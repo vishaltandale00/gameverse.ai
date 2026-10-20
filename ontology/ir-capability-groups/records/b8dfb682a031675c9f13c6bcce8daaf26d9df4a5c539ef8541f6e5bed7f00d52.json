@@ -1,0 +1,428 @@
+{
+  "canonicalstate": {
+    "adapter_fields_by_existing_package": {
+      "fusion.player.contact_profile": [
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_0",
+          "offset": 50336325,
+          "owner": "global",
+          "width": 8
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_1",
+          "offset": 50336354,
+          "owner": "global",
+          "width": 16
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_2",
+          "offset": 50336356,
+          "owner": "global",
+          "width": 8
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_3",
+          "offset": 50336360,
+          "owner": "global",
+          "width": 16
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_4",
+          "offset": 50336362,
+          "owner": "global",
+          "width": 16
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_5",
+          "offset": 50336364,
+          "owner": "global",
+          "width": 16
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_6",
+          "offset": 50336366,
+          "owner": "global",
+          "width": 16
+        }
+      ]
+    },
+    "concurrent_intermediate_write_semantics": "Unproven; no IRQ/concurrent observer assumed by finite function proofs",
+    "corrected_source_field_names": {
+      "field_0": "pose",
+      "field_1": "slopeType",
+      "field_2": "standingStatus",
+      "field_3": "drawDistanceLeft",
+      "field_4": "drawDistanceTop",
+      "field_5": "drawDistanceRight",
+      "field_6": "drawDistanceBottom"
+    },
+    "owner": "Original canonical SamusData current player at03001244; distinct previous snapshot remains separate",
+    "physical_addresses": "validation/provenance only, not portable allocation",
+    "readonly_assets": "Source-compiled325Bpose\u00d75 descriptor and64Bsigned16[8][4]draw-distance table,ROM-exact; overbroad embedded windows not fully semantically identified",
+    "storage_authority": "Original host RAM; binding snapshots and commits only at explicit synchronous invocation boundary"
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "existing_packages_with_additional_installed_provenance": 1,
+    "new_central_packages_requested": 0,
+    "new_distinct_source_functions": 0,
+    "new_distinct_source_roots": 0,
+    "new_native_runs_for_this_proposal": 0,
+    "new_packages_from_semantic_refinement": 0,
+    "prior_qualified_roots_installed": 1,
+    "retained_fresh_rebuilt_comparisons": 32,
+    "retained_reused_original_comparisons": 32
+  },
+  "dependency_links": [
+    {
+      "from": "fusion.player.contact_profile",
+      "kind": "source-indexed-immutable-table-read",
+      "proof": {
+        "path": "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json",
+        "sha256": "6093072ba5a0cfecfd45848438c6629e092efd315669db98b731bc26f2d62dd4"
+      },
+      "to_asset_ids": [
+        "sSamusCollisionData",
+        "sSamusDrawDistanceOffsets"
+      ],
+      "typed_emitted_physical_bytes_including_duplicates": 890,
+      "typed_unique_source_bytes": 389,
+      "untyped_embedded_physical_bytes": 9830
+    },
+    {
+      "kind": "same-current-player-backing",
+      "scope": "Reuse existing canonical source SamusData; no additional player state owner requested",
+      "to_module_id": "fusion.player.source-motion-transition"
+    }
+  ],
+  "event_order": [
+    "Source SamusUpdateDrawDistanceAndStandingStatus0800c174 reads pose descriptor byte0 and publishes four signed draw distances.",
+    "Descriptor byte4 resolves standingStatus; mid-air status or prior enemy standing clears slopeType according to source branches.",
+    "Normal source owner invokes phase before integration and again after contact; full driver/integration/terrain closure unqualified."
+  ],
+  "exactpins": {
+    "authoritative_source_consumer": {
+      "path": "local/decomps/mf/src/samus.c",
+      "sha256": "26d68cffe07ff66bef770347cb7e0bbfb9a66963eb2c6c9078041f45fda89ccb"
+    },
+    "authoritative_source_struct": {
+      "path": "local/decomps/mf/include/structs/samus.h",
+      "sha256": "fd9e571c37058fe540f377fc0fc424caff827bdda2a22382f93e110a045b8f1a"
+    },
+    "current_central_L1": {
+      "path": "local/ir/packages/fusion.player.contact_profile/l1.json",
+      "sha256": "26efb5bb13cd59bbbca6b0c716a10b4dc5b4c8e541c7974eb50bd11edcf2ce67"
+    },
+    "current_central_ontology": {
+      "path": "ontology/executable-components/fusion.player.contact_profile.json",
+      "sha256": "d4f078cbebc943bb0f24510164f851038677e1e7c7a7b1180e8656877932475a"
+    },
+    "current_central_package": {
+      "path": "local/ir/packages/fusion.player.contact_profile/package.json",
+      "sha256": "2ee5fbbe9dd7e680564506200a9b04d3c1a1c28924a98e420968f89da1db7965"
+    },
+    "current_central_receipt": {
+      "path": "local/ir/packages/fusion.player.contact_profile/receipt.json",
+      "sha256": "6dc60631db2b9652b75cfae7a9d08ef036bb496b9dafdabed2ec3f9bd24f2b2a"
+    },
+    "existing_canonical_module_delivery": {
+      "path": "research/deep-extraction/resume/metroid-fusion/prefab-pass/delivery.json",
+      "sha256": "89c547e714eccb0283d3adf3873da128c4ac4f15c4a3c43b48001d050f433d18"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/metroid-fusion/result.json",
+      "sha256": "cae9addf24f8eb04832669c53ea2cfc95bec9dd2fdc33d5717d45ebe11e5f67b"
+    },
+    "guarded_semantic_metadata_overlay": {
+      "path": "research/ir-workshop/coverage-wave-next/metroid-fusion/semantic-metadata-overlay-v1.json",
+      "sha256": "be94d0373c80ea32ef02ab20e4e354e7db4840087552d81681417c19890fc632"
+    },
+    "independent_IR_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/fusion-ir-qc.json",
+      "sha256": "0dc4f0ff89e4172274e5f412dc7649b5c7f17c270e9c60a5d9a18d7e957cae1f"
+    },
+    "independent_source_context_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/fusion-context-qc.json",
+      "sha256": "930addfc800afc9289193c8c2a720bd566620b77cdc60eac4754fad99e1076f8"
+    },
+    "prefab_graph": {
+      "path": "local/roundtrip/coverage-next-fusion-contact-v1/prefab-graph.json",
+      "sha256": "9eb2be42f36ab598f602dc26f0a6327d48bd09b785ef9a0a8faec508a8f28414"
+    },
+    "prior_closure": {
+      "path": "research/deep-extraction/resume/metroid-fusion/next-round/source-closure-20261016/closure-result.json",
+      "sha256": "b0ffb53c945a7322d951db18e99dff4c28c59dbd05afa5800ef4db9a56d7307d"
+    },
+    "prior_immediate_parent_receipt": {
+      "path": "local/ir/packages/fusion.player.contact_profile/qualification-prior/receipt.json",
+      "sha256": "291840775379f8ef84af0252abd14c099e87b519f4a91cc0a1b860e57a9bdad1"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/coverage-next-fusion-contact-v1/provider-report.json",
+      "sha256": "2cd2314ce5aad532289fdbe5bb14f12e23b9c6412cb04113be6202337cdc1bc8"
+    },
+    "raw_diff": {
+      "path": "local/roundtrip/coverage-next-fusion-contact-v1/raw-diff.json",
+      "sha256": "13f1880d24b1b4cf86b12dc0c912648637fabb44472e6b1ea63510cfde7a1d91"
+    },
+    "semantic_metadata_publication": {
+      "path": "local/ir/source-fleet-restart-20261016/publication/coverage-next-fusion-role-01/publication.json",
+      "sha256": "2a7d5cab4dc9e376d24990b01977cb77d033ff884c5bc17ae49e3a2e2bf2ab5d"
+    },
+    "source_semantic_correction_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/fusion-semantic-overlay-review-v1.json",
+      "sha256": "0aad62279164f78b6215a28dc4392869489e69eb91f7b547f6403641d38943b5"
+    },
+    "source_semantic_correction_QC_link": {
+      "path": "local/ir/ir-coverage-publication-20261016/coverage-next-fusion-overlay-01/review/independent-qc-link.json",
+      "sha256": "0c5406a8b29aae69786d9026af90808d58d6c8dcf9c2b4ad5a3b92b8c3dad17d"
+    },
+    "typed_assets_proof": {
+      "path": "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json",
+      "sha256": "6093072ba5a0cfecfd45848438c6629e092efd315669db98b731bc26f2d62dd4"
+    },
+    "typed_partition": {
+      "path": "local/roundtrip/coverage-next-fusion-typed-v1/bundle.json",
+      "sha256": "90286bfa480d3036f6e511e02a10d2f4be728cebde4b1a944e42b7f7a558cb40"
+    },
+    "typed_replay_receipt": {
+      "path": "local/roundtrip/coverage-next-fusion-typed-v1/replay-receipt.json",
+      "sha256": "d2e795fcf547752a2c341da0757e1377c49139545a0463fd179d11c2da05a972"
+    }
+  },
+  "existing_package_capabilities": [
+    {
+      "current_central_status": "Source annotation refinement published; native proof inherited only through identical generated C, graph pending",
+      "existing_L1": {
+        "path": "local/ir/packages/fusion.player.contact_profile/l1.json",
+        "sha256": "26efb5bb13cd59bbbca6b0c716a10b4dc5b4c8e541c7974eb50bd11edcf2ce67"
+      },
+      "existing_ontology_record": {
+        "path": "ontology/executable-components/fusion.player.contact_profile.json",
+        "sha256": "d4f078cbebc943bb0f24510164f851038677e1e7c7a7b1180e8656877932475a"
+      },
+      "existing_package": {
+        "path": "local/ir/packages/fusion.player.contact_profile/package.json",
+        "sha256": "2ee5fbbe9dd7e680564506200a9b04d3c1a1c28924a98e420968f89da1db7965"
+      },
+      "existing_receipt": {
+        "path": "local/ir/packages/fusion.player.contact_profile/receipt.json",
+        "sha256": "6dc60631db2b9652b75cfae7a9d08ef036bb496b9dafdabed2ec3f9bd24f2b2a"
+      },
+      "installed_entry": "0800c174",
+      "package_id": "fusion.player.contact_profile",
+      "private_artifact_scope": "Retained installed artifacts below were emitted against prior L1 annotation hash. They are historical installation evidence; no rewritten/private regeneration or new native proof for current annotation.",
+      "private_executable_provenance": {
+        "bound.c": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/bound.c",
+          "sha256": "38bc9a759bc33b884f4633c1dfa6fd429f773cc146e47879a0d6547af1b41c9c"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/generated.c",
+          "sha256": "f20408d32f283b10e0ef6db98907c0da4f2412cd7e2ef080700da3786477d235"
+        },
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/l0.json",
+          "sha256": "a9c42e08407cc5ecaef039fc1d3f79648589cdd5dafa789584a3b785f4f34b36"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/l1.json",
+          "sha256": "92eb38c9f50f4cfbe5a173b4a7706e252e08daa7fb02ad06dc11c46e24741287"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/original-proof.json",
+          "sha256": "291840775379f8ef84af0252abd14c099e87b519f4a91cc0a1b860e57a9bdad1"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/rebuilt-proof.json",
+          "sha256": "4bd34887dc6b8a6798d6cdb0047a32ad04a53330034bdf1f72ecef5ff97de43f"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/validation-adapter.json",
+          "sha256": "45e445ee2bce55b529c704d2d05796a86335b6e4b194830467ab68467d948af2"
+        }
+      }
+    }
+  ],
+  "game_id": "metroid-fusion",
+  "gaps": [
+    "No full source-built matching ELF/map baseline; whole-game ROM logical ownership unknown",
+    "Only one previously qualified root installed; no new root lifted in this lane",
+    "Overbroad original L1 asset windows retain9830 physical untyped embedded bytes; 2939 unique original window bytes beyond independently typed tables",
+    "Motion integration09d78 signed-division dependency budget and terrain class11 callback world/map/default metadata remain open per retained closure",
+    "Canonical current-player caller/lifecycle/save/interrupt contracts and every other game subsystem remain native/open",
+    "Generic ir_bundle only accepts registered three-module MZM recipe; Fusion sealed typed pack uses explicit disjoint component replay, not that MZM IR-only recipe"
+  ],
+  "graph_admission": {
+    "new_graph_runs": 0,
+    "prior_graphs": "historical only; not admission of current corrected package/L1",
+    "ready_phase": false,
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_metadata_refinement",
+    "whole_game_ready": false
+  },
+  "historical_installed_package_capability": {
+    "existing_L1": {
+      "path": "local/ir/packages/fusion.player.contact_profile/qualification-prior/l1.json",
+      "sha256": "92eb38c9f50f4cfbe5a173b4a7706e252e08daa7fb02ad06dc11c46e24741287"
+    },
+    "existing_ontology_record": {
+      "path": "local/ir/source-fleet-restart-20261016/publication/coverage-next-fusion-role-01/before/catalog/fusion.player.contact_profile.json",
+      "sha256": "3bda9bfb36f09a42becba08fb691cfe18999b989c2582a096af75643139747e8"
+    },
+    "existing_package": {
+      "path": "local/ir/packages/fusion.player.contact_profile/qualification-prior/package.json",
+      "sha256": "6caafccae5287a316956a0090c20ff4f237609dbb7b87399b1a44de105ebc757"
+    },
+    "existing_receipt": {
+      "path": "local/ir/packages/fusion.player.contact_profile/qualification-prior/receipt.json",
+      "sha256": "291840775379f8ef84af0252abd14c099e87b519f4a91cc0a1b860e57a9bdad1"
+    },
+    "installed_entry": "0800c174",
+    "package_id": "fusion.player.contact_profile",
+    "private_executable_provenance": {
+      "bound.c": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/bound.c",
+        "sha256": "38bc9a759bc33b884f4633c1dfa6fd429f773cc146e47879a0d6547af1b41c9c"
+      },
+      "generated.c": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/generated.c",
+        "sha256": "f20408d32f283b10e0ef6db98907c0da4f2412cd7e2ef080700da3786477d235"
+      },
+      "l0.json": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/l0.json",
+        "sha256": "a9c42e08407cc5ecaef039fc1d3f79648589cdd5dafa789584a3b785f4f34b36"
+      },
+      "l1.json": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/l1.json",
+        "sha256": "92eb38c9f50f4cfbe5a173b4a7706e252e08daa7fb02ad06dc11c46e24741287"
+      },
+      "original-proof.json": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/original-proof.json",
+        "sha256": "291840775379f8ef84af0252abd14c099e87b519f4a91cc0a1b860e57a9bdad1"
+      },
+      "rebuilt-proof.json": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/rebuilt-proof.json",
+        "sha256": "4bd34887dc6b8a6798d6cdb0047a32ad04a53330034bdf1f72ecef5ff97de43f"
+      },
+      "validation-adapter.json": {
+        "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/validation-adapter.json",
+        "sha256": "45e445ee2bce55b529c704d2d05796a86335b6e4b194830467ab68467d948af2"
+      }
+    }
+  },
+  "id": "fusion.draw-distance-standing.installed-provenance.v2",
+  "module_id": "fusion.player.source-motion-transition",
+  "module_owner_policy": "Reuse existing canonical source owner; no new player/actor module or separate state instance requested",
+  "native_eligibility": {
+    "ABI": "Void roots; no scalar parameters; global-only state Fusion,borrowed entitybase r0 MLSS.8Bentry veneer clobbersr3; installed roots do not require incomingr3.",
+    "fresh_runs_for_this_metadata": 0,
+    "kind": "finite-original-and-reconstructed-entry-native-parity",
+    "original_rom_sha256": "a56ce3d7f8f3f4f4d0468d421fff5dd3ee3aec99a58244377e43aae769dc3fe8",
+    "rebuilt_rom_sha256": "02ea746c0f8d8a85fe2667d165acae42184dd97f9dd1a0214de415b97c027a8a",
+    "scope": "Exact pinned synthetic function states/fields; not all callers,gameplay,scheduler,lifecycle or whole-game proof",
+    "vectors_per_root": 32
+  },
+  "originalhostprerequisites": [
+    "Original current player backing initialized by native host remains authoritative; no detached profile actor.",
+    "Pinned USA source/table layout and synchronous exact entry. Pose legal0..64 from source; synthetic out-of-source poses in parity do not establish lifecycle.",
+    "Original caller scheduler, integration/contact/audio/save and interrupt-visible publication remain unqualified."
+  ],
+  "package_ids": [
+    "fusion.player.contact_profile"
+  ],
+  "proof_inheritance": {
+    "L0_identity": {
+      "path": "local/ir/packages/fusion.player.contact_profile/l0.json",
+      "sha256": "8167e4ea9be5673901bc32ca5e22f6914afe1a1d40f522399af277acda585e58"
+    },
+    "adapter_identity": {
+      "path": "local/ir/packages/fusion.player.contact_profile/validation-adapter.json",
+      "sha256": "45e445ee2bce55b529c704d2d05796a86335b6e4b194830467ab68467d948af2"
+    },
+    "child_native_vectors_reused": 32,
+    "current_L1_sha256": "26efb5bb13cd59bbbca6b0c716a10b4dc5b4c8e541c7974eb50bd11edcf2ce67",
+    "current_child_receipt": {
+      "path": "local/ir/packages/fusion.player.contact_profile/receipt.json",
+      "sha256": "6dc60631db2b9652b75cfae7a9d08ef036bb496b9dafdabed2ec3f9bd24f2b2a"
+    },
+    "generated_C_identity": {
+      "path": "local/ir/packages/fusion.player.contact_profile/generated.c",
+      "sha256": "f20408d32f283b10e0ef6db98907c0da4f2412cd7e2ef080700da3786477d235"
+    },
+    "historical_private_installed_L1": {
+      "path": "local/roundtrip/coverage-next-fusion-contact-v1/contact/l1.json",
+      "sha256": "92eb38c9f50f4cfbe5a173b4a7706e252e08daa7fb02ad06dc11c46e24741287"
+    },
+    "kind": "metadata_only_identical_generated_c",
+    "new_native_calls": 0,
+    "prior_tree": "local/ir/packages/fusion.player.contact_profile/qualification-prior",
+    "scope": "Metadata-only identical generated C/adapter/L0. Do not treat preserved historical installed L1 or original native ancestry as new current-hash native execution."
+  },
+  "proposal_status": "existing-published-semantic-refinement-current-central-provenance-normalization-graph-pending",
+  "requested_semantic_metadata_correction": {
+    "exact_guarded_overlay": {
+      "path": "research/ir-workshop/coverage-wave-next/metroid-fusion/semantic-metadata-overlay-v1.json",
+      "sha256": "be94d0373c80ea32ef02ab20e4e354e7db4840087552d81681417c19890fc632"
+    },
+    "label": "Publish source player draw distances and standing status",
+    "publication": {
+      "path": "local/ir/source-fleet-restart-20261016/publication/coverage-next-fusion-role-01/publication.json",
+      "sha256": "2a7d5cab4dc9e376d24990b01977cb77d033ff884c5bc17ae49e3a2e2bf2ab5d"
+    },
+    "requires_sole_publisher_review": false,
+    "role": "draw_distance_and_standing_status",
+    "source_semantic_correction": "Historical contact_profile identifier retained for compatibility. Collision extents/contactmode/supportmask labels do not match pinned mf source fields. Propose annotation correction only; L1 behavior/artifact unchanged.",
+    "status": "applied_by_sole_publisher_source_QC_clear"
+  },
+  "revision_reason": "Sole publisher applied guarded source semantics correction; current central package/L1/receipt/ontology pins normalized without rewriting frozen old private installed artifacts or implying a new graph/native run.",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "embedded_captured_readonly_asset_bytes": 10720,
+    "generated_behavior_bytes": 124,
+    "graph_admitted_current_hash": false,
+    "independently_identified_unique_source_data_bytes": 389,
+    "installed_artifact_annotation_scope": "Historical private L1 annotation emitted identical C; current corrected metadata inherits finite native proof, no ROM artifact regenerated for this normalization.",
+    "installed_entries": [
+      "0800c174"
+    ],
+    "mechanical_binding_bytes": 88,
+    "output_mixed_unknown_bytes": 8398041,
+    "portable_L1": true,
+    "raw_difference_bytes": 10940,
+    "replacement_entry_veneer_bytes": 8,
+    "whole_game_editable_or_ready": false,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "0800c174"
+  ],
+  "supersedes_proposal": {
+    "path": "research/ir-workshop/coverage-wave-next/metroid-fusion/library-capability-v1.json",
+    "sha256": "e69c11b57b74a94c20a0b2d6c02f7ade0b774c72fa04ce29988abde306cdd88a"
+  },
+  "timing": {
+    "metadata_normalization_seconds": 0.0011137079999999997,
+    "metadata_seconds": 0.003787915999999999,
+    "provider_total_seconds": 0.839751167,
+    "queue_seconds": null,
+    "scope": "Metadata-only current-central pin normalization; no lower/compiler/build/native/graph execution."
+  }
+}

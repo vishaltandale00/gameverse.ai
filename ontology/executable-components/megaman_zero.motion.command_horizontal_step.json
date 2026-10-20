@@ -1,0 +1,192 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "megaman_zero.motion.command_horizontal_step",
+  "label": "Command-selected facing and horizontal position step",
+  "role": "movement",
+  "source_game": "megaman-zero",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+  "package_sha256": "8f07c8517a3789cb624a4db0ad744a33eb1a8793f5d9c6a7e9bba4a45386ce5d",
+  "behavior_sha256": "fcdf9cc19d865ea71f03da75f921492785bcb9434dae321d742d151b77edbad2",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "94fc8f63c2ac6c29b20118614039e3fc24c06f9516bab899b164ecc0da7ff618"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "packed_flags",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_packed_facing_flags",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "facing_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_facing_selector",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_horizontal_integer_coordinate",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "movement_magnitude",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_horizontal_integer_step_magnitude",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_command_storage_index",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 256,
+      "semantic_type": {
+        "quantity": "command_history_bytes",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_actor_indexed_command_storage",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/megaman-zero/l0/08016d78.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/manifest.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 5,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 256
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "one actor-owned instance retaining shared indexed storage",
+    "clock": "explicit function invocation; game tick frequency unknown",
+    "phase": "horizontal direction and position update within source air-step call order",
+    "ordering": "command read precedes facing selector and packed flag writes; position addition consumes the resulting facing sign",
+    "ownership": "One canonical actor backing; scalar fields and collection are views of the same owned record."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/megaman_zero.motion.command_horizontal_step/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic native parity covers1024 vectors, not gameplay scheduling or whole subsystem qualification.",
+    "Unit1/1 means one stored source integer unit only; pixel scaling, physical units and tick frequency remain unknown. Distinct source-role frames prevent accidental unit compatibility.",
+    "Only facing bit of packed flags is semantically identified; other bits remain opaque and are preserved.",
+    "Recovered storage collection has256 u8-indexed entries; source producer also has64-entry ring behavior. No64-entry producer/consumer closure or full actor lifecycle is claimed.",
+    "Same actor owns direction flags, index, command storage and position. Preserve order: ring read, facing writes, then position update.",
+    "This subset performs no terrain correction, animation update or landing service. Full air subsystem depends on mechanically observable opaque services.",
+    "Launch-to-selected-air-mode scheduling remains unproved; no launch component is represented.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+    "sha256": "ed52ff8bc14f7fceea0f732f801c807a1d4cddd9e126b721d652a856180633b1",
+    "id": "megaman-zero.air-entry-motion-contact-landing",
+    "status": "source-backed full subsystem; only this automatic subset executable-qualified",
+    "unit_policy": "Rational1/1 expresses native stored integer units within each distinct source-role frame, not recovered physical units.",
+    "service_and_alias_policy": "Full source-system opaque/shared/service/order limitations remain unresolved; do not infer independent state copies or optional animation services."
+  }
+}

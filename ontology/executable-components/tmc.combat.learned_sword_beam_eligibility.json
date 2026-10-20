@@ -1,0 +1,171 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.combat.learned_sword_beam_eligibility",
+  "label": "Choose learned sword-beam eligibility from capability and hearts",
+  "role": "combat",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tmc.combat.learned_sword_beam_eligibility/package.json",
+  "package_sha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f",
+  "behavior_sha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "3c606f3f3989497d5eac60469f445d3403506f5e5c3ca1a2ac2929760fb3fdc9"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.health.current",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_capacity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.health.maximum",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "abilities.derived",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "no owned mutable state; borrowed canonical player health and same derived capability cache",
+    "clock": "explicit eligibility query at source swing event, no frequency inference",
+    "writes": false,
+    "allocation": false,
+    "ordering": "Source refresh precedes consuming cache; original swing uses query result before capacity/spawn/technique selection."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tmc.combat.learned_sword_beam_eligibility/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Function-level finite original/generated qualification only, not projectile/scene/gameplay.",
+    "Return selectors0/15/22 are native categorical eligibility variants; do not reinterpret as damage or spawned entity IDs.",
+    "Native heartpool unit is retained; no heart-to-pixel/time or display-heart scale inferred.",
+    "Synthetic qualification includes robust boundary fields not all reachable gameplay states.",
+    "Normal trainer discovery and once-only reward event remain unclosed.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "return_meaning": {
+      "quantity": "sword_beam_eligibility",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "combat.sword.beam_eligibility",
+      "confidence": 0.95,
+      "evidence": [
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+      ]
+    },
+    "return_domain": {
+      "values": [
+        0,
+        15,
+        22
+      ]
+    },
+    "parameter_meanings": {},
+    "source_evidence": {
+      "path": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+      "sha256": "f3017ccc0474b07be3a3ea79465919e1d5f2f9908f0dcb28eca68cd91b0091ba"
+    },
+    "owned_state": [],
+    "borrowed_state": "Source current/max nativehealth plus same u16 skillcache produced by tmc.progress.derive_skills.",
+    "alias_rule": "Bind one progression-owned learned bank\u2192refresh cache; consumer reads that exact cache. Do not invent second skillowner orcopy unrelated ability state.",
+    "eligibility": "Bit4 with current==maximum returns15; otherwise bit7 withcurrent<=8 returns22; otherwise0. Learnedstate1ofIDs76/79 mapsbits4/7.",
+    "services": [],
+    "preconditions": [
+      "Canonical same player/session health and skillcache, refreshed explicitly after ownership update.",
+      "u8current/maxnativehealth andu16skillmask; returnfullu32selectors."
+    ],
+    "ordering": "Query alone neither spawns beam nor authorizes full swordaction. Original parent suppliesanimationevent,capacityqueryandactor lifecycle.",
+    "qualification": "512nativepairs,50causal exactexpectedfullu32returns; noownedstatechanges."
+  },
+  "return_meaning": {
+    "quantity": "sword_beam_eligibility",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "combat.sword.beam_eligibility",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+    ]
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "legend-of-zelda-the-the-minish-cap",
+    "entry": "0807b014"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

@@ -1,0 +1,388 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "pokemon-firered-version",
+  "sourceContractRef": "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+  "blueprintIds": [
+    "dialogue-interactive-scenes",
+    "turn-based-party-battle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Interact with characters, view and advance dialogue pages, choose menu/party commands, battle and preserve progress. Supplied candidate is only the timed dialogue page-advance gate; original visible-text, input and page lifecycle consumers remain explicit gaps.",
+    "phases": [
+      {
+        "id": "scene_trigger",
+        "label": "Select original interaction and text stream",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Field input/reachability/scene script producer unclosed."
+        ]
+      },
+      {
+        "id": "dialogue_page_wait",
+        "label": "Gate dialogue page advance in original text lifecycle",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "firered.prefab.timed_dialogue_continuation"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [
+          "Host explicit text-tick schedule",
+          "Same-instance TextContext"
+        ],
+        "gaps": [
+          "Automatic gate only: manual input and visible text/page-clear continuation remain unqualified.",
+          "Host must respect original state2/timed-policy/entry-reset lifecycle."
+        ]
+      },
+      {
+        "id": "page_resume",
+        "label": "Clear acknowledged page and resume script",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [
+          "Window clear/render memory",
+          "BIOS0x0c effect"
+        ],
+        "gaps": [
+          "Canonical backing, cursor/state transaction consumer not executable-closed."
+        ]
+      },
+      {
+        "id": "choice_menu",
+        "label": "Choose dialogue and menu commands",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Choice navigation/confirm/cancel and script command effect unclosed."
+        ]
+      },
+      {
+        "id": "party",
+        "label": "Select and persist party commands",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Six100-byte record presentation candidate is static evidence only; encrypted record ownership and command legality unqualified."
+        ]
+      },
+      {
+        "id": "battle_command",
+        "label": "Select legal turn command",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Command availability, target selection and turn admission missing."
+        ]
+      },
+      {
+        "id": "battle_resolve",
+        "label": "Resolve turn and battle progression",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Turn order/RNG, effects/status/HP/faint/reward/experience missing."
+        ]
+      },
+      {
+        "id": "scene_commit",
+        "label": "Commit progress and return to field",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Durable save commit, lifecycle callback restoration and scene return missing."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "scene_trigger",
+        "to": "dialogue_page_wait",
+        "kind": "host-required",
+        "scope": "Stream/reachability boundary unresolved; not an extracted scheduler claim."
+      },
+      {
+        "from": "dialogue_page_wait",
+        "to": "page_resume",
+        "kind": "source-call",
+        "scope": "State2 call08005648 uses0800561c in timed mode; nonzero is required before window clear/cursor reset/state0."
+      },
+      {
+        "from": "choice_menu",
+        "to": "party",
+        "kind": "host-required",
+        "scope": "No recovered callback/command transition supplied; unresolved core-game boundary."
+      },
+      {
+        "from": "battle_command",
+        "to": "battle_resolve",
+        "kind": "host-required",
+        "scope": "Command/turn boundary missing; no ordering guessed from routine addresses."
+      },
+      {
+        "from": "battle_resolve",
+        "to": "scene_commit",
+        "kind": "host-required",
+        "scope": "Battle completion/reward/save/return continuation missing."
+      }
+    ],
+    "missingForCoreGame": [
+      "Field input/reachability/scene script producer unclosed.",
+      "Automatic gate only: manual input and visible text/page-clear continuation remain unqualified.",
+      "Host must respect original state2/timed-policy/entry-reset lifecycle.",
+      "Canonical backing, cursor/state transaction consumer not executable-closed.",
+      "Choice navigation/confirm/cancel and script command effect unclosed.",
+      "Six100-byte record presentation candidate is static evidence only; encrypted record ownership and command legality unqualified.",
+      "Command availability, target selection and turn admission missing.",
+      "Turn order/RNG, effects/status/HP/faint/reward/experience missing.",
+      "Durable save commit, lifecycle callback restoration and scene return missing."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "firered.dialogue.page_wait.bundle",
+      "label": "Timed dialogue page advance gate",
+      "moduleId": "firered.dialogue.page_wait",
+      "sourceGame": "pokemon-firered-version",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+      "planIds": [
+        "dialogue-interactive-scenes"
+      ],
+      "packageIds": [
+        "firered.text.timed_acknowledgement"
+      ],
+      "availability": "published-subset",
+      "scope": "Typed same-context automatic dialogue page-advance predicate with actual captured mayContinue return and retained delay progress. Inputs/visible-text/page lifecycle remain external explicit obligations.",
+      "gaps": [
+        "Manual A/B or remapped-L acknowledgement is not supplied.",
+        "Visible-text/window backing clear, cursor/state continuation and scene effects are not in this prefab.",
+        "Opaque session selector remains private/default0, fixed120-update threshold branch; alternate50-update mode not exposed as configurable input.",
+        "Graph validates/lower only; repeated host lifecycle execution and runtime reachability are not qualified."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+        "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json",
+        "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.validation.json",
+        "local/ir/mashup-coverage/backend-wave07/publication.json"
+      ],
+      "canonicalState": {
+        "identity": "One caller-owned TextContext page-wait module",
+        "fields": [
+          "waitCounter",
+          "mayContinue"
+        ],
+        "aliasRule": "Counter corresponds to original text+0x16; same owner retained across polls. Packed renderer aliases are outside supplied graph."
+      },
+      "roleFacets": [
+        {
+          "roleId": "dialogue",
+          "capability": "Expose whether an automatic dialogue page may advance",
+          "status": "published-subset",
+          "scope": "Actual u8 mayContinue source predicate output + canonical retained delay progress; full parent/manual/render consumers not supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.validation.json",
+            "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "scene-lifecycle",
+          "capability": "Source wait-entry/reset and acknowledged page-resume boundaries",
+          "status": "source-only",
+          "scope": "Host must supply entry/tick events; consumer clear/cursor/state transaction not provided.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+          ]
+        },
+        {
+          "roleId": "scene-effect",
+          "capability": "Original acknowledged page clear and decoder continuation consumer",
+          "status": "missing",
+          "scope": "Requires visible-window canonical backing, renderer memory service, cursor restore and source state0 transition; none supplied by gate graph.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "firered.prefab.timed_dialogue_continuation",
+        "label": "Timed dialogue page advance gate",
+        "assemblyRef": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.assembly.json",
+        "validationRef": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/delivery.json",
+        "packageIds": [
+          "firered.text.timed_acknowledgement"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "firered.prefab.timed_dialogue_continuation",
+      "moduleId": "firered.dialogue.page_wait",
+      "label": "Timed dialogue page advance gate",
+      "path": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.assembly.json",
+      "sha256": "aa4bc0ec3ddb7134e0aff6a9e6c7c06f9c012c3780aed0be894e7852469a98e4",
+      "validation": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/timed-page-poll.validation.json",
+      "validationSha256": "294f35f56d27d45550d6697fc1296a101a5951e8393cead31539e472b71a28bd",
+      "inputs": [
+        {
+          "id": "pageDelayProgress",
+          "label": "Current page delay progress",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Source byte counter, no narrowed native domain. New page begins0; fixed default session selects threshold120."
+          },
+          "binding": "waitCounter"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "mayContinue",
+          "label": "Page may advance",
+          "binding": "mayContinue",
+          "storageType": "u8",
+          "meaning": "Actual source return captured.1 iff pre-invocation counter already equals selected threshold; downstream page-clear/decoder consumer remains required."
+        },
+        {
+          "id": "pageDelayProgress",
+          "binding": "waitCounter",
+          "storageType": "u8",
+          "meaning": "Retained same-context source delay progress for next eligible text update; not an independent timer actor."
+        }
+      ],
+      "phases": [
+        {
+          "id": "dialogue_ack_gate",
+          "trigger": "Explicit supplied host event: eligible automatic dialogue update after page entry, original text state2 and timed-policy mask4.",
+          "invocations": [
+            "timedAck"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceContext": "Source parent080057a4\u219208005648\u21920800561c timed branch. Graph is the gate only; entry/state/policy checks belong to host/source parent."
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "page_entry_lifecycle",
+          "requirement": "Initialize/reset same page counter0 once per new page, retain across eligible updates; never reset every gate invocation."
+        },
+        {
+          "id": "text_update_schedule",
+          "requirement": "Supply explicit text-update events. No established video-frame/rate conversion."
+        },
+        {
+          "id": "visible_text_page_consumer",
+          "requirement": "Host consumes mayContinue before attempting canonical window clear, cursor restoration and decoder transition; original renderer/clear/state consumer is unqualified."
+        }
+      ],
+      "gaps": [
+        "Manual A/B or remapped-L acknowledgement is not supplied.",
+        "Visible-text/window backing clear, cursor/state continuation and scene effects are not in this prefab.",
+        "Opaque session selector remains private/default0, fixed120-update threshold branch; alternate50-update mode not exposed as configurable input.",
+        "Graph validates/lower only; repeated host lifecycle execution and runtime reachability are not qualified."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+        "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/core-context.json",
+        "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/return-contract-request.json"
+      ],
+      "qualificationScope": "Actual generic Composer result-binding/lowering pass with retained finite-qualified leaf; no new execution/native or full dialogue subsystem proof.",
+      "pins": {
+        "package": {
+          "path": "local/ir/packages/firered.text.timed_acknowledgement/package.json",
+          "sha256": "142db2a5783031bc999a0d22f5af76f2f20f27461f4d8926f04286e5dfd01d79"
+        },
+        "behavior": {
+          "path": "local/ir/packages/firered.text.timed_acknowledgement/l1.json",
+          "sha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64"
+        },
+        "nativeReceipt": {
+          "path": "local/ir/packages/firered.text.timed_acknowledgement/receipt.json",
+          "sha256": "2c456e31a5b6b0c3beca457abf9e9fdde608ab26289e36308a5afde627a5e707"
+        },
+        "catalog": {
+          "path": "ontology/executable-components/index.json",
+          "sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0"
+        },
+        "compositionContractIndex": {
+          "path": "ontology/composition-contracts/index.json",
+          "sha256": "ab806876959b47227d2c7678803f877c5bb0acd4c1f47ae946df7673d2987852"
+        },
+        "validator": {
+          "path": "tools/behavior_ir/assembly.py",
+          "sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9"
+        },
+        "composer": {
+          "path": "tools/behavior_ir/compose.py",
+          "sha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee"
+        },
+        "publication": {
+          "path": "local/ir/mashup-coverage/backend-wave07/publication.json",
+          "sha256": "33908b9c53a1fbba70f0424195b602716c5d3bb72a7b344d0ab7812ea6c5ff9c"
+        }
+      },
+      "declaredClock": "One source text-wait invocation per host-supplied eligible event; no numeric mapping to wall-clock/video frames."
+    }
+  ],
+  "blockedPrefabCandidates": [],
+  "timing": {
+    "runId": "firered-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.002444542000000001,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "One new result-bound symbolic Composer validation0.002444542s after actual central return metadata publication. Historical invalid admission retained separately. No native/build/JVM; interactive elapsed unavailable.",
+    "metadataSeconds": 0.0017210000000000003
+  },
+  "historicalAdmissionBlocker": {
+    "validation": "local/ir/fleet-next/pokemon-firered-version/prefab-pass/pre-return-contract.validation.json",
+    "reason": "Missing returnMeaning before central wave07. Retained historical failure; additive metadata now admits real result output."
+  }
+}

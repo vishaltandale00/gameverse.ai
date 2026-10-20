@@ -1,0 +1,501 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "dragon-ball-advanced-adventure",
+  "sourceSystemIds": [
+    "dragon-ball.charge-release-actor"
+  ],
+  "blueprintIds": [
+    "melee-action"
+  ],
+  "coreLoop": {
+    "playerOutcome": "On one fighter, sample inputs, admit resource/capability-gated actions, emit the attack in its animation phase, move/collide, then recover the action state without orphaned task/effect state. This experience is not yet executable in full.",
+    "phases": [
+      {
+        "id": "selected-input",
+        "label": "Selected Input",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "physical/replay input provider",
+          "source invocation cadence"
+        ],
+        "gaps": [
+          "source-backed serialized HighFunction, mode-dependent input and scheduler context incomplete",
+          "host-service closure absent"
+        ]
+      },
+      {
+        "id": "actor-input",
+        "label": "Actor Input",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "db.actor-input.sample-edges-repeat"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "canonical actor backing and selected input mask delivery",
+          "real controller consumer not executable"
+        ],
+        "gaps": []
+      },
+      {
+        "id": "controller-action",
+        "label": "Controller Action",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "exact callback target domain",
+          "death/service handling",
+          "effect lifecycle",
+          "world height"
+        ],
+        "gaps": [
+          "source-backed partial branching controller; resource/capability producers incomplete",
+          "not closed; required dependent functions/pool/services unresolved"
+        ]
+      },
+      {
+        "id": "release-emission",
+        "label": "Release Emission",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "canonical task pool and stable handles",
+          "owned effect cleanup",
+          "source animation completion timing"
+        ],
+        "gaps": [
+          "table profile0/1 lane mapped; emission object/lifetime still incomplete",
+          "blocked by task allocator0810d758 and source recovery link"
+        ]
+      },
+      {
+        "id": "integration-terrain",
+        "label": "Integration Terrain",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "world geometry",
+          "canonical attachment references",
+          "source signed fixedpoint units"
+        ],
+        "gaps": [
+          "main fixed actor update shows integration/terrain order; whole terrain solver incomplete",
+          "source-only"
+        ]
+      },
+      {
+        "id": "animation-update",
+        "label": "Animation Update",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "source asset ownership",
+          "logical animation clock; cannot blanket-stub rendering"
+        ],
+        "gaps": [
+          "mechanically required feedback source mapped",
+          "blocked nested animation references"
+        ]
+      },
+      {
+        "id": "recovery",
+        "label": "Recovery",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "shared actor reference",
+          "movement/air controller closures"
+        ],
+        "gaps": [
+          "source-backed recovery selector and exact record helper call",
+          "record helper qualified restrictedr1=1/r2=0; root fails same-entity collection binding"
+        ]
+      },
+      {
+        "id": "camera-presentation",
+        "label": "Camera Presentation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+        ],
+        "requiredServices": [
+          "camera/world state",
+          "native presentation effects not proven optional"
+        ],
+        "gaps": [
+          "main update source ordering mapped; services not closed",
+          "source-only host dependencies"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "selected-input",
+        "to": "actor-input",
+        "kind": "shared-state",
+        "scope": "Selected source mask consumed by same actor update; sampler scheduling not yet closed."
+      },
+      {
+        "from": "actor-input",
+        "to": "controller-action",
+        "kind": "source-call",
+        "scope": "08014a6c calls input operator before active controller callback on same actor."
+      },
+      {
+        "from": "controller-action",
+        "to": "release-emission",
+        "kind": "event",
+        "scope": "Capability/resource-gated release snapshots tier and selects initializer; not closed executable edge."
+      },
+      {
+        "from": "controller-action",
+        "to": "integration-terrain",
+        "kind": "source-call",
+        "scope": "Active callback before integration and terrain in original actor update."
+      },
+      {
+        "from": "integration-terrain",
+        "to": "animation-update",
+        "kind": "source-call",
+        "scope": "Collision precedes animation update in original fixed actor routine."
+      },
+      {
+        "from": "animation-update",
+        "to": "release-emission",
+        "kind": "shared-state",
+        "scope": "Completion flag produced after callback; next eligible source callback consumes prior completion state."
+      },
+      {
+        "from": "release-emission",
+        "to": "recovery",
+        "kind": "source-call",
+        "scope": "Timer/animation-gated release recovery chooses next controller."
+      },
+      {
+        "from": "integration-terrain",
+        "to": "camera-presentation",
+        "kind": "host-required",
+        "scope": "Source camera uses committed or prior pose according to actor/world flags."
+      }
+    ],
+    "missingForCoreGame": [
+      "same actor entity-owned collection binding blocked in fresh precise reproducer",
+      "emission and charge-begin depend canonical task allocation/handles; static exports not lifecycle closure",
+      "nested animation pointers and required completion feedback not closed",
+      "No published executable controller consumes actor_input outputs; source08017244 is known but dependent closure incomplete.",
+      "Death/audio linked-channel teardown, terrain, source input mode and save/progression unknowns remain explicit."
+    ],
+    "wholeGameReady": false,
+    "sourceComplete": false,
+    "executableComplete": false,
+    "hostDependencies": [
+      "physical/replay input provider",
+      "source invocation cadence",
+      "canonical actor backing and selected input mask delivery",
+      "real controller consumer not executable",
+      "exact callback target domain",
+      "death/service handling",
+      "effect lifecycle",
+      "world height",
+      "canonical task pool and stable handles",
+      "owned effect cleanup",
+      "source animation completion timing",
+      "world geometry",
+      "canonical attachment references",
+      "source signed fixedpoint units",
+      "source asset ownership",
+      "logical animation clock; cannot blanket-stub rendering",
+      "shared actor reference",
+      "movement/air controller closures",
+      "camera/world state",
+      "native presentation effects not proven optional"
+    ]
+  },
+  "bundles": [
+    {
+      "id": "db.actor-input-action-bundle",
+      "label": "Dragon Ball actor input and action boundary",
+      "moduleId": "db.actor-input-and-action",
+      "sourceGame": "dragon-ball-advanced-adventure",
+      "sourceSystemId": "dragon-ball.charge-release-actor",
+      "sourceContractRef": "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+      "planIds": [
+        "melee-action"
+      ],
+      "packageIds": [
+        "db.input.actor_edges_repeat"
+      ],
+      "availability": "published-subset",
+      "scope": "One source actor-input update: suppression \u2192 held/press/release edges \u2192 directional repeat countdown and stream. Charge controller, actions, movement and animation are not supplied.",
+      "gaps": [
+        "Actual controller consumer08017244 not published closed; this prefab only supplies its source input representation.",
+        "Physical/record/replay selected-mask producer and invocation cadence remain host responsibilities.",
+        "Preserve externally owned actor/input state, no disconnected per-role copies.",
+        "Main action/emission/recovery require task pool, animation feedback and entity collection linkage closure."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+      ],
+      "canonicalState": {
+        "identity": "Original actor task/session owns one persistent actor; selected held input belongs to source input context.",
+        "fields": [
+          "control flags",
+          "previous/held input",
+          "pressed/released masks",
+          "directional repeat counter and stream"
+        ],
+        "aliasRule": "All actor input views retain same backing as controller/action/motion state. Do not allocate separate copies for input/action/role facets."
+      },
+      "roleFacets": [
+        {
+          "roleId": "fighter-control",
+          "capability": "actor-local suppression, edges and directional repetition",
+          "status": "published-subset",
+          "scope": "One source actor-input update: suppression \u2192 held/press/release edges \u2192 directional repeat countdown and stream. Charge controller, actions, movement and animation are not supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+            "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+            "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+          ]
+        },
+        {
+          "roleId": "action",
+          "capability": "source capability-gated charge/release and animation-gated emission consumer",
+          "status": "source-only",
+          "scope": "Consumer is source-backed but no executable controller/task/animation closure supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "db.actor-input.sample-edges-repeat",
+        "label": "Actor input update: edges and repeat",
+        "assemblyRef": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.assembly.json",
+        "validationRef": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/delivery.json",
+        "packageIds": [
+          "db.input.actor_edges_repeat"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "db.actor-input.sample-edges-repeat",
+      "moduleId": "db.actor-input-and-action",
+      "label": "Actor input update: edges and repeat",
+      "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.assembly.json",
+      "sha256": "39f94268dab30cc17300ee6eec9d65c68d79ee4725d7b954e3e2865532af68aa",
+      "validation": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.validation.json",
+      "validationSha256": "3acff777bf8bfcf0eab9aa12f72a84af62f27227bb6ade1c2beaef2e8e7e41d7",
+      "inputs": [
+        {
+          "id": "selected-held",
+          "label": "Selected held button mask",
+          "storageType": "u16",
+          "default": 16,
+          "domain": "Sourceu16 selected button mask; low10 GBA bits ordinarily, replay/synthetic highbits not assumed impossible. No physical key binding or producer supplied.",
+          "binding": "selected_held"
+        },
+        {
+          "id": "control-flags",
+          "label": "Actor input suppression flags",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Sourceu32 flags; mask0x400 suppresses input. Preserve all other actor control bits when reusing canonical actor.",
+          "binding": "actor_field_0"
+        },
+        {
+          "id": "previous-held",
+          "label": "Previous held state",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Sourceu16 retained actor-local held mask",
+          "binding": "actor_field_2"
+        },
+        {
+          "id": "repeat-countdown",
+          "label": "Directional repeat countdown",
+          "storageType": "u8",
+          "default": 16,
+          "domain": "Sourceu8; units function invocations, no sourceframe cadence asserted",
+          "binding": "actor_field_1"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "held",
+          "binding": "actor_field_2",
+          "meaning": "Suppression-adjusted actor held mask after this invocation."
+        },
+        {
+          "id": "pressed",
+          "binding": "actor_field_3",
+          "meaning": "Newly pressed mask relative to retained previous held."
+        },
+        {
+          "id": "released",
+          "binding": "actor_field_4",
+          "meaning": "Newly released mask relative to retained previous held."
+        },
+        {
+          "id": "repeat-stream",
+          "binding": "actor_field_5",
+          "meaning": "Pressed buttons plus source directional repetition stream."
+        },
+        {
+          "id": "repeat-countdown",
+          "binding": "actor_field_1",
+          "meaning": "Retained directional repeat countdown for next invocation."
+        }
+      ],
+      "phases": [
+        {
+          "id": "sample_actor_input",
+          "trigger": "One explicitly supplied eligible actor input-update invocation",
+          "invocations": [
+            "actor_input"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceOrder": "Original08014a6c invokes this before active callback. This graph invokes only that bounded member; host cadence and controller dispatch not fabricated."
+        }
+      ],
+      "requiredServices": [
+        "Externally owned canonical actor input/control backing",
+        "Source-selected held-mask delivery (hardware/record/replay producer outside prefab)",
+        "Host invocation at eligible original actor boundary",
+        "Actual downstream controller/action consumer remains absent"
+      ],
+      "gaps": [
+        "Actual controller consumer08017244 not published closed; this prefab only supplies its source input representation.",
+        "Physical/record/replay selected-mask producer and invocation cadence remain host responsibilities.",
+        "Preserve externally owned actor/input state, no disconnected per-role copies.",
+        "Main action/emission/recovery require task pool, animation feedback and entity collection linkage closure."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/core-loop.json",
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+        "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json"
+      ],
+      "qualificationScope": "Actual Composer binding and lowering accepted; prior finite native proof qualifies original operator subset, not prefab runtime, source scheduler or whole game.",
+      "packagePins": [
+        {
+          "path": "local/ir/packages/db.input.actor_edges_repeat/package.json",
+          "sha256": "eee6882b05fea83a7d530cdffd0d549c1a3e106e6284bfda5b87bdee32823a1f"
+        },
+        {
+          "path": "local/ir/packages/db.input.actor_edges_repeat/l1.json",
+          "sha256": "de55633a24564cfb1777638a695821dc41351f287a03cb9ec68c40e95a93ddac"
+        },
+        {
+          "path": "local/ir/packages/db.input.actor_edges_repeat/receipt.json",
+          "sha256": "eaa45e89d490c583d0da82d06b626d1366d28478cc2c198e0b530f02e9747a12"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "press",
+          "label": "Held direction with no prior held state",
+          "default": true,
+          "assembly": {
+            "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.assembly.json",
+            "sha256": "39f94268dab30cc17300ee6eec9d65c68d79ee4725d7b954e3e2865532af68aa"
+          },
+          "validation": {
+            "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.validation.json",
+            "sha256": "3acff777bf8bfcf0eab9aa12f72a84af62f27227bb6ade1c2beaef2e8e7e41d7"
+          },
+          "status": "binding_valid_obligations_unproven"
+        },
+        {
+          "id": "suppression",
+          "label": "Suppress a previously held direction",
+          "default": false,
+          "assembly": {
+            "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-suppression.assembly.json",
+            "sha256": "013bae17530d4a3d7748d31a78c7effdc04db7e8abe633c1903a9a16de1f0901"
+          },
+          "validation": {
+            "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-suppression.validation.json",
+            "sha256": "3639c40faff877d77f3b9ae023bc2de62b27c335047c796803d078344ef03c15"
+          },
+          "status": "binding_valid_obligations_unproven"
+        }
+      ],
+      "runtimeQualified": false
+    }
+  ],
+  "timing": {
+    "runId": "db-prefab-source-coreloop-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.005040834000000001,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Two actual assembly validations0.002648167s and0.002392667000000001s; current compiler root blocker reproduction0.018119167s separately. No native rerun or build. Analysis total/queue unavailable. Existing native proof reused, not summed as new work."
+  },
+  "blockers": [
+    {
+      "id": "same-entity-owned-collection-link",
+      "status": "compiler-owner-fix-queued",
+      "evidence": {
+        "path": "local/ir/fleet-next/dragon-ball-advanced-adventure/prefab-pass/recovery-blocker.json",
+        "sha256": "1c7a6208f2857caec4b765317f856a4eb36c5f1ea63f4307f52f9aabdd26c792"
+      },
+      "reproducer": {
+        "path": "local/ir/fleet-next/dragon-ball-advanced-adventure/prefab-pass/reproduce-recovery.py",
+        "sha256": "54833faea4e609c82e24520878e9f97d9ee7bc826d5e204f98aadbec40d45471"
+      },
+      "detail": "Current recovery root08017068 with qualified exactdomain04040 callee requires same entityr0 collection binding; compiler rejects exactglobal-only. Shared owner acknowledged queued alias-preserving fix; no native rerun before stableAPI."
+    }
+  ],
+  "assemblyStatus": "binding_valid_obligations_unproven",
+  "configurationCount": 2,
+  "prefabCount": 1
+}

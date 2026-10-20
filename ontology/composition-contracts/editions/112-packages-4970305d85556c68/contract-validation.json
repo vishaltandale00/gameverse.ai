@@ -1,0 +1,21 @@
+{
+  "outcome": "pass",
+  "publishedPackages": 112,
+  "publicPorts": 291,
+  "privateFields": 298,
+  "candidateRelations": 181,
+  "validatedGraphs": 1,
+  "wholeRecoveredExecutableL2": 0,
+  "wallSeconds": 0.070741125,
+  "scope": "Pinned package/behavior/receipt/interface checks and candidate metadata only; no behavior, native or ROM execution",
+  "indexSha256": "4970305d85556c68f2449f243db7798a11ddae54611236663d64b8f18f20525b",
+  "builderSha256": "ae4e78f3103dc1fc19270061c493f7d9b5bf683d6ca53322d9892e5afd9292e2",
+  "registrySha256": "44fff31e83c8e3bf621df83b67c0f7050b2d056452c1473616e3d30025c16ca3",
+  "runId": "composition-contracts-20261016T141806.918956Z",
+  "python": "3.9.6",
+  "machine": "macOS-27.0.1-arm64-arm-64bit",
+  "queueSeconds": null,
+  "nativeExecutionSeconds": null,
+  "buildSeconds": null,
+  "timingScope": "Local contract read/check/index write only; report context/serialization excluded. No comparable earlier edition baseline exists."
+}

@@ -1,0 +1,396 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "pmd.input.publish",
+  "label": "Publish packed input snapshot before clearing accumulated events",
+  "role": "input",
+  "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/pmd.input.publish/package.json",
+  "package_sha256": "7b9d17f7da2357bff297447f15f74aa0b30a29ab5e6248f0d2a4a1a3fdd08648",
+  "behavior_sha256": "e78284f48aa118cab56dd5d43c89e0490197e1638aa6508ce2254b0ed89caa08",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "7e2089e960b422c7d128b1c2562aea3ac4e2fd356fe90c60fab3f573ad207a0e"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "packed_input_bitsets",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "published_input",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "packed_input_bitsets",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "published_input",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "accumulated_held_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_accumulation",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "accumulated_newly_pressed_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_accumulation",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "accumulated_repeat_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_accumulation",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "accumulated_short_release_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_accumulation",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 24,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared_owned_input_context",
+    "clock": "explicit_function_invocation",
+    "phase": "caller_selected_publication_boundary",
+    "sourceObservedOrdering": [
+      "copy four accumulator words to published state",
+      "clear first two accumulator words",
+      "reset auxiliary sentinel array and two flags"
+    ],
+    "callerOrderBeyondLeaf": "source-backed only; no invented mandatory orchestration or fixed FPS"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/pmd.input.publish/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+    "No unresolved pointer alias escapes the recovered state views",
+    "Bind every mapped field to the shared input context; cross-root packed aliases must remain shared.",
+    "Finite receipts cover this leaf and exact accessed lanes; no full sampler/controller or temporal sequence qualification.",
+    "KEYINPUT service blocks sampler and stateful producer automatic closure.",
+    "Opaque publication tail producers and auxiliary sentinel meaning unresolved.",
+    "Opaque fields remain unannotated; preserve storage and copy/reset behavior.",
+    "Qualification applies to this standalone leaf, not the full input lifecycle or sampler.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_system": {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+      "sha256": "ed4c9d687782b3259860aeb5f923db1d9cf0224ce82f2e9c21a677c83e240a0d"
+    },
+    "detailed_mapping_evidence": {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+      "sha256": "c9cd345d9abf2d9ad5e93a3b06f3d2cc01fef33a6ad54b99f6992cd7c6d2240c"
+    },
+    "owned_state": {
+      "id": "pmd_input_context",
+      "separation": "one shared input context, never independent per-leaf copies",
+      "aliases": "semanticMapping aliases and packedBitViews define shared backing lanes",
+      "unknownOpaqueStateAllowedOnlyWithRetention": true
+    },
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "Bind every mapped field to the shared input context; cross-root packed aliases must remain shared.",
+      "Finite receipts cover this leaf and exact accessed lanes; no full sampler/controller or temporal sequence qualification."
+    ],
+    "services": {
+      "externalCalls": [],
+      "hardwareReads": [],
+      "effect": "RAM-only source-observed state writes; no time, render or button sampling service in this leaf"
+    },
+    "packed_storage_aliases": [
+      {
+        "irField": "field_0",
+        "symbol": "published.heldPressedWord",
+        "aliases": [
+          {
+            "backingWord": "published.heldPressedWord",
+            "byteOffset": 0,
+            "widthBits": 32,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": [
+          {
+            "bits": [
+              0,
+              15
+            ],
+            "symbol": "published.held",
+            "quantity": "held_button_bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1,
+              "kind": "bitset"
+            },
+            "frame": "published_input",
+            "type": "u16"
+          },
+          {
+            "bits": [
+              16,
+              31
+            ],
+            "symbol": "published.pressed",
+            "quantity": "newly_pressed_button_bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1,
+              "kind": "bitset"
+            },
+            "frame": "published_input",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "irField": "field_1",
+        "symbol": "published.repeatShortReleaseWord",
+        "aliases": [
+          {
+            "backingWord": "published.repeatShortReleaseWord",
+            "byteOffset": 0,
+            "widthBits": 32,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": [
+          {
+            "bits": [
+              0,
+              15
+            ],
+            "symbol": "published.repeat",
+            "quantity": "repeat_button_bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1,
+              "kind": "bitset"
+            },
+            "frame": "published_input",
+            "type": "u16"
+          },
+          {
+            "bits": [
+              16,
+              31
+            ],
+            "symbol": "published.shortRelease",
+            "quantity": "short_release_button_bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1,
+              "kind": "bitset"
+            },
+            "frame": "published_input",
+            "type": "u16"
+          }
+        ]
+      },
+      {
+        "irField": "field_18",
+        "symbol": "accumulated.held",
+        "aliases": [
+          {
+            "backingWord": "accumulated.heldPressedWord",
+            "byteOffset": 0,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      },
+      {
+        "irField": "field_19",
+        "symbol": "accumulated.pressed",
+        "aliases": [
+          {
+            "backingWord": "accumulated.heldPressedWord",
+            "byteOffset": 2,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      },
+      {
+        "irField": "field_20",
+        "symbol": "accumulated.repeat",
+        "aliases": [
+          {
+            "backingWord": "accumulated.repeatShortReleaseWord",
+            "byteOffset": 0,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      },
+      {
+        "irField": "field_21",
+        "symbol": "accumulated.shortRelease",
+        "aliases": [
+          {
+            "backingWord": "accumulated.repeatShortReleaseWord",
+            "byteOffset": 2,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      }
+    ],
+    "opaque_fields": [
+      "field_2",
+      "field_3",
+      "field_4",
+      "field_5",
+      "field_6",
+      "field_7",
+      "field_8",
+      "field_9",
+      "field_10",
+      "field_11",
+      "field_12",
+      "field_13",
+      "field_14",
+      "field_15",
+      "field_16",
+      "field_17",
+      "field_22",
+      "field_23"
+    ],
+    "unit_limitations": "No fixed FPS or seconds. Repeat/short-hold counters count accepted input invocations; sentinel999 is not elapsed time.",
+    "qualification": {
+      "status": "pass",
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "vectors": 1024,
+      "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "receipt": {
+        "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/0800485c/receipt.json",
+        "sha256": "c14569e34bb6624e49a87bcbdc69c3246c9cfeb9242ac05ba6c8941eb801979e"
+      },
+      "notClaimed": [
+        "all input states",
+        "full input subsystem",
+        "dungeon turns or movement",
+        "whole-game completeness"
+      ]
+    },
+    "additional_qualification": {
+      "receipt": {
+        "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/publication-witness/receipt.json",
+        "sha256": "4a54ef782a4695f666472266de6e593f0cfc48ed885865864b72aed7a47a599e"
+      },
+      "fixtures": {
+        "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/publication-witness/fixtures.json",
+        "sha256": "adadc0ddb506538826793f04954d15649dac83121c73052c0173540530546e3f"
+      },
+      "vectors": 16,
+      "expectedStateCases": 4,
+      "scope": "packed copy-before-clear and opaque source-tail retention"
+    },
+    "original_l0_canonical_sha256": "abde284c04564a18da6da4d1f0a803a0b209e5cb677acab438309f5ca57b97de",
+    "adapter_l0_sha256": "abde284c04564a18da6da4d1f0a803a0b209e5cb677acab438309f5ca57b97de"
+  }
+}

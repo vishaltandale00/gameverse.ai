@@ -1,0 +1,347 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.lifecycle.viewport_retirement",
+  "label": "Camera visibility and conditional enemy retirement",
+  "role": "lifecycle",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.lifecycle.viewport_retirement/package.json",
+  "package_sha256": "a34321beb7c1e23d4f8c9f4db4d48c66b86fbcefd0db763f552b4d11498a529d",
+  "behavior_sha256": "f2db164d28b50adf5d63e3957611605a548a3d0e9d63fe85c1feb7c9ee6a7236",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "2b69ff89ac4ff58c23c36a6f4d57230d56448bf2ec264c0d80101a1818268185"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.status",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.source_coordinate1.scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.source_coordinate2.scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_extent_multiplier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.camera_extent.source_scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_extent_multiplier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.camera_extent.source_scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_extent_multiplier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.camera_extent.source_scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.flags",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.source_coordinate2.scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.source_coordinate1.scale_unverified",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800ddd4.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 9,
+    "collections": []
+  },
+  "lifecycle": {
+    "clock": "one explicit eligible source-helper invocation",
+    "phase": "enemy scheduler prepass or source AI caller as applicable; enemy scheduler precedes projectile contacts",
+    "ownership": "record view,not independent persistent copy",
+    "source_system": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+    "shared_state_contract": "entity r0 views source current enemy. Global scratch gate fields alias that enemy only during scheduler DMA staging; no independently persistent scratch entity.",
+    "cross_component_order": "minimum reaction helpers invoked in hit guard; reaction_tick executes on next eligible enemy scheduler invocation following projectile hit; viewport retirement executes after native enemy AI and animation."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.lifecycle.viewport_retirement/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Pool scheduling/DMA and connected contact/death closure not qualified.",
+    "No human gameplay/whole-game proof.",
+    "Annotations do not change executable bytes or narrow input domains. Original receipts remain immutable.",
+    "Position/extent units, palette selectors and complete status/pose enum retain source-specific opaque contracts; no inferred pixel scale.",
+    "Native receipts cover finite synthetic vectors, not all gameplay reachable states.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "domain": {
+      "field_0": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_1": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_2": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_3": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_4": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_5": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_6": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_7": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      },
+      "field_8": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      }
+    },
+    "opaque_ports": {
+      "field_1": {
+        "meaning": "enemy.coordinate1",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_2": {
+        "meaning": "enemy.coordinate2",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_3": {
+        "meaning": "enemy.camera_extent1",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_4": {
+        "meaning": "enemy.camera_extent2",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_5": {
+        "meaning": "enemy.camera_extent3",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_7": {
+        "meaning": "camera.coordinate2",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      },
+      "field_8": {
+        "meaning": "camera.coordinate1",
+        "binding": "source identity only; do not automatically unify across games",
+        "unknowns": [
+          "physical scale or complete enum/asset interpretation"
+        ]
+      }
+    },
+    "semantic_evidence_status": "own-ROM static source annotation over automatic finite-qualified behavior; no gameplay semantic validation",
+    "packed_reaction": {
+      "layout": "low7 bits countdown, highbit marker preserved by minimum helpers and decrement guarded by low7 nonzero",
+      "clock": "one eligible reaction helper invocation; wall-time conversion unverified"
+    },
+    "services": "These five leaves call no external gameplay services; source L2 audio/effect/pool/type dispatch remain blocked, never stubbed."
+  }
+}

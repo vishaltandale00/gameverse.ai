@@ -444,9 +444,11 @@
   },
   "coverage": {
     "status": "partial",
-    "depth": "scene_and_prior_only",
-    "canonical_component_count": 0,
-    "canonical_facets": [],
+    "depth": "instruction_verified_frontend_choice_seam",
+    "canonical_component_count": 1,
+    "canonical_facets": [
+      "frontend"
+    ],
     "source_supported_piece_count": 0,
     "missing": [
       "Player-facing movement, combat and progression source semantics; helpers do not establish these",
@@ -454,21 +456,1016 @@
       "Calibrated user skill and strategy evidence",
       "Full asset-to-source/address reuse catalogue"
     ],
-    "granular_records_not_summarized": [],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "cyclic_choice_list_controller",
+        "label": "Priority-based confirm/cancel and wrapping vertical choices",
+        "facet": "frontend"
+      }
+    ],
     "not_claimed": [
       "All mechanics extracted",
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:45:40.844259+00:00",
+      "rom_sha1": "6472695d69661490f78245e2982e1e676c080be7",
+      "status": "ok",
+      "function_records": 4589,
+      "pseudo_c_generated": 4589,
+      "process_wall_s": 52.8,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/final-fantasy-i-and-ii-dawn-of-souls/final-fantasy-i-and-ii-dawn-of-souls/functions.jsonl",
+      "export_sha256": "cb2d93eae0ca44230e399d4cbe79c71045c37604950a99d406a7783901794f7c",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/final-fantasy-i-and-ii-dawn-of-souls/final-fantasy-i-and-ii-dawn-of-souls/summary.json",
+      "summary_sha256": "314b00b4c8742105b642bed2cad079260e76c8e4712f929c23e249f80327131e",
+      "warning_function_count": 4393,
+      "unknown_register_function_count": 291,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x08000000",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08011a0c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08011b6c",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08011bec",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08011d70",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x080121cc",
+          "io_ref": [
+            "BG2PA",
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080123f0",
+          "io_ref": [
+            "BG2PA",
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801248c",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080126e0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08012700",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08013348",
+          "io_ref": [
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08013634",
+          "io_ref": [
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08016384",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08016674",
+          "io_ref": [
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "WIN0H",
+            "WIN0V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08016e74",
+          "io_ref": [
+            "BG0CNT",
+            "DISPCNT",
+            "WIN0H",
+            "WIN0V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08017edc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08017ff8",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080186e0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08018cc8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08018ee8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08019384",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08019840",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08019b78",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801a058",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801a1c8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801aae4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801aeec",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801b1ec",
+          "io_ref": [
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "WIN0H",
+            "WIN0V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0801c1bc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c760",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0801d5c0",
+          "io_ref": [
+            "BG0CNT",
+            "BLDCNT",
+            "DISPCNT",
+            "WIN0H",
+            "WIN0V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0801df5c",
+          "io_ref": [
+            "IE",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0801e2fc",
+          "io_ref": [
+            "BG1CNT",
+            "DISPCNT",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0801f1a4",
+          "io_ref": [
+            "BG1CNT",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0801fb58",
+          "io_ref": [
+            "BG0CNT",
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0802b6f0",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0802b820",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0802be40",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0802c7a8",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0802c9ac",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0802ce08",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0802ce94",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0802d054",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0802ddd4",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080315e0",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x080319c8",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0803504c",
+          "io_ref": [
+            "BG2VOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08035d98",
+          "io_ref": [
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08037258",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x08039908",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0803b2d8",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x0803b480",
+          "io_ref": [
+            "BG0HOFS"
+          ]
+        },
+        {
+          "entry": "0x0803c144",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0803c230",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0803c3cc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803e6dc",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0803e7e4",
+          "io_ref": [
+            "BG2HOFS",
+            "BG2VOFS"
+          ]
+        },
+        {
+          "entry": "0x0803ea9c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803f7a0",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "SOUND4CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08041640",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08041754",
+          "io_ref": [
+            "BG1HOFS"
+          ]
+        },
+        {
+          "entry": "0x0804187c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08042bc0",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08042cf8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080456e4",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804586c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x08047ae8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08048304",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080483a0",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x08048da8",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08049064",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0804a2a0",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804b214",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804b314",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0804b558",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0804cd02",
+          "io_ref": [
+            "SOUNDCNT_L"
+          ]
+        },
+        {
+          "entry": "0x0804ed0c",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804ed74",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804ee20",
+          "io_ref": [
+            "BG0CNT",
+            "BG0VOFS"
+          ]
+        },
+        {
+          "entry": "0x0804ef54",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0804f130",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0804ffb8",
+          "io_ref": [
+            "BG1HOFS",
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x0805011c",
+          "io_ref": [
+            "DISPCNT",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08050ac8",
+          "io_ref": [
+            "BG1VOFS",
+            "BLDY",
+            "DISPCNT",
+            "IE",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08051084",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08052960",
+          "io_ref": [
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS"
+          ]
+        },
+        {
+          "entry": "0x08053a54",
+          "io_ref": [
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x080545f0",
+          "io_ref": [
+            "BLDALPHA",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08054b38",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08060c98",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08060f70",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08061d00",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08063e8c",
+          "io_ref": [
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08064964",
+          "io_ref": [
+            "BLDY",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "WIN0V"
+          ]
+        },
+        {
+          "entry": "0x08064b44",
+          "io_ref": [
+            "BG0VOFS",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "WIN0V"
+          ]
+        },
+        {
+          "entry": "0x08064d34",
+          "io_ref": [
+            "DISPCNT",
+            "WIN0H",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08065548",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080656ec",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08065724",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0806784c",
+          "io_ref": [
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        }
+      ],
+      "reviewed_operator_count": 1,
+      "semantic_review_ref": "ontology/games/final-fantasy-i-and-ii-dawn-of-souls.yaml",
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/final-fantasy-i-and-ii-dawn-of-souls/evidence.json",
+      "input_root_count": 2,
+      "input_consumer_candidate_count": 126,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
-    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
-    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "recorded_at": "2026-10-16T07:05:03.133887+00:00",
+    "method": "ROM-first Ghidra self-decompilation plus ARM binutils instruction audit; own recovered C and isolated native Thumb differential qualification where individually linked. No community source input to these new operators.",
     "rom_sha1": "6472695d69661490f78245e2982e1e676c080be7",
-    "canonical": null,
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/final-fantasy-i-and-ii-dawn-of-souls.yaml",
+      "sha256": "7a4e650a634dbaf595000a65cd1a7be9451274bbf7da8df6ff140b4d5547e8af",
+      "scope": "New direct-ROM self-decompilation and local instruction review; isolated native witnesses where individually listed. Partial operators, not complete game recovery."
+    },
     "source_repositories": [],
-    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "source_to_rom_mapping": "Native addresses are taken directly from the indexed ROM whose SHA1 is recorded. No external repository-to-ROM mapping is needed for these components.",
     "capture_run_id": "20261016T004328-0e248f",
     "capture_frame_sha256": {
       "local/captures-experiments/20261016-current-scripts/final-fantasy-i-and-ii-dawn-of-souls/gameplay/keyframes/f002852_scene.png": "be82b359668857ace6ebf263b667787cf712dad33705592b7eacb617295c2fe1",

@@ -1,0 +1,62 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.fire_form_transform_finish",
+  "label": "Fire form transform finish",
+  "role": "progression",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.fire_form_transform_finish/package.json",
+  "package_sha256": "62e6b2bfd0ca6cd3678a13a0c8bd7f4a557ea3ba65465a2e8e280fe230d73c02",
+  "behavior_sha256": "f3ce7ad574df2c6ddd05c6b4546cc35d5e40bc6b37c3c7e5e81b7a8d4c9b760c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1865,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "1a2b9ac746525c3c398c0569d68ba6cdc0dffd3a0f35841abcdb1d6ede8633d1"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_context_1",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.fire_form_transform_finish/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

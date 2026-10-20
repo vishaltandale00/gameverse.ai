@@ -1,0 +1,97 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.combat.minimum_reaction2",
+  "label": "Guarded contact minimum reaction2",
+  "role": "combat",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.combat.minimum_reaction2/package.json",
+  "package_sha256": "10e7c5a233297b3d89e55c8f5fec1bc200740341bf0dfad25b4aee919135b292",
+  "behavior_sha256": "8ed56cb0d706d01b5b74ffdd566886707186c826a423e4c9184a9f0b2c4b3a61",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "8f1dcc0222c342cbc699749f061c45dff167c0a746a3f4bc4d00c66ffad1574c"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "packed_countdown",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.reaction_invocation_and_contact_marker",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "clock": "one explicit eligible source-helper invocation",
+    "phase": "enemy scheduler prepass or source AI caller as applicable; enemy scheduler precedes projectile contacts",
+    "ownership": "record view,not independent persistent copy",
+    "source_system": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+    "shared_state_contract": "entity r0 views source current enemy. Global scratch gate fields alias that enemy only during scheduler DMA staging; no independently persistent scratch entity.",
+    "cross_component_order": "minimum reaction helpers invoked in hit guard; reaction_tick executes on next eligible enemy scheduler invocation following projectile hit; viewport retirement executes after native enemy AI and animation."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.combat.minimum_reaction2/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Pool scheduling/DMA and connected contact/death closure not qualified.",
+    "No human gameplay/whole-game proof.",
+    "Annotations do not change executable bytes or narrow input domains. Original receipts remain immutable.",
+    "Position/extent units, palette selectors and complete status/pose enum retain source-specific opaque contracts; no inferred pixel scale.",
+    "Native receipts cover finite synthetic vectors, not all gameplay reachable states.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "domain": {
+      "field_0": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "full_storage_domain_used_by_retained_synthetic_qualification",
+        "not_claimed": "all states gameplay reachable or exhaustive u16 qualification"
+      }
+    },
+    "opaque_ports": {},
+    "semantic_evidence_status": "own-ROM static source annotation over automatic finite-qualified behavior; no gameplay semantic validation",
+    "packed_reaction": {
+      "layout": "low7 bits countdown, highbit marker preserved by minimum helpers and decrement guarded by low7 nonzero",
+      "clock": "one eligible reaction helper invocation; wall-time conversion unverified"
+    },
+    "services": "These five leaves call no external gameplay services; source L2 audio/effect/pool/type dispatch remain blocked, never stubbed."
+  }
+}

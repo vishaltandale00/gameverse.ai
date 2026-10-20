@@ -1,0 +1,203 @@
+{
+  "schema": "gameverse.ir-capability-library/1",
+  "entries": [
+    {
+      "id": "aria.canonical-entry-reconstruction.v1",
+      "game_id": "castlevania-aria-of-sorrow",
+      "module_id": "aria.actor.motion",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/4b2fdefbb944d95b6e9c8937051bfdd0f119efa2164a21f742be4a2f8891a658.json",
+        "sha256": "4b2fdefbb944d95b6e9c8937051bfdd0f119efa2164a21f742be4a2f8891a658"
+      }
+    },
+    {
+      "id": "crash.actor-motion.phase-payload.source-entry-replacement.v1",
+      "game_id": "crash-bandicoot-the-huge-adventure",
+      "module_id": "crash.actor-controller.normal_mode",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/62503e83a95dc412ccdc4731c7178734840d004ac6979427cd1939d34fd3023c.json",
+        "sha256": "62503e83a95dc412ccdc4731c7178734840d004ac6979427cd1939d34fd3023c"
+      }
+    },
+    {
+      "id": "dba.motion.facing-dependent-input.evidence-only.v1",
+      "game_id": "dragon-ball-advanced-adventure",
+      "module_id": "dba.motion.facing-dependent-input",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/c116517e20a20273902342a9f305cfe54c40b4e7aed28b7485f938c192e28158.json",
+        "sha256": "c116517e20a20273902342a9f305cfe54c40b4e7aed28b7485f938c192e28158"
+      }
+    },
+    {
+      "id": "driv3r.contact.initialize_records.source-entry-replacement.v1",
+      "game_id": "driv3r",
+      "module_id": "driv3r.actor.position-record-constraint",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/e1bb4340ea2c2a5ead4d5c8c2eb1f63b63aee0962d25c5f4df5ac4cbf289b17d.json",
+        "sha256": "e1bb4340ea2c2a5ead4d5c8c2eb1f63b63aee0962d25c5f4df5ac4cbf289b17d"
+      }
+    },
+    {
+      "id": "emerald.held-item.metadata.v2",
+      "game_id": "pokemon-emerald-version",
+      "module_id": "emerald.items.metadata",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/898ea07068d9acca384d28b3b0dc62b7d4f9f410ce6c62510abaabaf9a85e532.json",
+        "sha256": "898ea07068d9acca384d28b3b0dc62b7d4f9f410ce6c62510abaabaf9a85e532"
+      }
+    },
+    {
+      "id": "ff12.resource_owner.original-teardown-predicate.v1",
+      "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "module_id": "ff12.private.resource_predicate",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/666121c7fe27340eb75bf7c6a9b0a908b89613b443c8d626f3634560780cf371.json",
+        "sha256": "666121c7fe27340eb75bf7c6a9b0a908b89613b443c8d626f3634560780cf371"
+      }
+    },
+    {
+      "id": "ff12.sorted-resource-buckets.source-reset.v1",
+      "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "module_id": "ff12.resources.sorted_bucket_reset",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/291ec108bcc7dcb1329147f19a043d6d9a5e08944937f0cf6dde33271ea69d11.json",
+        "sha256": "291ec108bcc7dcb1329147f19a043d6d9a5e08944937f0cf6dde33271ea69d11"
+      }
+    },
+    {
+      "id": "ffta.content.index-readers.source-entry.v1",
+      "game_id": "final-fantasy-tactics-advance",
+      "module_id": "ffta.content.canonical_context",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/7c83dcf9ccfdc286639c670301e524bda05695d2b96d7abcf6112360a22eb134.json",
+        "sha256": "7c83dcf9ccfdc286639c670301e524bda05695d2b96d7abcf6112360a22eb134"
+      }
+    },
+    {
+      "id": "ffta.random.next15.source-entry.v1",
+      "game_id": "final-fantasy-tactics-advance",
+      "module_id": "ffta.random.canonical_state",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/1dc892b39d43af240a9d087f954d277551e6d15a713565b673e17d3e317ca990.json",
+        "sha256": "1dc892b39d43af240a9d087f954d277551e6d15a713565b673e17d3e317ca990"
+      }
+    },
+    {
+      "id": "fusion.draw-distance-standing.installed-provenance.v2",
+      "game_id": "metroid-fusion",
+      "module_id": "fusion.player.source-motion-transition",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/b8dfb682a031675c9f13c6bcce8daaf26d9df4a5c539ef8541f6e5bed7f00d52.json",
+        "sha256": "b8dfb682a031675c9f13c6bcce8daaf26d9df4a5c539ef8541f6e5bed7f00d52"
+      }
+    },
+    {
+      "id": "leafgreen.species.traits.v1",
+      "game_id": "pokemon-leafgreen-version",
+      "module_id": "leafgreen.species.traits",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/1a7e25bc9a901072fc3709396cd6b8e7b8c0888dfe13d42b53993ec63ed1287b.json",
+        "sha256": "1a7e25bc9a901072fc3709396cd6b8e7b8c0888dfe13d42b53993ec63ed1287b"
+      }
+    },
+    {
+      "id": "megaman-zero.profile2-input-history.conditional.v1",
+      "game_id": "megaman-zero",
+      "module_id": "megaman-zero.source-actor-command-motion",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/da143ea8d7fd53908a9a658993fc4dcfc24918753191401273d9b9de626a3bfe.json",
+        "sha256": "da143ea8d7fd53908a9a658993fc4dcfc24918753191401273d9b9de626a3bfe"
+      }
+    },
+    {
+      "id": "megaman-zero.source-profiles01.command-update.v2",
+      "game_id": "megaman-zero",
+      "module_id": "megaman-zero.source-actor-command-motion",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/dfb94827dd5b5cca850d8364cec95b8177537243a0835bc3f417efc45185e43c.json",
+        "sha256": "dfb94827dd5b5cca850d8364cec95b8177537243a0835bc3f417efc45185e43c"
+      }
+    },
+    {
+      "id": "minish.canonical-entry-reconstruction.v1",
+      "game_id": "legend-of-zelda-the-the-minish-cap",
+      "module_id": "tmc.learned_sword_charge_release",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/55ed1a90eff0b8a85ccd7a557081eafd735581a116045cbb797d265918b43552.json",
+        "sha256": "55ed1a90eff0b8a85ccd7a557081eafd735581a116045cbb797d265918b43552"
+      }
+    },
+    {
+      "id": "mlss.actor-motion-phase.installed-provenance.v1",
+      "game_id": "mario-and-luigi-superstar-saga",
+      "module_id": "mlss.motion.lifecycle",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/d1f8fc593912412a404efbe1e3a1b2fdbddb9e73c4fea93f161b7628c84e5744.json",
+        "sha256": "d1f8fc593912412a404efbe1e3a1b2fdbddb9e73c4fea93f161b7628c84e5744"
+      }
+    },
+    {
+      "id": "mzm.morph-ball.running-shoes.source-cluster-swap.v1",
+      "game_id": "metroid-zero-mission",
+      "module_id": "mzm.progression.mobility-acquisition",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/eb008c2d088b8dcd92a3477696df48672c4df0c4936fb3e5df000e9293fb8301.json",
+        "sha256": "eb008c2d088b8dcd92a3477696df48672c4df0c4936fb3e5df000e9293fb8301"
+      }
+    },
+    {
+      "id": "mzm.statue-consumption.source-entry-replacement.v1",
+      "game_id": "metroid-zero-mission",
+      "module_id": "mzm.module.enemy-source-record",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/fbc44efd325d2044731365f4b6831abc6916e4673ce3f40c68e16cd35232eaf0.json",
+        "sha256": "fbc44efd325d2044731365f4b6831abc6916e4673ce3f40c68e16cd35232eaf0"
+      }
+    },
+    {
+      "id": "pmd.input-event-context.outside-rom-qualified.v1",
+      "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+      "module_id": "pmd.module.input_event_context",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/2c40f1505059635f95e3c9b20198713a6dd939c3fbcb8ccf77765fe9fcac7ac3.json",
+        "sha256": "2c40f1505059635f95e3c9b20198713a6dd939c3fbcb8ccf77765fe9fcac7ac3"
+      }
+    },
+    {
+      "id": "ruby.species.traits.v1",
+      "game_id": "pokemon-ruby-version",
+      "module_id": "ruby.species.traits",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/40221d0c232c74e3214be9280de92a6b9bd12ff8ece81da87b5556f82d5f1f79.json",
+        "sha256": "40221d0c232c74e3214be9280de92a6b9bd12ff8ece81da87b5556f82d5f1f79"
+      }
+    },
+    {
+      "id": "sma4.source-contact.native-parent-five-helper-installation.v1",
+      "game_id": "super-mario-advance-4-super-mario-bros-3",
+      "module_id": "sma4.actor_pair.source_contact_phase",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/70f1b840d0c830e1963be1792321ba03eeb0f5a850c9b7c4c45cca954a5e8773.json",
+        "sha256": "70f1b840d0c830e1963be1792321ba03eeb0f5a850c9b7c4c45cca954a5e8773"
+      }
+    },
+    {
+      "id": "wl4.action60.source-entry-replacement.v2",
+      "game_id": "wario-land-4",
+      "module_id": "wl4.player.normal-form.protection",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/d8891ebabf59c34a7f1d9c9098802ac588fdc88042fdf7a5e1e56a430a6181bc.json",
+        "sha256": "d8891ebabf59c34a7f1d9c9098802ac588fdc88042fdf7a5e1e56a430a6181bc"
+      }
+    },
+    {
+      "id": "wl4.afterimage-history.source-entry-replacement.v1",
+      "game_id": "wario-land-4",
+      "module_id": "wl4.player.normal-form.protection",
+      "record": {
+        "path": "ontology/ir-capability-groups/records/9240280e548e41d8cfcbd9e98400af28103cd360407da392e5b63f2e57708dba.json",
+        "sha256": "9240280e548e41d8cfcbd9e98400af28103cd360407da392e5b63f2e57708dba"
+      }
+    }
+  ]
+}

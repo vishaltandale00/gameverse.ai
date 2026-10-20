@@ -1,0 +1,83 @@
+{
+  "schema": "prefab-iteration/1",
+  "run_id": "sonic-traversal-template",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "environment_version": "libmgba/0.10.5",
+  "adapter_version": "sonic-native-traversal/1",
+  "loop_config_ref": "tools/prefab_pipeline/requests/sonic-traversal-template.json",
+  "mechanism_sha256": "5c47b05eb64e1aa324656586845b872232c5d0d066f568a52a4e8f0751ac0920",
+  "base_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "limits": {
+    "attempts": 1,
+    "model_calls": 24,
+    "native_frames": 960,
+    "wall_seconds": 180,
+    "cost_usd": null
+  },
+  "supported_requests": [],
+  "experiment": {
+    "profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-profile.json",
+      "sha256": "8debeaadc639ccb70f9d640bb12593ba6967a954cdca4dd5b08cc551a75f30c4"
+    },
+    "memory_profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-memory.json",
+      "sha256": "7b255d6abc65be8d2138642d7630016f5e02b5badf9e38590fab8e2b7439dba3"
+    },
+    "fixture_recipe": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-fixture.json",
+      "sha256": "8e5e88d2739c785de4d6470f07e004dbe0b3854ee5b1cfd207f6ee2e8dcc945e"
+    },
+    "sid_env_file": "/Users/shishirtandale/Projects/siddarth_pokemon/.env",
+    "goal": "traversal",
+    "max_steps": 12,
+    "max_model_calls": 24,
+    "max_frames": 960,
+    "max_seconds": 60,
+    "model_timeout": 10,
+    "confidence": 0.65,
+    "margin": 0.2,
+    "confidence_basis": "uncalibrated_provider_score",
+    "calibration_artifact": null,
+    "policy_ref": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "189a326703cf5c5364529b58b48988354d05eda81e2dba61eaf712e97898ea9d"
+    },
+    "adapter_id": "sonic-native-traversal/1"
+  },
+  "coverage": "Exact existing Sonic/Metroid candidate and source-replayed Factory2 checkpoint; bounded native model traversal only. No duplicate compilation or campaign qualification.",
+  "mechanism_refs": [
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py",
+      "sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py",
+      "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native_build.py",
+      "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py",
+      "sha256": "fc763328b5306d7197b000c6a3b6437a950fb77a13ae2dcb260e3428fc412f0d"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/sonic_adapter.py",
+      "sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py",
+      "sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py",
+      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e"
+    }
+  ]
+}

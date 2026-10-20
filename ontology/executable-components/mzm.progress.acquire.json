@@ -6,7 +6,7 @@
   "source_game": "metroid-zero-mission",
   "origin": "automatic_highfunction_lift",
   "package_ref": "local/ir/packages/mzm.progress.acquire/package.json",
-  "package_sha256": "6776d8e9d23706a9db587861c63be0f29fddabcda5584485082ffa896bd9c1bd",
+  "package_sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
   "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
   "qualification": {
     "status": "pass",
@@ -62,7 +62,27 @@
       }
     }
   ],
-  "collection_ports": [],
+  "collection_ports": [
+    {
+      "id": "dependency_0_collection_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "count": 8,
+      "semantic_type": {
+        "quantity": "packed_event_bank",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.progress.source_event_bank",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+        ]
+      }
+    }
+  ],
   "assembly_status": "qualified_typed_ports",
   "owned_state": {
     "fields": 2,

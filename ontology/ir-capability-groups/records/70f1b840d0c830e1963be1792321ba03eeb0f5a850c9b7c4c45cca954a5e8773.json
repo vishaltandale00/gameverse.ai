@@ -1,0 +1,447 @@
+{
+  "canonicalstate": {
+    "fixture_domain": {
+      "current_slot": [
+        1,
+        2,
+        3
+      ],
+      "enabled_partner_slot": 0,
+      "partner_states": [
+        2,
+        3
+      ],
+      "partner_types": [
+        214,
+        114
+      ],
+      "self_type": 19
+    },
+    "owner": "One canonical world allocation WORLD=0x02010000 with 112-byte actor records; self aliases world+current_slot*112, eligible partner aliases a distinct preceding slot",
+    "readonly_assets": {
+      "credit": "Semantically identified read-only table data, not executable IR; original tables raw-captured, no data regeneration claim",
+      "embedded_copy_bytes": 768,
+      "original_preserved_table_bytes": 512,
+      "proof": {
+        "path": "research/ir-workshop/coverage-wave-next/sma4/asset-proof.json",
+        "sha256": "a50ee8c31237341fc2aab83953963a75af18196ba5a22198d1badc9f90e41e94"
+      },
+      "reaction_table": "08159304,256 u8 phase remapping entries for source type00d6; emitted once",
+      "shape_table": "08154cdc,64 records of4 u8 entries: X offset,width,Y offset,height; emitted twice",
+      "unique_source_bytes": 512
+    },
+    "shared_aliases": [
+      "self and partner belong to one world pool; no independent detached copies",
+      "Partner mirror/shape/reaction all address the same partner record",
+      "A/B shapes and overlap share canonical collision scratch 03003ad4..03003adf",
+      "Camera globals 03003750 and03003ce0 remain canonical borrowed u16 values"
+    ],
+    "state_authority": "Original host retains allocation, scheduling and lifecycle authority; generated bindings snapshot and commit fields synchronously"
+  },
+  "capability_phase": {
+    "blanket_composition_ready": false,
+    "blanket_lifecycle_ready": false,
+    "id": "source-native-parent-contact-phase",
+    "parent_entry": "08051144",
+    "parent_implementation": "retained-native",
+    "parent_regenerated_IR": false,
+    "phase_kind": "bounded-original-native-parent-invokes-generated-IR-helpers",
+    "scheduled_sequence": "Only the original native parent schedule is executed; no authored graph or query wrapper replaces the parent",
+    "synthetic_query_wrapper_installed": false
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "fresh_original_native_parent_cases": 256,
+    "fresh_rebuilt_native_parent_cases": 256,
+    "historically_individually_qualified_original_functions": 2,
+    "historically_sequence_qualified_original_helpers": 3,
+    "new_IR_parent_functions": 0,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "new_native_runs_for_publication": 0,
+    "newly_qualified_original_source_functions": 0,
+    "prior_recovered_original_functions_first_whole_image_installation": 5
+  },
+  "event_order": [
+    "Native parent gates global03003ae8 and self flags/type traits before producing self B shape08046154",
+    "Native parent traverses only preceding canonical pool records in descending order and applies original partner eligibility",
+    "For eligible partner, source calls mirror08047c40 then A shape080460fc then overlap08046320",
+    "Accepted overlap remains subject to native full-X proximity guard; only then source calls reaction080510b8(self,partner,actual live r2)",
+    "Original parent remains native; no synthetic query wrapper or manually authored eligibility/dispatch substituted"
+  ],
+  "exactpins": {
+    "artifact_only_bundle": {
+      "path": "local/roundtrip/coverage-next-sma4-bundle-001/bundle.json",
+      "sha256": "e2a26de4560ef4a6efd281bd4cb671debe3ce5d8243c93aa4fa8b0201256600f"
+    },
+    "caller_L0": {
+      "bytes": 91829,
+      "path": "local/ir/dependency-exports/20261016T095404606414/super-mario-advance-4-super-mario-bros-3/l0/08051144.json",
+      "sha256": "eed9797565e43f5b3c547fc069b21b5be935223472127501b9144aabbba263f9"
+    },
+    "compiler_snapshot_pins": {
+      "path": "local/roundtrip/coverage-next-sma4-inputs-001/compiler-snapshot-pins.json",
+      "sha256": "264fc62b3af51e58544ecf6c0ba16fa4c91a16901c869d6246f6e4c8487a6275"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/sma4/result.json",
+      "sha256": "38b98cbccfc8a000c822df0e0fbaecf399be3b8182aaea27d7b681866b0bae7f"
+    },
+    "independent_IR_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/sma4-ir-qc.json",
+      "sha256": "45fb35defe80d427bcfe45178b3f29d332df1ab8564a1a73c4dd86ff8809aed0"
+    },
+    "independent_context_QC": {
+      "path": "local/ir/ir-coverage-publication-20261016/coverage-next-library-stage-02/sma4-context-qc-b8221ff149c9.json",
+      "sha256": "b8221ff149c9fe38cbbdafeefae9e856f26766d2f46e9df6be58da7a1603886d"
+    },
+    "layout": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/layout.json",
+      "sha256": "87be92f6af6f093082f2035819a1229add9f5339dda1eb483db79fb5014698a7"
+    },
+    "manifest": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/manifest.json",
+      "sha256": "3d695f645eba7d40ef3a68a60e56cc17fe880d1127b32039322ab9355d5e3e57"
+    },
+    "native_ELF": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/native.elf",
+      "sha256": "81094c9a2f06696a396be1ebd2326e2bc5231e36ea6777d6bf24d5ca0fc2ba09"
+    },
+    "native_parent_oracle": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/parent-oracle.c",
+      "sha256": "e7f6f598dce88707aa389781cbebda115769cb58e30e86e66a62515284eb1d72"
+    },
+    "native_parent_proof": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/parent-native-proof.json",
+      "sha256": "a1e92cfc1113d0ff79e8503c6117fdb62f83eb981be453ae5acb6304c59e2525"
+    },
+    "parent_IR_blocker": {
+      "path": "local/roundtrip/coverage-next-sma4-inputs-001/static-probe.json",
+      "sha256": "56ace60fede5be7f516ab0d19ff9a9b784c8cd740c2362b79cc65da115980d1b"
+    },
+    "payload": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/native.bin",
+      "sha256": "b7a6ee10c58cff846702eeb4bc701ca6c795ac61a7968ec646ff8edadb4633d6"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/coverage-next-sma4-ir-002/provider-report.json",
+      "sha256": "d3a7cbbba0902c41d5cf49576e226335cc5c5a71e7ad39e5fbbf08192d529ab3"
+    },
+    "qualification_scope_supplement": {
+      "path": "research/ir-workshop/coverage-wave-next/sma4/qualification-scope-supplement.json",
+      "sha256": "2bb708f1eba9c138ec531cd89f6261e7b7809321ad19b155091998b0a5747be4"
+    },
+    "source_order_contract": {
+      "path": "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+      "sha256": "c7142e2dfc4ec31d33a2477e081ced316bafc193e5929543f11bde2d1fe8103d"
+    }
+  },
+  "game_id": "super-mario-advance-4-super-mario-bros-3",
+  "gaps": [
+    "Parent08051144 automatic lift blocked on cyclic SSA without exact terminating induction proof",
+    "768-byte omitted RAM range has no minimum-SP or exclusive dead-stack proof",
+    "Reaction parameter contract concerns low16 r2 only; no upper16 full-register ABI assurance",
+    "Original callback/allocator/IRQ/scheduler/save/lifecycle and full-game closure remain open",
+    "64 same-shape selectors with distributed fixture states are not exhaustive64x64 shape-pair coverage or all species/slots",
+    "Five prior roots first installed is not new source discovery or newly qualified original-function credit",
+    "Historical three-helper query package is evidence context; its synthetic wrapper is not installed"
+  ],
+  "id": "sma4.source-contact.native-parent-five-helper-installation.v1",
+  "module_id": "sma4.actor_pair.source_contact_phase",
+  "native_eligibility": {
+    "ABI_checks": [
+      "r4..r11 preserved",
+      "SP balanced",
+      "No incoming r3 parameter/entity-base dependency in five helpers"
+    ],
+    "kind": "finite_original_native_parent_versus_same_parent_with_five_installed_IR_helpers",
+    "nonclaims": [
+      "Caller-saved registers, flags and void-return register contents are not parity outputs",
+      "No complete type/slot/shape-pair domain or gameplay trace equivalence",
+      "No IRQ, concurrent writer, allocator, scheduler or save lifecycle equivalence"
+    ],
+    "observable_projection": {
+      "EWRAM_compared_bytes_per_case": 262144,
+      "IWRAM_compared_bytes_per_case": 32000,
+      "minimum_SP_recorded": false,
+      "note": "Explicit omitted RAM projection only; cannot claim every excluded byte exclusively transient or dead stack",
+      "omitted_RAM_bytes": 768,
+      "omitted_RAM_range": "03007b00..03007e00",
+      "omitted_range_exclusively_dead_stack_proved": false
+    },
+    "original_rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+    "parent_entry": "08051144",
+    "reaction_argument_domain": {
+      "alias_checks": "r0 canonical current actor; r1 distinct preceding actor in same pool; no overlapping accessed actor views",
+      "observed_meaning": "Low16 interpreted signed, domain[-128,127]",
+      "parameter": "param_0",
+      "reaction_hits_each_image": 96,
+      "register": "r2",
+      "signed_max": 127,
+      "signed_min": -128,
+      "source_evidence": "Reaction L0 inputv1 size2/registerr2; CAST then INT_SRIGHT15 at080510c8",
+      "storage_type": "u16",
+      "upper16_full_u32_ABI_asserted": false
+    },
+    "rebuilt_rom_sha256": "1408bb768aadc78cb41286ba8b8f8d1fd42443d8e81322392d63d850e3243a8d",
+    "vectors": {
+      "original_parent": 256,
+      "rebuilt_parent": 256
+    }
+  },
+  "originalhostprerequisites": [
+    "Exact AX4E USA revision0 original ROM pin",
+    "Synchronous Thumb AAPCS with valid disjoint stack and no concurrent or IRQ observer",
+    "Canonical world and source actor aliases from native parent; synthetic fixtures only source current slots1..3",
+    "Retain original parent eligibility, descending traversal and full-X proximity; modulo256 overlap alone is insufficient"
+  ],
+  "package_identity": [
+    {
+      "behavior_sha256": "6cf35d914db4823c4ebe83165f6bd61145fb02342e5242aa43a876250ff41863",
+      "central_package_changed": false,
+      "id": "sma4.collision.actor_pair_query",
+      "installation_relation": "Historical declared query wrapper is NOT installed; its three original helper bodies are separately regenerated and installed",
+      "original_qualification": {
+        "path": "local/ir/packages/sma4.collision.actor_pair_query/receipt.json",
+        "sha256": "6fd7b15bc2f15660b5002374026bb3d8f82117f83b6e0bdcccf782b5d8e22d42"
+      },
+      "package": {
+        "path": "local/ir/packages/sma4.collision.actor_pair_query/package.json",
+        "sha256": "c351d84bfccc0b01f9c7aa54744934ee7ba3ec7f5b696b27228c2fc262637727"
+      },
+      "qualification_kind": "declared_connected_sequence_native_equivalence_not_original_function_root",
+      "version": "0.1.0"
+    },
+    {
+      "behavior_sha256": "ac7e59c2fd03d0a60add7cb3bff78640200649fa15322462c869d9d14e340d5b",
+      "central_package_changed": false,
+      "id": "sma4.actor_pair_reaction",
+      "installation_relation": "Same previously recovered original source entry independently lowered and installed beneath retained parent; historical central package remains unchanged",
+      "original_qualification": {
+        "path": "local/ir/packages/sma4.actor_pair_reaction/receipt.json",
+        "sha256": "449bb126a0f734ac3ffaca1c67363a770675292192586bafdff2cfb6b89ec075"
+      },
+      "package": {
+        "path": "local/ir/packages/sma4.actor_pair_reaction/package.json",
+        "sha256": "2b1e5163687c20a7e3b043f576db53dfb0d1b9a5a13e61df933749669561926b"
+      },
+      "qualification_kind": "finite_original_function_subset",
+      "version": "0.1.0"
+    },
+    {
+      "behavior_sha256": "2439ca866cbce9407a6176ee9cd6525a907c5e46364d21813987e404a4121e69",
+      "central_package_changed": false,
+      "id": "sma4.actor_pixel_mirror_sync",
+      "installation_relation": "Same previously recovered original source entry independently lowered and installed beneath retained parent; historical central package remains unchanged",
+      "original_qualification": {
+        "path": "local/ir/packages/sma4.actor_pixel_mirror_sync/receipt.json",
+        "sha256": "ccf2d5e5c202f75914fb31844d61d0520ba44fbe18e868438d88ad50021ad365"
+      },
+      "package": {
+        "path": "local/ir/packages/sma4.actor_pixel_mirror_sync/package.json",
+        "sha256": "ecf2e62e385d373c58679b6e6172275126dd57f8e3dd9a0e0099199a4c4e8787"
+      },
+      "qualification_kind": "finite_original_function_subset",
+      "version": "0.1.0"
+    }
+  ],
+  "package_ids": [
+    "sma4.collision.actor_pair_query",
+    "sma4.actor_pair_reaction",
+    "sma4.actor_pixel_mirror_sync"
+  ],
+  "proposal_status": "additive-existing-package-capability-evidence-no-new-package-or-source-root",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 4,
+    "artifact_only_bundle_replay": true,
+    "bundle_IR_regeneration": false,
+    "closed_interchangeable_prefab": false,
+    "composition_ready": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_readonly_asset_bytes": 768,
+    "generated_behavior_bytes": 360,
+    "lifecycle_ready": false,
+    "mechanical_binding_bytes": 512,
+    "portable_L1": true,
+    "raw_difference_bytes": 1684,
+    "replacement_entry_veneer_bytes": 40,
+    "source_parent_IR_closed": false,
+    "unique_identified_source_asset_bytes": 512,
+    "whole_game_equivalent": null,
+    "current_or_general_ROM_replacement_eligible": false,
+    "complete_ABI_proven": false,
+    "excluded_RAM_liveness_proven": false
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_function_installations": [
+    {
+      "IR": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeB/l1.json",
+        "sha256": "69d05f208a8076a0522b4a16e65d6c0b7394e393afd289bdb98eb069ed896544"
+      },
+      "adapter": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeB/validation-adapter.json",
+        "sha256": "b836a7738693ace8d74a54bb2a11313178597bf5656992cc4d3dda9ee36d240c"
+      },
+      "bound_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeB/bound.c",
+        "sha256": "74006c926091252ae3a76ea3aca60bc59ac4fd7f73744bb70673c97c2985d2a6"
+      },
+      "first_whole_image_installation": true,
+      "generated_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeB/generated.c",
+        "sha256": "82c004a50a2d31cdc18ae93727810209c4270965289d8c9dd6e6fd06fbb3b3e6"
+      },
+      "historical_package": "sma4.collision.actor_pair_query",
+      "label": "shapeB",
+      "native_parent_invocations_each_image": 224,
+      "new_source_function": false,
+      "original_entry": "08046154",
+      "role": "Build self B shape before partner traversal",
+      "source_L0": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeB/l0.json",
+        "sha256": "f8bf8fc71077d1a3358c92d880685f7a91d111c75a3b0f6f0de2b018f97ebb08"
+      }
+    },
+    {
+      "IR": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/mirror/l1.json",
+        "sha256": "6201fc3c65993cf8a489e52eef3f398dcea60519fb698a7e1fc4881f6faf43af"
+      },
+      "adapter": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/mirror/validation-adapter.json",
+        "sha256": "0c8c7c2a929d696cac992038a76c3547efff1716f099dbe41e89f38175caaf49"
+      },
+      "bound_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/mirror/bound.c",
+        "sha256": "a6ad715c8bca5fe37105e491a169b5e3ea126bf6c656024617d327281333ef5d"
+      },
+      "first_whole_image_installation": true,
+      "generated_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/mirror/generated.c",
+        "sha256": "dc4aefb9b77e3e7a6b7f5215542ea1d9332a35f9403ff75d252224766a522ebb"
+      },
+      "historical_package": "sma4.actor_pixel_mirror_sync",
+      "label": "mirror",
+      "native_parent_invocations_each_image": 192,
+      "new_source_function": false,
+      "original_entry": "08047c40",
+      "role": "Synchronize eligible preceding partner pixel mirrors using canonical camera globals",
+      "source_L0": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/mirror/l0.json",
+        "sha256": "16dcd05cc01e1d2516293a1a570b5fdb7c07b1136ca0b79d464601126ab3912d"
+      }
+    },
+    {
+      "IR": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeA/l1.json",
+        "sha256": "711313b04e00bcda80997e6cf259c68352487616199607a78133773d8643761b"
+      },
+      "adapter": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeA/validation-adapter.json",
+        "sha256": "475459704e894b06823984b0e0fac880ca92a7b45abe50c1d6bb1c3ee79e9f83"
+      },
+      "bound_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeA/bound.c",
+        "sha256": "b6af3a8c6ef15098366b394e9a169166aeef2a570eef94c58324493e1b86fc47"
+      },
+      "first_whole_image_installation": true,
+      "generated_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeA/generated.c",
+        "sha256": "5a264a0afd9787c1108cbdde09fa100af484bfd2c5ecc4dc9a2b499be317bc33"
+      },
+      "historical_package": "sma4.collision.actor_pair_query",
+      "label": "shapeA",
+      "native_parent_invocations_each_image": 192,
+      "new_source_function": false,
+      "original_entry": "080460fc",
+      "role": "Build eligible partner A shape",
+      "source_L0": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/shapeA/l0.json",
+        "sha256": "fc50d301603f4f5514bf78b53cd14119e714ae470f0751b8208d5be8d5f992d5"
+      }
+    },
+    {
+      "IR": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/overlap/l1.json",
+        "sha256": "0b0b70b95375146366c56ed31a94713155451ad410809afd9d145c5d1b05130b"
+      },
+      "adapter": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/overlap/validation-adapter.json",
+        "sha256": "45711b77e1de78d14c26bf9030a499be9fbce05aa97311a9ffedb2eddc1df196"
+      },
+      "bound_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/overlap/bound.c",
+        "sha256": "8653712fe66d7a48a72931b57b2ecca67340ae50863f6af3ffd5f3e891058bef"
+      },
+      "first_whole_image_installation": true,
+      "generated_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/overlap/generated.c",
+        "sha256": "ab1c2abeedd5d2398cb71384e6b18579853d896b41a52105899e293daab358b1"
+      },
+      "historical_package": "sma4.collision.actor_pair_query",
+      "label": "overlap",
+      "native_parent_invocations_each_image": 192,
+      "new_source_function": false,
+      "original_entry": "08046320",
+      "role": "Query shared A/B collision scratch",
+      "source_L0": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/overlap/l0.json",
+        "sha256": "bfebe0dfd2204cab2fa5d81dce83b6af65eb1e5d354c7cca15d098b0f3c54523"
+      }
+    },
+    {
+      "IR": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/reaction/l1.json",
+        "sha256": "f8757f470b7060ec1bf65c0ac327f7ef7e52fccefb9ffcbf3c755f49f5821861"
+      },
+      "adapter": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/reaction/validation-adapter.json",
+        "sha256": "da8fb475655e27ff39c87f1eb3fdd9e207af054b973647cc7608170e16df61c9"
+      },
+      "bound_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/reaction/bound.c",
+        "sha256": "166c39c43cfaa9d8f62cb2e1615478153bb6c3833fc978b3bf88706d5e1a94b2"
+      },
+      "first_whole_image_installation": true,
+      "generated_C": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/reaction/generated.c",
+        "sha256": "4213414bc268e8baeaa0e45939df827368f22108ec6f37da2ff272ae30075b5f"
+      },
+      "historical_package": "sma4.actor_pair_reaction",
+      "label": "reaction",
+      "native_parent_invocations_each_image": 96,
+      "new_source_function": false,
+      "original_entry": "080510b8",
+      "role": "Apply accepted pair reaction after original full-X signed proximity guard",
+      "source_L0": {
+        "path": "local/roundtrip/coverage-next-sma4-ir-002/reaction/l0.json",
+        "sha256": "a355e059ed26203703f91fbb2179b7e08bd9468d547af20d02c38222932be144"
+      }
+    }
+  ],
+  "source_roots": [
+    "08046154",
+    "080460fc",
+    "08046320",
+    "08047c40",
+    "080510b8"
+  ],
+  "timing": {
+    "clean_emitted_build_link_layout_seconds": 0.275157333,
+    "comparable_before_after_wall_measurement": null,
+    "new_publication_native_seconds": null,
+    "parent_native_parity_seconds": 0.530855416,
+    "parent_oracle_compile_seconds": 0.05997687499999999,
+    "queue_seconds": null,
+    "scope": "All native/build measurements reused from frozen executed packet; metadata-only proposal, no rerun"
+  },
+  "publisher_scope_enforcement": {
+    "source_record": {
+      "path": "research/ir-workshop/coverage-wave-next/sma4/library-capability-v1.json",
+      "sha256": "94f91ff1824f85a864f998c77d6b93c84e73d6f3335d8937c2f7f83e2f7797bc"
+    },
+    "scope": "Finite projected native witness only.768B omittedRAM/minSP/exclusive-deadstack proof absent; no positive fullABI/allRAM/generalreplacement admission. No new execution/proof."
+  }
+}

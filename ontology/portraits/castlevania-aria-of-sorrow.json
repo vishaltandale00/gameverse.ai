@@ -109,7 +109,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#side_view_scene",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "capture_frame",
@@ -132,7 +132,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#room_transition_lookup",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -145,7 +145,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -168,7 +168,7 @@
       "id": "castlevania-aria-of-sorrow:combat",
       "label": "Equip a monster-power loadout",
       "slot": "combat",
-      "effect": "Cast equipped abilities under strict MP and active-effect constraints; allocation is charged only on success, and some casts lock movement.",
+      "effect": "Cast MP-costed monster powers; the starter bone now composes projectile motion, a moving hitbox partner, collision lifetime and exact slot cleanup through native IR.",
       "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
       "knobs": [
         {
@@ -198,6 +198,14 @@
         {
           "game_id": "castlevania-aria-of-sorrow",
           "component_id": "incoming_damage"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "enemy_defeat_rewards_own_rom"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "starter_bone_lifecycle_own_rom"
         }
       ],
       "requires": [
@@ -229,7 +237,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#character_equipment_state",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -242,7 +250,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#red_soul_cast",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -277,7 +285,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_equipment_validity",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -295,7 +303,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#incoming_damage",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -304,16 +312,26 @@
             }
           ],
           "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/deep-extraction/castlevania/defeat-qualification.json",
+          "scope": "Native reward subsystem assembled in2plans, actual Zombie defeat parity1XP/double2XP; other bundle components retain separate limitations"
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/deep-extraction/castlevania/ability-qualification.json",
+          "scope": "Actual native cast\u2192MP debit\u2192bone/contact pair\u2192Zombie defeat\u2192count/slot cleanup; plan-selected linger32versus16"
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Native casting-policy component and typed IR available; complete projectile prefab and host adapter still required."
+      "assembly_status": "Starter-bone cast/projectile/contact-partner and defeat rewards assemble as native components; other abilities/enemy AI and cross-game adapters remain partial."
     },
     {
       "id": "castlevania-aria-of-sorrow:progression",
       "label": "Collect powers, not just duplicates",
       "slot": "progression",
-      "effect": "Track distinct souls and discovered rooms separately from lifetime acquisition and RPG levels.",
+      "effect": "Enemy defeats grant XP, record discoveries and probabilistically expose souls/items/resources; this reward transaction now assembles through IR into the original campaign.",
       "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
       "knobs": [
         {
@@ -343,6 +361,10 @@
         {
           "game_id": "castlevania-aria-of-sorrow",
           "component_id": "map_completion"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "enemy_defeat_rewards_own_rom"
         }
       ],
       "requires": [
@@ -370,7 +392,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_completion",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -388,7 +410,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_collection_counter",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -411,7 +433,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#level_growth",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -439,7 +461,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -453,10 +475,15 @@
             }
           ],
           "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/deep-extraction/castlevania/defeat-qualification.json",
+          "scope": "Native reward subsystem assembled in2plans, actual Zombie defeat parity1XP/double2XP; other bundle components retain separate limitations"
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "assembly_status": "Own-ROM enemy defeat reward policy and native host adapter build through IR; other movement/combat/acquisition bundle dependencies remain partial."
     },
     {
       "id": "castlevania-aria-of-sorrow:story",
@@ -506,7 +533,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#intro_scene_delivery",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -586,7 +613,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#pixel_gothic_courtyard",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "capture_frame",
@@ -599,7 +626,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#hblank_scroll",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -632,7 +659,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#circular_window",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -655,7 +682,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#sample_audio",
-          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
+          "canonical_file_sha256": "f1a5a59f616bc2afdf8636c699d3c32ac58bd1ecdc4567417fda39a3fae3a343",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -1001,7 +1028,7 @@
       "queue_s": null,
       "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
       "whole_game_decompiled": false,
-      "mechanic_validation": "Own-ROM casting transaction and emitted native code locally qualified; effect lifecycle/host integration remains open.",
+      "mechanic_validation": "Native-assembled casting\u2192starterbone ballistic/contact lifecycle\u2192enemy defeat rewards and ownership cleanup qualified in bounded real gameplay. Other enemy AI, abilities, complete acquisition/campaign routes and cross-game adapters remain open.",
       "gaps": [
         "Indirect calls and undiscovered code",
         "Function boundaries and ABI recovery",
@@ -1808,7 +1835,12 @@
       "input_root_count": 1,
       "input_consumer_candidate_count": 68,
       "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review",
-      "semantic_review_ref": "research/deep-extraction/castlevania/cast.package.json"
+      "semantic_review_ref": "research/deep-extraction/castlevania/cast.package.json",
+      "assemblable_packages": [
+        "research/deep-extraction/castlevania/defeat.package.json",
+        "research/deep-extraction/castlevania/ability.package.json"
+      ],
+      "gameplay_evidence_ref": "research/deep-extraction/castlevania/ability-qualification.json"
     }
   },
   "provenance": {

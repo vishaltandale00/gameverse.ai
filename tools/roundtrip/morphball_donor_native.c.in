@@ -1,0 +1,55 @@
+@COMMON@
+static void copy(struct mCore*c,uint32_t to,uint32_t from,unsigned n){uint8_t raw[56];for(unsigned i=0;i<n;i++)raw[i]=c->busRead8(c,from+i);for(unsigned i=0;i<n;i++)c->busWrite8(c,to+i,raw[i]);}
+static unsigned banners(struct mCore*c){unsigned n=0;for(unsigned i=0;i<24;i++){uint32_t p=0x030001ac+i*56;if((c->busRead16(c,p)&1)&&c->busRead8(c,p+29)==17&&!(c->busRead8(c,p+50)&128))n++;}return n;}
+int main(int argc,char**argv){
+ if(argc!=2&&argc!=3)return 2;struct mCore*c=load(argv[1]);CHECK(c);uint32_t result;
+ if(argc==3){paired_core=load(argv[2]);CHECK(paired_core);}
+ uint32_t scratch=0x03000738, pool=0x030001ac, ball=pool+2*56;
+ zero(c,pool,24*56);zero(c,scratch,56);zero(c,0x03001530,20);
+ for(unsigned i=0;i<16;i++){c->busWrite8(c,pool-16+i,0x36^i);c->busWrite8(c,pool+24*56+i,0x63^i);}
+ c->busWrite16(c,scratch,1);c->busWrite16(c,scratch+2,200);c->busWrite16(c,scratch+4,200);
+ c->busWrite8(c,scratch+29,34);c->busWrite8(c,scratch+35,2);copy(c,ball,scratch,56);
+ /* The real MorphBall dispatcher calls Init and its real secondary spawn. */
+ CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead8(c,scratch+36)==9);CHECK(c->busRead8(c,0x0300153e)==0);
+ CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead8(c,scratch+36)==9);CHECK(banners(c)==0);
+ c->busWrite16(c,scratch,c->busRead16(c,scratch)|0x800);
+ CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead8(c,scratch+36)==35);
+ CHECK(c->busRead8(c,0x0300153e)==64);CHECK(c->busRead16(c,0x03001606)==1000);CHECK(banners(c)==1);
+ copy(c,ball,scratch,56);
+ CHECK(call(c,0x08013270,0,0,&result));CHECK(banners(c)==1);CHECK(c->busRead16(c,scratch)&1);
+ /* Stage a source-valid static message banner context after its graphics/text
+    setup, which is explicitly outside this proof. Its actual input gate,
+    removal animation predicate and native ball retirement run below. */
+ unsigned slot=24;for(unsigned i=0;i<24;i++)if(c->busRead8(c,pool+i*56+29)==17&&(c->busRead16(c,pool+i*56)&1)){slot=i;break;}CHECK(slot<24);
+ copy(c,scratch,pool+slot*56,56);c->busWrite8(c,scratch+36,35);c->busWrite16(c,scratch+6,100);
+ c->busWrite8(c,scratch+46,1);c->busWrite32(c,scratch+24,0x082cbb5c);
+ c->busWrite16(c,0x0300137c,1);c->busWrite8(c,0x030013d2,0);
+ for(unsigned i=0;i<100;i++){CHECK(call(c,0x0801bb14,0,0,&result));CHECK(c->busRead8(c,scratch+36)==35);CHECK(c->busRead16(c,0x03001606)==1000);}
+ c->busWrite16(c,0x0300137c,0);CHECK(call(c,0x0801bb14,0,0,&result));CHECK(c->busRead8(c,scratch+36)==35);
+ c->busWrite16(c,0x0300137c,1);CHECK(call(c,0x0801bb14,0,0,&result));CHECK(c->busRead8(c,scratch+36)==36);
+ CHECK(call(c,0x0801bb14,0,0,&result));CHECK(c->busRead8(c,scratch+36)==37);
+ unsigned frames=0;while((c->busRead16(c,scratch)&1)&&frames<60){CHECK(call(c,0x0801bb14,0,0,&result));if(c->busRead16(c,scratch)&1)CHECK(call(c,0x0800d32c,scratch,0,&result));frames++;}
+ CHECK(frames<60);CHECK(c->busRead16(c,0x03001606)==0);CHECK(c->busRead8(c,0x03000bf0)==6);
+ copy(c,scratch,ball,56);CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead16(c,scratch)==0);
+ /* Already-owned init veto is the donor duplicate policy. */
+ c->busWrite8(c,scratch+36,0);c->busWrite16(c,scratch,1);CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead16(c,scratch)==0);
+ /* Original native allocation-failure policy: ownership is granted even when
+    all24 records are occupied. FR's busy-message precondition is an explicit
+    host adaptation, not an asserted equivalent rollback in this donor. */
+ zero(c,pool,24*56);for(unsigned i=0;i<24;i++)c->busWrite16(c,pool+i*56,1);
+ c->busWrite8(c,ball+29,34);zero(c,scratch,56);c->busWrite8(c,scratch+29,34);
+ c->busWrite32(c,scratch+24,0x082b2ba8);c->busWrite16(c,scratch+2,168);c->busWrite16(c,scratch+4,200);
+ c->busWrite8(c,scratch+35,2);c->busWrite8(c,scratch+36,9);c->busWrite16(c,scratch,0x801);c->busWrite8(c,0x0300153e,0);
+ CHECK(call(c,0x08013270,0,0,&result));CHECK(c->busRead8(c,0x0300153e)==64);
+ CHECK(c->busRead8(c,scratch+36)==35);CHECK(c->busRead16(c,0x03001606)==1000);CHECK(banners(c)==0);
+ for(unsigned i=0;i<16;i++){CHECK(c->busRead8(c,pool-16+i)==(0x36^i));CHECK(c->busRead8(c,pool+24*56+i)==(0x63^i));}
+ unsigned resource_rejected=0;if(paired_core){
+  /* Deliberately outside the finite codec contract. Original unknown pose is
+     a no-op; installed identity adapter must reject the foreign OAM pointer. */
+  c->busWrite8(c,scratch+36,0x77);c->busWrite32(c,scratch+24,0x02010000);unsigned before=trap_hits;
+  CHECK(!call(c,0x08013270,0,0,&result));CHECK(trap_hits==before+1);
+  CHECK(paired_core->busRead32(paired_core,scratch+24)==0x02010000);resource_rejected=1;
+ }
+ printf("{\"outcome\":\"pass\",\"calls\":%lu,\"paired_calls\":%u,\"instructions\":%lu,\"static_gate_ticks\":100,\"removal_animation_ticks\":%u,\"owned_bit\":64,\"native_spawn\":true,\"native_banner_ack\":true,\"allocation_failure_still_grants\":true,\"unknown_OAM_rejected\":%u,\"original_minimum_sp\":%u,\"candidate_minimum_sp\":%u,\"original_max_stack_written_bytes\":%u,\"candidate_max_stack_written_bytes\":%u}\n",calls,paired_calls,instructions,frames,resource_rejected,original_minimum_sp,candidate_minimum_sp,original_stack_bytes,candidate_stack_bytes);
+ c->deinit(c);if(paired_core)paired_core->deinit(paired_core);return 0;
+}

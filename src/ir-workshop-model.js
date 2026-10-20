@@ -36,3 +36,12 @@ export function createIrSubmission(catalog, selections, parents, title, intent, 
     title, selections: { ...selections }, qualification: { run: true } },
   context: { parent_game_ids: [...parents], intent: intent.slice(0, 4000) } };
 }
+
+// Inspect the exact option returned by the compiler; do not infer extra support
+// from the wider source library or fabricate package bindings in the browser.
+export function selectionContract(catalog, role, selectionId) {
+  const option = catalog.roles[role]?.find(item => item.id === selectionId);
+  if (!option) return null;
+  return { option, packages: option.packages.map(id => catalog.components.find(component => component.id === id)).filter(Boolean),
+    missingPackages: option.packages.filter(id => !catalog.components.some(component => component.id === id)) };
+}

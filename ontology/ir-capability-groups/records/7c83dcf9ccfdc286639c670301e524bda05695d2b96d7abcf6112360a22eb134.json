@@ -1,0 +1,179 @@
+{
+  "canonicalstate": {
+    "adapter_globals": {
+      "ffta.content.read_current_index": [
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_0",
+          "offset": 33562992,
+          "owner": "global",
+          "width": 16
+        }
+      ],
+      "ffta.content.read_index_or_fallback": [
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_0",
+          "offset": 33562992,
+          "owner": "global",
+          "width": 16
+        },
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_1",
+          "offset": 33562994,
+          "owner": "global",
+          "width": 16
+        }
+      ]
+    },
+    "owner": "Borrowed canonical ContentIndexState current and optional u16 cells",
+    "readonly_assets": [],
+    "relation": "Shared current-index cell between queries; no execution chain"
+  },
+  "capability_phase": {
+    "id": "independent-content-context-readers",
+    "ordering_claim": "Only source-internal effects, no sequence across separate entries",
+    "phase_kind": "bounded-internal-support",
+    "requires_query_execution": false,
+    "scheduled_sequence": null
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "fresh_original_native_comparisons": 512,
+    "fresh_rebuilt_native_comparisons": 512,
+    "historical_native_comparisons": 0,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 2,
+    "new_native_runs_for_publication": 0,
+    "prospective_new_central_packages": 2
+  },
+  "event_order": [
+    "Each query independently reads current or optional/current; no query-to-query order asserted"
+  ],
+  "exactpins": {
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/ffta/result.json",
+      "sha256": "257534387e24e38489d209c454b3f56e03ce5ff99e2dc9a4601ae3d73463d6e6"
+    },
+    "independent_qc": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-ir-qc.json",
+        "sha256": "f56ecef12935a90264c43086e01972530a1acb5b6bdc386089b6523194e4e4d0"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-context-qc.json",
+        "sha256": "71c0a6a3af7b63a61e08f6abe292e628b2dbeed10d3de552777045dde4f39e6c"
+      }
+    ],
+    "producer_report": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/provider-report.json",
+      "sha256": "bdbe601ddd7da37d233c5625d4d0776bdc2f9a45a350a104a3f8b4d63b36e9f5"
+    },
+    "proofs": {
+      "current": {
+        "original": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/current/original-proof.json",
+          "sha256": "1c0264b50e7459cffe364bfc74955e62feebcebcf2ec96c472e10e8d4b22c4e7"
+        },
+        "rebuilt": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/current/rebuilt-proof.json",
+          "sha256": "ef1e19d49fcb8dc5c79d7a9e65bf776663ec3a1205fc425d6e92f6838b3cbb9e"
+        },
+        "source_oracle": {
+          "path": "local/roundtrip/coverage-next-ffta-inputs-001/current-fixtures.json",
+          "sha256": "a6312f05887705decc2789f75097c9d6449fb1020e99ac0f1a2fa4a96a7e4be7"
+        }
+      },
+      "fallback": {
+        "original": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/fallback/original-proof.json",
+          "sha256": "30ec806124cf40a7f4c013f61ca84a7b00a1db87e9d9336febc7cdc1377a91a2"
+        },
+        "rebuilt": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/fallback/rebuilt-proof.json",
+          "sha256": "e2db26ca12541963ecee5030b9f55bce4c61fe6130a5a69d4a363ca147790e3a"
+        },
+        "source_oracle": {
+          "path": "local/roundtrip/coverage-next-ffta-inputs-001/fallback-fixtures.json",
+          "sha256": "b400a04fb74f83848f272c9cc2f1401df6aa78eb248242ba060fe0117ae5a458"
+        }
+      }
+    },
+    "source_contract": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json",
+      "sha256": "c476c27f7abab21f7ebe569398140c646c37ab3b9e706fc75777eaa092611f2f"
+    },
+    "source_oracle": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-oracle.c",
+      "sha256": "4e2ba8710df1c6cf2d51cd66e2066a99e865d8516ba20ee1606677db4f1aa510"
+    }
+  },
+  "game_id": "final-fantasy-tactics-advance",
+  "gaps": [
+    "Original callers, scheduler, saves, initialization and concurrent lifecycle remain open",
+    "No whole-game semantic closure or interchangeable primary prefab",
+    "Palette 512 source-data serialization only; typed consumer OPEN and no closed asset regeneration credit",
+    "Index readers share context without composed execution; PRNG remains independent"
+  ],
+  "id": "ffta.content.index-readers.source-entry.v1",
+  "module_id": "ffta.content.canonical_context",
+  "native_eligibility": {
+    "ABI_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "incoming_r3_parameter_or_entity_dependency": false,
+    "kind": "finite_direct_original_and_reconstructed_entry_parity_with_source_oracle",
+    "original_rom_sha256": "43fc8204c6dceee58828aebc7af0c72eb807e99f35ad641c8bb0a4fa8b6edc19",
+    "rebuilt_rom_sha256": "4b3dad50a092360b2d9902e1ffa29fcb6f604c3f77e9c063f68f207fced8f348",
+    "scope": "Synchronous canonical global AAPCS; finite selected u16/u32 boundaries; no concurrent or IRQ observer",
+    "vectors_each_entry": {
+      "original": 256,
+      "rebuilt": 256
+    }
+  },
+  "originalhostprerequisites": [
+    "Exact USA revision 0 source and ROM pin",
+    "Canonical RAM with no stack alias and original AAPCS caller",
+    "Native callers and scheduler preserve storage authority; no fixed FPS or automatic loop assumed"
+  ],
+  "package_ids": [
+    "ffta.content.read_current_index",
+    "ffta.content.read_index_or_fallback"
+  ],
+  "proposal_status": "candidate-new-central-packages-finite-native-proofs-reused",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": null,
+    "alignment_note": "Two shared payload alignment bytes not allocated by group",
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 18,
+    "mechanical_binding_bytes": 68,
+    "portable_L1": true,
+    "replacement_entry_veneer_bytes": 16,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "0800a018",
+    "0800a024"
+  ],
+  "timing": {
+    "new_publication_native_seconds": null,
+    "provider_total_seconds": 1.849078208,
+    "queue_seconds": null,
+    "scope": "One shared provider run across all three entries; do not add per proposal"
+  },
+  "proposal_parent": {
+    "path": "research/ir-workshop/coverage-wave-next/ffta/publication-candidates-v2.json",
+    "sha256": "ffbef75ba0e39efbb690dccd9e12d7dc626bf93a3e39e014eca7dafc237fe923",
+    "json_pointer": "/capability_proposals/0"
+  }
+}

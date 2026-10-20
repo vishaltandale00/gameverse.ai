@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "patterns",
+    "suggestionRules",
+    "rankingPolicy",
+    "counts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "gameverse.assembly-patterns/1"
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "description",
+          "status",
+          "roles",
+          "links",
+          "obligations",
+          "evidence",
+          "currentValidation",
+          "runtimeQualified",
+          "rankingEvidence"
+        ],
+        "properties": {
+          "status": {
+            "enum": [
+              "source-pattern",
+              "validated-binding-example",
+              "candidate-next-piece"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "package_id",
+                "requiredPorts"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "package_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "requiredPorts": {
+                  "type": "array"
+                }
+              }
+            }
+          },
+          "links": {
+            "type": "array"
+          },
+          "runtimeQualified": {
+            "const": false
+          }
+        }
+      }
+    }
+  }
+}

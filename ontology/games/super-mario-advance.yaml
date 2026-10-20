@@ -1,0 +1,135 @@
+schema_version: 0
+id: super-mario-advance
+game:
+  title: 'Super Mario Advance: Super Mario Bros.2'
+  platform: gba
+  game_code: AMAE
+  rom_sha1: f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: rom_binary
+    ref: f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb; SHA256 d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244;
+      own indexed USA/Europe ROM, no community source input
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance.json
+conventions:
+  scope: Main SMB2 character jump/hover/friction/integration recovered and IR-native assembled; Mario/Peach natural
+    motion parity. Bundled Mario Bros excluded. Full input/terrain/carry/combat/progression remain separate.
+  units: Position signed32 16.16pixel; native velocity+carrier sum arithmetic-shift-right4 before position addition.
+    Explicit unit conversion needed for SMA2/SMA4/Sonic controllers.
+components:
+- id: character_configured_jump_and_finite_hover
+  facet: movement_physics
+  label: Character-specific jumps,charged takeoff and finite hover
+  summary: Complete local jump onset and gravity/hover operators consume a character parameter record,standing/carry/movement
+    flags,input hold and charge state. Mario crouch charge increases jump height; Peach has a finite held-jump hover
+    counter. Native source-parity cartridge demonstrates these distinct arcs.
+  instantiates:
+  - concept: movement_physics.jump.character_charge_hover
+  reads:
+  - player pointer03005cf0; jump velocity signed32+10, horizontal signed32+0c, mode+30, carry+2c and native actor
+    type+160
+  - player charge+37,hover remaining+36,character selector+28,charged phase+93; heldA input0300117a bit0; frame03001993
+  - 'character parameter pointer03005cf4: takeoff bytes+06..0c,hover duration+0d,gravity increments+0e/+0f/+10'
+  - exact hover oscillation and charged-phase duration tables within08367d00..08368cff
+  writes:
+  - player vertical velocity+10,hover remaining+36,consumed charge+37,charged state+93
+  invariants:
+  - Original controller decides when jump onset is allowed; this recovered operator chooses impulse from speed/carry/charge
+    context and character parameters.
+  - When ordinary mode,heldA and vertical high byte>-5 and hover counter>0, decrement hover and choose small oscillating
+    velocity from exact4-entry table. Otherwise add character-selected held/unheld gravity until native high-byte
+    threshold57.
+  - Native Mario character0 parameter record08368838 has hover duration0; Peach character1 record08368880 has duration48.
+    Their gravity bytes7/4 match; finite hover,not a guessed weaker gravity,is the observed distinctive mechanic.
+  - Jump onset uses parameter pair based on abs(horizontal high byte)<8,carry and charge. Charge>=60 selects charged
+    parameter pair and schedules explicit charged phase bits.
+  - Actual stationary Mario fromy272:ordinary apex219.5px,charged apex184.25px. Peach heldA remainsy221.75 atframe45
+    with finite hover countdown; tapped jump has returned toy272.
+  - Charge production/jump permission,input acceleration,terrain contact and carry/throw are separate retained host
+    systems.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-lift-evidence.json
+    confidence: 0.98
+    note: Six complete local own-ROM SMB2 operators,explicit native context and coefficient hash. Epilogues independently
+      reviewed as saved-LR returns; no downloaded source or bundled Mario Bros semantics.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json
+    confidence: 0.98
+    note: 6144 original-ROM/C/emitted ARM7TDMI cases across gravity/hover,jump onset,ground friction,charged state,carrier/wrap
+      integration. Finite local vectors, not complete input/terrain controller.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-gameplay-receipt.json
+    confidence: 0.99
+    note: 'Shared IR full-ROM six-entry replacement: Mario ordinary and crouch-charged jump,Peach held and tapped
+      jump; all390 frames per implementation full player hashes and rendered observations equal. Native videos recorded.
+      Character0 Mario uses08368838,character1 Peach08368880.'
+- id: ground_friction_and_carrier_wrapped_integration
+  facet: movement_physics
+  label: Ground friction and carrier-aware wrapped movement
+  summary: Complete local friction converges grounded velocity to zero using mode-specific coefficients. Integration
+    adds actor/carrier velocity with an explicit scale,mirrors pixel positions and clears carrier accumulators.
+    Special stage modes implement horizontal wrap and carried-object boundary adjustments.
+  instantiates:
+  - concept: movement_physics.integration.carrier_wrapped_character_motion
+  reads:
+  - actor position signed32+00/+04 in16.16pixel; velocity signed32+0c/+10; carrier accumulators+38/+3c
+  - player grounded+29,special surface+31,carry+90 and movement/character flags+28 for friction
+  - profile pointer03001110 byte0 chooses wrap behavior; entity pool03005cd8 carries selected object attributes;
+    actor+5c selects0..12
+  - exact mode-specific friction and acceleration-sign tables
+  writes:
+  - actor position+00/+04 and signed16 pixel mirrors+18/+1a
+  - actor previous carrier snapshots+15c/+164,current carrier accumulators+38/+3c cleared; x bypass flag+8e cleared
+  - grounded horizontal velocity and stopped animation-related phase bytes
+  invariants:
+  - Integration adds arithmetic_shift_right(i32(velocity+carrier),4) to16.16pixel position. Underlying velocity
+    unit1/1048576pixel/invocation; no assumption it matches SMA2 raw velocity units.
+  - Grounded friction runs only on frames accepted by surface mask; coefficient direction reverses motion until
+    sign crossing then clamps zero. Airborne path leaves velocity unchanged.
+  - Horizontal integrator may skip movement for one flagged invocation but still snapshots/clears carrier and resets
+    bypass flag.
+  - Ordinary wrap uses24bit masking outside retained range; carried special object types0x16/0x1d use expanded edge
+    and compensation rules. Natural wrap/carrier cases not yet witnessed.
+  - Native six-entry ROM preserves original input/terrain/enemy/campaign code; no full controller or cross-game
+    coordinate bridge claim.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-lift-evidence.json
+    confidence: 0.98
+    note: Six complete local own-ROM SMB2 operators,explicit native context and coefficient hash. Epilogues independently
+      reviewed as saved-LR returns; no downloaded source or bundled Mario Bros semantics.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json
+    confidence: 0.98
+    note: 6144 original-ROM/C/emitted ARM7TDMI cases across gravity/hover,jump onset,ground friction,charged state,carrier/wrap
+      integration. Finite local vectors, not complete input/terrain controller.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-gameplay-receipt.json
+    confidence: 0.99
+    note: 'Shared IR full-ROM six-entry replacement: Mario ordinary and crouch-charged jump,Peach held and tapped
+      jump; all390 frames per implementation full player hashes and rendered observations equal. Native videos recorded.
+      Character0 Mario uses08368838,character1 Peach08368880.'
+proposed_concepts:
+- id: movement_physics.jump.character_charge_hover
+  label: Character-specific jumps,charged takeoff and finite hover
+  definition: Complete local jump onset and gravity/hover operators consume a character parameter record,standing/carry/movement
+    flags,input hold and charge state. Mario crouch charge increases jump height; Peach has a finite held-jump hover
+    counter. Native source-parity cartridge demonstrates these distinct arcs.
+- id: movement_physics.integration.carrier_wrapped_character_motion
+  label: Ground friction and carrier-aware wrapped movement
+  definition: Complete local friction converges grounded velocity to zero using mode-specific coefficients. Integration
+    adds actor/carrier velocity with an explicit scale,mirrors pixel positions and clears carrier accumulators.
+    Special stage modes implement horizontal wrap and carried-object boundary adjustments.
+open_questions:
+- Recover full input acceleration,crouch-charge production,carry pickup/throw and terrain/contact controller
+- Recover actual enemy interaction and player damage/health,items and stage progression
+- Natural Luigi/Toad mapping and character-specific behavior; native Mario/Peach current evidence does not qualify
+  all four
+- Natural carrier/wrap and special modes remain finite operator evidence
+- Recover story beats/world transitions rather than relying on title motifs

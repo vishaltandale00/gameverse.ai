@@ -1,0 +1,429 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "prince-of-persia-the-sands-of-time",
+  "sourceSystemIds": [
+    "prince-of-persia-the-sands-of-time.terrain-hazard-resource-protection-recovery"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "hazard-recovery"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Traverse the original actor/world, detect terrain hazards, lose a bounded shared resource with temporary protection, and recover retained actor state through source history. Complete controls, terminal outcomes and scene continuation remain open.",
+    "phases": [
+      {
+        "id": "engine-initialization",
+        "label": "Prepare engine clock state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "host supplies EngineInitialization event and canonical clock slots"
+        ],
+        "gaps": [
+          "Clock consumption and source controller runtime remain separate obligations.",
+          "Actual initialization proof is internal support only; no addable game-building card without a meaningful source decision consumer."
+        ]
+      },
+      {
+        "id": "actor-control",
+        "label": "Input and action-state update",
+        "status": "source-only",
+        "gaps": [
+          "Input sampling, actor action transitions, movement integration and terrain response are not an executable closed controller."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": []
+      },
+      {
+        "id": "terrain-hazard",
+        "label": "Terrain sampling and hazard eligibility",
+        "status": "source-only",
+        "gaps": [
+          "Terrain map and actor/sprite nested references block executable predicate; published mask query alone is not terrain production."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "terrain map and actor/sprite references"
+        ]
+      },
+      {
+        "id": "resource-hit",
+        "label": "Accepted resource loss and repeated-hit rejection",
+        "status": "source-only",
+        "gaps": [
+          "Nested sprite reference, number-effect shared actor allocation and fifth stack-argument ABI remain unresolved. Resource meaning is not certified as health."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "shared effect actors and audio dispatcher"
+        ]
+      },
+      {
+        "id": "protection",
+        "label": "Protection timer expires and reopens hit eligibility",
+        "status": "source-only",
+        "gaps": [
+          "Independent drain runs first; exact-divisor remainder loop and services remain unresolved. Timer units are eligible calls, not seconds or rendered frames."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": []
+      },
+      {
+        "id": "history-recovery",
+        "label": "Actor snapshot and history restore",
+        "status": "source-only",
+        "gaps": [
+          "History record index capacity, pointer identities, packed fields and callbacks remain open; this is not a qualified rewind controller."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "history record backing and lifecycle dispatcher"
+        ]
+      },
+      {
+        "id": "checkpoint",
+        "label": "Checkpoint, terminal failure and continuation",
+        "status": "missing",
+        "gaps": [
+          "No checkpoint/save or resource-zero terminal consumer/life-reset scene closure is reconstructed in this source packet."
+        ],
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ],
+        "requiredServices": []
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor-control",
+        "to": "protection",
+        "kind": "source-call",
+        "scope": "Owner0800b4f8 mode1 calls08013620 before its terrain queries."
+      },
+      {
+        "from": "protection",
+        "to": "terrain-hazard",
+        "kind": "source-call",
+        "scope": "08013620 then08013d5c then080133b4; skip-on-early-transition remains a controller obligation."
+      },
+      {
+        "from": "terrain-hazard",
+        "to": "resource-hit",
+        "kind": "source-call",
+        "scope": "Nonzero080133b4 result conditionally calls080134d8."
+      },
+      {
+        "from": "resource-hit",
+        "to": "protection",
+        "kind": "shared-state",
+        "scope": "Accepted hit sets same protection flag and timer110 later ticked to121; timer may expire before same-owner hazard hit."
+      },
+      {
+        "from": "history-recovery",
+        "to": "resource-hit",
+        "kind": "shared-state",
+        "scope": "History snapshot includes shared resource; restore raises it only if saved value is greater, and restores actor timer/flags. Not a runtime schedule."
+      },
+      {
+        "from": "engine-initialization",
+        "to": "protection",
+        "kind": "shared-state",
+        "scope": "Initial clock pulse later read by independent resource drain; not a guessed per-frame order."
+      }
+    ],
+    "missingForCoreGame": [
+      "Input sampling, actor action transitions, movement integration and terrain response are not an executable closed controller.",
+      "Terrain map and actor/sprite nested references block executable predicate; published mask query alone is not terrain production.",
+      "Nested sprite reference, number-effect shared actor allocation and fifth stack-argument ABI remain unresolved. Resource meaning is not certified as health.",
+      "Independent drain runs first; exact-divisor remainder loop and services remain unresolved. Timer units are eligible calls, not seconds or rendered frames.",
+      "History record index capacity, pointer identities, packed fields and callbacks remain open; this is not a qualified rewind controller.",
+      "No checkpoint/save or resource-zero terminal consumer/life-reset scene closure is reconstructed in this source packet.",
+      "No qualified original movement/terrain controller, complete enemy/contact rules, resource-zero terminal consumer, checkpoint or scene lifecycle is supplied.",
+      "Published clock helpers do not close the hazard system; original stop-byte/word alias and meaningful consumer remain explicit.",
+      "Current actual hazard consumer080133b4 fails: unresolved indirect call: stack-derived call argument needs no-escape proof"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "pop.hazard_recovery.source_module",
+      "label": "Prince actor/world hazard and recovery source module",
+      "moduleId": "pop.canonical.world_actor_clock_context",
+      "sourceGame": "prince-of-persia-the-sands-of-time",
+      "sourceSystemId": "prince-of-persia-the-sands-of-time.terrain-hazard-resource-protection-recovery",
+      "sourceContractRef": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+      "planIds": [
+        "hazard-recovery",
+        "character-traversal"
+      ],
+      "packageIds": [
+        "pop.clock.initialize"
+      ],
+      "availability": "source-only",
+      "scope": "Original hazard/recovery module is source-only. Published clock/gate support functions and actual initialization proof are retained internally; no primary prefab is admitted.",
+      "gaps": [
+        "Clock consumption and source controller runtime remain separate obligations.",
+        "Input sampling, actor action transitions, movement integration and terrain response are not an executable closed controller.",
+        "Terrain map and actor/sprite nested references block executable predicate; published mask query alone is not terrain production.",
+        "Nested sprite reference, number-effect shared actor allocation and fifth stack-argument ABI remain unresolved. Resource meaning is not certified as health.",
+        "Independent drain runs first; exact-divisor remainder loop and services remain unresolved. Timer units are eligible calls, not seconds or rendered frames.",
+        "History record index capacity, pointer identities, packed fields and callbacks remain open; this is not a qualified rewind controller.",
+        "No checkpoint/save or resource-zero terminal consumer/life-reset scene closure is reconstructed in this source packet.",
+        "A clock/reset or isolated gate query is not a useful primary prefab without actual hazard/protection/history decision closure."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+        "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/core-loop-reconstruction.json"
+      ],
+      "canonicalState": {
+        "identity": "one Prince engine world context with alias-preserving actor, sprite and history references",
+        "fields": [
+          "world gates u16",
+          "shared pulse u32",
+          "pulse stop low byte plus opaque surrounding word view",
+          "shared resource u8",
+          "actor flags u16/overlapping byte",
+          "actor protection timer u8",
+          "actor signed16.16 positions",
+          "sprite facing byte through actor reference",
+          "history stride0x60 packed records"
+        ],
+        "aliasRule": "One backing for pulse across clock routines; one backing for u8 stop write/u32 packed read. Actor flags byte and halfword accesses share backing. Shared world resource is distinct from actor+82. History records and actor/world references must not be copied into separate per-facet state."
+      },
+      "roleFacets": [
+        {
+          "roleId": "hazard-contact",
+          "capability": "A world-gate query can expose original prerequisite bits; it does not produce terrain contact.",
+          "status": "source-only",
+          "scope": "A world-gate query can expose original prerequisite bits; it does not produce terrain contact.",
+          "evidence": [
+            "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "resource-hit",
+          "capability": "Source accepted-hit saturation and effect ordering are mapped, not an executable prefab.",
+          "status": "source-only",
+          "scope": "Source accepted-hit saturation and effect ordering are mapped, not an executable prefab.",
+          "evidence": [
+            "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "protection",
+          "capability": "Source repeat-hit gate and invocation timer are mapped; expiry/drain remain unqualified.",
+          "status": "source-only",
+          "scope": "Source repeat-hit gate and invocation timer are mapped; expiry/drain remain unqualified.",
+          "evidence": [
+            "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "history-recovery",
+          "capability": "Source snapshot/restore and shared resource max rule are mapped; no complete rewind lifecycle.",
+          "status": "source-only",
+          "scope": "Source snapshot/restore and shared resource max rule are mapped; no complete rewind lifecycle.",
+          "evidence": [
+            "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "checkpoint",
+          "capability": "Checkpoint/save/terminal continuation consumer is not reconstructed.",
+          "status": "missing",
+          "scope": "Checkpoint/save/terminal continuation consumer is not reconstructed.",
+          "evidence": [
+            "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+          ]
+        }
+      ],
+      "supportPrefabs": [],
+      "internalSupportAssembly": {
+        "id": "pop.engine_clock.initialize",
+        "label": "Initialize the shared engine clock",
+        "assemblyRef": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/clock-initialize.assembly.json",
+        "validationRef": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/clock-initialize.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/delivery.json",
+        "packageIds": [
+          "pop.clock.initialize"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [],
+  "openPublicationRequest": {
+    "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/return-contract-request.json",
+    "sha256": "e2667f47492fdb7a75f767ea640d66268a91544168d8a86abfa700c53aa3ecc7"
+  },
+  "timing": {
+    "runId": "pop-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": {
+      "internal_clock_initialization": 0.002586708,
+      "blocked_gate_result_capture": 0.0007664170000000019
+    },
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "metadataAssemblySeconds": 0.016713167,
+    "beforeAfter": null,
+    "accounting": "Actual pure Composer validation seconds are recorded per graph. Metadata assembly timing excludes interactive analysis. No exports, game ROMs or native reruns; queue/full elapsed unavailable.",
+    "targetedStaticSeconds": 0.015911375
+  },
+  "internalSupportPhases": [
+    {
+      "id": "pop.engine_clock.initialize",
+      "moduleId": "pop.canonical.world_actor_clock_context",
+      "label": "Initialize the shared engine clock",
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/clock-initialize.assembly.json",
+      "sha256": "83c8b5bc4f68401dfcff8c1b60a92916e3589e7d991a23866dd265f394e890cb",
+      "validation": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/clock-initialize.validation.json",
+      "validationSha256": "7bc8f87a3d7d9e7e5f56e14b0ad2fd33b8313dc7867d9eb5e202c5ab6676998a",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "pulse",
+          "binding": "state.pulse",
+          "storageType": "u32",
+          "meaning": "Recovered initializer writes pulse count0; host/world context retains this canonical output."
+        },
+        {
+          "id": "stopByte",
+          "binding": "state.stopByte",
+          "storageType": "u8",
+          "meaning": "Recovered initializer clears the clock stop byte. Adjacent opaque bytes are not cleared."
+        }
+      ],
+      "phases": [
+        {
+          "id": "engine-initialization",
+          "trigger": "Explicit supplied EngineInitialization event; source startup0808fc70 calls080914c0 once in its initialization path.",
+          "invocations": [
+            "initializeClock"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceBoundary": "Engine startup reset boundary is source-backed; host supplies the event and canonical slots. No recurring frame schedule."
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Lifecycle infrastructure only; does not advance a timer, apply hazard damage, expose a complete protection controller or prove native frame frequency.",
+        "Source pulse consumers include08013668 and080914d0, but whole source consumer closure is not delivered.",
+        "Stop-byte/u32-view alias must be preserved if integrating the separately published advance routine; this prefab does not duplicate that packed view."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+        "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/core-loop-reconstruction.json"
+      ],
+      "qualificationScope": "Actual Composer symbolic binding and lowering only. Published source functions have retained finite native receipts; this prefab has no new host/native execution qualification.",
+      "readyToAdd": false,
+      "runtimeQualified": false,
+      "packageIds": [
+        "pop.clock.initialize"
+      ],
+      "classification": "internal_support_phase_not_primary_prefab",
+      "consumerStatus": "Source clock/drain consumers recorded but not an executable connected game decision."
+    }
+  ],
+  "meaningfulDecisionFrontier": {
+    "target": "080133b4",
+    "sourceRole": "Actual terrain hazard predicate consuming original gate query",
+    "status": "blocked",
+    "error": "unresolved indirect call: stack-derived call argument needs no-escape proof",
+    "receipt": {
+      "path": "local/ir/fleet-next/prince-of-persia-the-sands-of-time/prefab-pass/hazard-predicate.blocker.json",
+      "sha256": "905c28a240a34e3691fe3cee11660f65737191ccc0c4a748aa66792277d1c698"
+    },
+    "scope": "One current static compiler attempt using exact own-ROM HighFunction and current published gate dependency; no native or export.",
+    "nextAction": "Compiler owner must prove stack-derived call no-escape/return boundary while preserving exact argument ABI, then close terrain/sprite references and bounded probe loop before native qualification/publication.",
+    "dependencyMetadataUpdatedAfterAttempt": true,
+    "dependencyUpdateScope": "Return semantics only; executable behavior unchanged. Original exact blocker receipt retained without rerun."
+  },
+  "publicationProposalStatus": "Additive clock.read and world.gate_read return contracts centrally published in backend wave07; behavior/native proofs unchanged. Preparatory interface closure only; no primary prefab without actual source decision consumer.",
+  "productDecision": {
+    "owner": "/root/game_system_experience",
+    "decision": "Initializer/reset and isolated gate query remain internal support; primary prefabs and allowlist empty.",
+    "reason": "No independently meaningful source game decision is executable and connected in current published Prince package set."
+  },
+  "structuredEvidencePins": [
+    {
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+      "sha256": "9f3ad425fd3905b1c9d92aab0b214ef9987c049d57123ade842eaf7fd0f9b0e2"
+    },
+    {
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/core-loop-reconstruction.json",
+      "sha256": "8574ea2cf9f689985006504899270cf836ecbe0e1785cc7b9f601a37b95e67cb"
+    }
+  ],
+  "publishedPreparatoryContracts": [
+    {
+      "id": "pop.clock.read",
+      "package": {
+        "path": "local/ir/packages/pop.clock.read/package.json",
+        "sha256": "c4fffaeb6fc6e4b3ac39447c9817dd671dab14c192b7486eee55842dd15da367"
+      },
+      "return_meaning": {
+        "quantity": "eligible_update_invocation_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.shared_clock",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+          "local/ir/packages/pop.clock.read/l0.json"
+        ]
+      },
+      "behavior_sha256": "52a5fc85d595ee21b19ad09a2bf81d61462e8e21e7eb5bac234528bbdb07dc1d"
+    },
+    {
+      "id": "pop.world.gate_read",
+      "package": {
+        "path": "local/ir/packages/pop.world.gate_read/package.json",
+        "sha256": "2fec9d5a3d1c2da246297f252f7ce3e71445fd0c01dfdf1b0f6b8b0cc9f60edf"
+      },
+      "return_meaning": {
+        "quantity": "masked_world_gate_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.gates",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+          "local/ir/packages/pop.world.gate_read/l0.json"
+        ]
+      },
+      "behavior_sha256": "280c800afa29a6919128404208cef827661f61e3e2254ea8c04c077559c90ac9"
+    }
+  ],
+  "metadataRegistrationFix": {
+    "scope": "Every evidence/sourceRefs array contains repository-relative path strings. Structured path/hash pins retained separately.",
+    "newProofRuns": 0
+  }
+}

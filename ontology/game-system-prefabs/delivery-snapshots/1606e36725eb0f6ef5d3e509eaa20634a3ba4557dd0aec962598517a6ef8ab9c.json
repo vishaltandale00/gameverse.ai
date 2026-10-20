@@ -1,0 +1,276 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "pokemon-ruby-version",
+  "sourceSystemIds": [
+    "pokemon-ruby-input-repeat-menu-navigation"
+  ],
+  "blueprintIds": [
+    "dialogue-interactive-scenes",
+    "turn-based-party-battle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Choose commands through input/menu state, apply party combat actions, continue encounter/progression. This packet only sources the input/menu boundary.",
+    "phases": [
+      {
+        "id": "input-setup",
+        "label": "Initialize repeat delays and input masks",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Published helper available; initialization alone is not a useful core-loop prefab",
+          "Countdown/latch initialization outside this helper"
+        ]
+      },
+      {
+        "id": "sample-repeat",
+        "label": "Sample buttons and produce edges/repeats",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+          "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/blockers.json"
+        ],
+        "requiredServices": [
+          "KEYINPUT input sampling"
+        ],
+        "gaps": [
+          "Current automatic lift fails unresolved MMIO pointerv4",
+          "Timing units are sampler invocations; frame schedule not qualified"
+        ]
+      },
+      {
+        "id": "menu-navigation",
+        "label": "Navigate indexed rows/columns and clamp selection",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+          "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/blockers.json",
+          "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked-menu-native/receipt.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Linked source controller automatically lifts with canonical byte-region alias and finite native parity512cases",
+          "Controller is not published portable prefab; source menu semantic frame/screen identity and legal-state domains unresolved",
+          "Conditional row0..3 entry subset is not whole menu reachability/lifecycle proof"
+        ]
+      },
+      {
+        "id": "party-command",
+        "label": "Choose party/battle commands",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No source call/reachability evidence ties this bounded menu controller to party or battle; no command assembler is qualified"
+        ]
+      },
+      {
+        "id": "turn-order",
+        "label": "Order chosen combat actions",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No Ruby turn-order closure extracted in this packet; Emerald evidence is not a Ruby substitute"
+        ]
+      },
+      {
+        "id": "resolve",
+        "label": "Resolve actions and update shared combatants",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "Ruby combatant pool/command/result aliases and damage/status transitions not recovered here"
+        ]
+      },
+      {
+        "id": "continuation",
+        "label": "Continue turn, encounter or scene and commit progress",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No Ruby continuation/party persistence service closure in this packet"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input-setup",
+        "to": "sample-repeat",
+        "kind": "source-call",
+        "scope": "Main initialization and later sampler call in0800024c; no total frame schedule claim"
+      },
+      {
+        "from": "sample-repeat",
+        "to": "menu-navigation",
+        "kind": "shared-state",
+        "scope": "Sampler writes repeat_mask030017a0; controller080e77e8 reads it. Scheduling/reachable menu callback remains incomplete."
+      }
+    ],
+    "missingForCoreGame": [
+      "KEYINPUT service boundary in automatic lifter",
+      "Published typed linked-menu contract with evidenced semantic frame/legal-state domain and runtime scheduling",
+      "Input watch-mask/latch/countdown lifecycle and scheduler callback ownership",
+      "Source-reachable party/battle command, turn-order, action-resolution and continuation/persistence closures"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "ruby-input-menu-source-bundle",
+      "label": "Ruby input and indexed menu source module",
+      "moduleId": "ruby-input-menu-session",
+      "sourceGame": "pokemon-ruby-version",
+      "sourceSystemId": "pokemon-ruby-input-repeat-menu-navigation",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+      "planIds": [
+        "dialogue-interactive-scenes",
+        "turn-based-party-battle"
+      ],
+      "packageIds": [
+        "ruby.input.initialize"
+      ],
+      "availability": "source-only",
+      "scope": "Published setup helper; source-backed sampler; linked controller+clamp native-qualified finite512case conditional row0..3 subset, unpublished",
+      "gaps": [
+        "No useful ready prefab from initializer singleton",
+        "MMIO sampler blocked; new native controller publication/frame/domain contract pending",
+        "No evidenced party/battle consumer boundary"
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+        "research/deep-extraction/resume/pokemon-ruby-version/packet.json",
+        "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/blockers.json"
+      ],
+      "canonicalState": {
+        "identity": "one Ruby input context and one referenced indexed menu context per original session",
+        "fields": [
+          "input raw/logical/repeat masks and countdown/latch",
+          "menu row/column/region/scroll state",
+          "menu row_limits byte table"
+        ],
+        "aliasRule": "Input producer and menu consumer share repeat_mask backing. row_limits[1] at original020011ab is same byte as direct controller read, preserved by canonical_byte_region; never clone table/direct views."
+      },
+      "roleFacets": [
+        {
+          "roleId": "choice",
+          "capability": "source row/column navigation and clamp",
+          "status": "source-only",
+          "scope": "Exact menu screen identity unknown; no dialogue selection effects proved",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+            "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/blockers.json"
+          ]
+        },
+        {
+          "roleId": "command",
+          "capability": "none supplied beyond input/menu source candidates",
+          "status": "missing",
+          "scope": "No sourced party/battle command path",
+          "evidence": []
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "ruby-input-menu-not-ready",
+        "label": "Ruby input/menu closure pending",
+        "assemblyRef": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/initializer-diagnostic.assembly.json",
+        "validationRef": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/initializer-diagnostic.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/delivery.json",
+        "packageIds": [
+          "ruby.input.initialize"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "diagnosticOnly": true
+      }
+    }
+  ],
+  "prefabs": [],
+  "diagnosticAssemblies": [
+    {
+      "reason": "Only current published Ruby helper; explicitly excluded from useful ready prefab allowlist",
+      "graph": {
+        "path": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/initializer-diagnostic.assembly.json",
+        "sha256": "50f7dcc24f5578f18aa875082c26b43fc75f421ec54d02df540041f14480b5e2"
+      },
+      "validation": {
+        "path": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/initializer-diagnostic.validation.json",
+        "sha256": "e92edb22b2f812899e2d1e6418f211cbf11784a06c7b4dbab5b49c2043c4f9f5"
+      },
+      "valid": true,
+      "qualificationScope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure."
+    }
+  ],
+  "executableBlockerReproducer": {
+    "script": {
+      "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/reproduce_blockers.py",
+      "sha256": "947c192d10d8c6e1e10739b791af1309f2f53a36c21d25fa9465fd5af5ac62a0"
+    },
+    "receipt": {
+      "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/blockers.json",
+      "sha256": "21884bbd574723877234eff34b7fc6ed8e21d91ddc188b692959a281e79edbbe"
+    },
+    "currentResult": "samplerMMIO blocked; linked menu now LIFT_PASS after shared compiler alias repair",
+    "newLinkedL1": {
+      "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked_menu_controller.l1.json",
+      "sha256": "d6b11b678857f7bdf3445e126ada0e647506dc7e8511c53247992b8a39282b92"
+    },
+    "newLinkedAdapter": {
+      "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked_menu_controller.adapter.json",
+      "sha256": "d4656b7a282cceb9f2ad7fdceed131f04e114afc9a9a503f53347cfac76b5d5c"
+    },
+    "linkedMenuQualification": {
+      "receipt": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked-menu-native/receipt.json",
+        "sha256": "9c671d09fe3ba9d3af5ef615dffba75fe1f64c7ccc938a561edba7d4b79a9db0"
+      },
+      "l1": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked-menu-native/l1.json",
+        "sha256": "d6b11b678857f7bdf3445e126ada0e647506dc7e8511c53247992b8a39282b92"
+      },
+      "adapter": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked-menu-native/validation-adapter.json",
+        "sha256": "d4656b7a282cceb9f2ad7fdceed131f04e114afc9a9a503f53347cfac76b5d5c"
+      },
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "vectors": 512,
+      "nativeWallSeconds": 0.22069504199999998,
+      "entryDomain": "menu row0..3; conditional subset, not all source states",
+      "wholeSubsystemQualified": false
+    }
+  },
+  "sourceEvidence": [
+    {
+      "path": "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+      "sha256": "f4fe724d3556cc76f2ac51ddf47dc8d0ab4d451d47ce425faca17761745f681a"
+    },
+    {
+      "path": "research/deep-extraction/resume/pokemon-ruby-version/packet.json",
+      "sha256": "cb794ae899121e9b768dd13ec134e479369c75a0fe1e17c8a4dde8366db66f3e"
+    }
+  ],
+  "timing": {
+    "runId": "ruby-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0031707910000000027,
+    "buildSeconds": null,
+    "nativeSeconds": 0.22069504199999998,
+    "totalSeconds": null,
+    "metadataAssemblySeconds": 0.010689,
+    "beforeAfter": null,
+    "accounting": "Narrow new linked-menu qualification total includes nested compile/link/oracle stages;512cases only with explicit row0..3 entry domain. Previous initializer/helper receipts reused, not rerun. Lift reproducer timings in blockers.json separate. No JVM/export/game build or broadnative campaign."
+  }
+}

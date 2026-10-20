@@ -1,0 +1,437 @@
+{
+  "canonicalstate": {
+    "collections": [
+      {
+        "address": null,
+        "argument": "r0",
+        "count": 64,
+        "name": "dependency_0_collection_0",
+        "offset": 304,
+        "owner": "entity",
+        "reference": null,
+        "refs": [
+          "op7",
+          "op45",
+          "op39",
+          "op44",
+          "op50",
+          "op56",
+          "op62",
+          "op68",
+          "op74",
+          "op80",
+          "op86",
+          "op92",
+          "op98",
+          "op104",
+          "op110",
+          "op116",
+          "op122",
+          "op128",
+          "op134",
+          "op140",
+          "op146",
+          "op152",
+          "op158",
+          "op164",
+          "op170",
+          "op176",
+          "op182",
+          "op188",
+          "op194",
+          "op200",
+          "op206",
+          "op212",
+          "op218",
+          "op224",
+          "op230",
+          "op236",
+          "op242",
+          "op248",
+          "op254",
+          "op260",
+          "op266",
+          "op272",
+          "op278",
+          "op284",
+          "op290",
+          "op296",
+          "op302",
+          "op308",
+          "op314",
+          "op320",
+          "op326",
+          "op332",
+          "op338",
+          "op344",
+          "op350",
+          "op356",
+          "op362",
+          "op368",
+          "op374",
+          "op380",
+          "op386",
+          "op392",
+          "op398",
+          "op404",
+          "op410",
+          "op416",
+          "op422"
+        ],
+        "size": 1
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "count": 2,
+        "name": "dependency_0_collection_1",
+        "offset": 368,
+        "owner": "entity",
+        "reference": null,
+        "refs": [
+          "op60",
+          "op65",
+          "op430",
+          "op435"
+        ],
+        "size": 4
+      }
+    ],
+    "fields": [
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_0",
+        "offset": 301,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "domain": {
+          "unsigned_max": 63,
+          "unsigned_min": 0
+        },
+        "name": "field_1",
+        "offset": 302,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_2",
+        "offset": 303,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_3",
+        "offset": 520,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_4",
+        "offset": 522,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_5",
+        "offset": 524,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_6",
+        "offset": 526,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_7",
+        "offset": 528,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_8",
+        "offset": 530,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_9",
+        "offset": 532,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_10",
+        "offset": 534,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "domain": {
+          "unsigned_max": 2,
+          "unsigned_min": 2
+        },
+        "name": "field_11",
+        "offset": 536,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_12",
+        "offset": 537,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_13",
+        "offset": 33696610,
+        "owner": "global",
+        "width": 16
+      }
+    ],
+    "immutable_assets": [],
+    "owner": "same original r0 actor shared by input-history initializer, producer and bounded command-motion reader; no new detached actor/ring",
+    "source_actor_layout_proof": {
+      "current_initializer_adapter": {
+        "path": "local/roundtrip/weak-wave-megaman-initializer-003/validation-adapter.json",
+        "sha256": "f70abb499c401da4231ad68e04d064e06b1d9610ae12613f78f3a60cd5a6bd3c"
+      },
+      "existing_command_motion_adapter": {
+        "path": "local/ir/packages/megaman_zero.motion.command_horizontal_step/validation-adapter.json",
+        "sha256": "c85644158fe4133c375e17e680b8baf99194d7cb402d223ebc59f8d28b51c734"
+      },
+      "existing_module_delivery": {
+        "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json",
+        "sha256": "ceb5339c096c4fde821c68e22433947aa869c3f9d81465f0920c794fc0aa2b9c"
+      },
+      "joint_runtime_limit": "No new initializer-to-motion execution or full source scheduler proof; actual joint fixture connects initializer\u2192producer only. Canonical module reuse conveys physical actor layout, not scheduling.",
+      "shared_command_storage": {
+        "alias_scope": "Only reader indices0..63 share the real64-byte source ring. Do not equate the entire reader256-byte artificial domain to an independent ring or ignore its overlaps with other actor fields.",
+        "argument": "r0",
+        "element_size_bytes": 1,
+        "existing_reader_count": 256,
+        "initializer_count": 64,
+        "offset": 304
+      },
+      "shared_index": {
+        "argument": "r0",
+        "existing_reader_field": "field_4",
+        "initializer_field": "field_1",
+        "offset": 302,
+        "qualified_initializer_domain": "0..63",
+        "width_bits": 8
+      },
+      "source_contract": {
+        "path": "local/roundtrip/weak-wave-megaman-initializer-003/initializer-group.json",
+        "sha256": "e68e777e8836ef74eba008158d7a0ba3597f3f6231eeab3976cd18714adbd427"
+      },
+      "source_core_loop": {
+        "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+        "sha256": "cbea067fa137c777ee28fcc4c94d71f493bf65946dc31c003e4e5427b3e6bce6"
+      },
+      "status": "exact-source-adapter same-owner same-offset bounded-subview proof"
+    },
+    "source_input_authority": {
+      "global_u16": "02022b62",
+      "status": "original host-owned effective input; upstream hardware producer unqualified"
+    }
+  },
+  "capability_phase": {
+    "id": "profile2-command-history-initialize",
+    "ordering_claim": "Source order established inside initializer;14fixture sequences verify init\u2192producer same actor. No auto-scheduled init\u2192motion phase claimed.",
+    "package_id": "mmz.input.profile2-history-initialize",
+    "phase_kind": "source-invoked-input-history-initialization",
+    "scheduled_sequence": null
+  },
+  "counts": {
+    "do_not_pool_historical_reused_and_fresh": true,
+    "fresh_installed_comparisons": 512,
+    "fresh_original_initializer_comparisons": 256,
+    "new_central_packages_at_proposal": 0,
+    "new_distinct_source_function_record_bytes": 70,
+    "new_distinct_source_functions": 1,
+    "new_packages_proposed": 1,
+    "provider_reused_original_comparisons": 512,
+    "same_actor_joint_native_calls_each_image": 28,
+    "same_actor_joint_scenarios_each_image": 14
+  },
+  "event_order": [
+    "Original initializer0801b254 sets sameactor history index0.",
+    "It invokes source producer0801b29c; exactprofile2 source selector0801b374 chooses sameactor custom map and automatic mapper0801b340 derives command.",
+    "Producer reads ring0, advances index1, writes command/edge/marker and updates same bitmap.",
+    "Initializer fills same64-byte ring with resulting command, then clears same2u32 bitmap.",
+    "Separate bounded jointfixture invokes producer again on same actor; newindex2/command/edge/ring/bitmap match source expected state; full source update parent remains open."
+  ],
+  "exactpins": {
+    "conditional_installed_result": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/installed-result.json",
+      "sha256": "3add89ef0e6d317df57296c582ec560b4e9a115f31a929175f00caddf8bbd908"
+    },
+    "independent_context_QC": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/megaman-history-installed-context-qc.json",
+      "sha256": "f093443293f78450868ca6290032a00622070be7aec8c359de28b28eee965cc9"
+    },
+    "independent_initializer_QC": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/megaman-initializer-intermediate-qc.json",
+      "sha256": "516552b4fb1192c96e6df1487f16dd003de0bc0d3622ad17b4a80e420d445910"
+    },
+    "independent_installed_QC": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/megaman-history-producer-installed-qc.json",
+      "sha256": "ee1f97d2139d9785742f3cdcb9e680ecec07996deebd24f9e134729a1c8198ee"
+    },
+    "independent_intake_v2_QC": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/megaman-intake-v2-pin-review.json",
+      "sha256": "490a1ac9e5833d1ab35bf6f4a87d4f9e3d2dc657bd8166ac146c1bdf604805f7"
+    },
+    "initializer_C": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/generated.c",
+      "sha256": "59f2a90c0995fe03cf2a1d06be3d6be1b546c4eda042fc809fc1380d24a4dbce"
+    },
+    "initializer_L1": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/l1.json",
+      "sha256": "e032e363e30e15175453c206ef6808b9e0e2d2551d5a1d7bfce0b1d3cfce0328"
+    },
+    "initializer_adapter": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/validation-adapter.json",
+      "sha256": "f70abb499c401da4231ad68e04d064e06b1d9610ae12613f78f3a60cd5a6bd3c"
+    },
+    "initializer_original_proof": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/receipt.json",
+      "sha256": "7ad0b51d42b7461d052161e6f535f92a25ef5b39b8621c983838ada37ca4fd3d"
+    },
+    "initializer_raw_L0": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/l0.json",
+      "sha256": "8bf2e6df9365e1d94bd5b32f0569a1f1557bf37994a9f1bbc79642fc488fd8c2"
+    },
+    "initializer_source_contract": {
+      "path": "local/roundtrip/weak-wave-megaman-initializer-003/initializer-group.json",
+      "sha256": "e68e777e8836ef74eba008158d7a0ba3597f3f6231eeab3976cd18714adbd427"
+    },
+    "provider_profile": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/history-producer-ir-profile.json",
+      "sha256": "15da9c393981981f4d5be22193814b6c47e422b45a597f36e15a34d343680800"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-megaman-history-producer-install-001/provider-report.json",
+      "sha256": "acab17f801a3eb7309f81158fc7ce0f375ba99ec1c30c537d2f38c35db50da2a"
+    },
+    "raw_diff": {
+      "path": "local/roundtrip/weak-wave-megaman-history-producer-install-001/raw-diff.json",
+      "sha256": "4ef49ad603935aad8db386a56587920657b6e5ee8dc479c12a6cf36a84ea920d"
+    },
+    "same_actor_joint_proof": {
+      "path": "local/roundtrip/weak-wave-megaman-history-producer-sequence-001/receipt.json",
+      "sha256": "92b964039c777d314a8b6cbdbc0d6127063942eea917551a5a5744b8945754d1"
+    },
+    "source_selector_counterexample": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/next-source-recovery.json",
+      "sha256": "4977e1becb13c264d397e1796dd4d4a3ec77185f69092eb498141428d0960716"
+    },
+    "standard_intake": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/intake-records-v2.json",
+      "sha256": "1e2efee6b7339e4fd5005b2bd9b29ef002cdf2d682445dc94d75e5934e2f7131"
+    },
+    "static_dependency_frontier": {
+      "path": "local/roundtrip/weak-wave-megaman-dependency-frontier-001/frontier.json",
+      "sha256": "0081c1a86cf597f9ce42a2a1c72c41f1a18d7f3d6f3c0b320d600ae7caa2ee18"
+    }
+  },
+  "game_id": "megaman-zero",
+  "gaps": [
+    "General original producer profile0/1 readonlyROM-map closure remains the next concrete recovery task.",
+    "Full source initializer/update parent and initializer\u2192motion execution unqualified.",
+    "Existing published reader256-byte domain only aliases realring first64bytes for indices0..63; no broad ABI or storage merge outside that subset.",
+    "Live allocator/lifetime, input authority, scheduler/save and interrupt-visible write order remain open.",
+    "No whole-game editable/ready capability, general replacement eligibility or campaign equivalence."
+  ],
+  "id": "megaman-zero.profile2-input-history.conditional.v1",
+  "module_id": "megaman-zero.source-actor-command-motion",
+  "native_eligibility": {
+    "abi": "void root; caller passes actor inr0, finite proof preserves r4-r11 and stack; no R0 return semantic claim",
+    "all_live_callers_domain_proven": false,
+    "current_or_general_ROM_replacement_eligible": false,
+    "fresh_installed_proofs": "256perentry=512,including14expectedscalar+collection cases each",
+    "installed_rom_sha256": "2eb422aadc2345a7faeb2b3eaac00c01a8d62b578c0a7169c557f4a0ac67eb04",
+    "joint_sequence": "14scenariosperimage,28nativecallsper original/installedimage,full576B actor+ABI after each call; sourcecomponentfixture,not gameplay",
+    "kind": "finite_profile2_source_function_and_conditional_twoentry_retained_host_install",
+    "original_proof_reuse": "exact retained256producer+256initializer proofs reused by provider; no fresh original executions claimed within provider",
+    "original_rom_sha256": "cf505422d68295fba36136a49a3c9dedb104ab16aa542edaeecbb89efdd57807",
+    "profile_selector_byte": {
+      "argument": "r0",
+      "auto_selector_configuration": false,
+      "established_by_initializer": false,
+      "offset": 536,
+      "required_value": 2,
+      "runtime_guard": false
+    },
+    "source_counterexample": "0801c7ec(actor,config=0)\u21920801b244(actor)\u21920801ca94(actor+0x178) sets actor+0x218=0; initializer never establishes2. Non-null configuration can copy a different selector-containing word."
+  },
+  "originalhostprerequisites": [
+    "Exact pinned own-ROM identity and source profile2 actor custom controls. Do not silently set selector2 or rewrite a live profile to satisfy domain.",
+    "One aligned canonical caller-owned mutable actor r0 span[0,538), same ring and bitmap backing; disjoint source effective-input global and native stack.",
+    "Synchronous explicit invocation with no concurrent or interrupt-visible intermediate write observer; live allocation/lifetime proof remains open.",
+    "Original host owns source caller schedule, upstream input authority, terrain/animation/combat and save/recovery services.",
+    "Current installed candidate has unguarded hooks; other profiles are explicitly unsupported and it is not eligible as general/current ROM replacement."
+  ],
+  "package_ids": [
+    "mmz.input.profile2-history-initialize"
+  ],
+  "proposal_status": "conditional-new-initializer-phase-for-existing-source-actor-module; central sole writer reviews before publication",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "actual_source_entry_replacement_scope": "twohook evidence-only fixture candidate; selector2 conditional, no default accepted ROM replacement",
+    "alignment_bytes": 4,
+    "auto_selector_configuration": false,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "finite_profile2_only": true,
+    "general_ROM_eligible": false,
+    "generated_behavior_bytes": 6716,
+    "mechanical_binding_bytes": 600,
+    "portable_L1": true,
+    "raw_difference_bytes": 7336,
+    "replacement_entry_veneer_bytes": 16,
+    "runtime_profile_guard": false,
+    "whole_game_editable_or_ready": false,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "0801b254"
+  ],
+  "timing": {
+    "provider_total_seconds": 1.8528025419999998,
+    "queue_seconds": null,
+    "scope": "No new native/build/model/replay for capability normalization; proof/timing references retained existing runs."
+  }
+}

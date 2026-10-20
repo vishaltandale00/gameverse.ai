@@ -1,0 +1,180 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "super-mario-advance",
+  "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+  "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+  "rom_bytes": 4194304,
+  "append_address": "0x8400000",
+  "output_bytes": 8388608,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "SMB2 main-game original input/terrain/carry/enemy/campaign retained; six exact local motion entries replaced. Bundled Mario Bros excluded.",
+    "argument_constants": [],
+    "argument_reads": [
+      {
+        "address": "0x3005cf0",
+        "width": 32
+      },
+      {
+        "address": "0x3001110",
+        "width": 32
+      },
+      {
+        "address": "0x3005cd8",
+        "width": 32
+      },
+      {
+        "address": "0x3005cf4",
+        "width": 32
+      },
+      {
+        "address": "0x300117a",
+        "width": 16
+      },
+      {
+        "address": "0x3001993",
+        "width": 8
+      },
+      {
+        "address": "0x0300117c",
+        "width": 16
+      },
+      {
+        "address": "0x03001992",
+        "width": 8
+      }
+    ],
+    "global_context_writes": [
+      "Borrowed native player through03005cf0: motion,character jump/hover/charged fields",
+      "Original integration actor receives original r0; no BSS or new actor allocation",
+      "Controller writes original pressed mask and profile query coordinates/result; carried entity x/y/velocities and state flags",
+      "Run,charge,skid and native sound effects use original player fields"
+    ],
+    "phase_obligation": "Original main-game controller chooses and orders these local movement entries; no new scheduler or coordinate-frame reinterpretation"
+  },
+  "hooks": [
+    {
+      "id": "gravity_hover",
+      "address": "0x80a7618",
+      "preimage": "90b581b06f460648",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [],
+      "phase": "gravity_hover",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "friction",
+      "address": "0x80a7e80",
+      "preimage": "80b584b06f461d48",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [],
+      "phase": "friction",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "jump_onset",
+      "address": "0x80a9808",
+      "preimage": "80b582b06f460848",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [],
+      "phase": "jump_onset",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "charged_state_decay",
+      "address": "0x80abaa0",
+      "preimage": "90b56f463a480168",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [],
+      "phase": "charged_state_decay",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "integrate_x",
+      "address": "0x80abf40",
+      "preimage": "b0b583b06f463860",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [
+        "ptr"
+      ],
+      "phase": "integrate_x",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "integrate_y",
+      "address": "0x80ac11c",
+      "preimage": "80b581b06f463860",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "return": "void",
+      "args": [
+        "ptr"
+      ],
+      "phase": "integrate_y",
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ]
+    },
+    {
+      "id": "controller",
+      "address": "0x80a7774",
+      "preimage": "90b583b06f4600f0",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "return": "void",
+      "phase": "controller",
+      "writes": [
+        "velocity",
+        "jump_hover_charge",
+        "carried_actor",
+        "controller_effects",
+        "input_edges",
+        "terrain_query"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "play_sound",
+      "address": "0x080b551c",
+      "isa": "thumb",
+      "abi": "void(u32)",
+      "preimage": "00b50004074a0849",
+      "range_size": 36,
+      "range_sha256": "1db290d22127345f45a8444b7329d1d6173921405e322aca6e1b97df893c20a0"
+    }
+  ]
+}

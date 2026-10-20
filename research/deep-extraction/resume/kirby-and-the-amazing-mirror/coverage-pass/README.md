@@ -1,0 +1,11 @@
+# Published callback setter admission
+
+The published Kirby callback/phase setter now has an actual graph admission receipt: **binding_valid_obligations_unproven**, in **0.010808208 seconds**. Before this pass its graph coverage was untested, not rejected. [manifest.json](manifest.json) pins the exact published package, typed behavior, existing finite-native receipt, graph request and admission result.
+
+The real `assembly.py --request … --out …` invocation exercised Composer and source-package lowering. Package SHA256 is `77097863ed72163f9f672d54f65d504c1be11cf6d19533771647345c5a983ca3`; behavior SHA256 is `5be27fb62885f676b74ecc61e8a8dd0705612fb13ce510101864159bce4da63f`. One invocation binds actor flag, callback and phase lanes to external caller-backed storage, uses phase1 and the callback already observed in source phase entry, and requests no runtime services or clock. Initial zeros are explicit graph caller assumptions, not gameplay evidence.
+
+Admission proves symbolic binding and lowering only. It does not qualify source reachability, actor identity across a composed runtime, callback invocation, full source lifecycle or runtime L2. No meaningful second component connection is currently justified: pool eligibility, target EntityRef, proximity stack ABI and physics/terrain/animation ordering remain open. Repeating the setter or joining foreign opaque flags would invent the missing source relationship.
+
+A concrete source-effect gap is retained in [gap-manifest.json](gap-manifest.json). The source setter preserves the previous phase when the parameter's low16 is65535, but the published effect readset omits that conditionally retained field. Composer therefore does not seed externally bound phase before the call while copying it out afterward. The current admitted phase1 invocation always writes phase, so it does not exercise or certify that sentinel-binding case. The graph lead and compiler owner received the exact gap; native leaf qualification remains valid.
+
+No source re-mining, export, new lift, native rerun, game, ROM or demonstration occurred. Metadata pinning took0.001828916seconds. Old proofs and shared compiler/catalog/contracts files were left unchanged.

@@ -1,0 +1,439 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kirby-nightmare.terrain.publish_current_below_top_cell",
+  "label": "Publish current and below terrain probe, bounded source top cell",
+  "role": "terrain_probe_scratch_publication",
+  "source_game": "kirby-nightmare-in-dream-land",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kirby-nightmare.terrain.publish_current_below_top_cell/package.json",
+  "package_sha256": "7c6b9a86e08248292df1d83e4177183d0f4efabec35be5ccbf4c457bd7345c46",
+  "behavior_sha256": "7247fa262d46a5bc11beedfcae4b19ede0a76f59cf9cc3f6794f009c05be8867",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 5036,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "a6d84797e56a13ef486e3777ac5416312856afa319dfbd3a3602cfe463a04dbe"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "flattened_16_by_16_shape_sample_index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tile_local_shape_row",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_current_cell_attribute_encoding",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_cell_attributes",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_cell_shape_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_shape_catalog",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_below_cell_shape_selector_or_zero",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_shape_catalog",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_below_cell_attribute_or_zero",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_cell_attributes",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_below_cell_linear_index_bound",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "one_by_two_source_terrain_map",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_map_height",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "one_by_two_source_terrain_map",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_map_width",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "one_by_two_source_terrain_map",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_cell_attribute_encoding",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_cell_attributes",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_cell_shape_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_shape_catalog",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_cell_attribute_encoding",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_cell_attributes",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_cell_shape_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_shape_catalog",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 12,
+    "collections": []
+  },
+  "lifecycle": {
+    "required": [
+      "stable terrain-map reference for invocation",
+      "serialized source scratch publication",
+      "exact immutable own-ROM occupancy row bytes"
+    ],
+    "none": [
+      "audio",
+      "render",
+      "hardware button reads"
+    ],
+    "lifecycle": "Map setup before query; dependent caller reads shared published fields before next query overwrites; no actor lifetime ownership inferred."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kirby-nightmare.terrain.publish_current_below_top_cell/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Width1,height2; source top-cell x/y0..15; belowBound0..1 only.",
+    "Current and below fields publish to one shared source probe scratch.",
+    "No actor contact resolution/writeback, general-map or gameplay cadence claim.",
+    "Attribute bytes remain opaque encoding; individual material bits are unknown.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "closure": {
+      "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+      "sha256": "452e9bb40c7a902618df882a3290f3bb861bf24a949edb0c579d2af3a90afa16"
+    },
+    "source_system": "kirby-nightmare-in-dream-land.terrain-contact-resolution",
+    "canonical_state": {
+      "identity": "One terrain map reference plus one source terrainProbeScratch view across samplers and contact consumers.",
+      "map": "Two four-byte cells in one backing; byte+2attribute,+3shape, second cell at+4.",
+      "aliases": "Mixed-width global probe sample/current/below fields are canonical source scratch; parent captures fields before later query overwrites. Do not instantiate per-package output copies when linking contact.",
+      "ownership": "Map owned by source world; scratch owned by serialized source terrain invocation, actor parent owner remains pending.",
+      "units": "Coordinates use low4bits/16unit tile decomposition; physical pixel/world scaling and frame cadence unknown."
+    },
+    "input_domain": "Width1,height2; top-cell x/y0..15; belowBound0or1; source cell attribute/shape are u8.",
+    "native_receipt": {
+      "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/qualification.json",
+      "sha256": "929002b0c6b7fd0a0aab2fad6d5c607e622b16aba841b42613bc3c49b361fe05"
+    },
+    "fixture_scope": "All256shape selectors at6local samples; all256samples of14unique occupancy rows; both below-bound values0/1; exact expected current/below output state, untouched map bytes and returned occupancy asserted.",
+    "l0_digest": {
+      "raw": {
+        "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+        "sha256": "2c58ea1d5163bcac820560d6741275209dc248879676509b9d8306d4df43ed61"
+      },
+      "canonical": "c8bf991a463d51e768f1dafb5a3e2dd9177a7ff1f8d6b22c8f6cda219dffd888",
+      "adapter": "c8bf991a463d51e768f1dafb5a3e2dd9177a7ff1f8d6b22c8f6cda219dffd888"
+    },
+    "ordering": [
+      "Compute low-nibble16x16 sample index and publish it.",
+      "Check map bounds; source-top-cell subset remains valid.",
+      "Compare linear below-cell index1 against source bound; reject at0and sample at1.",
+      "Publish below attribute/shape or zeros.",
+      "Publish current attribute/shape.",
+      "Read immutable occupancy row at same sample index and return signed8value."
+    ],
+    "gaps": [
+      {
+        "id": "08021634-row-pointer-publication",
+        "status": "blocking-other-publishing-sampler",
+        "evidence": {
+          "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt01/08021634-scratch-domains/attempt.json",
+          "sha256": "b8b844e4feaf32addfe3bc0dcc51c34f5038252920aac08fda3fa945f3b1f5c6"
+        },
+        "reason": "Immutable occupancy-row pointer550a0 escapes as scalar; cannot silently remove source observable row reference."
+      },
+      {
+        "id": "actor-load-aliases",
+        "status": "blocking-actor-phase",
+        "evidence": {
+          "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt03/actor-load-attempt.json",
+          "sha256": "1ec4bdc0234c1361be9f70068c11b6fc69be9fc17b3b360f35d93873c8686500"
+        },
+        "reason": "Source actor-load0801c51c has shared context actor reference plus shape argument; compiler requires alias closure. No production-disjointness invented."
+      },
+      {
+        "id": "general-map-and-contact",
+        "status": "open",
+        "reason": "Other dimensions/rows and invalid map coordinates, actual contact root and actor commit need separate closure; this subset stays bounded."
+      }
+    ]
+  },
+  "return_meaning": {
+    "quantity": "signed8_terrain_occupancy_sign_extended_to_u32",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "tile_local_shape_row",
+    "confidence": 0.99,
+    "evidence": [
+      "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+    ],
+    "storage_type": "u32",
+    "signed_encoding": "twos_complement"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_y_coordinate_low4",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "source_top_cell_terrain_coordinates",
+      "confidence": 0.99,
+      "evidence": [
+        "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+      ],
+      "storage_type": "u32"
+    },
+    "param_1": {
+      "quantity": "source_x_coordinate_low4",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "source_top_cell_terrain_coordinates",
+      "confidence": 0.99,
+      "evidence": [
+        "local/ir/fleet-next/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/080216d8/l0.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-round/source-closure-20261016/attempt02/closure.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+      ],
+      "storage_type": "u32"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "kirby-nightmare-in-dream-land",
+    "entry": "080216d8"
+  },
+  "domain_contract_fingerprint": "00b274d3c1ec19c076680eaddf64f65afb5ab4597fdc77647737321160c91183",
+  "specialization_subset": true
+}

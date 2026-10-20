@@ -1,0 +1,205 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sonic.motion.air_steering",
+  "label": "Original airborne steering, inherited overspeed and upward drag",
+  "role": "movement",
+  "source_game": "sonic-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sonic.motion.air_steering/package.json",
+  "package_sha256": "ef7020fbd115cc0c0550ec53e0621ffde248d84515bfb673d9c01b64f9f7d4aa",
+  "behavior_sha256": "287a37af3d95bc71cd35c2827ce57d77957bbd56b6482cfd3571329bd427e9eb",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "c5ab3f488f2dfc51e1b3afc9b19b0045526047bc331252bead760d050c6fdb3e"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review",
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review",
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review",
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "own_ROM_steering_source_read_write_usage"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "own_ROM_steering_source_read_write_usage"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "own_ROM_steering_source_read_write_usage"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_pose_code",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.pose",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+        ],
+        "naming_status": "own_ROM_steering_source_read_write_usage"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one canonical actor",
+    "clock": "source_player_update",
+    "phase": "airmode2or6 afterrelease/ability beforeworldbounds/integration",
+    "ordering": "source047378 call04463C\u219204456C\u2192043E8C\u21920470B4\u2192047100"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sonic.motion.air_steering/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Original source air steering/upward-drag only; jumprelease/abilities, worldbounds, landing andframe entry remainhost-owned",
+    "Q8values retain source signedbitpatterns; no invented cap widening or render-clock assumption",
+    "16 exact source-expected fixture cases plus 1008 boundary/random pairs; native leaf only. Composer phase requires independent admission after publication.",
+    "World wrap/bounds must remain between steering and integration; no service stub or uninterrupted all-three controller.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json",
+    "sha256": "1a16b53ad40ac324f9c831bed1cc5ff28d205f358b63b85253db0e2a8f8d6e9b",
+    "role": "Original airborne steering, inherited overspeed and upward drag; not full air controller",
+    "source_scheduler": "08047378 calls 0804456C after release/ability and before required 08043E8C world boundary",
+    "source_alias": "Same canonical actor r0; vx/vy/flags views match existing integration/gravity by original offsets. No independent actor copies."
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "sonic-advance",
+    "entry": "0804456c"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

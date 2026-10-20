@@ -1,0 +1,502 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma4.collision.actor_pair_query",
+  "label": "Two actor shapes and inclusive local contact query",
+  "role": "combat",
+  "source_game": "super-mario-advance-4-super-mario-bros-3",
+  "origin": "automatic_highfunction_linked_sequence",
+  "package_ref": "local/ir/packages/sma4.collision.actor_pair_query/package.json",
+  "package_sha256": "c351d84bfccc0b01f9c7aa54744934ee7ba3ec7f5b696b27228c2fc262637727",
+  "behavior_sha256": "6cf35d914db4823c4ebe83165f6bd61145fb02342e5242aa43a876250ff41863",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "4096 exact connected cases: all64x64 shape-selector pairs, distributed width flags and12 touching/separation/wrap/sign classes; not full cross-product with positions/flags",
+    "kind": "declared_connected_sequence_native_equivalence_not_original_function_root",
+    "receipt_sha256": "6fd7b15bc2f15660b5002374026bb3d8f82117f83b6e0bdcccf782b5d8e22d42"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.x.right",
+        "label": "Actor pixel mirror modulo256",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.y.down",
+        "label": "Actor pixel mirror modulo256",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma4.collision.shape_selector",
+        "label": "Source selector, low6 bits select one of64 shapes",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma4.collision.width_expansion",
+        "label": "Zero or any nonzero: add16 pixels to width",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.x.right",
+        "label": "Actor pixel mirror modulo256",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.y.down",
+        "label": "Actor pixel mirror modulo256",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma4.collision.shape_selector",
+        "label": "Source selector, low6 bits select one of64 shapes",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma4.collision.width_expansion",
+        "label": "Zero or any nonzero: add16 pixels to width",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "extent",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.x.right",
+        "label": "Selected source shape width",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "extent",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.x.right",
+        "label": "Selected source shape width",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "extent",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.y.down",
+        "label": "Selected source shape height",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "extent",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.y.down",
+        "label": "Selected source shape height",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "penetration_negative",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.x.right",
+        "label": "Negative overlap depth; valid only after successful query",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "penetration_negative",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "collision.local.y.down",
+        "label": "Negative overlap depth; valid only after successful query",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma4.collision.direction",
+        "label": "On success bit1 is negativeX difference, bit0 negativeY; failure representation differs",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/findings.json",
+          "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 20,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_instance_with_one_shared_collision_scratch",
+    "clock": "explicit_query_invocation",
+    "phase": "caller_proximity_and_eligibility_guards_before_query",
+    "ordering": "shape_B_then_shape_A_then_overlap"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "0d4ccbcec93160c1fed705ae2f4dff779b61f27b1badaad259621a336ec2a136",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "e3a4b6ab961e0d8f57fbdf6921bf84833593edb9dc2a2789e94b2d826dc34d9d",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_2",
+      "behavior_sha256": "c2cb0844d350eec0bda15c05b8f328b6894f59bfd685e8b366203a7511bd7eff",
+      "provenance_namespace": "dependency_2",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "declared_ordered_helper_sequence",
+    "link_schedule_ref": "local/ir/packages/sma4.collision.actor_pair_query/l0.json",
+    "machine_evidence_refs": [
+      {
+        "ref": "local/ir/dependency-exports/20261016T101717908568/super-mario-advance-4-super-mario-bros-3/l0/080460fc.json",
+        "sha256": "fc50d301603f4f5514bf78b53cd14119e714ae470f0751b8208d5be8d5f992d5"
+      },
+      {
+        "ref": "local/ir/dependency-exports/20261016T100757084950/super-mario-advance-4-super-mario-bros-3/l0/08046154.json",
+        "sha256": "f8bf8fc71077d1a3358c92d880685f7a91d111c75a3b0f6f0de2b018f97ebb08"
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-sma4/overlap-export/l0/08046320.json",
+        "sha256": "bfebe0dfd2204cab2fa5d81dce83b6af65eb1e5d354c7cca15d098b0f3c54523"
+      }
+    ],
+    "resolution": "Recovered helper bodies linked under a declared schedule; no recovered original root function claim"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_2_Acyclic structured CFG only",
+    "dependency_2_Semantic units and human names remain unknown unless separately evidenced",
+    "Declared shape-B, shape-A, overlap invocation sequence, not one original ROM function or recovered caller eligibility",
+    "Two distinct actor records; modulo256 local pixel geometry only; caller must enforce full-world proximity before invoking",
+    "Touching is inclusive. Scratch failure outputs may be stale; inspect Boolean before interpreting penetration/direction",
+    "No target eligibility, HP, damage, retirement, pixel-mirror synchronization, full contact dispatch or game completeness claim"
+  ],
+  "derivation": {
+    "kind": "declared_ordered_composition_of_automatically_recovered_L1_bodies",
+    "schedule": [
+      "shape_b",
+      "shape_a",
+      "overlap"
+    ],
+    "source_l0s": [
+      {
+        "ref": "local/ir/dependency-exports/20261016T101717908568/super-mario-advance-4-super-mario-bros-3/l0/080460fc.json",
+        "sha256": "fc50d301603f4f5514bf78b53cd14119e714ae470f0751b8208d5be8d5f992d5"
+      },
+      {
+        "ref": "local/ir/dependency-exports/20261016T100757084950/super-mario-advance-4-super-mario-bros-3/l0/08046154.json",
+        "sha256": "f8bf8fc71077d1a3358c92d880685f7a91d111c75a3b0f6f0de2b018f97ebb08"
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-sma4/overlap-export/l0/08046320.json",
+        "sha256": "bfebe0dfd2204cab2fa5d81dce83b6af65eb1e5d354c7cca15d098b0f3c54523"
+      }
+    ],
+    "caller_evidence": {
+      "ref": "local/ir/dependency-exports/20261016T095404606414/super-mario-advance-4-super-mario-bros-3/l0/08051144.json",
+      "sha256": "eed9797565e43f5b3c547fc069b21b5be935223472127501b9144aabbba263f9",
+      "calls": [
+        {
+          "call_pc": "08051194",
+          "callee": "08046154",
+          "bytes_hex": "f4f7deff",
+          "sha256": "d9e6584b80b7505298be8d01d263b37b4435ff149ec3a4e7da2c8b4e25f36f3a"
+        },
+        {
+          "call_pc": "08051224",
+          "callee": "080460fc",
+          "bytes_hex": "f4f76aff",
+          "sha256": "9f2ed7c2798248a2436157535fdc6a6aaf44860badfb9fe863c7147bb6483bdc"
+        },
+        {
+          "call_pc": "08051228",
+          "callee": "08046320",
+          "bytes_hex": "f5f77af8",
+          "sha256": "c93b1f197ef43911f774e92528dc6d93a1efc4b41f22341a696b98bf46e12773"
+        }
+      ],
+      "dominance": "shapeB block6 dominates shapeA/overlap block17"
+    },
+    "excluded": "Caller loop, proximity, eligibility and reaction dispatch are not recovered by this wrapper",
+    "return_semantics": {
+      "quantity": "boolean",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "collision.overlap",
+      "label": "Inclusive local shape overlap; fullu32 originalr0 compared",
+      "confidence": 0.98,
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma4/findings.json",
+        "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+      ]
+    }
+  },
+  "source_l0s": [
+    {
+      "ref": "local/ir/dependency-exports/20261016T101717908568/super-mario-advance-4-super-mario-bros-3/l0/080460fc.json",
+      "sha256": "fc50d301603f4f5514bf78b53cd14119e714ae470f0751b8208d5be8d5f992d5"
+    },
+    {
+      "ref": "local/ir/dependency-exports/20261016T100757084950/super-mario-advance-4-super-mario-bros-3/l0/08046154.json",
+      "sha256": "f8bf8fc71077d1a3358c92d880685f7a91d111c75a3b0f6f0de2b018f97ebb08"
+    },
+    {
+      "ref": "research/deep-extraction/mario/parallel-sma4/overlap-export/l0/08046320.json",
+      "sha256": "bfebe0dfd2204cab2fa5d81dce83b6af65eb1e5d354c7cca15d098b0f3c54523"
+    }
+  ],
+  "native_sequence": [
+    {
+      "entry": "08046154",
+      "arguments": {
+        "r0": "r1"
+      },
+      "instruction_span": {
+        "size": 88,
+        "sha256": "a0e77711d760bf21afa79fa45014d13bfa8cb241dade2d966219196e34c6822c"
+      }
+    },
+    {
+      "entry": "080460fc",
+      "arguments": {
+        "r0": "r0"
+      },
+      "instruction_span": {
+        "size": 88,
+        "sha256": "cbb8a8e051f9e0ec2952ddd8138b5ca4d6ddb37530c35813e9f19b263ff70e2b"
+      }
+    },
+    {
+      "entry": "08046320",
+      "arguments": {},
+      "instruction_span": {
+        "size": 118,
+        "sha256": "331abdb2415d6cc77345345f94aa042dcc3767efd36084f7e8681e291df98ac8"
+      }
+    }
+  ],
+  "return_semantics": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "collision.overlap",
+    "label": "Inclusive local shape overlap; fullu32 originalr0 compared",
+    "confidence": 0.98,
+    "evidence": [
+      "research/deep-extraction/mario/parallel-sma4/findings.json",
+      "research/deep-extraction/mario/parallel-sma4/overlap-findings.json"
+    ]
+  }
+}

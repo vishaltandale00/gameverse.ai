@@ -1,240 +1,2698 @@
 {
   "schema": "gameverse.automatic-ir-status/0.3",
-  "source_commit_at_snapshot": "c6c7c4e5f8b4b3e3aa5faecd6f6988ff9c468335",
-  "updated_utc": "2026-10-16T09:53:01.328976+00:00",
+  "source_commit_at_snapshot": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "updated_utc": "2026-10-16T21:15:02.077422+00:00",
   "objective_status": "ONGOING_ALL_GAMES_PARTIAL",
-  "scope": "Automatic own-ROM executable mechanics and new-ROM compositions; complete Mario mechanic recovery is active priority. None of this count is whole-game completeness.",
+  "scope": "Original-ROM executable L1 subsets and partial source-derived L2 systems; no game generation in this mining round. None of this count is whole-game completeness.",
   "rom_inventory": 33,
   "discovery_states": {
     "baseline_reused": 2,
-    "depth_pending": 29,
-    "failed_discovery": 2
+    "depth_pending": 31
   },
-  "bounded_l0_exports": 21845,
-  "bounded_static_l1_candidates": 2271,
-  "retained_native_qualified_packages": 31,
-  "typed_port_subset_packages": 15,
-  "retained_package_fixture_pairs": 524872,
+  "bounded_l0_exports": 22851,
+  "bounded_static_l1_candidates": 2351,
+  "retained_native_qualified_packages": 183,
+  "original_function_package_subsets": 176,
+  "raw_instruction_control_package_subsets": 3,
+  "caller_scoped_state_effects_package_subsets": 3,
+  "declared_linked_sequence_package_subsets": 1,
+  "unique_original_source_roots": 171,
+  "domain_specialization_subset_packages": 11,
+  "source_context_specialized_package_subsets": 32,
+  "typed_port_subset_packages": 159,
+  "retained_package_fixture_pairs": 924977,
   "packages": [
+    {
+      "id": "alttp-four-swords.events.bounded_enqueue",
+      "source_game": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "vectors": 64,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+        "entry": "08003dfc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "aria.cast.first_free_slot",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0802d208"
+      },
+      "specialization_subset": false
+    },
     {
       "id": "aria.motion.integrate_x",
       "source_game": "castlevania-aria-of-sorrow",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0806d430"
+      },
+      "specialization_subset": false
     },
     {
       "id": "aria.motion.integrate_y",
       "source_game": "castlevania-aria-of-sorrow",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0806d460"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "aria.progress.category0_acquire",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0803278c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.category0_pickup_selection_list",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "08049e64"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.category1_acquire",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0803278c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.category2_acquire",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0803278c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.category3_acquire",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "0803278c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "aria.progress.category3_count",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "080326b8"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.category3_enable",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "08032adc"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "aria.progress.pickup_counter_increment",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "castlevania-aria-of-sorrow",
+        "entry": "08032dbc"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_preserve_scalar",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 1792,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "0800b6a0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_reset_scalar",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 1536,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "0800b6d0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.actor.motion_target_approach_integrate",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 126,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "0800b270"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.input.direction_lookup",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "08000760"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.progress.query_flag5",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "080231b0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.progress.query_flag6",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "080231a8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "crash.progress.query_flag7",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "crash-bandicoot-the-huge-adventure",
+        "entry": "080231c0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "db.actor.record_setup.slot1_profile0",
+      "source_game": "dragon-ball-advanced-adventure",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "dragon-ball-advanced-adventure",
+        "entry": "08004040"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "db.effect.request_cleanup",
+      "source_game": "dragon-ball-advanced-adventure",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "dragon-ball-advanced-adventure",
+        "entry": "0800cfdc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "db.input.actor_edges_repeat",
+      "source_game": "dragon-ball-advanced-adventure",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "dragon-ball-advanced-adventure",
+        "entry": "080149dc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "dba.motion.facing-dependent-input",
+      "source_game": "dragon-ball-advanced-adventure",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "dragon-ball-advanced-adventure",
+        "entry": "08028048"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "driv3r.contact.initialize_records",
+      "source_game": "driv3r",
+      "vectors": 64,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "driv3r",
+        "entry": "0805fc3c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "driv3r.proximity.allocate_record",
+      "source_game": "driv3r",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_state_effects_projection",
+      "qualification_kind": "caller_scoped_state_effects_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "driv3r",
+        "entry": "080b3198"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "driv3r.proximity.allocate_secondary_record",
+      "source_game": "driv3r",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_state_effects_projection",
+      "qualification_kind": "caller_scoped_state_effects_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "driv3r",
+        "entry": "080b32a8"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "emerald.battle.paired_order_swap",
+      "source_game": "pokemon-emerald-version",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-emerald-version",
+        "entry": "0803cedc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "emerald.battle.side_lookup",
+      "source_game": "pokemon-emerald-version",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-emerald-version",
+        "entry": "080a6a30"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "emerald.items.effect",
+      "source_game": "pokemon-emerald-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-emerald-version",
+        "entry": "080d74dc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "emerald.items.parameter",
+      "source_game": "pokemon-emerald-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-emerald-version",
+        "entry": "080d7500"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ff12.choice.entry_transition",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+        "entry": "0801d074"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ff12.private.resource_predicate",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+        "entry": "08015264"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ff12.resources.sorted_bucket_reset",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+        "entry": "08015178"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffta.content.read_current_index",
+      "source_game": "final-fantasy-tactics-advance",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-tactics-advance",
+        "entry": "0800a018"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffta.content.read_index_or_fallback",
+      "source_game": "final-fantasy-tactics-advance",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-tactics-advance",
+        "entry": "0800a024"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffta.random.next15",
+      "source_game": "final-fantasy-tactics-advance",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-tactics-advance",
+        "entry": "08002804"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffta.terrain.bounds_snapshot",
+      "source_game": "final-fantasy-tactics-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-tactics-advance",
+        "entry": "0801cd4c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffta.terrain.cell_flags_stride16",
+      "source_game": "final-fantasy-tactics-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-tactics-advance",
+        "entry": "0801cd08"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ffvi.combat.hp_effect_actor0",
+      "source_game": "final-fantasy-vi-advance",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_own_ROM_raw_pcode_control_lift",
+      "qualification_kind": "finite_original_raw_control_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-vi-advance",
+        "entry": "0807e7c0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "ffvi.combat.pending_status_filter_actor0",
+      "source_game": "final-fantasy-vi-advance",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_own_ROM_raw_pcode_control_lift",
+      "qualification_kind": "finite_original_raw_control_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-vi-advance",
+        "entry": "0808bcf4"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "ffvi.combat.postcallback_status_settlement_actor0",
+      "source_game": "final-fantasy-vi-advance",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_own_ROM_raw_pcode_control_lift",
+      "qualification_kind": "finite_original_raw_control_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "final-fantasy-vi-advance",
+        "entry": "0808b6ca"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "firered.text.timed_acknowledgement",
+      "source_game": "pokemon-firered-version",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-firered-version",
+        "entry": "0800561c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "firered.text.wait_initialize",
+      "source_game": "pokemon-firered-version",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-firered-version",
+        "entry": "080054dc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "fusion.motion.directional_acceleration",
+      "source_game": "metroid-fusion",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-fusion",
+        "entry": "08006240"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "fusion.player.contact_profile",
+      "source_game": "metroid-fusion",
+      "vectors": 32,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-fusion",
+        "entry": "0800c174"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "fusion.state.transition_snapshot_reset",
+      "source_game": "metroid-fusion",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-fusion",
+        "entry": "08004d60"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "gta.component.view_priority_metric",
+      "source_game": "grand-theft-auto",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "grand-theft-auto",
+        "entry": "0800d0a0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "gta.component_list.insert_head",
+      "source_game": "grand-theft-auto",
+      "vectors": 192,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "grand-theft-auto",
+        "entry": "0800d838"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "gta.component_list.unlink",
+      "source_game": "grand-theft-auto",
+      "vectors": 588,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "grand-theft-auto",
+        "entry": "0800d85c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kart.driver_steering_accumulation_lane0",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "08038afc"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kart.steering_recovery",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "0803ba98"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kart.track_coordinate_bounds",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "08032c50"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kart.turn_recovery_acceleration",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "0803daec"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kart.vehicle_speed_heading_step",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "08038200"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kart.vehicle_turn_drag_acceleration",
+      "source_game": "mario-kart-super-circuit",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-kart-super-circuit",
+        "entry": "08038640"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "khcom.effect.consume_on_action_kind50",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kingdom-hearts-chain-of-memories",
+        "entry": "0807bc08"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "khcom.effect.expiration_gate",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kingdom-hearts-chain-of-memories",
+        "entry": "0809de18"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "khcom.effect.install_from_descriptor",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "vectors": 128,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kingdom-hearts-chain-of-memories",
+        "entry": "0807b45c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kirby-amazing-mirror.actor.callback_phase_reset",
+      "source_game": "kirby-and-the-amazing-mirror",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-and-the-amazing-mirror",
+        "entry": "0809f7d8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kirby-nightmare.terrain.four_corner_classification_common_map",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "08021564"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.four_corner_classification_one_cell",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "08021564"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape1",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219d0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape2",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219d0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape3",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219d0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.point_occupancy_one_cell",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 7456,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "08021ab4"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.publish_current_below_top_cell",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 5036,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080216d8"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape1",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219f0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape2",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219f0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape3",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219f0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape1",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219b0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape2",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219b0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape3",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "kirby-nightmare-in-dream-land",
+        "entry": "080219b0"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "leafgreen.persistence.secure_record_decrypt",
+      "source_game": "pokemon-leafgreen-version",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-leafgreen-version",
+        "entry": "0803f930"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "leafgreen.persistence.secure_record_encrypt",
+      "source_game": "pokemon-leafgreen-version",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-leafgreen-version",
+        "entry": "0803f90c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "leafgreen.species.ability",
+      "source_game": "pokemon-leafgreen-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-leafgreen-version",
+        "entry": "08040d4c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "leafgreen.species.gender",
+      "source_game": "pokemon-leafgreen-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-leafgreen-version",
+        "entry": "0803f7a0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "megaman_zero.motion.command_horizontal_step",
+      "source_game": "megaman-zero",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "megaman-zero",
+        "entry": "08016d78"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "metal_slug_advance.selection.entry_available",
+      "source_game": "metal-slug-advance",
+      "vectors": 2048,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metal-slug-advance",
+        "entry": "08007bb0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "metal_slug_advance.selection.visible_frontier",
+      "source_game": "metal-slug-advance",
+      "vectors": 2048,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metal-slug-advance",
+        "entry": "08007d00"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mlss.motion.actor_step",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-and-luigi-superstar-saga",
+        "entry": "0804fe68"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mlss.motion.initialize",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-and-luigi-superstar-saga",
+        "entry": "080401f0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mlss.motion.reset",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-and-luigi-superstar-saga",
+        "entry": "08047eb8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mlss.motion.update",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "mario-and-luigi-superstar-saga",
+        "entry": "080402c4"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mmz.input.profile0-producer",
+      "source_game": "megaman-zero",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "megaman-zero",
+        "entry": "0801b29c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "mmz.input.profile1-producer",
+      "source_game": "megaman-zero",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "megaman-zero",
+        "entry": "0801b29c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "mmz.input.profile2-history-initialize",
+      "source_game": "megaman-zero",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "megaman-zero",
+        "entry": "0801b254"
+      },
+      "specialization_subset": true
     },
     {
       "id": "mzm.combat.impact",
       "source_game": "metroid-zero-mission",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08050424"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.combat.minimum_reaction2",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "080504ac"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.combat.minimum_reaction3",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "080504cc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.combat.reaction_tick",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08010cf0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.lifecycle.choose_defeat_drop",
+      "source_game": "metroid-zero-mission",
+      "vectors": 8192,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08010eec"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.lifecycle.enemy_update_gate",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08011280"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.lifecycle.viewport_retirement",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "0800ddd4"
+      },
+      "specialization_subset": false
     },
     {
       "id": "mzm.motion.accelerate",
       "source_game": "metroid-zero-mission",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08008278"
+      },
+      "specialization_subset": false
     },
     {
       "id": "mzm.progress.acquire",
       "source_game": "metroid-zero-mission",
       "vectors": 4096,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "080138d8"
+      },
+      "specialization_subset": false
     },
     {
       "id": "mzm.progress.events",
       "source_game": "metroid-zero-mission",
       "vectors": 65536,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "080608bc"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.statue.after-item-timer",
+      "source_game": "metroid-zero-mission",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08014494"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.statue.behavior",
+      "source_game": "metroid-zero-mission",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08013de0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "mzm.statue.wait-collected",
+      "source_game": "metroid-zero-mission",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "metroid-zero-mission",
+        "entry": "08014468"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "nfs.scene.request_transition",
+      "source_game": "need-for-speed-underground",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "need-for-speed-underground",
+        "entry": "08001790"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pmd.input.clear_pressed",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+        "entry": "080048f8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pmd.input.initialize",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+        "entry": "080047e8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pmd.input.publish",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+        "entry": "0800485c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pmd.input.suppress_repeat",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+        "entry": "080048d0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.clock.advance",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "080914d0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.clock.initialize",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "080914c0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.clock.read",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "08091504"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.recovery.advance_capacity_profile",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "0806acc0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.recovery.consume_resource_charge",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "08069c20"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "pop.world.gate_read",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "prince-of-persia-the-sands-of-time",
+        "entry": "0806bbf0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ruby.input.initialize",
+      "source_game": "pokemon-ruby-version",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-ruby-version",
+        "entry": "08000400"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ruby.menu.capture_selected_code_mode1",
+      "source_game": "pokemon-ruby-version",
+      "vectors": 96,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-ruby-version",
+        "entry": "080e7af4"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "ruby.menu.navigate_four_row_input",
+      "source_game": "pokemon-ruby-version",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-ruby-version",
+        "entry": "080e77e8"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "ruby.species.ability",
+      "source_game": "pokemon-ruby-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-ruby-version",
+        "entry": "0803db14"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "ruby.species.gender",
+      "source_game": "pokemon-ruby-version",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "pokemon-ruby-version",
+        "entry": "0803c524"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "shaman.camera.layer1_scroll_publish",
+      "source_game": "shaman-king-master-of-spirits",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "shaman-king-master-of-spirits",
+        "entry": "08000e20"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "shaman.input.held_read",
+      "source_game": "shaman-king-master-of-spirits",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "shaman-king-master-of-spirits",
+        "entry": "0800064c"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0802e978"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0802faac"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_decay_run_charge",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806f828"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_gravity",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 1024,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806f714"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_integrate",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806b52c"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806b5a8"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806b604"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_run_charge",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806f834"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-2-super-mario-world.motion.sma2_special_surface",
       "source_game": "super-mario-advance-2-super-mario-world",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806e838"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 2770,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "080479c0"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
       "source_game": "super-mario-advance-4-super-mario-bros-3",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "0809b190"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
       "source_game": "super-mario-advance-4-super-mario-bros-3",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "08046738"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 2770,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "080479e8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.horizontal_integration",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "080a0f68"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-4-super-mario-bros-3.motion.run_boost_helper",
       "source_game": "super-mario-advance-4-super-mario-bros-3",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "0809b0f4"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
       "source_game": "super-mario-advance-4-super-mario-bros-3",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "080a1040"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma.motion.sma1_friction",
       "source_game": "super-mario-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080a7e80"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma.motion.sma1_gravity_hover",
       "source_game": "super-mario-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080a7618"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma.motion.sma1_integrate_y",
       "source_game": "super-mario-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080ac11c"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sma.motion.sma1_jump_onset",
       "source_game": "super-mario-advance",
       "vectors": 11848,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080a9808"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma1.death_update_lives",
+      "source_game": "super-mario-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080a9334"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma1.lifecycle.retry_checkpoint_restore",
+      "source_game": "super-mario-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance",
+        "entry": "080490b8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.actor_contact_box",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0802f290"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.actor_player_relative_side",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0802f1b8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.actor_reinitialize",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 6144,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0802ebec"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.audio.channel9_active_read",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0809d77c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.audio.spatial_pan",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0809b514"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.audio.x_attenuation",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0809b564"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.auxiliary_slot_clear",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0803dab4"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.auxiliary_vertical_integrate",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0803dae8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.cape_form_transform_finish",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "08069640"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.carried_attachment_release",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806c910"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.contact.item_class_c2_query",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 84,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "08034264"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "sma2.fire_form_transform_finish",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1865,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0806969c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.player_contact_box",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "0803407c"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.powered_hurt_recovery",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1865,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "080711d4"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.shared_contact_overlap",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "08034198"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma2.small_hurt_recovery",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1865,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-2-super-mario-world",
+        "entry": "08069530"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma4.actor_pair_reaction",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "080510b8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma4.actor_pixel_mirror_sync",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "08047c40"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma4.clear_actor_active",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "super-mario-advance-4-super-mario-bros-3",
+        "entry": "08047910"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sma4.collision.actor_pair_query",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_linked_sequence",
+      "qualification_kind": "declared_connected_sequence_native_equivalence_not_original_function_root",
+      "typed_ports": true,
+      "source_root_identity": null,
+      "specialization_subset": false
+    },
+    {
+      "id": "sonic.motion.air_steering",
+      "source_game": "sonic-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "0804456c"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sonic.motion.gravity",
       "source_game": "sonic-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "08047100"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sonic.motion.integrate",
       "source_game": "sonic-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "080470b4"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sonic.motion.slope_acceleration",
       "source_game": "sonic-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "08046f78"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sonic.motion.surface_detach",
       "source_game": "sonic-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "080471a0"
+      },
+      "specialization_subset": false
     },
     {
       "id": "sonic.motion.surface_projection",
       "source_game": "sonic-advance",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": false
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": false,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "08047078"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "sonic.world.boundary_stage0",
+      "source_game": "sonic-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "sonic-advance",
+        "entry": "08043e8c"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "tekken.collision.clear_actor_boxes",
+      "source_game": "tekken-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "tekken-advance",
+        "entry": "08011ea4"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tekken.collision.materialize_actor_boxes",
+      "source_game": "tekken-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "tekken-advance",
+        "entry": "08011ee4"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tekken.collision.separate_actor_boxes",
+      "source_game": "tekken-advance",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "tekken-advance",
+        "entry": "080130e8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tekken.combat.damage_knockback_response",
+      "source_game": "tekken-advance",
+      "vectors": 64,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "tekken-advance",
+        "entry": "080125d0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tmc.combat.learned_sword_beam_eligibility",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "0807b014"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tmc.input.equipped_item_predicate",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "08077f24"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tmc.input.held_equipped_item",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "08077efc"
+      },
+      "specialization_subset": false
     },
     {
       "id": "tmc.progress.derive_skills",
       "source_game": "legend-of-zelda-the-the-minish-cap",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "0807aee4"
+      },
+      "specialization_subset": false
     },
     {
       "id": "tmc.progress.inventory_read",
       "source_game": "legend-of-zelda-the-the-minish-cap",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "0807ca84"
+      },
+      "specialization_subset": false
     },
     {
       "id": "tmc.progress.inventory_write",
       "source_game": "legend-of-zelda-the-the-minish-cap",
       "vectors": 16384,
       "qualification": "native_finite_pass",
-      "typed_ports": true
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "original_function_native_equivalence",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "0807caa0"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "tmc.progress.script_inventory_write",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 512,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_source_dispatch_effects_lift",
+      "qualification_kind": "caller_dispatch_state_effects_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "entry": "0807f078"
+      },
+      "specialization_subset": true
+    },
+    {
+      "id": "wl4.normal-form.afterimage_history_step",
+      "source_game": "wario-land-4",
+      "vectors": 256,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "0800ff64"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "wl4.protection.read_query_result",
+      "source_game": "wario-land-4",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "0806d730"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "wl4.protection.tag_query_result",
+      "source_game": "wario-land-4",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "0806d734"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "wl4.protection.test_protected_zero_selector",
+      "source_game": "wario-land-4",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "0806d7f8"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "wl4.protection.test_unprotected_zero_selector_complement",
+      "source_game": "wario-land-4",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "0806d854"
+      },
+      "specialization_subset": false
+    },
+    {
+      "id": "wl4.recovery.action60_struggle_step",
+      "source_game": "wario-land-4",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "origin": "automatic_highfunction_lift",
+      "qualification_kind": "finite_original_function_subset",
+      "typed_ports": true,
+      "source_root_identity": {
+        "source_game": "wario-land-4",
+        "entry": "08012614"
+      },
+      "specialization_subset": false
     }
   ],
   "generated_compositions": [
+    {
+      "request_id": "55f3114f-69ae-4fa3-a1aa-19c9229a6da1",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "4b6538c12ee89644c13b1513c2ca98451ebb1db20ee36f9a2d0714324aa0d755",
+      "receipt": "local/ir/generated/55f3114f-69ae-4fa3-a1aa-19c9229a6da1/status.json",
+      "wall_s": null,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/l2-quality-20261016/attempt04/quality-summary.json",
+        "wall_s": null,
+        "final": {
+          "ticks": 218,
+          "px": 224,
+          "py": 132,
+          "hearts": 3,
+          "failed": 0,
+          "won": 1,
+          "charger_hp": 0,
+          "turret_hp": 0,
+          "charger_x": 10,
+          "charger_mode": 2,
+          "charger_clock": 128,
+          "turret_clock": 70,
+          "turret_aim": 79,
+          "threat_active": 0,
+          "threat_x": 170,
+          "threat_y": 79,
+          "windups": 2,
+          "hurt_count": 0,
+          "jump_count": 1,
+          "shots": 6,
+          "hits": 4,
+          "shield_hits": 1,
+          "kills": 2,
+          "exit_open": 1,
+          "retries": 0,
+          "threat_fired": 1,
+          "grace": 0,
+          "charger_pose": 98,
+          "turret_pose": 98
+        }
+      }
+    },
+    {
+      "request_id": "624dc495-5c34-4808-ae17-29be9295fb24",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "dbdf2753fa91b5b2cfe96e9c1b40cf5341dba8dd750a3a8cad3934020e5637e9",
+      "receipt": "local/ir/generated/624dc495-5c34-4808-ae17-29be9295fb24/status.json",
+      "wall_s": null,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/l2-production-20261016/attempt01/native/route-receipt.json",
+        "wall_s": 0.526934333,
+        "final": {
+          "ticks": 457,
+          "player_x": 256880,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1,
+          "relay_lives": 1,
+          "relay_timer": 0,
+          "relay_signal": 1,
+          "relay_active": 0,
+          "relay_consumed": 1,
+          "relay_calls": 3
+        }
+      }
+    },
+    {
+      "request_id": "64ae4662-6688-4224-929a-dfc9b4ec5503",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "353c55f3987ba1e3d8dc2c8d7fc569ae18b0cae9aaab899f9b5545a5b9b641da",
+      "receipt": "local/ir/generated/64ae4662-6688-4224-929a-dfc9b4ec5503/status.json",
+      "wall_s": null,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/l2-production-next-20261016/attempt01/native/route-receipt.json",
+        "wall_s": 0.64349825,
+        "final": {
+          "ticks": 494,
+          "player_x": 256688,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1,
+          "soul_low": 4,
+          "soul_high": 1,
+          "soul_byte0": 20,
+          "soul_byte1": 84,
+          "soul_byte2": 165,
+          "soul_byte3": 57,
+          "soul_calls": 5,
+          "charge_calls": 2,
+          "spend_calls": 1,
+          "weave_calls": 1
+        }
+      }
+    },
     {
       "request_id": "aria-minish-mzm-three-game-01",
       "outcome": "pass",
@@ -366,6 +2824,42 @@
         },
         "error": null
       }
+    },
+    {
+      "request_id": "sma1-peach-policies",
+      "outcome": "failed",
+      "diagnostic": "",
+      "rom_sha256": null,
+      "receipt": "local/ir/generated/sma1-peach-closure-link-02/status.json",
+      "wall_s": 0.010801749999999999,
+      "route": {}
+    },
+    {
+      "request_id": "sma1-peach-policies",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "7f8899ed3ab7a61e63bb59eee9ecec256b3ed867f29fffe460a850cb389a7637",
+      "receipt": "local/ir/generated/sma1-peach-closure-link-03/status.json",
+      "wall_s": 0.607225125,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/sma1-peach-closure-link-03/native/route-receipt.json",
+        "wall_s": 0.473706917,
+        "final": {
+          "ticks": 417,
+          "player_x": 256832,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1,
+          "sma1_hover": 48
+        },
+        "error": null
+      }
     }
   ],
   "queue_ref": "local/ir/automatic-queue.json",
@@ -379,10 +2873,32 @@
     "New-ROM world/contact/projectile/gate/rendering are explicitly authored IR; recovered behaviors and source datasets are named in composition receipts"
   ],
   "active_blockers": [
-    "Mario shared world/entity actor views require typed entity handles and alias-preserving pool schema; separate actor/world copies would be incorrect",
+    "Mario shared actor/world typed record lanes have bounded opt-in proof; dynamic indices, shared callee bindings, lane domains and semantic ports remain pending; separate actor/world copies would be incorrect",
     "Original audio/render service boundaries are not interchangeable with resource/collision effects",
-    "General loop structuring, dynamic callbacks, unresolved pointer aliases and non-AAPCS profiles remain unsupported",
+    "Source-proven finite CFG loops and path bounds now supported within budgets; unknown loops, dynamic callbacks, unresolved pointer aliases and non-AAPCS profiles remain unsupported; saved returns require ROM-backed provenance, and byref stack escapes need explicit contracts",
+    "Mixed-width OAM canonicalization remains experimental/default fail-closed after original/emitted mismatch at test672; no OAM package promoted",
     "Full terrain/controllers/health/death/enemies/abilities/progression/persistence and bundled engines remain partial/unexplored"
   ],
-  "timing_context": "Retained receipts include actual build/native stages and immutable hashes; queue latency is unavailable. No paid provider calls or new dependency/CI job. Reused exact behavior/native identities avoid broad unchanged reruns."
+  "timing_context": "Retained receipts include actual build/native stages and immutable hashes; queue latency is unavailable. No paid provider calls or new dependency/CI job. Reused exact behavior/native identities avoid broad unchanged reruns.",
+  "generation_work_this_round": "none",
+  "source_l2": {
+    "ref": "ontology/recovered-systems/index.json",
+    "counts": {
+      "originalGames": 33,
+      "analysisRecords": 57,
+      "sourceSystems": 33,
+      "priorSourceAnalysisRecords": 24,
+      "gamesWithSourceAnalysis": 33,
+      "gamesWithSourceSystemContracts": 33,
+      "completeGames": 0,
+      "recoveredExecutableL2": 0,
+      "automaticComponentPackages": 112,
+      "automaticTypedPortPackages": 87,
+      "automaticPackageOrigins": {
+        "automatic_highfunction_lift": 111,
+        "automatic_highfunction_linked_sequence": 1
+      }
+    }
+  },
+  "bounded_l0_count_scope": "Queue-indexed retained exports only; private fleet exports remain source-contract referenced until queue reconciliation"
 }

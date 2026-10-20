@@ -6,14 +6,14 @@
   "source_game": "metroid-zero-mission",
   "origin": "automatic_highfunction_lift",
   "package_ref": "local/ir/packages/mzm.combat.impact/package.json",
-  "package_sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1",
-  "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+  "package_sha256": "19cceb6567866d6f3bd4e0ff3dd76db538e2a4920d3a4b1a11ee0190781ff4a9",
+  "behavior_sha256": "ad6aacedd995f7c8f8e4349064fb63d0aa57be39588442a163948a36a8d63280",
   "qualification": {
     "status": "pass",
     "receipt": "receipt.json",
     "vectors": 16384,
     "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
-    "receipt_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4"
+    "receipt_sha256": "5e0c378c4cd72a67ba2f9a6a2fb977b52f38d64b15cfff3dd2462a48076df7ca"
   },
   "configurations": [],
   "state_owners": [],
@@ -35,12 +35,32 @@
           "numerator": 1,
           "denominator": 1
         },
-        "frame": "enemy",
-        "confidence": 0.85,
+        "frame": "mzm.enemy.hp",
+        "confidence": 0.8,
         "evidence": [
-          "own_rom_state_usage_and_existing_motion_unit_review"
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
         ],
-        "naming_status": "analysis_annotation_not_a_behavior_input"
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.palette_selector",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
       }
     },
     {
@@ -53,12 +73,91 @@
           "numerator": 1,
           "denominator": 1
         },
-        "frame": "enemy",
-        "confidence": 0.85,
+        "frame": "mzm.enemy.native_pose_enum",
+        "confidence": 0.8,
         "evidence": [
-          "own_rom_state_usage_and_existing_motion_unit_review"
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08050424.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08011280.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
         ],
-        "naming_status": "analysis_annotation_not_a_behavior_input"
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.lethal_transition_marker",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08050424.c",
+          "local/ir/packages/mzm.combat.impact/validation-adapter.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "packed_countdown",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.reaction_invocation_and_contact_marker",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.freeze_invocation",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.player_contact_link",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08050424.c",
+          "local/ir/packages/mzm.combat.impact/validation-adapter.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
       }
     },
     {
@@ -125,5 +224,51 @@
     "Acyclic structured CFG only",
     "Semantic units and human names remain unknown unless separately evidenced",
     "Semantic annotation has not been independently scored against game rendering"
-  ]
+  ],
+  "source_contract": {
+    "semantic_refinement": {
+      "path": "local/ir/mashup-coverage/publication-intake/mzm-impact-refinement-02/input-packet.json",
+      "sha256": "0caa4b66d1a9bbe2e3d063471e870b346422c77eb91b5d35c6a7462205f52945"
+    },
+    "original_source_proposal": {
+      "path": "research/ir-workshop/game-system-assembly-20261016/closure/impact-semantic-proposal-v2.json",
+      "sha256": "eddf8455cf006ecdb8d98905d32223edb10c3520de65d122935cc27474ba2bae"
+    },
+    "shared_actor_fields": {
+      "field_0": "field_0",
+      "field_1": "field_2",
+      "field_4": "field_3",
+      "field_5": "field_4"
+    },
+    "shared_actor_ownership": "Mapped impact and deferred-reaction lanes view the same actor backing; do not copy them into independent component state",
+    "other_source_roles": {
+      "field_3": {
+        "entity_offset": 38,
+        "claim": "Lethal writes1; opaque transition marker only, no counter/enum consumer claim"
+      },
+      "field_6": {
+        "entity_offset": 49,
+        "claim": "nonzero + world030013d5==1 lethal gate transitions worldstate to2 then clears this byte; opaque source link only"
+      }
+    },
+    "scheduling_limit": "Original whole-source scheduling and service lifecycle are not proven by these finite per-function receipts",
+    "pose_alias_refinement": {
+      "path": "local/ir/mashup-coverage/publication-intake/mzm-pose-refinement-01/proposal.json",
+      "sha256": "67b23673dbe0f6e5ff1a90d7959ceaca607b56fd9f6417a68641ec2fa7745ac8"
+    }
+  },
+  "return_meaning": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "mzm.enemy.damage_lethal",
+    "confidence": 0.8,
+    "evidence": [
+      "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08050424.c",
+      "local/ir/packages/mzm.combat.impact/validation-adapter.json"
+    ],
+    "naming_status": "source_derived_annotation_not_behavior_input"
+  }
 }

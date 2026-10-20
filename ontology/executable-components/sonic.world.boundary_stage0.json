@@ -1,0 +1,184 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sonic.world.boundary_stage0",
+  "label": "Original stage-selector-zero world wrap, actor bounds and defeat boundary",
+  "role": "movement",
+  "source_game": "sonic-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sonic.world.boundary_stage0/package.json",
+  "package_sha256": "4f8c44095d3347ec4f4d91a5dd7c875c4bdc67c9660d9c82f14333a8bfabe59a",
+  "behavior_sha256": "292c85756fcbd314ced854218ed0d928332dd89d4317406325835287bedb55fe",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "fdad4dc2cffdea6edfb9acf52e7a11de3937c427f594b63a27f2f6648a979696"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "stage",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 23,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "onecanonical actor + explicitoriginalsourceglobalcells",
+    "clock": "source_player_update",
+    "phase": "aftersteeringbeforeintegration",
+    "ordering": "04456C\u2192043E8C\u21920470B4\u2192047100"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sonic.world.boundary_stage0/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "1024original/emitted pairs including12expectedsourcecases; not wholetraversal or gameplay",
+    "Native oracle actor at02010000 distinct from fixedsourceglobals; sourceactor/globalalias reachability remains host obligation",
+    "Noninverted current/prior0x80clear required when wiring existing world.y.down motionports; native machine semantics retain all flags",
+    "Fixedstage-selector0; all other selector values inadmissible",
+    "Unresolved semantic units for preserved camera/global rawcells remainunknown; no portability claims",
+    "Landingdispatcher/terraincallback/angle/lifecycle remainoutside this dependency",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/sonic-advance/next-extraction/traversal-closure-01/source-contract.json",
+    "sha256": "13fdca42f3383901a1a092604785989e45642b0919905e069a70d429cd35f6c4",
+    "role": "Stage-selector0 world boundary dependency; not arbitrary stage or fulltraversal"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "sonic-advance",
+    "entry": "08043e8c"
+  },
+  "domain_contract_fingerprint": "908c4d5e78cec529f8a9fa59329b3cb8d402f42b8047e55bd8a66def99b6c07e",
+  "specialization_subset": true
+}

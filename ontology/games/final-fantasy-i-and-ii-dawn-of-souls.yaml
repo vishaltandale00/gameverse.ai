@@ -1,0 +1,102 @@
+schema_version: 0
+id: final-fantasy-i-and-ii-dawn-of-souls
+game:
+  title: 'Final Fantasy I & II: Dawn of Souls'
+  platform: gba
+  game_code: BFFE
+  rom_sha1: 6472695d69661490f78245e2982e1e676c080be7
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  sources:
+  - kind: rom_binary
+    ref: 6472695d69661490f78245e2982e1e676c080be7; SHA256 bbafb77d2be577ca0a4bfcbec9fc3004b589f24478ec5e406d61645296449422
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/final-fantasy-i-and-ii-dawn-of-souls.json
+conventions:
+  scope: Partial cartridge self-decompilation; one instruction-reviewed frontend choice seam. Neither constituent
+    game is fully recovered.
+  units: Input bit masks and native UI storage; invocation clock, cursor coordinate units and renderer unknown.
+components:
+- id: cyclic_choice_list_controller
+  facet: frontend
+  label: Priority-based confirm/cancel and wrapping vertical choices
+  summary: A ROM-recovered selection controller at 0x0801d100 consumes the global new-press mask and updates a list
+    index and cursor-position fields in its supplied UI context. Confirm has priority over cancel, then up over
+    down; up/down wrap at list ends and accepted/cancelled paths write mode 10. Its exact menu screen and which
+    half of this dual-game cartridge uses it remain unverified.
+  instantiates:
+  - concept: ui_hud.selection.cyclic_list_step
+  reads:
+  - ram[0x02001df4]:u16 newly pressed buttons
+  - context[0x21b8]:i32 previous list index
+  - context[0x21bc]:u16 choice count
+  writes:
+  - context[0x21b8]:i32 selected index or cancel sentinel 2
+  - context[0x21a8]:u8 mode
+  - context[0x520]:u16 cursor coordinate 0x54
+  - context[0x522]:u16 cursor coordinate 10*index+0x68
+  invariants:
+  - Branch priority is A(0x1), B(0x2), UP(0x40), DOWN(0x80). Simultaneous A+B takes confirm; simultaneous UP+DOWN
+    takes up.
+  - Confirm writes mode=10 without changing the index. Cancel writes index=2 and mode=10, then skips cursor writes.
+  - Assuming count>0 and 0<=index<count, up maps 0 to count-1 and otherwise subtracts one; down maps count-1 to
+    0 and otherwise adds one.
+  - With count!=0, non-cancel paths store cursor coordinates 0x54 and 10*newIndex+0x68, truncated to 16 bits. Coordinate
+    projection/pixel units require a renderer witness.
+  - 'No safe empty-list behavior is claimed: up at count=0 may produce -1. A caller must establish count>0 before
+    reuse.'
+  - External calls to 0x0818c250 carry immediates 0x65, 0x6f or 0x64 and callback 0x0818abfd. Their audiovisual
+    meaning and callback ABI remain unverified.
+  - The final pop {r0}; bx r0 is a saved-LR return, not a real unknown indirect call as printed by the raw decompiler.
+  evidence:
+  - &id001
+    kind: static_signature
+    ref: 6472695d69661490f78245e2982e1e676c080be7:Thumb0x0801d100..0x0801d1f2 exclusive; literal pool through0x0801d200;
+      region SHA256 465511f1e6c0c3fd905cf58eb45fd7c3ba5ab6a1777f8bbb21370688e37943a8; research/corpus-mining/20261016-binary-corpus-round2/reviewed/ff1-2-choice-controller-0801d100.asm.txt
+    confidence: 0.95
+    note: Branch priorities, signed comparisons, stores and final return directly instruction-reviewed. Callback
+      effects and screen identity unverified.
+  - kind: ghidra_function
+    ref: local/re/experiments/20261016-binary-corpus-round2/final-fantasy-i-and-ii-dawn-of-souls/final-fantasy-i-and-ii-dawn-of-souls/functions.jsonl;
+      entry0x0801d100; C SHA256 1247f83bbe28796803f4ef0e1007b61c7e3c03c8405a3788c1f7d7f6f39890bc; retained lift
+      research/corpus-mining/20261016-binary-corpus-round2/reviewed/ff1-2-choice-controller-0801d100.c
+    confidence: 0.85
+    note: Partial ROM self-decompile; no downloaded source. Other functions retain ABI/boundary uncertainty.
+  params:
+    confirmed_or_cancelled_mode:
+      value: 10
+      unit: native UI mode ID
+      native_value: 10
+      native_unit: native UI mode ID
+      evidence: &id002
+      - *id001
+    cancel_selection_sentinel:
+      value: 2
+      unit: native selection value
+      native_value: 2
+      native_unit: native selection value
+      evidence: *id002
+    cursor_origin:
+      value: &id003
+      - 84
+      - 104
+      unit: native cursor coordinate units; renderer mapping unverified
+      native_value: *id003
+      native_unit: native cursor coordinate units; renderer mapping unverified
+      evidence: *id002
+    cursor_row_stride:
+      value: 10
+      unit: native cursor coordinate units; renderer mapping unverified
+      native_value: 10
+      native_unit: native cursor coordinate units; renderer mapping unverified
+      evidence: *id002
+proposed_concepts:
+- id: ui_hud.selection.cyclic_list_step
+  label: Cyclic list selection
+  definition: A bounded list index updated by priority-ordered confirm/cancel/directional inputs, with wrapping
+    and explicit cursor projection.
+open_questions:
+- Map this context and callback chain to a rendered, player-accessible screen in an isolated session.
+- Verify count>0 and index-range preconditions in its caller before packaging the list controller.
+- Map both engines, movement, battle, quest flags, story and asset layouts independently.

@@ -1,0 +1,127 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.progress.category3_count",
+  "label": "Query category3 aliased soul ownership",
+  "role": "progression.ownership_query",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.progress.category3_count/package.json",
+  "package_sha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+  "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "50823754299baa6f3ea890f0471cfd176fe64c81f0920dd627b8cacba7147716"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 3,
+        "unsigned_max": 3
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 7
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "packed_four_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "inventory.soul.category3",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json"
+        ],
+        "naming_status": "source_backed_inventory_bit_semantics"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "same caller-owned campaign backing across source transactions",
+    "clock": "explicit source caller invocation",
+    "ordering": "before ability grant branch count query; newcategory3enable before acquire; postcount only host observation"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.progress.category3_count/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite native function subset, not full pickup/equip/cast/root080441f8 closure",
+    "No original root count inflation; each distinct original entry counted once",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+    "sha256": "c2ef50c9dbf97271c5f178e0036fad5236e6c9ede8ce2d9e7adc68719e2b2fa5"
+  },
+  "return_meaning": {
+    "quantity": "soul_owned_count",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "inventory.soul.category3",
+    "confidence": 0.95,
+    "evidence": [
+      "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json",
+      "local/ir/aria-category3-closure-20261016/count-return-abi.json"
+    ],
+    "naming_status": "source_backed_alias_sum"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "castlevania-aria-of-sorrow",
+    "entry": "080326b8"
+  },
+  "domain_contract_fingerprint": "d19571a747079d5f587b43a8c6afd94ece3e3345e324fe39270ec180e743bc61",
+  "specialization_subset": true
+}

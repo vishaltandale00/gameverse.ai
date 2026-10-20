@@ -460,7 +460,61 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-repair-retry",
+      "recorded_at": "2026-10-16T07:04:34.570073+00:00",
+      "rom_sha1": "df2238fc239bdd0226a1b39deef06fa521eae48e",
+      "status": "failed",
+      "function_records": null,
+      "pseudo_c_generated": null,
+      "process_wall_s": 90.0,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "failure": "timeout after 90s",
+      "partial_journal": {
+        "path": "local/re/experiments/20261016-binary-corpus-repair-retry/driv3r/partial-functions.jsonl",
+        "sha256": "c0227640edbc5208f747c7c35dc19d0fb8afbb6dc286226712f082f6ee3110f5",
+        "progress": {
+          "run_id": "20261016T030032-66a28d",
+          "script_hash": "cf69ac5b09cdb9aa",
+          "status": "partial_journal_not_final_export",
+          "records_flushed": 256,
+          "discovered_function_count": 3236,
+          "decompiled_count": 244,
+          "decompile_failures": 12,
+          "elapsed_decompile_ms": 67764
+        },
+        "note": "Incomplete process-cap checkpoint, not final function/whole-game coverage"
+      },
+      "return_repair": {
+        "ref": "local/re/experiments/20261016-binary-corpus-repair-retry/driv3r/returns.json",
+        "sha256": "7f72870c73779e8fa7177baa880e22c3a3393362c57c63e22a6ca79e7f448e89",
+        "heuristic": true,
+        "flow_overrides": 37,
+        "note": "Saved-LR CFG aid; ABI and gameplay semantics remain unverified"
+      },
+      "previous_attempt_refs": [
+        "research/corpus-mining/20261016-binary-corpus-round2/driv3r.json"
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-repair-retry/frontiers/driv3r/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 3,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review",
+      "partial_function_records_valid": 272,
+      "partial_pseudo_c_generated": 260,
+      "partial_truncated_lines": 1,
+      "partial_scope": "Valid retained journal lines only; process capped; boundaries/ABI/semantics unverified"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

@@ -1,0 +1,42 @@
+{
+  "schema": "gameverse.pokemon-eclectic-request/1",
+  "recipe": "pokemon-rally-mastery/1",
+  "stage_sha256": "e3e0cef0449a9b38a502400c07324e906ec31ac5f36f4cafb3e6b9eebc978ca8",
+  "packages": {
+    "steering": {
+      "id": "kart.driver_steering_accumulation_lane0",
+      "sha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700"
+    },
+    "drag": {
+      "id": "kart.vehicle_turn_drag_acceleration",
+      "sha256": "ffee0a1ab29cd9650c7101e3ef8183ed5abecac5f198b387410ccb000f4efe5f"
+    },
+    "speed": {
+      "id": "kart.vehicle_speed_heading_step",
+      "sha256": "aedf0f4b4086e0ca5e23257aca9c1f32940bbd3e462350604584b9b316af83de"
+    },
+    "skills": {
+      "id": "tmc.progress.derive_skills",
+      "sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f"
+    },
+    "beam": {
+      "id": "tmc.combat.learned_sword_beam_eligibility",
+      "sha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f"
+    },
+    "hp": {
+      "id": "ffvi.combat.hp_effect_actor0",
+      "sha256": "24e55698ca4aaec89d0b21b29d25f1a0f05f0add06b195afd61415a94e950524"
+    }
+  },
+  "policy": {
+    "rally_capacity": 64,
+    "tile_gain": 1,
+    "beam_spend_cap": 8,
+    "guard_spend_cap": 16,
+    "beam_badge": 1,
+    "guard_badge": 4,
+    "hp_projection": "full only on equality; otherwise min(63,ceil(hp*64/maxHP)); low<=8",
+    "persistence": "session-only rally; original native badges durable"
+  },
+  "qualification": "development candidate; source predicates adapted to authored Rally rules; campaign not qualified"
+}

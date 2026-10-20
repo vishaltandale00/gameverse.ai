@@ -1,0 +1,221 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.cast.first_free_slot",
+  "label": "First available cast-effect slot",
+  "role": "cast_effect_capacity_query",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.cast.first_free_slot/package.json",
+  "package_sha256": "7f60f2521c4439ae8055dca7185de26a75b3c84642aa934fac19f813c04885f9",
+  "behavior_sha256": "b97374f01998eb3c4daa527b3f5a34dcafd50dbd1a218ede2b5e6759e2e0371c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "3f9eb91dec0c398d6fb979ea3d64cdc98226752709bf27857154b74f4e02c87b"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 0 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 1 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 2 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 3 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 4 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 5 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 6 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "cast_effect_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "aria.session.cast_pool",
+        "confidence": 0.95,
+        "evidence": [
+          "Slot 7 of eight: zero is available; nonzero is occupied.",
+          "Source HighFunction and Thumb scan are pinned in source_evidence."
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "session cast-effect pool",
+    "clock": "explicit cast admission invocation",
+    "phase": "capacity lookup before effect allocation and MP commit",
+    "ordering": "Original cast root 08034624 calls this scan after descriptor/cap reconciliation; allocation and MP effects remain outside this component."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.cast.first_free_slot/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Read-only eight-slot scan. It does not reserve, allocate, debit MP, release, or render an effect.",
+    "Original cast root and descriptor/cap dependencies remain blocked; this component is a finite native-qualified use-side subset.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "return_meaning": {
+    "quantity": "cast_first_free_slot_or_full",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "aria.session.cast_pool",
+    "confidence": 0.95,
+    "evidence": [
+      "Returns first zero slot 0..7, or unsigned -1 when all eight are occupied.",
+      "Source HighFunction and Thumb scan are pinned in source_evidence."
+    ],
+    "type": "u32",
+    "storage_type": "u32"
+  },
+  "source_root_identity": {
+    "source_game": "castlevania-aria-of-sorrow",
+    "entry": "0802d208"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

@@ -1,0 +1,223 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kirby-nightmare.terrain.point_occupancy_one_cell",
+  "label": "Terrain point occupancy, bounded one-cell source map",
+  "role": "terrain_occupancy",
+  "source_game": "kirby-nightmare-in-dream-land",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kirby-nightmare.terrain.point_occupancy_one_cell/package.json",
+  "package_sha256": "47169e561c9c7063d8fddca6a7d58f8499114ac58b3a5ae8ef1ef208093dac2b",
+  "behavior_sha256": "84f4bf894ee2681be448c58e9592c9eebe8eebfb5aca261426e4fadc4698ce4f",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 7456,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "c509100266c3f9f3dc31d29dcd0b9a7432cfe82ac7f1e14e046f4347dc35b24f"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_map_height",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "one_cell_terrain_map",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+          "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "terrain_map_width",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "one_cell_terrain_map",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+          "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_cell_shape_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_terrain_shape_catalog",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+          "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one caller-owned four-byte terrain cell and immutable own-ROM shape rows",
+    "clock": "explicit_function_invocation",
+    "phase": "source point-to-tile query after one-cell map and coordinates are supplied",
+    "ordering": "map bounds -> cell shape byte -> immutable occupancy row -> local coordinate index -> signed occupancy return"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kirby-nightmare.terrain.point_occupancy_one_cell/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Only one cell with signed16 width=height=1 and coordinates 0..15 qualifies; no general map or below-cell sampling claim.",
+    "This query does not publish the original terrain probe scratch or perform actor contact correction/writeback.",
+    "Source scheduler cadence and physical coordinate scale remain unqualified.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_system": {
+      "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+      "sha256": "62eaee5f2b5d63e3202a1ee47c138d7f4ba34e02fb0c46b7314d18f909896e3a"
+    },
+    "capsule": {
+      "path": "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json",
+      "sha256": "7b8fdbf35a9043b208b6415e2561900c22be0cb9c22a9093b889476b2ca397ca"
+    },
+    "native_receipt": {
+      "path": "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/qualification.json",
+      "sha256": "f8a7a812fbf8995190586edeb304be97d530532d69b114012139977b2896eca6"
+    },
+    "map_profile": "one four-byte cell; signed16 width=height=1; cell byte+3 shape selector 0..255",
+    "parameter_domain": "source x/y each 0..15; low four bits select a 16 by 16 occupancy row",
+    "asset": "own-ROM occupancy pointer table and 14 deduplicated immutable rows embedded in qualified L1",
+    "source_services_open": [
+      "general terrain map sampler",
+      "current/below probe scratch publication",
+      "actor contact root",
+      "actor load/writeback"
+    ]
+  },
+  "return_meaning": {
+    "quantity": "signed8_terrain_occupancy_sign_extended_to_u32",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "tile_local_shape_row",
+    "confidence": 0.99,
+    "evidence": [
+      "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+      "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+    ],
+    "storage_type": "u32",
+    "signed_encoding": "twos_complement"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_y_coordinate_low4",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "one_cell_terrain_map",
+      "confidence": 0.99,
+      "evidence": [
+        "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+      ],
+      "storage_type": "u32"
+    },
+    "param_1": {
+      "quantity": "source_x_coordinate_low4",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "one_cell_terrain_map",
+      "confidence": 0.99,
+      "evidence": [
+        "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/l0.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+      ],
+      "storage_type": "u32"
+    }
+  },
+  "source_root_identity": {
+    "source_game": "kirby-nightmare-in-dream-land",
+    "entry": "08021ab4"
+  },
+  "domain_contract_fingerprint": "bd2e3c42796a916cac9cb8873fb678c6a7777239dfcf0deb2541da7e5da5d8d3",
+  "specialization_subset": true
+}

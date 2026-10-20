@@ -1,0 +1,66 @@
+CHECK(argc==3);unsigned retained_boot=boot_frames;boot_frames=0;struct mCore*d=load(argv[2]);boot_frames=retained_boot;CHECK(d);watched_callback=SWAP_CALLBACK;
+CHECK(boot_state);CHECK(d->stateSize(d)==boot_state_bytes);CHECK(d->loadState(d,boot_state));free(boot_state);boot_state=NULL;
+CHECK(d->busRead32(d,SWAP_CALLBACK)==SWAP_CALLBACK_WORD);
+CHECK(byte_word(d,0x08166336)==SWAP_SCRIPT);CHECK(byte_word(d,0x08166343)==SWAP_SCRIPT);CHECK(byte_word(d,0x08166350)==SWAP_SCRIPT);
+/* Exact original coordinate caller remains native. Its early ownership is0;
+   the candidate takes the donor's early permanent-ownership transition. */
+CHECK(prepare_host(c,1,53,28,2));CHECK(prepare_host(d,1,53,28,2));
+CHECK(script_start(c,0x0816632f));CHECK(script_start(d,0x0816632f));
+unsigned original_owned=0,candidate_owned=0,first_grant_tick=0;
+for(unsigned i=0;i<8;i++){
+ CHECK(script_tick(c,0,&result));CHECK(script_tick(d,0,&result));
+ CHECK(ability(c,&original_owned));CHECK(ability(d,&candidate_owned));CHECK(original_owned==0);
+ if(candidate_owned){first_grant_tick=i+1;break;}
+}
+CHECK(first_grant_tick>0);CHECK(c->busRead16(c,gSaveBlock1+0x10d8)==1);
+CHECK(d->busRead16(d,gSaveBlock1+0x10d8)==1);
+unsigned ticks_top=0,ticks_mid=0,ticks_bottom=0;
+CHECK(candidate_cycle(d,0x0816632f,28,&ticks_top));
+CHECK(candidate_cycle(d,0x0816633c,29,&ticks_mid));
+CHECK(candidate_cycle(d,0x08166349,30,&ticks_bottom));
+/* Real canonical ownership survives source-supported SaveBlock1 relocation.
+   This is an in-memory alias test, not serialized-save compatibility. */
+uint8_t saved[0x3d68];for(unsigned i=0;i<sizeof(saved);i++)saved[i]=d->busRead8(d,gSaveBlock1+i);
+for(unsigned i=0;i<sizeof(saved);i++)d->busWrite8(d,gSaveBlock1+64+i,saved[i]);
+d->busWrite32(d,gSaveBlock1Ptr,gSaveBlock1+64);CHECK(ability(d,&candidate_owned));CHECK(candidate_owned==1);
+d->busWrite32(d,gSaveBlock1Ptr,gSaveBlock1);for(unsigned i=0;i<sizeof(saved);i++)d->busWrite8(d,gSaveBlock1+i,saved[i]);
+/* All source admission predicates are recomputed on each callback poll. */
+unsigned negative_cases=0;
+for(unsigned kind=0;kind<4;kind++){
+ unsigned scene=kind==0?0:1,x=kind==1?52:53,y=kind==2?31:28,map=kind==3?3:2;
+ CHECK(prepare_host(d,scene,x,y,map));CHECK(script_start(d,0x0816632f));
+ unsigned notify_before=notification_calls;
+ for(unsigned i=0;i<16;i++){CHECK(script_tick(d,0,&result));CHECK(ability(d,&candidate_owned));CHECK(candidate_owned==0);}
+ CHECK(notification_calls==notify_before);CHECK(d->busRead16(d,gSaveBlock1+0x10d8)==scene);CHECK(d->busRead8(d,gObjectEvents+36)&1);CHECK(d->busRead8(d,CTX+1)==2);negative_cases++;
+}
+/* Native InitScriptContext resets the lease and scratch; a previously blocked
+   isolated session can start a fresh valid lifecycle without stale grant. */
+unsigned reset_ticks=0;CHECK(candidate_cycle(d,0x0816632f,28,&reset_ticks));
+/* Already-owned Init suppresses both native notification and fanfare. */
+CHECK(prepare_host(d,1,53,28,2));CHECK(call(d,FlagSet,0x82f,0,&result));
+unsigned duplicate_notify=notification_calls,duplicate_fanfare=fanfare_calls;
+CHECK(script_start(d,0x0816632f));for(unsigned i=0;i<8;i++)CHECK(script_tick(d,0,&result));
+CHECK(notification_calls==duplicate_notify);CHECK(fanfare_calls==duplicate_fanfare);CHECK(d->busRead16(d,gSaveBlock1+0x10d8)==2);
+/* The host busy-window adaptation rejects before donor Get commits ownership;
+   the busy state is created by an actual native ShowFieldMessage call. */
+CHECK(prepare_host(d,1,53,28,2));CHECK(call(d,0x08069450,0x0817e9e8,0,&result));CHECK(result==1);
+CHECK(script_start(d,0x0816632f));unsigned trap_before=trap_hits;int rejected=0;
+for(unsigned i=0;i<8;i++){if(!script_tick(d,0,&result)){rejected=1;break;}}
+CHECK(rejected);CHECK(trap_hits==trap_before+1);CHECK(ability(d,&candidate_owned));CHECK(candidate_owned==0);CHECK(d->busRead16(d,gSaveBlock1+0x10d8)==1);
+/* The final reset proves the supported session can execute again after the
+   bounded guard-stop fixture. No cartridge exception-recovery claim is made. */
+unsigned recovery_ticks=0;CHECK(candidate_cycle(d,0x0816632f,28,&recovery_ticks));
+/* Preserve the acquired canonical save while testing existing native input,
+   terrain and bike gates. Only transient movement fixture state is reset. */
+CHECK(call(d,0x08063d48,gObjectEvents,0,&result));d->busWrite8(d,gPlayerAvatar,1);
+CHECK(movement(d,0,&action,&flags));CHECK(action==19);CHECK(!(flags&128));
+CHECK(call(d,0x08063d48,gObjectEvents,0,&result));d->busWrite8(d,gPlayerAvatar,1);d->busWrite8(d,gMapHeader+25,0);
+CHECK(movement(d,2,&action,&flags));CHECK(action==19);CHECK(!(flags&128));
+CHECK(call(d,0x08063d48,gObjectEvents,0,&result));d->busWrite8(d,gPlayerAvatar,1);d->busWrite8(d,gMapHeader+25,2);d->busWrite8(d,gObjectEvents+30,10);d->busWrite32(d,0x02012280,10);
+CHECK(movement(d,2,&action,&flags));CHECK(action==19);CHECK(!(flags&128));
+CHECK(call(d,0x08063d48,gObjectEvents,0,&result));d->busWrite8(d,gPlayerAvatar,2);d->busWrite8(d,gObjectEvents+30,0);d->busWrite32(d,0x02012280,0);
+unsigned foot_before=foot_movement_hits,bike_before=bike_movement_hits;CHECK(call3(d,0x0805b4e8,4,0,2,&result));CHECK(foot_movement_hits==foot_before);CHECK(bike_movement_hits==bike_before+1);CHECK(!(d->busRead8(d,gPlayerAvatar)&128));
+CHECK(ability(d,&candidate_owned));CHECK(candidate_owned==1);
+printf("\"candidate_first_grant_tick\":%u,\"original_owned_at_candidate_grant\":%u,\"candidate_owned_before_ack\":1,\"notification_ticks\":[%u,%u,%u],\"admission_negative_cases\":%u,\"busy_guard_rejected\":true,\"real_notification_calls\":%u,\"real_fanfare_calls\":%u,\"real_ack_calls\":%u,\"generated_callback_hits\":%u,",first_grant_tick,original_owned,ticks_top,ticks_mid,ticks_bottom,negative_cases,notification_calls,fanfare_calls,ack_calls,callback_hits);
+printf("\"unrelated_persistent_bytes_preserved\":true,\"no_B_walk\":true,\"map_running_veto\":true,\"terrain_running_veto\":true,\"native_bike_gate\":true,");
+d->deinit(d);

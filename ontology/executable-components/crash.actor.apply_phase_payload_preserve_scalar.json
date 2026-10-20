@@ -1,0 +1,216 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "crash.actor.apply_phase_payload_preserve_scalar",
+  "label": "Apply phase payload preserving actor scalar",
+  "role": "actor_state_application",
+  "source_game": "crash-bandicoot-the-huge-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/package.json",
+  "package_sha256": "8363787fe3974a7c7d025cbca4df36294f1ae51b8e43a2ed2a3a91bf5b3ecf85",
+  "behavior_sha256": "f732a92bdadb2c638c4277eae1ea5a7a194dac5281a1ece0767bebf36bcc7130",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1792,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "f68e132756dc67ed82a811dde79a778b281d42cb928a44f250e3f8ea274ce9a3"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "crash.actor.apply_sign_flags",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/publication-semantic-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json",
+          "local/ir/fleet-next/crash-bandicoot-the-huge-adventure/export-ex018/l0/0800b6a0.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "invocation": "caller-driven synchronous leaf",
+    "clock": "explicit invocation; no fixedFPS or native tick rate asserted",
+    "ownership": "shared actor state plus caller-owned stack payload with distinct accessed views",
+    "teardown": "caller retains context; payload only lives through synchronous call"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite native receipt covers leaf fixture domain only, not full controller/phase transaction.",
+    "No new tests, lifts, JVM or native work in metadata pass.",
+    "Physical units of numeric actor/payload channels are unknown; those fields remain unannotated.",
+    "Named ability meanings of capability flags remain unknown.",
+    "No independent copies of shared input/progression/actor state.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_l2": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json",
+      "sha256": "b19eb7b2f9dd85ce30a5e373397410ed1fb0cbf2a239bbd7b5d336e9412fecbf"
+    },
+    "result_manifest": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/manifest.json",
+      "sha256": "8a81d549892209d217c5e9b2835b553a12a09302a3fe032039a809e2a23ecdef"
+    },
+    "dispatch_evidence": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/dispatch-evidence.json",
+      "sha256": "6693dd2a31657055440d17676d5724bc7574ab2c0d86af0d98a537f47761d65e"
+    },
+    "qualified_vectors": 1792,
+    "qualification_scope": {
+      "scope": "all256 actor flag bytes x7 payload triples including all3phase payloads and signed boundaries; scalar64 untouched by alternate method"
+    },
+    "parameters": [],
+    "return_storage_type": "void",
+    "return_meaning": "void actor mutation",
+    "unknown_fields": [
+      "field_1",
+      "field_2",
+      "field_3",
+      "field_4",
+      "field_5",
+      "field_6"
+    ],
+    "source_order": "consumer chooses exactly one apply variant, applies synchronously then clears dirty; connected transaction is not qualified",
+    "aliases": "actor is shared with source controller/global actor; stack triple stays a distinct borrowed view",
+    "services": "no externalservice or hardware read in these leaves; input is already sampled; full subsystem services remain open",
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "Entity argument accessed views are distinct for this component invocation; original caller evidence and validation domain are required"
+    ],
+    "argument_contract": {
+      "separation": "distinct_accessed_views",
+      "evidence": [
+        "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/dispatch-evidence.json"
+      ]
+    },
+    "compiler_input_policy": "only own-ROM HighFunction; pseudoC analysis oracle never compiler input",
+    "motion_consumer_semantic_refinement": {
+      "path": "local/ir/source-fleet-restart-20261016/publication/crash-apply-overlay-01/input-proposal.json",
+      "sha256": "8370650eb931db019fa90ac655233224f6998c0592d6fe079ae14102dae78453"
+    }
+  }
+}

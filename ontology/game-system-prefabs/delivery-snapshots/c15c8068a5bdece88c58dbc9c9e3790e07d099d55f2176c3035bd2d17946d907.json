@@ -1,0 +1,460 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "metal-slug-advance",
+  "sourceSystemIds": [],
+  "blueprintIds": [
+    "exploration-progression",
+    "dialogue-interactive-scenes",
+    "combat-encounter"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Choose an available scene, activate its tasks, play the active combat scene and have the source result advance persistent selection progress. Only a small availability-driven selection-frontier phase is executable here.",
+    "phases": [
+      {
+        "id": "restore-session",
+        "label": "Restore progress and available-entry state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ],
+        "requiredServices": [
+          "source persistent-record provider08008618",
+          "bank copy/layout and savecommit"
+        ],
+        "gaps": [
+          "Source save/restore/record ownership not qualified; no durableprogressclaim."
+        ],
+        "sourceSymbols": [
+          "08007a64",
+          "08007ab8"
+        ]
+      },
+      {
+        "id": "refresh-selection",
+        "label": "Apply availability54 to the selectable frontier",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "metal_slug_advance.selection.refresh_frontier"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+          "local/ir/fleet-next/metal-slug-advance/prefab-pass/frontier-qualification-01/receipt.json",
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.assembly.json",
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json"
+        ],
+        "requiredServices": [
+          "host menu-refresh event",
+          "canonical progressbyte andavailabilitybank"
+        ],
+        "gaps": [
+          "Only read-only selection-frontier phase isportable; original menu rows/cursor/confirmation andlateractivation stayexternal."
+        ],
+        "sourceSymbols": []
+      },
+      {
+        "id": "choose-scene",
+        "label": "Build choices, navigate and publish selected scene",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+          "research/deep-extraction/resume/metal-slug-advance/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "input snapshot",
+          "linkedactorpool allocation",
+          "presentation/animation",
+          "real callbacktrampolines"
+        ],
+        "gaps": [
+          "Menuinitializer adds1tofrontier andallocatesentries, then callbackhandlescursor/A/B; nestedstate/pool/services notclosed."
+        ],
+        "sourceSymbols": [
+          "08027a60",
+          "08027b88"
+        ]
+      },
+      {
+        "id": "activate-scene",
+        "label": "Carry selected ID into scene task activation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ],
+        "requiredServices": [
+          "source scene lookup tables",
+          "canonical actors/taskscheduler",
+          "asset/resource/presentation services"
+        ],
+        "gaps": [
+          "selectedID030020e8 flows tosceneinitializer, currentScene0300228a andscript/table stage lookup; no executable portable stageorplayer activation."
+        ],
+        "sourceSymbols": [
+          "080044dc",
+          "08005268",
+          "08005358",
+          "080096f0",
+          "08009730",
+          "0800545c"
+        ]
+      },
+      {
+        "id": "combat",
+        "label": "Move, fire, hit enemies and survive the active scene",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "source playercontrol producer",
+          "attack/projectile allocator andlifetime",
+          "contact/vulnerability rules",
+          "canonical enemy HP/reaction",
+          "defeat/death services"
+        ],
+        "gaps": [
+          "This packet has no verified source combatclosure or qualified movement/attack/contact/damagecounterpart; genericactorengine andinputconsumers cannot stand in forcombat."
+        ],
+        "sourceSymbols": []
+      },
+      {
+        "id": "resolve-progress",
+        "label": "Resolve scene branch, advance frontier and return",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ],
+        "requiredServices": [
+          "original scene outcome producer",
+          "same persistent progress/session bank",
+          "source scene transition/cleanup"
+        ],
+        "gaps": [
+          "When08003d6c returns0,09540 advancesfrontier relative currentScene; exact combat success/defeat producer andtransitionmeaning remainunqualified.",
+          "Bank refresh andcleanup have tocomplete before futuremenurefresh; no fakeprogresssetter supplied."
+        ],
+        "sourceSymbols": [
+          "08009540",
+          "08007d30",
+          "08007b2c"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "restore-session",
+        "to": "refresh-selection",
+        "kind": "shared-state",
+        "scope": "07a64 restores canonicalprogressbyte andavailabilitybank readby07d00."
+      },
+      {
+        "from": "refresh-selection",
+        "to": "choose-scene",
+        "kind": "source-call",
+        "scope": "Actual27a60 calls07d00 then adds1tofrontier tosizevisibleentries."
+      },
+      {
+        "from": "choose-scene",
+        "to": "activate-scene",
+        "kind": "shared-state",
+        "scope": "27b88 pressedA writes selectedID via044dc;05268/05358 consume same030020e8."
+      },
+      {
+        "from": "activate-scene",
+        "to": "combat",
+        "kind": "host-required",
+        "scope": "Source initializes task/scene state; playablecombatcontroller/contact chain not recovered here; no guessedfullframeorder."
+      },
+      {
+        "from": "combat",
+        "to": "resolve-progress",
+        "kind": "host-required",
+        "scope": "The outcome producer behind03d6c isunqualified; do notinfer stageclear solely fromgenericgatevalue."
+      },
+      {
+        "from": "resolve-progress",
+        "to": "refresh-selection",
+        "kind": "shared-state",
+        "scope": "09540\u219207d30 updates samefrontier byte, observed byfuture07d00 refresh; scenephase order isexplicitnot universalframe."
+      }
+    ],
+    "missingForCoreGame": [
+      "Restore andcommit persistentbank/record ownership.",
+      "Finish visible menuentry construction/cursor/selection andnestedactorlifecycle.",
+      "Close selectedscene\u2192stage/player/task activation with original resources.",
+      "Identifyandqualify real move/fire/contact/enemyreaction/defeat sourceclosures.",
+      "Close sceneoutcome producer, taskcleanup andsave/return scheduling."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "metal-slug-selection-frontier-bundle",
+      "label": "Progress and availability \u2192 visible selection frontier",
+      "moduleId": "metal_slug_advance.selection.frontier_module",
+      "sourceGame": "metal-slug-advance",
+      "sourceContractRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+      "planIds": [
+        "exploration-progression",
+        "dialogue-interactive-scenes"
+      ],
+      "packageIds": [
+        "metal_slug_advance.selection.visible_frontier"
+      ],
+      "availability": "published-subset",
+      "scope": "Source-real menu-refresh transaction consumes progressbyte andavailabilityentry54, returns highestvisible selectionindex0..5. CurrentpublishedautomaticL1 passed2048nativecases; actualoneinvocationComposerassembly+lowering and6same-statehostwiringcases pass. Menuconstruction remains external.",
+      "gaps": [
+        "Original menuallocation/cursor/input/selectionevent consumer notportable.",
+        "Persistentprogressproducer/save/restore, sceneactivation, combat andoutcomeproducer unqualified."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+        "local/ir/fleet-next/metal-slug-advance/prefab-pass/frontier-qualification-01/receipt.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/publication-candidates.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.assembly.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json"
+      ],
+      "canonicalState": {
+        "identity": "one persistent source session progressandavailability bank",
+        "fields": [
+          "progress_frontier:u8",
+          "availability_table:13\u00d7u16",
+          "visible_frontier:u8 result"
+        ],
+        "aliasRule": "Inputprogress andavailability represent same source session;07d00 reads canonical globalbacking, no detachedentrycopies; result isseparatederivedview, notprogressmutation."
+      },
+      "roleFacets": [
+        {
+          "roleId": "benefit",
+          "capability": "availability-driven-selection-access",
+          "status": "published-subset",
+          "scope": "Derives sourcevisiblefrontier from progression andentry54availability; samecanonicalmodule exposesbenefit/choice limit only, not fullmenuorinputhandling.",
+          "evidence": [
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+            "local/ir/fleet-next/metal-slug-advance/prefab-pass/frontier-qualification-01/receipt.json",
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json"
+          ]
+        },
+        {
+          "roleId": "choice",
+          "capability": "visible-choice-frontier",
+          "status": "published-subset",
+          "scope": "Derives sourcevisiblefrontier from progression andentry54availability; samecanonicalmodule exposesbenefit/choice limit only, not fullmenuorinputhandling.",
+          "evidence": [
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+            "local/ir/fleet-next/metal-slug-advance/prefab-pass/frontier-qualification-01/receipt.json",
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "metal_slug_advance.selection.refresh_frontier",
+        "label": "Refresh selectable frontier",
+        "descriptorRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/delivery-frontier-v1.json",
+        "assemblyRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.assembly.json",
+        "validationRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+        "verificationRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json",
+        "packageIds": [
+          "metal_slug_advance.selection.visible_frontier"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "scope": "Read-only availability-driven selection-frontier phase; actualsourcefunction finite nativeproof plus symbolicbindings/lowering andhostwiringchecks. No executablemenus, sceneactivation orcombat."
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "metal_slug_advance.selection.refresh_frontier",
+      "moduleId": "metal_slug_advance.selection.frontier_module",
+      "label": "Progress and availability \u2192 visible selection frontier",
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.assembly.json",
+      "sha256": "92fe6b42a915a24518840ae79fbc2ac17c559fae5c7b9ed57e9e7a31e44fba76",
+      "validation": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.validation.json",
+      "validationSha256": "95cb801d7dc882ec1ea07f08b1220f99a5c1301c8cf424ff8fef63b9caa02b45",
+      "inputs": [
+        {
+          "id": "progress_frontier",
+          "label": "Current saved selection frontier",
+          "storageType": "u8",
+          "default": 5,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "scope": "sourcebyte domain; nativeall256 values, normalgameprogressproducer remains external"
+          },
+          "binding": "progress_frontier"
+        },
+        {
+          "id": "availability_table",
+          "label": "Canonical source availability bank (entry54 upperflag controls expanded frontier)",
+          "storageType": "u16",
+          "count": 13,
+          "default": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "13halfwords:100logicaltwo-bit entries; sourcebank stable duringrefresh. Originalentry54upperflag isword6 bit13.",
+          "binding": "availability_table",
+          "ownership": "external canonical session bank; read-only invocation"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "visible_frontier",
+          "binding": "visible_frontier",
+          "storageType": "u8",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 5
+          },
+          "meaning": "Highest visible zero-based source selection index. Originalmenuconsumer uses+1forrowcount; emittedprefab returnsindex only."
+        }
+      ],
+      "phases": [
+        {
+          "id": "refresh",
+          "trigger": "Supplied host menu-refresh event at the source menuinitialization boundary",
+          "invocations": [
+            "frontier"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceOrder": "Original27a60 calls07d00 before+1 androwallocation; inside07d00 progressread precedesconditionalentry54availability read andresult."
+        }
+      ],
+      "requiredServices": [
+        "Caller supplies explicit menu-refresh event; graphdoesnotrun an inputloop.",
+        "Host owns andprovides originalprogressbyte andcanonicalavailabilitybank coherently.",
+        "Host menuconsumer uses derivedhighestindex; original27a60 adds1andbuildsrows, whichthisprefabdoesnotemit."
+      ],
+      "gaps": [
+        "No portable cursor/confirmation/actorpool/presentationmenuimplementation.",
+        "No gameplayprogressreward/save/restore orcombatcontroller supplied.",
+        "Only functionnativeproof andgraph/hostbindings qualify; fullsource-system runtime notqualified."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/availability-return-abi.json",
+        "research/deep-extraction/resume/metal-slug-advance/prefab-pass/default-source-cases.json"
+      ],
+      "qualificationScope": "Currentpublishedsource07d00 finiteoriginalROMnative2048; actualassembly binding/lowering+Composerstatement generation;6hostsame-statewiringchecks. No nativecomposedmenu/game/wholecoreloopqualification.",
+      "hostVerification": {
+        "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json",
+        "sha256": "5bef24b79d1dd2cecc35f9db203705858d014cd7b6e698d1d3c932834f9342af"
+      },
+      "packageIds": [
+        "metal_slug_advance.selection.visible_frontier"
+      ],
+      "packagePins": [
+        {
+          "path": "local/ir/fleet-next/metal-slug-advance/prefab-pass/prefab-package-snapshot.json",
+          "sha256": "f1c351c589ead747e3d4ea19735ff44857f541cb935a87ecff787c028e9c32a3"
+        }
+      ],
+      "defaultConfigurationResult": {
+        "progress_frontier": 5,
+        "entry54_available": false,
+        "expectedVisibleFrontier": 4,
+        "sourceProofCase": 40
+      },
+      "configurationExamples": [
+        {
+          "id": "entry54_available",
+          "progress_frontier": 5,
+          "availability_table": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "expectedVisibleFrontier": 5,
+          "sourceProofCase": 44
+        }
+      ],
+      "runtimeQualified": false
+    }
+  ],
+  "timing": {
+    "runId": "metalslug-prefab-frontier-01",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.004062791,
+    "buildSeconds": null,
+    "nativeSeconds": 0.268717625,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Boundedsourceconsumerattempt0.333667959s includes native0.268717625s (nestedoraclecompile/link/execution). Newgraphvalidation 0.004062791s andhostwiringcheck 0.134770625s areseparate. Hostcompile 0.048897916s nestswithinhostcheck; no native repeat, fullinteractive/queue/passelapsed unavailable.",
+    "boundedConsumerAttemptSeconds": 0.333667959,
+    "hostCheckSeconds": 0.134770625,
+    "hostCompileSeconds": 0.048897916,
+    "buildScope": "No game/ROM build. One cleanhostfixture compiledtofresh privatebinary;cache state unavailable beyond freshoutput."
+  },
+  "status": "one_actual_ready_prefab_source_core_loop_partial",
+  "proofs": {
+    "sourceContract": {
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+      "sha256": "c6ebeb93c55a0663d97e4010102b8f3874763f5cac3bce62a5dff3c8f6cb87bb"
+    },
+    "publicationCandidate": {
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/publication-candidates.json",
+      "sha256": "d1c1ea7b290c38ca850c0e5b9ef74183cdad278b07cafd7aae553c9626d19b57"
+    },
+    "centralPublication": {
+      "path": "local/ir/mashup-coverage/backend-wave08/publication.json",
+      "sha256": "b8116aa25441188439a8d737b1be14f0735709166045c68575a92a0d831a515a"
+    },
+    "centralPreparedManifest": {
+      "path": "local/ir/mashup-coverage/publication-intake/prefab-expansion/metalslug-frontier-01/prepared-manifest.json",
+      "sha256": "adcd4a5a405e3efaccc51033205f07c28ab4a6207456bddbd3a81ebdaea9398f"
+    },
+    "sourceNative": {
+      "path": "local/ir/fleet-next/metal-slug-advance/prefab-pass/frontier-qualification-01/receipt.json",
+      "sha256": "388618af23bb230b46e7c0603a0967c427de749482b63f573f67f29502bd127b"
+    },
+    "prefabPins": {
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/prefab-proof-pins.json",
+      "sha256": "fa433b13729303e410c8a66a5a58d47e2a41ef0b2a7806b2ed14ea3d5f456aa9"
+    },
+    "hostCheck": {
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/refresh-frontier.host-check.json",
+      "sha256": "5bef24b79d1dd2cecc35f9db203705858d014cd7b6e698d1d3c932834f9342af"
+    },
+    "defaults": {
+      "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/default-source-cases.json",
+      "sha256": "4d9f5e224e5efa8cb6cee409fa959cc2c2a54aea24fb7af51dc3f357818a1f86"
+    }
+  },
+  "registrationIntent": {
+    "mode": "--replace",
+    "registeredPath": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/delivery.json",
+    "reason": "Versioned readyfrontierconsumer replaces earlier source-only/blocked registration after centralpublication, actualonecallgraph andhostwiringproof; no newqueryprimary."
+  },
+  "candidateVersion": "frontier-v1"
+}

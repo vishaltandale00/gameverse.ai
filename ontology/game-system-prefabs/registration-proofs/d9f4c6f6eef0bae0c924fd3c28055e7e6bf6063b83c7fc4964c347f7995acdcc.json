@@ -1,0 +1,485 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "steering": {
+      "package_id": "sonic.motion.air_steering",
+      "package_sha256": "ef7020fbd115cc0c0550ec53e0621ffde248d84515bfb673d9c01b64f9f7d4aa",
+      "behavior_sha256": "287a37af3d95bc71cd35c2827ce57d77957bbd56b6482cfd3571329bd427e9eb",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review",
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_3",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_4",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "acceleration",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "meaning": {
+            "quantity": "acceleration",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor.input",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor.input",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_6",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "source_pose_code",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor.pose",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "meaning": {
+            "quantity": "source_pose_code",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor.pose",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+            ],
+            "naming_status": "own_ROM_steering_source_read_write_usage"
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5",
+          "field_6"
+        ],
+        "writes": [
+          "field_0",
+          "field_2"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "one canonical actor",
+        "clock": "source_player_update",
+        "phase": "airmode2or6 afterrelease/ability beforeworldbounds/integration",
+        "ordering": "source047378 call04463C\u219204456C\u2192043E8C\u21920470B4\u2192047100"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Original source air steering/upward-drag only; jumprelease/abilities, worldbounds, landing andframe entry remainhost-owned",
+        "Q8values retain source signedbitpatterns; no invented cap widening or render-clock assumption",
+        "16 exact source-expected fixture cases plus 1008 boundary/random pairs; native leaf only. Composer phase requires independent admission after publication.",
+        "World wrap/bounds must remain between steering and integration; no service stub or uninterrupted all-three controller.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "cb8ec6d616c4787bfdfe288cbe9e65a9de4d90e530dc34f92fdfa0b40bd27d4f",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "steering": {
+        "package_id": "sonic.motion.air_steering",
+        "package_sha256": "ef7020fbd115cc0c0550ec53e0621ffde248d84515bfb673d9c01b64f9f7d4aa",
+        "behavior_sha256": "287a37af3d95bc71cd35c2827ce57d77957bbd56b6482cfd3571329bd427e9eb",
+        "bindings": {
+          "field_0": {
+            "slot": "actor_vx"
+          },
+          "field_1": {
+            "slot": "actor_vy"
+          },
+          "field_2": {
+            "slot": "actor_flags"
+          },
+          "field_3": {
+            "slot": "actor_max_speed"
+          },
+          "field_4": {
+            "slot": "actor_acceleration"
+          },
+          "field_5": {
+            "slot": "actor_held"
+          },
+          "field_6": {
+            "slot": "actor_pose"
+          }
+        }
+      }
+    },
+    "state": {
+      "actor_vx": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.x.right",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review",
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_vy": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.y.down",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review",
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_flags": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "actor",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review",
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_max_speed": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.x.right",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "own_ROM_steering_source_read_write_usage"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_acceleration": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "acceleration",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.x.right",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "own_ROM_steering_source_read_write_usage"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_held": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "actor.input",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "own_ROM_steering_source_read_write_usage"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_pose": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "source_pose_code",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "actor.pose",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+          ],
+          "naming_status": "own_ROM_steering_source_read_write_usage"
+        },
+        "owner": "external",
+        "shared": true
+      }
+    },
+    "invocations": [
+      {
+        "component": "steering",
+        "arguments": {}
+      }
+    ],
+    "initialize": {
+      "actor_vx": 0,
+      "actor_vy": 0,
+      "actor_flags": 258,
+      "actor_max_speed": 1536,
+      "actor_acceleration": 24,
+      "actor_held": 0,
+      "actor_pose": 0
+    },
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "steering"
+  ],
+  "statement_sha256": "e282060a3b543b911ba35004cf9c0fec10f9a691d3c4b448053a0e71c0cb77ca",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.003610042000000001
+}

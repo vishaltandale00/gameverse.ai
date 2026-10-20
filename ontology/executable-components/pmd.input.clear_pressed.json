@@ -1,0 +1,210 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "pmd.input.clear_pressed",
+  "label": "Clear pressed input across published, accumulated and current stages",
+  "role": "input",
+  "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/pmd.input.clear_pressed/package.json",
+  "package_sha256": "356d709c141f5e14d6f82509c4914c0e55a091b0869021958f6bd7acc569142a",
+  "behavior_sha256": "b64523c6d1c94433430242cd80a67ad17c33f8c0b8f8ae11f66db700c1e908b7",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "2960306fbac589ef857d761165ddd83463633413d4fe2c50702cfc65b2e9ae2d"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "newly_pressed_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "published_input",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "accumulated_newly_pressed_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_accumulation",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "newly_pressed_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "current_input",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared_owned_input_context",
+    "clock": "explicit_function_invocation",
+    "phase": "caller_selected_pressed_suppression",
+    "sourceObservedOrdering": [
+      "clear published pressed lane",
+      "clear accumulated pressed lane",
+      "clear current pressed lane"
+    ],
+    "callerOrderBeyondLeaf": "source-backed only; no invented mandatory orchestration or fixed FPS"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/pmd.input.clear_pressed/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+    "No unresolved pointer alias escapes the recovered state views",
+    "Bind every mapped field to the shared input context; cross-root packed aliases must remain shared.",
+    "Finite receipts cover this leaf and exact accessed lanes; no full sampler/controller or temporal sequence qualification.",
+    "KEYINPUT service blocks sampler and stateful producer automatic closure.",
+    "Opaque publication tail producers and auxiliary sentinel meaning unresolved.",
+    "Opaque fields remain unannotated; preserve storage and copy/reset behavior.",
+    "Qualification applies to this standalone leaf, not the full input lifecycle or sampler.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_system": {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+      "sha256": "ed4c9d687782b3259860aeb5f923db1d9cf0224ce82f2e9c21a677c83e240a0d"
+    },
+    "detailed_mapping_evidence": {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+      "sha256": "c9cd345d9abf2d9ad5e93a3b06f3d2cc01fef33a6ad54b99f6992cd7c6d2240c"
+    },
+    "owned_state": {
+      "id": "pmd_input_context",
+      "separation": "one shared input context, never independent per-leaf copies",
+      "aliases": "semanticMapping aliases and packedBitViews define shared backing lanes",
+      "unknownOpaqueStateAllowedOnlyWithRetention": true
+    },
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "Bind every mapped field to the shared input context; cross-root packed aliases must remain shared.",
+      "Finite receipts cover this leaf and exact accessed lanes; no full sampler/controller or temporal sequence qualification."
+    ],
+    "services": {
+      "externalCalls": [],
+      "hardwareReads": [],
+      "effect": "RAM-only source-observed state writes; no time, render or button sampling service in this leaf"
+    },
+    "packed_storage_aliases": [
+      {
+        "irField": "field_0",
+        "symbol": "published.pressed",
+        "aliases": [
+          {
+            "backingWord": "published.heldPressedWord",
+            "byteOffset": 2,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      },
+      {
+        "irField": "field_1",
+        "symbol": "accumulated.pressed",
+        "aliases": [
+          {
+            "backingWord": "accumulated.heldPressedWord",
+            "byteOffset": 2,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      },
+      {
+        "irField": "field_2",
+        "symbol": "current.pressed",
+        "aliases": [
+          {
+            "backingWord": "current.heldPressedWord",
+            "byteOffset": 2,
+            "widthBits": 16,
+            "relationship": "same underlying bytes; low/high halfword views preserved across qualified roots"
+          }
+        ],
+        "packedBitViews": []
+      }
+    ],
+    "opaque_fields": [],
+    "unit_limitations": "No fixed FPS or seconds. Repeat/short-hold counters count accepted input invocations; sentinel999 is not elapsed time.",
+    "qualification": {
+      "status": "pass",
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "vectors": 1024,
+      "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "receipt": {
+        "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/080048f8/receipt.json",
+        "sha256": "a85c11a9f657e0118cf218af4deae05def15e7a0b85bc32744c5a83bfa43abf3"
+      },
+      "notClaimed": [
+        "all input states",
+        "full input subsystem",
+        "dungeon turns or movement",
+        "whole-game completeness"
+      ]
+    },
+    "additional_qualification": null,
+    "original_l0_canonical_sha256": "d3c63a4188908a87a8fd6fb3741ec6499a6e1c718971e0b0ee80a7d8870720bc",
+    "adapter_l0_sha256": "d3c63a4188908a87a8fd6fb3741ec6499a6e1c718971e0b0ee80a7d8870720bc"
+  }
+}

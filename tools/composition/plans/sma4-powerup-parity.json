@@ -1,0 +1,159 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mario-sma4-recovered-powerups-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "super-mario-advance-4-super-mario-bros-3",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "Exact indexed ROM with own recovered component and reviewed context adapter"
+  },
+  "execution": {
+    "clock": "native-accepted-pickup-event",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "pickup"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "item_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "consumed_item",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_form_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "pending_growth_form",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "effect_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "sound_and_score_effects",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "components": [
+    {
+      "id": "pickup",
+      "provides": [
+        "progression.player_form@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "item_state",
+          "phase": "pickup",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "player_form_state",
+          "phase": "pickup",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effect_state",
+          "phase": "pickup",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-recovered.c",
+        "evidence_refs": [
+          "local/re/experiments/20261016-binary-corpus-round2/sma4-powerup-policy-01/receipt.json",
+          "local/re/experiments/20261016-binary-corpus-round2/sma4-powerup-live-07/probe.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "campaign-qualification",
+      "detail": "Parity candidate only; full campaign and other enemy/ability/progression packages remain incomplete."
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sma4-usa-powerups.host.json",
+      "sha256": "6d7dcc90eaf590dd18d2fd0516420f72e2778f5eff72cdf806fae01f6a124a37"
+    },
+    "packages": [
+      {
+        "instance": "pickup",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma4-powerups-host.json",
+          "sha256": "c530c4a019606e75aca4e8133c6189352299f314227128e56bea605fd033c470"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "growth",
+        "instance": "pickup",
+        "symbol": "sma4_host_growth",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "fire",
+        "instance": "pickup",
+        "symbol": "sma4_host_fire",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "leaf",
+        "instance": "pickup",
+        "symbol": "sma4_host_leaf",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 8192,
+    "timeout_s": 15,
+    "max_build_s": 30
+  }
+}

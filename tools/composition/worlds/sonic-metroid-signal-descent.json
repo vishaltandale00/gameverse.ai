@@ -9,7 +9,7 @@
   },
   "authorship": {
     "new": "route-relative prefabs, alien AI, progression placements, story, tiny OBJ art and integration glue",
-    "recovered": "MZM damage/cooldown/caps/freeze/drops, motion; Sonic controller/contact/entity/task/render services"
+    "recovered": "MZM damage/cooldown/caps/freeze/drops, motion; Sonic controller/contact/entity/task/render services; original MZM species0x16 patrol/terrain-turn/animation closure and graphics via explicit portable ports"
   },
   "coordinate_contract": {
     "x": "absolute native world pixels",
@@ -18,7 +18,8 @@
     "bounded_geometry_search_px": "symmetric112px about current route floor",
     "terrain_layer": "Actual native player+0x27 lowbit selects0or1; both are valid. Retain native rectangular plane switches at0x080238CC; never hardcode one plane.",
     "scripted_contact_rule": "Freeze tutorial belongs to open-air coast; Factory low ceiling and external-motion rail admit beam seals only.",
-    "freeze_gateway_clearance": "Coast1130..1190 has no upper platform; do not place the support under the native elevated platforms beginning near1224."
+    "freeze_gateway_clearance": "Coast1130..1190 has no upper platform; do not place the support under the native elevated platforms beginning near1224.",
+    "ripper_habitat": "Optional authored patrol_radius_px in8px units binds visible habitat-boundary markers to the recovered terrain-classification port. Original patrol\u2192turn\u2192recovery state machine stays unchanged; zero uses native physicalterrain only."
   },
   "progression": {
     "persistence": "native flag2 task data; reset on cartridge coldboot, fullRAM checkpoints retain it; no new SRAM save format",
@@ -245,6 +246,14 @@
           "x": 2100,
           "id": 7,
           "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 700,
+          "id": 6,
+          "floor_offset": 0,
+          "patrol_radius_px": 64
         }
       ]
     },
@@ -424,6 +433,13 @@
           "x": 1300,
           "id": 5,
           "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
+          "floor_offset": 0
         }
       ]
     },
@@ -485,6 +501,13 @@
           "component": "guardian",
           "x": 1800,
           "id": 7,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
           "floor_offset": 0
         }
       ]
@@ -548,6 +571,13 @@
           "x": 1800,
           "id": 7,
           "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
+          "floor_offset": 0
         }
       ]
     },
@@ -609,6 +639,13 @@
           "component": "guardian",
           "x": 1800,
           "id": 7,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
           "floor_offset": 0
         }
       ]
@@ -672,6 +709,13 @@
           "x": 1800,
           "id": 7,
           "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
+          "floor_offset": 0
         }
       ]
     },
@@ -733,6 +777,13 @@
           "component": "guardian",
           "x": 1800,
           "id": 7,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
           "floor_offset": 0
         }
       ]
@@ -796,6 +847,13 @@
           "x": 1800,
           "id": 7,
           "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
+          "floor_offset": 0
         }
       ]
     },
@@ -857,6 +915,13 @@
           "component": "guardian",
           "x": 1800,
           "id": 7,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "ripper",
+          "x": 1600,
+          "id": 6,
           "floor_offset": 0
         }
       ]

@@ -1,0 +1,549 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "integrate": {
+      "package_id": "sonic.motion.integrate",
+      "package_sha256": "7b4846722fec19c639104dcb51b10d7970469026655c0b9696ae9bd9e337b662",
+      "behavior_sha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_2",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_3",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_4",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "stage",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "stage",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "stage",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "stage",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5"
+        ],
+        "writes": [
+          "field_0",
+          "field_1",
+          "field_3"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Semantic annotation has not been independently scored against game rendering"
+      ]
+    },
+    "gravity": {
+      "package_id": "sonic.motion.gravity",
+      "package_sha256": "daab08a110263fe6fc4e2c103814b55e6eee783f972983dc2550c479cf44c67e",
+      "behavior_sha256": "2125d4c9097713fc2dc3d12fe35b1c8209b3a310db4aa8f780b6eed0470cdb45",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "world.y.down",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "actor",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [
+          "field_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Semantic annotation has not been independently scored against game rendering"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "ba76e57ae9076b91df03c02f67bc8447658a6dd6d1d70e51b0c0510276a514cf",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "integrate": {
+        "package_id": "sonic.motion.integrate",
+        "package_sha256": "7b4846722fec19c639104dcb51b10d7970469026655c0b9696ae9bd9e337b662",
+        "behavior_sha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462",
+        "bindings": {
+          "field_0": {
+            "slot": "actor_x"
+          },
+          "field_1": {
+            "slot": "actor_y"
+          },
+          "field_2": {
+            "slot": "actor_vx"
+          },
+          "field_3": {
+            "slot": "actor_vy"
+          },
+          "field_4": {
+            "slot": "stage_flags_current"
+          },
+          "field_5": {
+            "slot": "stage_flags_previous"
+          }
+        }
+      },
+      "gravity": {
+        "package_id": "sonic.motion.gravity",
+        "package_sha256": "daab08a110263fe6fc4e2c103814b55e6eee783f972983dc2550c479cf44c67e",
+        "behavior_sha256": "2125d4c9097713fc2dc3d12fe35b1c8209b3a310db4aa8f780b6eed0470cdb45",
+        "bindings": {
+          "field_0": {
+            "slot": "actor_vy"
+          },
+          "field_1": {
+            "slot": "actor_flags"
+          }
+        }
+      }
+    },
+    "state": {
+      "actor_x": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "position",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.x.right",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_y": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "position",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.y.down",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_vx": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.x.right",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_vy": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 256
+          },
+          "frame": "world.y.down",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "stage_flags_current": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "stage",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "stage_flags_previous": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "stage",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "actor_flags": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "actor",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        },
+        "owner": "external",
+        "shared": true
+      }
+    },
+    "invocations": [
+      {
+        "component": "integrate",
+        "arguments": {}
+      },
+      {
+        "component": "gravity",
+        "arguments": {}
+      }
+    ],
+    "initialize": {
+      "actor_x": 25600,
+      "actor_y": 51200,
+      "actor_vx": 768,
+      "actor_vy": 64256,
+      "actor_flags": 258,
+      "stage_flags_current": 0,
+      "stage_flags_previous": 0
+    },
+    "services": []
+  },
+  "invocation_count": 2,
+  "ordered_components": [
+    "integrate",
+    "gravity"
+  ],
+  "statement_sha256": "75a5342276b0442f4b894ee32b74e47d08d601e708d8376e1c89e8d8e01011cd",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.0028223749999999985
+}

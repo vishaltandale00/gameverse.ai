@@ -24,3 +24,13 @@ community-source motion descriptions remain comparative hypotheses.
 
 Native graph entry point: `python3 -m tools.gba_mashup.build --help`.
 Focused native contract checks: `python3 -m unittest tools.composition.test_native_build`.
+
+Immutable cross-cartridge sprite packages can declare `native_implementation.kind=
+extracted_asset_data` and `recovery.data_recovery`. The contract pins the local
+source ROM, every original data range, and extraction receipt. The builder
+verifies those independently of executable behavior witnesses and rejects hooks
+or host services qualified only by an asset witness. The Sonic campaign's
+reextracted MZM flyer demonstrates this path; private asset bytes stay local.
+The focused qualification retains a deliberately corrupted range rejection.
+No CI job/dependency was added; its clean native build remains under one second
+on the recorded macOS arm64/Clang21 machine (exact receipts carry timings).

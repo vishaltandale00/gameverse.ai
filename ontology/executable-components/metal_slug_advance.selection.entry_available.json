@@ -1,0 +1,203 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "metal_slug_advance.selection.entry_available",
+  "label": "Check selected-entry availability before confirmation or child browsing",
+  "role": "progression",
+  "source_game": "metal-slug-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/metal_slug_advance.selection.entry_available/package.json",
+  "package_sha256": "a86af28c4f1ebd9e05600d81ea199699bb6995d72c27d16a0d84a48f3676a380",
+  "behavior_sha256": "b6a7a65142cc7650b53296fc0d5c59d4ff6152559f6f8a99d5f4a2970d9a077b",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 2048,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "1bded1a960c1bff7d1890eefa9ec14a08e570f7e79d068ed93d14c68072a46e3"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 99
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "dependency_0_collection_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "count": 13,
+      "semantic_type": {
+        "quantity": "packed_two_bit_availability",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_selection_availability_table",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/metal-slug-advance/coverage-pass/availability-contract.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "dependency_0_collection_0",
+        "storage_type": "u16",
+        "count": 13
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "canonical progression table backing supplied by owner",
+    "clock": "explicit query invocation; no timer progression",
+    "phase": "availability_read_before_selection_confirmation_or_child_list_population",
+    "ordering": "read upper packed flag; return predicate to source caller before branch/allocation"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "0d571be281995ecf730c6303e588f162ec3d5f2df07565f25c3e4c7466d919b9",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/metal_slug_advance.selection.entry_available/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Only availability predicate subset is native-qualified; original selection/child controller remains partial.",
+    "Packed flag population/persistence and full actor pool scheduling remain open.",
+    "Source query uses upper flag bit; exact flag meaning beyond observed availability must not be renamed acquisition/ability without evidence.",
+    "No scalar/collection pointer alias splitting; backing is canonical shared source table for call.",
+    "Graph admission is binding validity only; it does not prove a full selection lifecycle or gameplay.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/metal-slug-advance/coverage-pass/availability-contract.json",
+    "sha256": "f76fe7c211d489ea2810c5c990842baab227a036c0fbac1b7e5fb44fe423bb3e",
+    "input_domain": "selected entry0..99",
+    "return_domain": [
+      0,
+      1
+    ],
+    "storage_contract": {
+      "parameter": "u16",
+      "return": "u8",
+      "collection": "13\u00d7u16 packed2bit state;100sourceentries"
+    },
+    "connected_system": "availability gates original grid confirmation and child list enumeration; remaining controller notqualified"
+  },
+  "return_meaning": {
+    "quantity": "availability_predicate",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "source_selected_entry_upper_flag_membership",
+    "confidence": 0.98,
+    "evidence": [
+      "research/deep-extraction/resume/metal-slug-advance/coverage-pass/availability-contract.json"
+    ]
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "entry_index",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "source_grid_selection_100_entry_index",
+      "confidence": 0.98,
+      "evidence": [
+        "research/deep-extraction/resume/metal-slug-advance/coverage-pass/availability-contract.json"
+      ]
+    }
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "metal_slug_advance.selection.entry_available",
+        "source_game": "metal-slug-advance",
+        "package": {
+          "path": "local/ir/packages/metal_slug_advance.selection.entry_available/package.json",
+          "sha256": "a86af28c4f1ebd9e05600d81ea199699bb6995d72c27d16a0d84a48f3676a380"
+        },
+        "package_sha256": "a86af28c4f1ebd9e05600d81ea199699bb6995d72c27d16a0d84a48f3676a380",
+        "behavior": {
+          "path": "local/ir/packages/metal_slug_advance.selection.entry_available/l1.json",
+          "sha256": "b6a7a65142cc7650b53296fc0d5c59d4ff6152559f6f8a99d5f4a2970d9a077b"
+        },
+        "behavior_sha256": "b6a7a65142cc7650b53296fc0d5c59d4ff6152559f6f8a99d5f4a2970d9a077b",
+        "native_receipt": {
+          "path": "local/ir/packages/metal_slug_advance.selection.entry_available/receipt.json",
+          "sha256": "1bded1a960c1bff7d1890eefa9ec14a08e570f7e79d068ed93d14c68072a46e3"
+        },
+        "native_receipt_sha256": "1bded1a960c1bff7d1890eefa9ec14a08e570f7e79d068ed93d14c68072a46e3",
+        "graph_request": {
+          "path": "research/deep-extraction/resume/metal-slug-advance/coverage-pass/availability-graph.json",
+          "sha256": "61228e236b37ab9e69e2f9ddb3144a8a607fe9be2a7cd706daf04f04c4c03e2a"
+        },
+        "graph_receipt": {
+          "path": "research/deep-extraction/resume/metal-slug-advance/coverage-pass/graph-admission.json",
+          "sha256": "c7cd6a0e4b45f5fe15c65e14e04a563198b3b3984083aee6e5c588a9cb3ad795"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/metal-slug-advance/coverage-pass/admitted-assembly-snapshot.py",
+          "sha256": "2a45ef9868ac9bff2be1f7b97c00b8501857a8bbb3e4d1a7d0de175c3e9e0758"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/metal-slug-advance/coverage-pass/admitted-catalog-snapshot.json",
+          "sha256": "a170d569e7e444850507a594ce2914f2d99a84f0722a4ef2407cf8817232df13"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "component_instance": "availability",
+        "graph_invocation_count": 100,
+        "statement_sha256": "e4c35674281a5dc4ca9bbabb3f0552814a7d65dfc36e6e688aa6b6214aa487f2",
+        "source_admission_pins": {
+          "path": "research/deep-extraction/resume/metal-slug-advance/coverage-pass/admission-pins.json",
+          "sha256": "fce583e952f59b9d746c5f8b356fa956645801eb4136cc6a1c9078319772bc3f"
+        },
+        "limitations": [
+          "Symbolic binding, ownership, input-domain and ordered-invocation validation only",
+          "Caller lifecycle obligations remain unproven; no native composed graph or whole source system claim"
+        ]
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "metal-slug-advance",
+    "entry": "08007bb0"
+  },
+  "domain_contract_fingerprint": "194a421069c51228aafb8ff56947afaf10f62535ee60da377d9626f0e8094975",
+  "specialization_subset": false
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+  "label": "Wrapped actor x integration",
+  "role": "movement",
+  "source_game": "super-mario-advance-4-super-mario-bros-3",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration/package.json",
+  "package_sha256": "97d8837e793fc7d11361d5b67dc81f1d9ae6a7e9d601ff14b4dd460350fbc4f0",
+  "behavior_sha256": "5c92048348ce3a97e3f537d89c39ab4d51a0ba60ac2c2c89b5c26e4cdfe65cbb",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 2770,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "5efc2f7dd64165f1f6baa4ca04fe0aa023621f3b3e417f19d35b05e8803a0a1b"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_context_2",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "entity_r0",
+      "identity": "current_record_view",
+      "ownership": "shared_record_view",
+      "lifetime": "invocation",
+      "separation": "only_proven_disjoint_accessed_slices_scalarized",
+      "container": "context_object_0",
+      "capacity": 18,
+      "evidence": [
+        "research/deep-extraction/mario/sma4-actor-dispatch.json",
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 16
+        },
+        "frame": "world.x.right",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma4-actor-dispatch.json"
+        ],
+        "naming_status": "original_instruction_unit_evidence",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "6c9bdb52a59159e2ece20867cdd260fdb626bbab8a24ebefc346dd8d255a1021",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Finite normal actor-type domain0..300 only; reserved/out-of-domain actor types remain unqualified",
+    "Split horizontal position lanes retain unknown port semantics; only original signed velocity at actor+16 is annotated",
+    "18 scheduled shared actor slots do not enlarge the separately evidenced15-slot normal allocator",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

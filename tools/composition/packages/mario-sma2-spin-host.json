@@ -1,0 +1,379 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma2.accepted_spin_stomp",
+  "version": "0.1-native-qualified-local",
+  "concept": {
+    "role": "combat.accepted_spin_stomp",
+    "pattern": "spin impact sets enemy terminal timer, selects player bounce, allocates particles and chains reward/life progression",
+    "facets": [
+      "mechanics",
+      "progression"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance-2-super-mario-world:actors_ai"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance-2-super-mario-world",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Own indexed USA/Australia ROM SHA1 5101ddf223d1d918928fe1f306b63a42ada14a5e",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json",
+    "abi": "void(r0 native actor100bytes); explicit borrowed player/engine/profile/scene plus held input and camera context",
+    "recovery": {
+      "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "ranges": [
+        {
+          "address": "0x0802fd38",
+          "size": 132,
+          "isa": "thumb",
+          "instruction_sha256": "b6d19cc6b4d13360700840a18f739deba34cdc3d70c2ac437d7863906c43cba4",
+          "name": "sma2_spin_stomp",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802fc0c",
+          "size": 138,
+          "isa": "thumb",
+          "instruction_sha256": "630fdaebb030b51829b8bd0c97bf5d171d4811eae02db2ed47a3d9f2da189971",
+          "name": "sma2_contact_effect",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802e978",
+          "size": 24,
+          "isa": "thumb",
+          "instruction_sha256": "4af50e6bd4aab14b8c7b40626b3e28780eabad8456b07e852dd2acf78b29dbf0",
+          "name": "sma2_effect_suppressed",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802fcb8",
+          "size": 92,
+          "isa": "thumb",
+          "instruction_sha256": "399f6b0bd42f2cbd706cf915c21197ae2fa1feaf14602039af37d58ca26f7300",
+          "name": "sma2_bounce",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802faac",
+          "size": 12,
+          "isa": "thumb",
+          "instruction_sha256": "a7cd40eeb6ddd8555380a0dfd86d9057e28fd69baab671432c058d5a7d220448",
+          "name": "sma2_terminal_state",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802fde0",
+          "size": 118,
+          "isa": "thumb",
+          "instruction_sha256": "9365e8dcd0b5a6ec656bcf07091776ba6facd1a8d30105b8641f82b00cecb5e2",
+          "name": "sma2_particles",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0802fe64",
+          "size": 178,
+          "isa": "thumb",
+          "instruction_sha256": "02d3b6662248aeab700d396ee752505cbdbb1ee4295aebaf961488cbfc9db9d4",
+          "name": "sma2_chain_reward",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0803daa0",
+          "size": 20,
+          "isa": "thumb",
+          "instruction_sha256": "e2134adbd93d420759a95f7eb204e072dfbc988c03a4aabc419ace869ec1888d",
+          "name": "sma2_reward",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0803da0c",
+          "size": 86,
+          "isa": "thumb",
+          "instruction_sha256": "9b78ff849a7e51e7f5907da04a5e7bc014f260e4781cebc246474ff6099719f0",
+          "name": "sma2_reward_record",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0803d804",
+          "size": 224,
+          "isa": "thumb",
+          "instruction_sha256": "902c35d2810508646cf27055685e59d10a643087dc263b18b78b05e2eae62bfc",
+          "name": "sma2_reward_slot",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-recovered.c",
+      "lift_sha256": "f0284a31505a1f01f9990c364e680e2f2425b9cf3d732b4c981e7963cb423933",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "{\"address\": \"0x80ff400\", \"bytes\": 2048, \"sha256\": \"ede4af01ac27611f326ccc660688b089d6950159fb3b11e6f12c05ebc0f302fc\"}",
+          "{\"address\": \"0x8101a00\", \"bytes\": 256, \"sha256\": \"f022ddf6fc28c7ef37a6d196e0e0ba4e71835fb3241366ba35be39aee0a7b1fd\"}"
+        ],
+        "ram": [
+          "Explicit typed actor/player/engine/profile/scene and held/camera/sound context"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Pure closure has no native addresses or mutable globals; adapter borrows original live storage"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-gameplay-receipt.json"
+      ],
+      "unknowns": [
+        "Native contact query/dispatch stays upstream",
+        "Native natural spin destruction qualified; broader ecology/other interactions remain unknown",
+        "Other enemy response forms and full campaign unqualified"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "accepted_spin_contact",
+      "direction": "in",
+      "type": {
+        "scalar": "native_actor_ptr",
+        "quantity": "accepted_spin_hit",
+        "unit": "one_native_contact",
+        "frame": "SMA2_contact"
+      },
+      "semantic": "Upstream native query must already accept spin impact; actor100-byte ABI required"
+    },
+    {
+      "id": "impact_and_rewards",
+      "direction": "out",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "terminal_bounce_particles_chain_score",
+        "unit": "native_fields",
+        "frame": "SMA2_contact"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "enemy_terminal",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "enemy_terminal",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_bounce_chain",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "player_bounce_chain",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "particles_rewards",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "particles_rewards",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "spin_response",
+      "clock": "native_accepted_contact",
+      "phases": [
+        "contact_effect",
+        "bounce",
+        "terminal",
+        "particles",
+        "chain_reward"
+      ],
+      "reads": [
+        "enemy_terminal",
+        "player_bounce_chain",
+        "particles_rewards"
+      ],
+      "writes": [
+        "enemy_terminal",
+        "player_bounce_chain",
+        "particles_rewards"
+      ],
+      "invariants": [
+        "Actor state4,timer31; caller contact eligibility separate",
+        "Local reward pool closure includes overwrite payout and native score/life counters",
+        "Character/riding/input and native wrapping are explicit context"
+      ],
+      "authority": "Replace accepted spin response only; retain original enemy eligibility and frame scheduling"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "Ten own-ROM functions with fc0c actor argument and d804 slot return reviewed from instructions"
+    ],
+    "data": [
+      "{\"address\": \"0x80ff400\", \"bytes\": 2048, \"sha256\": \"ede4af01ac27611f326ccc660688b089d6950159fb3b11e6f12c05ebc0f302fc\"}",
+      "{\"address\": \"0x8101a00\", \"bytes\": 256, \"sha256\": \"f022ddf6fc28c7ef37a6d196e0e0ba4e71835fb3241366ba35be39aee0a7b1fd\"}"
+    ],
+    "globals": [
+      "Borrowed reviewed actor/player/world context; no new storage"
+    ],
+    "macros": [
+      "SMA2_SPIN_NATIVE"
+    ],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "General contact eligibility and other enemy responses",
+      "No whole campaign qualification"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2_normalize_spin.py",
+    "preconditions": [
+      "Exact own ROM and reviewed native actor/world ABI",
+      "Accepted spin contact from original or independently reviewed query"
+    ],
+    "outputs": [
+      "Complete local spin impact/reward closure",
+      "Native actor/global adapter and exact shared IR build plan"
+    ],
+    "semantic_changes": [
+      "None intended"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Native actor16.16 positions and player split pixel position; camera-relative effect context",
+    "authority_obligation": "Accepted impact writes player bounce,enemy terminal state and world effects once; preserve one contact/reward writer"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Destroy enemies with a spinning bounce and chain rewards into extra lives",
+    "status": "Original/C/emitted native closure and natural first-enemy spin destruction source-parity qualified"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma2-spin-parity.json",
+    "hooks": [],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-host-spin.c",
+          "sha256": "0e62684b057b503664bbcb5249013817edc4fc417244487f61f7214a4cfeec43"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-recovered.c",
+          "sha256": "f0284a31505a1f01f9990c364e680e2f2425b9cf3d732b4c981e7963cb423933"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-host-spin.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma2_host_spin",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "enemy",
+          "storage": "host-r0-actor",
+          "bytes": 100,
+          "lifetime": "native-entity",
+          "writes": [
+            {
+              "offset": 28,
+              "width": 8,
+              "quantity": "terminal_state"
+            },
+            {
+              "offset": 34,
+              "width": 8,
+              "quantity": "terminal_timer"
+            }
+          ],
+          "allocation": "No allocation; original accepted-contact actor. Global player/world effects declared in package and host."
+        }
+      ],
+      "host_calls": [],
+      "host_reads": [
+        {
+          "address": "0x3003f98",
+          "width": 32
+        },
+        {
+          "address": "0x3002360",
+          "width": 32
+        },
+        {
+          "address": "0x3007a48",
+          "width": 32
+        },
+        {
+          "address": "0x3002b94",
+          "width": 16
+        },
+        {
+          "address": "0x3002c04",
+          "width": 16
+        },
+        {
+          "address": "0x3002c08",
+          "width": 16
+        },
+        {
+          "address": "0x3002b68",
+          "width": 16
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "4096 finite original/C/emitted native comparisons including particle slots,score pool reuse,chain wrapping,character/riding/input contexts",
+      "Natural stock first-stage spin impact: actor type0xbd state8->4,timer31,player bounce-8,chain0->1",
+      "Shared-IR generated ROM natural first enemy0xbd state8->4,timer31,bounce-8,chain0->1; all52-frame player/enemy/scene/engine/profile hashes and observations agree"
+    ],
+    "required_witnesses": [
+      "Same private natural contact checkpoint stock versus shared-IR-generated ROM, actor/player/world/profile state and rendered-frame parity"
+    ],
+    "known_limits": [
+      "Original contact query/dispatcher retained; no whole enemy ecology or full campaign claim"
+    ]
+  }
+}

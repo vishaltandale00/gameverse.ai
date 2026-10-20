@@ -1,0 +1,232 @@
+schema_version: 0
+id: super-mario-advance-2-super-mario-world
+game:
+  title: 'Super Mario Advance2: Super Mario World'
+  platform: gba
+  game_code: AA2E
+  rom_sha1: 5101ddf223d1d918928fe1f306b63a42ada14a5e
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: rom_binary
+    ref: 5101ddf223d1d918928fe1f306b63a42ada14a5e; SHA256 63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3;
+      own indexed USA/Australia ROM; no community source input
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world.json
+conventions:
+  scope: Own-ROM local run/jump/cape/integration and accepted spin-stomp/particle/reward systems. Shared IR builds
+    native full-ROM replacements and natural ordinary/spin movement and first-enemy destruction match stock. Terrain/general
+    enemy ecology and full progression remain partial.
+  units: Positions signed16 pixel integer plus u8subpixel (1/256pixel). Velocity signed16 underlying units1/4096pixel;
+    only signed high byte integrated as1/16pixel/invocation. Native frame schedule retained.
+components:
+- id: charged_run_and_normal_spin_jump
+  facet: movement_physics
+  label: Charged running and normal/spin jump initiation
+  summary: Full local horizontal control selects facing, skidding, run acceleration and caps, surface-specific convergence,
+    run-charge gain/decay, and normal versus spin takeoff. Jump onset depends on speed, character and riding state;
+    contact and native mode flags explicitly gate initiation.
+  instantiates:
+  - concept: movement_physics.controller.charged_run_spin_jump
+  reads:
+  - 'player at03003fa0: velocity x signed16 at+08, high byte signed1/16pixel per frame; airborne byte+01 and contacts+06'
+  - held03002b94:u16 and pressed03002b96:u16; A=bit0,R=bit8,B=bit1, left/right bits5/4, downbit7
+  - player+43:u8 movement mode, +46:u8 run charge, +54/+55 special traversal, +6e cape mode, +71 spin state
+  - 'engine pointer03003f98: +10fa riding state; profile03002360:+dc character; map03003f9c:+5c mode; scene03007a48
+    level ID,edb/edc mode flags'
+  - exact immutable onset,acceleration,target speed,charge and character tables within08109e00..0810a5ff
+  writes:
+  - player vx+08,vy high+0d, facing+05, airborne+01, duck+02, charge+46, spin+71, character float+87, charge timer+95
+    and related native traversal bytes
+  - ground effect records in scene+02f0..032f and sound context03002b68 plus ordered audio events
+  invariants:
+  - Only grounded state and pressed A/R can initiate ordinary takeoff; existing contact and special level-mode gates
+    remain active.
+  - Jump speed index=(abs(signed vx high)>>2)&0xfe. Spin adds1; onset comes from exact character table. Mario onset
+    pairs range -80/-74 to -97/-90; Luigi -46/-43 to -62/-58.
+  - R spin initiates sound0x29 and increments spin state; ordinary jump sound0x23. Riding/special scene state changes
+    allowed spin path.
+  - Charge update adds exact table[-1,-1,2,4] for native selector0..3; wrapped negative charge resets0, charge above111
+    saturates112 and advances returned cap mode.
+  - Controller owns acceleration, facing and jump onset; input polling, terrain contact production and frame scheduling
+    are explicit host dependencies.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json
+    confidence: 0.98
+    note: 11 own-ROM Ghidra functions normalized with explicit context/ABI and exact coefficient-window hash; indirect-tail
+      warnings instruction-reviewed as saved-LR returns. No downloaded source.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-motion-receipt.json
+    confidence: 0.98
+    note: 6144 finite scenarios compare original ROM Thumb, pure C and emitted ARM7TDMI native adapter; full player/input/scene/engine/map/profile
+      objects and ordered sound ports agree. Branch coverage is finite, not a whole-state proof.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json
+    confidence: 0.99
+    note: Shared IR produced full native ROM with three noarg movement entry replacements. Same private Yoshi-house
+      checkpoint,117 real frames with run/normal-jump/spin-jump witnesses; every sampled full player hash and rendered
+      frame matched stock. Natural cape/riding/Luigi behavior remains unqualified.
+- id: gravity_and_cape_flight_policy
+  facet: movement_physics
+  label: Input-shaped gravity and cape/riding flight state
+  summary: The full local vertical policy retains held-jump gravity, character differences, fall speed clamps, run-charged
+    cape entry, directional cape states and riding-related float behavior. It consumes explicit form, riding, contact
+    and charge state rather than assuming a generic universal jump.
+  instantiates:
+  - concept: movement_physics.controller.cape_gravity
+  reads:
+  - player vy high+0d, airborne+01, movement modifier+43, cape state+6e/+6f, cape rise cap+70, charge timer+95,
+    phase timers+9a/+9b
+  - held/pressed jump and run/direction buttons; profile character+dc and powerup+e0; engine riding flags+10fa/+114f
+  - exact gravity,fall cap,cape state transition and vertical limit tables
+  writes:
+  - player vy high+0d, airborne phase+01, cape state+6e/+6f/+70 and timers+95/+9a/+9b
+  - ordered native sound and spatial context
+  invariants:
+  - Ordinary Mario gravity adds6 when jump unheld and3 while held; Luigi ordinary unmodified/unmounted branch adds2
+    or1. Native helper caps prior nonnegative vy at64 before adding gravity, so resulting value may exceed64.
+  - Normal airborne phase11 becomes36 when vertical velocity is nonnegative. Special state and riding branches select
+    additional modes, preserved in the full lift.
+  - Cape flight requires recovered form2 plus context gates; its mode, direction, run input, timers and coefficient
+    tables select transitions and vertical caps.
+  - Natural Mario ordinary/spin arcs qualified; cape,riding and Luigi branches have finite original/native differential
+    evidence only. Form acquisition and projectile ability are separate dependencies.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json
+    confidence: 0.98
+    note: 11 own-ROM Ghidra functions normalized with explicit context/ABI and exact coefficient-window hash; indirect-tail
+      warnings instruction-reviewed as saved-LR returns. No downloaded source.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-motion-receipt.json
+    confidence: 0.98
+    note: 6144 finite scenarios compare original ROM Thumb, pure C and emitted ARM7TDMI native adapter; full player/input/scene/engine/map/profile
+      objects and ordered sound ports agree. Branch coverage is finite, not a whole-state proof.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json
+    confidence: 0.99
+    note: Shared IR produced full native ROM with three noarg movement entry replacements. Same private Yoshi-house
+      checkpoint,117 real frames with run/normal-jump/spin-jump witnesses; every sampled full player hash and rendered
+      frame matched stock. Natural cape/riding/Luigi behavior remains unqualified.
+- id: split_fixed_point_position_integration
+  facet: movement_physics
+  label: Two-axis split fixed-point position and redirected vertical motion
+  summary: The native integration phase preserves integer/subpixel carry separately for each axis, consumes signed
+    high velocity bytes, and supports a mode that temporarily redirects vertical speed from horizontal speed before
+    restoring it.
+  instantiates:
+  - concept: movement_physics.integration.split_fixed_point_motion
+  reads:
+  - x signed16 pixels atplayer+30 and u8fraction+3c; y signed16pixels+34 and u8fraction+3e
+  - velocity high bytes at+09/+0d signed1/16pixel per invocation; underlying signed16 fields retain acceleration
+    fraction
+  - player+45:u8 vertical redirection selector
+  writes:
+  - x/y integer and subpixel fields; player+24 temporary saved vertical byte; original vertical speed restored
+  invariants:
+  - Subpixel += u8(vHigh)*16 modulo256; integer += arithmetic_shift_right(i8(vHigh),4) plus unsigned low-nibble
+    carry.
+  - When redirect selector is nonzero, integration uses x-speed as temporary y-speed; odd selector negates it. Stored
+    original y-speed is restored after both axes.
+  - Original frame wrappers integrate then sample/resolve terrain before control and gravity. Do not silently change
+    phase order when composing another controller.
+  - No terrain collision is hidden in this operator; clamping and grounded/contact flags remain native host responsibilities.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json
+    confidence: 0.98
+    note: 11 own-ROM Ghidra functions normalized with explicit context/ABI and exact coefficient-window hash; indirect-tail
+      warnings instruction-reviewed as saved-LR returns. No downloaded source.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-motion-receipt.json
+    confidence: 0.98
+    note: 6144 finite scenarios compare original ROM Thumb, pure C and emitted ARM7TDMI native adapter; full player/input/scene/engine/map/profile
+      objects and ordered sound ports agree. Branch coverage is finite, not a whole-state proof.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json
+    confidence: 0.99
+    note: Shared IR produced full native ROM with three noarg movement entry replacements. Same private Yoshi-house
+      checkpoint,117 real frames with run/normal-jump/spin-jump witnesses; every sampled full player hash and rendered
+      frame matched stock. Natural cape/riding/Luigi behavior remains unqualified.
+- id: spin_stomp_particles_and_chain_rewards
+  facet: mechanics
+  label: Spin stomps destroy enemies, spawn particles and chain rewards
+  summary: The complete accepted spin-contact response chooses a player bounce, gives the enemy a terminal state/timer,
+    allocates impact particles and publishes a chained reward through a recovered native reward pool. Saturated
+    chains increment the active player life counter; reusing occupied reward slots flushes pending score/life effects.
+    Contact eligibility and enemy walking remain separate native systems.
+  instantiates:
+  - concept: mechanics.combat.spin_stomp_chain_reward_pool
+  reads:
+  - r0 native enemy actor100 bytes, world position at+10/+12, type+1a, suppression+2e/+2f, chain modifier+3a
+  - 'player at03003fa0: special bounce inhibit+03, full vy+0c, y+34, chaini16+ec'
+  - held03002b94 A/R; character profile+dc, riding engine+10fa, active-player variant engine+1158
+  - 'scene03007a48 context: impact/effect slots,particle slots,reward pool,cursor6a7,chain sound selectorf33'
+  - exact bounce/particle/chain/ring payout tables; camera X03002c04,Y03002c08
+  writes:
+  - enemy state+1c=4 and timer+22=31
+  - player full vy+0c=0xf800 (-8 highbyte); riding branch can choose held/character bounce if no special inhibit
+  - player chaini16+ec increment; scene particle/effect/reward records and ring cursor
+  - scene life counteri16+6be or+6c0 on saturated-chain path, chosen by active-player variant
+  - profile scoreu32+68 and engine scoreu32+00, or engine life fieldi16+10f0 when overwriting a pending reward
+  - sound spatial context03002b68 set from enemy x minus camera X
+  invariants:
+  - Upstream native contact dispatcher must already accept a spin stomp; this component is not a general overlap
+    detector.
+  - Native impact effect uses original actor r0 even though Ghidra omitted the fc0c parameter. Actor flags2e/2f
+    may suppress that effect.
+  - Particle allocator scans slots7 down1; creates up to4 distinct fragments with original position offsets,velocities,type0x17
+    and lifetime; occupied slots remain occupied.
+  - Chain is a wrapping signed16 field. Reward index=(u16(oldChain+actorModifier)+1)&0xffff; values>=8 saturate
+    visual reward8 and increment selected life counter.
+  - Reward pool scans5..0 or4..0 depending scene mode. If full, decrements wrapping ring cursor and flushes a still-pending
+    overwritten reward into original score/life fields before reuse.
+  - Natural witness validates first native type0xbd only; no complete asset name/ecology claim or full campaign
+    completion.
+  evidence:
+  - kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-lift-evidence.json
+    confidence: 0.98
+    note: Own-ROM ten-function closure, exact code/table hashes; native-review transcript records saved-LR returns
+      and correct fc0c r0 actor/d804 result ABI. Original accepted contact eligibility remains upstream.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json
+    confidence: 0.98
+    note: 4096 finite original-ROM/C/emitted-native comparisons cover actor/player/world/profile/engine,particle/reward
+      slots,wrapping chains,character/riding/input and score/life effects.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-gameplay-receipt.json
+    confidence: 0.99
+    note: Actual first-stage enemy native type0xbd spin-destroyed in stock and shared-IR generated game; state8->4,timer31,bounce-8,chain0->1;
+      all sampled player/enemy/scene/engine/profile states and rendered frames equal over52 natural frames.
+proposed_concepts:
+- id: movement_physics.controller.charged_run_spin_jump
+  label: Charged running and normal/spin jump initiation
+  definition: Full local horizontal control selects facing, skidding, run acceleration and caps, surface-specific
+    convergence, run-charge gain/decay, and normal versus spin takeoff. Jump onset depends on speed, character and
+    riding state; contact and native mode flags explicitly gate initiation.
+- id: movement_physics.controller.cape_gravity
+  label: Input-shaped gravity and cape/riding flight state
+  definition: The full local vertical policy retains held-jump gravity, character differences, fall speed clamps,
+    run-charged cape entry, directional cape states and riding-related float behavior. It consumes explicit form,
+    riding, contact and charge state rather than assuming a generic universal jump.
+- id: movement_physics.integration.split_fixed_point_motion
+  label: Two-axis split fixed-point position and redirected vertical motion
+  definition: The native integration phase preserves integer/subpixel carry separately for each axis, consumes signed
+    high velocity bytes, and supports a mode that temporarily redirects vertical speed from horizontal speed before
+    restoring it.
+- id: mechanics.combat.spin_stomp_chain_reward_pool
+  label: Accepted spin-stomp and pooled chain reward
+  definition: An accepted spinning impact drives actor terminal state/player bounce,particle allocation and wrapping
+    reward progression with explicit pool overwrite effects.
+open_questions:
+- Recover full floor/ceiling/wall sampler and response around0806b6a0 and supporting routines
+- Recover actual enemy ecology, accepted contact and stomp/damage/reward rules
+- Recover cape/fire form acquisition, projectile lifecycle and riding abilities as separate contextual components
+- Natural cape,Luigi/riding and long-run charge witnesses; only finite branch probes for these so far
+- Recover stage exits/map progression and narrative event structure; do not equate movement recovery with full game
+  completion

@@ -1,0 +1,26 @@
+# Original FireRed VS Seeker provider
+
+`tools/whole_game/single_rom/vs_seeker.py:stage_vs_seeker(base, donor, staged_output, report_dir)` ports all41 original `vs_seeker.c` functions, the complete rematch table, NPC scan records, three response movement scripts, original RNG calls and all four player-effect task stages. Canonical sources and shared build trees remain untouched. This stage provides source and actual native objects; it does not claim a final ROM or gameplay qualification.
+
+Stage after state, encounters, audio, field_movement, fonts and native_ui; stage before quest_log. Native source APIs live in `include/whole_game_fr_vs_seeker.h`. The actual field-effect ID is allocated after the current native table; with the original X/double-exclamation effects delivered by field_movement, `FR_FLDEFF_USE_VS_SEEKER` is69. `include/constants/field_effects.h` includes the new constant provider. No existing ID is reused.
+
+## Actual behavior and ownership
+
+- The low byte of the original u16 counter charges while the actual VS Seeker is in the shared bag. It stops at100. The high byte expires wanted rematches after100 eligible steps. The100-byte rematch array and counter are separate FireRed saved fields inside `wholeGameKanto`; Emerald Match Call state is never aliased.
+- Source scan eligibility, trainer visibility, unfought/decline/accept reactions, 70-percent rematch RNG, duplicate trainer response consistency, SKIP entries, story milestones and last-available-party behavior are retained. Original source map inputs contain at most13 trainer templates, preserving the16-record sentinel capacity. Inactive-object failure sentinels are guarded before native array dereference; legitimate active-object behavior is unchanged.
+- The native bag and registered-key-item callbacks invoke the source scan. Source Kanto route/town/city and forest restrictions are retained; Hoenn has no FireRed rematch policy and displays the original Oak rejection message. Shared native bag widgets display original donor text using the actual donor font provider and return through their native bag lifecycle.
+- The four source field-effect stages lock/freeze, select the actual original Red/Green VS Seeker sprite frames, wait for their held animation, restore the shared Emerald avatar’s normal/Mach/Acro/surf graphics and unfreeze. The renderer’s explicit transient player bank is enabled before donor graphics and disabled before restoration. No source trainer emote or animation is replaced with an empty handler.
+- Field movement supplies the original raise-hand stop/jump/swim movement handlers and X/double-exclamation graphics. Their source IDs are appended to native dispatch, never interpreted as unrelated Emerald movement IDs. Audio uses imported FireRed song/effect IDs.
+- Step hooks retain original ordering before poison/hatch and exclude forced movement; quest-log playback skips donor charging. Native Hoenn Match Call counter advancement remains Hoenn-only. Map-load hooks clear wanted rematches and reset their idle movement, retaining the low-byte portable-item charge.
+
+Public exports include `FR_GetRematchTrainerId`, `FR_ShouldTryRematchBattle`, `FR_IsTrainerReadyForRematch`, both clear-state functions, scan/freeze/reset tasks and `FR_FldEff_UseVsSeeker`. The source has no `GetNextRematchTrainerId` function: its real internal helper is `GetNextAvailableRematchTrainer`. `FR_QuestLog_GetTrainerRematchArray()` returns a typed pointer to the actual100-byte saved array for source quest-log backup/restore. `FR_ResetDeferredLinkEvent` belongs to the quest-log provider’s one original deferred-event state; it is not duplicated here.
+
+## Verification and limits
+
+Three VS tests and six affected state tests passed together in0.414 seconds. Compiled original gameplay functions exercise bag absence, charge saturation, high-byte expiry, independent native state, progression/SKIP fallback, unknown trainer IDs, rematch clearing, inactive-object bounds, unfought/decline/accept responses and duplicate trainer RNG consistency.
+
+The actual `agbcc` toolchain compiled both complete new translation units and the three modified native consumers (`item_use.c`, `field_control_avatar.c`, `overworld.c`) with `-mthumb-interwork -Wimplicit -Wparentheses -Werror -O2`. All five assembled into ARM ELF object files; exported provider symbols are retained in `arm-compile.json`. The five-file compile/assemble plus isolated preparation took0.661 seconds. Queue time and a comparable earlier implementation baseline are unavailable. Failed intermediate diagnostics are retained separately. The final source hashes match the compiled witness after metadata reconciliation.
+
+`verify_arm.py` reproduces this bounded check using a retained configured build source and the actual field_movement output as read-only dependencies. It never runs make, links a ROM, edits canonical sources or modifies the retained build tree.
+
+Final whole-source linkage, rendered use, native rematch battles, cancellation/recovery and save/reload gameplay remain unqualified. Source-provider readiness is distinct from these campaign gates. Later save-runtime sizing must include the central state additions: u16 counter,100-byte rematch array and aligned64-byte Fame Checker bank; subsequent world/daycare additions are separately owned.

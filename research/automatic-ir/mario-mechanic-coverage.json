@@ -1,6 +1,6 @@
 {
   "schema": "gameverse.ir.mechanic-coverage/0.2",
-  "updated_utc": "2026-10-16T10:09:42.277886+00:00",
+  "updated_utc": "2026-10-16T10:33:41.272605+00:00",
   "objective": "Comprehensive actual mechanics recovery, closed owned-state/dependency/service contracts and executable IR. Partial packages remain useful outputs, never game completion.",
   "enumeration_status": "expanded_game_specific_inventory_still_open_to_discovery",
   "completion_rule": "No game/family is complete until its discovered modes/states/transitions, world interactions, dependencies, persistence and qualification obligations are closed with evidence and unknown-coverage review. A fixed family checklist is not proof all mechanics were discovered.",
@@ -12,9 +12,9 @@
       "priority": "active_depth",
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
-        "native_qualified": 4,
-        "composable_ports_ready": 2,
-        "mechanics_closure_ready": 2
+        "native_qualified": 5,
+        "composable_ports_ready": 3,
+        "mechanics_closure_ready": 3
       },
       "families": [
         {
@@ -154,12 +154,22 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma1/targets.json"
+          ],
           "discovery_target_ids": [
             "sma1.terrain_hurt_transaction",
             "sma1.actor_hurt_transaction",
             "sma1.player_death_release",
-            "sma1.death_update_lives"
+            "sma1.death_update_lives",
+            "sma1.player_state_dispatch",
+            "sma1.scene_tick_death_completion",
+            "sma1.scene_phase_dispatch",
+            "sma1.completion_selector_dispatch",
+            "sma1.retry_checkpoint_consumer",
+            "sma1.zero_lives_consumer",
+            "sma1.retry_checkpoint_restore",
+            "sma1.reset_health_and_stage_fields"
           ],
           "remaining_unknowns": []
         },
@@ -281,10 +291,20 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma1/targets.json"
+          ],
           "discovery_target_ids": [
             "sma1.ground_object_interaction",
-            "sma1.room_transition_begin"
+            "sma1.room_transition_begin",
+            "sma1.player_state_dispatch",
+            "sma1.scene_tick_death_completion",
+            "sma1.scene_phase_dispatch",
+            "sma1.completion_selector_dispatch",
+            "sma1.retry_checkpoint_consumer",
+            "sma1.zero_lives_consumer",
+            "sma1.retry_checkpoint_restore",
+            "sma1.reset_health_and_stage_fields"
           ],
           "remaining_unknowns": []
         },
@@ -314,9 +334,19 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma1/targets.json"
+          ],
           "discovery_target_ids": [
-            "sma1.player_update_order"
+            "sma1.player_update_order",
+            "sma1.player_state_dispatch",
+            "sma1.scene_tick_death_completion",
+            "sma1.scene_phase_dispatch",
+            "sma1.completion_selector_dispatch",
+            "sma1.retry_checkpoint_consumer",
+            "sma1.zero_lives_consumer",
+            "sma1.retry_checkpoint_restore",
+            "sma1.reset_health_and_stage_fields"
           ],
           "remaining_unknowns": []
         },
@@ -350,92 +380,22 @@
       "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
       "automatic_target_rows": [
         {
-          "id": "sma.motion.sma1_integrate_x",
-          "role": "movement",
-          "entry": "080abf40",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "dfbfe7b0537a0febdf8895fdd0318f65e06f396bf784349b81e20edcfcc48a68",
-          "attempt_count": 4,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.001240041999999164,
-          "closure_ready": false
-        },
-        {
-          "id": "sma.motion.sma1_ctl_sample_tile",
-          "role": "movement",
-          "entry": "0804b270",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "8db5cfc8f864a5e4502b3e315679492d43eaed1e12e86b06eaba165f07f9ce08",
-          "attempt_count": 4,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0008325419999994921,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.player_update_order",
-          "role": "movement",
-          "entry": "080a7570",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ae17609600decbd5ed3bc2e95e9b75a92d643aa5b0bb626814e98815407a936a",
-          "attempt_count": 4,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0009288749999996071,
-          "closure_ready": false
-        },
-        {
-          "id": "sma.motion.sma1_ctl_control",
-          "role": "movement",
-          "entry": "080a7774",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "2c581c7768947451bf7d0b2c79d76221857c0d9b7ad97cd8c4983bae5c21660c",
-          "attempt_count": 4,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.003843665999999857,
-          "closure_ready": false
-        },
-        {
-          "id": "sma.motion.sma1_ctl_gait",
-          "role": "movement",
-          "entry": "080a7c7c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "39056c6704c7a9f0e9109b46751eea427baf18ee2cba717be2f2beaec411607f",
-          "attempt_count": 4,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0007614589999995758,
-          "closure_ready": false
-        },
-        {
-          "id": "sma.motion.sma1_ctl_speed_cap_throw",
-          "role": "movement",
-          "entry": "080a8008",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "44fddf3d1e5e17d69af364d88cf98e9d2ab114c4bfc0b3862b9a78973ccf20ae",
-          "attempt_count": 4,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0007903329999994213,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.movement_contact_legality",
-          "role": "movement",
-          "entry": "080a821c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "614a2da220ad29572130657a03d4d0039612dfb4eb31f40657540e7b4e6a86e7",
-          "attempt_count": 3,
-          "reason": "not constant v41",
-          "wall_s": 0.004400416999999379,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.terrain_response",
-          "role": "movement",
-          "entry": "080a8950",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "8c5f67dae9610873e38802c8a87d3ab98f37db26453ae166f4ec91318a0a6c97",
-          "attempt_count": 3,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.00046558400000051847,
-          "closure_ready": false
+          "id": "sma1.death_update_lives",
+          "role": "combat",
+          "entry": "080a9334",
+          "outcome": "native_qualified",
+          "input_signature": "f8e8a68eeec04db62d1c5944b34960e794209e287ed8a524822aeb52bdda9d3f",
+          "attempt_count": 6,
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T102001/super-mario-advance/sma1.death_update_lives",
+          "source_entries": [
+            "080a9334",
+            "080ac11c"
+          ],
+          "wall_s": 0.287819666
         },
         {
           "id": "sma.motion.sma1_gravity_hover",
@@ -466,6 +426,20 @@
           "wall_s": 0.29261454200000003
         },
         {
+          "id": "sma.motion.sma1_integrate_x",
+          "role": "movement",
+          "entry": "080abf40",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c2f77865f5ab8157b2b1110f85cd72dc028984f144efe3c29dbc08d458f998f5",
+          "attempt_count": 6,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "080abf40"
+          ],
+          "wall_s": 0.0010565420000001602,
+          "closure_ready": false
+        },
+        {
           "id": "sma.motion.sma1_integrate_y",
           "role": "movement",
           "entry": "080ac11c",
@@ -475,6 +449,64 @@
           "vectors": 16384,
           "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance/sma.motion.sma1_integrate_y",
           "wall_s": 0.27744854199999996
+        },
+        {
+          "id": "sma.motion.sma1_ctl_sample_tile",
+          "role": "movement",
+          "entry": "0804b270",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "475dd6b776364e46a3c56cda95760f3a1f5cc8f1a5b312702616ac8990dd8a57",
+          "attempt_count": 6,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "0804b270"
+          ],
+          "wall_s": 0.0007003749999996423,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.player_update_order",
+          "role": "movement",
+          "entry": "080a7570",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "782f11fc4205ebefe3fa99de7c6675b9318dd4e4c995aea81ff365d32b580472",
+          "attempt_count": 6,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080a7570",
+            "080abaa0"
+          ],
+          "wall_s": 0.000761624999999988,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_control",
+          "role": "movement",
+          "entry": "080a7774",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "7c56deaaee796a5ba5264bdf326347b34c18dbb571aa4ff5911a9162cb064e47",
+          "attempt_count": 6,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080a7774",
+            "080a7c7c"
+          ],
+          "wall_s": 0.0035666249999999344,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_gait",
+          "role": "movement",
+          "entry": "080a7c7c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "7b64d86938c59111298a068800db822a032e492fb6013e87a70fc687e88d4536",
+          "attempt_count": 6,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080a7c7c"
+          ],
+          "wall_s": 0.0007199999999998319,
+          "closure_ready": false
         },
         {
           "id": "sma.motion.sma1_friction",
@@ -488,14 +520,47 @@
           "wall_s": 0.21129033400000002
         },
         {
-          "id": "sma1.death_update_lives",
-          "role": "combat",
-          "entry": "080a9334",
+          "id": "sma.motion.sma1_ctl_speed_cap_throw",
+          "role": "movement",
+          "entry": "080a8008",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "2bd8673c9c3f31242a5e05c42d3e3ad4b2b4b1ac01939a6ca1ef8dfd4cd24131",
-          "attempt_count": 1,
-          "reason": "callee entity reference mapping unsupported",
-          "wall_s": 0.002423709000000329,
+          "input_signature": "7358bd60b16c31f37f7b4cdb101248f1ba5e9b1947b430642ca30c0e652338e6",
+          "attempt_count": 6,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "080a8008"
+          ],
+          "wall_s": 0.0006837079999999496,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.movement_contact_legality",
+          "role": "movement",
+          "entry": "080a821c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "3e089662c0325463990d5866b03c3b839876afcad144fafd03706f0ee440e8ec",
+          "attempt_count": 5,
+          "reason": "not constant v41",
+          "source_entries": [
+            "080a821c",
+            "080a8780",
+            "080a9b64"
+          ],
+          "wall_s": 0.0040501250000000155,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.terrain_response",
+          "role": "movement",
+          "entry": "080a8950",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "12cd51bf57c23a2027abb1a54cf4a7ebc1f21e629722da4fcd8f0aea4c23ad04",
+          "attempt_count": 5,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080a8950"
+          ],
+          "wall_s": 0.00041691600000026696,
           "closure_ready": false
         },
         {
@@ -503,10 +568,13 @@
           "role": "movement",
           "entry": "080a9dd0",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "d8484748766c168afdc4ab21d24ad4c49e999984a22140a293f3052a84af4998",
-          "attempt_count": 2,
+          "input_signature": "057f37432c28858f76261e02190ddf849e17631aa94eed49bb9d4fea59044fdc",
+          "attempt_count": 4,
           "reason": "not constant v0",
-          "wall_s": 0.0005905830000010326,
+          "source_entries": [
+            "080a9dd0"
+          ],
+          "wall_s": 0.00059899999999935,
           "closure_ready": false
         },
         {
@@ -514,10 +582,15 @@
           "role": "movement",
           "entry": "080aa5bc",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "547f926ce027a2da2d77f0cc019c215a2bf0268d81cd81ddb53678199f71b94d",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080aa63c",
-          "wall_s": 0.0003284580000002535,
+          "input_signature": "099414f528a0515cff89418b16809b9ca083fab869008df0d0b26f51b45200d0",
+          "attempt_count": 3,
+          "reason": "dynamic or nested object reference unresolved",
+          "source_entries": [
+            "080a9d64",
+            "080aa5bc",
+            "080aa63c"
+          ],
+          "wall_s": 0.0009671249999998466,
           "closure_ready": false
         },
         {
@@ -525,10 +598,14 @@
           "role": "combat",
           "entry": "080aa83c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "7275b276723632e4af795059cd7b1a03ef96a6c79ff0dedd65ea1792877035d5",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080b6f20",
-          "wall_s": 0.002438625000001693,
+          "input_signature": "452ca56e72039135e9959a68e94b0aec1ffe41e583152183c810b02646176136",
+          "attempt_count": 3,
+          "reason": "maximum recursion depth exceeded in comparison",
+          "source_entries": [
+            "080aa83c",
+            "080b6f20"
+          ],
+          "wall_s": 0.0029257500000001713,
           "closure_ready": false
         },
         {
@@ -536,10 +613,14 @@
           "role": "movement",
           "entry": "080aad60",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "9fe8ee71fd4266c8cb6eb1ac224e356f8d3d63bc45f0de5aa47051e72949c5e5",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080a9cf8",
-          "wall_s": 0.0009087500000006798,
+          "input_signature": "63be1fc36e4af892beb8fce108de3095405bcc56c7db77abbf5d517c27de0824",
+          "attempt_count": 3,
+          "reason": "dynamic or nested object reference unresolved",
+          "source_entries": [
+            "080a9cf8",
+            "080aad60"
+          ],
+          "wall_s": 0.001127166999999929,
           "closure_ready": false
         },
         {
@@ -547,21 +628,28 @@
           "role": "progression",
           "entry": "080ab05c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "97202a40e3b474e9b07eac1f5016deaac458405b76df02bd46237a438927ac4f",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080ab3b8",
-          "wall_s": 0.0013355409999995516,
+          "input_signature": "76b71c6cffdd71ad3cf36a2ad9c46a192268b0618107276d081e90de2a4e1d91",
+          "attempt_count": 3,
+          "reason": "multiple object reference alias closure unresolved",
+          "source_entries": [
+            "080ab05c",
+            "080ab3b8"
+          ],
+          "wall_s": 0.0014980420000005878,
           "closure_ready": false
         },
         {
           "id": "sma.motion.sma1_ctl_throw",
-          "role": "movement",
+          "role": "combat",
           "entry": "080ab60c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "a9b766df4864b44c2a560e72e45e4e5985d219cf8e17dd8ea932bc10ad519638",
-          "attempt_count": 1,
-          "reason": "dynamic entity index unresolved",
-          "wall_s": 0.0018319580000000016,
+          "input_signature": "a8c0c2331636fa221291f20e0454b00bb318154ae0e6242cf430678c6765870f",
+          "attempt_count": 3,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "080ab60c"
+          ],
+          "wall_s": 0.001953708000000276,
           "closure_ready": false
         },
         {
@@ -569,10 +657,13 @@
           "role": "movement",
           "entry": "080abaa0",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ecd24a8f400f8bda7fd36d4d8ceabc26c49516301eeeafc23eed69c3c946d7ab",
-          "attempt_count": 1,
+          "input_signature": "82817e069037c6e211a0190e75bd18a7c41bb155124c013e59431a611ef22bba",
+          "attempt_count": 3,
           "reason": "unbounded read-only asset index",
-          "wall_s": 0.0003269169999999995,
+          "source_entries": [
+            "080abaa0"
+          ],
+          "wall_s": 0.0005430419999994385,
           "closure_ready": false
         },
         {
@@ -580,10 +671,13 @@
           "role": "combat",
           "entry": "080ad8dc",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ed2c85768e94d2ce5ac442973d040e9960a38a6d44e85db709e872402620b878",
-          "attempt_count": 1,
+          "input_signature": "2879acb855549625edd1088035a83fc7f8b2273dbca0df60604e8a5bab8d99c4",
+          "attempt_count": 2,
           "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0011154580000010128,
+          "source_entries": [
+            "080ad8dc"
+          ],
+          "wall_s": 0.0006385839999998311,
           "closure_ready": false
         },
         {
@@ -637,8 +731,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance.json",
         "ontology/portraits/super-mario-advance.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
-      "automatic_status_sha256": "db0e82c07bf4ce209dd461582022c7cb283cd54a924aedfb8dea95bb702a5381"
+      "counts_snapshot_utc": "2026-10-16T10:20:53.414455+00:00",
+      "automatic_status_sha256": "e93ee691dba6e1cb2b365a44d47587900d593e8e8e2ce2790795a2e2da3890df"
     },
     {
       "game": "super-mario-advance-2-super-mario-world",
@@ -647,7 +741,7 @@
       "priority": "active_depth",
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
-        "native_qualified": 12,
+        "native_qualified": 16,
         "composable_ports_ready": 2,
         "mechanics_closure_ready": 2
       },
@@ -748,12 +842,19 @@
             }
           ],
           "evidence_refs": [
-            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json"
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json",
+            "research/deep-extraction/mario/parallel-sma2/targets.json"
           ],
           "discovery_target_ids": [
             "sma2.accepted_top_contact",
             "sma2.reserve_item_drop_on_hurt",
-            "sma2.carried_attachment_release"
+            "sma2.carried_attachment_release",
+            "sma2.actor_transient_reset",
+            "sma2.actor_descriptor_begin",
+            "sma2.actor_descriptor_fields",
+            "sma2.actor_reinitialize",
+            "sma2.scene_random_pair_update",
+            "sma2.actor_player_relative_side"
           ],
           "remaining_unknowns": [
             "Existing natural movement route does not witness cape; riding branches are not full companion recovery"
@@ -824,7 +925,8 @@
             }
           ],
           "evidence_refs": [
-            "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+            "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+            "research/deep-extraction/mario/parallel-sma2/targets.json"
           ],
           "discovery_target_ids": [
             "sma2.fire_form_acquire",
@@ -836,7 +938,13 @@
             "sma2.fire_projectile_enemy_hit",
             "sma2.fire_projectile_impact",
             "sma2.impact_effect_lifetime",
-            "sma2.auxiliary_slot_clear"
+            "sma2.auxiliary_slot_clear",
+            "sma2.actor_transient_reset",
+            "sma2.actor_descriptor_begin",
+            "sma2.actor_descriptor_fields",
+            "sma2.actor_reinitialize",
+            "sma2.scene_random_pair_update",
+            "sma2.actor_player_relative_side"
           ],
           "remaining_unknowns": [
             "No emitted/native whole ability qualification yet",
@@ -906,9 +1014,17 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma2/targets.json"
+          ],
           "discovery_target_ids": [
-            "sma2.actor_player_contact_dispatch"
+            "sma2.actor_player_contact_dispatch",
+            "sma2.actor_transient_reset",
+            "sma2.actor_descriptor_begin",
+            "sma2.actor_descriptor_fields",
+            "sma2.actor_reinitialize",
+            "sma2.scene_random_pair_update",
+            "sma2.actor_player_relative_side"
           ],
           "remaining_unknowns": []
         },
@@ -1036,10 +1152,15 @@
           "role": "progression",
           "entry": "08030054",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "822df22e05f4dba0f21d346f91b03722810ad97e79ac67e82b16b9b77b1a873e",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08030054",
-          "wall_s": 0.0002655420000010622,
+          "input_signature": "1f678f3748491711c3e1f32553ae8e2628c208ecbd724982c212d96163e77cb5",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08030054",
+            "0809b348",
+            "0809b40c"
+          ],
+          "wall_s": 0.0009935829999996315,
           "closure_ready": false
         },
         {
@@ -1047,10 +1168,29 @@
           "role": "progression",
           "entry": "08034de4",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "6aad99896699b645712d334f50cc011f3fdcaa4cf26158df863ea703af56dd20",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08034de4",
-          "wall_s": 0.0001580829999987543,
+          "input_signature": "39fad87ea54a18810e3a5513699e2f77e6921758b55ea3f16e1f2863c039f2d0",
+          "attempt_count": 2,
+          "reason": "missing L0 dependency 08034dd8",
+          "source_entries": [
+            "08034dd8",
+            "08034de4"
+          ],
+          "wall_s": 0.00047891700000057824,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.fire_form_acquire",
+          "role": "progression",
+          "entry": "08034fe8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "3d34d47e3a5345595bb928f78195e52023d3461a466a44789199b3550afc5c31",
+          "attempt_count": 2,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08034fe8",
+            "0809b5cc"
+          ],
+          "wall_s": 0.0009575830000008168,
           "closure_ready": false
         },
         {
@@ -1058,68 +1198,75 @@
           "role": "progression",
           "entry": "080350f0",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "8cc871d330113fca97b7703a79c61818ad75511ba2657787dabf3a0fd53ec3c6",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080350f0",
-          "wall_s": 0.00021624999999936279,
+          "input_signature": "0791d660394f3ae8d3506358d3612565a581fb96522bcdc1c4ec9c14d568039f",
+          "attempt_count": 2,
+          "reason": "multiple object reference alias closure unresolved",
+          "source_entries": [
+            "0803407c",
+            "08034264",
+            "080350f0"
+          ],
+          "wall_s": 0.008439000000000085,
           "closure_ready": false
         },
         {
-          "id": "sma2.fire_projectile_update",
-          "role": "movement",
-          "entry": "0803e864",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "e74dda93dcf4d4852618fab6a59d07895d28a04c330ad5f7aae22492bee4810a",
-          "attempt_count": 1,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.004511916000000227,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.auxiliary_frame_dispatch",
-          "role": "movement",
-          "entry": "0803f7b8",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "0f138512cf0b107e366cb8573e4b061d5b784ce0742d1c3c48c2db53718c8035",
-          "attempt_count": 1,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.00044879199999847685,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.player_state_dispatch",
-          "role": "movement",
-          "entry": "08068dfc",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "50b8d0b8ade4cbbe628156769041e5e894df26f63c35fb36fa3321bbbf373da6",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 0809e43c",
-          "wall_s": 0.00028137500000013915,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.small_hurt_recovery",
+          "id": "sma2.auxiliary_terrain_query",
           "role": "combat",
-          "entry": "08069530",
-          "outcome": "native_qualified",
-          "input_signature": "e84471f6f1ba858ab3f2cae295c40320fca0fc0f1b70bf50a16bc1de76aa10fa",
-          "attempt_count": 1,
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 1865,
-          "artifacts": "local/ir/depth-runs/20261016T100753/super-mario-advance-2-super-mario-world/sma2.small_hurt_recovery",
-          "wall_s": 0.22173637500000076
+          "entry": "0803627c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a031fa0dbdeb13cb07ea87384d2524261f493f6de7127ca3b9314c47405d1c24",
+          "attempt_count": 2,
+          "reason": "missing L0 dependency 08035ffc",
+          "source_entries": [
+            "08035ffc",
+            "080361c0",
+            "0803627c"
+          ],
+          "wall_s": 0.0009170830000000407,
+          "closure_ready": false
         },
         {
-          "id": "sma2.growth_transform_finish",
+          "id": "sma2.reserve_item_drop_on_hurt",
           "role": "progression",
-          "entry": "0806959c",
+          "entry": "080381f8",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "aca0bb908474226430b66eae92078b117ffce2e84c5b3f517ee83aa356efdf7e",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 0806959c",
-          "wall_s": 0.0001789579999993407,
+          "input_signature": "db84fd80591c934660e8e21ca5c208eec2247401d9a40fbaead0314328c8d0e0",
+          "attempt_count": 2,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080381f8",
+            "0809b5cc"
+          ],
+          "wall_s": 0.001285207999999649,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_reward_slot",
+          "role": "combat",
+          "entry": "0803d804",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "74fe39a9cc3f53ae4f3f7739bae51ebaf586470c1bdefe41b424824c5935ead9",
+          "attempt_count": 3,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "0803d804"
+          ],
+          "wall_s": 0.0006915410000001287,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_reward_record",
+          "role": "combat",
+          "entry": "0803da0c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "d70fae91b9b9771816cbce57296a48504b2d6738ddff38d67ab023ebba950b49",
+          "attempt_count": 2,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "0803d804",
+            "0803da0c"
+          ],
+          "wall_s": 0.002778166999999776,
           "closure_ready": false
         },
         {
@@ -1127,10 +1274,15 @@
           "role": "combat",
           "entry": "0802fd38",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "443544ebc0c7f86cc9dc5c45663234e4af4a3445ab6ebf3380bd6d1e6d6fae5f",
-          "attempt_count": 3,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0013566249999996671,
+          "input_signature": "04a8987233a379e1ae6d26bfcd0d762279ad9a1dcaf5e1c9402f834896460caf",
+          "attempt_count": 5,
+          "reason": "callee object ABI argument missing",
+          "source_entries": [
+            "0802e978",
+            "0802fc0c",
+            "0802fd38"
+          ],
+          "wall_s": 0.0015428329999997992,
           "closure_ready": false
         },
         {
@@ -1202,10 +1354,16 @@
           "role": "combat",
           "entry": "0802bd9c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "a746fa00000438ef97d6a9a67376f76f16ce79e79f9eb344e25d948fe2f4eda9",
-          "attempt_count": 2,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.00472379200000006,
+          "input_signature": "3e6f62c1fcf5b9c35f8fd26b1d8889d5a440ad3eb2dd6b3f2214bc9184a95ccd",
+          "attempt_count": 4,
+          "reason": "callee object ABI argument missing",
+          "source_entries": [
+            "0802bd9c",
+            "0802e978",
+            "0802fc0c",
+            "0802fd38"
+          ],
+          "wall_s": 0.0050074170000002916,
           "closure_ready": false
         },
         {
@@ -1235,10 +1393,14 @@
           "role": "combat",
           "entry": "0802fc0c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "5c77124345e4e01c877c7bab1b799e76b65ef50c6836cbdaf0fdb2bb34bbbe75",
-          "attempt_count": 3,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.00046733399999965286,
+          "input_signature": "c8c83a5ef6768e01d3c454f33faaaa4f973e9f28ba6df916b3beb68f96b601c1",
+          "attempt_count": 5,
+          "reason": "callee object ABI argument missing",
+          "source_entries": [
+            "0802e978",
+            "0802fc0c"
+          ],
+          "wall_s": 0.0005393750000002306,
           "closure_ready": false
         },
         {
@@ -1246,10 +1408,13 @@
           "role": "combat",
           "entry": "0802fcb8",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "0c76d30b1bc60e83021a00fcada77b416fe413a890925b45ef222ec80815623c",
-          "attempt_count": 3,
+          "input_signature": "fe4e5505b2a29f60d6d9e7786ae1039fc2c62fda7960ba4ffa496aebedc40bcf",
+          "attempt_count": 5,
           "reason": "unresolved pointer phi v62",
-          "wall_s": 0.0003974169999985122,
+          "source_entries": [
+            "0802fcb8"
+          ],
+          "wall_s": 0.0003733339999998364,
           "closure_ready": false
         },
         {
@@ -1257,10 +1422,13 @@
           "role": "combat",
           "entry": "0802fde0",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "976bd24e8a7f8410c7045c0766b3c762736b7f4828c47b2e46425caa54935fa9",
-          "attempt_count": 3,
+          "input_signature": "0912c5deb17632b6f7bd6937c87b1d992da22a72c295558d8714ddbc63bfee98",
+          "attempt_count": 5,
           "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.000408000000000186,
+          "source_entries": [
+            "0802fde0"
+          ],
+          "wall_s": 0.0004601250000000334,
           "closure_ready": false
         },
         {
@@ -1268,10 +1436,13 @@
           "role": "combat",
           "entry": "0802fe64",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "eb234b2515f64d169c863cff38c2ceb9cdbcb8930bc1901a8259cbf938a30cd9",
-          "attempt_count": 3,
+          "input_signature": "86595e8439c4724946df785aee62cd843955730698ec30e55227209ffb6a330f",
+          "attempt_count": 5,
           "reason": "unresolved pointer phi v193",
-          "wall_s": 0.0006489589999993939,
+          "source_entries": [
+            "0802fe64"
+          ],
+          "wall_s": 0.0007280409999999016,
           "closure_ready": false
         },
         {
@@ -1279,65 +1450,14 @@
           "role": "combat",
           "entry": "08034264",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "302ee102f7b871006c8a0188bc2d9e947c986741005f26df5122eb5dfb25638c",
-          "attempt_count": 2,
+          "input_signature": "ac30b0792eb3f308a6286c7be626431fee863214ad9edbd3570bda1ed7e7a8e2",
+          "attempt_count": 3,
           "reason": "multiple object reference alias closure unresolved",
-          "wall_s": 0.007384584000000416,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.fire_form_acquire",
-          "role": "movement",
-          "entry": "08034fe8",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "cfd12f132bed7345285ad7780102783d4db991a8cefdf71335a6917f1198a3d9",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0011076250000012777,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.auxiliary_terrain_query",
-          "role": "movement",
-          "entry": "0803627c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "af8fa685361a51bfe107f7141519b01d462ea8b611a7204ee8d3000dcdc28802",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080361c0",
-          "wall_s": 0.0005965830000000949,
-          "closure_ready": false
-        },
-        {
-          "id": "sma2.reserve_item_drop_on_hurt",
-          "role": "progression",
-          "entry": "080381f8",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "14c29097adff1049606026d00ed1abeef7614820b0f0732b1d4f7be31c329b94",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0011401660000007752,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-2-super-mario-world.combat.sma2_reward_slot",
-          "role": "combat",
-          "entry": "0803d804",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "17625715c50208435cc93defc641197c4db0e84fff20f5cd36e94c317d953271",
-          "attempt_count": 2,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0006396660000014265,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-2-super-mario-world.combat.sma2_reward_record",
-          "role": "combat",
-          "entry": "0803da0c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "2203de9fdb5b7efb7c4b3a96bb268131fa5ef9355c0ac72baa070861a89bdb05",
-          "attempt_count": 1,
-          "reason": "dynamic entity index unresolved",
-          "wall_s": 0.00100220800000006,
+          "source_entries": [
+            "0803407c",
+            "08034264"
+          ],
+          "wall_s": 0.008863667000000408,
           "closure_ready": false
         },
         {
@@ -1399,44 +1519,143 @@
           "closure_ready": false
         },
         {
-          "id": "sma2.cape_form_transform_finish",
+          "id": "sma2.fire_projectile_update",
           "role": "movement",
-          "entry": "08069640",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "entry": "0803e864",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "e74dda93dcf4d4852618fab6a59d07895d28a04c330ad5f7aae22492bee4810a",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.004511916000000227,
           "closure_ready": false
         },
         {
-          "id": "sma2.fire_form_transform_finish",
+          "id": "sma2.auxiliary_frame_dispatch",
           "role": "movement",
-          "entry": "0806969c",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "entry": "0803f7b8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0f138512cf0b107e366cb8573e4b061d5b784ce0742d1c3c48c2db53718c8035",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.00044879199999847685,
           "closure_ready": false
+        },
+        {
+          "id": "sma2.player_state_dispatch",
+          "role": "movement",
+          "entry": "08068dfc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "50b8d0b8ade4cbbe628156769041e5e894df26f63c35fb36fa3321bbbf373da6",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809e43c",
+          "wall_s": 0.00028137500000013915,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.small_hurt_recovery",
+          "role": "combat",
+          "entry": "08069530",
+          "outcome": "native_qualified",
+          "input_signature": "e84471f6f1ba858ab3f2cae295c40320fca0fc0f1b70bf50a16bc1de76aa10fa",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1865,
+          "artifacts": "local/ir/depth-runs/20261016T100753/super-mario-advance-2-super-mario-world/sma2.small_hurt_recovery",
+          "wall_s": 0.22173637500000076
+        },
+        {
+          "id": "sma2.growth_transform_finish",
+          "role": "progression",
+          "entry": "0806959c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "aca0bb908474226430b66eae92078b117ffce2e84c5b3f517ee83aa356efdf7e",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0806959c",
+          "wall_s": 0.0001789579999993407,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.cape_form_transform_finish",
+          "role": "progression",
+          "entry": "08069640",
+          "outcome": "native_qualified",
+          "input_signature": "889d215006e63d617fe933cc2eaaac2192e5708f1ffc204d51f3d1ddd95886bb",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1024,
+          "artifacts": "local/ir/depth-runs/20261016T101352/super-mario-advance-2-super-mario-world/sma2.cape_form_transform_finish",
+          "source_entries": [
+            "08069640"
+          ],
+          "wall_s": 0.300796708
+        },
+        {
+          "id": "sma2.fire_form_transform_finish",
+          "role": "progression",
+          "entry": "0806969c",
+          "outcome": "native_qualified",
+          "input_signature": "258bda5a679051d03d7e6152dd96d576bde07c16123db2809a3706eebe97162f",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1865,
+          "artifacts": "local/ir/depth-runs/20261016T101352/super-mario-advance-2-super-mario-world/sma2.fire_form_transform_finish",
+          "source_entries": [
+            "0806969c"
+          ],
+          "wall_s": 0.2139402920000002
         },
         {
           "id": "sma2.death_countdown_life_retry",
           "role": "combat",
           "entry": "08069d60",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "092fe689487e0340b3dbfda42ebe0fdd20f6a705b6c5e425dd579686bf3313bd",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809b348",
+          "source_entries": [
+            "08069d60",
+            "0809b348"
+          ],
+          "wall_s": 0.0023789160000005083,
           "closure_ready": false
         },
         {
           "id": "sma2.player_mode_clock_presentation",
           "role": "progression",
           "entry": "0806aa14",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "f017b2f936c1f8e994607045b7dcfdb37a8c655e5c0f3277f1ef05730ed44561",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0805e0a8",
+          "source_entries": [
+            "0805e0a8",
+            "0806aa14"
+          ],
+          "wall_s": 0.0076043749999996635,
           "closure_ready": false
         },
         {
           "id": "sma2.carried_attachment_release",
           "role": "combat",
           "entry": "0806c910",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
-          "closure_ready": false
+          "outcome": "native_qualified",
+          "input_signature": "c12dba4c6058a3c48e9e1567c97a898effe52d47260dea8da1ff9cb8129820fc",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T101352/super-mario-advance-2-super-mario-world/sma2.carried_attachment_release",
+          "source_entries": [
+            "0806c910"
+          ],
+          "wall_s": 0.2077472079999998
         },
         {
           "id": "sma-2-super-mario-world.motion.sma2_special_surface",
@@ -1465,10 +1684,17 @@
         },
         {
           "id": "sma2.form_action_legality",
-          "role": "movement",
+          "role": "combat",
           "entry": "0806f128",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "b307620bd6397e94f014812245adf437e0291c3a2ba2132c42d15c94626fa22b",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "0806f128",
+            "08071514"
+          ],
+          "wall_s": 0.001683250000000136,
           "closure_ready": false
         },
         {
@@ -1536,32 +1762,62 @@
           "id": "sma2.death_velocity_begin",
           "role": "combat",
           "entry": "080709f8",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "208709463f081918ee6134736b8166fe3156a42cc2e109cc31ceacc19391d858",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809b348",
+          "source_entries": [
+            "080709f8",
+            "08070a14",
+            "0809b348"
+          ],
+          "wall_s": 0.0006124579999999824,
           "closure_ready": false
         },
         {
           "id": "sma2.death_state_begin",
           "role": "combat",
           "entry": "08070a14",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "55af103cf6d39d3e561b9553f35545350daf431496e5d31d847c5228698787fb",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809b348",
+          "source_entries": [
+            "08070a14",
+            "0809b348"
+          ],
+          "wall_s": 0.000545875000000251,
           "closure_ready": false
         },
         {
           "id": "sma2.powered_hurt_recovery",
           "role": "combat",
           "entry": "080711d4",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
-          "closure_ready": false
+          "outcome": "native_qualified",
+          "input_signature": "4eb8ff2dfe82f8791f45f5be4c67eb5e415feafb1c85849dd67af06d8bac566c",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1865,
+          "artifacts": "local/ir/depth-runs/20261016T101358/super-mario-advance-2-super-mario-world/sma2.powered_hurt_recovery",
+          "source_entries": [
+            "080711d4"
+          ],
+          "wall_s": 0.22685312499999988
         },
         {
           "id": "sma2.fire_projectile_spawn",
-          "role": "movement",
+          "role": "combat",
           "entry": "08071514",
-          "outcome": "pending_unattempted",
-          "discovery_only": false,
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a3201c5826636e62a877464038c623d8675fcc3663f6efd42d1499889049a5e9",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "source_entries": [
+            "08071514"
+          ],
+          "wall_s": 0.0014208339999992603,
           "closure_ready": false
         },
         {
@@ -1582,8 +1838,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world.json",
         "ontology/portraits/super-mario-advance-2-super-mario-world.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
-      "automatic_status_sha256": "d041162e414da9dff971b144dbde634cd43dd5e08fa8ce537371dd19eb5077d2"
+      "counts_snapshot_utc": "2026-10-16T10:20:53.414455+00:00",
+      "automatic_status_sha256": "62f53e4a0b04a1c3077476c798f23f8a9ce5e7f1363332238223320eae353f77"
     },
     {
       "game": "super-mario-advance-4-super-mario-bros-3",
@@ -1592,9 +1848,9 @@
       "priority": "active_depth",
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
-        "native_qualified": 7,
-        "composable_ports_ready": 1,
-        "mechanics_closure_ready": 1
+        "native_qualified": 8,
+        "composable_ports_ready": 2,
+        "mechanics_closure_ready": 2
       },
       "families": [
         {
@@ -1658,9 +1914,13 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma4/targets.json"
+          ],
           "discovery_target_ids": [
-            "sma4.player_terrain_phase"
+            "sma4.player_terrain_phase",
+            "sma4.actor_contact_shape_a",
+            "sma4.actor_contact_overlap"
           ],
           "remaining_unknowns": []
         },
@@ -1730,11 +1990,14 @@
             }
           ],
           "evidence_refs": [
-            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-native-receipt.json"
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-native-receipt.json",
+            "research/deep-extraction/mario/parallel-sma4/targets.json"
           ],
           "discovery_target_ids": [
             "sma4.actor_player_contact_dispatch",
-            "sma4.stomp_side_contact_policy"
+            "sma4.stomp_side_contact_policy",
+            "sma4.actor_contact_shape_a",
+            "sma4.actor_contact_overlap"
           ],
           "remaining_unknowns": []
         },
@@ -1829,13 +2092,16 @@
             }
           ],
           "evidence_refs": [
-            "research/deep-extraction/mario/sma4-actor-dispatch.json"
+            "research/deep-extraction/mario/sma4-actor-dispatch.json",
+            "research/deep-extraction/mario/parallel-sma4/targets.json"
           ],
           "discovery_target_ids": [
             "sma4.actor_player_contact_dispatch",
             "sma4.species_update_dispatch",
             "sma4.walking_hopping_ai",
-            "sma4.actor_pair_contact_phase"
+            "sma4.actor_pair_contact_phase",
+            "sma4.actor_contact_shape_a",
+            "sma4.actor_contact_overlap"
           ],
           "remaining_unknowns": []
         },
@@ -1865,7 +2131,9 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-sma4/targets.json"
+          ],
           "discovery_target_ids": [
             "sma4.normal_actor_pool_allocate",
             "sma4.actor_reset_from_species",
@@ -1873,7 +2141,9 @@
             "sma4.actor_state_update_dispatch",
             "sma4.actor_type_initialize",
             "sma4.dead_actor_class_dispatch",
-            "sma4.retire_actor_and_spawn_marker"
+            "sma4.retire_actor_and_spawn_marker",
+            "sma4.actor_contact_shape_a",
+            "sma4.actor_contact_overlap"
           ],
           "remaining_unknowns": []
         },
@@ -1995,6 +2265,326 @@
       "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
       "automatic_target_rows": [
         {
+          "id": "sma4.dead_actor_offscreen_gate",
+          "role": "combat",
+          "entry": "080413f0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "5c7c965e93a8cc84848e4eae1ed967c31102df07ab98a8daa09e5561b00f1f73",
+          "attempt_count": 3,
+          "reason": "object/reference argument alias closure unresolved",
+          "source_entries": [
+            "080413f0",
+            "08042b28"
+          ],
+          "wall_s": 0.0009397500000005721,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_type_initialize",
+          "role": "combat",
+          "entry": "0804146c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "6cc1dde73ba16448b9acfddfd4d99e8d3b426b5f80b8a3195f0c908fb06e9f28",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "0804146c",
+            "0804a650"
+          ],
+          "wall_s": 0.0014033749999988743,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.species_update_dispatch",
+          "role": "combat",
+          "entry": "0804149c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ec7f6640fe17e721a6e0ad7e2b3f6a122f1077b634b2ad16259be20b3e414623",
+          "attempt_count": 3,
+          "reason": "unresolved indirect call",
+          "source_entries": [
+            "0804149c",
+            "08045638",
+            "080e7638"
+          ],
+          "wall_s": 0.0005687920000010394,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.dead_actor_class_dispatch",
+          "role": "combat",
+          "entry": "080420d4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "d7647148b128c992268a0c5013731bf5bb13c08195e862cd494aefdaf46792f6",
+          "attempt_count": 3,
+          "reason": "object/reference argument alias closure unresolved",
+          "source_entries": [
+            "080413f0",
+            "080420d4",
+            "08042b28"
+          ],
+          "wall_s": 0.0006146660000005966,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_state_update_dispatch",
+          "role": "combat",
+          "entry": "080425a0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "b7d2972ac7ccda63847098bb1e4d8611e0d762e9d447ba5a0cb9a2beed435fe2",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "080425a0"
+          ],
+          "wall_s": 0.0009094159999989415,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.world_actor_frame",
+          "role": "combat",
+          "entry": "08042738",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "baa765ea3ec70697b9cb8871cad2dfb7d74c0be63e288ee8f6f6d4b3e6069e7a",
+          "attempt_count": 3,
+          "reason": "maximum recursion depth exceeded in comparison",
+          "source_entries": [
+            "08042738",
+            "0808dfec",
+            "0808e75c",
+            "0808e8f0"
+          ],
+          "wall_s": 0.007862250000000515,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_player_contact_dispatch",
+          "role": "combat",
+          "entry": "08046fb4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "5cb17793e0482d9329dccdc6ec6eed712a0933a16cbc18aae2ed96efc445865c",
+          "attempt_count": 3,
+          "reason": "missing L0 dependency 080460fc",
+          "source_entries": [
+            "080460fc",
+            "08046568",
+            "080466bc",
+            "08046fb4"
+          ],
+          "wall_s": 0.0012458330000004736,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.retirement_reward_accounting",
+          "role": "combat",
+          "entry": "08047144",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9dabca43269af0d250f8e7e40b958050360ab124d8bc6d3ec53e40cbf8f0e18e",
+          "attempt_count": 2,
+          "reason": "maximum recursion depth exceeded in comparison",
+          "source_entries": [
+            "08047144",
+            "0808dfec",
+            "0808e75c",
+            "0808e8f0"
+          ],
+          "wall_s": 0.003404624999999939,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.stomp_resolution",
+          "role": "combat",
+          "entry": "08046744",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "e1cb35aac8917701831614f845a93c3a20dea6fd3682b75e88676023e7dd3830",
+          "attempt_count": 4,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08046744",
+            "0809b190",
+            "080e4040"
+          ],
+          "wall_s": 0.005632583000000579,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.stomp_side_contact_policy",
+          "role": "combat",
+          "entry": "08046b88",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0ba677c288b6b11a0710cb6cbd920156b506a7e222cb23351dca38da8f9a6dab",
+          "attempt_count": 3,
+          "reason": "object/reference argument alias closure unresolved",
+          "source_entries": [
+            "08046b44",
+            "08046b88"
+          ],
+          "wall_s": 0.0012632080000001267,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "role": "movement",
+          "entry": "080479c0",
+          "outcome": "native_qualified",
+          "input_signature": "18f01cfca0ad25b09a705b8defc27a961c416162d881b6a2bec7f84732115a94",
+          "attempt_count": 3,
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 2770,
+          "artifacts": "local/ir/depth-runs/20261016T101053/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "source_entries": [
+            "080479c0"
+          ],
+          "wall_s": 0.288278333
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+          "role": "combat",
+          "entry": "080479e8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ce5d8ac5e1122a76f1d588203f40a2c5dc8cee3561467697920bfa1eea1807c4",
+          "attempt_count": 3,
+          "reason": "callee object ABI argument missing",
+          "source_entries": [
+            "080479c0",
+            "080479e8"
+          ],
+          "wall_s": 0.0009399999999999409,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_motion_gravity_terrain",
+          "role": "movement",
+          "entry": "08047ac8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "578cf49eeccc8611bed77eb1879b07d5e4fb246262b3480e37e2f9c7f566fc5b",
+          "attempt_count": 3,
+          "reason": "callee object ABI argument missing",
+          "source_entries": [
+            "080479c0",
+            "080479e8",
+            "08047ac8"
+          ],
+          "wall_s": 0.0006577910000000742,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.growth_pickup",
+          "role": "progression",
+          "entry": "08068cd4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "58842a11919d41f896bab8b892eb6146cce1147edfb6eaeab649272246b0229c",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08068aa4",
+            "08068cd4",
+            "080e4040"
+          ],
+          "wall_s": 0.0010122919999995261,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.fire_pickup",
+          "role": "progression",
+          "entry": "08068d60",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "f2ab8a9c9e592fb2c81b1ef2ebdb77139bb426625148f3cab182177ba7daf316",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08068d60",
+            "080e4040"
+          ],
+          "wall_s": 0.0008517499999998179,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.leaf_pickup",
+          "role": "progression",
+          "entry": "08068dd0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "cd3f1e3713c0f0838f161bc21e66adc3d9fbdd017e39b8c389fdbb7ccee8dce0",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "08068dd0",
+            "080e4040"
+          ],
+          "wall_s": 0.0011577919999998798,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.jump_gravity_policy",
+          "role": "movement",
+          "entry": "0809a42c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "530b66292ba04842d79ac75cf1ec8f9bc07161e196d2e308a4fdf98228b75916",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "source_entries": [
+            "0809a42c",
+            "080e4040"
+          ],
+          "wall_s": 0.0029877499999999557,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.horizontal_integration",
+          "role": "movement",
+          "entry": "080a0f68",
+          "outcome": "native_qualified",
+          "input_signature": "af5d36c7e3e64db195b94a2585a3c87b8b0c648d88e247e7654a163f7e52b136",
+          "attempt_count": 2,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T101358/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.motion.horizontal_integration",
+          "source_entries": [
+            "080a0f68"
+          ],
+          "wall_s": 0.23182304200000026
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
+          "role": "movement",
+          "entry": "080a1040",
+          "outcome": "native_qualified",
+          "input_signature": "f164581ff130ee6d410110f16f3c04ff657713267edcb3d05e6b589c904e3568",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.motion.vertical_integration",
+          "wall_s": 0.23360154199999972
+        },
+        {
+          "id": "sma4.actor_update_discovery.08041464",
+          "role": "combat",
+          "entry": "08041464",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
+          "role": "combat",
+          "entry": "08046738",
+          "outcome": "native_qualified",
+          "input_signature": "aaa8d029bdd525278087da63cb9e1b9ff3419e8bd1972f7863b719f3ea3a5ad4",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.flatten_initializer",
+          "wall_s": 0.20519791600000037
+        },
+        {
           "id": "sma4.clear_actor_active",
           "role": "combat",
           "entry": "08047910",
@@ -2028,287 +2618,6 @@
           "attempt_count": 1,
           "reason": "unresolved pointer phi v65",
           "wall_s": 0.0003570419999974206,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.actor_pair_contact_phase",
-          "role": "combat",
-          "entry": "08051144",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "266c9cb76a304b611b773b3a4996e13bd038efcfd9dfda1484adeda5806532f2",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08046154",
-          "wall_s": 0.0005980420000000208,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.walking_hopping_ai",
-          "role": "combat",
-          "entry": "0805130c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "c669433b10716635b32af5f55796f3b1105b8be364d6b13fc6986893c8ca0484",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08047db0",
-          "wall_s": 0.0011724999999991326,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.death_phase_2",
-          "role": "combat",
-          "entry": "080a674c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "9d7aa9cdef76ee30fdfefcfcb60486d2dbb387af30749de9299ddf9a2784438c",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080e64a8",
-          "wall_s": 0.0005453329999980383,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.death_phase_3",
-          "role": "combat",
-          "entry": "080a678c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "34d8179306437d88b37ca0e2f84c8e8ff8fc2b8001e1bde7b887f746a48fe816",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080e64a8",
-          "wall_s": 0.0010768339999991383,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.combat.stomp_resolution",
-          "role": "combat",
-          "entry": "08046744",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "fa4cc9928ad4cf8cae2b683b73da017fec365e287a0f0ee97b373a20865449dd",
-          "attempt_count": 2,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.004290916000002198,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.stomp_side_contact_policy",
-          "role": "combat",
-          "entry": "08046b88",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "d24cd3099070ca7accfc2cd14b32044882370387e915a1ebdb21d7552c95694b",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08046b44",
-          "wall_s": 0.002181124999999895,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
-          "role": "movement",
-          "entry": "080479c0",
-          "outcome": "native_qualified",
-          "input_signature": "111e6b0cf6ae867f42d536f2b1d07f5e8e94b834323a89e556f88d2a5e27ec8a",
-          "attempt_count": 2,
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 2770,
-          "artifacts": "local/ir/depth-runs/20261016T100234/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.actor_x_integration",
-          "wall_s": 0.285293542
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
-          "role": "combat",
-          "entry": "080479e8",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "cdd3c6955f5ae3f2f8e078a920f25a2e2af2343ca1cfa77503346e44331e27ea",
-          "attempt_count": 1,
-          "reason": "multiple object reference alias closure unresolved",
-          "wall_s": 0.00040766599999919606,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.actor_motion_gravity_terrain",
-          "role": "movement",
-          "entry": "08047ac8",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "92f3c74a267330044e07c44ca7abfcaa753514b3be673f7399238a8ed976d21c",
-          "attempt_count": 1,
-          "reason": "object/reference argument alias closure unresolved",
-          "wall_s": 0.0013569169999989583,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.progression.growth_pickup",
-          "role": "progression",
-          "entry": "08068cd4",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "4d99001cf4a61c1cd93fdf61157de7b1344dcc38d35376f76862b006a747fbe3",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0007818329999995655,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.progression.fire_pickup",
-          "role": "progression",
-          "entry": "08068d60",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "83466e130572fe6263c089a2b0fcb2e9b6143ebe45a01ffc3e60168103ce92f0",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0007115420000012307,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.progression.leaf_pickup",
-          "role": "progression",
-          "entry": "08068dd0",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "1139bfb62865e3623182c12251709709b65ce60febe5b8ed01c2e061c613080e",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0007546669999989319,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.motion.jump_gravity_policy",
-          "role": "movement",
-          "entry": "0809a42c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "cf7a09dd70e4e384b60e63266af21e2b83711c9db0ea2047ff6f99601f315eaf",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.002476959000000889,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.motion.horizontal_integration",
-          "role": "movement",
-          "entry": "080a0f68",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "e562428a54641e02ea68faa4b00be23206ea50c76a90e31d2b237b50e81b95ee",
-          "attempt_count": 1,
-          "reason": "multiple object reference alias closure unresolved",
-          "wall_s": 0.0006563750000001534,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
-          "role": "movement",
-          "entry": "080a1040",
-          "outcome": "native_qualified",
-          "input_signature": "f164581ff130ee6d410110f16f3c04ff657713267edcb3d05e6b589c904e3568",
-          "attempt_count": 1,
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.motion.vertical_integration",
-          "wall_s": 0.23360154199999972
-        },
-        {
-          "id": "sma4.dead_actor_offscreen_gate",
-          "role": "combat",
-          "entry": "080413f0",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "b6f41d90f22df3b0ba4743ab790542e4cca02ed2cc9e158a710f14708a1bb8f7",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08042b28",
-          "wall_s": 0.00038716700000129833,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.actor_update_discovery.08041464",
-          "role": "combat",
-          "entry": "08041464",
-          "outcome": "pending_causal_analysis",
-          "discovery_only": true,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.actor_type_initialize",
-          "role": "combat",
-          "entry": "0804146c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ec368901e489dda5478aa0efe496a91178d457f6ae2e48fbcdc47e872ec99109",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.002100875000000002,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.species_update_dispatch",
-          "role": "combat",
-          "entry": "0804149c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "03f215d71acdc16a532c87e55b92e071d708f1e73c3f3205da0f17b92e1574d2",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08045638",
-          "wall_s": 0.00038783299999956,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.dead_actor_class_dispatch",
-          "role": "combat",
-          "entry": "080420d4",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ce217613d55b3749200b0da06da9d6ab90a16ad3328257e7b43180bc4de9c26b",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08042b28",
-          "wall_s": 0.0006357909999987754,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.actor_state_update_dispatch",
-          "role": "combat",
-          "entry": "080425a0",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "bdbb947c0d414d2aa114b539e58762e0f3021578df2cbfa64803f9c09527fe1a",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.0008736250000005441,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.world_actor_frame",
-          "role": "combat",
-          "entry": "08042738",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "aa6196d2a291714a4c8b8e152c2913c5b3e9f0fe5f3904c182f1a72ef36cfcd9",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 0808e8f0",
-          "wall_s": 0.0043594999999996276,
-          "closure_ready": false
-        },
-        {
-          "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
-          "role": "combat",
-          "entry": "08046738",
-          "outcome": "native_qualified",
-          "input_signature": "aaa8d029bdd525278087da63cb9e1b9ff3419e8bd1972f7863b719f3ea3a5ad4",
-          "attempt_count": 1,
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.flatten_initializer",
-          "wall_s": 0.20519791600000037
-        },
-        {
-          "id": "sma4.actor_player_contact_dispatch",
-          "role": "combat",
-          "entry": "08046fb4",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "195d33156c691abced18b88629b6b7065b9a0113695895911f103be0d9416aae",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080466bc",
-          "wall_s": 0.0006550000000000722,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.retirement_reward_accounting",
-          "role": "combat",
-          "entry": "08047144",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "081e70651283c82b1eea00f32cd072ab303a11b05f8cd2276aa538f0f026dfba",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 0808e8f0",
-          "wall_s": 0.0002491659999996898,
           "closure_ready": false
         },
         {
@@ -2688,6 +2997,28 @@
           "vectors": 16384,
           "artifacts": "local/ir/depth-runs/20261016T100633/super-mario-advance-4-super-mario-bros-3/sma4.actor_pair_reaction",
           "wall_s": 0.311702375
+        },
+        {
+          "id": "sma4.actor_pair_contact_phase",
+          "role": "combat",
+          "entry": "08051144",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "266c9cb76a304b611b773b3a4996e13bd038efcfd9dfda1484adeda5806532f2",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08046154",
+          "wall_s": 0.0005980420000000208,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.walking_hopping_ai",
+          "role": "combat",
+          "entry": "0805130c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c669433b10716635b32af5f55796f3b1105b8be364d6b13fc6986893c8ca0484",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08047db0",
+          "wall_s": 0.0011724999999991326,
+          "closure_ready": false
         },
         {
           "id": "sma4.actor_update_discovery.08051504",
@@ -4270,6 +4601,28 @@
           "reason": "missing L0 dependency 080e3e7c",
           "wall_s": 0.00037395800000084023,
           "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_2",
+          "role": "combat",
+          "entry": "080a674c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9d7aa9cdef76ee30fdfefcfcb60486d2dbb387af30749de9299ddf9a2784438c",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e64a8",
+          "wall_s": 0.0005453329999980383,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_3",
+          "role": "combat",
+          "entry": "080a678c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "34d8179306437d88b37ca0e2f84c8e8ff8fc2b8001e1bde7b887f746a48fe816",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e64a8",
+          "wall_s": 0.0010768339999991383,
+          "closure_ready": false
         }
       ],
       "automatic_status_ref": "local/ir/depth-status/super-mario-advance-4-super-mario-bros-3.json",
@@ -4278,8 +4631,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3.json",
         "ontology/portraits/super-mario-advance-4-super-mario-bros-3.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
-      "automatic_status_sha256": "451659505aca1533a8716540fca8338d5994346525e0e1612d71a75625ec0c1a"
+      "counts_snapshot_utc": "2026-10-16T10:20:53.414455+00:00",
+      "automatic_status_sha256": "39251b5437b0c1d75c9eb663c66b5bea121ffff6a4ebaacbc6af60329e8f1c27"
     },
     {
       "game": "mario-and-luigi-superstar-saga",
@@ -4291,7 +4644,7 @@
       "families": [
         {
           "id": "paired_overworld_controller",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4315,8 +4668,19 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-superstar/targets.json"
+          ],
+          "discovery_target_ids": [
+            "mlss.input_edges_repeat",
+            "mlss.input_sensitive_rate",
+            "mlss.actor_vertical_init",
+            "mlss.actor_vertical_update",
+            "mlss.actor_vertical_reset",
+            "mlss.actor_contact_quantize",
+            "mlss.actor_contact_vertical_cleanup",
+            "mlss.actor_scheduler"
+          ],
           "remaining_unknowns": []
         },
         {
@@ -4448,6 +4812,28 @@
           "evidence_refs": [],
           "discovery_target_ids": [],
           "remaining_unknowns": []
+        },
+        {
+          "id": "bundled_mario_bros_engine",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Independent embedded engine input, actor/update loops, multiplayer/session rules and persistence",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-superstar/targets.json"
+          ],
+          "discovery_target_ids": [
+            "mlss.mb.input_edges",
+            "mlss.mb.frame_dispatch"
+          ],
+          "remaining_unknowns": [
+            "Separate ROM header/inputs/frame dispatch identified; no HighFunction/native behavior qualification in bounded export census."
+          ]
         }
       ],
       "known_family_enumeration_complete": false,
@@ -4467,7 +4853,7 @@
       "families": [
         {
           "id": "vehicle_controller_surface_dynamics",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4491,13 +4877,22 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-kart/targets.json"
+          ],
+          "discovery_target_ids": [
+            "kart.racer_update",
+            "kart.input_speed_policy",
+            "kart.acceleration_state",
+            "kart.surface_contact",
+            "kart.contact_recovery",
+            "kart.character_class_profiles"
+          ],
           "remaining_unknowns": []
         },
         {
           "id": "items_combat_hazards",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4521,13 +4916,19 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-kart/targets.json"
+          ],
+          "discovery_target_ids": [
+            "kart.pair_contact",
+            "kart.impact_resource_loss",
+            "kart.homing_projectile"
+          ],
           "remaining_unknowns": []
         },
         {
           "id": "opponent_ai_racing_world",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4546,13 +4947,19 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-kart/targets.json"
+          ],
+          "discovery_target_ids": [
+            "kart.cpu_route_heading",
+            "kart.cpu_heading_slew",
+            "kart.cpu_speed_policy"
+          ],
           "remaining_unknowns": []
         },
         {
           "id": "race_progression_rules",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4576,13 +4983,19 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-kart/targets.json"
+          ],
+          "discovery_target_ids": [
+            "kart.checkpoint_lap_crossing",
+            "kart.track_checkpoint_producer",
+            "kart.race_phase_finish"
+          ],
           "remaining_unknowns": []
         },
         {
           "id": "persistence_lifecycle",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -4601,8 +5014,15 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/parallel-kart/targets.json"
+          ],
+          "discovery_target_ids": [
+            "kart.racer_reset",
+            "kart.packed_item_cleanup",
+            "kart.record_defaults_merge",
+            "kart.flash_sector_program"
+          ],
           "remaining_unknowns": []
         }
       ],
@@ -4617,7 +5037,16 @@
   "evidence_packets": [
     "research/deep-extraction/mario/mechanics-targets.json",
     "research/deep-extraction/mario/l0-context-evidence.json",
-    "research/deep-extraction/mario/context-observations.json"
+    "research/deep-extraction/mario/context-observations.json",
+    "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+    "research/deep-extraction/mario/sma2-fire-pool-contracts.json",
+    "research/deep-extraction/mario/sma1-death-entry-fixtures.json",
+    "research/deep-extraction/mario/audio-service-boundaries.json",
+    "research/deep-extraction/mario/parallel-sma4/targets.json",
+    "research/deep-extraction/mario/parallel-superstar/targets.json",
+    "research/deep-extraction/mario/parallel-sma1/targets.json",
+    "research/deep-extraction/mario/parallel-sma2/targets.json",
+    "research/deep-extraction/mario/parallel-kart/targets.json"
   ],
   "status_definitions": {
     "partial_manual_native_qualified": "Existing finite original/recovered/emitted and native source-host evidence; NOT automatically lifted whole family.",
@@ -4625,5 +5054,19 @@
     "static_causal_target": "Own-ROM export traced to actual mechanic/state/service dependencies; no new native executable qualification.",
     "unknown_not_recovered": "No sufficient own-ROM executable evidence currently recorded. Candidate names are investigation obligations, not claims of recovered mechanics.",
     "coverage_complete": "Requires defended mode/state/transition/dependency/data/persistence and native acceptance closure, never helper count."
+  },
+  "new_causal_qualification": {
+    "id": "sma1.death_update_lives",
+    "entry": "080a9334",
+    "source_dependencies": [
+      "080ac11c"
+    ],
+    "outcome": "automatic_original_generated_and_expected_state_pass",
+    "vectors": 16384,
+    "explicit_expected_cases": 8,
+    "wall_s": 0.287819666,
+    "receipt_ref": "local/ir/depth-runs/20261016T102001/super-mario-advance/sma1.death_update_lives/receipt.json",
+    "fixture_evidence": "research/deep-extraction/mario/sma1-death-entry-fixtures.json",
+    "limits": "Death timer, life decrement/signals and fall integration only. External completion consumption, retry/game-over scene and persistence unresolved. Not idempotent."
   }
 }

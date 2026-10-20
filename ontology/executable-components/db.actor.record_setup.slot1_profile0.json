@@ -1,0 +1,122 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "db.actor.record_setup.slot1_profile0",
+  "label": "Initialize actor record lanes for exact recovery call arguments",
+  "role": "actor_record_setup",
+  "source_game": "dragon-ball-advanced-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/db.actor.record_setup.slot1_profile0/package.json",
+  "package_sha256": "a112f3b02205d862703b9ff47fb77061bfc01751fe72da79ec9e0b359fd25502",
+  "behavior_sha256": "a4bde96a8766eb58eabd59475d5ae611cd45f6a2a884de9985840771cdebe629",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d9f94614dde3f9d613229addc265cf2f0bc71cb5d51e10e7c0ccbd58a3927303"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 1,
+        "unsigned_max": 1
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u16",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 0
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "actor_flag_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.control",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/08004040.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u16",
+        "count": 2
+      },
+      {
+        "id": "collection_1",
+        "storage_type": "u16",
+        "count": 2
+      },
+      {
+        "id": "collection_2",
+        "storage_type": "u16",
+        "count": 2
+      },
+      {
+        "id": "collection_3",
+        "storage_type": "u32",
+        "count": 2
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "source_actor_and_shared_context_backing",
+    "clock": "explicit_invocation",
+    "phase": "actor_record_setup",
+    "ordering": "Preserve serialized L1 body order; caller order source-backed in L2 only",
+    "source_subsystem_qualified": false
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/db.actor.record_setup.slot1_profile0/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite isolated operator receipt; no connected subsystem, gameplay reachability or complete game claim.",
+    "Canonical actor aliases and shared context state remain shared; no independent field copies.",
+    "No manual/recovered C input; generated.c is compiler output from serialized own-ROM HighFunction.",
+    "r1 exactly1 and r2 exactly0; do not widen domain or link into other call sites without proof.",
+    "Caller08017068 binding remains blocked by callee owned collection view binding unresolved.",
+    "Unannotated fields/collections retain unknown quantity/unit meaning; all original state must survive. Parameter and return domains/meanings live in pinned source contract/citations, never new L1 parameter fields.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+    "sha256": "d60a8d42c1271d77fa4a64a958b9c5456efe622151ef2ee02ae2a8efeea15368"
+  }
+}

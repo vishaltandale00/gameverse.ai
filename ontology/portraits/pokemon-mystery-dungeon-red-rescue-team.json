@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "game_id": "pokemon-mystery-dungeon-red-rescue-team",
-  "title": "Pokémon Mystery Dungeon: Red Rescue Team",
+  "title": "Pok\u00e9mon Mystery Dungeon: Red Rescue Team",
   "identity": {
     "tagline": "A rescue partnership turns each dungeon step into a team decision.",
     "categories": [
@@ -1351,7 +1351,376 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:59:54.722839+00:00",
+      "rom_sha1": "9f4cfc5b5f4859d17169a485462e977c7aac2b89",
+      "status": "ok",
+      "function_records": 2896,
+      "pseudo_c_generated": 2896,
+      "process_wall_s": 27.1,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/pokemon-mystery-dungeon-red-rescue-team/pokemon-mystery-dungeon-red-rescue-team/functions.jsonl",
+      "export_sha256": "a05b8c1fddf0d819abf43a9cdf6ed67bcbe5cac62f54181e998eabf297c51b47",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/pokemon-mystery-dungeon-red-rescue-team/pokemon-mystery-dungeon-red-rescue-team/summary.json",
+      "summary_sha256": "235a23ae8d329f2eee651d8dfd58b9d0399329bec8775c652f5b6a879333b139",
+      "warning_function_count": 2494,
+      "unknown_register_function_count": 77,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x0800b32c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "DISPCNT",
+            "DMA0CNT_H",
+            "DMA0SAD",
+            "DMA1CNT_H",
+            "DMA2CNT_H",
+            "DMA3CNT_H",
+            "DMA3SAD",
+            "WAITCNT",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0800b540",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "TM3CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0800b5f0",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800b620",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800b67c",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800b6b0",
+          "io_ref": [
+            "VCOUNT",
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x0800b8c8",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0800b988",
+          "io_ref": [
+            "DISPSTAT",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0800ba5c",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0800bc14",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x0800bd08",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0SAD",
+            "DMA1CNT_H",
+            "DMA2CNT_H",
+            "DMA3CNT_H",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800cb74",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x0800cd84",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0800ce54",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x0800d6ac",
+          "io_ref": [
+            "BG0HOFS",
+            "BLDCNT",
+            "IE",
+            "IME",
+            "RCNT",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800d7d0",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080ae274",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080ae8c8",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1SAD",
+            "DMA2CNT_H",
+            "DMA2CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080aef24",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080af1e0",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_X+1",
+            "SOUND2CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_H+1",
+            "SOUND4CNT_L+1",
+            "SOUNDCNT_L",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x080af324",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "DMA2CNT_H",
+            "DMA2CNT_L",
+            "DMA2DAD",
+            "DMA2SAD",
+            "FIFO_A",
+            "FIFO_B",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_H",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x080af41c",
+          "io_ref": [
+            "TM0CNT_H",
+            "TM0CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080af4c0",
+          "io_ref": [
+            "SOUNDBIAS+1"
+          ]
+        },
+        {
+          "entry": "0x080af5ac",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA2CNT_H",
+            "DMA2CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080af628",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA2CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080afa24",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_L+1"
+          ]
+        },
+        {
+          "entry": "0x080afadc",
+          "io_ref": [
+            "SOUND1CNT_H",
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_L",
+            "SOUND1CNT_L+1",
+            "SOUND2CNT_L",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_H",
+            "SOUND3CNT_H+1",
+            "SOUND3CNT_L",
+            "SOUND3CNT_L+1",
+            "SOUND4CNT_L",
+            "SOUND4CNT_L+1",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_L+1",
+            "WAVE_RAM",
+            "WAVE_RAM+12",
+            "WAVE_RAM+4",
+            "WAVE_RAM+8"
+          ]
+        },
+        {
+          "entry": "0x080b051c",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080b0558",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080b0600",
+          "io_ref": [
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080b06ac",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0778",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0810",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0934",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0a68",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0adc",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b0be0",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/pokemon-mystery-dungeon-red-rescue-team/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 1,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

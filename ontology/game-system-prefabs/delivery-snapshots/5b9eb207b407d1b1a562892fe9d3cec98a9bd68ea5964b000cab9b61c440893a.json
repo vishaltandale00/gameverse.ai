@@ -1,0 +1,220 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+  "sourceSystemIds": [
+    "alttp-four-swords.input-timed-state-toggle"
+  ],
+  "blueprintIds": [
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Original actor input changes a gated shared timed state and can produce a later eligible event delivery; full recognizable game/control and inventory experience remain incomplete.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Sample held and fresh input",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [
+          "hardware input adapter"
+        ],
+        "gaps": [
+          "Hardware pointer boundary is not executable closed."
+        ]
+      },
+      {
+        "id": "state",
+        "label": "Resolve shared actor state and admit source update",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [
+          "canonical actor/handle state"
+        ],
+        "gaps": [
+          "Paired actor/state reference return PIECE remains unsupported.",
+          "Full eligibility/controller caller closure is open."
+        ]
+      },
+      {
+        "id": "timer",
+        "label": "Advance eligible timer and toggle state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [
+          "source scheduler and eligibility"
+        ],
+        "gaps": [
+          "No periodic clock is inferred; eligible invocation is the source unit.",
+          "Gameplay ability identity and full action lifecycle remain unresolved."
+        ]
+      },
+      {
+        "id": "queue",
+        "label": "Append opaque activation event",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Only bounded enqueue is published/finite-qualified; excluded singleton is not a useful core-loop prefab.",
+          "Qualified count domain0..8 is not proven global invariant."
+        ]
+      },
+      {
+        "id": "drain",
+        "label": "Snapshot/reset then conditionally deliver FIFO",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [
+          "original driver services and lifetime"
+        ],
+        "gaps": [
+          "Original drain loop/eligibility ABI and dispatch driver remain unqualified."
+        ]
+      },
+      {
+        "id": "inventory",
+        "label": "Recover original inventory and owned ability consumer",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "No original inventory transaction or item/ability consumer mapped in existing evidence."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "state",
+        "kind": "shared-state",
+        "scope": "Shared held/fresh sample feeds original actor/controller; exact indirect entry reachability remains open."
+      },
+      {
+        "from": "state",
+        "to": "timer",
+        "kind": "source-call",
+        "scope": "Original source eligibility gates precede timer region; paired actor/state views must retain identity."
+      },
+      {
+        "from": "timer",
+        "to": "queue",
+        "kind": "event",
+        "scope": "Source high-bit activation enqueues opaque tag105 before timer reload; no fresh action logic authored."
+      },
+      {
+        "from": "queue",
+        "to": "drain",
+        "kind": "shared-state",
+        "scope": "One shared queue/count; original drain snapshots then clears count before eligibility gates, accepted entries FIFO; exact schedule unresolved."
+      }
+    ],
+    "missingForCoreGame": [
+      "Paired actor r0/shared-state r1 reference return blocks source controller automatic lift; exact current PIECE failure is retained.",
+      "Queue drain/eligibility/FIFO driver dependencies are source-mapped but not executable qualified.",
+      "Actual gameplay action identity, complete input/scheduler ownership and inventory-to-action path are unresolved.",
+      "No useful prefab is formed from the sole enqueue service; no singleton/disconnected basket counted.",
+      "Original inventory acquisition, ownership/equipment input consumer and persistence are not evidenced by the current packet."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "alttp-four-swords.indexed-action-delayed-event-core",
+      "label": "Indexed actor timed-state and event-delivery boundary",
+      "moduleId": "alttp-four-swords.indexed-action-delayed-event-core",
+      "sourceGame": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "sourceSystemId": "alttp-four-swords.input-timed-state-toggle",
+      "sourceContractRef": "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "alttp-four-swords.events.bounded_enqueue"
+      ],
+      "availability": "source-only",
+      "scope": "One original gated actor-state timer/event boundary. Enqueue service subset is published, but no ready full control or traversal phase is delivered.",
+      "gaps": [
+        "Paired actor r0/shared-state r1 reference return blocks source controller automatic lift; exact current PIECE failure is retained.",
+        "Queue drain/eligibility/FIFO driver dependencies are source-mapped but not executable qualified.",
+        "Actual gameplay action identity, complete input/scheduler ownership and inventory-to-action path are unresolved.",
+        "No useful prefab is formed from the sole enqueue service; no singleton/disconnected basket counted."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json",
+        "local/ir/fleet-next/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/current-accessor-repro.json"
+      ],
+      "canonicalState": {
+        "identity": "one original actor plus handle-indexed shared state and one shared queue service backing",
+        "fields": [
+          "actor identity/handle",
+          "shared mode26",
+          "shared timer89",
+          "shared held/fresh masks",
+          "shared queue count/entries"
+        ],
+        "aliasRule": "Preserve r0 actor/r1 shared state pair; same-handle actors reference same state; no per-function or per-actor queue copies."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "Source gated timed-state transition boundary",
+          "status": "source-only",
+          "scope": "Source-only internal action-state timer/input relationship; does not supply movement, jump admission, terrain, inventory permission or a portable controller.",
+          "evidence": [
+            "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json"
+          ]
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "20261016-alttp-prefab-canonical-metadata",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "metadata adaptation of existing pinned artifacts only; no toolchain execution",
+    "queueSeconds": null,
+    "validationSeconds": null,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "This pass only writes canonical metadata. Prior accessor lift and admission/native receipts remain unchanged and are not new execution measurements. Metadata assembly duration is separately recorded.",
+    "metadataAssemblySeconds": 0.0007841660000000011
+  },
+  "sourceCoreLoopMap": {
+    "path": "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/source-core-loop-map.json",
+    "sha256": "ec6ba5821d3ce7f4d70aea0ff5eb8c5cab59eb99c041114e8661a2b7058300f8"
+  },
+  "currentExecutableBlocker": {
+    "path": "local/ir/fleet-next/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/current-accessor-repro.json",
+    "sha256": "56070922cd56b9209ed4371082e628f5858b3112bad10bfdf97eb32da9873b4a"
+  },
+  "readyPrefabCount": 0,
+  "singleServiceExcludedFromCoreCount": true
+}

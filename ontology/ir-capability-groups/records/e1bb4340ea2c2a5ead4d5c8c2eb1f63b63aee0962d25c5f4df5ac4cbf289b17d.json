@@ -1,0 +1,150 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "driv3r.contact.initialize_records.source-entry-replacement.v1",
+  "game_id": "driv3r",
+  "module_id": "driv3r.actor.position-record-constraint",
+  "package_ids": [
+    "driv3r.contact.initialize_records"
+  ],
+  "source_roots": [
+    "0805fc3c"
+  ],
+  "canonicalstate": {
+    "id": "driv3r.actor.position-record-constraint",
+    "entry": "0805fb1c",
+    "canonical_bank": "0203c144",
+    "bytes": 40,
+    "owner": "one original Driv3r host bank shared by initializer and consumer; no detachedinstance storage",
+    "proof": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/initialization-state-contract.json",
+      "sha256": "3aed39317286cd9f874a428ab05b0237a62ca0aae03c5816571685dc6b4ed209"
+    },
+    "consumer_executable": false
+  },
+  "event_order": [
+    "Original source initializer zeroes the fixed40B bank. Source parent consumer remains unqualified; no complete contact schedule inferred."
+  ],
+  "exactpins": {
+    "standard_records": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/standard-records-v2.json",
+      "sha256": "3b827cfbc55efb282c83c75598ebd3e3169645a317721fc86de70bd722d2ecbc"
+    },
+    "outside_original_ir": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/initialization-ir-result.json",
+      "sha256": "ae5cc9b21ec09df5d1bbf17c036561d32a51b65dbd957eb7cd21ee04926fcf38"
+    },
+    "installed_supplement": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/initialization-installed-result.json",
+      "sha256": "3da02bec2cf79ca1c95f754e2696c0cf80c96dd15309e85ee514d4e253315767"
+    },
+    "original_qualification": {
+      "path": "local/roundtrip/weak-wave-driv3r-contact-init-001/receipt.json",
+      "sha256": "d8eab60310afad37e0e3c9f1798a208167388a384639ba68cf0d27d1544addfc"
+    },
+    "rebuilt_qualification": {
+      "path": "local/roundtrip/weak-wave-driv3r-initialize-installed-001/initialize/rebuilt-proof.json",
+      "sha256": "6f30267a893aa5014c8de677f67e0d3b1e3930933df4ef1dbdfe92c93d75fbfc"
+    },
+    "provider": {
+      "path": "local/roundtrip/weak-wave-driv3r-initialize-installed-001/provider-report.json",
+      "sha256": "b71457404707da2fedd5a3b4fb367602695ad7a9c9104829d45fb6e2093e654f"
+    },
+    "producer_qc": {
+      "path": "local/roundtrip/weak-wave-driv3r-initialize-installed-001/qc.json",
+      "sha256": "49aef1e03b9fb50c3fe848f199dd09c6ba7c9bae9baaa119d7da71f18be76b25"
+    },
+    "negative": {
+      "path": "local/roundtrip/weak-wave-driv3r-initialize-installed-negative-001/negative-result.json",
+      "sha256": "57297271b979ffcfab0c8bb436eb850206f912b417843189e5fdcef3cf74f8c2"
+    },
+    "provenance": {
+      "path": "local/roundtrip/weak-wave-driv3r-initialize-installed-001/compiler-runtime-dependencies.json",
+      "sha256": "d32e0f4d5a3d6ea9e0650f7ac380b28621a1503e6caf998e318a8bc4f15ae4fe"
+    },
+    "independent_qc": {
+      "context": {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/driv3r-installed-context-qc-v1.json",
+        "sha256": "8c12d32c59ed7e1a86bec5ccd610f1a55d170718f55088c52e4759086bc9654c"
+      },
+      "ir": {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/driv3r-installed-ir-qc-v1.json",
+        "sha256": "5e30c12bc9e0c6324d293c18ec2dfab17137fbbfd4527f00e27b6f2108b61efc"
+      }
+    },
+    "source_proposal": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/library-capability-v2.json",
+      "sha256": "4f3e682dab6e5d9487d99b4099195639b5c51e5bb7efaf43fa727b95c808a366"
+    },
+    "central_package": {
+      "path": "local/ir/packages/driv3r.contact.initialize_records/package.json",
+      "sha256": "2daa39236205ba558a714d8c66177d7b18b71c0f4cfd27be63c23a22db6deedf"
+    },
+    "central_behavior": {
+      "path": "local/ir/packages/driv3r.contact.initialize_records/l1.json",
+      "sha256": "7341817acf2563f56fd45e2028d885dce6aaf0471766700ee0cb954e5118b481"
+    },
+    "central_receipt": {
+      "path": "local/ir/packages/driv3r.contact.initialize_records/receipt.json",
+      "sha256": "b646e6fce340f08fdfa755e4627f79e4ed6f770bf95b55b07eb9b01c8d1874eb"
+    }
+  },
+  "native_eligibility": {
+    "proven": {
+      "automatic_IR_original_native_qualification": true,
+      "original_vectors": 64,
+      "explicit_expected_cases": 4,
+      "actual_installed_original_entry": true,
+      "installed_vectors": 64,
+      "installed_behavior_bytes": 168,
+      "installed_binding_bytes": 688,
+      "veneer_extent_bytes": 12,
+      "changed_original_bytes": 10,
+      "append_bytes": 856,
+      "raw_delta_bytes": 866,
+      "full_bank_and32canaries_source_register_frame": true,
+      "onebyte_installed_mutation_rejected": true
+    },
+    "finite_input_scope": {
+      "explicit_expected_state_cases": 4,
+      "harness_synthetic_cases": 60,
+      "total_original_emitted_vectors": 64,
+      "fixture_kinds": [
+        "allzero",
+        "all255",
+        "varyingbytes",
+        "alternatingbytes"
+      ],
+      "complete_capture_domain": false,
+      "detail": "Four explicit full40B expectedzero states plus60 harnesssynthetic inputs; not64 complete captured states. Generic originalreceipt metadata retained historically; no qualification_scope override in standardrecordsv2."
+    },
+    "independent_qc_status": "Frozen independent installed context/IR QC v1 pinned; no native rerun."
+  },
+  "runtime_capabilities": {
+    "portable_L1": true,
+    "actual_source_entry_replacement": true,
+    "generated_behavior_bytes": 168,
+    "mechanical_binding_bytes": 688,
+    "replacement_entry_veneer_bytes": 12,
+    "raw_difference_bytes": 866,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "whole_game_equivalent": null
+  },
+  "originalhostprerequisites": "Show as bounded contact-bank initialization recipe; existing artifacts/proofs do not make game or full driving system ready. New edits require fresh qualification.",
+  "gaps": {
+    "whole_game_semantic_equivalence": false,
+    "full_executable_driving_system": false,
+    "whole_game_editable_or_ready": false,
+    "contact_root_math_dependency_closure": false,
+    "actual_original_initializer_callsite_scheduling": false,
+    "complete_assets": false
+  },
+  "counts": {
+    "new_distinct_source_functions": 1,
+    "new_central_packages": 1,
+    "original_vectors_reused": 64,
+    "installed_vectors": 64,
+    "new_publication_native_calls": 0
+  },
+  "normalization": "Generic library envelope maps component_id to package_ids and source_parent.id to module_id; all source claims retained in pinned proposal. Prior88BThumb outsideartifact is historical, not added to168BARM installation."
+}

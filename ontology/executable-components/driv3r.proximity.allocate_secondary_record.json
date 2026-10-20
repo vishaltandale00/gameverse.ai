@@ -1,0 +1,311 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "driv3r.proximity.allocate_secondary_record",
+  "label": "Secondary proximity record request allocation",
+  "role": "proximity_record_allocation",
+  "source_game": "driv3r",
+  "origin": "automatic_highfunction_state_effects_projection",
+  "package_ref": "local/ir/packages/driv3r.proximity.allocate_secondary_record/package.json",
+  "package_sha256": "773fd9069dfa153e735a33ec56fcfe2030473f780b0bf8afb34a37260534356c",
+  "behavior_sha256": "5c84a5164858cc8a8fb0fb9e023bd34c2124ef9ef5823c20c48170b944b11f50",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 128,
+    "scope": "128 explicit source-derived fixtures: 2 selected lanes \u00d7 4 source classes (first empty, duplicate guard, full-pool reuse, permission guard) \u00d7 16 record slots. The same four profile words are fixed across all rows. Complete 192-byte pool output and 32 surrounding canary bytes are checked. No random vectors or gameplay traces were executed.",
+    "kind": "caller_scoped_state_effects_subset",
+    "scope_evidence": {
+      "fixture_input": {
+        "path": "local/ir/system-prefabs/driv3r/sibling01/fixtures.canonical.json",
+        "sha256": "84e247e5c068a0b38ca6e46eaf186bd0a03ea04084ed7812fa941c06092de6d1"
+      },
+      "capture_context": {
+        "kind": "source-derived_original_allocator_cases",
+        "source_case_count": 128,
+        "lanes": 2,
+        "classes": [
+          "first_empty",
+          "duplicate_guard",
+          "full_pool_reuse",
+          "permission_guard"
+        ],
+        "slots": 16,
+        "source": "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt"
+      },
+      "original_harness_scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous"
+    },
+    "receipt_sha256": "13263ae742d2d6e5cab3f43e4ad12af3ef356c29a60c7157647b6c7e7bf4645d"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "proximity_active_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_selection",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "proximity_allocation_lane",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_pool",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "proximity_activation_guard",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_pool",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "proximity_allocation_permission",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_lane_5",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "proximity_allocation_permission",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_lane_6",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "proximity_profile_word",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_secondary_record_payload_0",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "proximity_profile_word",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_secondary_record_payload_1",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "proximity_profile_word",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_secondary_record_payload_2",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "proximity_profile_word",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_secondary_record_payload_3",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "byte_region_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 192,
+      "semantic_type": {
+        "quantity": "proximity_record_pool_bytes",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.proximity_record_pool_v1",
+        "confidence": 1.0,
+        "evidence": [
+          "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 9,
+    "collections": [
+      {
+        "id": "byte_region_0",
+        "storage_type": "u8",
+        "count": 192
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "allocation_before_activation_in_original_caller",
+    "ordering": "Original caller invokes primary allocator, this secondary allocator, record updater, then activation scanner. Only this secondary allocator state effect is qualified."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_caller_scoped_state_effects_projection",
+    "machine_evidence_ref": "local/ir/packages/driv3r.proximity.allocate_secondary_record/l0.json",
+    "resolution": "Original source state effects with separately proven caller-discarded return; no original result ABI claim"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Caller-scoped state-effect projection at original callsite: inferred r0 result is discarded by the actual next callee; no allocator pointer return is exposed.",
+    "Finite native qualification is 128 exact source-derived allocation/guard cases across two selector lanes and all16 record positions, with full192-byte pool and32 surrounding canary bytes; no gameplay qualification.",
+    "Four profile inputs are raw32-bit source words; low16 bits are copied into the pool. Coordinate units and descriptor interpretation remain unproven.",
+    "Pool format:16records stride12; active byte, selector byte, four little-endian halfwords, two cleared bytes. Full pool reuses first record; duplicate active selector suppresses allocation.",
+    "Explicit experimental mixed-width proof applies to this reviewed component only. Global default remains fail-closed.",
+    "ARM original ABI clobbers r0-r3/r7/r9/r11/r12; source-pinned saved-LR return proof and bounded reference-window oracle were used.",
+    "No sibling allocator, activation scanner or resource initializer executable closure is claimed.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "return_projection": {
+    "kind": "caller_scoped_state_effects_projection",
+    "return_semantics": "unavailable_original_r0_discarded_by_declared_caller",
+    "callsite": "08002dbc",
+    "next_entry": "080b33b8",
+    "spans": [
+      {
+        "address": "08002dbc",
+        "size": 8,
+        "sha256": "e03f1700fba6a3ad7d9a31179f51f19c76e6b8ad89d845d674bf1c313c375082"
+      },
+      {
+        "address": "080b33b8",
+        "size": 8,
+        "sha256": "56ea2f318235c0aa5503acf85237e3a470c501a378df6cad01c5c34990a9f964"
+      },
+      {
+        "address": "080b3550",
+        "size": 4,
+        "sha256": "f5a4da655df1677956105ba11b462bd3a6bd564a80cda8da5abd82c33e6abccc"
+      }
+    ],
+    "basis": "Adjacent unconditional ARM BLs; next entry saves LR only then loads ROM literal into r0 before any r0 read",
+    "limitations": [
+      "No allocator result or full original function ABI claim",
+      "All memory and declared register liveouts remain required"
+    ]
+  },
+  "source_contract": {
+    "path": "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json",
+    "sha256": "bc2c5f79daa957d15486681c5cc93c326f43b5b11f74ebf2d7f959adbf3fd037"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "driv3r",
+    "entry": "080b32a8"
+  },
+  "domain_contract_fingerprint": "eac8b42405fc19b357677dcb2e1d64c648340736f63963dc212393794b19238b",
+  "specialization_subset": true
+}

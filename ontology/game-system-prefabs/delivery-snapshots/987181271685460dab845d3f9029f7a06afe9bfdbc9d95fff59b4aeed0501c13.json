@@ -1,0 +1,2946 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "tekken-advance",
+  "sourceSystemIds": [
+    "tekken.actor_box_separation"
+  ],
+  "blueprintIds": [
+    "melee-action"
+  ],
+  "status": "one-binding-valid-prefab",
+  "coreLoop": {
+    "playerOutcome": "Control a fighter, animate attacks, resolve contact/reaction, deplete opponent HP and continue the round. Only a bounded geometry separation transaction is currently native-qualified here.",
+    "phases": [
+      {
+        "id": "input-action",
+        "label": "Input, control and action selection",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [
+          "input/AI sampling",
+          "ROM script/callback dispatch"
+        ],
+        "gaps": [
+          "Input/AI/script dispatch and action eligibility not automatically qualified."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              168,
+              168
+            ],
+            "symbol": "FUN_0800d1f4",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              194,
+              194
+            ],
+            "symbol": "FUN_08010408",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "separation",
+        "label": "Refresh pair contact and separate four-by-four actor boxes",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "tekken-advance.actor-pair-separation"
+        ],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Finite distinct-actor domain only; original full caller lifecycle remains open."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              249,
+              249
+            ],
+            "symbol": "FUN_080130e8",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "actor-update",
+        "label": "Snapshot previous position, update scripts/animation and integrate actor",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [
+          "actor update activation/clock",
+          "animation/script dispatch"
+        ],
+        "gaps": [
+          "Update, animation/script callbacks, HP consumption and integration not qualified."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              169,
+              169
+            ],
+            "symbol": "FUN_0800d638",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "box-rebuild",
+        "label": "Rebuild four actor world boxes",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Published materializer is qualified; original caller scheduling, descriptor/lifetime and both actors wiring remain open."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              234,
+              234
+            ],
+            "symbol": "FUN_08011ee4",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              170,
+              170
+            ],
+            "symbol": "FUN_0800dbc4",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "attack-contact",
+        "label": "Query attack/hurt contact in both directions",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Attack/hurt query and eligibility remain unqualified; separation bit3 is not attack contact."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              235,
+              235
+            ],
+            "symbol": "FUN_08012060",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              170,
+              170
+            ],
+            "symbol": "FUN_0800dbc4",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "reaction-damage",
+        "label": "Apply impact and consume deferred damage",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [
+          "effect actor allocation",
+          "reaction callbacks",
+          "damage/HP and training policy"
+        ],
+        "gaps": [
+          "Impact writes pending damage +0x51f; actor update reads it on a later activation. No qualified impact\u2192HP/KO transaction or proven full frame clock."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              247,
+              247
+            ],
+            "symbol": "FUN_0801275c",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              169,
+              169
+            ],
+            "symbol": "FUN_0800d638",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      },
+      {
+        "id": "defeat-round",
+        "label": "Resolve defeat and continue the round",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+          "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+        ],
+        "requiredServices": [
+          "actor pool/tag lifecycle",
+          "round/scene scheduler"
+        ],
+        "gaps": [
+          "KO/round continuation and scheduler dispatch ownership are not closed."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              169,
+              169
+            ],
+            "symbol": "FUN_0800d638",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+            "lines": [
+              117,
+              117
+            ],
+            "symbol": "FUN_080080d0",
+            "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input-action",
+        "to": "separation",
+        "kind": "source-call",
+        "scope": "0800d1f4 invokes input/control for A then B, then 080130e8."
+      },
+      {
+        "from": "separation",
+        "to": "actor-update",
+        "kind": "source-call",
+        "scope": "Machine witness case08008584: pair phase, then conditional active A/B updates; scheduler full dispatch ownership remains open."
+      },
+      {
+        "from": "actor-update",
+        "to": "box-rebuild",
+        "kind": "shared-state",
+        "scope": "0800d638 snapshots previous x/y before integration; later0800dbc4 materializes A then B from canonical actors. Separator consumed prior materialized boxes."
+      },
+      {
+        "from": "box-rebuild",
+        "to": "attack-contact",
+        "kind": "source-call",
+        "scope": "0800dbc4 materializes A/B before08012060(A,B) then(B,A)."
+      },
+      {
+        "from": "attack-contact",
+        "to": "reaction-damage",
+        "kind": "source-call",
+        "scope": "0800dbc4 gates0801275c impact separately; predicates and all impact consumers unqualified."
+      },
+      {
+        "from": "reaction-damage",
+        "to": "actor-update",
+        "kind": "shared-state",
+        "scope": "0801275c writes pending damage +0x51f,0800d638 consumes on later activation; exact next-frame lifecycle not proven."
+      },
+      {
+        "from": "reaction-damage",
+        "to": "defeat-round",
+        "kind": "host-required",
+        "scope": "HP/KO/round boundary requires unclosed source scheduler and policy; no stubbed continuation."
+      }
+    ],
+    "missingForCoreGame": [
+      "Original input/control, dynamic action/script/animation callbacks, actor update clock and integration are not executable-qualified.",
+      "Original prior-box\u2192separation\u2192integration\u2192box-rebuild order is source-backed only; no recovered executable full scheduler.",
+      "Attack/hurt query, gated impact, pending-damage\u2192HP/KO and round continuation are open.",
+      "Exact/partial actor alias, pool/tag lifetime and descriptor ownership remain unqualified."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "tekken-advance.actor-box-contact",
+      "label": "Actor pair separation and contact marker",
+      "moduleId": "tekken.actor_box_separation",
+      "sourceGame": "tekken-advance",
+      "sourceSystemId": "tekken.actor_box_separation",
+      "sourceContractRef": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+      "planIds": [
+        "melee-action"
+      ],
+      "packageIds": [
+        "tekken.collision.separate_actor_boxes"
+      ],
+      "availability": "published-subset",
+      "scope": "Published original four-by-four source separator transaction and explicit shared actor state; refreshed contact marker and x corrections available.",
+      "gaps": [
+        "Original input/control, dynamic action/script/animation callbacks, actor update clock and integration are not executable-qualified.",
+        "Original prior-box\u2192separation\u2192integration\u2192box-rebuild order is source-backed only; no recovered executable full scheduler.",
+        "Attack/hurt query, gated impact, pending-damage\u2192HP/KO and round continuation are open.",
+        "Exact/partial actor alias, pool/tag lifetime and descriptor ownership remain unqualified."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+        "local/ir/fleet-next/tekken-advance/coverage-pass/separation-v10/receipt.json",
+        "local/ir/packages/tekken.collision.separate_actor_boxes/package.json",
+        "local/ir/packages/tekken.collision.separate_actor_boxes/receipt.json",
+        "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "one stable actor-pair module with actor_a and actor_b canonical backing",
+        "fields": [
+          {
+            "id": "actor_a.position_x",
+            "port": "field_0",
+            "storageType": "u32",
+            "access": "read_write",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.x",
+              "label": "actor_a position_x",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.position_depth",
+            "port": "field_1",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.depth",
+              "label": "actor_a position_depth",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.previous_x",
+            "port": "field_2",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.x",
+              "label": "actor_a previous_x",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.frame_flags",
+            "port": "field_3",
+            "storageType": "u32",
+            "access": "read_write",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.actor.frame_flags",
+              "label": "actor_a contact bit3; other source flags preserved",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.separation_flags",
+            "port": "field_4",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.actor.separation_flags",
+              "label": "actor_a bit3 disables separation; other source flags remain opaque",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[0].roles",
+            "port": "field_5",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_a box 0 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[0].x_lower",
+            "port": "field_6",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 0 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[0].y_lower",
+            "port": "field_7",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 0 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[0].x_upper",
+            "port": "field_8",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 0 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[0].y_upper",
+            "port": "field_9",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 0 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[1].roles",
+            "port": "field_10",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_a box 1 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[1].x_lower",
+            "port": "field_11",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 1 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[1].y_lower",
+            "port": "field_12",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 1 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[1].x_upper",
+            "port": "field_13",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 1 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[1].y_upper",
+            "port": "field_14",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 1 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[2].roles",
+            "port": "field_15",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_a box 2 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[2].x_lower",
+            "port": "field_16",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 2 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[2].y_lower",
+            "port": "field_17",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 2 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[2].x_upper",
+            "port": "field_18",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 2 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[2].y_upper",
+            "port": "field_19",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 2 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[3].roles",
+            "port": "field_20",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_a box 3 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[3].x_lower",
+            "port": "field_21",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 3 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[3].y_lower",
+            "port": "field_22",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 3 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[3].x_upper",
+            "port": "field_23",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_a box 3 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_a.world_boxes[3].y_upper",
+            "port": "field_24",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_a box 3 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.position_x",
+            "port": "field_25",
+            "storageType": "u32",
+            "access": "read_write",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.x",
+              "label": "actor_b position_x",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.position_depth",
+            "port": "field_26",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.depth",
+              "label": "actor_b position_depth",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.previous_x",
+            "port": "field_27",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 256
+              },
+              "frame": "tekken.world.x",
+              "label": "actor_b previous_x",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.frame_flags",
+            "port": "field_28",
+            "storageType": "u32",
+            "access": "read_write",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.actor.frame_flags",
+              "label": "actor_b contact bit3; other source flags preserved",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.separation_flags",
+            "port": "field_29",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.actor.separation_flags",
+              "label": "actor_b bit3 disables separation; other source flags remain opaque",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[0].roles",
+            "port": "field_30",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_b box 0 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[0].x_lower",
+            "port": "field_31",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 0 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[0].y_lower",
+            "port": "field_32",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 0 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[0].x_upper",
+            "port": "field_33",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 0 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[0].y_upper",
+            "port": "field_34",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 0 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[1].roles",
+            "port": "field_35",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_b box 1 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[1].x_lower",
+            "port": "field_36",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 1 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[1].y_lower",
+            "port": "field_37",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 1 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[1].x_upper",
+            "port": "field_38",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 1 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[1].y_upper",
+            "port": "field_39",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 1 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[2].roles",
+            "port": "field_40",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_b box 2 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[2].x_lower",
+            "port": "field_41",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 2 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[2].y_lower",
+            "port": "field_42",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 2 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[2].x_upper",
+            "port": "field_43",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 2 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[2].y_upper",
+            "port": "field_44",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 2 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[3].roles",
+            "port": "field_45",
+            "storageType": "u16",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "bitset",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.roles",
+              "label": "actor_b box 3 role bit0 participates in separation",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ]
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[3].x_lower",
+            "port": "field_46",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 3 x lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[3].y_lower",
+            "port": "field_47",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 3 y lower endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[3].x_upper",
+            "port": "field_48",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.x",
+              "label": "actor_b box 3 x upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          },
+          {
+            "id": "actor_b.world_boxes[3].y_upper",
+            "port": "field_49",
+            "storageType": "u32",
+            "access": "read_only",
+            "meaning": {
+              "quantity": "position",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "tekken.box.world.y",
+              "label": "actor_b box 3 y upper endpoint",
+              "confidence": 0.98,
+              "evidence": [
+                "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+              ],
+              "signed_encoding": "twos_complement"
+            }
+          }
+        ],
+        "aliasRule": "Each actor and its embedded four world boxes share actor backing across producers and consumers. Actor A/B accessed views must be distinct/non-overlapping; do not clone actors per facet."
+      },
+      "roleFacets": [
+        {
+          "roleId": "contact",
+          "capability": "Pair geometry separation contact and x correction",
+          "status": "published-subset",
+          "scope": "Provides original separation contact bit3 and ordered x correction only. No attack/hit/damage consumer.",
+          "evidence": [
+            "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+            "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+              "sha256": "34064e666bdf16c02ba52667fbb5a5eb6097b80030ac748557b67cc4f473e6c8"
+            },
+            {
+              "path": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json",
+              "sha256": "4c4176d841ba1e78d7dee30216ea29ba1a1e9f238bc66d966a46f4f408e0d940"
+            }
+          ]
+        },
+        {
+          "roleId": "fighter-control",
+          "capability": "Observed upstream control dependency",
+          "status": "source-only",
+          "scope": "0800d1f4 input/control phase before separator; no input/action component supplied.",
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+          ],
+          "evidencePins": [
+            {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+              "lines": [
+                168,
+                168
+              ],
+              "symbol": "FUN_0800d1f4",
+              "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+            }
+          ]
+        },
+        {
+          "roleId": "action",
+          "capability": "Observed script/animation dependency",
+          "status": "source-only",
+          "scope": "Actor update script/animation dispatch is not provided by separator.",
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+          ],
+          "evidencePins": [
+            {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+              "lines": [
+                169,
+                169
+              ],
+              "symbol": "FUN_0800d638",
+              "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+            }
+          ]
+        },
+        {
+          "roleId": "reaction",
+          "capability": "Observed downstream impact dependency",
+          "status": "source-only",
+          "scope": "0801275c pending damage/effects unqualified; separator does not supply damage.",
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+          ],
+          "evidencePins": [
+            {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+              "lines": [
+                247,
+                247
+              ],
+              "symbol": "FUN_0801275c",
+              "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+            }
+          ]
+        },
+        {
+          "roleId": "defeat",
+          "capability": "Unclosed HP/KO and round continuation",
+          "status": "missing",
+          "scope": "No executable defeat/round transaction.",
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl"
+          ],
+          "evidencePins": [
+            {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+              "lines": [
+                169,
+                169
+              ],
+              "symbol": "FUN_0800d638",
+              "sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb"
+            }
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "tekken-advance.actor-pair-separation",
+        "label": "Separate a pair of four-box fighters",
+        "assemblyRef": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.assembly.json",
+        "validationRef": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/tekken-advance/prefab-pass/delivery.json",
+        "packageIds": [
+          "tekken.collision.separate_actor_boxes"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "qualificationScope": "Actual generic assembly binding/lowering PASS with current immutable published package; one original source transaction. Separate native1024 original-ROM/L1 finite distinct-actor proof reused. No composed prefab execution, all-state, full fight, physics, animation, damage or game readiness claim."
+      },
+      "sourceContractPin": {
+        "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+        "sha256": "34064e666bdf16c02ba52667fbb5a5eb6097b80030ac748557b67cc4f473e6c8"
+      },
+      "evidencePins": [
+        {
+          "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+          "sha256": "34064e666bdf16c02ba52667fbb5a5eb6097b80030ac748557b67cc4f473e6c8"
+        },
+        {
+          "path": "local/ir/fleet-next/tekken-advance/coverage-pass/separation-v10/receipt.json",
+          "sha256": "b43bd3b5f640a71ec6eda4bea36f33086eb44aa5ba1f9781489a6ead5cbea422"
+        },
+        {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/package.json",
+          "sha256": "2d563bad890882a4ae26004d28351062f397636f7f17e10ed939025f5596559b"
+        },
+        {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/receipt.json",
+          "sha256": "3d93ce9d1877e821cfccad9c7ea3d562db4e24b6adc714bb1904b364fab820c1"
+        },
+        {
+          "path": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json",
+          "sha256": "4c4176d841ba1e78d7dee30216ea29ba1a1e9f238bc66d966a46f4f408e0d940"
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "tekken-advance.actor-pair-separation",
+      "moduleId": "tekken.actor_box_separation",
+      "label": "Separate a pair of four-box fighters",
+      "path": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.assembly.json",
+      "sha256": "bc9413641de9c362b3b4980aabdda8bc361c038aa5212502a195b6b16cf02732",
+      "validation": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json",
+      "validationSha256": "4c4176d841ba1e78d7dee30216ea29ba1a1e9f238bc66d966a46f4f408e0d940",
+      "inputs": [
+        {
+          "id": "actor_a.position_x",
+          "label": "actor_a position_x",
+          "storageType": "u32",
+          "default": 772,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_position_x",
+            "component": "separate",
+            "field": "field_0"
+          },
+          "access": "read_write",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.x",
+            "label": "actor_a position_x",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.position_depth",
+          "label": "actor_a position_depth",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.depth\"}",
+          "binding": {
+            "stateSlot": "actor_a_position_depth",
+            "component": "separate",
+            "field": "field_1"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.depth",
+            "label": "actor_a position_depth",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.previous_x",
+          "label": "actor_a previous_x",
+          "storageType": "u32",
+          "default": 1024,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_previous_x",
+            "component": "separate",
+            "field": "field_2"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.x",
+            "label": "actor_a previous_x",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.frame_flags",
+          "label": "actor_a contact bit3; other source flags preserved",
+          "storageType": "u32",
+          "default": 1509949448,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_frame_flags",
+            "component": "separate",
+            "field": "field_3"
+          },
+          "access": "read_write",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.actor.frame_flags",
+            "label": "actor_a contact bit3; other source flags preserved",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.separation_flags",
+          "label": "actor_a bit3 disables separation; other source flags remain opaque",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_separation_flags",
+            "component": "separate",
+            "field": "field_4"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.actor.separation_flags",
+            "label": "actor_a bit3 disables separation; other source flags remain opaque",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[0].roles",
+          "label": "actor_a box 0 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_0_roles",
+            "component": "separate",
+            "field": "field_5"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_a box 0 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[0].x_lower",
+          "label": "actor_a box 0 x lower endpoint",
+          "storageType": "u32",
+          "default": 4294967292,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_0_x_lower",
+            "component": "separate",
+            "field": "field_6"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 0 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[0].y_lower",
+          "label": "actor_a box 0 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_0_y_lower",
+            "component": "separate",
+            "field": "field_7"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 0 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[0].x_upper",
+          "label": "actor_a box 0 x upper endpoint",
+          "storageType": "u32",
+          "default": 4294967295,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_0_x_upper",
+            "component": "separate",
+            "field": "field_8"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 0 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[0].y_upper",
+          "label": "actor_a box 0 y upper endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_0_y_upper",
+            "component": "separate",
+            "field": "field_9"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 0 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[1].roles",
+          "label": "actor_a box 1 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_1_roles",
+            "component": "separate",
+            "field": "field_10"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_a box 1 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[1].x_lower",
+          "label": "actor_a box 1 x lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_1_x_lower",
+            "component": "separate",
+            "field": "field_11"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 1 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[1].y_lower",
+          "label": "actor_a box 1 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967295,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_1_y_lower",
+            "component": "separate",
+            "field": "field_12"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 1 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[1].x_upper",
+          "label": "actor_a box 1 x upper endpoint",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_1_x_upper",
+            "component": "separate",
+            "field": "field_13"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 1 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[1].y_upper",
+          "label": "actor_a box 1 y upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_1_y_upper",
+            "component": "separate",
+            "field": "field_14"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 1 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[2].roles",
+          "label": "actor_a box 2 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_2_roles",
+            "component": "separate",
+            "field": "field_15"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_a box 2 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[2].x_lower",
+          "label": "actor_a box 2 x lower endpoint",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_2_x_lower",
+            "component": "separate",
+            "field": "field_16"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 2 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[2].y_lower",
+          "label": "actor_a box 2 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_2_y_lower",
+            "component": "separate",
+            "field": "field_17"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 2 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[2].x_upper",
+          "label": "actor_a box 2 x upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_2_x_upper",
+            "component": "separate",
+            "field": "field_18"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 2 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[2].y_upper",
+          "label": "actor_a box 2 y upper endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_2_y_upper",
+            "component": "separate",
+            "field": "field_19"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 2 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[3].roles",
+          "label": "actor_a box 3 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_3_roles",
+            "component": "separate",
+            "field": "field_20"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_a box 3 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[3].x_lower",
+          "label": "actor_a box 3 x lower endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_3_x_lower",
+            "component": "separate",
+            "field": "field_21"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 3 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[3].y_lower",
+          "label": "actor_a box 3 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967295,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_3_y_lower",
+            "component": "separate",
+            "field": "field_22"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 3 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[3].x_upper",
+          "label": "actor_a box 3 x upper endpoint",
+          "storageType": "u32",
+          "default": 5,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_3_x_upper",
+            "component": "separate",
+            "field": "field_23"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_a box 3 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_a.world_boxes[3].y_upper",
+          "label": "actor_a box 3 y upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_a_world_boxes_3_y_upper",
+            "component": "separate",
+            "field": "field_24"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_a box 3 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.position_x",
+          "label": "actor_b position_x",
+          "storageType": "u32",
+          "default": 1796,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_position_x",
+            "component": "separate",
+            "field": "field_25"
+          },
+          "access": "read_write",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.x",
+            "label": "actor_b position_x",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.position_depth",
+          "label": "actor_b position_depth",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.depth\"}",
+          "binding": {
+            "stateSlot": "actor_b_position_depth",
+            "component": "separate",
+            "field": "field_26"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.depth",
+            "label": "actor_b position_depth",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.previous_x",
+          "label": "actor_b previous_x",
+          "storageType": "u32",
+          "default": 4294966272,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 256}, \"frame\": \"tekken.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_previous_x",
+            "component": "separate",
+            "field": "field_27"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 256
+            },
+            "frame": "tekken.world.x",
+            "label": "actor_b previous_x",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.frame_flags",
+          "label": "actor_b contact bit3; other source flags preserved",
+          "storageType": "u32",
+          "default": 1509949448,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_frame_flags",
+            "component": "separate",
+            "field": "field_28"
+          },
+          "access": "read_write",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.actor.frame_flags",
+            "label": "actor_b contact bit3; other source flags preserved",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.separation_flags",
+          "label": "actor_b bit3 disables separation; other source flags remain opaque",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_separation_flags",
+            "component": "separate",
+            "field": "field_29"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.actor.separation_flags",
+            "label": "actor_b bit3 disables separation; other source flags remain opaque",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[0].roles",
+          "label": "actor_b box 0 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_0_roles",
+            "component": "separate",
+            "field": "field_30"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_b box 0 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[0].x_lower",
+          "label": "actor_b box 0 x lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_0_x_lower",
+            "component": "separate",
+            "field": "field_31"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 0 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[0].y_lower",
+          "label": "actor_b box 0 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_0_y_lower",
+            "component": "separate",
+            "field": "field_32"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 0 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[0].x_upper",
+          "label": "actor_b box 0 x upper endpoint",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_0_x_upper",
+            "component": "separate",
+            "field": "field_33"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 0 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[0].y_upper",
+          "label": "actor_b box 0 y upper endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_0_y_upper",
+            "component": "separate",
+            "field": "field_34"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 0 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[1].roles",
+          "label": "actor_b box 1 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_1_roles",
+            "component": "separate",
+            "field": "field_35"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_b box 1 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[1].x_lower",
+          "label": "actor_b box 1 x lower endpoint",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_1_x_lower",
+            "component": "separate",
+            "field": "field_36"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 1 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[1].y_lower",
+          "label": "actor_b box 1 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967295,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_1_y_lower",
+            "component": "separate",
+            "field": "field_37"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 1 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[1].x_upper",
+          "label": "actor_b box 1 x upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_1_x_upper",
+            "component": "separate",
+            "field": "field_38"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 1 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[1].y_upper",
+          "label": "actor_b box 1 y upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_1_y_upper",
+            "component": "separate",
+            "field": "field_39"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 1 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[2].roles",
+          "label": "actor_b box 2 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_2_roles",
+            "component": "separate",
+            "field": "field_40"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_b box 2 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[2].x_lower",
+          "label": "actor_b box 2 x lower endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_2_x_lower",
+            "component": "separate",
+            "field": "field_41"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 2 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[2].y_lower",
+          "label": "actor_b box 2 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967294,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_2_y_lower",
+            "component": "separate",
+            "field": "field_42"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 2 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[2].x_upper",
+          "label": "actor_b box 2 x upper endpoint",
+          "storageType": "u32",
+          "default": 5,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_2_x_upper",
+            "component": "separate",
+            "field": "field_43"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 2 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[2].y_upper",
+          "label": "actor_b box 2 y upper endpoint",
+          "storageType": "u32",
+          "default": 2,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_2_y_upper",
+            "component": "separate",
+            "field": "field_44"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 2 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[3].roles",
+          "label": "actor_b box 3 role bit0 participates in separation",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Full u16 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Opaque bits preserved; separation uses frame/separation bit3 or box role bit0 as described.",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_3_roles",
+            "component": "separate",
+            "field": "field_45"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.roles",
+            "label": "actor_b box 3 role bit0 participates in separation",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ]
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[3].x_lower",
+          "label": "actor_b box 3 x lower endpoint",
+          "storageType": "u32",
+          "default": 4,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_3_x_lower",
+            "component": "separate",
+            "field": "field_46"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 3 x lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[3].y_lower",
+          "label": "actor_b box 3 y lower endpoint",
+          "storageType": "u32",
+          "default": 4294967295,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_3_y_lower",
+            "component": "separate",
+            "field": "field_47"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 3 y lower endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[3].x_upper",
+          "label": "actor_b box 3 x upper endpoint",
+          "storageType": "u32",
+          "default": 7,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.x\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_3_x_upper",
+            "component": "separate",
+            "field": "field_48"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.x",
+            "label": "actor_b box 3 x upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        },
+        {
+          "id": "actor_b.world_boxes[3].y_upper",
+          "label": "actor_b box 3 y upper endpoint",
+          "storageType": "u32",
+          "default": 3,
+          "domain": "Full u32 source bit-pattern storage; finite1024 native evidence only; signed positions/endpoints use two\u2019s complement, source32-bit arithmetic. Unit/frame: {\"unit\": {\"numerator\": 1, \"denominator\": 1}, \"frame\": \"tekken.box.world.y\"}",
+          "binding": {
+            "stateSlot": "actor_b_world_boxes_3_y_upper",
+            "component": "separate",
+            "field": "field_49"
+          },
+          "access": "read_only",
+          "sourceMeaning": {
+            "quantity": "position",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "tekken.box.world.y",
+            "label": "actor_b box 3 y upper endpoint",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+            ],
+            "signed_encoding": "twos_complement"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "id": "actor_a.position_x",
+          "binding": {
+            "stateSlot": "actor_a_position_x",
+            "component": "separate",
+            "field": "field_0"
+          },
+          "meaning": "Updated Q8 x position, signed32 bit pattern; other position axes untouched."
+        },
+        {
+          "id": "actor_a.frame_flags",
+          "binding": {
+            "stateSlot": "actor_a_frame_flags",
+            "component": "separate",
+            "field": "field_3"
+          },
+          "meaning": "Frame flags; bit3 is refreshed separation contact, all other bits preserved. Not attack hit or damage."
+        },
+        {
+          "id": "actor_b.position_x",
+          "binding": {
+            "stateSlot": "actor_b_position_x",
+            "component": "separate",
+            "field": "field_25"
+          },
+          "meaning": "Updated Q8 x position, signed32 bit pattern; other position axes untouched."
+        },
+        {
+          "id": "actor_b.frame_flags",
+          "binding": {
+            "stateSlot": "actor_b_frame_flags",
+            "component": "separate",
+            "field": "field_28"
+          },
+          "meaning": "Frame flags; bit3 is refreshed separation contact, all other bits preserved. Not attack hit or damage."
+        }
+      ],
+      "phases": [
+        {
+          "id": "pair-separation",
+          "trigger": "Caller supplies one stable distinct actor pair and prior materialized box state; invoke once at its chosen separation phase.",
+          "invocations": [
+            "separate"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceOrder": "Inside080130e8: A then B contact refresh; eligibility; A-major/B-minor4\u00d74 decision; A then B contact set; ordered A then B x writes. Original outer phase places this before actor integration and box rebuild; host total schedule not supplied."
+        }
+      ],
+      "requiredServices": [],
+      "hostObligations": [
+        "Caller invokes this phase and maintains stable canonical actor backing and prior world-box records. No host callbacks occur inside the qualified leaf.",
+        "Full original phase sequencing, actor integration, input/script/animation and downstream impact services are not part of this prefab."
+      ],
+      "gaps": [
+        "Original input/control, dynamic action/script/animation callbacks, actor update clock and integration are not executable-qualified.",
+        "Original prior-box\u2192separation\u2192integration\u2192box-rebuild order is source-backed only; no recovered executable full scheduler.",
+        "Attack/hurt query, gated impact, pending-damage\u2192HP/KO and round continuation are open.",
+        "Exact/partial actor alias, pool/tag lifetime and descriptor ownership remain unqualified."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+        "local/ir/fleet-next/tekken-advance/scheduler-order.asm.txt"
+      ],
+      "qualificationScope": "Actual generic assembly binding/lowering PASS with current immutable published package; one original source transaction. Separate native1024 original-ROM/L1 finite distinct-actor proof reused. No composed prefab execution, all-state, full fight, physics, animation, damage or game readiness claim.",
+      "packagePins": [
+        {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/package.json",
+          "sha256": "2d563bad890882a4ae26004d28351062f397636f7f17e10ed939025f5596559b"
+        },
+        {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/l1.json",
+          "sha256": "92d84f2e7a86a28bacce5f0d6c01ce84d20f0c0c824c5247794c0d9789bb9cae"
+        },
+        {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/receipt.json",
+          "sha256": "3d93ce9d1877e821cfccad9c7ea3d562db4e24b6adc714bb1904b364fab820c1"
+        }
+      ],
+      "defaultSource": {
+        "fixtures": "local/ir/fleet-next/tekken-advance/coverage-pass/separation-v10/fixtures.json",
+        "case": 4,
+        "meaning": "Retained active geometry fixture; defaults are explicit inputs, not a new expected-output test."
+      },
+      "aliasRules": [
+        "Every actor reference and its four world-box views refer to the same canonical actor backing across producer, separator and later consumers. Do not copy world boxes into independent per-component state.",
+        "Qualified pair domain requires distinct non-overlapping actor accessed views; exact/partial actor alias cases are not qualified.",
+        "Scalarized ports describe proven non-overlapping accessed fields; they do not certify full actor-pool, partner-pointer, tag/swap or handle lifecycle closure."
+      ],
+      "eligibility": [
+        "Either actor separation-disable bit3 exits after contact refresh.",
+        "Original wrapped signed absolute depth difference greater than0x13ff exits.",
+        "Only box role bit0 participates; touching endpoints count as intersection.",
+        "No attack/hurt eligibility, HP/death, round or terrain service is folded into this separator."
+      ],
+      "sourceRefsPins": [
+        {
+          "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+          "sha256": "34064e666bdf16c02ba52667fbb5a5eb6097b80030ac748557b67cc4f473e6c8"
+        },
+        {
+          "path": "local/ir/fleet-next/tekken-advance/scheduler-order.asm.txt",
+          "sha256": "15553ab66c0873eeeb48bed939b6e4b99041a01bb6b21253cbeb6f01af132dc7"
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "runId": "tekken-prefab-transaction-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit; Python 3.9.6",
+    "queueSeconds": null,
+    "validationSeconds": 0.02875125,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.042845625,
+    "beforeAfter": null,
+    "accounting": "One narrow actual assembly validation nested in metadata preparation total. No build/native execution; existing1024 native receipt reused and not recounted. Initial source-map preparation0.009139125s separate. Queue unavailable; no implementation before/after benchmark."
+  },
+  "nextAction": "Integrate exact allowlisted prefab through central semantic/site owners; next executable source gap is caller integration/input-animation or attack/hurt\u2192impact consumer, not another disconnected helper.",
+  "metadataRevision": {
+    "id": "registrar-path-strings-v3",
+    "scope": "Reference representation only; source/native/assembly behavior and exact graph validation unchanged.",
+    "previousDescriptor": {
+      "path": "research/deep-extraction/resume/tekken-advance/prefab-pass/delivery-ready-v2.json",
+      "sha256": "1d741f038d33401d2a49f9c1b29f18df488aea083e392ae77e664a176f126d7c"
+    },
+    "seconds": 0.0011256670000000003,
+    "graphRuns": 0,
+    "nativeRuns": 0
+  }
+}

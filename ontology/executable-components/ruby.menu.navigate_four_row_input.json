@@ -1,0 +1,387 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ruby.menu.navigate_four_row_input",
+  "label": "Navigate Ruby source-local menu rows and columns",
+  "role": "source_local_menu_navigation",
+  "source_game": "pokemon-ruby-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ruby.menu.navigate_four_row_input/package.json",
+  "package_sha256": "9276eb9ddebfe1e2e8364be302c9618ac1514c215a1a45d22c19f4ee42d721e4",
+  "behavior_sha256": "135417e5fd6a0b751965abe5468799953d65d51c27ac10ab53fc37b040ed3a3c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "32a3977688af502d3805369a416c4925b4a157128d9340c38a60ff4f6913e0e8"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_navigation_mode",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.mode",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_row_index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.row_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_column_index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.column_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_scroll_origin_row",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.row_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_row_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.row_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_alternate_region_flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.region",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_menu_scroll_row_delta",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.row_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "raw_edge_or_repeat_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "byte_region_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "source_menu_column_limit_by_row",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ruby_menu_navigation.column_index",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+          "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+          "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": [
+      {
+        "id": "byte_region_0",
+        "storage_type": "u8",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": "One source menu navigation update from supplied repeat mask. Caller/sampler scheduling remains external and unqualified.",
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "3f8adced24aef269a5dd81a98b33f316f22b5a1539288a42bdc4e48ec0fd878c",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ruby.menu.navigate_four_row_input/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Finite512synthetic native cases; row0..3 conditional entry domain only",
+    "No confirm/cancel result consumer or scene effect/teardown evidenced",
+    "No runtime gameplay trace or whole menu/battle/L2 closure",
+    "Input sampling MMIO boundary remains upstream gap",
+    "Registered delivery unchanged; this is a versioned intake candidate only",
+    "Qualified native u32 return is preserved; semantic return meaning remains unknown/unexposed. No confirmed/cancelled result port or inference.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "system": {
+      "path": "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+      "sha256": "f4fe724d3556cc76f2ac51ddf47dc8d0ab4d451d47ce425faca17761745f681a"
+    },
+    "originalL0": {
+      "raw": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e77e8.json",
+        "sha256": "916322fd499aafa3b5fc4654a1b49a4f0fa511bdfb391338751be7f7f345e624"
+      },
+      "canonicalJsonSha256": "b4e894a7799a8efa2b997a9374289c818ce779faebefc4a65a1ec4c5d3fc7bc0",
+      "adapterL0Sha256": "b4e894a7799a8efa2b997a9374289c818ce779faebefc4a65a1ec4c5d3fc7bc0"
+    },
+    "linkedDependency": {
+      "symbol": "080e7ab8",
+      "l0": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/menu-export-20261016/l0/080e7ab8.json",
+        "sha256": "879817fc3042667588184447bf223915b4fc91ad989cc72433557c6d07e99350"
+      },
+      "qualifiedLeafReceipt": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/menu-clamp-four-row/receipt.json",
+        "sha256": "71fe5e6084504d3c151c2d449eaf03a4697c6d41b38b359f7c3c400fc12e02db"
+      },
+      "linkedBehaviorProvenance": "dependency automatically inlined by current Lifter; controller canonical mutable byte region retains direct row_limits[1] alias"
+    },
+    "ABI": {
+      "parameters": [],
+      "return_type": "u32",
+      "returnMeaning": null,
+      "proof": "Exact existing512 native receipt preserves original/generated u32 result comparison plus callee-saved/SP; source-local navigation return is not exposed as a semantic port. Earlier metadata void wording was inaccurate. No artifact or execution changed."
+    },
+    "stateDomains": [
+      {
+        "field": "field_0",
+        "domain": null
+      },
+      {
+        "field": "field_1",
+        "domain": {
+          "unsigned_min": 0,
+          "unsigned_max": 3
+        }
+      },
+      {
+        "field": "field_2",
+        "domain": null
+      },
+      {
+        "field": "field_3",
+        "domain": null
+      },
+      {
+        "field": "field_4",
+        "domain": null
+      },
+      {
+        "field": "field_5",
+        "domain": null
+      },
+      {
+        "field": "field_6",
+        "domain": null
+      },
+      {
+        "field": "field_7",
+        "domain": null
+      }
+    ],
+    "sourceRoleFrameEvidence": "row is signed index into row_limits; column is compared/clamped to selected per-row limit; vertical increments/wraps row and scroll origins, horizontal increments/wraps column; these frames identify this source-local index system only. No physical coordinates, screen identity, character, or battle role inferred.",
+    "sharedState": {
+      "inputOwner": "same upstream source input context via repeat mask reference",
+      "menuOwner": "one source menu navigation context",
+      "alias": "table byte at row_limits[1] is same direct controller byte; canonical_mutable_byte_region backing4bytes",
+      "noCrossInstanceAliasInference": true
+    },
+    "services": {
+      "requiredByThisLeaf": [],
+      "requiredUpstream": [
+        "KEYINPUT producer",
+        "scheduler dispatch ownership"
+      ]
+    },
+    "sourceOrder": [
+      "up before down; vertical row mutation then clamp when no scroll transition",
+      "left before right; column wrap then alternate-region transition",
+      "source clamp call retained, canonical region direct/indexed reads share backing"
+    ],
+    "qualification": {
+      "receipt": {
+        "path": "local/ir/fleet-next/pokemon-ruby-version/prefab-pass/linked-menu-native/receipt.json",
+        "sha256": "9c671d09fe3ba9d3af5ef615dffba75fe1f64c7ccc938a561edba7d4b79a9db0"
+      },
+      "vectors": 512,
+      "outcome": "pass",
+      "wall_s": 0.22069504199999998,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "nativeChecksReused": true
+    },
+    "usefulGraphAfterPublication": "Bind actual source-local row/column/repeat-mask, mode, scroll and row-limit storage explicitly; one source update, observable mutated row/column/scroll outputs; initialization/sampler integration still separate obligations",
+    "metadataCorrection": {
+      "supersedesPacket": {
+        "path": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/publication-candidates-menu-v1.json",
+        "sha256": "eb74ab93dce5543e3e2950a2abcfe29a3920ab39ab51de5148289ac7d542de68"
+      },
+      "scope": "Only native return ABI gap wording corrected; all L0/L1/adapter/generatedC/receipt pins unchanged",
+      "earlierVoidClaimCorrected": true,
+      "semanticReturnExposed": false
+    },
+    "acceptedCallerChain": {
+      "sourceEvidence": {
+        "path": "research/deep-extraction/resume/pokemon-ruby-version/next-round/source-closure-20261016/attempt-01/system-source-v2.json",
+        "sha256": "0b3745051bb15806468178d7cf4c21da430ec85b3f2ab3958e79ebc9c033088e"
+      },
+      "caller": "080e6fe8",
+      "sourceOrder": [
+        "navigation080e77e8",
+        "source A/available-entry/normal-region acceptance guard",
+        "capture080e7af4 selectedcode",
+        "callbacksetter080e684c opens next source phase"
+      ],
+      "publishedConsumer": {
+        "id": "ruby.menu.capture_selected_code_mode1",
+        "packageSha256": "16dc8a49a91aafe1f88f9a2622d3e0526bdfbd0c45da155ad18c524aaac7fd3e",
+        "behaviorSha256": "9183dc1d20c0e66de8d26ee47af0ac68a7209df6ba4f07cba986103c32105f47"
+      },
+      "graphBoundary": "Navigation\u2192capture graph is accepted-source-path conditional; caller A/availability/scroll guard must stay explicit, no capture on cancel",
+      "qualificationScope": "Reuse prior512nav+96capture; no composed native parity or fullscene claim"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "pokemon-ruby-version",
+    "entry": "080e77e8"
+  },
+  "domain_contract_fingerprint": "fc63263fc2831784425c825523e69a2f8a3f0f17343ecdd2390de0650e0e2f99",
+  "specialization_subset": true
+}

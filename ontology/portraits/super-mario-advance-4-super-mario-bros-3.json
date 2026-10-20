@@ -56,9 +56,9 @@
   "pieces": [
     {
       "id": "super-mario-advance-4-super-mario-bros-3:movement_view",
-      "label": "Spatial framing and controller candidate",
+      "label": "Mario movement: capped speed, oriented integration and variable jump height",
       "slot": "movement_view",
-      "effect": "Observed framing: Top-down board map. Unverified extension: Side-view platform stages are model-prior gameplay knowledge; neither retained frame shows one. Candidate controller rules: Choose stages on a world board, then use power-ups and aerial movement in platform courses.",
+      "effect": "Own-ROM player components expose speed-limited oriented movement, buffered variable-height jumps with boost rules, and sampled wall-contact correction. A native stage shows acceleration and different held-versus-tapped jump arcs. Full controller scheduling, terrain queries and power-up/progression closure remain outstanding.",
       "flavor": "Board-like world navigation feeds short obstacle courses with transformative power-ups.",
       "knobs": [
         {
@@ -72,16 +72,36 @@
           "status": "design_parameter_not_extracted_value"
         }
       ],
-      "component_refs": [],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "horizontal_velocity_integration"
+        },
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "vertical_velocity_integration"
+        },
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "buffered_variable_height_jump"
+        },
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "wall_contact_resolution"
+        }
+      ],
       "requires": [
-        "world coordinates",
-        "collision or terrain rules",
-        "input semantics"
+        "signed fixed-point player state",
+        "one owner and ordered updates for world coordinates",
+        "velocity/acceleration/jump policy",
+        "contact solver and boundary policy",
+        "orientation transform producer and exact coefficient tables",
+        "auxiliary additive motion state"
       ],
       "exposes": [
-        "position",
-        "facing",
-        "grounded or traversal state"
+        "updated world coordinates",
+        "capped motion channels",
+        "explicit orientation frame dependencies"
       ],
       "conflicts": [
         {
@@ -109,16 +129,85 @@
           "ref": "GPT editorial recall on2026-10-16; not an extraction result",
           "confidence": 0.35,
           "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        },
+        {
+          "kind": "self_decompilation",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-evidence.json",
+          "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+          "scope": "Two whole native motion leaves qualified by49,152 original Thumb comparisons; live stage right/jump corroboration; full controller not recovered."
+        },
+        {
+          "kind": "self_decompilation",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-lowering-receipt.json",
+          "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+          "scope": "Four local movement/jump/wall behaviors compiled to standalone ARM7TDMI packet ABI; meaningful ordinary jump gameplay witness; host adapters and larger gameplay dependencies still open."
         }
       ],
-      "status": "candidate_unverified",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "status": "source_supported_partial",
+      "assembly_status": "requires_adapters_and_controller_contact_dependencies"
+    },
+    {
+      "id": "super-mario-advance-4-super-mario-bros-3:actors_ai",
+      "label": "Stomp, bounce and chain rewards",
+      "slot": "combat",
+      "effect": "Jump onto a valid enemy target to bounce and extend a reward chain. Native species traits control whether the hit removes a form, flattens the enemy, or ends its motion. The extracted rule has been assembled back into a real GBA cartridge and matched the stock first-Goomba encounter.",
+      "flavor": "Enemies become stepping stones and reward chains; top-contact timing matters.",
+      "knobs": [
+        {
+          "name": "bounce",
+          "meaning": "Adapt the bounce impulse while preserving the host velocity units and contact phase.",
+          "status": "native_rule_recovered; changing value requires requalification"
+        },
+        {
+          "name": "enemy_hit_outcome",
+          "meaning": "Use explicit species traits for form loss, flattening, terminal motion and score chain.",
+          "status": "native_table_driven; full ecology still partial"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "enemy_stomp_bounce_and_chain"
+        }
+      ],
+      "requires": [
+        "validated top-contact event",
+        "native player and enemy state",
+        "typed species traits",
+        "scoring and sound effect ports",
+        "ordered movement/contact phases"
+      ],
+      "exposes": [
+        "upward bounce",
+        "enemy health/form/state transition",
+        "stomp-chain reward event"
+      ],
+      "conflicts": [
+        {
+          "when": "Another movement system overwrites vertical speed after bounce.",
+          "issue": "A successful stomp can lose its bounce or inherit a mismatched velocity unit.",
+          "bridge": "Choose one bounce authority and explicitly map units/order at the contact boundary."
+        }
+      ],
+      "bridge_options": [
+        "Retain the host contact query while adapting stomp effects through typed actor and reward ports."
+      ],
+      "evidence": [
+        {
+          "kind": "self_decompilation",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-gameplay-receipt.json",
+          "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+          "scope": "Actual stock-vs-IR-generated native Goomba stomp parity with matching state and rendered frames; full enemy AI and campaign not recovered."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "native_original_host_integration_qualified; cross_game_adapter_required"
     },
     {
       "id": "super-mario-advance-4-super-mario-bros-3:progression",
-      "label": "Journey and replay candidate",
+      "label": "Collect forms and change what Mario can do",
       "slot": "progression",
-      "effect": "Proposed high-level loop from unverified recall: Choose stages on a world board, then use power-ups and aerial movement in platform courses.",
+      "effect": "Growth and form pickups schedule real player transitions, consume the item and reward duplicates. The extracted growth rule has been assembled back into the native cartridge and matched a natural mushroom collection through the visible small-to-large change. Full fire/flying abilities, form application and progression routes still need recovery.",
       "flavor": "Board-like world navigation feeds short obstacle courses with transformative power-ups.",
       "knobs": [
         {
@@ -132,16 +221,24 @@
           "status": "design_parameter_not_extracted_value"
         }
       ],
-      "component_refs": [],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance-4-super-mario-bros-3",
+          "component_id": "acquired_form_pickup_progression"
+        }
+      ],
       "requires": [
-        "persistent state",
-        "gate or objective predicates",
-        "reward events"
+        "accepted item contact",
+        "current and pending player form contract",
+        "form-application phase and ability implementations",
+        "ordered score/audio effects",
+        "item lifecycle ownership"
       ],
       "exposes": [
-        "unlocked route",
-        "completion state",
-        "new capability"
+        "pending acquired form",
+        "growth/transformation timing",
+        "consumed item",
+        "duplicate reward"
       ],
       "conflicts": [
         {
@@ -169,10 +266,16 @@
           "ref": "GPT editorial recall on2026-10-16; not an extraction result",
           "confidence": 0.35,
           "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        },
+        {
+          "kind": "self_decompilation",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-gameplay-receipt.json",
+          "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+          "scope": "Natural growth-item collection and actual current-form change matched stock vs shared-IR-generated native ROM; not complete powerup/progression system."
         }
       ],
-      "status": "candidate_unverified",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "status": "source_supported_partial",
+      "assembly_status": "native_growth_original_host_integration_qualified; other_forms_and_cross_game_adapter_partial"
     },
     {
       "id": "super-mario-advance-4-super-mario-bros-3:setting",
@@ -447,12 +550,16 @@
   },
   "coverage": {
     "status": "partial",
-    "depth": "scene_and_prior_only",
-    "canonical_component_count": 0,
-    "canonical_facets": [],
-    "source_supported_piece_count": 0,
+    "depth": "partial_native_player_combat_and_form_progression",
+    "canonical_component_count": 6,
+    "canonical_facets": [
+      "movement_physics",
+      "mechanics",
+      "progression"
+    ],
+    "source_supported_piece_count": 3,
     "missing": [
-      "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+      "Full movement/contact scheduling, enemy ecology, downstream form/weapon/flying abilities and campaign routes; natural stomp and growth parts reconstructed through IR",
       "Complete plot/event dependency graph",
       "Calibrated user skill and strategy evidence",
       "Full asset-to-source/address reuse catalogue"
@@ -463,7 +570,837 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:52:06.558479+00:00",
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "status": "ok",
+      "function_records": 4640,
+      "pseudo_c_generated": 4640,
+      "process_wall_s": 35.5,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "Native-lowered movement/jump/wall package;147,456 original-vs-recovered and original-vs-emitted Thumb comparisons. Grounded/contact sampler and full controller remain incomplete.",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+      "export_sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/summary.json",
+      "summary_sha256": "e9fd7cb4acc5958da2f1419abb3d1c6cc8c311279b4e694b8e6f22e7833e58f9",
+      "warning_function_count": 4461,
+      "unknown_register_function_count": 35,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080004bc",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "KEYCNT"
+          ]
+        },
+        {
+          "entry": "0x08000790",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "MOSAIC",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WININ+1",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08000864",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x0800092c",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS"
+          ]
+        },
+        {
+          "entry": "0x08000dd0",
+          "io_ref": [
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08000ea4",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800122c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x080013e0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08001568",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080016dc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001870",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08001c9c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08001e14",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WININ+1",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08001f48",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x080020d0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08002298",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002528",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080026c8",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080027bc",
+          "io_ref": [
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x08002844",
+          "io_ref": [
+            "DISPSTAT",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x08002878",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x08002a68",
+          "io_ref": [
+            "BLDCNT",
+            "DISPSTAT",
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08004fb4",
+          "io_ref": [
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08005aa4",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080074bc",
+          "io_ref": [
+            "BG1HOFS",
+            "IF",
+            "VCOUNT",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x080075b8",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800b294",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800bc2c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0800dbc0",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0800dec0",
+          "io_ref": [
+            "IF",
+            "VCOUNT",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0800df10",
+          "io_ref": [
+            "BG2HOFS",
+            "IF",
+            "VCOUNT",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0800e320",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0801220c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08013c3c",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08014420",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08016ce8",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08025e24",
+          "io_ref": [
+            "BG2HOFS",
+            "IF",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08025fb8",
+          "io_ref": [
+            "BLDALPHA",
+            "IF",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08026358",
+          "io_ref": [
+            "BG1HOFS",
+            "DISPSTAT",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x0802645c",
+          "io_ref": [
+            "BG1VOFS",
+            "DISPSTAT",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x080264b4",
+          "io_ref": [
+            "BG1HOFS",
+            "BG1VOFS",
+            "DISPSTAT",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x08028b58",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0802aeec",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0802ba8c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0802be7c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0802c944",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0802cb50",
+          "io_ref": [
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08031eac",
+          "io_ref": [
+            "BG1HOFS",
+            "IF",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08031ee0",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08034938",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08035378",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080355ac",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0803584c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08035dd4",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080360d8",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08036238",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0803645c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08036528",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08036714",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08037e64",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08038338",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08039574",
+          "io_ref": [
+            "DMA3CNT_L",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080395f8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0803a480",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803a4a8",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803a554",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803b948",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0803c054",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS"
+          ]
+        },
+        {
+          "entry": "0x0803c230",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803c724",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803cc0c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803cc94",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803d150",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803d194",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803d63c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803d678",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803daf0",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803db34",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0803dfa0",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x0803ee60",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x08042c40",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080a820c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080a83d4",
+          "io_ref": [
+            "IE",
+            "IF",
+            "RCNT",
+            "SIOCNT",
+            "TM3CNT_H",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080a860c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080a86f8",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080a877c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080a8800",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080a889c",
+          "io_ref": [
+            "SIOMULTI0",
+            "TM3CNT_H",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080a8d38",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "IME",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x080a916c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080ab1c4",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080b0214",
+          "io_ref": [
+            "IF",
+            "VCOUNT",
+            "WIN0H",
+            "WIN1H"
+          ]
+        },
+        {
+          "entry": "0x080b0254",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080b1348",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080b1648",
+          "io_ref": [
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080b1808",
+          "io_ref": [
+            "BG1VOFS",
+            "BLDALPHA"
+          ]
+        },
+        {
+          "entry": "0x080b1f4c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY"
+          ]
+        },
+        {
+          "entry": "0x080b4c2c",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080b4e78",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080b6188",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "KEYCNT"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/super-mario-advance-4-super-mario-bros-3/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 336,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

@@ -58,7 +58,7 @@ void gv_native_player(void)
 void gv_native_vram_reset(void)
 {
     for(unsigned i=0;i<256;i++)GV_R16(0x03004a30+i*2)=0;
-    GvState *s=gv_find_state();if(s){gv_restore_palette(s);s->tiles=0;}
+    GvState *s=gv_find_state();if(s){gv_restore_palette(s);s->tiles=s->mzm_tiles=0;}
 }
 void gv_game_task(void)
 {

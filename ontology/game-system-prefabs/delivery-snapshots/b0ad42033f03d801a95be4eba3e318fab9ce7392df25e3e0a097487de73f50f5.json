@@ -1,0 +1,460 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "need-for-speed-underground",
+  "sourceSystemIds": [
+    "nfs.identity-entry-and-profile-transition"
+  ],
+  "blueprintIds": [
+    "racing-session",
+    "dialogue-interactive-scenes"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Drive a vehicle through a race, react to road/incidents, finish the session and preserve profile identity/progress; these are missing delivery responsibilities, not recovered claims.",
+    "phases": [
+      {
+        "id": "drive",
+        "label": "Driving control and vehicle dynamics",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "source vehicle update/input/physics"
+        ],
+        "gaps": [
+          "No source-backed executable car controller is supplied; menu input is not driving."
+        ]
+      },
+      {
+        "id": "track",
+        "label": "Road/track contact and route geometry",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "track/terrain query"
+        ],
+        "gaps": [
+          "No qualified source road/track producer or geometry consumer."
+        ]
+      },
+      {
+        "id": "race_progress",
+        "label": "Race progress and finish",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "source session progression"
+        ],
+        "gaps": [
+          "Lap/checkpoint/timing/finish rules not recovered into qualified source packages."
+        ]
+      },
+      {
+        "id": "race_incidents",
+        "label": "Vehicle impacts and race incidents",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "collision/incident processing"
+        ],
+        "gaps": [
+          "No qualified source impact/recovery closure."
+        ]
+      },
+      {
+        "id": "identity_entry",
+        "label": "Identity editing and acceptance",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "authoritative input",
+          "audio/presentation",
+          "profile reference"
+        ],
+        "gaps": [
+          "Editor and acceptance caller remain blocked; no authored replacement."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+            "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+          }
+        ]
+      },
+      {
+        "id": "scene_request",
+        "label": "Request scene and fade state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "host observation of output slots",
+          "source scene lifecycle consumer"
+        ],
+        "gaps": [
+          "Narrow source write transaction passes assembly and prior native subset; without useful consumer it is not an allowlisted ready prefab."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+            "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+          }
+        ]
+      },
+      {
+        "id": "scene_lifecycle",
+        "label": "Fade advancement and scene dispatch",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "timer2 hardware service",
+          "source update cadence",
+          "scene dispatcher"
+        ],
+        "gaps": [
+          "Producer located at0x08000c0c; unresolved timer/control dependencies prevent portable execution."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+            "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+          }
+        ]
+      },
+      {
+        "id": "profile_commit",
+        "label": "Profile commit/restore and persistence",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "shared buffer/profile alias",
+          "save completion"
+        ],
+        "gaps": [
+          "Copy to profile+0xc4/restore+0x240 is mapped; terminating copy and durable save closure remain blocked."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+            "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "identity_entry",
+        "to": "scene_request",
+        "kind": "source-call",
+        "scope": "Acceptance caller source branch requests scene0x11 after six-byte commit/restore."
+      },
+      {
+        "from": "scene_request",
+        "to": "scene_lifecycle",
+        "kind": "shared-state",
+        "scope": "Shared signed fade request; source update advances toward zero; whole runtime cadence not qualified."
+      },
+      {
+        "from": "identity_entry",
+        "to": "profile_commit",
+        "kind": "shared-state",
+        "scope": "Source six-byte identity buffer/profile windows; source branches differ; no global schedule inferred."
+      },
+      {
+        "from": "scene_lifecycle",
+        "to": "profile_commit",
+        "kind": "host-required",
+        "scope": "Operational scheduling/restore/commit service is an open dependency, not supplied host implementation."
+      }
+    ],
+    "missingForCoreGame": [
+      "No executable source fade consumer or scene dispatcher is published; observable request slots are not an operating scene lifecycle.",
+      "Profile acceptance and commit/restore are source-backed but blocked by copy loops, audio collection, hardware timing and CALLOTHER service dependencies.",
+      "No source driving, track/road, lap/race progression or collision/incident subsystem has a qualified reusable package in this game.",
+      "Smallest meaningful source closure: publish source fade clock/scene consumer preserving the signed countdown and actual request output; exact current executable blocker is hardware timer2 access in0x0806f8f4/0x0806f908 plus wider0x08000c0c service closure."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "nfs.bundle.identity_scene_session",
+      "label": "NFS identity and scene session boundary",
+      "moduleId": "nfs.module.identity_scene_session",
+      "sourceGame": "need-for-speed-underground",
+      "sourceSystemId": "nfs.identity-entry-and-profile-transition",
+      "sourceContractRef": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+      "planIds": [
+        "racing-session",
+        "dialogue-interactive-scenes"
+      ],
+      "packageIds": [
+        "nfs.scene.request_transition"
+      ],
+      "availability": "source-only",
+      "scope": "One original shared scene request transaction; source identity/fade/profile context remains mapped but unclosed.",
+      "gaps": [
+        "No executable source fade consumer or scene dispatcher is published; observable request slots are not an operating scene lifecycle.",
+        "Profile acceptance and commit/restore are source-backed but blocked by copy loops, audio collection, hardware timing and CALLOTHER service dependencies.",
+        "No source driving, track/road, lap/race progression or collision/incident subsystem has a qualified reusable package in this game."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+        "local/ir/packages/nfs.scene.request_transition/package.json",
+        "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "One source session/scene state owner, shared with editor, fade and profile consumers",
+        "fields": [
+          "scene_request.field_0 → fade_countdown",
+          "scene_request.field_2 → requested_scene",
+          "scene_request.field_1 private opaque auxiliary",
+          "scene_request.field_3 private opaque sentinel"
+        ],
+        "aliasRule": "Do not copy session/scene storage per role facet. Adjacent request/sentinel bytes and wider source views require original shared backing when further consumers are linked; existing graph has one instance only."
+      },
+      "roleFacets": [
+        {
+          "roleId": "race-session",
+          "capability": "Narrow scene request transaction",
+          "status": "source-only",
+          "scope": "Only request/fade writes, no racing session lifecycle.",
+          "evidence": [
+            "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+              "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+            }
+          ]
+        },
+        {
+          "roleId": "scene-trigger",
+          "capability": "Opaque scene identifier request",
+          "status": "source-only",
+          "scope": "Caller supplied u8 scene17; source acceptance caller evidence, no trigger discovery.",
+          "evidence": [
+            "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+              "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+            }
+          ]
+        },
+        {
+          "roleId": "scene-effect",
+          "capability": "Observable request/fade output state",
+          "status": "source-only",
+          "scope": "Actual graph slots requested_scene and fade_countdown; no consumer execution.",
+          "evidence": [
+            "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+              "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+            }
+          ]
+        },
+        {
+          "roleId": "scene-lifecycle",
+          "capability": "Signed fade clock and dispatcher",
+          "status": "source-only",
+          "scope": "Source call/order mapped; hardware timing and dispatch incomplete.",
+          "evidence": [
+            "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+              "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+            }
+          ]
+        },
+        {
+          "roleId": "choice",
+          "capability": "Identity-entry decision",
+          "status": "source-only",
+          "scope": "Five-character editor and accept gate source-backed, not executable closure.",
+          "evidence": [
+            "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+              "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+            }
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "nfs.prefab.scene_request_observation",
+        "label": "NFS scene request observation (blocked for ready-prefab use)",
+        "assemblyRef": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.assembly.json",
+        "validationRef": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.validation.json",
+        "descriptorRef": "research/ir-workshop/accepted-game-reconstruction-maps-20261016/need-for-speed-underground/delivery.json",
+        "packageIds": [
+          "nfs.scene.request_transition"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      },
+      "evidencePins": [
+        {
+          "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+          "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+        },
+        {
+          "path": "local/ir/packages/nfs.scene.request_transition/package.json",
+          "sha256": "8ccbaeb6cff7eb2a84e97a576029e071889dd5caabb82e11ad93136269bf38f3"
+        },
+        {
+          "path": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.validation.json",
+          "sha256": "a7909b99bb8961ba5131cdf568a3ddd425b5b35d88fff57d5828d7450663bb31"
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "admission": {
+    "actualAssembly": {
+      "path": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.validation.json",
+      "sha256": "a7909b99bb8961ba5131cdf568a3ddd425b5b35d88fff57d5828d7450663bb31"
+    },
+    "status": "binding_valid_obligations_unproven",
+    "valid": true,
+    "readyPrefabCount": 0,
+    "diagnosticAssemblyCount": 1,
+    "publishedBehaviorSha256": "54567b79cfff7ba5f38797be5cd0cc8d97fe4c5bb7ac4955355225bc2c987e80",
+    "existingNativeReceipt": {
+      "status": "pass",
+      "receipt": "receipt.json",
+      "vectors": 1024,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "kind": "finite_original_function_subset",
+      "receipt_sha256": "d7e9180ab9818190a4226e2b0bc34b5c2231c7d9f8fdb4513078189e9e234540"
+    },
+    "nativeRerun": false,
+    "whyNotAllowlisted": "Transition output observation is documented, but no useful source consumer/operational host effect is supplied. Do not relabel single-helper admission as a ready gameplay prefab."
+  },
+  "targetedGap": {
+    "sourceOwner": "fade/scene clock with compiler_shared_state service support",
+    "sourceEntries": [
+      "08000c0c",
+      "0806f8f4",
+      "0806f908"
+    ],
+    "existingFailureReceipts": [
+      {
+        "path": "local/ir/fleet-next/need-for-speed-underground/fade-clock-attempt.json",
+        "sha256": "3689cb026fc8a8eb12d89e28baa4d38079f62c44c5f1fdf7ae80123270d318de"
+      },
+      {
+        "path": "local/ir/fleet-next/need-for-speed-underground/timer-service-attempts.json",
+        "sha256": "49c92bd1a181ca44e9132fa5d554aef2ab6667a4549878540d6a70712ca61b8f"
+      }
+    ],
+    "failureReason": "timer2 control/counter hardware pointers unresolved even under source r0=2; source main update also invokes presentation services.",
+    "nextAction": "Shared compiler/service owner closes exact hardware-effect boundary and source consumer before NFS ready-prefab admission; no new manual C/host stub."
+  },
+  "timing": {
+    "runId": "nfs-prefab-pass-20261016T150045Z",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0020644580000000017,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "metadataAssemblySeconds": 0.026534625,
+    "beforeAfter": null,
+    "accounting": "Only current narrow assembly validator timed. No native rerun/export/build; prior native receipt reused. Full interactive wall and queue unavailable; no additive nested stage claim."
+  },
+  "internalSupportPhases": [
+    {
+      "id": "nfs.prefab.scene_request_observation",
+      "moduleId": "nfs.module.identity_scene_session",
+      "label": "NFS scene request observation (blocked for ready-prefab use)",
+      "path": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.assembly.json",
+      "sha256": "43e5467dadb3ccc2fc5b22ffe862e5240ddbb86f547178914369e885367ff550",
+      "validation": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/scene-request.validation.json",
+      "validationSha256": "a7909b99bb8961ba5131cdf568a3ddd425b5b35d88fff57d5828d7450663bb31",
+      "readyToAdd": false,
+      "runtimeQualified": false,
+      "inputs": [
+        {
+          "id": "requested_scene",
+          "label": "Opaque scene request",
+          "storageType": "u8",
+          "default": 17,
+          "domain": "u8 storage; default17 is observed source profile-acceptance scene request; legal arbitrary scenes unqualified",
+          "binding": "invocations[0].arguments.param_0"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "requested_scene",
+          "binding": "state.requested_scene",
+          "meaning": "Actual recovered output stores requested opaque scene byte; host may inspect it, but no host consumer is implemented."
+        },
+        {
+          "id": "fade_countdown",
+          "binding": "state.fade_countdown",
+          "meaning": "Actual recovered output stores u32 bits0xfffffff0, source signed-16 fade request; no portable advance-to-zero consumer is attached."
+        }
+      ],
+      "phases": [
+        {
+          "id": "request",
+          "trigger": "Explicit caller-provided source scene request event",
+          "invocations": [
+            "scene_request"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "Host output observation boundary (not supplied executable consumer)",
+        "Source fade controller, scene dispatcher and profile lifecycle for operational use"
+      ],
+      "gaps": [
+        "No executable source fade consumer or scene dispatcher is published; observable request slots are not an operating scene lifecycle.",
+        "Profile acceptance and commit/restore are source-backed but blocked by copy loops, audio collection, hardware timing and CALLOTHER service dependencies.",
+        "No source driving, track/road, lap/race progression or collision/incident subsystem has a qualified reusable package in this game."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+      ],
+      "qualificationScope": "Actual current-pin assembly.py generic Composer+lowering passes; prior1024-vector native subset helper proof reused. Not a useful complete operational prefab or full L2.",
+      "sourceRefsPins": [
+        {
+          "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+          "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+        }
+      ],
+      "primaryEligible": false,
+      "productScope": "Source request/flag support only; the real identity/scene transition consumer is not closed."
+    }
+  ],
+  "sourceDeliveryRef": "research/deep-extraction/resume/need-for-speed-underground/prefab-pass/delivery.json",
+  "sourceDeliverySha256": "7017c9ef07a40986fbd8b91139487d6148804ef4dafa9667853335cb62b4f7a3",
+  "metadataNormalization": {
+    "sourceRefs": "Structured reference objects retain original pins alongside repository-relative path strings.",
+    "productScope": "No source semantics or source proofs changed; zero primary prefab map."
+  }
+}

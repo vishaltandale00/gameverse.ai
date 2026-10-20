@@ -1,0 +1,420 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "recovery": {
+      "package_id": "kart.steering_recovery",
+      "package_sha256": "39c7c446d406d9e84f9b9cdad8a5655e719f218dbb467148d89febaceafb262f",
+      "behavior_sha256": "7f56fa2547e55697ff753790e325f6deb7a29a8bcd5adf64090c461513a98753",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.action_state",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.action_state",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "reads": false,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "unknown",
+            "unit": "unknown",
+            "frame": "unknown",
+            "confidence": 0.0,
+            "evidence": []
+          },
+          "meaning": {
+            "quantity": "unknown",
+            "unit": "unknown",
+            "frame": "unknown",
+            "confidence": 0.0,
+            "evidence": []
+          },
+          "reads": false,
+          "writes": true
+        },
+        {
+          "name": "field_2",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.wrapped_offset",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.wrapped_offset",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_3",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.motion_phase",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.motion_phase",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "reads": false,
+          "writes": true
+        },
+        {
+          "name": "field_4",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.flags",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.flags",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_5",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.signed_step",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.signed_step",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_2",
+          "field_4",
+          "field_5"
+        ],
+        "writes": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "one canonical externally owned racer record",
+        "clock": "explicit original-function invocation; elapsed real time unavailable",
+        "phase": "caller-selected; entry legality not qualified",
+        "cleanup": "no allocation or retirement in qualified root"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "One original steering-recovery subphase, not complete steering/controller/race subsystem",
+        "Physical angle units, entry legality, callers and complete racer pool identity remain unqualified",
+        "Finite synthetic threshold/random entry states, not gameplay traces",
+        "No new native proof; reuse exact pinned receipt",
+        "Full steering/contact/race subsystem remains incomplete and nonexecutable as L2",
+        "Canonical aliases with active-player and racer-pool references are caller obligations; no independent object copies",
+        "Rational units denote storage counts; physical angle, distance and per-second calibration unavailable",
+        "Action and phase enum values preserve source identity; full state naming and transition graph unresolved",
+        "Source flags contain unrelated bits preserved by masks; individual meanings beyond direction/completion remain opaque",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "57890f0ff5fa95031428846be5dd07271155d2420929a2a6519041a7d106d4b6",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "recovery": {
+        "package_id": "kart.steering_recovery",
+        "behavior_sha256": "7f56fa2547e55697ff753790e325f6deb7a29a8bcd5adf64090c461513a98753",
+        "bindings": {
+          "field_0": {
+            "slot": "racer_action"
+          },
+          "field_2": {
+            "slot": "recovery_angle"
+          },
+          "field_3": {
+            "slot": "racer_phase"
+          },
+          "field_4": {
+            "slot": "recovery_flags"
+          },
+          "field_5": {
+            "slot": "recovery_step"
+          }
+        },
+        "package_sha256": "39c7c446d406d9e84f9b9cdad8a5655e719f218dbb467148d89febaceafb262f"
+      }
+    },
+    "state": {
+      "racer_action": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "enum",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.action_state",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ]
+        },
+        "owner": "recovery",
+        "shared": false
+      },
+      "recovery_angle": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "angle",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering_recovery.wrapped_offset",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ],
+          "signed_encoding": "twos_complement"
+        },
+        "owner": "recovery",
+        "shared": false
+      },
+      "racer_phase": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "enum",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.motion_phase",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ]
+        },
+        "owner": "recovery",
+        "shared": false
+      },
+      "recovery_flags": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering_recovery.flags",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ]
+        },
+        "owner": "recovery",
+        "shared": false
+      },
+      "recovery_step": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "angle_step",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering_recovery.signed_step",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ],
+          "signed_encoding": "twos_complement"
+        },
+        "owner": "recovery",
+        "shared": false
+      }
+    },
+    "invocations": [
+      {
+        "component": "recovery",
+        "arguments": {}
+      }
+    ],
+    "initialize": {
+      "racer_action": 11,
+      "recovery_angle": 8192,
+      "racer_phase": 11,
+      "recovery_flags": 256,
+      "recovery_step": 4096
+    },
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "recovery"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "recovery"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "recovery",
+      "arguments": {}
+    }
+  ],
+  "statement_sha256": "41b98ffe913022991c77fa0bff61eb7aa0f484a9582fa4c888efa97ee16cb31b",
+  "catalog_sha256": "5505c30159b2718634ea4104dce5628479acc241ff5443f0816486f0e394316e",
+  "wall_s": 0.009334374999999999
+}

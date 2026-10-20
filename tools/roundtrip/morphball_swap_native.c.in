@@ -1,0 +1,138 @@
+#include <mgba/core/core.h>
+#include <mgba/core/config.h>
+#include <mgba/core/log.h>
+#include <mgba/gba/core.h>
+#include <mgba/internal/arm/arm.h>
+#include <mgba/internal/arm/isa-inlines.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <time.h>
+#include <string.h>
+@SYMBOLS@
+static unsigned long instructions, calls;
+static unsigned instruction_cap=2048, maximum_instructions;
+static unsigned boot_frames=0;
+static unsigned notification_calls,fanfare_calls,ack_calls,ability_grants,callback_hits;
+static unsigned foot_movement_hits,bike_movement_hits;
+static unsigned trap_hits;
+static uint32_t watched_callback;
+static void*boot_state;static size_t boot_state_bytes;
+static struct mCore*paired_core;static unsigned paired_calls;
+struct StackTrace{uint32_t minimum_sp,first_write,last_write;unsigned stores;uint8_t written[0x300];};
+static struct StackTrace last_stack_trace,*active_stack_trace;
+static struct ARMMemory*active_memory;
+static uint32_t original_minimum_sp=0x03007e00,candidate_minimum_sp=0x03007e00;
+static unsigned original_stack_bytes,candidate_stack_bytes;
+static void trace_store(uint32_t address,unsigned width){
+ if(!active_stack_trace)return;
+ if(address>=0x03007b00&&address<0x03007e00){
+  struct StackTrace*t=active_stack_trace;t->stores++;
+  if(address<t->first_write)t->first_write=address;if(address+width>t->last_write)t->last_write=address+width;
+  for(unsigned i=0;i<width&&address+i<0x03007e00;i++)t->written[address+i-0x03007b00]=1;
+ }
+}
+static void traced_store32(struct ARMCore*c,uint32_t a,int32_t v,int*n){trace_store(a&~3u,4);active_memory->store32(c,a,v,n);}
+static void traced_store16(struct ARMCore*c,uint32_t a,int16_t v,int*n){trace_store(a&~1u,2);active_memory->store16(c,a,v,n);}
+static void traced_store8(struct ARMCore*c,uint32_t a,int8_t v,int*n){trace_store(a,1);active_memory->store8(c,a,v,n);}
+static uint32_t traced_multiple(struct ARMCore*c,uint32_t base,int mask,enum LSMDirection direction,int*n){
+ unsigned count=(unsigned)__builtin_popcount((unsigned)mask&0xffffu);
+ uint32_t start=base&~3u;if(direction&LSM_D)start-=count*4-(direction&LSM_B?0:4);else if(direction&LSM_B)start+=4;
+ if(count)trace_store(start,count*4);return active_memory->storeMultiple(c,base,mask,direction,n);
+}
+static double boot_wall_s;
+static double monotonic_s(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec/1e9;}
+static void native_log(struct mLogger*logger,int category,enum mLogLevel level,const char*format,va_list args){(void)logger;(void)category;if(level&(mLOG_FATAL|mLOG_ERROR|mLOG_WARN)){vfprintf(stderr,format,args);fputc('\n',stderr);}}
+static struct mLogger native_logger={.log=native_log,.filter=NULL};
+static struct mCore *load(const char *path) {
+ mLogSetDefaultLogger(&native_logger);
+ struct mCore *c=GBACoreCreate(); if(!c||!c->init(c))return NULL;
+ mCoreInitConfig(c,NULL); mCoreConfigSetDefaultIntValue(&c->config,"skipBios",1);
+ mCoreConfigSetDefaultIntValue(&c->config,"useBios",0);mCoreLoadConfig(c);
+ if(!mCoreLoadFile(c,path))return NULL;c->reset(c);if(boot_frames){double began=monotonic_s();for(unsigned i=0;i<boot_frames;i++)c->runFrame(c);boot_wall_s+=monotonic_s()-began;}return c;
+}
+static void zero(struct mCore*c,uint32_t a,unsigned n){for(unsigned i=0;i<n;i++)c->busWrite8(c,a+i,0);}
+static int invoke3(struct mCore*c,uint32_t pc,uint32_t a,uint32_t b,uint32_t arg2,uint32_t*out){
+ for(unsigned i=0;i<16;i++){c->busWrite8(c,0x03007b00+i,0x5a^i);c->busWrite8(c,0x03007e10+i,0xa5^i);}
+ struct ARMCore*cpu=c->cpu;for(unsigned i=0;i<16;i++)cpu->gprs[i]=0;
+ cpu->gprs[0]=a;cpu->gprs[1]=b;cpu->gprs[2]=arg2;for(unsigned i=4;i<12;i++)cpu->gprs[i]=0x9e3779b9u*i;
+ cpu->gprs[ARM_SP]=0x03007e00;cpu->gprs[ARM_LR]=0x08000001;cpu->cpsr.i=1;
+ cpu->cycles=0;cpu->nextEvent=INT_MAX;_ARMSetMode(cpu,MODE_THUMB);cpu->gprs[ARM_PC]=pc;ThumbWritePC(cpu);
+ struct ARMMemory native_memory=cpu->memory;struct StackTrace trace;memset(&trace,0,sizeof(trace));trace.minimum_sp=0x03007e00;trace.first_write=UINT_MAX;
+ active_memory=&native_memory;active_stack_trace=&trace;
+ cpu->memory.store32=traced_store32;cpu->memory.store16=traced_store16;cpu->memory.store8=traced_store8;cpu->memory.storeMultiple=traced_multiple;
+#define END_NATIVE(value) do{cpu->memory.store32=native_memory.store32;cpu->memory.store16=native_memory.store16;cpu->memory.store8=native_memory.store8;cpu->memory.storeMultiple=native_memory.storeMultiple;active_memory=NULL;active_stack_trace=NULL;last_stack_trace=trace;return(value);}while(0)
+ unsigned n=0;while((uint32_t)cpu->gprs[ARM_PC]-2!=0x08000000&&n<instruction_cap){
+  if((uint32_t)cpu->gprs[ARM_SP]<trace.minimum_sp)trace.minimum_sp=cpu->gprs[ARM_SP];
+  uint32_t observed=(uint32_t)cpu->gprs[ARM_PC]-2;
+  if(cpu->cpsr.t&&c->busRead16(c,observed)==0xdefe){trap_hits++;instructions+=n;calls++;fprintf(stderr,"native guard UDF254 at%x\n",observed);END_NATIVE(0);}
+  notification_calls+=observed==0x08069450;fanfare_calls+=observed==0x08071c74;ack_calls+=observed==0x0806b8ac;
+  ability_grants+=observed==0x0806e694&&cpu->gprs[0]==0x82f;callback_hits+=watched_callback&&observed==watched_callback;
+  foot_movement_hits+=observed==0x0805b9e8;bike_movement_hits+=observed==0x080bd0b0;
+  ARMRun(cpu);n++;
+ }
+ if(n>maximum_instructions)maximum_instructions=n;
+ instructions+=n;calls++;*out=cpu->gprs[0];
+ for(unsigned i=4;i<12;i++)if((uint32_t)cpu->gprs[i]!=0x9e3779b9u*i){fprintf(stderr,"callee register r%u pc%x end%x n%u\n",i,pc,cpu->gprs[ARM_PC],n);END_NATIVE(0);}
+ if(cpu->gprs[ARM_SP]!=0x03007e00||n>=instruction_cap||trace.minimum_sp<0x03007b10){fprintf(stderr,"ABI/cap pc%x end%x sp%x n%u minsp%x\n",pc,cpu->gprs[ARM_PC],cpu->gprs[ARM_SP],n,trace.minimum_sp);END_NATIVE(0);}
+ for(unsigned i=0;i<16;i++)if(c->busRead8(c,0x03007b00+i)!=(0x5a^i)||c->busRead8(c,0x03007e10+i)!=(0xa5^i)){fprintf(stderr,"stack canary pc%x\n",pc);END_NATIVE(0);}END_NATIVE(1);
+}
+static uint32_t ram_address(unsigned index){return index<0x40000?0x02000000+index:0x03000000+index-0x40000;}
+static int call3(struct mCore*c,uint32_t pc,uint32_t a,uint32_t b,uint32_t arg2,uint32_t*out){
+ if(!paired_core)return invoke3(c,pc,a,b,arg2,out);
+ /* Same canonical input context, independent installed cartridge code. Every
+    preceding step already matched before this fixture/storage transfer. */
+ for(unsigned i=0;i<0x48000;i++){uint32_t address=ram_address(i);paired_core->busWrite8(paired_core,address,c->busRead8(c,address));}
+ uint32_t candidate_result;int left=invoke3(c,pc,a,b,arg2,out);struct StackTrace original_trace=last_stack_trace;
+ int right=invoke3(paired_core,pc,a,b,arg2,&candidate_result);struct StackTrace candidate_trace=last_stack_trace;
+ if(!left||!right)return 0;
+ if(original_trace.minimum_sp<original_minimum_sp)original_minimum_sp=original_trace.minimum_sp;
+ if(candidate_trace.minimum_sp<candidate_minimum_sp)candidate_minimum_sp=candidate_trace.minimum_sp;
+ unsigned left_bytes=0,right_bytes=0;for(unsigned i=0;i<0x300;i++){left_bytes+=original_trace.written[i];right_bytes+=candidate_trace.written[i];}
+ if(left_bytes>original_stack_bytes)original_stack_bytes=left_bytes;if(right_bytes>candidate_stack_bytes)candidate_stack_bytes=right_bytes;
+ for(unsigned i=0;i<0x48000;i++){
+  uint32_t address=ram_address(i);
+  if(address>=0x03007b00&&address<0x03007e00){unsigned index=address-0x03007b00;
+   if((address>=original_trace.minimum_sp&&original_trace.written[index])||(address>=candidate_trace.minimum_sp&&candidate_trace.written[index]))continue;
+  }
+  unsigned x=c->busRead8(c,address),y=paired_core->busRead8(paired_core,address);
+  if(x!=y){fprintf(stderr,"paired native RAM differs call%u pc%x address%x original%u candidate%u\n",paired_calls,pc,address,x,y);return 0;}
+ }
+ paired_calls++;return 1;
+}
+static int call(struct mCore*c,uint32_t pc,uint32_t a,uint32_t b,uint32_t*out){return call3(c,pc,a,b,0,out);}
+#define CHECK(x) do{if(!(x)){fprintf(stderr,"check failed line%d: %s\n",__LINE__,#x);return 5;}}while(0)
+/* Source-valid isolated plain 32x32 virtual map; canonical engine globals and
+   actual native collision/behavior/animation consumers run without call HLE. */
+static void movement_context(struct mCore*c,unsigned allow,unsigned behavior){
+ zero(c,gPlayerAvatar,32);zero(c,gObjectEvents,16*36);zero(c,gMapHeader,28);
+ zero(c,0x02010000,0x1000);zero(c,gSprites,68);zero(c,gSaveBlock1,0x3d68);zero(c,gSaveBlock2,0xf24);
+ c->busWrite32(c,gSaveBlock1Ptr,gSaveBlock1);c->busWrite32(c,gSaveBlock2Ptr,gSaveBlock2);
+ c->busWrite32(c,VMap,32);c->busWrite32(c,VMap+4,32);c->busWrite32(c,VMap+8,0x02010000);
+ c->busWrite32(c,gMapHeader,0x02010900);c->busWrite8(c,gMapHeader+25,allow?2:0);
+ c->busWrite32(c,0x02010900,18);c->busWrite32(c,0x02010904,18);
+ c->busWrite32(c,0x02010910,0x02010940);c->busWrite32(c,0x02010914,0x02010940);
+ c->busWrite32(c,0x02010954,0x02010980);c->busWrite32(c,0x02010980,behavior);
+ c->busWrite8(c,gObjectEvents,1);c->busWrite8(c,gObjectEvents+2,1);
+ c->busWrite16(c,gObjectEvents+16,10);c->busWrite16(c,gObjectEvents+18,10);
+ c->busWrite8(c,gObjectEvents+30,behavior);c->busWrite8(c,gPlayerAvatar,1);
+ c->busWrite8(c,gQuestLogState,0);c->busWrite8(c,gQuestLogPlaybackState,0);
+}
+static int movement(struct mCore*c,unsigned keys,unsigned *action,unsigned*flags){
+ uint32_t result;if(!call(c,PlayerNotOnBikeMoving,4,keys,&result))return 0;
+ *action=c->busRead8(c,gObjectEvents+28);*flags=c->busRead8(c,gPlayerAvatar);return 1;
+}
+@CANDIDATE_HELPERS@
+int main(int argc,char**argv){
+ if(argc<2)return 2;struct mCore*c=load(argv[1]);CHECK(c);uint32_t result;unsigned action,flags;
+ if(argc==3){boot_state_bytes=c->stateSize(c);boot_state=malloc(boot_state_bytes);CHECK(boot_state);CHECK(c->saveState(c,boot_state));}
+ movement_context(c,1,0);CHECK(movement(c,2,&action,&flags));unsigned walking=action;
+ printf("{\"walking_action\":%u,",walking);
+ movement_context(c,1,0);CHECK(call(c,FlagSet,0x82f,0,&result));CHECK(movement(c,2,&action,&flags));
+ CHECK(action!=walking);printf("\"running_action\":%u,\"running_flags\":%u,",action,flags);
+ movement_context(c,0,0);CHECK(call(c,FlagSet,0x82f,0,&result));CHECK(movement(c,2,&action,&flags));CHECK(action==walking);
+ @CANDIDATE_TESTS@
+ printf("\"outcome\":\"pass\",\"calls\":%lu,\"instructions\":%lu,\"maximum_instructions_per_call\":%u,\"boot_wall_s\":%.9f}\n",calls,instructions,maximum_instructions,boot_wall_s);c->deinit(c);return 0;
+}

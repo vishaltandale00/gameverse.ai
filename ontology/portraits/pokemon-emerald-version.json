@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "game_id": "pokemon-emerald-version",
-  "title": "Pokémon Emerald Version",
+  "title": "Pok\u00e9mon Emerald Version",
   "identity": {
     "tagline": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
     "categories": [
@@ -920,7 +920,7 @@
           "source_evidence": [
             {
               "kind": "capture_frame",
-              "ref": "capture:attract:keyframes f001183, f001850 (grassland/route scenery, player on bike with Pokémon)",
+              "ref": "capture:attract:keyframes f001183, f001850 (grassland/route scenery, player on bike with Pok\u00e9mon)",
               "confidence": 0.6
             },
             {
@@ -1369,7 +1369,7 @@
       },
       {
         "id": "starter_choice_changes_future_world",
-        "description": "Interacting with the bag invokes starter choice, sets ownership/rescue flags, heals the party, hides the route actors and sends the player to Birch’s lab.",
+        "description": "Interacting with the bag invokes starter choice, sets ownership/rescue flags, heals the party, hides the route actors and sends the player to Birch\u2019s lab.",
         "status": "source_backed_local_beat",
         "requires": [
           "Bag interaction event"
@@ -1643,7 +1643,7 @@
       },
       {
         "component_id": "pokemon_contests",
-        "label": "Pokémon Contests (condition judging plus five-round appeal minigame)",
+        "label": "Pok\u00e9mon Contests (condition judging plus five-round appeal minigame)",
         "facet": "mechanics"
       },
       {
@@ -1668,7 +1668,7 @@
       },
       {
         "component_id": "trainer_rematches_match_call",
-        "label": "PokéNav Match Call and step-gated trainer rematches",
+        "label": "Pok\u00e9Nav Match Call and step-gated trainer rematches",
         "facet": "progression"
       },
       {
@@ -1678,7 +1678,7 @@
       },
       {
         "component_id": "inventory_and_storage",
-        "label": "Pocketed bag, PC item storage and 14-box Pokémon storage",
+        "label": "Pocketed bag, PC item storage and 14-box Pok\u00e9mon storage",
         "facet": "economy"
       },
       {
@@ -1688,7 +1688,7 @@
       },
       {
         "component_id": "start_menu_hub",
-        "label": "Start-menu hub (Pokédex, Pokémon, Bag, PokéNav, Trainer, Save, Option)",
+        "label": "Start-menu hub (Pok\u00e9dex, Pok\u00e9mon, Bag, Pok\u00e9Nav, Trainer, Save, Option)",
         "facet": "ui_hud"
       },
       {
@@ -1707,7 +1707,727 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:57:58.031812+00:00",
+      "rom_sha1": "f3ae088181bf583e55daf962a92bb46f4f1d07b7",
+      "status": "ok",
+      "function_records": 12974,
+      "pseudo_c_generated": 12974,
+      "process_wall_s": 58.0,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+      "export_sha256": "cb5bea8ed645907e978765732ce68da2ae6b0ef91b3afaa84fa4d1c7581bb1c0",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/summary.json",
+      "summary_sha256": "6560b37be27502bf6992e1f5cf26494c46cab8b6fa4c744ec0d6d09282d42198",
+      "warning_function_count": 12393,
+      "unknown_register_function_count": 112,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080003a4",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08000554",
+          "io_ref": [
+            "TM1CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08000560",
+          "io_ref": [
+            "TM1CNT_H",
+            "TM1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080005e4",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x08000684",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080008f4",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1SAD",
+            "DMA2CNT_H",
+            "DMA3CNT_H",
+            "DMA3SAD",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08000bf0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0800103c",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x080010b4",
+          "io_ref": [
+            "DISPCNT",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08001140",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080011b8",
+          "io_ref": [
+            "DISPSTAT",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08001228",
+          "io_ref": [
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08006140",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08007188",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080099e0",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800a468",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800b2e8",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800b2f8",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800b53c",
+          "io_ref": [
+            "IF",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x0800b594",
+          "io_ref": [
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0800b638",
+          "io_ref": [
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0800ba38",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800bac0",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0800bad0",
+          "io_ref": [
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x0800bbcc",
+          "io_ref": [
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x0800bce4",
+          "io_ref": [
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0800bd98",
+          "io_ref": [
+            "TM3CNT_H",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0800bdcc",
+          "io_ref": [
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x0800d158",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800d550",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800d7d8",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800d888",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800d934",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800d9dc",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800e6d0",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08020770",
+          "io_ref": [
+            "BG1HOFS"
+          ]
+        },
+        {
+          "entry": "0x0802f0cc",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0802f0e4",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0802f6f4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08031678",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08034c30",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0805c71c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0805dc0c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0805dd7c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0805e7dc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08072c38",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08072e0c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080730d4",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08073314",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08074310",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080743f8",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG2HOFS"
+          ]
+        },
+        {
+          "entry": "0x08074b9c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08075198",
+          "io_ref": [
+            "GREENSWAP+1"
+          ]
+        },
+        {
+          "entry": "0x0808631c",
+          "io_ref": [
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080867d8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08099d20",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0809ef88",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a03e4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a09d0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a19c0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a1ad4",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080a2438",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080a2a5c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a438c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080a47d8",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080a4fc8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a750c",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080a8bc4",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080a95f4",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080aa7a4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080aafa4",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080ac830",
+          "io_ref": [
+            "WININ"
+          ]
+        },
+        {
+          "entry": "0x080b0318",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "DISPCNT",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x080b8584",
+          "io_ref": [
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x080b85f8",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080b8770",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080b8920",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080b8a64",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080b9fb8",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x080ba0a8",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x080ba384",
+          "io_ref": [
+            "BG0HOFS"
+          ]
+        },
+        {
+          "entry": "0x080ba4dc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080bb534",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080c2690",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080c26d4",
+          "io_ref": [
+            "BG0VOFS",
+            "IME",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080c2c80",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080c7be4",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080ca44c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080cc124",
+          "io_ref": [
+            "SOUNDCNT_L"
+          ]
+        },
+        {
+          "entry": "0x080d2c1c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080d7e44",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080d833c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080d895c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080dc87c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080dd940",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080de008",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080e2fe4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080f6b78",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08107d58",
+          "io_ref": [
+            "BLDALPHA"
+          ]
+        },
+        {
+          "entry": "0x0810fe14",
+          "io_ref": [
+            "BG1HOFS",
+            "BG2HOFS"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/pokemon-emerald-version/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 694,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

@@ -1,0 +1,283 @@
+{
+  "adapter_version": "aria-readonly-reward-fragment/1",
+  "base_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "coverage": "Connected source-native combat/movement/progression modification. Fresh exact-ROM source fixture then bounded real DecisionAI exploration with uncertainty-only System2. Partial traversal diagnostics do not block candidate artifact availability; campaign unqualified.",
+  "environment_version": "libmgba/0.10.5",
+  "experiment": {
+    "calibration_artifact": null,
+    "confidence": 0.65,
+    "confidence_basis": "uncalibrated_provider_score",
+    "fixture_recipe": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-fixture.json",
+      "sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b"
+    },
+    "goal": "traversal",
+    "margin": 0.2,
+    "max_frames": 960,
+    "max_model_calls": 24,
+    "max_seconds": 60,
+    "max_steps": 12,
+    "memory_profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-memory.json",
+      "sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484"
+    },
+    "model_timeout": 10,
+    "policy_ref": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f"
+    },
+    "profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-profile.json",
+      "sha256": "a97a4095180eb27cc55ec85900e882cd5675854be460735bdd4c6aed82a4f741"
+    },
+    "sid_env_file": "/Users/shishirtandale/Projects/siddarth_pokemon/.env"
+  },
+  "limits": {
+    "attempts": 1,
+    "cost_usd": null,
+    "model_calls": 24,
+    "native_frames": 7000,
+    "wall_seconds": 180
+  },
+  "loop_config_ref": "prepared:aria-soulstride-next",
+  "mechanism_refs": [
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py",
+      "sha256": "761cbea258863975b29ae8e23fff79511d048e6f80e37ca21e6dcbd8c4679f38"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/aria_adapter.py",
+      "sha256": "efac6922479cbfeccfc385aed1b816dfdcdde7963f99f784eb902c194601e7e3"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py",
+      "sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py",
+      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py",
+      "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/momentum_strategy.py",
+      "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/soulstride_movement.py",
+      "sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/soulstride_progression.py",
+      "sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/reward_strategy.py",
+      "sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native_build.py",
+      "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py",
+      "sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8"
+    }
+  ],
+  "mechanism_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+  "preparation": {
+    "execution": "none; no build or provider calls",
+    "limits_preserved": true,
+    "refreshed_pins": [
+      {
+        "after_sha256": "761cbea258863975b29ae8e23fff79511d048e6f80e37ca21e6dcbd8c4679f38",
+        "before_sha256": "761cbea258863975b29ae8e23fff79511d048e6f80e37ca21e6dcbd8c4679f38",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py"
+      },
+      {
+        "after_sha256": "efac6922479cbfeccfc385aed1b816dfdcdde7963f99f784eb902c194601e7e3",
+        "before_sha256": "efac6922479cbfeccfc385aed1b816dfdcdde7963f99f784eb902c194601e7e3",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/aria_adapter.py"
+      },
+      {
+        "after_sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8",
+        "before_sha256": "e7e3ae2de39a3fffe1dfaf76aa1d18307979bb5c42968461b6265bb3280a57fc",
+        "changed": true,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py"
+      },
+      {
+        "after_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "before_sha256": "189a326703cf5c5364529b58b48988354d05eda81e2dba61eaf712e97898ea9d",
+        "changed": true,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py"
+      },
+      {
+        "after_sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+        "before_sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py"
+      },
+      {
+        "after_sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
+        "before_sha256": "2b28ce2e9af203f94a6e4dc22e6e2716ba9e79341d4e6ae67a36f23cf6a728a5",
+        "changed": true,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py"
+      },
+      {
+        "after_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+        "before_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/momentum_strategy.py"
+      },
+      {
+        "after_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+        "before_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/soulstride_movement.py"
+      },
+      {
+        "after_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+        "before_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/soulstride_progression.py"
+      },
+      {
+        "after_sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d",
+        "before_sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/reward_strategy.py"
+      },
+      {
+        "after_sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+        "before_sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native_build.py"
+      },
+      {
+        "after_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+        "before_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/requests/aria-soulstride-base.plan.json"
+      },
+      {
+        "after_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+        "before_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
+      },
+      {
+        "after_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "before_sha256": null,
+        "changed": true,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py"
+      },
+      {
+        "after_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "before_sha256": "5c47b05eb64e1aa324656586845b872232c5d0d066f568a52a4e8f0751ac0920",
+        "changed": true,
+        "field": "mechanism_sha256",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py"
+      },
+      {
+        "after_sha256": "a97a4095180eb27cc55ec85900e882cd5675854be460735bdd4c6aed82a4f741",
+        "before_sha256": "a97a4095180eb27cc55ec85900e882cd5675854be460735bdd4c6aed82a4f741",
+        "changed": false,
+        "field": "experiment.profile",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-profile.json"
+      },
+      {
+        "after_sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484",
+        "before_sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484",
+        "changed": false,
+        "field": "experiment.memory_profile",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-memory.json"
+      },
+      {
+        "after_sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b",
+        "before_sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b",
+        "changed": false,
+        "field": "experiment.fixture_recipe",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/soulstride-fixture.json"
+      },
+      {
+        "after_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "before_sha256": "189a326703cf5c5364529b58b48988354d05eda81e2dba61eaf712e97898ea9d",
+        "changed": true,
+        "field": "experiment.policy_ref",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py"
+      }
+    ],
+    "removed_resume_fields": [
+      "repair_of"
+    ],
+    "request_sha256": "c8531fd02326c04ed057c72b2e47d91b30911717828862e8bf68d93cf9f7878f",
+    "schema": "prefab-iteration-preparation/1",
+    "template_config_ref": "tools/prefab_pipeline/requests/aria-soulstride-iteration-repaired.json",
+    "template_run_id": "aria-soulstride-iteration-002",
+    "template_sha256": "5d520991da7412c013304490bf8a25ceb3f0eaa20069b6d28effc2a0699017be"
+  },
+  "run_id": "aria-soulstride-next",
+  "schema": "prefab-iteration/1",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "supported_requests": [
+    {
+      "intent": "Winged Skeleton Soulstride: successful native bone birth lunges the player and transfers momentum into combat; moving defeats restore MP and request real first souls; persistent native owned souls strengthen future lunges.",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 16384,
+        "subprocess_s": 20
+      },
+      "plan": {
+        "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+        "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+      },
+      "request_id": "aria-soulstride-20261016-v1",
+      "rom": {
+        "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+        "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+      },
+      "schema": "native-prefab-mod-request/1",
+      "strategy_lowering": {
+        "backend": "connected-strategy/1",
+        "lowerer": {
+          "path": "tools/prefab_pipeline/momentum_strategy.py",
+          "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+        },
+        "strategy": {
+          "path": "research/deep-extraction/castlevania/soulstride-strategy.json",
+          "sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.progress.category2_acquire",
+  "label": "Acquire category 2 packed soul inventory",
+  "role": "progression.soul_inventory_acquisition_transaction",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.progress.category2_acquire/package.json",
+  "package_sha256": "0e28cbf79e12ba7cb181f7ddd652aca44c009f9ec3eb92ac34e8f199f52fcb14",
+  "behavior_sha256": "cc13d5a636c61a4c9efe5fbe34b8a2e460cda430096c3f4500a77e36d0399224",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "0070374e2e512f023aa71fdd79d168a738327e499fb83a1b07b0535370b84cf5"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 2,
+        "unsigned_max": 2
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 35
+      }
+    },
+    {
+      "name": "param_2",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "byte_region_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 36,
+      "semantic_type": {
+        "quantity": "canonical_packed_soul_inventory_bank_pair",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_inventory.category2",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/0803278c.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08032588.json",
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-extraction/publication-source-evidence-details.json",
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-extraction/l2-subsystem.json"
+        ],
+        "naming_status": "source_backed_inventory_semantics"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "byte_region_0",
+        "storage_type": "u8",
+        "count": 36
+      }
+    ]
+  },
+  "lifecycle": {
+    "invoke": "one acquisition/adjustment transaction from caller; source root does not discover pickups or schedule itself",
+    "reentrancy": "ordered mutable-state transaction; do not parallelize count/rollback/final-adjust stages",
+    "teardown": "no allocation/destruction service; caller retains state"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "58039a6afb4795a4498615583a7f9261bd115a2ffb25eb7938e16b26f66c8a3e",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "ffbd57d9959a4933d4a2fcc08b983a7c5cd94cd690597bdfbc6766df53de9a97",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.progress.category2_acquire/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "No pickup-to-cast whole-subsystem closure",
+    "Unknown caller scheduling and persistence I/O remain outside this root",
+    "No arbitrary category selection: this artifact specialized to exactly one category",
+    "category fixed2; index0..35",
+    "Canonical bank backing is mutable RAM state, distinct from immutable ROM assets and oracle stack; physical addresses remain validation adapter only.",
+    "Preserve native narrowing; do not replace delta math with unbounded integers.",
+    "Publication qualification is finite fixture-domain coverage, not all possible delta/byte combinations.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-extraction/l2-subsystem.json",
+    "sha256": "102253caa8318c8e988a8cdf9471d5ca2c070a0635c965ee9e4d6cae05e1be17"
+  },
+  "source_root_identity": {
+    "source_game": "castlevania-aria-of-sorrow",
+    "entry": "0803278c"
+  },
+  "domain_contract_fingerprint": "779de390cce32ffb0aec79f3972537f5571ccb87fb1c971f38a8910839cc622b",
+  "specialization_subset": true
+}

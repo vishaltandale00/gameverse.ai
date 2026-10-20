@@ -1,0 +1,219 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "wl4.recovery.action60_struggle_step",
+  "label": "Source struggle step and protection recovery request",
+  "role": "protection_recovery_request",
+  "source_game": "wario-land-4",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/wl4.recovery.action60_struggle_step/package.json",
+  "package_sha256": "5495b6d8fa4647ff5cd901a911bfe17e3654def0e8e9d0b6279a3b06ea3309cb",
+  "behavior_sha256": "a65a44cc6a010fc56c3f85af47d32b9a4b5719ce40c2974aed37f83263441a6b",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d41079101c57df55118a21500bcd2b696d7d5dd617bb58fce3ab0924847d91a1"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "input_edge_mask",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.input",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "player_protection_update_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.protection",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "escape_accumulator",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.source_action60",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "direction_mask",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.direction",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "animation_update_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.source_action60.animation",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "animation_frame_index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.source_action60.animation",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+          "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one canonical player and input world",
+    "clock": "explicit original action0x3c handler invocation",
+    "phase": "source direction-edge struggle/recovery request",
+    "ordering": "Test incoming accumulator; incomplete branch updates input/animation then returns255, complete branch seeds protection96 then returns4. Source caller later consumes lowbyte action; caller/age/hazard chain unqualified."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/wl4.recovery.action60_struggle_step/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Actual action dispatcher consumer is not executable closed; return event is exposed but not falsely described as committed recovery.",
+    "Normal-form age08015218 has historical MOV-PC table branches exported as CALLIND; no approved flow repair yet.",
+    "Actual attachment cancellation consumer0802eb28 is source-connected by protection byte but its finder08026c14 exceeds structured expansion budget.",
+    "No checkpoint or whole hazard transaction; services and parent scheduler closure remain open.",
+    "Finite1024 expected cases exhaust accumulator byte\u00d7four direction masks at frame0/count0; separate120 expected animation boundary cases retained. No arbitrary gameplay-state coverage.",
+    "Source player-facing transformation identity unknown; action0x3c exact tag retained only in source evidence.",
+    "Units count source invocations/encoded masks; no assumed video frame rate or real-time duration.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+    "sha256": "1e2b1eb6033fdace1da59ada5f303f9736e48ae97abff2e0a379655d4e534409",
+    "canonicalOwner": "All mutable fields are source player/input globals; do not instantiate independent escape, timer and animation player copies. Own-ROM loads/stores retained, no entity pointer fixture alias introduced.",
+    "aliases": "All mutable fields are source player/input globals; do not instantiate independent escape, timer and animation player copies. Own-ROM loads/stores retained, no entity pointer fixture alias introduced.",
+    "preconditions": [
+      "Caller selects source normal-form action0x3c; full game entry/reachability not qualified.",
+      "Observed source animation states0..3; parent resets frame/count0 via0800fd28; frame cadence source invocation-based, no FPS assumed.",
+      "Player/input globals share canonical backing; no detached timer instances."
+    ],
+    "returnMeaning": {
+      "values": {
+        "4": "request source action4 and protection seeded96",
+        "255": "no action change request"
+      },
+      "storage": "u32; original parent consumes low8bits"
+    },
+    "services": [],
+    "animationQualification": {
+      "path": "local/ir/fleet-next/wario-land-4/next-round/source-closure-20261016/attempt03-animation-boundaries/receipt.json",
+      "sha256": "fccea6e7cb3f9c19f9ee5965ed83bcd4ad174dc39c91d9491198096ab68b978d"
+    },
+    "callerConsumerStatus": "source-backed; not executable closed"
+  },
+  "return_meaning": {
+    "quantity": "player_action_request",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "player.normal_form.action",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+      "local/ir/queue-runs/20261016T091004/wario-land-4/l0/08012614.json"
+    ],
+    "type": "u32",
+    "storage_type": "u32"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "wario-land-4",
+    "entry": "08012614"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

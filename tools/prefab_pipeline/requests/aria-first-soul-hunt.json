@@ -1,0 +1,39 @@
+{
+  "schema": "native-prefab-mod-request/1",
+  "request_id": "aria-first-soul-hunt-eleven-enemies-20261016",
+  "intent": "First unowned soul hunt: actual combat causes native soul pickup, homing collection and original persistent ability inventory; owned souls use original reward RNG",
+  "limits": {
+    "max_build_s": 60,
+    "max_payload_bytes": 16384,
+    "subprocess_s": 20
+  },
+  "strategy_lowering": {
+    "backend": "reward-strategy/1",
+    "strategy": {
+      "path": "research/deep-extraction/castlevania/first-soul-strategy.json",
+      "sha256": "85681f0f60ed9aeb9b445f665f561f2529a85be0defdc36045624cd8e6ba96a4"
+    },
+    "lowerer": {
+      "path": "tools/prefab_pipeline/reward_strategy.py",
+      "sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d"
+    },
+    "instance": "reward"
+  },
+  "hook_edits": [
+    {
+      "host_hook": "enemy_defeat",
+      "symbol": "gv_aos_first_soul_native",
+      "constant_arguments": {
+        "1": 1
+      }
+    }
+  ],
+  "plan": {
+    "path": "research/deep-extraction/castlevania/acquisition-parity.plan.json",
+    "sha256": "3ab306457c03248c7ff2ab0ac9371c9626bd2237a250f892ddb51ca7cdec846c"
+  },
+  "rom": {
+    "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+    "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+  }
+}

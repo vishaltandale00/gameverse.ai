@@ -1,0 +1,11 @@
+# Additive Superstar phase alias handoff
+
+This is a metadata-only immutable mapping, not a new executable phase adapter. It maps all48 fields from the four exact published adapters into21 canonical actor lanes. Eleven lanes overlap old initializer/update/reset and actor-step: three already have matching public meanings; eight remain private opaque. Four initializer-only lanes must survive actor-step unchanged, and six actor-step-only lanes must bind existing actor bytes rather than become fresh zero state.
+
+`canonical-alias-map.json` gives every source offset, storage width and package field, read/write effects, exact source adapter/behavior/package/native-proof pins and existing semantic status. There are no partial-width overlaps among these accessed views. Equal lanes alias only under the explicit precondition that old/new phase inputs bind the same existing actor; r0 register names alone do not establish application instance identity.
+
+`default-policy.json` requires zero writes when adding or selecting a variant. Existing live flags, counter, heights, saved parameters and velocities win. In particular, the standalone actor-step graph's counter -1 is a fresh demonstration fixture, **never** a phase-selection default. Selecting actor-step must not reset the existing actor or discard old accepted calls. Selecting back must recover the same canonical state, including values private to one phase.
+
+The additive candidate is honestly blocked. Current typed assembly rejects private opaque public bindings, and phase extension classifies typed external slots rather than preserving all opaque component backing across body replacement. Both standalone graphs also have component-owned public slots, which need an explicit lifecycle adapter before phase extension. All three known old overlaps are already public and identically typed in actor-step; no missing semantic projection can solve the eight unknown overlaps without inventing meaning/units.
+
+`phase-candidate.json` preserves the old registered phase and requests a canonical private-owner adapter before installation. `readyToMerge` and `readyToAutoSelect` are false. The old graph, new standalone graph, published packages and prior proofs are unchanged. Pin/alias metadata checks took0.007471s; there were no source lifts, native runs, host builds or game/ROM generation.

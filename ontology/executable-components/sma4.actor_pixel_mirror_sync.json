@@ -1,0 +1,196 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma4.actor_pixel_mirror_sync",
+  "label": "Sma4 Actor Pixel Mirror Sync",
+  "role": "movement",
+  "source_game": "super-mario-advance-4-super-mario-bros-3",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma4.actor_pixel_mirror_sync/package.json",
+  "package_sha256": "ecf2e62e385d373c58679b6e6172275126dd57f8e3dd9a0e0099199a4c4e8787",
+  "behavior_sha256": "2439ca866cbce9407a6176ee9cd6525a907c5e46364d21813987e404a4121e69",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "ccf2d5e5c202f75914fb31844d61d0520ba44fbe18e868438d88ad50021ad365"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "actor_world_x_fixed8"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "actor_world_y_fixed8"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "camera.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "actor_camera_x_pixel"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "camera.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "actor_camera_y_pixel"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "camera_x_pixel"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/sma4-actor-dispatch.json",
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+        ],
+        "label": "camera_y_pixel"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": "Caller-owned invocation; original subsystem assembly and outer schedule remain unqualified.",
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma4.actor_pixel_mirror_sync/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original/emitted qualification only; no complete mechanic or game claim.",
+    "Unannotated state remains private opaque source storage; preserve distinct roles and exact alias/order contracts.",
+    "L2 source-backed contract is nonexecutable; no arbitrary compatible substitution established.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_contract_ref": "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+    "L2_executable": false,
+    "source_root_identity": "08047c40",
+    "alias_service_order_constraints": "Full original source facts retained in pinned contract; shared actor/scene/scratch owner relationships must not be split.",
+    "unannotated_fields": [],
+    "parameter_contract": "Original parameters and domains only as recorded in pinned L1/adapter and source evidence; no semantic parameter fields added.",
+    "return_contract": "Original qualified ABI return; exact semantics only as recorded in pinned source evidence.",
+    "alias_constraints": [
+      "Entity is borrowed original world-pool actor view; camera globals are shared input",
+      "Pixel mirrors narrow modulo sixteen bits; preserve invocation order before collision shape preparation"
+    ],
+    "opaque_and_service_limits": [
+      "No visibility, eligibility, damage, allocation or retirement semantics provided",
+      "No external service calls inside root; outer scheduler and actor-world canonical ownership remain caller responsibilities",
+      "No sign encoding claimed for world or camera storage beyond original qualified bit operations"
+    ]
+  },
+  "source_root_identity": {
+    "source_game": "super-mario-advance-4-super-mario-bros-3",
+    "entry": "08047c40"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

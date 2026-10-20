@@ -1,0 +1,213 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "khcom.effect.expiration_gate",
+  "label": "Effect display expiration suppression gate",
+  "role": "read_only_source_required_expiration_gate_dependency",
+  "source_game": "kingdom-hearts-chain-of-memories",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/khcom.effect.expiration_gate/package.json",
+  "package_sha256": "e842491c5d22fc2701dc6f64293ac410b38ea636060311987a1e6a336762812d",
+  "behavior_sha256": "2982bb9d35fc87d8319191d07dbaeafb15b382e3af6cd84775092daef3281c93",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b054c4e670960362a3c388120a11ac74c67965330a72ee59a812b07e3314d4e2"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_side_discriminant",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "effect_display.side_selector",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/manifest.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/export-ex028/l0/0809de18.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/abi-witness.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/lift-0809de18/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "displayed_effect_kind_discriminant",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "effect_display.kind_selector",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/manifest.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/export-ex028/l0/0809de18.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/abi-witness.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/lift-0809de18/fixtures.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "invoke": "one read-only gate query from source expiration updater",
+    "clock": "explicit invocation only; frame cadence unresolved",
+    "ownership": "borrowed caller effect-display context; no allocation or state mutation",
+    "ordering": "snapshot side discriminant, conditionally read kind discriminant, return predicate; caller normal updater is suppressed when true",
+    "teardown": "none; caller retains storage",
+    "qualificationScope": "isolated gate only; full subsystem blocked"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/khcom.effect.expiration_gate/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Source categorical comparisons establish dimensionless discriminants, not physical units; game-visible side/effect names remain opaque.",
+    "Fields share one borrowed caller context; do not bind independent stale copies.",
+    "One gate dependency qualified; full recovery, charge consumption, presentation expiration and callback lifecycle remain incomplete.",
+    "No clock conversion, global actor ownership, persistence or scheduler guarantee recovered for this leaf.",
+    "No new tests/JVM/lifts performed in publication pass; qualification is retained finite synthetic native receipt.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json",
+    "sha256": "fe0af37782ff4741e048522ba115dcb6036add542aa40fb1c1bffa87a7a18414",
+    "fieldMapping": {
+      "field_0": {
+        "type": "u8",
+        "quantity": "opaque_side_discriminant",
+        "domain": {
+          "unsigned_min": 0,
+          "unsigned_max": 255
+        },
+        "predicateValues": [
+          1,
+          2
+        ],
+        "access": "read_only"
+      },
+      "field_1": {
+        "type": "u16",
+        "quantity": "displayed_effect_kind_discriminant",
+        "domain": {
+          "unsigned_min": 0,
+          "unsigned_max": 65535
+        },
+        "predicateValues": [
+          37
+        ],
+        "access": "read_only",
+        "unknowns": [
+          "effect game-visible name unknown; this predicate kind differs from resource recovery effectkind23"
+        ]
+      }
+    },
+    "parameters": [],
+    "parameterExplanation": "Actual L1 scalar parameter list is empty; two fields are borrowed views of one implicit native entity reference.",
+    "return": {
+      "type": "u32",
+      "quantity": "suppress_expiration_updater_predicate",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "gate_invocation",
+      "domain": [
+        0,
+        1
+      ],
+      "predicate": "true iff side discriminant is1or2 and displayed kind is37"
+    },
+    "ownerReferences": [
+      {
+        "id": "entity_r0",
+        "ownership": "borrowed_read_only_context",
+        "fields": [
+          "field_0",
+          "field_1"
+        ],
+        "lifetime": "caller controlled, stable for invocation"
+      }
+    ],
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "Native r0 identifies valid caller context with readable byte25 and halfword30 when side1/2",
+      "Source caller0809dcb8 passes original live r0 atpc0809dcc2; own-ROM ABI witness retained",
+      "Finite synthetic receipt qualifies this isolated leaf only; no scheduler/callback or full-effect lifecycle qualification"
+    ],
+    "services": {
+      "externalCalls": [],
+      "hardwareReads": [],
+      "hardwareWrites": [],
+      "effect": "read-only RAM predicate; no own scheduling, time or rendering service"
+    },
+    "sourceOrderEvidence": [
+      "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json",
+      "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/manifest.json",
+      "local/ir/fleet-next/kingdom-hearts-chain-of-memories/export-ex028/l0/0809de18.json",
+      "local/ir/fleet-next/kingdom-hearts-chain-of-memories/abi-witness.json",
+      "local/ir/fleet-next/kingdom-hearts-chain-of-memories/lift-0809de18/fixtures.json"
+    ],
+    "qualification": {
+      "status": "pass",
+      "outcome": "pass",
+      "scope": "original-ROM versus emitted isolated gate; finite synthetic fields, not gameplay traces",
+      "vectors": 1024,
+      "expected_return_cases": 768,
+      "native_instructions": 13350,
+      "abi_checks": [
+        "callee_saved_r4_r11",
+        "stack_balance",
+        "qualified_return_width"
+      ],
+      "receipt": {
+        "path": "local/ir/fleet-next/kingdom-hearts-chain-of-memories/lift-0809de18/receipt.json",
+        "sha256": "c6cc38f99c770befebf20901ee51198ff3bde47268ebeec1d9ec3dd5a225eb42"
+      },
+      "wall_s": 0.24832683400000002,
+      "notClaimed": [
+        "full updater or effect subsystem qualification",
+        "all16-bit effect values for allsidevalues",
+        "whole-game completion"
+      ]
+    },
+    "fullSubsystemStatus": "blocked_on_bounded_arithmetic_loops_canonical_aliases_and_controller_ABI",
+    "unknowns": [
+      "side labels and effect names",
+      "complete scheduler ordering",
+      "caller allocation lifecycle"
+    ]
+  }
+}

@@ -1,0 +1,412 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma4.stomp_host_bundle",
+  "version": "0.1-source-parity",
+  "concept": {
+    "role": "combat.enemy_stomp",
+    "pattern": "top contact causes bounce, health decrement, type/state change and score-chain event",
+    "facets": [
+      "mechanics",
+      "ai"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance-4-super-mario-bros-3:actors_ai"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance-4-super-mario-bros-3",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Indexed own USA ROM SHA1 69e81f41394f02d64cad206adb26b3cd43690770",
+    "compiler_ref": "local/re/experiments/20261016-binary-corpus-round2/sma4-stomp-host-02/receipt.json",
+    "abi": "r0 native enemy record; reviewed host adapter resolves explicit original player/world/rule globals; retained score/audio services",
+    "recovery": {
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "ranges": [
+        {
+          "address": "0x8046744",
+          "size": 588,
+          "isa": "thumb",
+          "instruction_sha256": "0f4db9580835ac8eb32bdc64333591bd727cf6d093192f671c1d3e2b23f6850a",
+          "name": "stomp_resolution",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x809b190",
+          "size": 132,
+          "isa": "thumb",
+          "instruction_sha256": "2828167f60745931451db373eec19a02683f5dbb09cc80c174d5b0ea4957ae5f",
+          "name": "bounce_initializer",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8046738",
+          "size": 12,
+          "isa": "thumb",
+          "instruction_sha256": "32e856efcf03780b5aace5171ca94b4a36d2d377a9c1f82fe16e882fd24f3f92",
+          "name": "flatten_initializer",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80479c0",
+          "size": 40,
+          "isa": "thumb",
+          "instruction_sha256": "fe9372df8c5df9efdaeb281574e414824f82526281539f9bc20f474405c52b7e",
+          "name": "actor_x_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80479e8",
+          "size": 120,
+          "isa": "thumb",
+          "instruction_sha256": "89be1c1c041d369cb3f17f995a44138112b2b1bc5fb4579fa8cd5867f063de09",
+          "name": "wrapped_actor_x_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-recovered.c",
+      "lift_sha256": "e707eca99c353f4c7265a5ba1fb39a112625fb918ee68c766e6a46afa51a78f0",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "Original score_chain0x08091144 and play_sound0x080e4040 retained through exact pinned host service contracts"
+        ],
+        "data": [
+          "ROM per-enemy transform,collision,stomp visual and wrapping traits; whole cart hash pins tables"
+        ],
+        "ram": [
+          "r0 native enemy112-byte record",
+          "Reviewed player264-byte and world4096-byte state through host pointers",
+          "Explicit character/rule/camera/input globals; sound context write0x03002d7c"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Pure rule has no original addresses; host adapter owns all context reads and effects",
+          "No mutable BSS or new actor/world allocation"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-binary-corpus-round2/sma4-stomp-host-02/receipt.json",
+        "local/re/experiments/20261016-binary-corpus-round2/sma4-stomp-live-02/probe.json"
+      ],
+      "unknowns": [
+        "Native finite qualification covers eight enemy type records; complete enemy ecology/campaign remains open",
+        "Original contact eligibility and enemy movement remain retained host dependencies, not recovered in this operator",
+        "Score service consumes a preserved pre-transform actor view; service reads x,y,type only; whole-game parity still pending"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "stomp_contact",
+      "direction": "in",
+      "type": {
+        "scalar": "native_enemy_ptr",
+        "quantity": "accepted_contact",
+        "unit": "one_native_contact_event",
+        "frame": "original_contact_dispatch"
+      }
+    },
+    {
+      "id": "stomp_effects",
+      "direction": "out",
+      "type": {
+        "scalar": "native_state_and_events",
+        "quantity": "bounce_enemy_score",
+        "unit": "native_fixed_point_and_chain_steps",
+        "frame": "SMA4_world"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "enemy_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "enemy_health_type_state",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "bounce_airborne_chain",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "world_effect_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "scoring_and_contact_effects",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "room"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "stomp",
+      "clock": "original_native_contact_event",
+      "phases": [
+        "bounce",
+        "decrement_enemy_health",
+        "transform_or_flatten",
+        "score_effect"
+      ],
+      "reads": [
+        "enemy_state",
+        "player_state",
+        "world_effect_state"
+      ],
+      "writes": [
+        "enemy_state",
+        "player_state",
+        "world_effect_state"
+      ],
+      "invariants": [
+        "Original contact dispatcher decides whether stomping is allowed",
+        "Enemy species traits are native table inputs, not name keywords",
+        "Preserve original pre-transform enemy view for score effects"
+      ],
+      "authority": "Exclusive replacement for one original stomp-handler entry; all other enemy/controller behavior retained"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-stomp.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-recovered.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-freestanding-runtime.c"
+    ],
+    "data": [
+      "Native species trait tables pinned by exact foundation SHA256"
+    ],
+    "globals": [
+      "Reviewed player/world pointers, rule selectors, held buttons, camera and sound context from host contract"
+    ],
+    "macros": [
+      "SMA4_NATIVE_BUILD"
+    ],
+    "hardware": [],
+    "host_services": [
+      "score_chain",
+      "play_sound"
+    ],
+    "unsupported": [
+      "Not a complete enemy AI, movement, terrain solver, ability, progression or mashup"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-recovered.c",
+    "preconditions": [
+      "Exact USA ROM and component source identities",
+      "Original native r0 enemy record and reviewed host-context fields",
+      "Stomp qualification and host service contracts retained"
+    ],
+    "outputs": [
+      "Recovered stomp rule",
+      "Reviewable native context adapter",
+      "Pinned composition plan and native ROM candidate"
+    ],
+    "semantic_changes": [
+      "None intended; pure rule exports typed effects which host adapter routes back to original services"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Native player/actor fixed-point units retained",
+    "authority_obligation": "r0 enemy plus reviewed player/world side effects; native dispatcher still owns contact eligibility"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Jump on an enemy to bounce, change its health/form and extend a score chain",
+    "status": "Source parity integration candidate; native gameplay qualification pending"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma4-stomp-parity.json",
+    "hooks": [
+      {
+        "id": "stomp",
+        "address": "0x08046744",
+        "size": 8,
+        "preimage_hex": "f0b54f464646c0b4",
+        "preimage_sha256": "4e4fae5e46b9f0e8a791ece305a7aad672ea53e0e3fc3081441a2c6297bf3200",
+        "export": "sma4_host_stomp",
+        "abi": "r0 native enemy record; explicit global-context adapter"
+      }
+    ],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-stomp.c",
+          "sha256": "cbe9b3f84e79ab7441b5a0bdd1b4b8d405d6e5f66b2e8f0f35a8aff0e29899a2"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-recovered.c",
+          "sha256": "e707eca99c353f4c7265a5ba1fb39a112625fb918ee68c766e6a46afa51a78f0"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-freestanding-runtime.c",
+          "sha256": "9fcd06c9031785be5d2a052508675359f6c21d99bc35680412d8087a85628d46"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-stomp.c",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-freestanding-runtime.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma4_host_stomp",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "enemy",
+          "storage": "host-r0-actor",
+          "bytes": 112,
+          "lifetime": "native-entity",
+          "writes": [
+            {
+              "offset": 0,
+              "width": 32,
+              "quantity": "enemy_world_x"
+            },
+            {
+              "offset": 16,
+              "width": 8,
+              "quantity": "enemy_vx"
+            },
+            {
+              "offset": 18,
+              "width": 8,
+              "quantity": "enemy_vy"
+            },
+            {
+              "offset": 22,
+              "width": 8,
+              "quantity": "enemy_state"
+            },
+            {
+              "offset": 24,
+              "width": 16,
+              "quantity": "enemy_type"
+            },
+            {
+              "offset": 36,
+              "width": 8,
+              "quantity": "contact_cooldown"
+            },
+            {
+              "offset": 52,
+              "width": 8,
+              "quantity": "flatten_timer"
+            },
+            {
+              "offset": 54,
+              "width": 8,
+              "quantity": "enemy_health"
+            }
+          ],
+          "allocation": "None; original enemy actor retained. Player/world side effects explicitly declared in host context and IR states."
+        }
+      ],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x80e4040",
+          "abi": "void(u16,constvoidptr)"
+        },
+        {
+          "service": "score_chain",
+          "address": "0x8091144",
+          "abi": "void(constvoidptr,i32)"
+        }
+      ],
+      "host_reads": [
+        {
+          "address": "0x3007818",
+          "width": 32
+        },
+        {
+          "address": "0x3007848",
+          "width": 32
+        },
+        {
+          "address": "0x3002d53",
+          "width": 8
+        },
+        {
+          "address": "0x3003a2f",
+          "width": 8
+        },
+        {
+          "address": "0x3002d77",
+          "width": 8
+        },
+        {
+          "address": "0x3002d52",
+          "width": 8
+        },
+        {
+          "address": "0x3003aea",
+          "width": 16
+        },
+        {
+          "address": "0x3003750",
+          "width": 16
+        },
+        {
+          "address": "0x3002d7c",
+          "width": 16
+        },
+        {
+          "address": "0x3003cb3",
+          "width": 8
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "Original stomp vs pure rule and emitted host adapter, eight native enemy types",
+      "Actual first Goomba stomp: state2\u21923, player bounce -64, chain0\u21921"
+    ],
+    "required_witnesses": [
+      "Generated ROM must retain foundation byte identity outside stomp entry",
+      "Same-private-checkpoint baseline versus generated-ROM stomp traces, score and rendered frames",
+      "Whole-game/campaign qualification remains separate"
+    ],
+    "known_limits": [
+      "Current candidate preserves all other original game systems; not recovered whole-game source",
+      "Native scoring and audio are retained pinned services",
+      "No cross-game assembly or UI publication implied"
+    ]
+  }
+}

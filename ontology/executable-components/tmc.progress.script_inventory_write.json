@@ -1,0 +1,188 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.progress.script_inventory_write",
+  "label": "Original script command writes packed learned inventory",
+  "role": "progression",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_source_dispatch_effects_lift",
+  "package_ref": "local/ir/packages/tmc.progress.script_inventory_write/package.json",
+  "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+  "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "512 explicit supplied native cases, including 8 source-derived cases; full 64-byte expected inventory bank, 16 global guard bytes and two complete 256-byte context/cursor canary views. Accepted item ID 0..255 and state 0..3; not exhaustive 1024 Cartesian combinations, trainer script, parser stream, refresh/save lifecycle or residual r0 return qualification.",
+    "kind": "caller_dispatch_state_effects_subset",
+    "scope_evidence": {
+      "fixture_input": {
+        "path": "local/ir/mashup-coverage/publication-intake/minish-script-packet-03/fixtures.canonical.json",
+        "sha256": "d085e423ace4360dd196fd65756f30cb3738cc55aa45793a98fb9f9844143efb"
+      },
+      "capture_context": {},
+      "original_harness_scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "complete_expected_state_collection_matrix": true
+    },
+    "receipt_sha256": "b4c37039c6eba96028289c4a367303464674cfed1d68e635f370fc53a2260d06"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "script_cursor",
+      "identity": "script_cursor",
+      "ownership": "caller_owned_readonly_region",
+      "lifetime": "invocation",
+      "separation": "explicit_distinct_accessed_views",
+      "evidence": [
+        "research/ir-workshop/blueprint-completion-20261016/minish/script-probe.c"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "source_item_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "script_command",
+        "confidence": 0.9,
+        "evidence": [
+          "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "two_bit_inventory_state",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "script_command",
+        "confidence": 0.9,
+        "evidence": [
+          "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "dependency_0_collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "quantity": "packed_two_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign",
+        "confidence": 0.9,
+        "evidence": [
+          "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": [
+      {
+        "id": "dependency_0_collection_0",
+        "storage_type": "u8",
+        "count": 64
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "caller_owned_script_context_and_campaign_bank",
+    "clock": "explicit_script_command_invocation",
+    "phase": "script_effect_before_explicit_capability_refresh",
+    "ordering": "parser dispatch provides cursor; handler does not advance parser or refresh cache"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "d6d692b811751a8bb42bd5ed60036233721291154f865a7b4bab30f1382f1f29",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_source_dispatch_state_effects_projection",
+    "machine_evidence_ref": "local/ir/packages/tmc.progress.script_inventory_write/l0.json",
+    "resolution": "Own-ROM script handler memory effects under a source-proven dispatch context that discards residual return; no complete handler result ABI claim"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Qualified item ID 0..255 and state 0..3 only",
+    "No trainer script or once-only claim identified",
+    "Return value outside source parser state-effects view",
+    "No accepted external-media persistence claim",
+    "512 total native fixtures including 8 expected source cases, not exhaustive 256x4 Cartesian input coverage.",
+    "Caller must supply distinct readonly cursor+2..6 and 28-byte script context; 64-byte learned bank alias shared with published setter; no parser stream, trainer, cache refresh or external persistence claim.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_dispatch_effects_scope": {
+    "kind": "thumb_dispatch_r0_overwritten_before_use",
+    "handler_entry": "0807f078",
+    "parser": "0x0807df74",
+    "dispatch_call": "0x0807dfca",
+    "first_r0_overwrite": "0x0807dfd2",
+    "witness_bytes": "82f794ffb17949002868",
+    "handler_table_index": 133,
+    "source_routes": {
+      "path": "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json",
+      "sha256": "70a752f6d69fbaddd59191e0142b2921fc61b00be2f091a1253c60718804ea46"
+    },
+    "return_semantics": "unavailable_residual_r0_discarded_by_source_dispatcher",
+    "handler_table_index_hex": "0x85"
+  },
+  "source_contract": {
+    "dispatch": {
+      "parser": "0807df74",
+      "opcode": 133,
+      "handler": "0807f078",
+      "source_evidence": {
+        "path": "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json",
+        "sha256": "70a752f6d69fbaddd59191e0142b2921fc61b00be2f091a1253c60718804ea46"
+      }
+    },
+    "cursor": "caller-owned r1 context word +0 points to payload u16 at +2/+4; handler does not validate opcode or advance cursor",
+    "effect": "calls original inventory setter 0807caa0; cache refresh is separate 0807aee4",
+    "return": "source parser overwrites handler residual r0 at 0807dfd2, as source-routes.json returnUse records"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "legend-of-zelda-the-the-minish-cap",
+    "entry": "0807f078"
+  },
+  "domain_contract_fingerprint": "41a4d59b6ccaf473f66b53ea12b05d8a14cc75e98c19e9aae34fa8b3e3e1f453",
+  "specialization_subset": true
+}

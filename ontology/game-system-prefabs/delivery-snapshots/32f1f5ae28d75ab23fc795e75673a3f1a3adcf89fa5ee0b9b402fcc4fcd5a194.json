@@ -1,0 +1,323 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "kirby-and-the-amazing-mirror",
+  "sourceSystemIds": [
+    "kirby-amazing-mirror.pool-eligibility-proximity-hop"
+  ],
+  "blueprintIds": [
+    "actors-world-lifecycle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Configured world actors become eligible, select a live nearby target and execute coherent timed hop/approach updates on one canonical actor. This source-mapped lifecycle is incomplete; no player movement or ability capability is delivered.",
+    "phases": [
+      {
+        "id": "player-input-movement",
+        "label": "Player movement and terrain response",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source player controller",
+          "terrain and position integration"
+        ],
+        "gaps": [
+          "Existing packet covers an unidentified actor hop/approach subsystem, not Kirby player control."
+        ]
+      },
+      {
+        "id": "ability-action",
+        "label": "Inhale, copy ability and action lifecycle",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source ability admission and consumers"
+        ],
+        "gaps": [
+          "No inhale/copy/flight ability closure is supplied."
+        ]
+      },
+      {
+        "id": "actor-activation",
+        "label": "Configured actor eligibility and target activation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "canonical actor pool",
+          "config reference",
+          "region predicate stack ABI"
+        ],
+        "gaps": [
+          "Shared pool pointer/domain and nested configuration references remain executable blockers."
+        ]
+      },
+      {
+        "id": "callback-retarget",
+        "label": "Internal callback/phase handoff support",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/prefab-pass/setter.lowered.c",
+          "tools/behavior_ir/assembly.py"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Useful atomic state transaction only; actual callback dispatch and private reset-lane host backing remain outside graph.",
+          "Internal scheduling/reference support only; no primary gameplay prefab."
+        ]
+      },
+      {
+        "id": "hop-consumer",
+        "label": "Same-actor hop/approach and terrain/animation continuation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source actor scheduler",
+          "vertical integration",
+          "terrain flags",
+          "animation completion"
+        ],
+        "gaps": [
+          "Consumer phase machine is source-mapped but not executable-qualified."
+        ]
+      },
+      {
+        "id": "actor-retire",
+        "label": "Actor retirement, spawn and persistent recovery",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "task allocator/destructor",
+          "persistence bit producer"
+        ],
+        "gaps": [
+          "Allocation/configuration service references exist; cleanup/reuse and persistent restoration not closed."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor-activation",
+        "to": "callback-retarget",
+        "kind": "source-call",
+        "scope": "Source eligibility/proximity installs callback through setter; callbacks execute under unresolved original scheduler."
+      },
+      {
+        "from": "callback-retarget",
+        "to": "hop-consumer",
+        "kind": "shared-state",
+        "scope": "Same actor callback andphase consumed by source actor update; exact dispatch timing not proved."
+      },
+      {
+        "from": "hop-consumer",
+        "to": "actor-retire",
+        "kind": "host-required",
+        "scope": "Cleanup/destruction/persistence boundaries remain unclosed; no invented frame order."
+      }
+    ],
+    "missingForCoreGame": [
+      "Canonical actor identity and byte alias mapping for every public and private field",
+      "Callback symbolic resolution and actual task dispatcher lifetime",
+      "Original task scheduling and terrain/animation writers to consume phase and callback",
+      "Allocator/destructor/persistence and source world/pool references",
+      "Optionality of audio/render clocks is unproven; do not omit mandatory lifecycle services",
+      "Kirby player input/controller and inhale/copy ability consumers",
+      "Complete terrain solver and level progression",
+      "Portable source pool/region/config dependencies"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "kirby-amazing-mirror.actor.proximity-hop-lifecycle",
+      "label": "Configured actor proximity and timed hop lifecycle",
+      "moduleId": "kirby-amazing-mirror.actor.proximity_hop_module",
+      "sourceGame": "kirby-and-the-amazing-mirror",
+      "sourceSystemId": "kirby-amazing-mirror.pool-eligibility-proximity-hop",
+      "sourceContractRef": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+      "planIds": [
+        "actors-world-lifecycle"
+      ],
+      "packageIds": [
+        "kirby-amazing-mirror.actor.callback_phase_reset"
+      ],
+      "availability": "source-only",
+      "scope": "Source-mapped configuration/pool eligibility \u2192 live-target proximity \u2192 timed hop/approach updates; canonical actor, terrain/animation services and lifetime remain unresolved. Callback reset is internal support only.",
+      "gaps": [
+        "Full actor needs canonical backing/synchronization for private timer and cursor reset fields.",
+        "Callback target symbolic resolution and actual scheduler dispatch remain host obligations.",
+        "Current assembly API prep seeds all bound output ports; raw Composer alone lacks retained-phase synchronization.",
+        "No damage, checkpoint, spawn, terrain response or player control is certified."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+        "local/ir/fleet-next/kirby-and-the-amazing-mirror/prefab-pass/setter.lowered.c",
+        "tools/behavior_ir/assembly.py"
+      ],
+      "canonicalState": {
+        "identity": "one original caller actor, borrowed mutable view",
+        "fields": [
+          "packed flags",
+          "callback reference",
+          "phase selector",
+          "timer reset lane",
+          "two cursor reset lanes"
+        ],
+        "aliasRule": "Public lanes must map same actor; timer/cursor private lanes require canonical host synchronization before full lifecycle acceptance. Never duplicate actor for its control/recovery facets."
+      },
+      "roleFacets": [
+        {
+          "roleId": "actor-update",
+          "capability": "source-actor-proximity-hop-update",
+          "status": "source-only",
+          "scope": "Timed hop/approach actor update is source-mapped but not a qualified portable consumer phase. No player ability, attack or checkpoint system supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json"
+          ]
+        }
+      ],
+      "internalSupportPhases": [
+        {
+          "id": "kirby-amazing-mirror.actor.preserve_phase_callback_retarget",
+          "label": "Keep phase; replace callback and reset associated state",
+          "assemblyRef": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/preserve-phase-retarget.assembly.json",
+          "validationRef": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/preserve-phase-retarget.validation.json",
+          "descriptorRef": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/delivery.json",
+          "packageIds": [
+            "kirby-amazing-mirror.actor.callback_phase_reset"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "readyToAddReason": "Actual atomic graph admitted; central role eligibility and full actor private-lane host obligations require semantic lead acceptance."
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "kirby-mirror-phase-preserve-prefab-pass",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0021765000000000014,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Actual assembly validation wall includes Composer/lowering. Separate emitted-path reproduction time in manifest; no new native/build/export. Interactive total unavailable."
+  },
+  "packagePins": [
+    {
+      "path": "local/ir/packages/kirby-amazing-mirror.actor.callback_phase_reset/package.json",
+      "sha256": "77097863ed72163f9f672d54f65d504c1be11cf6d19533771647345c5a983ca3"
+    }
+  ],
+  "compilerApi": {
+    "path": "tools/behavior_ir/assembly.py",
+    "sha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18"
+  },
+  "consumerApi": {
+    "path": "tools/behavior_ir/compose.py",
+    "sha256": "aa046ba3c7b3b807a906ddd8fb2bd8c53db4baf84cc9b60c3064fb4ecc099946"
+  },
+  "hostAcceptanceBoundary": "No primary gameplay prefab is admitted for presentation. Callback retarget proof is internal support only; a timed hop/approach consumer or valid combined actor phase is required before ready user-facing capability.",
+  "internalSupportPhases": [
+    {
+      "id": "kirby-amazing-mirror.actor.preserve_phase_callback_retarget",
+      "moduleId": "kirby-amazing-mirror.actor.callback_state_service",
+      "label": "Keep phase; replace callback and reset associated state",
+      "path": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/preserve-phase-retarget.assembly.json",
+      "sha256": "a5bc78dbebc86091cafa0a4e68298177821f12e5926b2b85c255e40dae472250",
+      "validation": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/preserve-phase-retarget.validation.json",
+      "validationSha256": "eebf3f12b72471dded67cefab471510692e3a65d2187e332277a8dcd4a8c9052",
+      "inputs": [
+        {
+          "id": "actor_phase",
+          "label": "Current action phase to retain",
+          "storageType": "u8",
+          "default": 5,
+          "domain": "u8 source state; current witness5 is an observed hop state; no player mode equivalence",
+          "binding": "state.actor_phase"
+        },
+        {
+          "id": "actor_flags",
+          "label": "Existing actor flags",
+          "storageType": "u32",
+          "default": 256,
+          "domain": "fullu32 bitset; default is graph witness only, not spawn policy",
+          "binding": "state.actor_flags"
+        },
+        {
+          "id": "callback_target",
+          "label": "Source hop continuation reference",
+          "storageType": "u32",
+          "default": 134364521,
+          "domain": "exact stored source callback reference; no arbitrary dispatch capability",
+          "binding": "invocations[0].arguments.param_1"
+        },
+        {
+          "id": "preserve_phase",
+          "label": "Retain current action phase",
+          "storageType": "u32",
+          "default": 65535,
+          "domain": "low16 all ones is source preserve sentinel; retain full-width test semantics",
+          "binding": "invocations[0].arguments.param_0"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "actor_phase",
+          "binding": "state.actor_phase",
+          "meaning": "Phase5 remains5 for admitted sentinel invocation; requires current assembly readset preparation."
+        },
+        {
+          "id": "actor_callback",
+          "binding": "state.actor_callback",
+          "meaning": "Reference replaced with supplied source hop continuation; no dispatch occurs."
+        },
+        {
+          "id": "actor_flags",
+          "binding": "state.actor_flags",
+          "meaning": "Flags256 becomes260 by OR4; all other bits retained."
+        }
+      ],
+      "phases": [
+        {
+          "id": "callback-retarget",
+          "trigger": "explicit caller request to source callback/state setter",
+          "invocations": [
+            "setter"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Full actor needs canonical backing/synchronization for private timer and cursor reset fields.",
+        "Callback target symbolic resolution and actual scheduler dispatch remain host obligations.",
+        "Current assembly API prep seeds all bound output ports; raw Composer alone lacks retained-phase synchronization.",
+        "No damage, checkpoint, spawn, terrain response or player control is certified."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+        "local/ir/fleet-next/kirby-and-the-amazing-mirror/prefab-pass/setter.lowered.c",
+        "tools/behavior_ir/assembly.py"
+      ],
+      "qualificationScope": "Actual binding_valid_obligations_unproven receipt with Composer/lowering; phase5->5 is source/lowered-path analysis plus existing finite leaf proof, not new runtime graph qualification."
+    }
+  ]
+}

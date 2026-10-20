@@ -1,0 +1,15 @@
+# GTA active-component view-priority consumer
+
+The new automatic leaf is original `0800d0a0`, the rectangle/view metric called by the original active-component list sorter. It reads the same component identity retained by the existing activation/deactivation prefab. This connects the membership work to a real rendering consumer; it does not recover vehicle physics or replace the original sorter.
+
+The final original-versus-emitted native matrix passed 1,024 comparisons, including 306 explicit expected-return and unchanged-state cases. Cases cover translated rectangles, inside/edge/corner/outside samples, positive and negative radii, saturation, and a directed negative result from signed squared-distance overflow. The original function returns a full 32-bit word. Its caller stores the low 16 bits before forming the sorting key. Treating the result as an always nonnegative distance would lose source behavior.
+
+Qualification 01 passed 1,024 comparisons with 305 focused cases. It is retained in `receipt-qualification01.json` and `fixtures-qualification01.json`. Qualification 02 adds the explicit negative-distance overflow case and corrects the earlier extreme-case group label. Thus 2,048 native comparisons were actually executed across the two proofs; the final publication matrix is 1,024, not their sum. Final qualifier wall time was 0.230231 seconds, with build/link/native substages nested inside it. No before/after speedup, queue time or whole interactive elapsed time is available.
+
+The source chain is actor activation → component membership → world update → render consumer `0800d2b0` → list sorter `0800d180` → metric `0800d0a0`, followed later by actor deactivation/unlink. The contract preserves the renderer's modulo-four clock, camera-change/force guards, visibility flags, animation indices, draw queue effects and service order. The new leaf does not advance those states.
+
+Actual fresh attempts on `0800d180` and `0800d2b0` stop at the compiler's exact cyclic-SSA induction requirement. Their mutable list traversals and sort/animation services remain open and have been routed to the compiler owner. No service was erased or stubbed. The persistent prefab dependency link is source evidence, not a composed original-ROM runtime qualification.
+
+`publication-candidates-v2.json` is the final normalized intake packet. Publication and real graph admission are separately owned by the intake/coordinator. No browser, new ROM, game, dependency, JVM export, central registry edit or unchanged proof rerun was performed. GTA remains incomplete.
+
+The metric was subsequently published after independent review in wave 07. `closure-published-v2.json` preserves the earlier closure and pins the actual central package. The exact published metric phase and its negative-wrap configuration pass the real graph validator; narrowing the result to 16 bits is correctly rejected. Independent graph clearance remains separate. These graph checks took 0.012759 seconds in aggregate and performed no original-ROM native rerun.

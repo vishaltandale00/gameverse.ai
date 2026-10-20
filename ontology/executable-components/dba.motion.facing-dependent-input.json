@@ -1,0 +1,264 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "dba.motion.facing-dependent-input",
+  "label": "Facing-dependent held-input acceleration and profile braking, finite disjoint actor domain",
+  "role": "actor_horizontal_motion_consumer",
+  "source_game": "dragon-ball-advanced-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/dba.motion.facing-dependent-input/package.json",
+  "package_sha256": "7fb36971f8c7ea6482feac2eedc294717a42d0bcb99a69e51f483d5847ce5cee",
+  "behavior_sha256": "a191279e6ec3e778ffb0e4f546fec0093f879195c8cda0e9b9841ea8e587d4bd",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "f0ed459e3eb7176b18c444b309dfb84b158d84ff586dd33a155515e757a3127a"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.motion.gates",
+        "quantity": "actor_motion_gate_flags",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.motion.facing",
+        "quantity": "facing_and_motion_flags",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.controls.charge",
+        "quantity": "charge_control_flags",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.motion.horizontal_source_units",
+        "quantity": "signed_horizontal_velocity_encoded",
+        "signed_encoding": "twos_complement",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.capabilities",
+        "quantity": "motion_capability_bits",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.profile",
+        "quantity": "actor_charge_profile_selector",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "actor.controls.held",
+        "quantity": "held_direction_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+          "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json"
+        ],
+        "frame": "host.profile",
+        "quantity": "global_braking_profile_selector",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": []
+  },
+  "lifecycle": {
+    "clock": "Explicit source routine invocation; no FPS/cadence inferred",
+    "ordering": "Source held bits/facing select cap; source acceleration/braking writes signedvelocity; no position integration",
+    "source_parent": "Static0801cd28 edge only; no parent callback execution/admission",
+    "storage": "Borrowed canonical actor r0 and original readonly global profile; native proof fixeddisjoint actor only"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/dba.motion.facing-dependent-input/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Actual parentcontroller0801cd28 callback/action entry and fullframe scheduling",
+    "Fixedactor020205a0/globalprofile0202066a samebytealias notnativeadmitted",
+    "Original globalprofile producer and actualruntime0..29 enforcement",
+    "Code-ref initializer08018e68\u219208018ec5 and actualBXr1 dispatcher08116a20 notIRsupported",
+    "Task allocator cyclicSSA/nextlist invariant/payload/destructor/audio closure",
+    "Terrain/position/save/lifecycle,intermediate IRQ-visible writes and campaign equivalence",
+    "Composition eligibility false; this is installed research evidence only, not a generally host-usable capability",
+    "Source caller0801cd28\u219208028048 is static evidence only; no joint controller invocation qualified",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "composition_eligible": false,
+    "contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+      "sha256": "2e68cc83bed0c2ece2c141fadf62b6fe6cf166f3f06f5721891660e0c55c575a"
+    },
+    "general_game_replacement_eligible": false,
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/dba-motion-context-qc.json",
+      "sha256": "3c20a4cd367d173e8b1c7dd190a0f1939953c97bee116a8f07775297d900d156"
+    },
+    "independent_ir_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/dba-motion-ir-qc.json",
+      "sha256": "bcfe7906d35f8d4e750cf09a2585f36e8873e10c8961f64ca09d6877a4a9c4c9"
+    },
+    "native_domain": {
+      "actual_fixed_actor": "020205a0",
+      "actual_fixed_actor_globalprofile_alias_admitted": false,
+      "actual_source_parent_executed": false,
+      "caller_owned_actor_bytes": 256,
+      "concurrent_or_IRQ_writer": false,
+      "entity_global_disjoint": true,
+      "original_global_profile": "0202066a",
+      "profile_unsigned_max": 29,
+      "profile_unsigned_min": 0,
+      "r0_exact": "02010000",
+      "synchronous": true
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/original-proof.json",
+      "sha256": "c753a0007147db035a244fa2a31626d1ff43f24187a24a5a2e2fd080a920e463"
+    },
+    "provider": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/provider-report.json",
+      "sha256": "7ff29c09e359c1218916f8e2280c6ebe13cd44f1add2f2a8dd65b310df682607"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/rebuilt-proof.json",
+      "sha256": "1fe25edf72ce2af1db15349f4e77766c1d49ddb898b6766ef2d923447b4aaf64"
+    },
+    "source_caller_edge": {
+      "from": "0801cd28",
+      "status": "static_only_not_context_qualified",
+      "to": "08028048"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "dragon-ball-advanced-adventure",
+    "entry": "08028048"
+  },
+  "domain_contract_fingerprint": "ee686b0d73c08873ea1642a624c7f30548088a0cc21077dfaf1eaed0c5ea8451",
+  "specialization_subset": true
+}

@@ -1,0 +1,369 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "wario-land-4",
+  "sourceSystemIds": [
+    "wario-land-4.normal-form-protection-hazard"
+  ],
+  "blueprintIds": [
+    "hazard-recovery",
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move through source terrain, encounter a hazard, take a reaction, recover temporary protection, and continue safely until protection expires; defeat/checkpoint continuation also required.",
+    "phases": [
+      {
+        "id": "movement",
+        "label": "Control, movement and terrain integration",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "control input",
+          "terrain map lookup"
+        ],
+        "gaps": [
+          "Normal movement controller, integration and full terrain dependencies are not published; source flags/positions alone do not produce traversal."
+        ]
+      },
+      {
+        "id": "hazard",
+        "label": "Classify terrain hazard contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "terrain map",
+          "callback dispatch"
+        ],
+        "gaps": [
+          "0806f9d8/0806fba4 source map and callback dependencies remain open; no executable hazard transaction."
+        ]
+      },
+      {
+        "id": "hurt",
+        "label": "Apply hit and action reaction",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "collision/terrain",
+          "sound/effects"
+        ],
+        "gaps": [
+          "0801318c hurt entry conditionally reduces health and sets protection1; full root not published."
+        ]
+      },
+      {
+        "id": "recovery",
+        "label": "Leave hurt and seed protection",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "action dispatcher"
+        ],
+        "gaps": [
+          "08012e5c seeds96 from actions0x13/0x14; root lacks published executable closure."
+        ]
+      },
+      {
+        "id": "age",
+        "label": "Advance shared protection lifetime",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source presentation/callback cadence"
+        ],
+        "gaps": [
+          "08015218 fresh automatic root fails return/indirect-control proof; prefix cannot be replaced by authored timer arithmetic."
+        ]
+      },
+      {
+        "id": "protection-query",
+        "label": "Expose current protection eligibility",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Only source-zero selector query is supplied; opaque selector is private default0, not a configurable game ability.",
+          "Prefab reads a protection counter and writes a boolean; it neither applies damage nor seeds/decrements the counter.",
+          "Tagged return is not exposed because published return semantics are unavailable; actual observable record boolean is bound as output.",
+          "Host must supply the canonical shared player counter and query trigger; no per-frame callback cadence is implied.",
+          "Stored query predicate is existing legacy support, not an additional primary game-building capability; actual hazard eligibility/use consumer remains missing."
+        ]
+      },
+      {
+        "id": "checkpoint",
+        "label": "Failure, checkpoint and scene recovery",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "scene/save/restore host adapter"
+        ],
+        "gaps": [
+          "No source-backed complete defeat/checkpoint/scene lifecycle is recovered in this bounded system."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "hazard",
+        "to": "hurt",
+        "kind": "source-call",
+        "scope": "Source hazard callback table selects normal action dispatcher; ABI/closure not executable-qualified."
+      },
+      {
+        "from": "hurt",
+        "to": "recovery",
+        "kind": "shared-state",
+        "scope": "Previous action0x13/0x14 selects recovery seed; no total frame schedule inferred."
+      },
+      {
+        "from": "recovery",
+        "to": "age",
+        "kind": "shared-state",
+        "scope": "Same canonical protection byte seeded then aged in source callback."
+      },
+      {
+        "from": "age",
+        "to": "protection-query",
+        "kind": "shared-state",
+        "scope": "Same timer read; relative host invocation timing must preserve original scheduler, not inferred here."
+      },
+      {
+        "from": "protection-query",
+        "to": "hazard",
+        "kind": "host-required",
+        "scope": "Returned stored predicate is available to host; actual hazard consumer binding is absent and not claimed."
+      }
+    ],
+    "missingForCoreGame": [
+      "Published full movement/controller and terrain producer",
+      "Published hurt/recovery and timer producer",
+      "Resolved source callback ABI/indirect control and map pointer domains",
+      "Original protection update/hazard ordering and mechanically necessary presentation cadence",
+      "Hazard/resource-hit service closure and failure/checkpoint/save lifecycle"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "wl4.normal-form.protection-query-bundle",
+      "label": "Normal-form protection query phase",
+      "moduleId": "wl4.player.normal-form.protection",
+      "sourceGame": "wario-land-4",
+      "sourceSystemId": "wario-land-4.normal-form-protection-hazard",
+      "sourceContractRef": "research/deep-extraction/resume/wario-land-4/next-extraction/system.json",
+      "planIds": [
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "wl4.protection.test_protected_zero_selector"
+      ],
+      "availability": "source-only",
+      "scope": "Source protection/contact lifecycle map with existing qualified query support; no new primary prefab.",
+      "gaps": [
+        "Only source-zero selector query is supplied; opaque selector is private default0, not a configurable game ability.",
+        "Prefab reads a protection counter and writes a boolean; it neither applies damage nor seeds/decrements the counter.",
+        "Tagged return is not exposed because published return semantics are unavailable; actual observable record boolean is bound as output.",
+        "Host must supply the canonical shared player counter and query trigger; no per-frame callback cadence is implied.",
+        "Close source timer producer\u2192actual hazard eligibility/use consumer before claiming a useful new protection/contact phase."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/wario-land-4/next-extraction/system.json",
+        "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.validation.json",
+        "local/ir/fleet-next/wario-land-4/prefab-pass/age-producer-lift-receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "One normal-form player protection owner and one ephemeral caller query record",
+        "fields": [
+          {
+            "id": "protection_count",
+            "owner": "canonical player state",
+            "storageType": "u8",
+            "access": "read"
+          },
+          {
+            "id": "protection_present",
+            "owner": "query record",
+            "storageType": "u32",
+            "access": "write"
+          }
+        ],
+        "aliasRule": "Protection count must reference same canonical state used by original hurt/recovery/aging/hazard consumers; host must not instantiate renderer-owned copies. Query record remains separate from player counter and saved return stack. Role facets share one module instance."
+      },
+      "roleFacets": [
+        {
+          "roleId": "protection",
+          "capability": "Read canonical protection count and expose source predicate result",
+          "status": "source-only",
+          "scope": "Full lifecycle is source-only; qualified stored-predicate query is internal/legacy support, not a new primary prefab.",
+          "evidence": [
+            "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.validation.json",
+            "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "hazard-contact",
+          "capability": "Source terrain eligibility gate",
+          "status": "source-only",
+          "scope": "Static terrain/hazard map and callback evidence only",
+          "evidence": [
+            "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "resource-hit",
+          "capability": "Source hurt/health effect mapping",
+          "status": "source-only",
+          "scope": "Conditional health decrement and resource helper source evidence, no portable closure",
+          "evidence": [
+            "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "history-recovery",
+          "capability": "Source hurt exit and counter seed",
+          "status": "source-only",
+          "scope": "Recovery actions0x13/0x14 seed0x60; no history/checkpoint recovery supplied",
+          "evidence": [
+            "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "checkpoint",
+          "capability": "Checkpoint continuation",
+          "status": "missing",
+          "scope": "No supported runtime operation supplied",
+          "evidence": []
+        }
+      ],
+      "internalSupportAssembly": {
+        "id": "wl4.protection.present-query-prefab",
+        "label": "Query whether normal-form protection is present",
+        "assemblyRef": "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.assembly.json",
+        "validationRef": "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/wario-land-4/prefab-pass/delivery.json",
+        "packageIds": [
+          "wl4.protection.test_protected_zero_selector"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "productStatus": "internal_support_only_existing_legacy_duplicate"
+      }
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "wario-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.003594084000000001,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Assembly wall time is measured by existing validator; targeted automatic age-root attempt0.012350916s is a separate compiler probe. Full interactive total unavailable. No native/build run; prior qualification reused."
+  },
+  "producerGap": {
+    "receipt": "local/ir/fleet-next/wario-land-4/prefab-pass/age-producer-lift-receipt.json",
+    "sha256": "7d0882c285c4cc5f83657612238f86d4cb646b59991eb9f75a81e82ffaa3c0a7",
+    "exactDiagnostic": "local/ir/fleet-next/wario-land-4/prefab-pass/age-return-proof-diagnostic.json",
+    "currentFailure": "unresolved indirect call: return proof control flow escapes bounded function",
+    "action": "Compiler owner received precise CALLIND sites; retain required age state effects rather than hand-writing a producer."
+  },
+  "publishedPins": [
+    {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/package.json",
+      "sha256": "ab85b7c9c65902141a20e11f14b68fc4e9984d8e963f489624e753daffb16c5b"
+    },
+    {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/l1.json",
+      "sha256": "39ad453c603a7b10e2ab72ffce41f2d584fc6daa46f9ff0175d9cca636514b2f"
+    },
+    {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/receipt.json",
+      "sha256": "e37ba5c072693d0f96a266ae3684b263e7a0f642d6d2952c991a5d25a6a438b9"
+    }
+  ],
+  "internalSupportPhases": [
+    {
+      "id": "wl4.protection.present-query-prefab",
+      "moduleId": "wl4.player.normal-form.protection",
+      "label": "Query whether normal-form protection is present",
+      "path": "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.assembly.json",
+      "sha256": "07be223cb769701f942b239cbcdff13dc8165f4f451662b86a5f027e329167e5",
+      "validation": "research/deep-extraction/resume/wario-land-4/prefab-pass/protection-query.validation.json",
+      "validationSha256": "23371bb98a5c22c71095ee8d5f6be50271db042d297bd6f237745e2779a26739",
+      "inputs": [
+        {
+          "id": "protection_count",
+          "label": "Current protection update count",
+          "storageType": "u8",
+          "default": 96,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "unit": "eligible source-update count; FPS unknown"
+          },
+          "binding": "protection_count",
+          "source": "Recovery function08012e5c seeds96; all256 byte values have retained predicate expected-case qualification."
+        }
+      ],
+      "outputs": [
+        {
+          "id": "protection_present",
+          "binding": "protection_present",
+          "meaning": "u32 boolean1 when input protection count is nonzero for fixed source-zero query selector, otherwise0. This is the source-written record result, not an authored predicate."
+        }
+      ],
+      "phases": [
+        {
+          "id": "query",
+          "trigger": "Explicit supplied host request for current protection eligibility",
+          "invocations": [
+            "protection_query"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Only source-zero selector query is supplied; opaque selector is private default0, not a configurable game ability.",
+        "Prefab reads a protection counter and writes a boolean; it neither applies damage nor seeds/decrements the counter.",
+        "Tagged return is not exposed because published return semantics are unavailable; actual observable record boolean is bound as output.",
+        "Host must supply the canonical shared player counter and query trigger; no per-frame callback cadence is implied."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/wario-land-4/next-extraction/system.json",
+        "research/deep-extraction/resume/wario-land-4/next-extraction/publication-source-evidence.json"
+      ],
+      "qualificationScope": "Actual assembly/Composer symbolic binding/lowering valid; source query has retained finite native qualification. Host schedule and composed runtime behavior remain unqualified.",
+      "productStatus": "existing_legacy_support_duplicate_not_new_primary_prefab",
+      "legacyDisposition": "Existing legacy ready query module remains untouched; this new proof is internal support only."
+    }
+  ],
+  "productFilter": {
+    "decision": "no_new_primary_prefab",
+    "reason": "Same stored protection predicate already exists as legacy support; root requires actual timer/lifecycle/consumer closure.",
+    "legacyEdited": false,
+    "proofRerun": false,
+    "nextMeaningfulBoundary": "Source protection age producer\u2192canonical timer\u2192hazard eligibility/use consumer with original alias/order/services preserved."
+  }
+}

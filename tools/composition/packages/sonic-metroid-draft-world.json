@@ -19,7 +19,7 @@
       "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
       "ranges": [],
       "lift_ref": "tools/composition/components/sonic_metroid/world_data.c",
-      "lift_sha256": "ff8f7f6669c08363d645a0d2b4fcdafd6990fb7e101ecf740551370b748a30d3",
+      "lift_sha256": "b6cd4868c8ac69a15cccf9d868e14752e6e57fd8f199bf9a53382a602e495614",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
@@ -76,23 +76,27 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/world_data.c",
-          "sha256": "ff8f7f6669c08363d645a0d2b4fcdafd6990fb7e101ecf740551370b748a30d3"
+          "sha256": "b6cd4868c8ac69a15cccf9d868e14752e6e57fd8f199bf9a53382a602e495614"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+          "sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
           "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
         },
         {
+          "ref": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+          "sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07"
+        },
+        {
           "ref": "tools/composition/worlds/sonic-metroid-signal-descent.json",
-          "sha256": "8e81fff0d8742bef0dcb90da608ac4ddbd96123a773caaf78126da2e5936a34e"
+          "sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/compile_world.py",
-          "sha256": "195fb26a48c24554e0983839dde4b69eb8dd35722fef63044eb2c935e8563685"
+          "sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60"
         }
       ],
       "translation_units": [

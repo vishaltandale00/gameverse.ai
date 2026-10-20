@@ -1,0 +1,127 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "emerald.battle.paired_order_swap",
+  "label": "Swap paired action and battler order entries",
+  "role": "battle_ordering",
+  "source_game": "pokemon-emerald-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+  "package_sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8",
+  "behavior_sha256": "a3b918edf0815c6ae5ccbbdd1f501129d1b370f0518598d6d88b88aec79829bc",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "33d0c17a37484a92d1bc1b1c5b1dc68c9daa2f9a76b939b1c18e0051f1f8e334"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 3
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 3
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "action_code",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle.turn_order_position",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+        ],
+        "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+      }
+    },
+    {
+      "id": "collection_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "battler_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle.turn_order_position",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+        ],
+        "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 4
+      },
+      {
+        "id": "collection_1",
+        "storage_type": "u8",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "shared_paired_order_collections",
+    "clock": "explicit_invocation",
+    "phase": "caller_owned",
+    "ordering": "Retain recovered body order; system contract retains required inter-call ordering."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/emerald.battle.paired_order_swap/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite native subset qualification; whole turn-order/weather/scheduler system remains incomplete.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+    "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+  }
+}

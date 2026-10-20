@@ -1,0 +1,126 @@
+schema_version: 0
+id: tekken-advance
+game:
+  title: Tekken Advance
+  platform: gba
+  game_code: ATKE
+  rom_sha1: 8b21cd57cacf172f963dfc7ead4fa127a8a63870
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  sources:
+  - kind: rom_binary
+    ref: 8b21cd57cacf172f963dfc7ead4fa127a8a63870; SHA256 09fc5ec1649ec162da49044d6ecc84d5c74938ee315b902642bfda0728a95333;
+      no community source input
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/tekken-advance.json
+conventions:
+  scope: 'Partial ROM self-decompilation: one instruction-reviewed and finite native-qualified pair-collision operator.
+    Not full fighting mechanics.'
+  units: Native box/record integers and invocation clock; world, depth, pixel and VBlank conversions not yet proven.
+components:
+- id: paired_active_box_separation
+  facet: mechanics
+  label: Paired active-box separation with a proximity gate
+  summary: "A native two-record operator at 0x080130e8 compares up to four active boxes per record after a second-coordinate\
+    \ proximity gate. Inclusive overlaps select the largest-magnitude signed separation, then opposite adjustments\
+    \ are applied to the records\u2019 offset-0x14 coordinates and a shared contact bit is set. The fighter update\
+    \ at 0x0800d1f4 calls it after input routing; exact world/projection units and gameplay actor identity remain\
+    \ unverified."
+  instantiates:
+  - concept: mechanics.collision.paired_active_box_separation
+  reads:
+  - a/b[0x48]:u32 exclusion flags
+  - a/b[0x1c]:i32 proximity coordinate
+  - a/b[0x20]:i32 ordering coordinate
+  - a/b[0x14]:i32 adjusted coordinate
+  - a/b[0x534 +20*i]:u16 active flags, i=0..3
+  - a/b[0x538 +20*i,0x53c +20*i,0x540 +20*i,0x544 +20*i]:i32 box bounds
+  writes:
+  - a/b[0x44]:u32 contact flag bit0x8
+  - a[0x14]:i32 previous value minus correction
+  - b[0x14]:i32 previous value plus correction
+  invariants:
+  - Contact bit0x8 is cleared in both records at entry even on an early-out; other bits are preserved.
+  - If either record flags0x48 has bit0x8, or abs(a[0x1c]-b[0x1c])>0x13ff, no boxes are tested.
+  - Each record has four boxes of stride20. A box participates when its first halfword has bit0x1. Bounds comparisons
+    are inclusive, so touching edges participate.
+  - For overlapping boxes, ordering a[0x20]<b[0x20] chooses a.right-(b.left-1); otherwise chooses (a.left-1)-b.right.
+    Largest absolute candidate wins; equal magnitudes retain earlier iteration order.
+  - A nonzero selected overlap sets contact bit0x8 in both records. Initial correction=selected*64; absolute corrections
+    below256 are replaced with magnitude64, preserving sign. Additional coordinate-order/gap rules can replace this
+    correction; exact code is in the own recovered lift.
+  - Within the reviewed finite no-overflow domain, final updates preserve a[0x14]+b[0x14]. Neither record is assumed
+    immovable or mass weighted.
+  - Recovered C requires differences, negations and products to fit signed32-bit, especially avoiding abs(INT32_MIN).
+    Full native overflow behavior and valid gameplay ranges remain unqualified.
+  - 'Do not substitute this directly for a single-plane terrain collider: it consumes paired four-box records, a
+    separate proximity coordinate and an ordering coordinate.'
+  evidence:
+  - &id001
+    kind: static_signature
+    ref: 8b21cd57cacf172f963dfc7ead4fa127a8a63870:Thumb region0x080130e8..0x08013270 exclusive; region SHA256 dedc140e839a8abd4e19317830ed3879ce8658cec34365a9ce4070351cd0c3e1;
+      research/corpus-mining/20261016-binary-corpus-round2/reviewed/tekken-box-separation.asm.txt
+    confidence: 0.96
+    note: Local operator, signed branches, nested four-by-four box iteration, word stores and saved-LR return instruction-reviewed.
+      Region includes embedded literal pool0x08013198..0x080131a0.
+  - kind: ghidra_function
+    ref: research/corpus-mining/20261016-binary-corpus-round2/frontiers/tekken-advance/0x0800d1f4.c; callee0x080130e8;
+      lift research/corpus-mining/20261016-binary-corpus-round2/reviewed/tekken-box-separation-recovered.c
+    confidence: 0.85
+    note: Own ROM-derived caller links the two-record operator after per-record input routing. Full combat and projection
+      meanings not established.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/tekken-box-native-receipt.json
+    confidence: 0.97
+    note: '4,096 isolated native Thumb versus own recovered C vectors matched full two-record buffers/canaries:
+      exclusion flags, threshold boundaries, record order, box activation, edge contact and correction gaps. Finite
+      local operator scope only.'
+  params:
+    boxes_per_record:
+      value: 4
+      unit: active box records
+      native_value: 4
+      native_unit: active box records
+      evidence: &id002
+      - *id001
+    box_stride:
+      value: 20
+      unit: bytes
+      native_value: 20
+      native_unit: bytes
+      evidence: *id002
+    max_proximity_delta:
+      value: 5119
+      unit: native coordinate units; world conversion unverified
+      native_value: 5119
+      native_unit: native coordinate units; world conversion unverified
+      evidence: *id002
+    initial_correction_multiplier:
+      value: 64
+      unit: adjusted-coordinate units per selected overlap unit
+      native_value: 64
+      native_unit: adjusted-coordinate units per selected overlap unit
+      evidence: *id002
+    small_correction_threshold:
+      value: 256
+      unit: native adjusted-coordinate units
+      native_value: 256
+      native_unit: native adjusted-coordinate units
+      evidence: *id002
+    small_correction_magnitude:
+      value: 64
+      unit: native adjusted-coordinate units
+      native_value: 64
+      native_unit: native adjusted-coordinate units
+      evidence: *id002
+proposed_concepts:
+- id: mechanics.collision.paired_active_box_separation
+  label: Paired active-box separation
+  definition: A proximity-gated pairwise active-box comparison that selects separation and updates both records
+    symmetrically, with explicit ordering and tie behavior.
+open_questions:
+- Identify both supplied fighter records and correlate box bounds/contact flags with isolated gameplay captures.
+- Recover the move-command buffer at0x0800fdac, attack/hurt interactions and health/round outcome rules separately.
+- Establish numeric units, legal coordinate ranges, per-tick order and native overflow domains before reuse.

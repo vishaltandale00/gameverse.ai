@@ -1,0 +1,11 @@
+# Stopped source-port checkpoint
+
+The latest user direction changed the primary work to lossless component extraction, original-game reconstruction and evidence-backed interchangeability. New mashup/story work stopped immediately. The already-running bounded compiler check finished; no further repair or build campaign was started.
+
+Preserved implementation: `tools/whole_game/single_rom/story_services.py` contains eleven requested original FireRed roots and their source dependency partition: 28 functions, eight source arrays and 32 original palettes. It preserves the native/donor map, variable/flag, item, audio and game-stat domains explicitly. It also stages the original Deoxys movement action/task through a regional native effect dispatcher and the actual Deoxys/Resort per-step counter hooks. The Fame Checker registered-item source now references the original league-lighting stop provider.
+
+Actual bounded evidence: the emitted story unit, native field-effect dispatcher unit and native field-control counter unit all passed pinned agbcc with warnings treated as errors. Native assets/generated headers were reused read-only from an existing matching pinned build. The receipt is `agbcc-verification.json`.
+
+This checkpoint is incomplete. There are no story behavior tests, final helper-binding proof ledger, integrated special-provider receipt, or linked/runtime qualification. The stage's provisional source-complete flags are not a completed task or interchangeable-component certificate. The stage was not integrated into a new ROM build before stopping.
+
+Reusable partition lessons: field-special roots depend on private callback tasks and constant arrays, not just their public function bodies. Source palette transformations also depend on Quest Log tint/backup ownership. Deoxys field-effect IDs differ (FireRed 67, Emerald 66); a symbolic service boundary must preserve the handler's exact action, active-list and task-completion semantics. Per-step puzzle inputs are an engine lifecycle dependency and cannot be recovered from script-special roots alone. Camera helper names differ while their sprite/state fields may be equivalent; that equivalence needs source hashes and field-alias evidence, not same-name inference.

@@ -1,0 +1,224 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tekken.combat.damage_knockback_response",
+  "label": "Consume pending damage into defender knockback",
+  "role": "Real impact/KO consumer of pending damage and combo state into canonical defender knockback; not contact predicate, damage producer orHP consumer",
+  "source_game": "tekken-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tekken.combat.damage_knockback_response/package.json",
+  "package_sha256": "0a72d951ad96926c2d6969e7e7e594677a2151e1849f74f3c75383774830a733",
+  "behavior_sha256": "aa73d70ba6fc538f5e1b326d5e539957368e71e615c26cbfcc0ab7ef34b33ee3",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 64,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b5480442d279bd47ed5f4d04c6ef95075f41be7ab08ceb1f3bef198cf32bb736"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.frame_flags",
+        "label": "Facing bit0 versus relative-facing bit12 chooses impulse sign.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.y.per_actor_update",
+        "label": "Source vertical impulse override +0x50c; zero selects damage/combo formula.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x.per_actor_update",
+        "label": "Source horizontal impulse adjustment +0x510.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.combo",
+        "label": "Unsigned combo counter +0x514 scales reaction impulse.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x.per_actor_update",
+        "label": "Written horizontal displacement per actor update; original source signed clamp \u00b12000 before facing sign.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.y.per_actor_update",
+        "label": "Written vertical displacement per actor update; source upper cap1000.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.y.per_actor_update_squared",
+        "label": "Written62; original actor update subtracts this from vertical velocity while y>0.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.pending_hp_damage",
+        "label": "Unsigned pending damage byte+0x51f, consumed here for impulse; separate update subtracts fromHP under source gates.",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "distinct canonical attacker/defender actors; outputs consumed by original actor integration",
+    "clock": "original caller-selected response activation; full scheduler remains open",
+    "phase": "after pending damage written by source impact in its selected generic reaction branch; KO caller also uses response",
+    "ordering": "acceleration then signed/clamped horizontal velocity then vertical velocity then return",
+    "services": "leaf has no external gameplay calls; surrounding allocation/dispatch/HP integration remain open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tekken.combat.damage_knockback_response/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Full impact0801275c cannot yet close real effect-pool allocation08003f68\u219208000c28: circular linked-list iteration has no exact terminating source induction proof.",
+    "Attack/hurt query result08012060 gates impact in0800dbc4; that full predicate\u2192impact transaction remains unqualified.",
+    "This consumer does not write HP, produce pending damage, perform integration, play effects or resolve KO/round.",
+    "Exact/partial actor aliases, partner references, pool/tag lifetime and complete activation clock remain unqualified.",
+    "Finite64 source-native cases are not all-state or full game proof; parent1,024 separator proof is reused only as historical context.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/tekken-advance/next-round/source-closure-20261016/system-v1.json",
+    "sha256": "b38c2566e421f46bdc98c0fe2c6ef75a2632f4bfc1294fb00aa6af814c4e2ae8"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "tekken-advance",
+    "entry": "080125d0"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

@@ -1,0 +1,424 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "super-mario-advance-4-super-mario-bros-3",
+  "blueprintIds": [
+    "character-traversal",
+    "combat-encounter"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Traverse Mario3 stages, encounter enemies/items, earn/use forms, survive or retry, and persist stage/world progress.",
+    "phases": [
+      {
+        "id": "controller_terrain",
+        "label": "Input, grounded movement and terrain response",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma4-traversal-bundle.json"
+        ],
+        "requiredServices": [
+          "source terrain samples and host packet"
+        ],
+        "gaps": [
+          "Full controller/terrain source closure pending"
+        ]
+      },
+      {
+        "id": "actor_scheduler",
+        "label": "Allocate and update canonical actor slots",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma4-actor-dispatch.json"
+        ],
+        "requiredServices": [
+          "source actor state/species callbacks"
+        ],
+        "gaps": [
+          "18scheduled versus15normal allocation; reserved slots and dynamic callbacks pending"
+        ]
+      },
+      {
+        "id": "actor_motion_projection",
+        "label": "Advance selected actor and project camera mirrors",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "sma4.actor-advance-camera-projection"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          {
+            "id": "actor_phase_admission",
+            "status": "external-host-required",
+            "scope": "Source scheduler/eligibility must admit exactly one actor phase; not implemented by scaffold."
+          },
+          {
+            "id": "camera_state",
+            "status": "external-input",
+            "scope": "Supply canonical camera offsets before invocation."
+          }
+        ],
+        "gaps": [
+          "Caller supplies active actor, velocity and camera; no source eligibility/freeze/cull/controller decisions.",
+          "Graph has one actor field view; canonical18scheduled/15allocatable pool handles and reserved lifecycle are external obligations.",
+          "Integrator original world+bd2 delta is preserved as private component.field_2 but has no published semantic port; consumers remain outside.",
+          "Camera u16 output to collision u8 input requires original lowbyte projection and frame mapping; no contact closure.",
+          "No native execution of this newly wired graph; source package proofs reused only."
+        ]
+      },
+      {
+        "id": "actor_contact",
+        "label": "Eligibility, geometry and accepted responses",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          "shared scratch, proximity guard, callback/reward services"
+        ],
+        "gaps": [
+          "Lowbyte source views and callback specialization; live r2; no connected native caller proof"
+        ]
+      },
+      {
+        "id": "retirement_rewards",
+        "label": "Retire actor, release markers and apply reward ownership",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma4-actor-dispatch.json"
+        ],
+        "requiredServices": [
+          "spawn markers, world reward accumulator"
+        ],
+        "gaps": [
+          "Clearactive subset opaque; full retirement/respawn/persistence pending"
+        ]
+      },
+      {
+        "id": "forms_items",
+        "label": "Acquire and commit legal forms and abilities",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma4-pickup-response-bundle.json"
+        ],
+        "requiredServices": [
+          "player tick and form consumers"
+        ],
+        "gaps": [
+          "Pending form is distinct from active form; weapons/flight legality unfinished"
+        ]
+      },
+      {
+        "id": "stage_retry_persistence",
+        "label": "Exit stage or retry with saved progress",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "scene/event consumer and save host"
+        ],
+        "gaps": [
+          "No qualified complete retry/gameover/world/save transaction"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor_scheduler",
+        "to": "actor_motion_projection",
+        "kind": "host-required",
+        "scope": "Caller selects activeactor phase; source scheduler not in prefab."
+      },
+      {
+        "from": "actor_motion_projection",
+        "to": "actor_contact",
+        "kind": "shared-state",
+        "scope": "Source contact reads actor pixel mirrors; missing lowbyte adapter prevents portablegraph edge."
+      },
+      {
+        "from": "actor_contact",
+        "to": "retirement_rewards",
+        "kind": "source-call",
+        "scope": "Source accepted response may change lifecycle; species cleanup remains source-only."
+      },
+      {
+        "from": "controller_terrain",
+        "to": "forms_items",
+        "kind": "shared-state",
+        "scope": "Source player tick commits pending form; no complete graph."
+      }
+    ],
+    "missingForCoreGame": [
+      "Original controller/terrain and scheduler invocation policies",
+      "Canonical actor pool views and dynamic per-species calls",
+      "Contact lowbyte aliases plus accepted response/live r2 and stateful terrain",
+      "Marker lifecycle, reward consumers, ability progression and scene/save commit"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "sma4-actor-motion-camera-prefab",
+      "label": "Advance one actor and refresh camera-relative pixel mirrors",
+      "moduleId": "sma4.actor-runtime-view",
+      "sourceGame": "super-mario-advance-4-super-mario-bros-3",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+      "planIds": [
+        "character-traversal",
+        "combat-encounter"
+      ],
+      "packageIds": [
+        "sma-4-super-mario-bros-3.combat.actor_x_integration",
+        "sma4.actor_pixel_mirror_sync"
+      ],
+      "availability": "published-subset",
+      "scope": "Enemy/world actor admitted motion\u2192camera coordinate producer, not player traversal or stomp/pickup response.",
+      "gaps": [
+        "Caller supplies active actor, velocity and camera; no source eligibility/freeze/cull/controller decisions.",
+        "Graph has one actor field view; canonical18scheduled/15allocatable pool handles and reserved lifecycle are external obligations.",
+        "Integrator original world+bd2 delta is preserved as private component.field_2 but has no published semantic port; consumers remain outside.",
+        "Camera u16 output to collision u8 input requires original lowbyte projection and frame mapping; no contact closure.",
+        "No native execution of this newly wired graph; source package proofs reused only."
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json",
+        "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.validation.json",
+        "local/ir/prefab-reconstruction/sma4/composer-receipt.json",
+        "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json"
+      ],
+      "canonicalState": {
+        "identity": "One selected actor field view and shared external camera",
+        "fields": [
+          "actor_world_x",
+          "actor_world_y",
+          "actor_velocity_x",
+          "actor_camera_x",
+          "actor_camera_y"
+        ],
+        "aliasRule": "One module across facets; advance writes same worldX consumed byproject; never duplicate actor pool state."
+      },
+      "roleFacets": [
+        {
+          "roleId": "camera",
+          "capability": "actor_camera_pixel_projection",
+          "status": "published-subset",
+          "scope": "Project updated source actor coordinates to camera-relative pixel mirrors.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json"
+          ]
+        },
+        {
+          "roleId": "contact",
+          "capability": "contact_coordinate_producer",
+          "status": "source-only",
+          "scope": "Supplies u16mirror prerequisite; actual u8shape/overlap/response connection blocked.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "sma4.actor-advance-camera-projection",
+        "label": "Advance one actor and refresh camera-relative pixel mirrors",
+        "assemblyRef": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json",
+        "validationRef": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.validation.json",
+        "descriptorRef": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/delivery.json",
+        "packageIds": [
+          "sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "sma4.actor_pixel_mirror_sync"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "sma4.actor-advance-camera-projection",
+      "moduleId": "sma4.actor-runtime-view",
+      "label": "Advance one actor and refresh camera-relative pixel mirrors",
+      "path": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json",
+      "sha256": "aad3391700ecd7dd5d506a86957fbf8a45118423d8fec47f8983821058563c9e",
+      "validation": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.validation.json",
+      "validationSha256": "87799af46357ce03ca3c31baca633c82ea3bc371eb404851c928928056d9349d",
+      "inputs": [
+        {
+          "id": "actor_world_x",
+          "label": "World X fixed8",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "source32bit wrapping position",
+          "binding": "actor_world_x"
+        },
+        {
+          "id": "actor_velocity_x",
+          "label": "Horizontal velocity raw signed8",
+          "storageType": "u8",
+          "default": 16,
+          "domain": "all8bit encodings; signed source arithmetic,1/16pixel per invocation",
+          "binding": "actor_velocity_x"
+        },
+        {
+          "id": "actor_world_y",
+          "label": "World Y fixed8",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "source32bit position",
+          "binding": "actor_world_y"
+        },
+        {
+          "id": "camera_x",
+          "label": "Camera X pixels",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "source16bit pixel encoding",
+          "binding": "camera_x"
+        },
+        {
+          "id": "camera_y",
+          "label": "Camera Y pixels",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "source16bit pixel encoding",
+          "binding": "camera_y"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "actor_world_x",
+          "binding": "actor_world_x",
+          "meaning": "Original wrap32 X integration result; next phase reads same slot."
+        },
+        {
+          "id": "actor_camera_x",
+          "binding": "actor_camera_x",
+          "meaning": "u16 camera-relative X pixel mirror; lowbyte projection for collision remains separate."
+        },
+        {
+          "id": "actor_camera_y",
+          "binding": "actor_camera_y",
+          "meaning": "u16 camera-relative Y pixel mirror from supplied worldY."
+        }
+      ],
+      "phases": [
+        {
+          "id": "advance_and_project",
+          "trigger": "Caller invokes once for selected active actor when its source phase permits motion",
+          "invocations": [
+            "advance",
+            "project"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "actor_phase_admission",
+          "status": "external-host-required",
+          "scope": "Source scheduler/eligibility must admit exactly one actor phase; not implemented by scaffold."
+        },
+        {
+          "id": "camera_state",
+          "status": "external-input",
+          "scope": "Supply canonical camera offsets before invocation."
+        }
+      ],
+      "gaps": [
+        "Caller supplies active actor, velocity and camera; no source eligibility/freeze/cull/controller decisions.",
+        "Graph has one actor field view; canonical18scheduled/15allocatable pool handles and reserved lifecycle are external obligations.",
+        "Integrator original world+bd2 delta is preserved as private component.field_2 but has no published semantic port; consumers remain outside.",
+        "Camera u16 output to collision u8 input requires original lowbyte projection and frame mapping; no contact closure.",
+        "No native execution of this newly wired graph; source package proofs reused only."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+        "research/deep-extraction/mario/sma4-actor-dispatch.json"
+      ],
+      "qualificationScope": "ActualComposer +assembly binding/lowering; native-qualified packages individually. No composed native/source-root parity.",
+      "packagePins": {
+        "advance": {
+          "package_id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "manifest": {
+            "ref": "local/ir/packages/sma-4-super-mario-bros-3.combat.actor_x_integration/package.json",
+            "sha256": "4ab3b4afb821ed309d6c52f96c087e66bca60c5443f06d74c36ffacc85e9943f"
+          },
+          "behavior_sha256": "9f36bee6125b2d04f4a112a4175d6819646cf707bd71f1545458e872042c07f3",
+          "qualification": {
+            "status": "pass",
+            "receipt": "receipt.json",
+            "vectors": 2770,
+            "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous"
+          }
+        },
+        "project": {
+          "package_id": "sma4.actor_pixel_mirror_sync",
+          "manifest": {
+            "ref": "local/ir/packages/sma4.actor_pixel_mirror_sync/package.json",
+            "sha256": "ecf2e62e385d373c58679b6e6172275126dd57f8e3dd9a0e0099199a4c4e8787"
+          },
+          "behavior_sha256": "2439ca866cbce9407a6176ee9cd6525a907c5e46364d21813987e404a4121e69",
+          "qualification": {
+            "status": "pass",
+            "receipt": "receipt.json",
+            "vectors": 4096,
+            "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+            "kind": "finite_original_function_subset"
+          }
+        }
+      },
+      "observableDefaults": {
+        "actor_velocity_x": 16,
+        "meaning": "Onepixel horizontal displacement per admitted invocation; initialization example, not recovered default speed."
+      },
+      "canonicalState": {
+        "sharedSlot": "actor_world_x",
+        "writeThenRead": [
+          "advance.field_0",
+          "project.field_0"
+        ],
+        "aliasLimit": "Exact shared scalar source field preserved; pool-wide alias relation still caller obligation."
+      },
+      "readyToAdd": true,
+      "runtimeQualified": false
+    }
+  ],
+  "counts": {
+    "readyWiredPrefabs": 1,
+    "sourceOnlyCorePhases": 5,
+    "missingCorePhases": 1,
+    "composedNativeQualified": 0
+  },
+  "targetedClosureRequest": {
+    "owner": "/root/compiler_shared_state",
+    "sourceFunctions": [
+      "08047c40",
+      "080460fc",
+      "08046154",
+      "08046320"
+    ],
+    "task": "Automatically linked mirror\u2192source lowbyte shape loads\u2192overlap preserving two actor views and one scratchowner; reuse existing exports then finite native sequence parity. No authoredC glue.",
+    "smallestBoundary": "One camera frame, two explicit actor accessedviews, no callback/terrain/retirement yet; preserve original result and failedbranch scratch.",
+    "followingGap": "Contact caller query-only specialization080466bc\u219246568 and guarded response with live r2 remain further closure.",
+    "status": "sent_to_compiler_owner"
+  },
+  "timing": {
+    "runId": "sma4-prefab-reconstruction-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.002760834,
+    "composerSeconds": 0.0031370420000000013,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.0058978760000000015,
+    "beforeAfter": null,
+    "accounting": "SequentialComposer statements and assembly validation summed; no new native/JVM/game build. Packetcreation excluded; no throughput change claim."
+  }
+}

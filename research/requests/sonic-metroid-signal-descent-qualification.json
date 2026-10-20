@@ -3,18 +3,18 @@
   "game": "sonic-metroid-signal-descent",
   "status": "playable whole-campaign code first draft; early/midgame systems connected and natively qualified; late campaign acceptance pending",
   "exact_candidate": {
-    "ref": "local/composition-builds/sonic-metroid-signal-descent-21/game.gba",
-    "sha256": "870fc2fac6059155cd7f9bf3e819e2976e0f83541cf53312f25546c7aa38518e",
+    "ref": "local/composition-builds/sonic-metroid-signal-descent-25/game.gba",
+    "sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
     "receipt": {
-      "ref": "local/composition-builds/sonic-metroid-signal-descent-21/receipt.json",
-      "sha256": "f5763be547e4c7ec5364f6343e6d9ad388147b964d4064f6cf31c981b46e5b59"
+      "ref": "local/composition-builds/sonic-metroid-signal-descent-25/receipt.json",
+      "sha256": "aa3bb9cef9479329141364397cfd44a6d7db377998b826952fca134a3ee51c81"
     },
-    "clean_build_s": 0.636281,
-    "payload_bytes": 22528,
+    "clean_build_s": 0.774958,
+    "payload_bytes": 27032,
     "hooks": 13,
-    "packages": 15,
-    "prefabs": 106,
-    "source_commit_at_build": "fe84324d64ab687bfd0a943e38d310fca76fb6f9"
+    "packages": 20,
+    "prefabs": 115,
+    "source_commit_at_build": "2f05a2ba148177ddadde1279f553936a8271867c"
   },
   "execution": "Real native emulator input only; observation reads RAM/PNG. No synthetic ability grants, player teleports, HP writes or browser tests. Initial states derive from recorded native play. Old candidate evidence is not silently attributed to the new cart.",
   "qualified_current": [
@@ -26,18 +26,21 @@
     "Factory missile seal and projectile ammo cost; native transport/backtracking remains functional",
     "Actual wall kick corner escape in retained Factory geometry",
     "Natural FactoryAct1\u2192Act2, Varia acquisition, maxenergy99\u2192149;180 native frames in active heat field with energy149/damage unchanged",
-    "Exact same candidate21 fresh-game lineage continues through Factory to Varia/heat, then native relay3\u21922\u21921\u21920, all8abilities255 and organic seal bit14",
+    "Exact same candidate25 fresh-game lineage continues through Factory to Varia/heat, then native relay3\u21922\u21921\u21920, all8abilities255 and organic seal bit14",
     "Real native loop witness Factory angle178\u00b0,speed2560Q8; momentum authority retained",
     "Bidirectional relay scene teardown/fresh-stage bootstrap retains upgrades/ledgers and has no unvisited destination unlock",
     "Without Screw: physically avoid cache with ordinary precision High Jump; organic seal remains closed and actorblocked atx546; then collectScrew and open SAME seal",
-    "Spin body kill on a creature with no Speed ability and no shots fired; counters expose the actual outcome"
+    "Spin body kill on a creature with no Speed ability and no shots fired; counters expose the actual outcome",
+    "Recovered own-ROM MZM species0x16 live patrol/turn/recovery/animation:6912 originalThumb/HOST-C/emittedThumb finitecases plus512temporalframes; actual original empty/solid/out-of-bounds terrain classifier",
+    "Actual native campaign Ripper patrol,Ice240 withHP20unchanged,animation/controlpause thenresume; original2KiBtiles/16palettecolors byteidentical in actualGBA VRAM/palette and originalOAMparts visible",
+    "Native wallkick\u2192powergrip\u2192original movinghandle\u2192secondhandle\u2192upperwest landing with inherited Soniclaunch authority preserved"
   ],
   "older_witnesses": [
     "Candidate15 required freeze-prey kill/drop\u2192120-tick dormant phase\u2192respawn HP6; same ecology source retained, not rerun on17"
   ],
   "remaining_acceptance": [
     "Later FactoryAct2/remaining zones and all later original phased bosses/final outcome not traversed in this qualification. Native world/campaign geometry/data retained; preservation is not a proof of playability.",
-    "Original MZM crawler/pirate/Kraid AI bodies/art, full beam-modifier set, Metroid camera/parallax/music and a native SRAM extension are NOT claimed imported. The explicit first-draft adapters retain native Sonic scene/camera/boss/audio services, add authored cue/phase alien patterns/art/story, and use recovered MZM mechanical policies.",
+    "Ripper live patrol/turn/recovery and original sprite closure are recovered; other MZM crawler/pirate/Kraid AI bodies/art, full beam-modifier set, Metroid camera/parallax/music and native SRAM extension remain unimported. Their present campaign adapters are explicitly authored; native Sonic scene/camera/boss/audio ownership stays explicit.",
     "Late special-stage controls/allocations and native final ending need their own acceptance scenario.",
     "Physical-device performance and worst-case sprite load were not measured."
   ],
@@ -49,6 +52,22 @@
     {
       "ref": "signal-descent-16-qualified-prefix/report.json",
       "cause": "Automatic stationary-wall authority transfer changed a prior campaign route; narrowed to explicit L+A, candidate17 route passed"
+    },
+    {
+      "ref": "signal-descent-23-qualified-factory2/report.json",
+      "cause": "Probe sampledA before original input/task edge had advanced; two realframes fixedprobe; nativegameunchanged"
+    },
+    {
+      "ref": "mzm-ripper-qualification-01/report.json",
+      "cause": "Wrong inferredcontactbytewrite rejected onfirst originalThumb case; removedassumption,6912original/emittedcasespassed"
+    },
+    {
+      "ref": "signal-descent-25-all-eight-return/report.json",
+      "cause": "Policy walked past actualstage2spawnrecharge104\u2192195 beforetryingrelay; repairedatrealretainedrechargecheckpoint, all255/Screwsealpassed"
+    },
+    {
+      "ref": "local/composition-builds/sonic-metroid-signal-descent-24/receipt.json",
+      "cause": "Cross-ROMstaticassetpackagelackedappropriatedata witness; buildrejected; addedseparate exactROM/range/extractionproof validation, notfakedynamicbehaviorwitness"
     }
   ],
   "timing_accounting": "Build and native qualification are separate. Stage durations are nested in each run total; do not double-count. Reports include build compiler/toolchain/context and exact artifact hashes. Direct invocation queue measurement unavailable. No CI run or physical hardware timing measured.",
@@ -174,7 +193,24 @@
     "task_teardown": "0x08001954(0,65535), original TaskDestroy honors flag2",
     "fresh_stage": "0x0803CE20() initializes source spawn/checkpoint via0x08046C84, then native0x0803CF68()"
   },
-  "current_reports": [
+  "scope_note": "Native qualification is separate from code-draft completeness; none of the later full-campaign gaps are silently called passed.",
+  "previous_candidates": [
+    {
+      "ref": "local/composition-builds/sonic-metroid-signal-descent-21/game.gba",
+      "sha256": "870fc2fac6059155cd7f9bf3e819e2976e0f83541cf53312f25546c7aa38518e",
+      "receipt": {
+        "ref": "local/composition-builds/sonic-metroid-signal-descent-21/receipt.json",
+        "sha256": "f5763be547e4c7ec5364f6343e6d9ad388147b964d4064f6cf31c981b46e5b59"
+      },
+      "clean_build_s": 0.636281,
+      "payload_bytes": 22528,
+      "hooks": 13,
+      "packages": 15,
+      "prefabs": 106,
+      "source_commit_at_build": "fe84324d64ab687bfd0a943e38d310fca76fb6f9"
+    }
+  ],
+  "historical_candidate21_reports": [
     {
       "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-21-qualified-prefix/report.json",
       "sha256": "0f429ae181a690ad8447eea9e4701a44275959afed46e18b4c67d236ed730f74",
@@ -1143,5 +1179,154 @@
       }
     }
   ],
-  "scope_note": "Native qualification is separate from code-draft completeness; none of the later full-campaign gaps are silently called passed."
+  "current_reports": [
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-qualified-prefix/report.json",
+      "sha256": "c451da2d47d439c92cb0043b018c35812b79a7b576fa90cc7872475986f918d4",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "prefix_passed_actual_native_flow",
+      "wall_s": 7.64704625
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-qualified-factory/report.json",
+      "sha256": "6406f8de7dbd358d87d5172ba60ce6217c1ea5b86217e6e93d16f032a6dd782e",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "natural_factory_varia_and_heat_passed",
+      "wall_s": 4.3938815
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-qualified-factory2-chain/report.json",
+      "sha256": "7cf28c21ed713de8b3709b0b2a0186df4bbb43ca26d192fd5240784ec547d698",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "wall_grip_two_original_handles_upperwest_route_passed",
+      "wall_s": 1.515675875
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-qualified-return/report.json",
+      "sha256": "93413f2742e3309cf73012af0ddfd9eae97fb10c99446873fe1771493c2c0507",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "return_discovery_body_contact_and_seal_dependency_passed",
+      "wall_s": 1.849068667
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-all-eight-return-repaired/report.json",
+      "sha256": "c2c9fbb29e42593ac482446bf3a2425fce88dd73050f72f9e39d7a72599f9d77",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "observed",
+      "wall_s": 0.880374167,
+      "final_observation": {
+        "level": 0,
+        "x": 620.4765625,
+        "y": 365.86328125,
+        "state": {
+          "upgrades": 255,
+          "visited": 15,
+          "energy": 149,
+          "relay": {
+            "trips": 3,
+            "from": 1,
+            "to": 0
+          },
+          "mzm_ecology": {
+            "steps": 314,
+            "draws": 163,
+            "tiles": 0,
+            "palette": 14
+          }
+        }
+      }
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-native-ripper/report.json",
+      "sha256": "0096a4c4de39a6d583116b97cea7e4b4afa8fe43d59180bb5fdcb8ac3d7287f1",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "observed",
+      "wall_s": 0.140399208,
+      "final_observation": {
+        "level": 1,
+        "x": 749.10546875,
+        "y": 685.3203125,
+        "state": {
+          "upgrades": 95,
+          "visited": 3,
+          "energy": 79,
+          "relay": {
+            "trips": 0,
+            "from": 0,
+            "to": 0
+          },
+          "mzm_ecology": {
+            "steps": 290,
+            "draws": 163,
+            "tiles": 100742272,
+            "palette": 14
+          }
+        }
+      }
+    },
+    {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-25-ripper-visible/report.json",
+      "sha256": "05c1419b2f9fd6581ac4c1fb256e8cadd22a4925c2a17621fd99100b961c4d4a",
+      "rom_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+      "outcome": "observed",
+      "wall_s": 0.2043215,
+      "final_observation": {
+        "level": 1,
+        "x": 633.07421875,
+        "y": 674.41796875,
+        "state": {
+          "upgrades": 95,
+          "visited": 3,
+          "energy": 59,
+          "relay": {
+            "trips": 0,
+            "from": 0,
+            "to": 0
+          },
+          "mzm_ecology": {
+            "steps": 352,
+            "draws": 404,
+            "tiles": 100742272,
+            "palette": 14
+          }
+        }
+      }
+    }
+  ],
+  "source_component_proofs": [
+    {
+      "ref": "research/requests/sonic-metroid-automatic-impact-proof.json",
+      "sha256": "ae6e405c26e5ead955f71e2a2bb6a0e7c571d744b1dddeec3c950d8a7aa75f0f"
+    },
+    {
+      "ref": "research/requests/mzm-ripper-live-controller.json",
+      "sha256": "790f881c16560679a4ab209da9196b03d32dac61dbc1ffce42557bac791421dd"
+    },
+    {
+      "ref": "research/requests/mzm-ripper-native-game-proof.json",
+      "sha256": "7009d19d399d5ca556ed9ebbc81b5ea118af00052e567d4ab5d8fa9ea5c20bcf"
+    },
+    {
+      "ref": "research/requests/sonic-native-traversal-contract.json",
+      "sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea"
+    }
+  ],
+  "candidate26_habitat_extension": {
+    "proof": {
+      "ref": "research/requests/mzm-ripper-habitat-proof.json",
+      "sha256": "36740c98ebd38d636f7d58b2e86feeab8d7d4d3e9e1d57eb177c4c1a43fa3eaa"
+    },
+    "candidate": {
+      "ref": "local/composition-builds/sonic-metroid-signal-descent-26/game.gba",
+      "sha256": "ef7d653159328e9ab4ac0d67eb63dd212e9c6c8f7382eaf7b683627cb0396605",
+      "receipt": {
+        "ref": "local/composition-builds/sonic-metroid-signal-descent-26/receipt.json",
+        "sha256": "c002051cfbc95a34e0a6010170c7b01765cfe3d2a86cf08af158e517b02e0380"
+      },
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "stable_candidate25_preserved": true
+    },
+    "outcome": "passed_bounded_native_habitat_turn_freeze_thaw_resume_and_factory_prefix",
+    "status": "Separate extension evidence; stable exact_candidate25 remains preserved. Later routes incomplete."
+  }
 }

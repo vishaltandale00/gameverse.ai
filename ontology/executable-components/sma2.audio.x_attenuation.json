@@ -1,0 +1,86 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.audio.x_attenuation",
+  "label": "Map signed16 audio context X to attenuation",
+  "role": "audio",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.audio.x_attenuation/package.json",
+  "package_sha256": "05c0c4a1bb0ead6f62c6b839cf889d779d18c10edc0a39646e0c056700233d6f",
+  "behavior_sha256": "b527b5523dcc9c7878d700da99dde02433586503d689d1b4b585882827f7b1c8",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "823b133b02e9068323a469c22612a12bd1e5c48c77a73c3af4e2ab64878934d4"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "scalar",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.audio.context.x.signed16",
+        "label": "Original source audio context X",
+        "confidence": 1.0,
+        "evidence": [
+          "research/automatic-ir/projectile-lifecycle-20261016/round02/audio-source-evidence.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "caller_owned_context_view",
+    "clock": "explicit_invocation",
+    "phase": "audio_service_call",
+    "ordering": "original_source_caller_order"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.audio.x_attenuation/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Own-ROM automatic HighFunction lift; finite native parity only",
+    "Signed16 context identity is source-backed; not a universal world-coordinate/frame adapter",
+    "No source fullaudio arbitration/commandqueue/spawn/lifetime closure claim",
+    "Actual runtime pins in qualification receipts, not failed earlier externalfreeze",
+    "No generatedROM/demo/manualbehaviorC; synthesis/transport and connected consumers remain open",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "input": "r0 exact two-byte signed16 source audio contextX view",
+    "signed_encoding": "twos_complement",
+    "domain": "all signed16bitpatterns admitted, finite qualification 1024 boundaries/deterministic representatives only",
+    "return": "sourceu16Xattenuation mapping",
+    "finite_native_pairs": 1024
+  }
+}

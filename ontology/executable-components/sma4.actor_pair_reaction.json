@@ -1,0 +1,213 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma4.actor_pair_reaction",
+  "label": "Actor pair reaction",
+  "role": "combat",
+  "source_game": "super-mario-advance-4-super-mario-bros-3",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma4.actor_pair_reaction/package.json",
+  "package_sha256": "2b1e5163687c20a7e3b043f576db53dfb0d1b9a5a13e61df933749669561926b",
+  "behavior_sha256": "ac7e59c2fd03d0a60add7cb3bff78640200649fa15322462c869d9d14e340d5b",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "449bb126a0f734ac3ffaca1c67363a770675292192586bafdff2cfb6b89ec075"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16",
+      "domain": {
+        "signed_min": -128,
+        "signed_max": 127
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "orientation_flags",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.orientation",
+        "confidence": 0.9,
+        "signed_encoding": "unsigned_categorical_or_flags",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_position_correction",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.terrain.y",
+        "confidence": 0.9,
+        "signed_encoding": "twos_complement_i8",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 16
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "signed_encoding": "twos_complement_i8",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "lifecycle_state_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.lifecycle",
+        "confidence": 0.9,
+        "signed_encoding": "unsigned_categorical_or_flags",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "type_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.type",
+        "confidence": 0.9,
+        "signed_encoding": "unsigned_categorical_or_flags",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "orientation_flags",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.orientation",
+        "confidence": 0.9,
+        "signed_encoding": "unsigned_categorical_or_flags",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_position_correction",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.terrain.y",
+        "confidence": 0.9,
+        "signed_encoding": "twos_complement_i8",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "behavior_phase_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.behavior",
+        "confidence": 0.9,
+        "signed_encoding": "unsigned_categorical_or_flags",
+        "evidence": [
+          "research/deep-extraction/mario/sma4-pair-reaction-semantics.json"
+        ],
+        "naming_status": "instruction_consumer_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma4.actor_pair_reaction/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

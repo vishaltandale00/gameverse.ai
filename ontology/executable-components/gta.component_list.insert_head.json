@@ -1,0 +1,246 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "gta.component_list.insert_head",
+  "label": "Insert actor component at list head",
+  "role": "lifecycle.component_membership.insert_head",
+  "source_game": "grand-theft-auto",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/gta.component_list.insert_head/package.json",
+  "package_sha256": "c14f59f54ff7bf60090eba4345202de6e69a1411e710da84ef6b1f64b42882af",
+  "behavior_sha256": "93e6788eeeeae823b017e01e593c94e552d046aa4ada139b2de53ecdcc3bc582",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 192,
+    "scope": "All ordered subsets of four live identities; every source-valid absent node operation; three stale-lane seeds. Original and emitted ARM, full native-node canaries, symbolic state/head canaries and expected states. Finite domain only.",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "f28671d7a2af39c417bbb5af912a9fa0419a140cfa9dd0299e6f8fac97bfc8d3"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "component_list",
+      "identity": "component_list",
+      "ownership": "canonical_shared_pointer_pool",
+      "lifetime": "across_calls",
+      "evidence": [
+        "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 1,
+        "unsigned_max": 4
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "nullable_component_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_list_identity",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract.json",
+          "tools/behavior_ir/pointer_pool_ir.py",
+          "local/ir/mashup-coverage/grand-theft-auto/source-native-proof.json",
+          "local/ir/mashup-coverage/grand-theft-auto/list-cases.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "pointer_lane_5",
+      "direction": "inout",
+      "storage_type": "u32",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "nullable_component_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_list_identity",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract.json",
+          "tools/behavior_ir/pointer_pool_ir.py",
+          "local/ir/mashup-coverage/grand-theft-auto/source-native-proof.json",
+          "local/ir/mashup-coverage/grand-theft-auto/list-cases.json"
+        ]
+      }
+    },
+    {
+      "id": "pointer_lane_6",
+      "direction": "inout",
+      "storage_type": "u32",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "nullable_component_handle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_list_identity",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract.json",
+          "tools/behavior_ir/pointer_pool_ir.py",
+          "local/ir/mashup-coverage/grand-theft-auto/source-native-proof.json",
+          "local/ir/mashup-coverage/grand-theft-auto/list-cases.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "pointer_lane_5",
+        "storage_type": "u32",
+        "count": 4
+      },
+      {
+        "id": "pointer_lane_6",
+        "storage_type": "u32",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "canonical_shared_component_list_arena",
+    "clock": "explicit_invocation",
+    "phase": "caller_selected_membership_operation",
+    "ordering": "external_explicit_call_order",
+    "preconditions": [
+      "capacity4 qualification domain only",
+      "node handle1..4; link/head0..4",
+      "acyclic reciprocal live list; node must be absent",
+      "head/older/newer share identical node identity codec; no independent copied views"
+    ],
+    "removed_links": "preserved_stale",
+    "source_contract": {
+      "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+      "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+    }
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/gta.component_list.insert_head/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite four-node qualification subset; original allocator capacity unknown",
+    "Canonical handle domain and valid list membership are required invocation obligations",
+    "Actor lifecycle sibling services/scheduler/allocation/reuse remain open",
+    "No whole actor system/game completion or generated game claimed",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+    "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "component_handle",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "gta_component_list_identity",
+      "confidence": 1.0,
+      "evidence": [
+        "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract.json",
+        "tools/behavior_ir/pointer_pool_ir.py",
+        "local/ir/mashup-coverage/grand-theft-auto/source-native-proof.json",
+        "local/ir/mashup-coverage/grand-theft-auto/list-cases.json"
+      ]
+    }
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "gta.component_list.insert_head",
+        "source_game": "grand-theft-auto",
+        "package": {
+          "path": "local/ir/packages/gta.component_list.insert_head/package.json",
+          "sha256": "c14f59f54ff7bf60090eba4345202de6e69a1411e710da84ef6b1f64b42882af"
+        },
+        "package_sha256": "c14f59f54ff7bf60090eba4345202de6e69a1411e710da84ef6b1f64b42882af",
+        "behavior": {
+          "path": "local/ir/packages/gta.component_list.insert_head/l1.json",
+          "sha256": "93e6788eeeeae823b017e01e593c94e552d046aa4ada139b2de53ecdcc3bc582"
+        },
+        "behavior_sha256": "93e6788eeeeae823b017e01e593c94e552d046aa4ada139b2de53ecdcc3bc582",
+        "native_receipt": {
+          "path": "local/ir/packages/gta.component_list.insert_head/receipt.json",
+          "sha256": "f28671d7a2af39c417bbb5af912a9fa0419a140cfa9dd0299e6f8fac97bfc8d3"
+        },
+        "native_receipt_sha256": "f28671d7a2af39c417bbb5af912a9fa0419a140cfa9dd0299e6f8fac97bfc8d3",
+        "graph_request": {
+          "path": "local/ir/mashup-coverage/grand-theft-auto/graph-request.json",
+          "sha256": "723adc473363ff442041414746cdc215218b9468f522e092d76c33b63dc5c300"
+        },
+        "graph_receipt": {
+          "path": "local/ir/mashup-coverage/grand-theft-auto/graph-result.json",
+          "sha256": "9fb781f26af5a9a491f932ae3096d7a2e438852e7e86c64483ccee681277b131"
+        },
+        "validator": {
+          "path": "local/ir/mashup-coverage/grand-theft-auto/graph-validator-snapshot.py",
+          "sha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/mashup-coverage/grand-theft-auto/graph-catalog-snapshot.json",
+          "sha256": "fce6c652f6346ce2c4ec18cada31d526605b60c675cdd6f3cd3950138e5a2afb"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "review_status": "scoped_clear_integration_review_ontology_evidence",
+        "component_instance": "insert_head",
+        "graph_invocation_count": 2,
+        "statement_sha256": "a65947d1218adf8b1b88e619cd154f9b377742163680201f837e488925241ead",
+        "source_admission_pins": {
+          "path": "local/ir/mashup-coverage/grand-theft-auto/graph-admission-evidence.json",
+          "sha256": "9f5019dff298c308ff56bbcbc525072f04ace68fe4f4e6023cc55ad6ea918a69"
+        },
+        "limitations": [
+          "Binding validation does not prove composed native execution or runtime membership/reuse invariants",
+          "Finite arena capacity4 is a qualification domain, not recovered game allocator capacity",
+          "Full actor lifecycle/scheduler/allocation/sibling services remain open"
+        ]
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "grand-theft-auto",
+    "entry": "0800d838"
+  },
+  "domain_contract_fingerprint": "075c1958e1cdaf9b1352946f7da2619b43a79376c0063c7e846e1f86d7547279",
+  "specialization_subset": false
+}

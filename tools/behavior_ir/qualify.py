@@ -18,6 +18,7 @@ def qualify(out,rom,vectors=16384,parameter_grid=False,fixtures=None):
   return p.stdout
  try:
   if a.get('retained_services'):raise RuntimeError('retained native services require an explicit separate-core native effect qualifier')
+  if a.get('resource_references'):raise RuntimeError('resource references require an explicit native identity codec qualifier')
   if a.get('entity_references'):
    from entity_reference import validate_adapter
    validate_adapter(a)

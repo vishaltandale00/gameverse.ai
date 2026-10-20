@@ -1,0 +1,194 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.progress.category0_pickup_selection_list",
+  "label": "Publish acquired category0 soul to source selection list",
+  "role": "progression.source_pickup_postcommit_consumer",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.progress.category0_pickup_selection_list/package.json",
+  "package_sha256": "de6ab76f23a1631fe1b16a926346b721ad605ad7e5b144319857a0f2040df920",
+  "behavior_sha256": "8d006d66994667f3a8a0d703902f92d1477a97b36f713bdae76d109d148c72db",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "afd2baae7069ee912dde7803f31b83189e53e4c49b45a4cc2fa4f8b2d75fc51a"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 0
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 55
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "encoded_soul_selection_list_slot_0",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_selection.category0",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+          "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+        ],
+        "naming_status": "source_observed_list_and_counter_not_equipped_state"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "encoded_soul_selection_list_slot_1",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_selection.category0",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+          "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+        ],
+        "naming_status": "source_observed_list_and_counter_not_equipped_state"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "encoded_soul_selection_list_slot_2",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_selection.category0",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+          "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+        ],
+        "naming_status": "source_observed_list_and_counter_not_equipped_state"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "encoded_soul_selection_list_slot_3",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_selection.category0",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+          "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+        ],
+        "naming_status": "source_observed_list_and_counter_not_equipped_state"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 4,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "samepersistentcampaignstate",
+    "clock": "originalpickupcallback,afteracquisition",
+    "ordering": "08032dbc beforeoriginal0800e708 notification before08049e64; root/serviceeffects unclosed"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.progress.category0_pickup_selection_list/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Source bounded function subset, not originalpickupdispatcher or equippedcast closure",
+    "Encoded selection list slots are not directly equipped soul state; source unknown paths remain excluded.",
+    "Syntheticfinite native qualification is not worldcollision/acquisition gameplay",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+    "sha256": "7353ed6561d594a5f28e6a5888647a418c2d27778a1c66dfa4b19cede247d50e"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_soul_category_selector",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "campaign.soul_selection.category0",
+      "confidence": 0.95,
+      "evidence": [
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+        "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+      ],
+      "naming_status": "source_caller_category0_index_and_increment1"
+    },
+    "param_1": {
+      "quantity": "source_soul_index",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "campaign.soul_selection.category0",
+      "confidence": 0.95,
+      "evidence": [
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/source-system.json",
+        "local/ir/fleet-next/castlevania-aria-of-sorrow/next-round/source-closure-20261016/attempt-01/export-EX053/l0/08049e64.json"
+      ],
+      "naming_status": "source_caller_category0_index_and_increment1"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "castlevania-aria-of-sorrow",
+    "entry": "08049e64"
+  },
+  "domain_contract_fingerprint": "4a479c86db2a57716e8c3a360987f5f41e3148ae3f1034a95fdead871bee7b72",
+  "specialization_subset": true
+}

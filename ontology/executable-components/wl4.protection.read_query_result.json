@@ -1,0 +1,152 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "wl4.protection.read_query_result",
+  "label": "Read query result",
+  "role": "combat",
+  "source_game": "wario-land-4",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/wl4.protection.read_query_result/package.json",
+  "package_sha256": "1d340e737591bf7b2f0f28d51a910a58dc042dbb1c3c2a814d5bc937cc3056ef",
+  "behavior_sha256": "54e29988a2e65917b48425dac571f33da52b4e36d81ca468254cdbc00cc0982e",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "269256a022d94a3afa6d6b33fbe9163aa8ed0ce3eada94f7ee78aeac49218fa0"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "query_result_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "query_record",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/publication-source-evidence.json",
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "invocation": "Synchronous query; no allocation, retention, initialization or cleanup",
+    "updateOrdering": "Load result then optional tag OR then return",
+    "externalOrdering": "Full age/hazard ordering not qualified; callers must retain source order"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/wl4.protection.read_query_result/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Complete hurt/recovery aging and hazard transaction not executable-qualified",
+    "General query-record or engine-tag meaning remains unknown; only observed predicate/bit operations typed",
+    "Full native ABI qualifications are finite synthetic field tests; arbitrary query-record/player-state overlap is not qualified.",
+    "Selector field_1 remains semantically unannotated because only its zero/nonzero use is known.",
+    "Protection counter unit is source-update count, not seconds or a specified frame count.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "return": {
+      "quantity": "query_result_bitset",
+      "type": "u32",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1,
+        "dimension": "dimensionless"
+      },
+      "frame": "query_record",
+      "semantics": "Return record.offset0 unchanged",
+      "tagInterpretation": "bit24 observed tag; broader engine tag meaning unknown",
+      "evidence": [
+        {
+          "path": "local/ir/fleet-next/wario-land-4/EX033-protection-hazard/l0/0806d730.json",
+          "pc": "0x0806d732",
+          "op": "op2"
+        }
+      ]
+    },
+    "stateOwnership": {
+      "ownedState": [],
+      "referenceState": [
+        {
+          "id": "query_record",
+          "argument": "r0",
+          "owner": "caller",
+          "lifetime": "valid/aligned for invocation",
+          "accessedBytes": [
+            {
+              "offset": 0,
+              "size": 4,
+              "access": "read"
+            }
+          ]
+        }
+      ]
+    },
+    "aliases": [
+      "query_record is one caller-owned object; helper only reads offset0"
+    ],
+    "preconditions": [
+      "Valid aligned caller query record backing",
+      "Caller record does not overlap saved return stack or separately bound player-global storage",
+      "Source protection state remains stable across this single invocation; no concurrent update injected"
+    ],
+    "services": [],
+    "qualification": {
+      "vectors": {
+        "outcome": "pass",
+        "vectors": 1024,
+        "instructions_total": 4096
+      },
+      "expectedStateCases": 0,
+      "expectedReturnCases": 0,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "aliasScope": "independent query record allocation and original global timer backing",
+      "wholeSystem": false
+    },
+    "lifecycle": {
+      "invocation": "Synchronous query; no allocation, retention, initialization or cleanup",
+      "updateOrdering": "Load result then optional tag OR then return",
+      "externalOrdering": "Full age/hazard ordering not qualified; callers must retain source order"
+    },
+    "originalL0Identity": {
+      "adapter_l0_sha256": "d7adb5e655d44be79dec4a9166553131ae2896bc454de0359bb2448507420d1b",
+      "hashConvention": "SHA256(json.dumps(originalL0,sort_keys=True).encode()); canonical file supplied byte-for-byte under adapterCanonicalL0; raw source file separately pinned",
+      "canonicalMatchesAdapter": true,
+      "semanticsUnchanged": true
+    },
+    "sourceL2": {
+      "path": "research/deep-extraction/resume/wario-land-4/next-extraction/system.json",
+      "sha256": "dc1877b31df910ca1659f8ead3581fe30c087df83054ce63cfd4d6948f031a86"
+    },
+    "unannotatedFields": {}
+  }
+}

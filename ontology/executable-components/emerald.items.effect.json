@@ -1,0 +1,119 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "emerald.items.effect",
+  "label": "Read source held-item effect kind",
+  "role": "held_item_metadata",
+  "source_game": "pokemon-emerald-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/emerald.items.effect/package.json",
+  "package_sha256": "cd430bf7b434a365efa7b4ac93ea346a41fb1829438bbc89d52aff81c6d6dd9d",
+  "behavior_sha256": "77ca6b7aca357f35b5cdd022a3c12f69af231a0e1ba9cc0b446d653b6b5386b4",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "ef30df66766879ae4c74936b0de5e52df3333a8a8fd4a28672220393e58177dd"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "domain": {},
+      "name": "param_0",
+      "storage_type": "u16"
+    }
+  ],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "No mutable state; canonical original item table immutable",
+    "clock": "Explicit source function invocation",
+    "phase": "Item metadata query; original battle/item caller remains authoritative",
+    "ordering": "Clamp item identity before record read; no new atomic pair or global schedule"
+  },
+  "dependencies": [
+    {
+      "behavior_sha256": "0f2c5f180b1f37d2e6cfdae0c406c71ce48e5ee9fe7ae65cc56a4507643d420d",
+      "id": "dependency_0",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/emerald.items.effect/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original and reconstructed native4096-vector parity with379 explicit expected return cases, not a full game campaign",
+    "Item effect execution and held-item lifecycle not recovered by these query components",
+    "Captured immutable data bytes are distinct from generated behavior bytes",
+    "Source item identities remain game/version-specific; no cross-game item meaning equivalence claimed",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/source-contract.json",
+    "sha256": "6bbf427435b28b96551eb35e4862ee5faa5d7d1b5ca41165bb8d558a7d6f7e66"
+  },
+  "return_meaning": {
+    "quantity": "held_effect_kind",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "emerald.item.held_effect_kind",
+    "confidence": 1.0,
+    "evidence": [
+      "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/source-contract.json",
+      "local/ir/pokemon-next-20261016/items001/source-layout-evidence.json",
+      "local/ir/pokemon-next-20261016/items001/clamp-return-abi.json"
+    ],
+    "encoding_scope": "Source identity enum"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_item_identity",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "emerald.item_identity",
+      "confidence": 1.0,
+      "evidence": [
+        "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/source-contract.json",
+        "local/ir/pokemon-next-20261016/items001/source-layout-evidence.json",
+        "local/ir/pokemon-next-20261016/items001/clamp-return-abi.json"
+      ],
+      "domain_semantics": "Full u16 input; invalid identities select source item0"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "pokemon-emerald-version",
+    "entry": "080d74dc"
+  },
+  "domain_contract_fingerprint": "c37ec63f3125cd632305986e91da4c9de7ddb9c1c9d0bebdb65ebed71a314082",
+  "specialization_subset": false
+}

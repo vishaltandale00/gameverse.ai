@@ -1,0 +1,311 @@
+{
+  "canonicalstate": {
+    "adapter_globals": {
+      "input.pressed_edge_mask": {
+        "address": 0,
+        "argument": null,
+        "name": "field_0",
+        "offset": 50337864,
+        "owner": "global",
+        "width": 16
+      },
+      "player.animation_frame_index": {
+        "address": 0,
+        "argument": null,
+        "name": "field_5",
+        "offset": 50337975,
+        "owner": "global",
+        "width": 8
+      },
+      "player.animation_update_count": {
+        "address": 0,
+        "argument": null,
+        "name": "field_4",
+        "offset": 50337974,
+        "owner": "global",
+        "width": 8
+      },
+      "player.direction_mask": {
+        "address": 0,
+        "argument": null,
+        "name": "field_3",
+        "offset": 50337958,
+        "owner": "global",
+        "width": 16
+      },
+      "player.escape_accumulator": {
+        "address": 0,
+        "argument": null,
+        "name": "field_2",
+        "offset": 50337954,
+        "owner": "global",
+        "width": 8
+      },
+      "player.protection_update_count": {
+        "address": 0,
+        "argument": null,
+        "name": "field_1",
+        "offset": 50337948,
+        "owner": "global",
+        "width": 8
+      }
+    },
+    "asset_binding": "asset_0 copied exactly from original0831d9c8 into emitted immutable payload;3061 bytes, no RAM writeback",
+    "other_global_roles": {
+      "input.pressed_edge_mask": "Distinct external input global; not aliased to protection byte.",
+      "player.animation_frame_index": "Distinct mutable player animation field; no alias with protection byte.",
+      "player.animation_update_count": "Distinct mutable player animation field; no alias with protection byte.",
+      "player.direction_mask": "Distinct mutable player direction field; no alias with protection byte.",
+      "player.escape_accumulator": "Distinct mutable player recovery field; no alias with protection byte."
+    },
+    "owner": "canonical source player/input globals, no detached protection/animation/escape copies",
+    "readonly_asset_proof": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/byte-attribution-supplement.json",
+      "sha256": "6290c4c7fdb8c05fb1f2b2784825ceafc40ffaf7ede92d66989c3efb3797c878"
+    },
+    "readonly_assets": [
+      {
+        "address": 137484744,
+        "bytes": 3061,
+        "name": "asset_0"
+      }
+    ],
+    "shared_protection_alias": {
+      "canonical_field": "player.protection_count",
+      "canonical_module_id": "wl4.player.normal-form.protection",
+      "evidence": [
+        {
+          "path": "local/ir/packages/wl4.recovery.action60_struggle_step/validation-adapter.json",
+          "sha256": "d2b6f0b5a324b2cb71084489ceef19a42d791306ccc33577a73a44a0e35a71a3"
+        },
+        {
+          "path": "local/ir/packages/wl4.recovery.action60_struggle_step/l0.json",
+          "sha256": "8b1f143479c7624b5e5489552420d1d7b0d3d8171904520b7f99bafabcc80715"
+        },
+        {
+          "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/validation-adapter.json",
+          "sha256": "d92037e984c4a4fd53f111368bc255dea604b8956d9c85b02ae78e07a45e2084"
+        },
+        {
+          "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/l0.json",
+          "sha256": "f3ddc40e094655e5286eaadd82f26650693302f31824bdbd88ff2f795ab5d81f"
+        },
+        {
+          "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/package.json",
+          "sha256": "ab85b7c9c65902141a20e11f14b68fc4e9984d8e963f489624e753daffb16c5b"
+        },
+        {
+          "path": "research/deep-extraction/resume/wario-land-4/prefab-pass/delivery.json",
+          "sha256": "3088c47bb4e7d7c356893b90f150f2b8803deb8a35b82b46c9d9776472ecc525"
+        }
+      ],
+      "existing_query": {
+        "access": "read",
+        "field": "field_2",
+        "package_id": "wl4.protection.test_protected_zero_selector",
+        "source_load": "op6@0806d806"
+      },
+      "producer": {
+        "access": "write96 on incoming escape accumulator>=65",
+        "field": "field_1",
+        "package_id": "wl4.recovery.action60_struggle_step",
+        "source_store": "op94@08012624"
+      },
+      "proof": "Both unmodified published validation adapters map these fields to global(address0+offset50337948), width8; source L0 STORE/LOAD and source contract identify same canonical player cell. No storage copy/new player instance admitted.",
+      "status": "source_and_adapter_backed_same_cell",
+      "storage_type": "u8",
+      "validation_address": "0x0300189c",
+      "width_bits": 8
+    }
+  },
+  "capability_phase": {
+    "id": "action60-struggle-recovery-request",
+    "ordering_claim": "No automatic phase sequence or query invocation established by this proposal.",
+    "package_id": "wl4.recovery.action60_struggle_step",
+    "phase_kind": "source-invoked-protection-producer",
+    "requires_query_execution": false,
+    "scheduled_sequence": null
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "fresh_original_native_comparisons": 1024,
+    "fresh_rebuilt_native_comparisons": 1024,
+    "historical_native_comparisons": 1144,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0
+  },
+  "event_order": [
+    "Parent0800ffdc snapshots current player position, advances animation update count when scene>1, and invokes form0 controller080104a4 via table082dec70.",
+    "Unless its wind override preempts,080104a4 dispatches normal action0x3c through082dedc0[0x3c]=08012615.",
+    "Handler tests incoming accumulator before direction-edge update. At<=64, direction bits0x30 add11 and replace direction; absent edge decrements nonzero accumulator; it then advances/wraps source animation and returns0xff.",
+    "At incoming accumulator>=65, handler writes protection96 and returns action4 without animation or accumulator update. Crossing64\u219275 therefore returns0xff now and requests action4 on a later eligible invocation.",
+    "Parent0800ffdc treats return lowbyte0xff as no action. Other lowbyte action dispatches via082deca0[form0]=08012bad to08012bac, then0801318c handles4 by restoring prior vertical velocity. Full dispatcher/root ABI and execution closure remain open."
+  ],
+  "exactpins": {
+    "adapter": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/recovery/validation-adapter.json",
+      "sha256": "d2b6f0b5a324b2cb71084489ceef19a42d791306ccc33577a73a44a0e35a71a3"
+    },
+    "attribution_overlay": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/byte-attribution-supplement.json",
+      "sha256": "6290c4c7fdb8c05fb1f2b2784825ceafc40ffaf7ede92d66989c3efb3797c878"
+    },
+    "current_central_behavior": {
+      "path": "local/ir/packages/wl4.recovery.action60_struggle_step/l1.json",
+      "sha256": "a65a44cc6a010fc56c3f85af47d32b9a4b5719ce40c2974aed37f83263441a6b"
+    },
+    "current_central_package": {
+      "path": "local/ir/packages/wl4.recovery.action60_struggle_step/package.json",
+      "sha256": "5495b6d8fa4647ff5cd901a911bfe17e3654def0e8e9d0b6279a3b06ea3309cb"
+    },
+    "current_central_receipt": {
+      "path": "local/ir/packages/wl4.recovery.action60_struggle_step/receipt.json",
+      "sha256": "d41079101c57df55118a21500bcd2b696d7d5dd617bb58fce3ab0924847d91a1"
+    },
+    "dependency_frontier": {
+      "path": "local/roundtrip/weak-wave-wario-ir-frontier-001.json",
+      "sha256": "610a5efbf47db7a396b77ea22c8564069715f1add4786f133fcd29cfe3616a02"
+    },
+    "existing_canonical_module_delivery": {
+      "path": "research/deep-extraction/resume/wario-land-4/prefab-pass/delivery.json",
+      "sha256": "3088c47bb4e7d7c356893b90f150f2b8803deb8a35b82b46c9d9776472ecc525"
+    },
+    "existing_query_adapter": {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/validation-adapter.json",
+      "sha256": "d92037e984c4a4fd53f111368bc255dea604b8956d9c85b02ae78e07a45e2084"
+    },
+    "existing_query_package": {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/package.json",
+      "sha256": "ab85b7c9c65902141a20e11f14b68fc4e9984d8e963f489624e753daffb16c5b"
+    },
+    "fixtures": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/recovery/fixtures.json",
+      "sha256": "0ff48531f386c1e2821353bb943338de3c460acb24116947de7f6be785e3614c"
+    },
+    "generated_c": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/recovery/generated.c",
+      "sha256": "a7e3c108022eb2055954b674227339c5191062ff6213209a28056325e7a8a4d7"
+    },
+    "independent_qc": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/wario-action60-ir-attributed-qc.json",
+      "sha256": "c55ade7795497083dbfc66781ab5b5eab9071e28748b053d434ae0e2d6b0aacb"
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/recovery/original-proof.json",
+      "sha256": "6d722eae057a5733fef92f4ede6582318a9ae131e17c51fb0561b994628f06f9"
+    },
+    "profile": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/ir-profile.json",
+      "sha256": "05cea7b661bf30d6f62bacb7f8e1ad9bd5b1dd91d1abf5103912e5c036f1b17e"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/provider-report.json",
+      "sha256": "e9bd122e93201e674322b56f31f13e88133c5913ac94148b8f250209eceba729"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-wario-ir-action60-001/recovery/rebuilt-proof.json",
+      "sha256": "568c5aff959008aa93092b102513e0768c8a2487e3748a913c3b7529ba7e41c0"
+    },
+    "retained_qualified_package": {
+      "path": "local/ir/fleet-next/wario-land-4/next-round/source-closure-20261016/prepared-publication-v2/wl4.recovery.action60_struggle_step/package.json",
+      "sha256": "b3adebf8222cd8c742610cdd72e240167c08f7791fdf379db69f89c1d14566a1"
+    },
+    "retained_qualified_receipt": {
+      "path": "local/ir/fleet-next/wario-land-4/next-round/source-closure-20261016/prepared-publication-v2/wl4.recovery.action60_struggle_step/receipt.json",
+      "sha256": "d41079101c57df55118a21500bcd2b696d7d5dd617bb58fce3ab0924847d91a1"
+    },
+    "source_contract": {
+      "path": "research/deep-extraction/resume/wario-land-4/next-round/source-closure-20261016/action60-source-system.json",
+      "sha256": "1e2b1eb6033fdace1da59ada5f303f9736e48ae97abff2e0a379655d4e534409"
+    }
+  },
+  "game_id": "wario-land-4",
+  "gaps": [
+    "Attachment0802eb28 and finder08026c14 retained raw/source evidence only; not jointly executed.",
+    "Attachment requires active matching type232/subtype0 actor; no-match24 outside pool and source lifecycle invariant unknown.",
+    "Original caller action4 commit, scheduler scratch ownership and producer-consumer ordering unqualified.",
+    "Age08015218 path-sensitive nested ROM row blocker unchanged.",
+    "Interrupt-visible intermediate write ordering, save/lifecycle and campaign equivalence unknown.",
+    "Embedded3061-byte source span includes conservative original index domain; graphic/shape semantic closure unknown."
+  ],
+  "id": "wl4.action60.source-entry-replacement.v2",
+  "module_id": "wl4.player.normal-form.protection",
+  "native_eligibility": {
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "certificate_boundary": "Pinned native qualification receipts establish finite direct-handler parity. Independent byteQC scoped_native certificate list is not proof authority. No joint attachment or host campaign claim.",
+    "fixture_input_sha256": "d011afd9971d55a9cf65edf722bf28a3f698b1337d85fbddfd5d51d9f95eeca5",
+    "fixture_scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_direct_handler_original_and_reconstructed_entry_parity",
+    "limits": {
+      "entity_bytes": 256,
+      "entity_span_limit": 16384,
+      "instructions_per_call": 2048,
+      "object_count": 1,
+      "object_stride": 8192,
+      "reserved_object_bytes": 32768,
+      "stage_timeout_s": 30,
+      "vectors": 1024
+    },
+    "observable_expected_cases_each": {
+      "return": 1024,
+      "state": 1024
+    },
+    "original_rom_sha256": "d16c7bf6e62bb84049fff1b387108fbd1e6e2cd38ca994ab5310dd9cbf9ba414",
+    "rebuilt_rom_sha256": "63303c1b7e235db2417588bd3b8a37260d5a5f0c3c875a81e45e8c0b2798a0b7",
+    "vectors": {
+      "fresh_original": 1024,
+      "fresh_rebuilt": 1024,
+      "historical_retained_producer_only": 1144
+    }
+  },
+  "originalhostprerequisites": [
+    "Caller selects source normal-form action0x3c; full game entry/reachability not qualified.",
+    "Observed source animation states0..3; parent resets frame/count0 via0800fd28; frame cadence source invocation-based, no FPS assumed.",
+    "Player/input globals share canonical backing; no detached timer instances.",
+    "Invoke source normal-form action0x3c handler against exact pinned original host. Binder snapshots/commits disjoint globals synchronously; no concurrent or interrupt observer assumed in finite direct-handler proof."
+  ],
+  "package_identity": {
+    "behavior_sha256": "a65a44cc6a010fc56c3f85af47d32b9a4b5719ce40c2974aed37f83263441a6b",
+    "central_package_unchanged": true,
+    "id": "wl4.recovery.action60_struggle_step",
+    "origin": "automatic_highfunction_lift",
+    "version": "0.1.0"
+  },
+  "package_ids": [
+    "wl4.recovery.action60_struggle_step"
+  ],
+  "proposal_status": "additive-existing-package-capability-not-new-qualification",
+  "revision_reason": "Reuse existing canonical protection module; package identity is a capability phase, not a new physical player.",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_readonly_asset_bytes": 3061,
+    "generated_behavior_bytes": 96,
+    "mechanical_binding_bytes": 80,
+    "original_entry": "08012614",
+    "portable_L1": true,
+    "raw_difference_bytes": 3245,
+    "replacement_entry_veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "08012614"
+  ],
+  "supersedes_proposal": {
+    "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/library-capability-v1.json",
+    "sha256": "8bf59021c098d95e1353c5c3f11dbf8e329292791385d5d86e4df62b413f7cf9"
+  },
+  "timing": {
+    "build_mode": "clean generated compilation",
+    "provider_total_seconds": 0.7971117919999999,
+    "queue_seconds": null,
+    "scope": "One fresh bounded generic-provider run; no added native run for capability publication"
+  }
+}

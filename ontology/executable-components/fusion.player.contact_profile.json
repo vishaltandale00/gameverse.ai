@@ -1,0 +1,214 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "fusion.player.contact_profile",
+  "label": "Publish source player draw distances and standing status",
+  "role": "draw_distance_and_standing_status",
+  "source_game": "metroid-fusion",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/fusion.player.contact_profile/package.json",
+  "package_sha256": "2ee5fbbe9dd7e680564506200a9b04d3c1a1c28924a98e420968f89da1db7965",
+  "behavior_sha256": "26efb5bb13cd59bbbca6b0c716a10b4dc5b4c8e541c7974eb50bd11edcf2ce67",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 32,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "6dc60631db2b9652b75cfae7a9d08ef036bb496b9dafdabed2ec3f9bd24f2b2a"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.pose",
+        "quantity": "enum",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.slope_type",
+        "quantity": "enum",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.standing_status",
+        "quantity": "enum",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.draw_distance_left.native_units",
+        "quantity": "draw_distance",
+        "signed_encoding": "twos_complement",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.draw_distance_top.native_units",
+        "quantity": "draw_distance",
+        "signed_encoding": "twos_complement",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.draw_distance_right.native_units",
+        "quantity": "draw_distance",
+        "signed_encoding": "twos_complement",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.99,
+        "evidence": [
+          "local/decomps/mf/src/samus.c",
+          "local/decomps/mf/include/structs/samus.h",
+          "local/roundtrip/coverage-next-fusion-typed-v1/assets-proof.json"
+        ],
+        "frame": "fusion.player.draw_distance_bottom.native_units",
+        "quantity": "draw_distance",
+        "signed_encoding": "twos_complement",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one source player canonicalcurrentstate; profile is a view not anotheractor",
+    "clock": "explicit source profile invocation",
+    "ordering": "08004e68 control/conditionaltransition\u2192profile\u2192integration;08004fec collision\u2192profile (normalengine path)",
+    "scope": "geometry/modeproducer with realsourceconsumers, not fullterrain/controller"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/fusion.player.contact_profile/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite source geometry/mode phase only; driver/runtime reachability and actualactorcontact consumer remain unqualified.",
+    "Native source coordinate units are not pixel-calibrated; signed local offsets are evidenced by actual consumer use.",
+    "No independent copiedplayer state; exact sourceowner aliases must stay shared in future assembly.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed",
+    "Prior contact/collision role labels are superseded by source draw-distance/standing-status member proof; no collision/lifecycle closure inferred."
+  ],
+  "source_contract": {
+    "authoritative_semantic_refinement": {
+      "path": "research/ir-workshop/coverage-wave-next/metroid-fusion/semantic-metadata-overlay-v1.json",
+      "sha256": "be94d0373c80ea32ef02ab20e4e354e7db4840087552d81681417c19890fc632"
+    },
+    "prior_source_contract": "research/deep-extraction/resume/metroid-fusion/next-round/source-closure-20261016/profile-source-system.json",
+    "scope": "Only source member semantics/title corrected; prior labels retained as historical evidence. Source ABI, ownership, domain, service/lifecycle restrictions unchanged; no collision or physical-pixel calibration inferred from draw distances."
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_metadata_refinement",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "metroid-fusion",
+    "entry": "0800c174"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

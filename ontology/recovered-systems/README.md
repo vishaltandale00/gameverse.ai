@@ -1,0 +1,15 @@
+# Recovered source systems
+
+`index.json` is a searchable, lossless graph view of original-game source analysis. It contains source-backed state, transitions, order, aliases, services, requirements and unresolved dependencies. Each normalized fact retains its exact original JSON pointer. `sourceFacts` preserves the complete source packet and qualification caveats.
+
+`source-backed-system` means a static causal analysis, not an executable subsystem or completed game. Missing fields are explicitly unavailable. A listed dependency can be a missing target; call-order evidence can describe an unproven edge. Read the fact's qualifications before interpreting an edge as closed. No authored game/demo is recovered L2.
+
+Each original game's `automaticComponents` separately retains the full existing executable contract, qualification scope, ports, units, state, dependencies and hashes. Finite native qualification of a subset never upgrades its containing source system. Existing declared sequences retain their original classification.
+
+`systems[]` holds analysis records. `recordKind` distinguishes retained prior analyses from new source-system contracts; multiple records can describe the same subsystem and must not be counted as independent recovered functionality. `counts.analysisRecords` counts documents, `counts.sourceSystems` counts new partial contracts, and game coverage is reported separately. Historical analyses can contain hypotheses corrected by newer contracts. `qualificationEvidence` and `automaticUnits` retain local subset evidence separately from whole-system readiness.
+
+`graph` contains only explicit source `from`/`to` edges, with exact claim/provenance. Every edge remains unqualified; `unresolved` flags conservative uncertainty terms and is not an exhaustive semantic assessment. Prose schedules, conditional transitions and effect order remain intact under `callOrder`. Use source pointers and source-fact line/symbol references for inspection.
+
+Regenerate with `python3 ontology/recovered-systems/ingest.py`. Additional stable source-system JSON paths belong in `additional-sources.json`; the original resumed packets are included automatically. This stdlib operation performs local JSON normalization only: no compiler, emulator, LLM, generated ROM, new dependency or CI job. Measured first normalization of 24 packets took 0.032495 seconds on this workspace; no comparable pre-existing implementation measurement exists. Queue/build/simulation time is unavailable, not zero.
+
+Run `python3 ontology/recovered-systems/validate.py --report` after the final source checkpoint to check identity, source hashes, exact normalized JSON pointers, graph endpoints and readiness/count invariants. `verification.json` retains the run identity, exact index/tool/config hashes, machine context and measured validation duration. Its index hash identifies the verified snapshot; later ingestion requires a fresh check. This is a small local integrity check, not semantic or native qualification.

@@ -1,0 +1,1136 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "pokemon-leafgreen-version",
+  "sourceSystemIds": [
+    "pokemon-leafgreen-version.move-learning-secure-record"
+  ],
+  "blueprintIds": [
+    "turn-based-party-battle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Explore, choose/train a party, resolve turn-based encounters, learn moves, and retain accepted party progress. This delivery supplies only protected-record representation phases.",
+    "phases": [
+      {
+        "id": "field-discovery",
+        "label": "Explore and encounter interactable characters or battles",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "Field input/map/collision/encounter scheduler"
+        ],
+        "gaps": [
+          "No recovered field-control/encounter producer closure in this delivery."
+        ],
+        "sourceEvidence": []
+      },
+      {
+        "id": "menu-command",
+        "label": "Choose a party member, move or action",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/0x080e48e0.c"
+        ],
+        "requiredServices": [
+          "Input edges",
+          "Task callbacks",
+          "Fade/audio completion",
+          "Text/dialogue renderer"
+        ],
+        "gaps": [
+          "Move-learning menu source observed; normal party menu and battle command ownership/selection validation remain missing."
+        ],
+        "sourceEvidence": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/0x080e48e0.c",
+            "sha256": "7aaddd2dcf48ece6bccd0132729bc9a8b8c2e6c2f37123ab55f6508f4b09b9d1"
+          }
+        ]
+      },
+      {
+        "id": "battle-resolution",
+        "label": "Choose turn order and resolve attacks, effects and continuation",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "Battle script/turn scheduler",
+          "RNG",
+          "Damage/status rules",
+          "Opponent/party synchronization"
+        ],
+        "gaps": [
+          "No qualified turn-order, attack resolution, defeat, XP or battle continuation consumer; codec does not supply battle semantics."
+        ],
+        "sourceEvidence": []
+      },
+      {
+        "id": "party-access",
+        "label": "Read or change one party member secure payload",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/0x0803fd58.c",
+          "research/deep-extraction/resume/pokemon-leafgreen-version/0x080404e4.c"
+        ],
+        "requiredServices": [
+          "Record selection/lifetime owner",
+          "Aliased permutation pointer views",
+          "Checksum/corruption rules"
+        ],
+        "gaps": [
+          "Full getter/setter transaction blocked by modulo24/permutation pointer-return closure; successful signed checksum loop expansion is not executable closure."
+        ],
+        "sourceEvidence": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/0x0803fd58.c",
+            "sha256": "8b77f7c9a3fe0600f7e1dcd4b6544700d60cebbe05cde3d90c1909811860d848"
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/0x080404e4.c",
+            "sha256": "910c8082e59af40ec102964e7bbd6f01e41efd56e9ec81e0846c7d4eada3a4ad"
+          }
+        ]
+      },
+      {
+        "id": "record-representation",
+        "label": "Internal protected-record representation support for creature move mutation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json"
+        ],
+        "requiredServices": [
+          "Host stable record instance and representation-phase authority"
+        ],
+        "gaps": [
+          "Qualified XOR codec leaves are internal support, not a useful standalone game-building prefab. A complete move mutation phase is not yet executable.",
+          "Only ordered two-key XOR leaves are executable; no valid-record/checksum or save commit claim."
+        ],
+        "sourceEvidence": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+            "sha256": "fa831be10ed6e7ea95d4318a464a26d1560c30f8683ebcef32c8edbf7daeab1b"
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+            "sha256": "88fecc5266cef2abfd0b3d0a8c0172550443ff7accee1bc0c81a090b36382098"
+          }
+        ]
+      },
+      {
+        "id": "move-learning",
+        "label": "Acquire/replace move, reset chosen bonus lane, initialize PP and publish result",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "Validated legal move data",
+          "Party selection",
+          "UI yes/no/slot selection",
+          "Secure setter transaction"
+        ],
+        "gaps": [
+          "Source order known; insertion/replacement and UI success/lifetime consumers unqualified."
+        ],
+        "sourceEvidence": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+            "sha256": "fa831be10ed6e7ea95d4318a464a26d1560c30f8683ebcef32c8edbf7daeab1b"
+          }
+        ]
+      },
+      {
+        "id": "persistence-commit",
+        "label": "Retain accepted party progress across save/resume",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "Save transaction/checksum/migration",
+          "ROM-version-bound persistence host",
+          "Recovery/lifecycle"
+        ],
+        "gaps": [
+          "Codec does not serialize a save, write SRAM/Flash, choose save slots or prove recovery."
+        ],
+        "sourceEvidence": []
+      }
+    ],
+    "edges": [
+      {
+        "from": "menu-command",
+        "to": "move-learning",
+        "kind": "source-call",
+        "scope": "Move-learning session selected-slot state0x1d resets slot bonus then calls move/PP setter; not generic battle command dispatch."
+      },
+      {
+        "from": "move-learning",
+        "to": "party-access",
+        "kind": "source-call",
+        "scope": "Selected party member secure getter/setter calls are observed in exact own-ROM session source."
+      },
+      {
+        "from": "party-access",
+        "to": "record-representation",
+        "kind": "source-call",
+        "scope": "Secure accessors decrypt before checksum/access and encrypt afterward; only codec calls currently executable."
+      },
+      {
+        "from": "record-representation",
+        "to": "party-access",
+        "kind": "shared-state",
+        "scope": "Same record keys/payload; shuffled logical substructure views must alias same live backing."
+      },
+      {
+        "from": "party-access",
+        "to": "persistence-commit",
+        "kind": "host-required",
+        "scope": "Durable save integration is required for progress but exact source save consumer is not identified/qualified here; no source call asserted."
+      }
+    ],
+    "missingForCoreGame": [
+      "No recovered field-control/encounter producer closure in this delivery.",
+      "Move-learning menu source observed; normal party menu and battle command ownership/selection validation remain missing.",
+      "No qualified turn-order, attack resolution, defeat, XP or battle continuation consumer; codec does not supply battle semantics.",
+      "Full getter/setter transaction blocked by modulo24/permutation pointer-return closure; successful signed checksum loop expansion is not executable closure.",
+      "Only ordered two-key XOR leaves are executable; no valid-record/checksum or save commit claim.",
+      "Source order known; insertion/replacement and UI success/lifetime consumers unqualified.",
+      "Codec does not serialize a save, write SRAM/Flash, choose save slots or prove recovery."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "leafgreen.creature-move-mutation-source-lifecycle",
+      "label": "Creature move acquisition and replacement",
+      "moduleId": "leafgreen.creature-move-mutation",
+      "sourceGame": "pokemon-leafgreen-version",
+      "sourceSystemId": "pokemon-leafgreen-version.move-learning-secure-record",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+      "planIds": [
+        "turn-based-party-battle"
+      ],
+      "packageIds": [],
+      "availability": "source-only",
+      "scope": "Source-backed selected-creature move insertion/replacement lifecycle: discover candidate move, accept/choose replacement, update move/PP/bonus fields through one shared secure record, then publish session result. Only internal XOR codec support is executable; no useful move mutation prefab is ready.",
+      "gaps": [
+        "No executable complete move grant/replacement transaction or result consumer.",
+        "Four-slot insertion,duplicate/full outcomes,selected-slot cancellation and UI session lifetime are not qualified.",
+        "PP initialization table extent and legal move domain,selected PP bonus clearing,move write and success publication ordering remain source-backed only.",
+        "Secure getter/setter transaction still requires modulo24 permutation pointer-return views,checksum and corruption handling.",
+        "Persistence save/commit/recovery and party/battle consumers remain unclosed.",
+        "This phase does not resolve shuffled substructure pointers or expose typed move/PP fields.",
+        "No checksum verification/recomputation, corruption flag handling, record allocation, party selection, battle logic or persistent save service.",
+        "Host must retain one record backing and correct representation phase across decode\u2192inspection/edit\u2192encode.",
+        "Checksum must be recomputed before encoding any payload edits; that executable step is still missing."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+        "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json"
+      ],
+      "canonicalState": {
+        "identity": "leafgreen.creature-move-mutation",
+        "fields": [
+          {
+            "id": "recordKey0",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.key_0"
+            },
+            "access": "read"
+          },
+          {
+            "id": "recordKey1",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.key_1"
+            },
+            "access": "read"
+          },
+          {
+            "id": "payloadWord0",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_0"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord1",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_1"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord2",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_2"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord3",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_3"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord4",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_4"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord5",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_5"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord6",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_6"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord7",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_7"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord8",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_8"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord9",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_9"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord10",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_10"
+            },
+            "access": "read-write"
+          },
+          {
+            "id": "payloadWord11",
+            "storageType": "u32",
+            "semanticType": {
+              "quantity": "bitpattern",
+              "unit": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "frame": "creature_secure_record.payload_word_11"
+            },
+            "access": "read-write"
+          }
+        ],
+        "aliasRule": "One live record owner. Both codec facets reuse identical key/payload wordslots and retain every32bit; shuffled secure views must not be copied or normalized into unrelated records.",
+        "representationAuthority": "Host tracks ciphertext/plaintext phase; never infer phase from word value.",
+        "crossRoleIdentity": "Same creature move-mutation module and party-record backing across command,party,resolve andcontinuation facets; no copied codec instances masquerading as game systems.",
+        "recordIdentity": "leafgreen.creature-secure-record",
+        "sessionOwner": "One move-learning session owns selectedParty,selectedSlot,candidateMove,result and task lifetime; its creature reference aliases the party record used by every accessor."
+      },
+      "roleFacets": [
+        {
+          "roleId": "party",
+          "capability": "Acquire or replace one selected creature move while preserving PP,bonus and record integrity",
+          "status": "source-only",
+          "scope": "Observed source transaction; only internal codec leaves finite-qualified. Accessor,permutation/checksum and move/PP writers unclosed.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+            "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json"
+          ]
+        },
+        {
+          "roleId": "command",
+          "capability": "Source move-learning choice drives selected party mutation",
+          "status": "source-only",
+          "scope": "Observed move-learning session only, not full battle command selection",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "resolve",
+          "capability": "No battle rule resolution supplied",
+          "status": "missing",
+          "scope": "Codec does not implement a battle resolver",
+          "evidence": []
+        },
+        {
+          "roleId": "continuation",
+          "capability": "No encounter/session continuation supplied",
+          "status": "missing",
+          "scope": "Task exit, defeat/reward and normal save consumers open",
+          "evidence": []
+        },
+        {
+          "roleId": "turn-order",
+          "capability": "No turn scheduling supplied",
+          "status": "missing",
+          "scope": "RNG/priority/speed rules unavailable",
+          "evidence": []
+        }
+      ],
+      "recoveredAssemblies": [],
+      "internalSupportPackageIds": [
+        "leafgreen.persistence.secure_record_decrypt",
+        "leafgreen.persistence.secure_record_encrypt"
+      ],
+      "internalSupportPhases": [
+        {
+          "id": "leafgreen.secure-record.decode",
+          "moduleId": "leafgreen.creature-move-mutation",
+          "label": "Decode a protected creature record for inspection",
+          "path": "research/deep-extraction/resume/pokemon-leafgreen-version/prefab-pass/decode.assembly.json",
+          "sha256": "b0eb3ceb9f3fddac299d9526240695ffd96e3b9403e3f27b6c86c78cd0e0efdb",
+          "validation": "research/deep-extraction/resume/pokemon-leafgreen-version/prefab-pass/decode.validation.json",
+          "validationSha256": "942b0dfadc2929f297ab5faa6190848c59507c07a4588e66444512398bdb137d",
+          "inputs": [
+            {
+              "id": "recordKey0",
+              "label": "Record XOR key 0",
+              "storageType": "u32",
+              "default": 305419896,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "recordKey0",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "recordKey1",
+              "label": "Record XOR key 1",
+              "storageType": "u32",
+              "default": 2271560481,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "recordKey1",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord0",
+              "label": "Encrypted payload word 0",
+              "storageType": "u32",
+              "default": 16909062,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord0",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord1",
+              "label": "Encrypted payload word 1",
+              "storageType": "u32",
+              "default": 16909063,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord1",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord2",
+              "label": "Encrypted payload word 2",
+              "storageType": "u32",
+              "default": 16909064,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord2",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord3",
+              "label": "Encrypted payload word 3",
+              "storageType": "u32",
+              "default": 16909065,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord3",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord4",
+              "label": "Encrypted payload word 4",
+              "storageType": "u32",
+              "default": 16909066,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord4",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord5",
+              "label": "Encrypted payload word 5",
+              "storageType": "u32",
+              "default": 16909067,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord5",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord6",
+              "label": "Encrypted payload word 6",
+              "storageType": "u32",
+              "default": 16909068,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord6",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord7",
+              "label": "Encrypted payload word 7",
+              "storageType": "u32",
+              "default": 16909069,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord7",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord8",
+              "label": "Encrypted payload word 8",
+              "storageType": "u32",
+              "default": 16909070,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord8",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord9",
+              "label": "Encrypted payload word 9",
+              "storageType": "u32",
+              "default": 16909071,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord9",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord10",
+              "label": "Encrypted payload word 10",
+              "storageType": "u32",
+              "default": 16909072,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord10",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord11",
+              "label": "Encrypted payload word 11",
+              "storageType": "u32",
+              "default": 16909073,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord11",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            }
+          ],
+          "outputs": [
+            {
+              "id": "payloadWord0",
+              "binding": "payloadWord0",
+              "meaning": "Decoded plaintext storage word 0 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord1",
+              "binding": "payloadWord1",
+              "meaning": "Decoded plaintext storage word 1 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord2",
+              "binding": "payloadWord2",
+              "meaning": "Decoded plaintext storage word 2 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord3",
+              "binding": "payloadWord3",
+              "meaning": "Decoded plaintext storage word 3 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord4",
+              "binding": "payloadWord4",
+              "meaning": "Decoded plaintext storage word 4 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord5",
+              "binding": "payloadWord5",
+              "meaning": "Decoded plaintext storage word 5 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord6",
+              "binding": "payloadWord6",
+              "meaning": "Decoded plaintext storage word 6 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord7",
+              "binding": "payloadWord7",
+              "meaning": "Decoded plaintext storage word 7 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord8",
+              "binding": "payloadWord8",
+              "meaning": "Decoded plaintext storage word 8 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord9",
+              "binding": "payloadWord9",
+              "meaning": "Decoded plaintext storage word 9 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord10",
+              "binding": "payloadWord10",
+              "meaning": "Decoded plaintext storage word 10 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord11",
+              "binding": "payloadWord11",
+              "meaning": "Decoded plaintext storage word 11 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            }
+          ],
+          "phases": [
+            {
+              "id": "plaintext-access-start",
+              "trigger": "Host explicitly begins protected-record inspection",
+              "invocations": [
+                "decode"
+              ],
+              "scheduleStatus": "caller-declared",
+              "sourceOrderEvidence": "Original secure getter/setter calls decrypt before checksum/access and encode after; the separate host-facing phase boundary is declared, not a recovered total scheduler."
+            }
+          ],
+          "requiredServices": [
+            {
+              "id": "shared-record-owner",
+              "kind": "host-required",
+              "capability": "Stable same-instance record keys/payload backing; serialize calls and track plaintext/ciphertext phase.",
+              "executableInGraph": false
+            }
+          ],
+          "gaps": [
+            "This phase does not resolve shuffled substructure pointers or expose typed move/PP fields.",
+            "No checksum verification/recomputation, corruption flag handling, record allocation, party selection, battle logic or persistent save service.",
+            "Host must retain one record backing and correct representation phase across decode\u2192inspection/edit\u2192encode.",
+            "Checksum must be recomputed before encoding any payload edits; that executable step is still missing."
+          ],
+          "sourceRefs": [
+            "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+            "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+            "local/ir/packages/leafgreen.persistence.secure_record_decrypt/package.json",
+            "local/ir/packages/leafgreen.persistence.secure_record_decrypt/receipt.json"
+          ],
+          "qualificationScope": "Actual current-published package identity, typed bindings, state ownership and lowering validated. Existing exact original leaf native proof256vectors inherited unchanged. No whole-prefab native runtime or host lifecycle qualification. These retained codec graphs do not count as useful primary prefabs.",
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "packageIds": [
+            "leafgreen.persistence.secure_record_decrypt"
+          ],
+          "representationBefore": "ciphertext",
+          "representationAfter": "plaintext",
+          "canonicalBindingRule": "Bind this prefab to module leafgreen.creature-secure-record on the existing record. Adding its other phase must reuse all14slots, not create a second record instance.",
+          "sourceRootIdentity": {
+            "source_game": "pokemon-leafgreen-version",
+            "entry": "0803f930"
+          },
+          "defaultExpectedOutputs": {
+            "payloadWord0": 2488473183,
+            "payloadWord1": 2488473182,
+            "payloadWord2": 2488473169,
+            "payloadWord3": 2488473168,
+            "payloadWord4": 2488473171,
+            "payloadWord5": 2488473170,
+            "payloadWord6": 2488473173,
+            "payloadWord7": 2488473172,
+            "payloadWord8": 2488473175,
+            "payloadWord9": 2488473174,
+            "payloadWord10": 2488473161,
+            "payloadWord11": 2488473160
+          },
+          "defaultExpectedOutputScope": "Derived configuration preview from exact XOR algebra; no separate execution claim.",
+          "supportRecordIdentity": "leafgreen.creature-secure-record",
+          "primaryPrefab": false,
+          "publicationEligibility": "internal_support_only_not_primary_game_building_card",
+          "sourceEvidence": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+              "sha256": "fa831be10ed6e7ea95d4318a464a26d1560c30f8683ebcef32c8edbf7daeab1b"
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+              "sha256": "88fecc5266cef2abfd0b3d0a8c0172550443ff7accee1bc0c81a090b36382098"
+            },
+            {
+              "path": "local/ir/packages/leafgreen.persistence.secure_record_decrypt/package.json",
+              "sha256": "c19b2d7322fa267b8467516e0c8a80c2eb821643dd34d51df8aaaafffc5e5353"
+            },
+            {
+              "path": "local/ir/packages/leafgreen.persistence.secure_record_decrypt/receipt.json",
+              "sha256": "21e2542e700a10366f0a7009c8bb0556baee1f1e73197e03a2235dfce86dd502"
+            }
+          ]
+        },
+        {
+          "id": "leafgreen.secure-record.encode",
+          "moduleId": "leafgreen.creature-move-mutation",
+          "label": "Encode a protected creature record after inspection",
+          "path": "research/deep-extraction/resume/pokemon-leafgreen-version/prefab-pass/encode.assembly.json",
+          "sha256": "d5749b698cec30eb0a9b1faec8e0065fd3163bb1b37631cc87c348373671ec87",
+          "validation": "research/deep-extraction/resume/pokemon-leafgreen-version/prefab-pass/encode.validation.json",
+          "validationSha256": "8f9afda83d53abb4f1e7091052e59e99b7475fdf951fde37eedf1cf40f0558d2",
+          "inputs": [
+            {
+              "id": "recordKey0",
+              "label": "Record XOR key 0",
+              "storageType": "u32",
+              "default": 305419896,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "recordKey0",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "recordKey1",
+              "label": "Record XOR key 1",
+              "storageType": "u32",
+              "default": 2271560481,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "recordKey1",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord0",
+              "label": "Plaintext payload word 0",
+              "storageType": "u32",
+              "default": 2488473183,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord0",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord1",
+              "label": "Plaintext payload word 1",
+              "storageType": "u32",
+              "default": 2488473182,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord1",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord2",
+              "label": "Plaintext payload word 2",
+              "storageType": "u32",
+              "default": 2488473169,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord2",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord3",
+              "label": "Plaintext payload word 3",
+              "storageType": "u32",
+              "default": 2488473168,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord3",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord4",
+              "label": "Plaintext payload word 4",
+              "storageType": "u32",
+              "default": 2488473171,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord4",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord5",
+              "label": "Plaintext payload word 5",
+              "storageType": "u32",
+              "default": 2488473170,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord5",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord6",
+              "label": "Plaintext payload word 6",
+              "storageType": "u32",
+              "default": 2488473173,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord6",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord7",
+              "label": "Plaintext payload word 7",
+              "storageType": "u32",
+              "default": 2488473172,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord7",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord8",
+              "label": "Plaintext payload word 8",
+              "storageType": "u32",
+              "default": 2488473175,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord8",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord9",
+              "label": "Plaintext payload word 9",
+              "storageType": "u32",
+              "default": 2488473174,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord9",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord10",
+              "label": "Plaintext payload word 10",
+              "storageType": "u32",
+              "default": 2488473161,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord10",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            },
+            {
+              "id": "payloadWord11",
+              "label": "Plaintext payload word 11",
+              "storageType": "u32",
+              "default": 2488473160,
+              "domain": "0..4294967295 unsigned bitpatterns; no gameplay range or record validity inferred",
+              "binding": "payloadWord11",
+              "defaultScope": "Synthetic inspection example, not a valid caught-creature/save fixture."
+            }
+          ],
+          "outputs": [
+            {
+              "id": "payloadWord0",
+              "binding": "payloadWord0",
+              "meaning": "Encoded ciphertext storage word 0 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord1",
+              "binding": "payloadWord1",
+              "meaning": "Encoded ciphertext storage word 1 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord2",
+              "binding": "payloadWord2",
+              "meaning": "Encoded ciphertext storage word 2 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord3",
+              "binding": "payloadWord3",
+              "meaning": "Encoded ciphertext storage word 3 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord4",
+              "binding": "payloadWord4",
+              "meaning": "Encoded ciphertext storage word 4 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord5",
+              "binding": "payloadWord5",
+              "meaning": "Encoded ciphertext storage word 5 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord6",
+              "binding": "payloadWord6",
+              "meaning": "Encoded ciphertext storage word 6 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord7",
+              "binding": "payloadWord7",
+              "meaning": "Encoded ciphertext storage word 7 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord8",
+              "binding": "payloadWord8",
+              "meaning": "Encoded ciphertext storage word 8 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord9",
+              "binding": "payloadWord9",
+              "meaning": "Encoded ciphertext storage word 9 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord10",
+              "binding": "payloadWord10",
+              "meaning": "Encoded ciphertext storage word 10 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            },
+            {
+              "id": "payloadWord11",
+              "binding": "payloadWord11",
+              "meaning": "Encoded ciphertext storage word 11 after ordered XOR; logical move/PP/species meaning remains unresolved."
+            }
+          ],
+          "phases": [
+            {
+              "id": "plaintext-access-finish",
+              "trigger": "Host explicitly finishes plaintext inspection, or supplies separately validated/rechecksummed edited payload",
+              "invocations": [
+                "encode"
+              ],
+              "scheduleStatus": "caller-declared",
+              "sourceOrderEvidence": "Original secure getter/setter calls decrypt before checksum/access and encode after; the separate host-facing phase boundary is declared, not a recovered total scheduler."
+            }
+          ],
+          "requiredServices": [
+            {
+              "id": "shared-record-owner",
+              "kind": "host-required",
+              "capability": "Stable same-instance record keys/payload backing; serialize calls and track plaintext/ciphertext phase.",
+              "executableInGraph": false
+            }
+          ],
+          "gaps": [
+            "This phase does not resolve shuffled substructure pointers or expose typed move/PP fields.",
+            "No checksum verification/recomputation, corruption flag handling, record allocation, party selection, battle logic or persistent save service.",
+            "Host must retain one record backing and correct representation phase across decode\u2192inspection/edit\u2192encode.",
+            "Checksum must be recomputed before encoding any payload edits; that executable step is still missing."
+          ],
+          "sourceRefs": [
+            "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+            "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+            "local/ir/packages/leafgreen.persistence.secure_record_encrypt/package.json",
+            "local/ir/packages/leafgreen.persistence.secure_record_encrypt/receipt.json"
+          ],
+          "qualificationScope": "Actual current-published package identity, typed bindings, state ownership and lowering validated. Existing exact original leaf native proof256vectors inherited unchanged. No whole-prefab native runtime or host lifecycle qualification. These retained codec graphs do not count as useful primary prefabs.",
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "packageIds": [
+            "leafgreen.persistence.secure_record_encrypt"
+          ],
+          "representationBefore": "plaintext",
+          "representationAfter": "ciphertext",
+          "canonicalBindingRule": "Bind this prefab to module leafgreen.creature-secure-record on the existing record. Adding its other phase must reuse all14slots, not create a second record instance.",
+          "sourceRootIdentity": {
+            "source_game": "pokemon-leafgreen-version",
+            "entry": "0803f90c"
+          },
+          "defaultExpectedOutputs": {
+            "payloadWord0": 16909062,
+            "payloadWord1": 16909063,
+            "payloadWord2": 16909064,
+            "payloadWord3": 16909065,
+            "payloadWord4": 16909066,
+            "payloadWord5": 16909067,
+            "payloadWord6": 16909068,
+            "payloadWord7": 16909069,
+            "payloadWord8": 16909070,
+            "payloadWord9": 16909071,
+            "payloadWord10": 16909072,
+            "payloadWord11": 16909073
+          },
+          "defaultExpectedOutputScope": "Derived configuration preview from exact XOR algebra; no separate execution claim.",
+          "supportRecordIdentity": "leafgreen.creature-secure-record",
+          "primaryPrefab": false,
+          "publicationEligibility": "internal_support_only_not_primary_game_building_card",
+          "sourceEvidence": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+              "sha256": "fa831be10ed6e7ea95d4318a464a26d1560c30f8683ebcef32c8edbf7daeab1b"
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+              "sha256": "88fecc5266cef2abfd0b3d0a8c0172550443ff7accee1bc0c81a090b36382098"
+            },
+            {
+              "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/package.json",
+              "sha256": "8e04bb2fdf463f6872535b4df544e1a2c52b77eda2691e901f67e0109474be3d"
+            },
+            {
+              "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/receipt.json",
+              "sha256": "b55346e5c6720aaa52b262d726d84d00208d710ecb38027b5b8de817120c6bc5"
+            }
+          ]
+        }
+      ],
+      "sourceEvidence": [
+        {
+          "path": "research/deep-extraction/resume/pokemon-leafgreen-version/next-extraction/system.json",
+          "sha256": "fa831be10ed6e7ea95d4318a464a26d1560c30f8683ebcef32c8edbf7daeab1b"
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+          "sha256": "88fecc5266cef2abfd0b3d0a8c0172550443ff7accee1bc0c81a090b36382098"
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "leafgreen-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit;Python standard library;existingassembly validator",
+    "queueSeconds": null,
+    "validationSeconds": 0.005764167000000001,
+    "validationProcessSeconds": 0.068341125,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.0870925,
+    "beforeAfter": null,
+    "accounting": "Total includes graph construction/pins and two CLI invocations; validator stages nested in invocation processes. No new builds/native/JVM/CI. Full interactive analysis duration unavailable.",
+    "metadataVerificationSeconds": 0.0007923340000000004,
+    "schemaValidationSeconds": 0.0003001670000000005,
+    "productFilterMetadataSeconds": 0.0002040840000000002
+  },
+  "sourceIdentity": {
+    "romSha256": "2f978f635b9593f6ca26ec42481c53a6b39f6cddd894ad5c062c1419fac58825",
+    "packages": {
+      "decode": {
+        "id": "leafgreen.persistence.secure_record_decrypt",
+        "manifest": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_decrypt/package.json",
+          "sha256": "c19b2d7322fa267b8467516e0c8a80c2eb821643dd34d51df8aaaafffc5e5353"
+        },
+        "behavior": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_decrypt/l1.json",
+          "sha256": "d98653ca890a5f3f5b909110b5c312b6bc6520229c9368c1812455014a5b3cbc"
+        },
+        "receipt": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_decrypt/receipt.json",
+          "sha256": "21e2542e700a10366f0a7009c8bb0556baee1f1e73197e03a2235dfce86dd502"
+        },
+        "sourceRoot": {
+          "source_game": "pokemon-leafgreen-version",
+          "entry": "0803f930"
+        }
+      },
+      "encode": {
+        "id": "leafgreen.persistence.secure_record_encrypt",
+        "manifest": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/package.json",
+          "sha256": "8e04bb2fdf463f6872535b4df544e1a2c52b77eda2691e901f67e0109474be3d"
+        },
+        "behavior": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/l1.json",
+          "sha256": "3061c220f5b83972850015dea41d303c1a779ac0ab0cf2a43e3c7ca0dea75096"
+        },
+        "receipt": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/receipt.json",
+          "sha256": "b55346e5c6720aaa52b262d726d84d00208d710ecb38027b5b8de817120c6bc5"
+        },
+        "sourceRoot": {
+          "source_game": "pokemon-leafgreen-version",
+          "entry": "0803f90c"
+        }
+      }
+    }
+  },
+  "claims": {
+    "primaryPrefabCount": 0,
+    "readyCorePhaseCount": 0,
+    "internalSupportPublishedPackageCount": 2,
+    "internalSupportAssemblyValidatedCount": 2,
+    "newNativeQualificationCount": 0,
+    "wholeCoreLoopRecovered": false,
+    "sourceDerivedL2Complete": false,
+    "productFilter": "Standalone codec utilities are internal support only; no ready prefab quota."
+  },
+  "historicalSupportVerification": {
+    "schema": {
+      "path": "local/ir/fleet-next/pokemon-leafgreen-version/prefab-pass/schema-validation.json",
+      "sha256": "9e353983c649e71bd01bfdb46d3eb18eba8692803d5a1946106b962cde9fa86f"
+    },
+    "artifactBindings": {
+      "path": "local/ir/fleet-next/pokemon-leafgreen-version/prefab-pass/delivery-checks.json",
+      "sha256": "173cbae73e2fccaa038c8630c591c2523413ee70019c4086583e3f8705c0f140"
+    },
+    "actualAssemblyRuns": {
+      "path": "local/ir/fleet-next/pokemon-leafgreen-version/prefab-pass/assembly-checks.json",
+      "sha256": "5d5b865165dd583a0dfd92bc27c45782cf63c413ab4bf0a0374efbcd12c30b7d"
+    }
+  },
+  "productFilter": {
+    "primaryPrefabEligibility": "A coherent creature move acquisition/replacement phase with actual executable mutation/result consumer,not standalone codec utilities.",
+    "nextQualificationTarget": "Complete source record-access/checksum/PP/order closure for move insertion or chosen-slot replacement before exposing a primary ready card.",
+    "proofReruns": 0
+  }
+}

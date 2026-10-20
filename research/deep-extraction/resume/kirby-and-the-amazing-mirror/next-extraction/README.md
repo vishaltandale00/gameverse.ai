@@ -1,0 +1,17 @@
+# Executable extraction — actor pool activation and hop lifecycle
+
+The actor callback/state setter `0x0809f7d8` is now **automatically lifted from its own-ROM HighFunction and finitely native-qualified**. The larger pool eligibility → proximity activation → hop lifecycle remains incomplete. [system.json](system.json) describes source-backed L2 inputs, owned/reference state, events, services and call order; it does not claim an executable-qualified L2 subsystem. [manifest.json](manifest.json) pins current artifacts, failures, timings and next actions.
+
+Under coordinator permit EX017, one private copied-project export produced exact missing HighFunctions `0x0809f7d8`, `0x0803d368` and `0x08039430` in 3.444005334 seconds. The original project was verified unchanged; the permit was released immediately. Export outputs, logs, hashes and append-only queue packet are retained under `local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/`. The global queue was not edited.
+
+Nine bounded automatic lift attempts produced one successful unique target. The setter writes the original callback, timer, phase, flags and animation cursor fields. Its `short(-1)` phase parameter preserves the previous phase. The setter passed 512 native ROM-versus-generated comparisons in 0.241865833 seconds. A separate 512-comparison run, justified by the sentinel branch, passed 72 explicit expected-state cases covering `0xffff`, `0x1ffff`, `0xffffffff`, other phase values, real installed callback values and flag patterns in 0.205505959 seconds. These are finite synthetic fixtures, not live gameplay or full lifecycle qualification. Expected states are verification oracles only; they are not compiler input.
+
+Current ROM returnproof also proves the old roots' terminal stack-restored branches. Historical false CALLIND tail diagnostics therefore no longer justify re-exporting those roots. Fresh executable failures instead are:
+
+- Eligibility `0x08023b14`, init `0x08023a6c`, launch `0x08024fe4` and phase entry `0x08023c68`: nested `actor+0xb0` configuration reference remains unsupported, even with the setter L1 linked.
+- Target selection `0x0803d368`: bounded canonical pool access and alias-preserving returned EntityRef remain unsupported. New source analysis resolves canonical pool base `0x02020ee0`, stride `0x1a8`, key offset `0x60` and X/Y offsets `0x40/0x44`. Capacity and lifetime still require proof. The selector chooses a nearest eligible same-key target with a fallback policy; detached copies would be incorrect.
+- Proximity predicate `0x08039430`: seven-argument ABI includes stack arguments; current lift fails `unresolved scalar argument v1`. No guessed four-register signature was applied.
+
+Exact traces and reproduction commands were sent to `/root/compiler_shared_state`. Existing artifacts suffice for the next compiler fixes; do not re-export the same three dependencies. Terrain/animation writers, scheduler timing, allocator/lifetime, persistence producer and the missing `0x08025040` function boundary remain open after those fixes.
+
+Final artifact validation took 0.018152041 seconds. Export and native receipt stages are nested; do not sum them with enclosing wall times. Interactive analysis/queue time and before/after build-latency measurements are unavailable. No new dependency, generated game/ROM/template/demo, global compiler edit, catalog edit or shared status edit occurred. All games remain partial; Mario remains the global depth priority.

@@ -1,0 +1,215 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "order_exchange": {
+      "package_id": "emerald.battle.paired_order_swap",
+      "package_sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8",
+      "behavior_sha256": "a3b918edf0815c6ae5ccbbdd1f501129d1b370f0518598d6d88b88aec79829bc",
+      "fields": [],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          }
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          }
+        }
+      ],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "collection_0",
+          "storage_type": "u8",
+          "count": 4,
+          "provenance": [
+            "op4",
+            "op7",
+            "op10",
+            "op13"
+          ],
+          "meaning": {
+            "quantity": "action_code",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "battle.turn_order_position",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+              "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+            ],
+            "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+          }
+        },
+        {
+          "name": "collection_1",
+          "storage_type": "u8",
+          "count": 4,
+          "provenance": [
+            "op16",
+            "op19",
+            "op22",
+            "op25"
+          ],
+          "meaning": {
+            "quantity": "battler_handle",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "battle.turn_order_position",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+              "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+            ],
+            "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+          }
+        }
+      ],
+      "effects": {
+        "reads": [],
+        "writes": [],
+        "collection_reads": [
+          "collection_0",
+          "collection_1"
+        ],
+        "collection_writes": [
+          "collection_0",
+          "collection_1"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "shared_paired_order_collections",
+        "clock": "explicit_invocation",
+        "phase": "caller_owned",
+        "ordering": "Retain recovered body order; system contract retains required inter-call ordering."
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Finite native subset qualification; whole turn-order/weather/scheduler system remains incomplete.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "3118a833caf8c7ca697855bf8c7df42263c75575cfd1aec53b4941157dcb2199",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "order_exchange": {
+        "package_id": "emerald.battle.paired_order_swap",
+        "behavior_sha256": "a3b918edf0815c6ae5ccbbdd1f501129d1b370f0518598d6d88b88aec79829bc",
+        "collection_bindings": {
+          "collection_0": "actions_by_turn_order",
+          "collection_1": "battlers_by_turn_order"
+        },
+        "package_sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8"
+      }
+    },
+    "state": {
+      "actions_by_turn_order": {
+        "storage_type": "u8",
+        "count": 4,
+        "owner": "external",
+        "shared": true,
+        "semantic_type": {
+          "quantity": "action_code",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "battle.turn_order_position",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+            "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+          ],
+          "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+        }
+      },
+      "battlers_by_turn_order": {
+        "storage_type": "u8",
+        "count": 4,
+        "owner": "external",
+        "shared": true,
+        "semantic_type": {
+          "quantity": "battler_handle",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "battle.turn_order_position",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+            "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/0803cedc/l0.json"
+          ],
+          "alias_rule": "Both collections are parallel lanes and must be swapped in the same invocation; same-position arguments alias intentionally."
+        }
+      }
+    },
+    "initialize": {
+      "actions_by_turn_order": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "battlers_by_turn_order": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "invocations": [
+      {
+        "component": "order_exchange",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 1
+          }
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "order_exchange"
+  ],
+  "statement_sha256": "25e40d56d22417078fc580ec4159c3a63c66e1c0747028b01398541cc9e86a7c",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.002707000000000001
+}

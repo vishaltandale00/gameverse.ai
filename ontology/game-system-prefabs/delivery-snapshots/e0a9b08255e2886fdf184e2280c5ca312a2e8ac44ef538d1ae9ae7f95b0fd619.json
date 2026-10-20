@@ -1,0 +1,624 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "castlevania-aria-of-sorrow",
+  "sourceSystemIds": [
+    "aria.soul_inventory_to_cast_lifecycle"
+  ],
+  "blueprintIds": [
+    "exploration-progression",
+    "combat-encounter"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Explore rooms, defeat enemies, collect souls and make a newly acquired soul available for later equipped casting. This delivery supplies only owned inventory and activation phases.",
+    "phases": [
+      {
+        "id": "explore",
+        "label": "Traverse rooms and reach enemies/pickups",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080446d4.json"
+        ],
+        "requiredServices": [
+          "original player movement/terrain/room scheduler"
+        ],
+        "gaps": [
+          "Full original player/room loop not closed by this packet"
+        ]
+      },
+      {
+        "id": "attack",
+        "label": "Cast an equipped soul and own its projectile",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08034624.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08026008.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08025f70.json"
+        ],
+        "requiredServices": [
+          "allocator08000da0",
+          "collision0804277c",
+          "viewport0806d128",
+          "world08001a00/08001f3c",
+          "affine0803e654/0803e6bc"
+        ],
+        "gaps": [
+          "descriptor return0802d284",
+          "cap context0802d2bc",
+          "eight-slot scan0802d208",
+          "shared parent/count/slot lifecycle"
+        ]
+      },
+      {
+        "id": "defeat",
+        "label": "Commit one enemy defeat and choose reward",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080683bc.json"
+        ],
+        "requiredServices": [
+          "RNG08000a90",
+          "equipment0804b314",
+          "level08033cac",
+          "drop allocators"
+        ],
+        "gaps": [
+          "Actual lethal caller/AI/damage closure remains external",
+          "Historical reward C proof is oracle only, not current portable package"
+        ]
+      },
+      {
+        "id": "pickup",
+        "label": "Spawn/homing/contact/claim admission",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/0804459c.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080446d4.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080441f8.json"
+        ],
+        "requiredServices": [
+          "entity pool08000da0",
+          "collision080421ac",
+          "animation0803f17c"
+        ],
+        "gaps": [
+          "full claim category switch and persistent marker logic unresolved",
+          "rare soul native acquisition remains historically unobserved"
+        ]
+      },
+      {
+        "id": "ownership",
+        "label": "Query and acquire soul quantity",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "aria.category3.acquire_observe",
+          "aria.category3.new_ability_grant"
+        ],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/0803278c.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08032588.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Full pickup/admission and save/equip consumers remain external."
+        ]
+      },
+      {
+        "id": "benefit",
+        "label": "Activate new category3 ability; refresh/equip",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "aria.category3.new_ability_grant"
+        ],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08032adc.json",
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080441f8.json"
+        ],
+        "requiredServices": [
+          "progress08032dbc",
+          "autoequip08049e64",
+          "notification0800e708"
+        ],
+        "gaps": [
+          "Only source ability-enable bitset commit is executable here; progress/autoequip and real cast consumers remain host dependencies."
+        ]
+      },
+      {
+        "id": "persist",
+        "label": "Retain claim/inventory/equipped ability across save/return",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080441f8.json"
+        ],
+        "requiredServices": [
+          "native persistence/write/read path"
+        ],
+        "gaps": [
+          "Full durable save/reload/claim transaction not closed"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "explore",
+        "to": "attack",
+        "kind": "host-required",
+        "scope": "same original actor/mode/input/room state; no controller synthesized"
+      },
+      {
+        "from": "attack",
+        "to": "defeat",
+        "kind": "host-required",
+        "scope": "original contact/damage/lethal transition must admit reward"
+      },
+      {
+        "from": "defeat",
+        "to": "pickup",
+        "kind": "source-call",
+        "scope": "080683bc calls0804459c when prioritized soul RNG succeeds; requesting drop not acquisition"
+      },
+      {
+        "from": "pickup",
+        "to": "ownership",
+        "kind": "source-call",
+        "scope": "080441f8 queries count and commits0803278c after actual collision admission"
+      },
+      {
+        "from": "pickup",
+        "to": "benefit",
+        "kind": "source-call",
+        "scope": "newcategory3 branch enables08032adc BEFORE acquisition at080444c2"
+      },
+      {
+        "from": "benefit",
+        "to": "ownership",
+        "kind": "source-call",
+        "scope": "08032adc then0803278c at080444e6 in admitted source branch"
+      },
+      {
+        "from": "ownership",
+        "to": "benefit",
+        "kind": "host-required",
+        "scope": "progress/notification/autoequip consumers occur after acquisition"
+      },
+      {
+        "from": "benefit",
+        "to": "attack",
+        "kind": "shared-state",
+        "scope": "equipped selected soul and enabled source state must feed actual legalcast guard"
+      },
+      {
+        "from": "ownership",
+        "to": "persist",
+        "kind": "host-required",
+        "scope": "claim marker/inventory/equip state persistence not a detached bank save"
+      }
+    ],
+    "missingForCoreGame": [
+      "080441f8 complete category/claim callback",
+      "08032dbc progress update",
+      "08049e64 autoequip",
+      "08034624 legalcast dependency closure",
+      "08026008/08025f70 shared effect lifecycle",
+      "original player/terrain/room scheduler",
+      "native save/return/reload with claim markers"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "aria.soul_claim_and_enable_bundle",
+      "label": "Soul ownership and source ability activation",
+      "moduleId": "aria.category3.soul_claim_inventory_and_enable",
+      "sourceGame": "castlevania-aria-of-sorrow",
+      "sourceSystemId": "aria.soul_inventory_to_cast_lifecycle",
+      "sourceContractRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+      "planIds": [
+        "exploration-progression"
+      ],
+      "packageIds": [
+        "aria.progress.category3_acquire",
+        "aria.progress.category3_count",
+        "aria.progress.category3_enable"
+      ],
+      "availability": "published-subset",
+      "scope": "Source inventory transaction plus category3 newability enable bitsetter, owned-count queries and exact shared bank persistence. Original pickup/equip/cast is explicitly outside.",
+      "gaps": [
+        "Source admission, actor/world scheduler, UI/progress/equip consumers, cast and durability remain open."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/build-receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "One campaign inventory/enable module reused by all its role facets",
+        "fields": [
+          "soul_bank:u8[4]",
+          "ability_flags:u8",
+          "owned_before:u8",
+          "owned_after:u8"
+        ],
+        "aliasRule": "Same4byte category3 region backs both source banks. Enable flags are adjacent distinct state. Acquire/query share inventory, facet changes do not create copies."
+      },
+      "roleFacets": [
+        {
+          "roleId": "ownership",
+          "capability": "inventory-transaction",
+          "status": "published-subset",
+          "scope": "Count/acquire/conditionaladjust over canonical source bank; observed result retained.",
+          "evidence": [
+            "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json"
+          ]
+        },
+        {
+          "roleId": "benefit",
+          "capability": "progression-capability",
+          "status": "published-subset",
+          "scope": "Only source newcategory3 ability activation bit; does not provide autoequip, input admission or executable cast.",
+          "evidence": [
+            "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "aria.category3.new_ability_grant",
+        "label": "New soul activation \u2192 acquisition \u2192 owned quantity",
+        "assemblyRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.assembly.json",
+        "validationRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/registration-v2/delivery.json",
+        "packageIds": [
+          "aria.progress.category3_acquire",
+          "aria.progress.category3_count",
+          "aria.progress.category3_enable"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      },
+      "recoveredAssemblies": [
+        {
+          "id": "aria.category3.acquire_observe",
+          "label": "Acquire soul \u2192 inspect owned quantity",
+          "assemblyRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/acquire-observe.assembly.json",
+          "validationRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/acquire-observe.validation.json",
+          "descriptorRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/registration-v2/delivery.json",
+          "packageIds": [
+            "aria.progress.category3_acquire",
+            "aria.progress.category3_count"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        },
+        {
+          "id": "aria.category3.new_ability_grant",
+          "label": "New soul activation \u2192 acquisition \u2192 owned quantity",
+          "assemblyRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.assembly.json",
+          "validationRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.validation.json",
+          "descriptorRef": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/registration-v2/delivery.json",
+          "packageIds": [
+            "aria.progress.category3_acquire",
+            "aria.progress.category3_count",
+            "aria.progress.category3_enable"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "aria.category3.acquire_observe",
+      "moduleId": "aria.category3.soul_claim_inventory_and_enable",
+      "label": "Acquire soul \u2192 inspect owned quantity",
+      "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/acquire-observe.assembly.json",
+      "sha256": "279a5475a540b56396903f69a25e5b92767b8ac2f59c0cd1988f3c1e7d1ead3b",
+      "validation": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/acquire-observe.validation.json",
+      "validationSha256": "e25ae313b95a3519cb4c4360e0f44e0d01ee8e14b76150b49eb808abefdbeb2c",
+      "inputs": [
+        {
+          "id": "soul_index",
+          "label": "Source soul index",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "0..7; graph pins0. Revalidate graph after changing a typed invocation constant.",
+          "binding": "query.param_1, acquire.param_1"
+        },
+        {
+          "id": "acquisition_delta",
+          "label": "Source count delta",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "Native signed delta bitpattern; prefab fixes+1; no arbitrary dynamic argument claimed.",
+          "binding": "acquire.param_2"
+        },
+        {
+          "id": "inventory",
+          "label": "Canonical source inventory",
+          "storageType": "u8[4]",
+          "default": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "Packed nibbles; both source category3 bank references alias. Caller-supplied gameplay state must satisfy branch admission.",
+          "binding": "state.soul_bank"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "owned_after",
+          "binding": "state.owned_after",
+          "meaning": "Exact published u8 owned-count result (source zero-extends native r0; range0..30), after mutation; category3 alias doubles same nibble (default2)."
+        },
+        {
+          "id": "inventory",
+          "binding": "state.soul_bank",
+          "meaning": "Same canonical4byte packed inventory retaining neighbors."
+        }
+      ],
+      "phases": [
+        {
+          "id": "acquire",
+          "trigger": "Explicit legal category3 acquisition transaction from external source caller.",
+          "invocations": [
+            "acquire"
+          ],
+          "scheduleStatus": "caller-declared"
+        },
+        {
+          "id": "observe",
+          "trigger": "Explicit host request to inspect resulting ownership.",
+          "invocations": [
+            "query"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "External legal acquisition event",
+        "Canonical campaign inventory import/commit"
+      ],
+      "gaps": [
+        "Original pickup/collision/claimed-marker dispatcher080441f8 not emitted.",
+        "Progress08032dbc, notification0800e708, autoequip08049e64, cast08034624 and full effect pool lifecycle remain source-only.",
+        "Graph/host checks do not certify composed native parity or a complete original game."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/core-loop-map.json",
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-extraction/l2-subsystem.json"
+      ],
+      "qualificationScope": "Actual assembly.py/Composer/lowering receipt plus narrow compiled host connection check; individual native receipts reused. No whole-root080441f8 or composed native parity claim.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "currentPins": {
+        "acquire": {
+          "package_id": "aria.progress.category3_acquire",
+          "package_sha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+          "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7",
+          "bindings": {},
+          "collection_bindings": {
+            "collection_0": "soul_bank"
+          }
+        },
+        "query": {
+          "package_id": "aria.progress.category3_count",
+          "package_sha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+          "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317",
+          "bindings": {},
+          "collection_bindings": {
+            "collection_0": "soul_bank"
+          }
+        }
+      },
+      "core": {
+        "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/acquire-observe.core.c",
+        "sha256": "4ce0713a2c29211cd5788b9146527762658965543bc1e27da5c8af640e6ad216"
+      },
+      "hostExecution": {
+        "exit_code": 0,
+        "stdout": "owned_after=2 bank0=1\n",
+        "stderr": "",
+        "wall_s": 0.11364600000000001
+      }
+    },
+    {
+      "id": "aria.category3.new_ability_grant",
+      "moduleId": "aria.category3.soul_claim_inventory_and_enable",
+      "label": "New soul activation \u2192 acquisition \u2192 owned quantity",
+      "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.assembly.json",
+      "sha256": "98b652d3ea4a68aef87b49ea9b98cfaf1ff6df127cc3317437e94d4b8413465f",
+      "validation": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.validation.json",
+      "validationSha256": "132cf9f3ef1fa8ab7dbec9185e633b5ed0a9b4b81d91fddaf46962f9814e5f23",
+      "inputs": [
+        {
+          "id": "soul_index",
+          "label": "Source soul index",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "0..7; graph pins0. Revalidate graph after changing a typed invocation constant.",
+          "binding": "query.param_1, acquire.param_1, enable.param_0"
+        },
+        {
+          "id": "acquisition_delta",
+          "label": "Source count delta",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "Native signed delta bitpattern; prefab fixes+1; no arbitrary dynamic argument claimed.",
+          "binding": "acquire.param_2"
+        },
+        {
+          "id": "inventory",
+          "label": "Canonical source inventory",
+          "storageType": "u8[4]",
+          "default": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "Packed nibbles; both source category3 bank references alias. Caller-supplied gameplay state must satisfy branch admission.",
+          "binding": "state.soul_bank"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "owned_after",
+          "binding": "state.owned_after",
+          "meaning": "Exact published u8 owned-count result (source zero-extends native r0; range0..30), after mutation; category3 alias doubles same nibble (default2)."
+        },
+        {
+          "id": "inventory",
+          "binding": "state.soul_bank",
+          "meaning": "Same canonical4byte packed inventory retaining neighbors."
+        },
+        {
+          "id": "owned_before",
+          "binding": "state.owned_before",
+          "meaning": "Original ownership query before caller-selected newability branch; must0 for this phase."
+        },
+        {
+          "id": "ability_flags",
+          "binding": "state.ability_flags",
+          "meaning": "Source category3 enable bitset with selected bit set; not proof that cast/equip consumer executes."
+        }
+      ],
+      "phases": [
+        {
+          "id": "admission_query",
+          "trigger": "Legal category3 pickup admitted externally; require actual preownership0 before selecting new branch.",
+          "invocations": [
+            "query"
+          ],
+          "scheduleStatus": "source-proven"
+        },
+        {
+          "id": "new_ability_commit",
+          "trigger": "Host has selected original newcategory3 branch; omitted presentation services remain explicit.",
+          "invocations": [
+            "enable",
+            "acquire"
+          ],
+          "scheduleStatus": "source-proven"
+        },
+        {
+          "id": "observe",
+          "trigger": "Explicit host request to inspect resulting ownership.",
+          "invocations": [
+            "query"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "External legal pickup/category/index admission and claimed-marker ownership",
+        "Canonical campaign state import/commit",
+        "Source newownership branch admission and omitted source UI/progress service policy"
+      ],
+      "gaps": [
+        "Original pickup/collision/claimed-marker dispatcher080441f8 not emitted.",
+        "Progress08032dbc, notification0800e708, autoequip08049e64, cast08034624 and full effect pool lifecycle remain source-only.",
+        "Graph/host checks do not certify composed native parity or a complete original game.",
+        "Newability branch is admitted externally: do not execute on arbitrary already-owned state; count0 gate is caller precondition, not synthesized branch."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/core-loop-map.json",
+        "research/deep-extraction/resume/castlevania-aria-of-sorrow/next-extraction/l2-subsystem.json"
+      ],
+      "qualificationScope": "Actual assembly.py/Composer/lowering receipt plus narrow compiled host connection check; individual native receipts reused. No whole-root080441f8 or composed native parity claim.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "currentPins": {
+        "acquire": {
+          "package_id": "aria.progress.category3_acquire",
+          "package_sha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+          "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7",
+          "bindings": {},
+          "collection_bindings": {
+            "collection_0": "soul_bank"
+          }
+        },
+        "query": {
+          "package_id": "aria.progress.category3_count",
+          "package_sha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+          "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317",
+          "bindings": {},
+          "collection_bindings": {
+            "collection_0": "soul_bank"
+          }
+        },
+        "enable": {
+          "package_id": "aria.progress.category3_enable",
+          "package_sha256": "b7ba974c146c99dabf9153410e8b0919f1d8eda6401979e5bf1c6d00573aa43b",
+          "behavior_sha256": "0931a10b72208d54eabbb0f4d3eb1616c126458ac274e872cb97b9ebfe9967bf",
+          "bindings": {
+            "field_0": {
+              "slot": "ability_flags"
+            }
+          },
+          "collection_bindings": {}
+        }
+      },
+      "core": {
+        "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/new-ability-grant.core.c",
+        "sha256": "e6ba42b2167a34badc6e05b4667afd67247055e3f97ff449a8a23264abe17b64"
+      },
+      "hostExecution": {
+        "exit_code": 0,
+        "stdout": "owned_after=2 bank0=1 owned_before=0 ability_flags=1\n",
+        "stderr": "",
+        "wall_s": 0.04556791699999996
+      }
+    }
+  ],
+  "timing": {
+    "runId": "aria-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.011392917000000013,
+    "buildSeconds": 0.12286704200000002,
+    "nativeSeconds": null,
+    "totalSeconds": 0.303662083,
+    "beforeAfter": null,
+    "accounting": "Actual graph/Composer/lowering +hostcompile/check run total; validation/build/host stages nested. New enable native proof separately pinned, prior count/acquire native proof reused; no repeated native campaign. Whole interactive elapsed unavailable."
+  },
+  "sourceCompleteness": {
+    "inventory_root_0803278c": "Executable finite-qualified root+count/adjust dependencies; not every possible input combination.",
+    "enable_08032adc": "Sourcecomplete low-level bitset routine for declared0..7index/enable0..1 domains, finite qualification.",
+    "pickup_root_080441f8": "Source-backed newcategory3 call order only; full dispatch/markers/services not executable.",
+    "core_game": "Incomplete; source-only and host dependencies explicit."
+  },
+  "buildReceipt": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/build-receipt.json",
+    "sha256": "9bcf040bd5d3f93e095bb527a324c866d2167329ad33219026708cc0f0642ba1"
+  },
+  "smallestGapProof": {
+    "path": "local/ir/fleet-next/castlevania-aria-of-sorrow/prefab-pass/ability-enable-expected/execution.json",
+    "note": "Corrected expected scalarfixture target; first attempt retained parity-only because it used emptycollection expectations."
+  },
+  "resolverSnapshot": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/resolver-snapshot.json",
+    "sha256": "354c727836d8107a76f7772bd5dc2945b05d70834fcbd3bfa599cbf4c3408907"
+  },
+  "retainedFailures": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/initial-result-width-failure",
+    "reason": "Initial observation slot assumed u32; exact published L1 return is u8 with source-native zero-extension proof. Corrected graph to exactu8; no source widening or native rerun."
+  },
+  "registrationRevision": {
+    "id": "aria-prefab-registration-v2",
+    "supersedes": {
+      "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/delivery.json",
+      "sha256": "d9d1a46e03e85ecba1b8a91d569e3c6a05dd3c029ac7380859964042d42b146b"
+    },
+    "scope": "Metadata only: both accepted prefab IDs described by recoveredAssemblies[] on one canonical bundle/module; no graph,code,proof or native changes.",
+    "acceptance": "Pending explicit game_system_experience --replace registration; original registered delivery remains untouched."
+  }
+}

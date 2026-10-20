@@ -1,0 +1,9 @@
+# Published actor-step output graph
+
+`actor-step.assembly.json` binds the actual published `mlss.motion.actor_step` package and captures source X/plane-Y output slots after three explicitly scheduled invocations of **one** component instance. Behavior SHA256 is `a2b9fcbda10598912826c0e5d001af4a7e1102875823228ac2e40c14d8614286`. This is the real original gated actor phase, not a reset wrapper or independent private actor copies.
+
+The source actor is active, path-phase flags are clear, and verticalcounter is fixed to inactive -1. XY increments and coordinates use reviewed1/256 source-projected pixel units; increments apply per explicit actor-phase invocation. Private vertical fields stay opaque/default and are inert under the counter precondition. Neither keyboard/AI control nor a universal frame cadence is supplied.
+
+Actual assembly/Composer admission passes in0.012174417s. The compiled Composer host scaffold checks80 gating/sign/wrap cases across240 calls and observes repeated updates of the same state. Host compile took0.053433542s and execution0.054847625s. Default source-unit trace is X0→256→512→768 and planeY1024→896→768→640. These graph connections are new host checks; the published1,024 native source comparisons are retained without rerunning them.
+
+`delivery.json` supplies defaults, observable outputs, callable phase, canonical module identity and exact pins. `prefab-allowlist.json` contains the narrow source-phase candidate for integration owners. It extends canonical `mlss.motion.lifecycle` rather than duplicating actors across role facets. The reset-only support phase remains internal. Full paired controller, input/terrain producers, source scheduler references/switches, actor initialization and RPG loops remain partial. No generated game/ROM or global/site edit occurred.

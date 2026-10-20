@@ -56,9 +56,9 @@
   "pieces": [
     {
       "id": "super-mario-advance-2-super-mario-world:movement_view",
-      "label": "Spatial framing and controller candidate",
+      "label": "Charged run, spin jumps and cape motion",
       "slot": "movement_view",
-      "effect": "Observed framing: Side-view stage. Unverified extension: An overworld route map is model-prior knowledge; neither retained frame shows one. Candidate controller rules: Use running jumps, power-ups and a rideable companion; alternate exits change the map route.",
+      "effect": "Run and skid into speed-sensitive normal or spin jumps; character/form/riding context controls gravity and cape motion. Native movement rules now compile through the component IR into the full original GBA game.",
       "flavor": "A branching platform world combines familiar movement with a rideable partner.",
       "knobs": [
         {
@@ -72,16 +72,32 @@
           "status": "design_parameter_not_extracted_value"
         }
       ],
-      "component_refs": [],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance-2-super-mario-world",
+          "component_id": "charged_run_and_normal_spin_jump"
+        },
+        {
+          "game_id": "super-mario-advance-2-super-mario-world",
+          "component_id": "gravity_and_cape_flight_policy"
+        },
+        {
+          "game_id": "super-mario-advance-2-super-mario-world",
+          "component_id": "split_fixed_point_position_integration"
+        }
+      ],
       "requires": [
-        "world coordinates",
-        "collision or terrain rules",
-        "input semantics"
+        "Side-view world coordinates and native unit conversion",
+        "Explicit collision/contact producer",
+        "Character/form/riding context and immutable coefficient tables",
+        "Single movement writer and preserved frame phases"
       ],
       "exposes": [
-        "position",
-        "facing",
-        "grounded or traversal state"
+        "Position/velocity/facing",
+        "Run charge",
+        "Normal/spin jump state",
+        "Cape traversal state",
+        "Ordered sound and ground-effect events"
       ],
       "conflicts": [
         {
@@ -96,23 +112,94 @@
       ],
       "evidence": [
         {
-          "kind": "capture_contact_sheet_inspection",
-          "refs": [
-            "local/captures-experiments/20261016-current-scripts/super-mario-advance-2-super-mario-world/gameplay/keyframes/f002378_scene.png",
-            "local/captures-experiments/20261016-current-scripts/super-mario-advance-2-super-mario-world/gameplay/keyframes/f005373_scene.png"
-          ],
-          "confidence": 0.85,
-          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          "kind": "static_signature",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json",
+          "confidence": 0.98,
+          "scope": "11 own-ROM Ghidra functions normalized with explicit context/ABI and exact coefficient-window hash; indirect-tail warnings instruction-reviewed as saved-LR returns. No downloaded source."
         },
         {
-          "kind": "model_prior_unverified",
-          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
-          "confidence": 0.35,
-          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-motion-receipt.json",
+          "confidence": 0.98,
+          "scope": "6144 finite scenarios compare original ROM Thumb, pure C and emitted ARM7TDMI native adapter; full player/input/scene/engine/map/profile objects and ordered sound ports agree. Branch coverage is finite, not a whole-state proof."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json",
+          "confidence": 0.99,
+          "scope": "Shared IR produced full native ROM with three noarg movement entry replacements. Same private Yoshi-house checkpoint,117 real frames with run/normal-jump/spin-jump witnesses; every sampled full player hash and rendered frame matched stock. Natural cape/riding/Luigi behavior remains unqualified."
         }
       ],
-      "status": "candidate_unverified",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "status": "source_supported_partial",
+      "assembly_status": "Native source-parity ROM qualified for ordinary run/normal/spin jumps. Cross-game frame/contact/units adapter still required."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world:actors_ai",
+      "label": "Spin attacks and reward chains",
+      "slot": "combat",
+      "effect": "A spinning top hit destroys an accepted enemy, gives a small bounce and scatters fragments; chained hits advance rewards and lives through a bounded native reward pool.",
+      "flavor": "A decisive spinning stomp with escalating rewards.",
+      "knobs": [
+        {
+          "name": "bounce",
+          "meaning": "Character/riding/input-sensitive native bounce; exact tables recovered.",
+          "status": "source_supported_partial"
+        },
+        {
+          "name": "chain rewards",
+          "meaning": "Native wrapping chain and reward-pool semantics; transfer requires explicit scoring/life authority.",
+          "status": "source_supported_partial"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance-2-super-mario-world",
+          "component_id": "spin_stomp_particles_and_chain_rewards"
+        }
+      ],
+      "requires": [
+        "Accepted spin contact",
+        "Original100-byte actor/native world ABI or explicit adapter",
+        "Particle/reward pool and score/life ownership"
+      ],
+      "exposes": [
+        "Enemy terminal timer",
+        "Player bounce",
+        "Impact particles",
+        "Chained reward and life changes"
+      ],
+      "conflicts": [
+        {
+          "when": "A donor already writes player velocity or enemy death/rewards in the same contact phase.",
+          "issue": "One stomp could double-bounce,kill twice or award twice.",
+          "bridge": "Declare one accepted-impact writer and explicit event/state conversion."
+        }
+      ],
+      "bridge_options": [
+        "Adapt native accepted-impact context to target collision and actor lifecycle; keep one reward owner."
+      ],
+      "evidence": [
+        {
+          "kind": "static_signature",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-lift-evidence.json",
+          "confidence": 0.98,
+          "scope": "Own-ROM ten-function closure, exact code/table hashes; native-review transcript records saved-LR returns and correct fc0c r0 actor/d804 result ABI. Original accepted contact eligibility remains upstream."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json",
+          "confidence": 0.98,
+          "scope": "4096 finite original-ROM/C/emitted-native comparisons cover actor/player/world/profile/engine,particle/reward slots,wrapping chains,character/riding/input and score/life effects."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-gameplay-receipt.json",
+          "confidence": 0.99,
+          "scope": "Actual first-stage enemy native type0xbd spin-destroyed in stock and shared-IR generated game; state8->4,timer31,bounce-8,chain0->1; all sampled player/enemy/scene/engine/profile states and rendered frames equal over52 natural frames."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Native spin-response source-parity cartridge qualified on natural first enemy. Contact eligibility and general ecology remain host owned."
     },
     {
       "id": "super-mario-advance-2-super-mario-world:progression",
@@ -446,16 +533,20 @@
     ]
   },
   "coverage": {
-    "status": "partial",
-    "depth": "scene_and_prior_only",
-    "canonical_component_count": 0,
-    "canonical_facets": [],
-    "source_supported_piece_count": 0,
+    "status": "partial_source_supported",
+    "depth": "Native movement and accepted spin/combat/reward closure with natural generated-ROM gameplay parity; remaining systems explicit",
+    "canonical_component_count": 4,
+    "canonical_facets": [
+      "movement_physics",
+      "mechanics"
+    ],
+    "source_supported_piece_count": 2,
     "missing": [
-      "Player-facing movement, combat and progression source semantics; helpers do not establish these",
-      "Complete plot/event dependency graph",
-      "Calibrated user skill and strategy evidence",
-      "Full asset-to-source/address reuse catalogue"
+      "Full terrain collision",
+      "Enemy contacts/AI/combat",
+      "Form acquisition/projectiles and riding system",
+      "Campaign progression and story beats",
+      "Natural cape/Luigi witnesses"
     ],
     "granular_records_not_summarized": [],
     "not_claimed": [
@@ -463,15 +554,915 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:51:30.882500+00:00",
+      "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+      "status": "ok",
+      "function_records": 2905,
+      "pseudo_c_generated": 2905,
+      "process_wall_s": 25.1,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+      "export_sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/summary.json",
+      "summary_sha256": "91005df97b0301b52d37b1ac3a1748e5c628dc6ae4486b693f48b78a076e2ad4",
+      "warning_function_count": 2640,
+      "unknown_register_function_count": 18,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x0800044c",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "KEYCNT"
+          ]
+        },
+        {
+          "entry": "0x08000578",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2PA",
+            "BG2PB",
+            "BG2PC",
+            "BG2VOFS",
+            "BG2X",
+            "BG2X+2",
+            "BG2Y",
+            "BG2Y+2",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "IF",
+            "MOSAIC",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x080010d6",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x08001320",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDCNT",
+            "DISPSTAT",
+            "IF",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V"
+          ]
+        },
+        {
+          "entry": "0x080014bc",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x080015a4",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080015d8",
+          "io_ref": [
+            "BLDCNT",
+            "DISPSTAT",
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08002c90",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08002fe4",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08003e90",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0800491c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08004d70",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08004f34",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT"
+          ]
+        },
+        {
+          "entry": "0x080051c8",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT"
+          ]
+        },
+        {
+          "entry": "0x0800566c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080056ac",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080057b0",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08007124",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080072a8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08007330",
+          "io_ref": [
+            "DMA3CNT_L",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08008434",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0800a1c0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800ae88",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0800b878",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0800c204",
+          "io_ref": [
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x080135d8",
+          "io_ref": [
+            "BG0CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080137cc",
+          "io_ref": [
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08014a88",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x08027c70",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080283b0",
+          "io_ref": [
+            "BG1HOFS"
+          ]
+        },
+        {
+          "entry": "0x08058590",
+          "io_ref": [
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08070adc",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x08071fb8",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x080724e0",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT"
+          ]
+        },
+        {
+          "entry": "0x08072718",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0807299c",
+          "io_ref": [
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x08073420",
+          "io_ref": [
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0807a7ac",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x0807c318",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "IE",
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0807e1f4",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0807e484",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0807e54c",
+          "io_ref": [
+            "IE",
+            "IF",
+            "SIOCNT",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0807e6bc",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x0807e838",
+          "io_ref": [
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0807e8a0",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0807e904",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x0807eae0",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0807eb28",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0",
+            "SIOMULTI3"
+          ]
+        },
+        {
+          "entry": "0x0807eef4",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0807f034",
+          "io_ref": [
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x0807f134",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0807f2a0",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x0807f804",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0807fbf0",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080802d8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08080650",
+          "io_ref": [
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x08082a68",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x08083aa4",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08085eac",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08086cb8",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08086f18",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x0808707c",
+          "io_ref": [
+            "SIOMULTI0",
+            "SIOMULTI3"
+          ]
+        },
+        {
+          "entry": "0x08087104",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08087308",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080877a0",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08087984",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08087aa4",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08087b80",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08087c08",
+          "io_ref": [
+            "IE",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08087d6c",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "DISPCNT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08087ed4",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0808813c",
+          "io_ref": [
+            "DISPCNT",
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080881dc",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08088218",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x080882fc",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x080883f4",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x0808869c",
+          "io_ref": [
+            "BG0CNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08088928",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x080889d0",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08088ae4",
+          "io_ref": [
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08088bb0",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08088c5c",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08088dd0",
+          "io_ref": [
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08088e9c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0808905c",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x080890fc",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08089324",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08089454",
+          "io_ref": [
+            "IE",
+            "IF",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08089b14",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08089cbc",
+          "io_ref": [
+            "BG0CNT",
+            "BG2HOFS",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08089d9c",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "IF",
+            "IME",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0808a3f8",
+          "io_ref": [
+            "BG0CNT",
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0808a640",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08099448",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0809b5cc",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0809b9a8",
+          "io_ref": [
+            "SOUND1CNT_H",
+            "SOUND1CNT_L",
+            "SOUNDBIAS",
+            "SOUNDCNT_H",
+            "SOUNDCNT_L",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x0809baa4",
+          "io_ref": [
+            "FIFO_A",
+            "FIFO_B",
+            "SOUNDCNT_H+1"
+          ]
+        },
+        {
+          "entry": "0x0809bb28",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "DMA2CNT_H",
+            "DMA2CNT_L",
+            "DMA2DAD",
+            "DMA2SAD",
+            "FIFO_A",
+            "FIFO_B",
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0809bbd8",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1SAD",
+            "DMA2CNT_H",
+            "DMA2SAD"
+          ]
+        },
+        {
+          "entry": "0x0809c66c",
+          "io_ref": [
+            "SOUND1CNT_H",
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_X",
+            "SOUND2CNT_H",
+            "SOUND2CNT_L",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_H+1",
+            "SOUND3CNT_X",
+            "SOUND4CNT_H",
+            "SOUND4CNT_H+1",
+            "SOUND4CNT_L+1",
+            "SOUNDCNT_L+1"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/super-mario-advance-2-super-mario-world/evidence.json",
+      "input_root_count": 2,
+      "input_consumer_candidate_count": 120,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",
-    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "method": "Own-ROM Ghidra review and explicit-context normalization, bounded native differential and same-checkpoint gameplay, no downloaded source",
     "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
-    "canonical": null,
+    "canonical": "ontology/games/super-mario-advance-2-super-mario-world.yaml",
     "source_repositories": [],
-    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "source_to_rom_mapping": "Own indexed ROM instruction/source pins and original/C/emitted-Thumb differential; full generated-ROM native run/jump/spin parity",
     "capture_run_id": "20261016T004328-0e248f",
     "capture_frame_sha256": {
       "local/captures-experiments/20261016-current-scripts/super-mario-advance-2-super-mario-world/gameplay/keyframes/f002378_scene.png": "9eda1717b3b8744c79fbebc1817c0b86456fcf8a64ec26a6982de650fa25c5f6",

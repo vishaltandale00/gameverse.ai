@@ -1,0 +1,80 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "shaman.input.held_read",
+  "label": "Read active-high held buttons",
+  "role": "input",
+  "source_game": "shaman-king-master-of-spirits",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/shaman.input.held_read/package.json",
+  "package_sha256": "94d2ae5ffa97f490f529dca7f82732ebef1d3b9f72ed1c8b3d253a5ad8347fbb",
+  "behavior_sha256": "a99834b48b229c96fad093506a5083df3c57a4da9f1387249ef01cacff48a51a",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d9b1302ff12487091c4df2cd81d6c5541a62c2d4deb2877dfa11c50a3c15e4e5"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "held_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sampled_input",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/shaman-king-master-of-spirits/l0/0800064c.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "naming_status": "source_analysis_metadata_only"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared symbolic context",
+    "clock": "explicit_invocation",
+    "phase": "input_read",
+    "ordering": "read current held mask; sampling order outside subset"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/shaman.input.held_read/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Shared context binding must preserve field identity with external consumers.",
+    "Full camera subsystem remains unqualified; BIOSsqrt/division/ABI/byref/lifecycle gaps remain.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+    "sha256": "541a57072ac543be4aff4c56e2da2d301dca81939a28321854a031ddcb7bc7e1"
+  }
+}

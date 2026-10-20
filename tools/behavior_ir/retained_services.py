@@ -11,6 +11,7 @@ import hashlib
 import re
 
 SCHEMA = 'gameverse.retained-native-service/0.1'
+STACK_SCHEMA = 'gameverse.retained-native-service/0.2'
 BASE = 0x08000000
 TYPES = {'u8': 'uint8_t', 'u16': 'uint16_t', 'u32': 'uint32_t'}
 NAME = re.compile(r'[A-Za-z_][A-Za-z_0-9]*\Z')
@@ -41,7 +42,7 @@ def validate_service(contract, rom, evidence=None):
     c = copy.deepcopy(contract)
     required = {'schema', 'id', 'rom_sha256', 'entry', 'mode', 'span_size',
                 'span_sha256', 'abi', 'effects', 'source_evidence'}
-    if not isinstance(c, dict) or set(c) != required or c['schema'] != SCHEMA:
+    if not isinstance(c, dict) or set(c) != required or c['schema'] not in (SCHEMA, STACK_SCHEMA):
         raise ValueError('unsupported retained service contract')
     if not isinstance(c['id'], str) or not NAME.fullmatch(c['id']):
         raise ValueError('retained service symbolic identifier required')
@@ -54,14 +55,21 @@ def validate_service(contract, rom, evidence=None):
     if start < 0 or start + size > len(rom) or hashlib.sha256(rom[start:start+size]).hexdigest() != _digest(c['span_sha256']):
         raise ValueError('retained service source span mismatch')
     abi = c['abi']
-    if not isinstance(abi, dict) or set(abi) != {'standard', 'arguments', 'return', 'stack_arguments', 'variadic', 'by_reference'} or abi['standard'] != 'AAPCS32' or abi['stack_arguments'] != 0 or abi['variadic'] is not False or abi['by_reference'] is not False:
+    stack_schema=c['schema']==STACK_SCHEMA
+    abi_keys={'standard','arguments','return','stack_arguments','variadic','by_reference'}|({'stack_prefix_bytes','stack_frame_bytes','preserve'}if stack_schema else set())
+    if not isinstance(abi,dict)or set(abi)!=abi_keys or abi['standard']not in(('AAPCS32','APCS32_scalar_words')if stack_schema else('AAPCS32',))or abi['variadic']is not False or abi['by_reference']is not False:
         raise ValueError('retained service unsupported ABI/stack/by-reference escape')
-    args = abi['arguments']
-    if not isinstance(args, list) or len(args) > 4:
-        raise ValueError('retained service supports at most four scalar registers')
-    for index, arg in enumerate(args):
-        if not isinstance(arg, dict) or set(arg) != {'register', 'type', 'kind'} or arg != {'register': 'r'+str(index), 'type': arg.get('type'), 'kind': 'scalar'} or arg['type'] not in TYPES:
-            raise ValueError('retained service requires contiguous typed scalar r0..r3')
+    args=abi['arguments']
+    if not isinstance(args,list)or len(args)>(7 if stack_schema else 4)or type(abi['stack_arguments'])is not int or abi['stack_arguments']!=max(0,len(args)-4):raise ValueError('retained service scalar argument layout/count unsupported')
+    if stack_schema and(not 5<=len(args)<=7 or abi['preserve']!=['r'+str(i)for i in range(4,12)]+['sp']):raise ValueError('stack service requires explicit bounded scalar words/preserved frame')
+    for index,arg in enumerate(args):
+        expected={'type':arg.get('type'),'kind':'scalar',**({'register':'r'+str(index)}if index<4 else{'stack_offset':4*(index-4)})}if isinstance(arg,dict)else None
+        if expected is None or arg!=expected or arg['type']not in TYPES or index>=4 and type(arg['stack_offset'])is not int:raise ValueError('retained service requires exact typed register/contiguous stack scalar words')
+    if stack_schema:
+        if type(abi['stack_prefix_bytes'])is not int or not abi['stack_prefix_bytes']<=size or type(abi['stack_frame_bytes'])is not int:raise ValueError('stack service source prefix/frame bound invalid')
+        from stack_call import callee_layout
+        layout=callee_layout(rom,entry,args,abi['stack_prefix_bytes'])
+        if layout['callee_frame_bytes']!=abi['stack_frame_bytes']:raise ValueError('stack service callee frame differs from source prologue')
     if abi['return'] not in ('void', 'u32'):
         raise ValueError('retained service requires void or full r0 u32 return')
     effects = c['effects']
@@ -108,7 +116,7 @@ def module_metadata(contracts):
                             'Automatically lifted control/state coverage does not certify portable service semantics or interchangeability']}
 
 
-def derive_call(call, varnodes, contract, resolve_argument, rom, evidence=None, result=None):
+def derive_call(call, varnodes, contract, resolve_argument, rom, evidence=None, result=None, source_l0=None, proofs=None):
     """Derive a symbolic statement only from the exact original direct CALL.
 
     resolve_argument is the lifter's expression resolver, called here with each
@@ -137,6 +145,12 @@ def derive_call(call, varnodes, contract, resolve_argument, rom, evidence=None, 
         raise ValueError('retained service CALL provenance required')
     if not callable(resolve_argument):
         raise ValueError('retained service requires exact input SSA resolver')
+    stack_proof=None
+    if c['abi']['stack_arguments']:
+        if source_l0 is None:raise ValueError('stack service requires original source L0 call frame')
+        from stack_call import prove
+        stack_proof=prove(source_l0,call,nodes,rom,c['abi']['arguments'],c['abi']['stack_prefix_bytes'])
+        if proofs is not None:proofs.append(stack_proof)
     arguments = []
     for source, declared in zip(inputs[1:], c['abi']['arguments']):
         arg = resolve_argument(source)
@@ -190,3 +204,9 @@ def render_call(statement, contract, render_expr, flush, reload):
     parts.append((result+' = ' if result is not None else '')+call)
     parts.extend([reload, '}'])
     return '\n'.join(parts)+'\n'
+
+
+def call_frame_proof(call,varnodes,contract,rom,source_l0):
+    if not contract['abi']['stack_arguments']:return None
+    from stack_call import prove
+    return prove(source_l0,call,varnodes,rom,contract['abi']['arguments'],contract['abi']['stack_prefix_bytes'])

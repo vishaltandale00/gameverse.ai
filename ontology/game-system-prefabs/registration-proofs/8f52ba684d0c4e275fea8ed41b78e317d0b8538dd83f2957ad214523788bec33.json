@@ -1,0 +1,221 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "timedAck: unbound source state remains private with zero/default configuration: field_1",
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "timedAck": {
+      "package_id": "firered.text.timed_acknowledgement",
+      "package_sha256": "142db2a5783031bc999a0d22f5af76f2f20f27461f4d8926f04286e5dfd01d79",
+      "behavior_sha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "text_wait_invocation_counter",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "text_context",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+              "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "text_wait_invocation_counter",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "text_context",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+              "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+            ]
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "unknown",
+            "unit": "unknown",
+            "frame": "unknown",
+            "confidence": 0.0,
+            "evidence": []
+          },
+          "meaning": {
+            "quantity": "unknown",
+            "unit": "unknown",
+            "frame": "unknown",
+            "confidence": 0.0,
+            "evidence": []
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "u8",
+      "return_meaning": {
+        "quantity": "acknowledgement_boolean",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "text_wait_pre_invocation_counter",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+        ]
+      },
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [
+          "field_0"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "caller-owned shared text or audio context",
+        "clock": "explicit invocation",
+        "ordering": "Original call context and effects specified in source_contract; no assumed video-frame clock"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Metadata annotations refer to unchanged actual IR fields; qualification does not extend to text controller or full L2.",
+        "Shared context alias and caller sequencing must be enforced when composed.",
+        "Video frames are not evidenced as one-to-one with text invocations.",
+        "Opaque fields intentionally unannotated in field_annotations.",
+        "Finite 256-vector leaf equivalence only; no complete controller or L2 qualification.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "b18e6e588d71626b471ffc36872558e1f57f8c5e53552ffb39e371b598bb9ff4",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "timedAck": {
+        "package_id": "firered.text.timed_acknowledgement",
+        "behavior_sha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64",
+        "bindings": {
+          "field_0": {
+            "slot": "waitCounter"
+          }
+        },
+        "package_sha256": "142db2a5783031bc999a0d22f5af76f2f20f27461f4d8926f04286e5dfd01d79"
+      }
+    },
+    "state": {
+      "waitCounter": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "text_wait_invocation_counter",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "text_context",
+          "confidence": 0.85,
+          "evidence": [
+            "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+            "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+          ]
+        },
+        "owner": "timedAck",
+        "shared": false
+      },
+      "mayContinue": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "acknowledgement_boolean",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "text_wait_pre_invocation_counter",
+          "confidence": 0.95,
+          "evidence": [
+            "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+            "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+          ]
+        },
+        "owner": "timedAck",
+        "shared": false
+      }
+    },
+    "initialize": {
+      "waitCounter": 0,
+      "mayContinue": 0
+    },
+    "invocations": [
+      {
+        "component": "timedAck",
+        "arguments": {},
+        "result": {
+          "slot": "mayContinue"
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "timedAck"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "timedAck"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "timedAck",
+      "arguments": {},
+      "result": {
+        "slot": "mayContinue"
+      }
+    }
+  ],
+  "statement_sha256": "2abd5937a75b3de246a0560e4e8657428e5c574c81b95fa1f2378044a9491a07",
+  "catalog_sha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+  "wall_s": 0.0038538749999999997
+}

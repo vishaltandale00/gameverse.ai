@@ -1,0 +1,161 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kart.track_coordinate_bounds",
+  "label": "Track coordinate bounds",
+  "role": "movement",
+  "source_game": "mario-kart-super-circuit",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kart.track_coordinate_bounds/package.json",
+  "package_sha256": "7dae64f60a0c73c2db404c9446f7b6830390dfd3ead35d8ecf6f3ed25c202551",
+  "behavior_sha256": "491eb1d7c72b524096168c697ccb5f98ca8cb7164afa54aa143d4139a118074f",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "3f8b8c17d0915a4e707b68bf64d3c825dae327b398c6d1baea5244fe28604a86"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {}
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "extent_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.track.bounds.axis_0",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "extent_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.track.bounds.axis_1",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one canonical externally owned track record",
+    "clock": "explicit original-function invocation; elapsed real time unavailable",
+    "phase": "caller-selected; entry legality not qualified",
+    "cleanup": "no allocation or retirement in qualified root"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kart.track_coordinate_bounds/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "No new native proof; reuse exact pinned receipt",
+    "Full steering/contact/race subsystem remains incomplete and nonexecutable as L2",
+    "Canonical aliases with active-player and racer-pool references are caller obligations; no independent object copies",
+    "Rational units denote storage counts; physical angle, distance and per-second calibration unavailable",
+    "Track extent counts are multiplied by the original source scale before signed comparisons; extent shape/physical cell dimensions not asserted",
+    "Finite fixtures retain wrapping machine arithmetic; dimensions are not constrained to a presumed legal track configuration",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "lifecycle": {
+      "storage": "one canonical externally owned track record",
+      "clock": "explicit original-function invocation; elapsed real time unavailable",
+      "phase": "caller-selected; entry legality not qualified",
+      "cleanup": "no allocation or retirement in qualified root"
+    },
+    "parameters": [
+      {
+        "name": "param_0",
+        "quantity": "coordinate_storage",
+        "axis": "axis_0",
+        "encoding": "signed32_twos_complement",
+        "units": "same storage domain as corresponding extent count multiplied by source scale"
+      },
+      {
+        "name": "param_1",
+        "quantity": "coordinate_storage",
+        "axis": "axis_1",
+        "encoding": "signed32_twos_complement",
+        "units": "same storage domain as corresponding extent count multiplied by source scale"
+      }
+    ],
+    "return": {
+      "kind": "u32",
+      "quantity": "boolean",
+      "meaning": "One when either coordinate is negative or at/beyond corresponding scaled track extent; zero otherwise"
+    },
+    "services": [],
+    "order": [
+      "Compare first coordinate with zero and scaled first extent",
+      "Compare second coordinate with zero and scaled second extent",
+      "Return out-of-bounds Boolean with original short-circuit order"
+    ],
+    "domain": [
+      "Finite native synthetic boundary/random fixture states; no claim of all gameplay states",
+      "Original ABI and externally owned state excluding saved return-frame storage"
+    ],
+    "private_opaque": [],
+    "limitations": [
+      "No new native proof; reuse exact pinned receipt",
+      "Full steering/contact/race subsystem remains incomplete and nonexecutable as L2",
+      "Canonical aliases with active-player and racer-pool references are caller obligations; no independent object copies",
+      "Rational units denote storage counts; physical angle, distance and per-second calibration unavailable",
+      "Track extent counts are multiplied by the original source scale before signed comparisons; extent shape/physical cell dimensions not asserted",
+      "Finite fixtures retain wrapping machine arithmetic; dimensions are not constrained to a presumed legal track configuration"
+    ]
+  },
+  "source_root_identity": {
+    "source_game": "mario-kart-super-circuit",
+    "entry": "08032c50"
+  },
+  "domain_contract_fingerprint": "340cef485c8b279c315c9522687aa050e5ce7ac4dd0247d2605db3cb3eadb4f1",
+  "specialization_subset": false
+}

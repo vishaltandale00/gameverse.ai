@@ -1,0 +1,277 @@
+{
+  "canonicalstate": {
+    "actor_layout_proof": {
+      "current_initializer_adapter": {
+        "path": "local/roundtrip/weak-wave-megaman-initializer-003/validation-adapter.json",
+        "sha256": "f70abb499c401da4231ad68e04d064e06b1d9610ae12613f78f3a60cd5a6bd3c"
+      },
+      "existing_command_motion_adapter": {
+        "path": "local/ir/packages/megaman_zero.motion.command_horizontal_step/validation-adapter.json",
+        "sha256": "c85644158fe4133c375e17e680b8baf99194d7cb402d223ebc59f8d28b51c734"
+      },
+      "existing_module_delivery": {
+        "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json",
+        "sha256": "ceb5339c096c4fde821c68e22433947aa869c3f9d81465f0920c794fc0aa2b9c"
+      },
+      "joint_runtime_limit": "No new initializer-to-motion execution or full source scheduler proof; actual joint fixture connects initializer\u2192producer only. Canonical module reuse conveys physical actor layout, not scheduling.",
+      "shared_command_storage": {
+        "alias_scope": "Only reader indices0..63 share the real64-byte source ring. Do not equate the entire reader256-byte artificial domain to an independent ring or ignore its overlaps with other actor fields.",
+        "argument": "r0",
+        "element_size_bytes": 1,
+        "existing_reader_count": 256,
+        "initializer_count": 64,
+        "offset": 304
+      },
+      "shared_index": {
+        "argument": "r0",
+        "existing_reader_field": "field_4",
+        "initializer_field": "field_1",
+        "offset": 302,
+        "qualified_initializer_domain": "0..63",
+        "width_bits": 8
+      },
+      "source_contract": {
+        "path": "local/roundtrip/weak-wave-megaman-initializer-003/initializer-group.json",
+        "sha256": "e68e777e8836ef74eba008158d7a0ba3597f3f6231eeab3976cd18714adbd427"
+      },
+      "source_core_loop": {
+        "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+        "sha256": "cbea067fa137c777ee28fcc4c94d71f493bf65946dc31c003e4e5427b3e6bce6"
+      },
+      "status": "exact-source-adapter same-owner same-offset bounded-subview proof"
+    },
+    "input_authority": "Original effective-input u16 global02022b62 remains host-owned; upstream hardware sampling/lifetime unqualified",
+    "old_reader_alias_scope": "Existing command-motion reader has256-byte artificial view atsame r0+304; only indices0..63 alias realring. No broader256-byte mutable storage merge or init\u2192motion joint schedule claimed.",
+    "owner": "existing canonical source r0 actor; no new player, ring or bitmap object",
+    "profiles": {
+      "0": {
+        "adapter": {
+          "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/validation-adapter.json",
+          "sha256": "9b593ebfcfbb127200769881aa55e81eea108c93c66fd8bd98a0009fe31b4a61"
+        },
+        "command_ring": {
+          "argument": "r0",
+          "count": 64,
+          "element_bytes": 1,
+          "offset": 304
+        },
+        "history_bitmap": {
+          "argument": "r0",
+          "count": 2,
+          "element_bytes": 4,
+          "offset": 368
+        },
+        "readonly_map": {
+          "RAM_writeback": false,
+          "logical_source_bytes": 16,
+          "source_address": "0x82a973c"
+        },
+        "selector": {
+          "argument": "r0",
+          "offset": 536,
+          "required_value": 0
+        }
+      },
+      "1": {
+        "adapter": {
+          "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/validation-adapter.json",
+          "sha256": "3098446f0265a253d979c88ca35b042ea8096c74bde59297a0742e804accde6b"
+        },
+        "command_ring": {
+          "argument": "r0",
+          "count": 64,
+          "element_bytes": 1,
+          "offset": 304
+        },
+        "history_bitmap": {
+          "argument": "r0",
+          "count": 2,
+          "element_bytes": 4,
+          "offset": 368
+        },
+        "readonly_map": {
+          "RAM_writeback": false,
+          "logical_source_bytes": 16,
+          "source_address": "0x82a974c"
+        },
+        "selector": {
+          "argument": "r0",
+          "offset": 536,
+          "required_value": 1
+        }
+      }
+    }
+  },
+  "counts": {
+    "additional_native_asset_payload_bytes": 0,
+    "emitted_behavior_bytes_total": 6056,
+    "expected_state_collection_cases": 32,
+    "fresh_original_native_comparisons": 512,
+    "logical_readonly_source_bytes_total": 32,
+    "new_conditional_source_domains": 2,
+    "new_distinct_source_functions": 0,
+    "new_installed_IR_bytes": 0,
+    "new_packages_proposed": 2
+  },
+  "event_order": [
+    "Caller establishes existing actor control profile0 or1; publication does not set it.",
+    "Original producer advances same actor history index modulo64.",
+    "Source exact readonlyROM control row derives command; rows0/1 swap source masks0x100/0x200 into commandbits6/7.",
+    "Source lock policy preserves prior command bits, then same ring/edge/bitmap/marker are committed.",
+    "No implicit initialization, profile switch, parent scheduling or original-entry hook is supplied."
+  ],
+  "exactpins": {
+    "dynamic_selector_gap": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/dynamic-selector-frontier.json",
+      "sha256": "af63b69da0763247c5f6c811154b125b69faee4957c917cd94ef1b216e193904"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json",
+      "sha256": "c7cc1891277dcb7ccee5653fa0879cce0d9320345e5e7f88614b40c6bffb6596"
+    },
+    "independent_profiles01_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/mmz-profiles01-qc.json",
+      "sha256": "06d502e330514f954eb28e218187f12495e4382066e2ca95a9d9219d32392753"
+    },
+    "next_default_setup_source_frontier": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/next-source-recovery.json",
+      "sha256": "4977e1becb13c264d397e1796dd4d4a3ec77185f69092eb498141428d0960716"
+    },
+    "profile0_C": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/generated.c",
+      "sha256": "60fb258bcb93f01e9576cd7d1b1a8948ec5e51e762170478e11367502bd23f32"
+    },
+    "profile0_adapter": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/validation-adapter.json",
+      "sha256": "9b593ebfcfbb127200769881aa55e81eea108c93c66fd8bd98a0009fe31b4a61"
+    },
+    "profile0_attribution": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/native-symbols.txt",
+      "sha256": "d57646c232b4a18f9ebbe4bdf6a69a6640768abbd44e1ee8f7fd2e7b6f6fa05e"
+    },
+    "profile0_l1": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/l1.json",
+      "sha256": "47490651c6dbf571d03e83c1c6538e478779279b5fee6986faac27090d1e96fb"
+    },
+    "profile0_native_proof": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/receipt.json",
+      "sha256": "bcb5f84d142149f4d1757a547ed5f0b8683e7795a76711c0336a56776157d660"
+    },
+    "profile0_normalization_scope": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/normalization-scope-supplement.json",
+      "sha256": "d6ee3aedc30f9ef7efc57d31065171c4cc2130d4c29a78be3a90547932c7af13"
+    },
+    "profile1_C": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/generated.c",
+      "sha256": "583880445f8a72f54726491df6ae33c12fbd954a8b293d7d035318a9356875fa"
+    },
+    "profile1_adapter": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/validation-adapter.json",
+      "sha256": "3098446f0265a253d979c88ca35b042ea8096c74bde59297a0742e804accde6b"
+    },
+    "profile1_attribution": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/native-symbols.txt",
+      "sha256": "d57646c232b4a18f9ebbe4bdf6a69a6640768abbd44e1ee8f7fd2e7b6f6fa05e"
+    },
+    "profile1_l1": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/l1.json",
+      "sha256": "31399fbaf306ceebc3599b7abaefa821f5e2c4e91db863a6d77a93f1dce6e092"
+    },
+    "profile1_native_proof": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/receipt.json",
+      "sha256": "f0ca45ce1a4eceab8fd666bbbbac4b9cc22adffb53b960a41a3006f929015d41"
+    },
+    "profile1_normalization_scope": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile1/normalization-scope-supplement.json",
+      "sha256": "f7321f1e71890cf94faa8a65ad7fe6568295ab1fb5f1c3353ac40360003680a4"
+    },
+    "runtime_after_native_stability": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/source-stability-after-native.json",
+      "sha256": "370893c5ade2a8d91a5b31253a5b060dd5cbfc3d7291038f42db4e6034c394a8"
+    },
+    "runtime_snapshot": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/runtime-snapshot.json",
+      "sha256": "20d17da24311b8837ecbd6f158a658a2f0961103fa2f653c22ec5a80197ddf4d"
+    },
+    "standard_variant_records": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-variant-records-v2.json",
+      "sha256": "77226ab6b0d4951a71949a5eed9bac060173e44757bc34909244d44d700efd3a"
+    }
+  },
+  "game_id": "megaman-zero",
+  "gaps": [
+    "True unspecialized source selector over actor-custom and ROM-backed pointer owners remains blocked by pointer-like ROM literal escaped as scalar.",
+    "Defaultsetup0801b244\u21920801ca94 is the next pinned source phase only; no new qualification for it this wave.",
+    "All livecaller domains, upstream input authority, allocation/save/lifecycle and interrupt-visible write order remain open.",
+    "Conditional variants are not new source roots, installed replacements, or general editable/playable games."
+  ],
+  "id": "megaman-zero.source-profiles01.command-update.v2",
+  "module_id": "megaman-zero.source-actor-command-motion",
+  "native_eligibility": {
+    "ABI": "r0 canonical actor, void result; native receipts check callee-saved r4-r11 and stack, no return-value semantic claim.",
+    "all_live_caller_profiles_proven": false,
+    "auto_selector_configuration": false,
+    "current_or_general_ROM_replacement_eligible": false,
+    "exact_source_profiles": [
+      0,
+      1
+    ],
+    "expected_state_collection_cases_each": 16,
+    "kind": "finite_original_ROM_vs_outside_cartridge_generated_object",
+    "new_distinct_source_roots": 0,
+    "normalization_scope": "Exact source profile0/1 pure-selector SSA normalization plus immutable imported mapper fields; raw export preserved separately.",
+    "original_vectors_each": 256,
+    "runtime_profile_guard": false,
+    "source_entry_install": false
+  },
+  "originalhostprerequisites": [
+    "Exact pinned own-ROM and source-selected profile0 or1 before invocation; no automatic selector rewrite.",
+    "Same canonical aligned actor RAM span538B, real64-byte history ring and2u32 bitmap; disjoint source effective-input global/native stack.",
+    "Source effective-input value and lock policy supplied under existing actor lifetime; no concurrent/interrupt observer assumption beyond finite oracle proof.",
+    "No source initializer, producer entry hook, full scheduler/allocator/campaign or general dynamic-selector runtime supplied."
+  ],
+  "package_ids": [
+    "mmz.input.profile0-producer",
+    "mmz.input.profile1-producer"
+  ],
+  "prior_profile2_capability": {
+    "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/library-capability-v1.json",
+    "sha256": "da143ea8d7fd53908a9a658993fc4dcfc24918753191401273d9b9de626a3bfe"
+  },
+  "proposal_status": "additive conditional source-domain variants; preserve prior profile2 packages and capability unchanged",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": false,
+    "additional_asset_payload_bytes": 0,
+    "alignment_bytes": 0,
+    "auto_selector_configuration": false,
+    "closed_interchangeable_prefab": false,
+    "finite_source_profiles": [
+      0,
+      1
+    ],
+    "general_ROM_eligible": false,
+    "generated_behavior_bytes_each": 3028,
+    "installed_IR_bytes": 0,
+    "logical_readonly_source_bytes_each": 16,
+    "mechanical_binding_bytes": 0,
+    "outside_cartridge_qualified": true,
+    "portable_L1": true,
+    "prior_profile2_package_preserved": true,
+    "runtime_profile_guard": false,
+    "whole_game_editable_or_ready": false,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "0801b29c"
+  ],
+  "supersedes_metadata_only": {
+    "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-library-capability-v1.json",
+    "reason": "Point to classifier-schema-normalized standard records v2; no behavior/scope/proof/native change",
+    "sha256": "fb99e990592ae768ed99b00858d1049147ea771c2fe1d47a52f875b4db5437e8"
+  },
+  "timing": {
+    "queue_seconds": null,
+    "scope": "Metadata-only terminal publication; no proof/result mutation and no new native/build/model/replay"
+  }
+}

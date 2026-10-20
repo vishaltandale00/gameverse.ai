@@ -1,0 +1,609 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.contact.item_class_c2_query",
+  "label": "Guarded original item contact query (descriptor class c2)",
+  "role": "combat",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.contact.item_class_c2_query/package.json",
+  "package_sha256": "33030d851ed2bcb0873ee0cd9a90e6fdaf37fc92295438a708de4e952717a766",
+  "behavior_sha256": "4899dcc60c119065778db4fca661163dd549d07f6906b3bdc707fe1042ac6062",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 84,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "e1645ce9e3cecbc2c0e81c5dee14e80c4da0f81d4240f2087e2444a12c26a87f"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_0x3007a48",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_1",
+      "identity": "observed_0x3003f98",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_2",
+      "identity": "observed_0x3002360",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "entity_r0",
+      "identity": "current_record_view",
+      "ownership": "shared_record_view",
+      "lifetime": "invocation",
+      "separation": "only_proven_disjoint_accessed_slices_scalarized",
+      "container": "context_object_0",
+      "capacity": 12,
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_x_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_y_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.contact.collision_layer",
+        "label": "actor_collision_layer",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_1",
+        "label": "Original descriptor channel 1",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_3",
+        "label": "Original descriptor channel 3",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.scene.contact_mode_flags",
+        "label": "source_contact_mode_flags",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.player.action_mode",
+        "label": "player_action_gate",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_x_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_y_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.contact.collision_layer",
+        "label": "player_collision_layer",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.player.contact_box_latch",
+        "label": "source_contact_box_latch",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_x",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_y",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_width",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_height",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_box_x",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_box_y",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_box_width",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_box_height",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.scene.actor_slot_id",
+        "label": "selected_actor_slot",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_22",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.scene.actor_slot_id",
+        "label": "suppressed_actor_slot",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_24",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.player.active_form",
+        "label": "player_active_form",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+          "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 25,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "canonical_selected_actor_and_scene",
+    "clock": "explicit_invocation",
+    "phase": "guarded_contact_query",
+    "ordering": "source34264 calls playerbox thenactorbox thenoverlap"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "feb6b2282cd2aaccb0574ee671b10eaf62d0a7982f10f4be1abf66a25000997e",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "f86a71eaa4fa4cb21770622b0b964841b500988359e40f839b813243588c72d7",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_2",
+      "behavior_sha256": "a57ce365939726d5d07d0faa9bd84391ef2758628d6499776902ef76b551fd9f",
+      "provenance_namespace": "dependency_2",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.contact.item_class_c2_query/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_2_Acyclic structured CFG only",
+    "dependency_2_Semantic units and human names remain unknown unless separately evidenced",
+    "Current query only, not350f0 consumption or ability ownership.",
+    "Entrybytec2 is a precondition, materialized nativeinput and kept stable by proved admitted-body effects.",
+    "Profile/form and layer/slot histories beyond84cases are not exhaustively qualified.",
+    "The classifier sources type21/74..78 have c2; no arbitrary actor type or source lifecycle completeness asserted.",
+    "Active scene/player/profile object roots stable during invocation and source classc2 enforced by caller.",
+    "The registered actor descriptor initializer remains internal; this package provides the actual classc2 guarded query only.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_query": "Original34264 rawHighFunction, actualsharedreadonly_entry_read proof; only3sourcegeometrydependencies, no handwritten querylogic",
+    "exact_precondition": "selected actor byte65 equals194 at entry and throughout admitted body",
+    "native_scope": "84exactsourceguard/overlapcases\u00d7sharedactorviews; falseearlyreturns preserve scratch, nonoverlap returns0 after writes/latchclear",
+    "native_runtime_lineage": {
+      "path": "research/deep-extraction/mario/parallel-sma2/source-contact-v02/native-runtime-lineage-v08.json",
+      "sha256": "f449d9912a4bdda8cb94b8189020c5ec98b5f3939f4f6715784851446df16d29"
+    },
+    "available_prior_bounded_cfg": {
+      "path": "local/ir/fleet-next/sma2/contact-query-shared-v08/compiler-snapshot/bounded_cfg.available-prior.py",
+      "sha256": "803a955c182ae82c0eccb7b00eac6e5158ca99c64df25dbd1a42d11da6c5e318"
+    },
+    "bounded_cfg_capture_gap": "Compiler owner identified this exact immutable pre-change source version (SHA803a955c...); v08 did not independently record before/after bounded_cfg hash. Do not infer an unrecorded sweep. Original source root CFG is81blocks acyclic, and exact materialized v08 L1/C/native artifacts are retained. Subsequent iterative DFS repair is excluded from native claim.",
+    "capsule": {
+      "path": "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+      "sha256": "4f6628152dbde1e7b41774ba7a54ac1e7f25766d226cdd35f8c7647ff4997d6f"
+    },
+    "consumer_gap": "350f0 itemconsume/form callback and spawneditem ownership not yet closed"
+  },
+  "return_meaning": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "sma2.item_contact.admitted_class_c2",
+    "label": "accepted_item_contact",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-capsule.json",
+      "local/ir/fleet-next/sma2/contact-query-shared-v08/fixtures.json",
+      "local/ir/fleet-next/sma2/contact-query-shared-v08/proof.json"
+    ],
+    "naming_status": "source_derived_annotation_not_behavior_input",
+    "description": "Original34264 guarded return0/1 only for actor descriptor byte41 exactlyc2; no item consumption/form effect or positiveflag enemy/hurt paths."
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "super-mario-advance-2-super-mario-world",
+    "entry": "08034264"
+  },
+  "domain_contract_fingerprint": "4f00698a3fc6b27f287e0e48cd85ff9f59e59c8dca479bb8deb983f6b85190ce",
+  "specialization_subset": true
+}

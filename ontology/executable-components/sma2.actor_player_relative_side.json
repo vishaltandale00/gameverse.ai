@@ -1,0 +1,207 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.actor_player_relative_side",
+  "label": "Sma2 Actor Player Relative Side",
+  "role": "combat",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.actor_player_relative_side/package.json",
+  "package_sha256": "5585c9771c2a613c42a1e25160dde5dc1a6dd284f29a5fd01cd159d963b21367",
+  "behavior_sha256": "e8525f84fbd3aef9a9fe2c9ad5332b1fa39dde0861a8cf179cf3e971ec3a657f",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "9a154090a5be11f47f8c24eadd96db1b10ac47c1680cecc2a997e4fc9a986e94"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_0x3007a48",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "entity_r0",
+      "identity": "current_record_view",
+      "ownership": "shared_record_view",
+      "lifetime": "invocation",
+      "separation": "only_proven_disjoint_accessed_slices_scalarized",
+      "container": "context_object_0",
+      "capacity": 12,
+      "evidence": [
+        "research/deep-extraction/mario/sma2-fire-pool-contracts.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "actor_x_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_x_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "relative.player_minus_actor.x",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "signed_player_minus_actor_x",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": "Caller-owned invocation; original subsystem assembly and outer schedule remain unqualified.",
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.actor_player_relative_side/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original/emitted qualification only; no complete mechanic or game claim.",
+    "Unannotated state remains private opaque source storage; preserve distinct roles and exact alias/order contracts.",
+    "L2 source-backed contract is nonexecutable; no arbitrary compatible substitution established.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_contract_ref": "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+    "L2_executable": false,
+    "source_root_identity": "0802f1b8",
+    "alias_service_order_constraints": "Full original source facts retained in pinned contract; shared actor/scene/scratch owner relationships must not be split.",
+    "unannotated_fields": [],
+    "parameter_contract": "Original parameters and domains only as recorded in pinned L1/adapter and source evidence; no semantic parameter fields added.",
+    "return_contract": "Original qualified ABI return; exact semantics only as recorded in pinned source evidence.",
+    "field_roles": {},
+    "opaque_and_service_limits": [
+      "Return is original unsigned byte negative-difference flag; no contact eligibility decision",
+      "Shared relative-difference scratch and actor view must alias canonical scene backing"
+    ],
+    "alias_constraints": [
+      "actor argument aliases the same canonical scene backing as collision scratch; no independent actor/world copies",
+      "Scratch writes survive rejected downstream overlap and are overwritten by later preparation calls"
+    ],
+    "domain_limits": [
+      "Original signed16 pixel narrowing and wrap are mechanical",
+      "Actor shape selector is masked to sixty-four source records; retained table spans overlap neighboring starts at last selector",
+      "Synthetic admitted scene view slots do not establish full scheduler reachability"
+    ],
+    "contact_contract_refinement": {
+      "path": "local/ir/source-fleet-restart-20261016/publication/sma2-contact-01/input-proposal.json",
+      "sha256": "67a72ade7f80d0179d71b6e33eb8168436123d318224ddba61068eb142ba13d7"
+    },
+    "coherent_phase_unlock": {
+      "id": "sma2.selected_actor_contact_query",
+      "module": "mario.sma2.selected_actor_lifecycle",
+      "source_phase": "initialize actor descriptors once on create/retype; later prepare player+selectedactor rectangle and capture overlap return for host contact consumer",
+      "components": [
+        "sma2.actor_reinitialize",
+        "sma2.player_contact_box",
+        "sma2.actor_contact_box",
+        "sma2.shared_contact_overlap"
+      ],
+      "producer_consumer_links": [
+        "actor_reinitialize descriptor.channel_1 \u2192 actor_contact_box full+3fbyte",
+        "player_contact_box rect4slots +actor_contact_box rect4slots \u2192 shared_contact_overlap",
+        "shared_contact_overlap return \u2192 actualcontactresult slot"
+      ],
+      "remaining_obligations": [
+        "Named source type/default context and full actor pool ownership",
+        "Actual source34264 guards/class query and350f0 consumer remain compiler-blocked until exact read invariant proven",
+        "Host create/retype and sampling schedule explicitly declared; no full game claim"
+      ]
+    }
+  },
+  "return_meaning": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "sma2.contact.player_left_of_actor",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+      "local/ir/fleet-next/sma2/contact-boundaries01/0802f1b8/receipt.json"
+    ],
+    "label": "Player lies left of actor after original signed16 subtraction",
+    "naming_status": "source_derived_annotation_not_behavior_input",
+    "domain": {
+      "values": [
+        0,
+        1
+      ]
+    }
+  },
+  "source_root_identity": {
+    "source_game": "super-mario-advance-2-super-mario-world",
+    "entry": "0802f1b8"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

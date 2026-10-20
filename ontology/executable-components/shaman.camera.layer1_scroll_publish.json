@@ -1,0 +1,139 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "shaman.camera.layer1_scroll_publish",
+  "label": "Publish masked layer-one scroll coordinates",
+  "role": "camera",
+  "source_game": "shaman-king-master-of-spirits",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+  "package_sha256": "a9dc507f7bf00426cee9a5cb340cc3a1ceb859463b978c4884ace33b50e52872",
+  "behavior_sha256": "2236d66b6e35433230050d748b7aefaea6018e87c244f5226fe7506b7e40376a",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "60727fe40f0d5605c69b959b7fc07852befdff2fcc09dc5b9a51f9a80746d81c"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 1,
+        "unsigned_max": 1
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u16",
+      "domain": {}
+    },
+    {
+      "name": "param_2",
+      "storage_type": "u16",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "scroll_pending_flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "background_layer_one",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/shaman-king-master-of-spirits/l0/08000e20.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "naming_status": "source_analysis_metadata_only"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "scroll_coordinate",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "background_layer_one.horizontal",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/shaman-king-master-of-spirits/l0/08000e20.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "naming_status": "source_analysis_metadata_only"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "scroll_coordinate",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "background_layer_one.vertical",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/shaman-king-master-of-spirits/l0/08000e20.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "naming_status": "source_analysis_metadata_only"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared symbolic context",
+    "clock": "explicit_invocation",
+    "phase": "scroll_publication",
+    "ordering": "source camera passes layer1 and coordinates; coordinate X then Y then pending flag"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/shaman.camera.layer1_scroll_publish/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Shared context binding must preserve field identity with external consumers.",
+    "Full camera subsystem remains unqualified; BIOSsqrt/division/ABI/byref/lifecycle gaps remain.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+    "sha256": "541a57072ac543be4aff4c56e2da2d301dca81939a28321854a031ddcb7bc7e1"
+  }
+}

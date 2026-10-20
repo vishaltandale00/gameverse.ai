@@ -1,0 +1,9 @@
+# Modern Mashup delivery audit
+
+Audit completed in 0.033677s. This was a bounded check of the frozen modern delivery manifest, listed source/proof pins, count classification, API evidence, and source/distribution parity. The audit ran no build, tests, native qualification, game generation, or ROM hashing. Future corpus ingestion is outside this snapshot.
+
+The delivery manifest `research/ir-workshop/modern-mashup-20261016/delivery.json` matches SHA256 `9a10845e0f0c02519e0d7f1f1971fa1ca827daed322eb9b9c8f8f106982218c5`; **43/43** listed source, data and proof pins match, including the screenshot assets. It records 120 packages in the composition snapshot, 19 bundles, 42 role facets and 9 allowlisted graph entries. The historical automatic-IR/source-system checkpoint remains 112 qualified packages/87 typed; the source-system index records 33 partial contracts plus 24 prior analyses, with zero recovered executable L2 and zero complete games. Candidate edges, bundles and facets do not count as complete L2.
+
+HTTP proof records six prefab imports and three additional current admissions accepted by the Composer, plus an emitted-host trace. It describes binding admission/finite host checks only; no composed original-ROM equivalence, native gameplay, complete subsystem or new game is claimed. The final snapshot’s catalog, source/data hashes and post-build asset checks are recorded, with source/distribution data equal. A clean shell build and post-build asset copy were performed by the delivery owner and are pinned; this audit did not rerun them.
+
+The delivery explicitly separates itself from the earlier extraction snapshot and notes future ingestion is excluded. All bounded hashes match: **True**. Recorded consistency checks match: **True**. See JSON for full expected/actual pins and limits.

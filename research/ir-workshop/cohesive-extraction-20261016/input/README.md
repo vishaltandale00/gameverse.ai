@@ -1,0 +1,11 @@
+# Dragon Ball input phase capsule
+
+`bundle.json` pins the ROM, retained HighFunctions, new automatically lifted IR, existing qualified edge IR, native receipt, and source ordering. This is a partial phase graph, not a closed controller or contact system.
+
+The new source member is `08016538`. The retained original function corpus shows `080043f4` calling it during actor initialization. Its L1 clears exactly four fields of the fixed actor record `0x020205a0`: `+0xba` (u16), `+0xca`, `+0xd0`, and `+0xdf` (u8 each). The source meanings of those fields remain unknown. `local/ir/cohesive-extraction-20261016/input/08016538/receipt.json` records 256 passing original ROM versus generated native vectors (0.215475 s total, nested compile/link/oracle stages). This is a real new IR member, but its four clears are not evidence of button-edge or hit-admission behavior.
+
+The already published `db.input.actor_edges_repeat` member is directly called by actor dispatcher `08014a6c` before the active controller callback. The generated-IR host scenario in `scenario.c` passes fresh press (`held=1, pressed=1`), continued hold (`held=1, pressed=0`), and source suppression bit `0x400` (`held=0, pressed=0, released=1`) on the same state object. `scenario.stdout` records its output. The caller supplies selected bits; physical key identity and actual attack admission are unknown. A consumer that uses held state can still repeat hits, so this capsule does not repair that behavior.
+
+The upstream selector `0810d2f8` cannot currently lift because the hardware/mode pointer `v10` is unresolved. The dispatcher `08014a6c` needs callee `08003dc0`, which then blocks on nested pointer `v71`; the exact failures are under the local input root. This prevents a qualified source `sample → actor edge → controller` sequence. The graph preserves source order and canonical actor ownership while declaring sampler, callback, integration, collision, and animation as unresolved services. No manual recovered C was used as a behavior input.
+
+The scenario is a narrow host check of already qualified generated IR. It does not measure gameplay cadence, physical input sampling, controller phase gating, hit counts, or playable game behavior. Queue and encompassing analysis timing are unavailable. No CI or build-system step changed, so no turnaround comparison is claimed.

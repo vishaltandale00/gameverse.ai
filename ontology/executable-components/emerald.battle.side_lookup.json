@@ -1,0 +1,107 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "emerald.battle.side_lookup",
+  "label": "Read battler side bit",
+  "role": "battle_ordering",
+  "source_game": "pokemon-emerald-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/emerald.battle.side_lookup/package.json",
+  "package_sha256": "49482b62ef5c5f02710b043fa0741b91d22a61322b0873dbf7ff0bbab5f3ee23",
+  "behavior_sha256": "b23e063aa95bede7a79f86eb1d1e350ce9d18686c47dc7968b08494007a58a21",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "e67199a0ed98440e0adf5ef58f9972f186c689e24ea74c41ff9a86d22a6a422f"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 3
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "battler_side_encoding",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle.battler_handle",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json"
+        ],
+        "opaque_bits": "Only low bit is interpreted by qualified root; remaining byte bits stay opaque."
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "qualified_invocation_state",
+    "clock": "explicit_invocation",
+    "phase": "caller_owned",
+    "ordering": "Retain recovered body order; system contract retains required inter-call ordering."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/emerald.battle.side_lookup/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite native subset qualification; whole turn-order/weather/scheduler system remains incomplete.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+    "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+  },
+  "return_meaning": {
+    "quantity": "side_bit",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "battle.battlers",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+      "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json"
+    ]
+  }
+}

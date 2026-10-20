@@ -1,0 +1,32 @@
+{
+  "id": "sonic-metroid-complete-first-draft",
+  "status": "unimplemented_acceptance_cases_required",
+  "request_ref": "gameverse-mashup-request.json supplied by user",
+  "required_features": [
+    "retained_sonic_world_and_campaign",
+    "metroid_ground_and_air_repertoire",
+    "sonic_momentum_on_loops_and_ramps",
+    "aim_and_realtime_beam_combat",
+    "missile_ammunition_and_typed_targets",
+    "energy_damage_invulnerability_and_defeat",
+    "metroid_enemy_ecology_and_entity_lifecycle",
+    "staged_boss_interaction",
+    "morph_bomb_and_ability_traversal",
+    "ability_unlocks_consumed_by_route_gates",
+    "hazards_liquids_and_environmental_rules",
+    "enemy_drops_resource_capacity_and_recovery",
+    "progression_survives_scene_change_death_and_resume",
+    "cohesive_region_atmosphere_parallax_and_audio",
+    "discovery_escalation_and_story_outcome",
+    "fresh_start_to_playable_campaign_outcome"
+  ],
+  "limits": { "wall_s": 180 },
+  "scenarios": [],
+  "evidence_rules": [
+    "Each promised gameplay feature needs an executing scenario with observable actions and semantic expectations against the installed candidate hash.",
+    "Each case may begin at a supplied private native save state, with exact state hash and provenance recorded; fixtures cannot stand in for a fresh-start progression witness.",
+    "Imported player-facing behaviors need stock-ROM controls showing the promised behavior is absent, not a failure caused by incompatible state or observation format.",
+    "Numerical movement changes and hook presence do not establish combat, enemies, abilities, progression or a completed first draft.",
+    "Missing cases fail coverage. Do not replace these requirements with a smaller passing suite or synthetic memory assertions unrelated to reachable gameplay."
+  ]
+}

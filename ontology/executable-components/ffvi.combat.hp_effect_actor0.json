@@ -1,0 +1,1250 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffvi.combat.hp_effect_actor0",
+  "label": "FFVI resolved HP and pending KO transaction, actor 0",
+  "role": "CompleteboundedsourceHP-effecttransaction:originaltargeteffectpreparation\u2192HPhealing/damage/clamp\u2192conditionalpendingKOrequest;separatefromattackderivationandrealizeddefeat.",
+  "source_game": "final-fantasy-vi-advance",
+  "origin": "automatic_own_ROM_raw_pcode_control_lift",
+  "package_ref": "local/ir/packages/ffvi.combat.hp_effect_actor0/package.json",
+  "package_sha256": "24e55698ca4aaec89d0b21b29d25f1a0f05f0add06b195afd61415a94e950524",
+  "behavior_sha256": "29b009f747a0918f52f91015449110f97b33382edc9accf501c7a0fa2b10c76e",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_raw_control_subset",
+    "receipt_sha256": "9730239860027d56e75d7705349547b84972e169c63c40251d225af2706c6760"
+  },
+  "configurations": [
+    {
+      "id": "actor0_null_continuation_context",
+      "label": "Actor 0 with qualified continuation context",
+      "source_data_sha256": "197e4a5020dfd6e0dfd5e3754d872c540497b406df09cd5ad931f0d06132376a",
+      "source_rom_sha256": "1310f2ad3c13f5446cf6c43d01d48aad640d6b8a4fbba2b92c776f4f6d90e6ff",
+      "provenance": {
+        "kind": "qualified_source_VM_entry_boundary_specialization",
+        "targetSelection": "Source actor0 subset, fixed target byte0; no claim all ten source actor slots qualified.",
+        "continuationSpill": "Portable null input token0; original source writes caller return continuation and generated token1. This private context must meet the entry domain again before a repeated accepted event.",
+        "control": {
+          "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/control-contract.json",
+          "sha256": "c6091df8893d79d7d0203dcb498b6d9e19b2ed9ef0c3ae0af3a5c23c4310ae99"
+        },
+        "codec": {
+          "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/validation-adapter.json",
+          "sha256": "cd3878935e9c43d57824ad92348bd79850c5ed60811c9693f58487189321b41e"
+        },
+        "codeProof": {
+          "path": "research/ir-workshop/game-system-assembly-20261016/continuation-token-review/review.json",
+          "sha256": "4735cdc14efd0e1cabf9b08bb61391efc504964a7cabe10fa5ab2f689ee97842"
+        },
+        "machine_layout": "validation_adapter_only"
+      }
+    }
+  ],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "actor_effect_membership_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.effect_mask.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              212,
+              212
+            ],
+            "symbol": "actor_effect_mask"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "actor_effect_membership_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.effect_mask.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              212,
+              212
+            ],
+            "symbol": "actor_effect_mask"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resolved_health_damage_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.resolved_damage.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              210,
+              210
+            ],
+            "symbol": "resolved_damage"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resolved_health_damage_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.resolved_damage.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              210,
+              210
+            ],
+            "symbol": "resolved_damage"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resolved_health_recovery_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.recovery.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              211,
+              211
+            ],
+            "symbol": "recovery"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resolved_health_recovery_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.recovery.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              211,
+              211
+            ],
+            "symbol": "recovery"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resource_effect_exclusion_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.exclusion_mask.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              212,
+              212
+            ],
+            "symbol": "exclusion_mask"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resource_effect_exclusion_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.exclusion_mask.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              212,
+              212
+            ],
+            "symbol": "exclusion_mask"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resource_effect_gate_packed_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.effect_gate.byte_0",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              213,
+              213
+            ],
+            "symbol": "effect_enabled",
+            "meaning": "Canonical three-byte backing for overlapping word gate. Only the evidenced word-intersection bit test is named; other game flag meanings remain unknown."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resource_effect_gate_packed_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.effect_gate.byte_1",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              213,
+              213
+            ],
+            "symbol": "effect_enabled",
+            "meaning": "Canonical three-byte backing for overlapping word gate. Only the evidenced word-intersection bit test is named; other game flag meanings remain unknown."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "resource_effect_gate_packed_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.effect_gate.byte_2",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              213,
+              213
+            ],
+            "symbol": "effect_enabled",
+            "meaning": "Canonical three-byte backing for overlapping word gate. Only the evidenced word-intersection bit test is named; other game flag meanings remain unknown."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "lethal_resource_transaction_latch_value",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.world.lethal_resource_latch",
+        "confidence": 0.9,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              215,
+              216
+            ],
+            "symbol": "death_global",
+            "meaning": "Source clears this byte on lethal HP transaction. Other latch values and downstream consumer meanings remain unknown."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_health.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              208,
+              208
+            ],
+            "symbol": "current_health"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_health.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              208,
+              208
+            ],
+            "symbol": "current_health"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_limit_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.maximum_health.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              208,
+              208
+            ],
+            "symbol": "maximum_health"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_limit_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.maximum_health.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              208,
+              208
+            ],
+            "symbol": "maximum_health"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              215,
+              215
+            ],
+            "symbol": "pending_status"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              215,
+              215
+            ],
+            "symbol": "pending_status"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              214,
+              214
+            ],
+            "symbol": "current_status"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/ffvi/battle-recovery.json",
+            "lines": [
+              214,
+              214
+            ],
+            "symbol": "current_status"
+          },
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+            "symbol": "canonical original little-endian byte accesses",
+            "meaning": "One byte lane of the sourced 16-bit value. Unit denotes packed byte value; no decoded scalar graph port or high-byte scaling is invented."
+          }
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 29,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "Canonicalactor0resource/statusbyteviewsandsharedworldmask/gate/latchstate;privateVMscratchfreshinvocationcontext.",
+    "clock": "explicitacceptedresolvedHP-effectevent",
+    "phase": "aftertargeteffectderivation/beforependingstatussettlement",
+    "ordering": [
+      {
+        "phase": "entry",
+        "calls": [
+          "hp_apply",
+          "continuation_call_prepare",
+          "prepare_signed_resource_effect"
+        ],
+        "meaning": "Push source continuation before entering signed-effect preparation."
+      },
+      {
+        "phase": "eligibility_and_resolution",
+        "meaning": "Sentinels, actor-mask exclusion writeback, overlapping effect-gate suppression, then signed net recovery/damage."
+      },
+      {
+        "phase": "HP_transaction",
+        "meaning": "Zero effect preserves resources/status. Healing clamps to maximum; damage subtracts and clamps lethal result to zero."
+      },
+      {
+        "phase": "lethal",
+        "calls": [
+          "lethal_hp_and_pending_ko",
+          "pending_status_or",
+          "VM_arithmetic_08134918"
+        ],
+        "meaning": "Clear source latch, publish HP0, queue pending bit0x80 unless current status mask0x0002."
+      },
+      {
+        "phase": "exit",
+        "meaning": "Actual r5 pop/BX caller continuation; source-derived portable token codec preserves written continuation spill."
+      }
+    ],
+    "repeatAcceptance": "Privateportablecontinuationspillnull+targetbyte0mustholdateachacceptedentry;noimplicitlogicalHP/statusreset;actualgraphonecallisnotrepeatedcombat."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_own_ROM_raw_instruction_pcode_control",
+    "machine_evidence_ref": "local/ir/packages/ffvi.combat.hp_effect_actor0/l0.json",
+    "resolution": "Exact own-ROM instruction p-code and declared source-pinned control/VM boundary; not HighFunction recovery"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Packed byte lanes are truthful current graph ports; decoded aggregate scalar health bindings are not claimed.",
+    "Other actor handles, full attack eligibility/damage derivation, status settlement/enemy lifecycle, rewards/UI/save remain outside finite boundary.",
+    "Continuation token entry-null specialization needs caller entry-context reset before an arbitrary repeated invocation; no unlimited event-loop claim.",
+    "4096finitenativepairsINCLUDING50independentsemanticfixtures;not4146andnotwholegameproof.",
+    "State/nativeABI/controlboundaryspecializationisexplicitactor0withprivateentrydomains.",
+    "Everypublicactor/worldportmustbeboundtoitsstatedcanonicalsourceidentity;unboundzero-defaultgameplaystateisnotanacceptablemeaningfulgraphproof.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "raw_pcode_provenance": {
+    "normalized_l0": {
+      "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/normalized-l0.json",
+      "sha256": "0d9d03f7f6f69f8807e2db0ddf31252daa608df91ae01a2c191fab6b6b6da424"
+    },
+    "runtime": {
+      "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/replay-runtime-vm_ir.py",
+      "sha256": "46ffd240c0a198577232593bfe1275dcd901d5f3d9e247766abe47aa9640f70f"
+    },
+    "control_contract": {
+      "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/control-contract.json",
+      "sha256": "c6091df8893d79d7d0203dcb498b6d9e19b2ed9ef0c3ae0af3a5c23c4310ae99"
+    },
+    "regeneration_identity": {
+      "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/regeneration-identity.json",
+      "sha256": "f9a2bdf24b738eb154fa750e330a39c1e10b75543ca3e2adc0d42417dfcf74d4"
+    }
+  },
+  "source_contract": {
+    "system": {
+      "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/source-system.json",
+      "sha256": "7d6e4bc3d5c83bfc0eb32f3ad8f4473587077d331666a570961157cabe4187c2"
+    },
+    "logical_port_views": [
+      {
+        "name": "current_health",
+        "logicalStorage": "u16",
+        "logicalQuantity": "health_resource",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_14",
+          "field_15"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.current_health",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "maximum_health",
+        "logicalStorage": "u16",
+        "logicalQuantity": "health_resource_limit",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_16",
+          "field_17"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.maximum_health",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "resolved_damage",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resolved_health_damage",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_4",
+          "field_5"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.resolved_damage",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": 65535
+      },
+      {
+        "name": "recovery",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resolved_health_recovery",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_6",
+          "field_7"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.recovery",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": 65535
+      },
+      {
+        "name": "actor_effect_mask",
+        "logicalStorage": "u16",
+        "logicalQuantity": "actor_effect_membership_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_2",
+          "field_3"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.effect_mask",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "exclusion_mask",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resource_effect_exclusion_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_8",
+          "field_9"
+        ],
+        "canonicalIdentity": "ffvi.battle.world.exclusion_mask",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "current_status",
+        "logicalStorage": "u16",
+        "logicalQuantity": "current_actor_status_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_20",
+          "field_21"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.current_status",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "pending_status",
+        "logicalStorage": "u16",
+        "logicalQuantity": "pending_actor_status_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_18",
+          "field_19"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.pending_status",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      }
+    ],
+    "canonical_public_fields": [
+      "field_14",
+      "field_15",
+      "field_16",
+      "field_17",
+      "field_4",
+      "field_5",
+      "field_6",
+      "field_7",
+      "field_2",
+      "field_3",
+      "field_8",
+      "field_9",
+      "field_20",
+      "field_21",
+      "field_18",
+      "field_19",
+      "field_10",
+      "field_11",
+      "field_12",
+      "field_13"
+    ],
+    "private_context_fields": [
+      "field_0",
+      "field_1",
+      "field_22",
+      "field_24",
+      "field_25",
+      "field_26",
+      "field_27",
+      "vm_r8",
+      "vm_r9"
+    ],
+    "canonical_state_sets": [
+      {
+        "id": "actor0",
+        "ownership": "canonical referenced actor0 state",
+        "views": [
+          {
+            "name": "current_health",
+            "logicalStorage": "u16",
+            "logicalQuantity": "health_resource",
+            "logicalUnit": "HP",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_14",
+              "field_15"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.current_health",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          },
+          {
+            "name": "maximum_health",
+            "logicalStorage": "u16",
+            "logicalQuantity": "health_resource_limit",
+            "logicalUnit": "HP",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_16",
+              "field_17"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.maximum_health",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          },
+          {
+            "name": "resolved_damage",
+            "logicalStorage": "u16",
+            "logicalQuantity": "resolved_health_damage",
+            "logicalUnit": "HP",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_4",
+              "field_5"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.resolved_damage",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": 65535
+          },
+          {
+            "name": "recovery",
+            "logicalStorage": "u16",
+            "logicalQuantity": "resolved_health_recovery",
+            "logicalUnit": "HP",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_6",
+              "field_7"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.recovery",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": 65535
+          },
+          {
+            "name": "actor_effect_mask",
+            "logicalStorage": "u16",
+            "logicalQuantity": "actor_effect_membership_bitset",
+            "logicalUnit": "bitset",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_2",
+              "field_3"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.effect_mask",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          },
+          {
+            "name": "exclusion_mask",
+            "logicalStorage": "u16",
+            "logicalQuantity": "resource_effect_exclusion_bitset",
+            "logicalUnit": "bitset",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_8",
+              "field_9"
+            ],
+            "canonicalIdentity": "ffvi.battle.world.exclusion_mask",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          },
+          {
+            "name": "current_status",
+            "logicalStorage": "u16",
+            "logicalQuantity": "current_actor_status_bitset",
+            "logicalUnit": "bitset",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_20",
+              "field_21"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.current_status",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          },
+          {
+            "name": "pending_status",
+            "logicalStorage": "u16",
+            "logicalQuantity": "pending_actor_status_bitset",
+            "logicalUnit": "bitset",
+            "encoding": "little_endian",
+            "byteFields": [
+              "field_18",
+              "field_19"
+            ],
+            "canonicalIdentity": "ffvi.battle.actor0.pending_status",
+            "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+            "sentinel": null
+          }
+        ],
+        "aliases": "Every sourced low/high byte lane is the same original actor record/parallel-array slot0 throughout prep, HP and pending-status calls; no per-callee copies."
+      },
+      {
+        "id": "world",
+        "ownership": "canonical shared world state",
+        "fields": [
+          "exclusion_mask",
+          "three overlapping effect-gate bytes",
+          "lethal resource latch"
+        ],
+        "aliases": "Gate words overlap the middle byte. Raw memory lowers each canonical byte once."
+      },
+      {
+        "id": "VM_context",
+        "ownership": "private bounded invocation context",
+        "fields": [
+          "operand scratch",
+          "accumulator/index scratch",
+          "target byte",
+          "r8/r9",
+          "continuation token spill"
+        ],
+        "entryConfiguration": "actor0_null_continuation_context"
+      }
+    ],
+    "inputs": [
+      {
+        "event": "ApplyResolvedHpEffect",
+        "acceptance": "Caller resolved target damage/recovery and selects fixed actor0; u16 values and bitsets use their exact source sentinels/width. Same canonical actor fields and world bytes must be bound together."
+      },
+      {
+        "name": "current_health",
+        "logicalStorage": "u16",
+        "logicalQuantity": "health_resource",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_14",
+          "field_15"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.current_health",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "maximum_health",
+        "logicalStorage": "u16",
+        "logicalQuantity": "health_resource_limit",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_16",
+          "field_17"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.maximum_health",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "resolved_damage",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resolved_health_damage",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_4",
+          "field_5"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.resolved_damage",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": 65535
+      },
+      {
+        "name": "recovery",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resolved_health_recovery",
+        "logicalUnit": "HP",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_6",
+          "field_7"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.recovery",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": 65535
+      },
+      {
+        "name": "actor_effect_mask",
+        "logicalStorage": "u16",
+        "logicalQuantity": "actor_effect_membership_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_2",
+          "field_3"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.effect_mask",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "exclusion_mask",
+        "logicalStorage": "u16",
+        "logicalQuantity": "resource_effect_exclusion_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_8",
+          "field_9"
+        ],
+        "canonicalIdentity": "ffvi.battle.world.exclusion_mask",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "current_status",
+        "logicalStorage": "u16",
+        "logicalQuantity": "current_actor_status_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_20",
+          "field_21"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.current_status",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      },
+      {
+        "name": "pending_status",
+        "logicalStorage": "u16",
+        "logicalQuantity": "pending_actor_status_bitset",
+        "logicalUnit": "bitset",
+        "encoding": "little_endian",
+        "byteFields": [
+          "field_18",
+          "field_19"
+        ],
+        "canonicalIdentity": "ffvi.battle.actor0.pending_status",
+        "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+        "sentinel": null
+      }
+    ],
+    "outputs": [
+      {
+        "name": "current_health",
+        "kind": "canonical u16 packed lanes",
+        "meaning": "Final original HP transaction result."
+      },
+      {
+        "name": "resolved_damage",
+        "meaning": "Exclusion may write eligible damage to0; absent sentinel behavior preserved."
+      },
+      {
+        "name": "pending_status",
+        "meaning": "Existing bits preserved, KO request0x80 queued only on lethal net damage without current-status mask0x0002."
+      },
+      {
+        "name": "lethal_resource_latch",
+        "meaning": "Source clears byte only on lethal path; downstream interpretation unknown."
+      },
+      {
+        "name": "VM_context",
+        "meaning": "Original scratch/register effects r8/r9 and continuation spill compared; remain private control/context rather than fabricated gameplay ports."
+      }
+    ],
+    "events": [
+      {
+        "name": "ApplyResolvedHpEffect",
+        "kind": "actual source transaction invocation; no invented dispatcher callback"
+      },
+      {
+        "name": "PendingKORequested",
+        "condition": "Lethal net damage and !(current_status & 0x0002)",
+        "order": "After HP0/latch clear; before downstream status realization",
+        "kind": "source-observed pending bit write, not realized defeat"
+      }
+    ],
+    "services": [
+      {
+        "service": "VM arithmetic and call/continuation control",
+        "status": "source-derived and closed, no stubs",
+        "effects": "Original shared register/memory effects and source order; native r5+4 exit and r8/r9 outputs checked."
+      },
+      {
+        "service": "pending status realization",
+        "status": "explicit external next consumer, not implemented by this component"
+      }
+    ],
+    "preconditions": [
+      "Fixed actor0 only; no entire actor pool or whole FFVI qualification.",
+      "All 20 public actor/world packed-byte ports must bind their stated canonical source identities; no hidden zero defaults for shared gameplay state.",
+      "Private target byte0 and null continuation spill token0 at event entry; repeated events must satisfy those entry domains again. No external request128 reload is required: full HP source performs original preparation internally.",
+      "Current HP/max/damage/recovery/status are u16 source bitvectors. Fixtures include outside-normal construction boundaries; ordinary reachable states and maxHP construction<=9999 are separate source facts.",
+      "IRQ/FIQ disabled during bounded qualification; source order is retained statically, native proof compares final state/declared exits rather than frame-time scheduling or every intermediate store."
+    ],
+    "gaps": [
+      "Packed byte lanes are truthful current graph ports; decoded aggregate scalar health bindings are not claimed.",
+      "Other actor handles, full attack eligibility/damage derivation, status settlement/enemy lifecycle, rewards/UI/save remain outside finite boundary.",
+      "Continuation token entry-null specialization needs caller entry-context reset before an arbitrary repeated invocation; no unlimited event-loop claim."
+    ],
+    "qualification": {
+      "sourceBacked": true,
+      "executableQualified": true,
+      "nativeVectors": 4096,
+      "independentSemanticFixturesIncluded": 50,
+      "countMeaning": "4096 total pairs INCLUDING50 independent expected-field-subset fixtures, not4146",
+      "receipt": {
+        "path": "local/ir/fleet-next/final-fantasy-vi-advance/coverage-pass/hp-candidate-v1/receipt.json",
+        "sha256": "4ed60f5cd72d2ab7ca1b3d8a7f564cd1f88fe8de8dc2a84cbdc09ef7944b41ea"
+      },
+      "nativeAbi": "r8/r9 liveouts; r5+4 and actual source pop/BX; r6/r7/r10/r11 preserved; continuation token codec independently reviewed",
+      "scope": "finite original source\u2192serialized L1\u2192emitted native parity, actor0/state+ABI/control specialization only",
+      "sourceL2Completeness": "partial coherent transaction; not whole game or full battle",
+      "graphAdmission": "pending central exact-package/behavior pins and actual generic graph receipt",
+      "review": "Independent token source review clear; final backend/source metadata review and actual central graph admission remain separate records."
+    },
+    "next_actual_consumer": "Nativependingstatussettlement/defeatscheduler;explicitlyoutsideboundaryandnotstubbed."
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "ffvi.combat.hp_effect_actor0",
+        "source_game": "final-fantasy-vi-advance",
+        "package": {
+          "path": "local/ir/packages/ffvi.combat.hp_effect_actor0/package.json",
+          "sha256": "24e55698ca4aaec89d0b21b29d25f1a0f05f0add06b195afd61415a94e950524"
+        },
+        "behavior": {
+          "path": "local/ir/packages/ffvi.combat.hp_effect_actor0/l1.json",
+          "sha256": "29b009f747a0918f52f91015449110f97b33382edc9accf501c7a0fa2b10c76e"
+        },
+        "native_receipt": {
+          "path": "local/ir/packages/ffvi.combat.hp_effect_actor0/receipt.json",
+          "sha256": "9730239860027d56e75d7705349547b84972e169c63c40251d225af2706c6760"
+        },
+        "graph_request": {
+          "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp.assembly.json",
+          "sha256": "ee7c92664816cc2e3401c6c4a03def28f77120b7e4a84daf4eafa8c0e879d5f5"
+        },
+        "graph_receipt": {
+          "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp.validation.json",
+          "sha256": "6d4be89ddc330c4a6d084f993278b25e0d979c7136e41723fd231568523d5e1c"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/final-fantasy-vi-advance/prefab-pass/graph-resolvers/assembly.snapshot.py",
+          "sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/final-fantasy-vi-advance/prefab-pass/graph-resolvers/catalog.snapshot.json",
+          "sha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "component_instance": "hp",
+        "graph_invocation_count": 1,
+        "statement_sha256": "b835a43cf06bce31a3ba87a995e12ac1a678db28e87836fff8c76188704dec23",
+        "source_admission_pins": {
+          "path": "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/graph-admission.json",
+          "sha256": "ace4e2c0c25937ce4ae16cfeaf6a22dd0a5b24e651bebfc160b2828305f613f9"
+        },
+        "review_status": "scoped_clear_integration_review",
+        "limitations": [
+          "Symbolic binding/ownership/domain/order validation only; source lifecycle obligations remain unproven.",
+          "No composed native execution or whole-system qualification claimed."
+        ],
+        "package_sha256": "24e55698ca4aaec89d0b21b29d25f1a0f05f0add06b195afd61415a94e950524",
+        "behavior_sha256": "29b009f747a0918f52f91015449110f97b33382edc9accf501c7a0fa2b10c76e",
+        "native_receipt_sha256": "9730239860027d56e75d7705349547b84972e169c63c40251d225af2706c6760"
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-vi-advance",
+    "entry": "0807e7c0"
+  },
+  "domain_contract_fingerprint": "6c558e97ec62cc7c9481255b7de20da48bac1ddb6a75377527a42d20147a7862",
+  "specialization_subset": true
+}

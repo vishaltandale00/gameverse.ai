@@ -1,0 +1,15 @@
+# CINDER RUN local Play registration
+
+[Open CINDER RUN in Play](http://127.0.0.1:4173/v0?view=play&game=ir-workshop). The existing single IR Workshop slot selects independently reviewed attempt 04, ROM `4b6538c12ee89644c13b1513c2ca98451ebb1db20ee36f9a2d0714324aa0d755`.
+
+Arrows move; **X** jumps; **Z** fires. Clear both guards, then reach the green exit. The charger warns yellow and takes damage while blue; use the central ledge and reposition after the turret aim line. You have three hearts. Press **X** after failure to retry, or after success to replay. Gamepad A jumps and B fires. These instructions now travel through the existing per-game notes field and appear in the actual Play catalog; older receipts retain generic notes.
+
+[Independent native quality review](../../requests/l2-quality-20261016/review/QUALITY.md) accepts a bounded readable combat prototype with visible warnings, distinct shield/damage feedback, movement-dependent completion, failure/retry and a defeated camp counterexample. This is a thin two-step encounter, with no fresh-human comprehension or enjoyment validation. The AI, shields, player hearts, collision checks, retry, world and graphics are authored L2 around qualified steering/impact/movement. Neither new original enemy AI recovery nor automatic L2 recovery is claimed. Cinder does not consume the separately qualified linked geometry query or projectile experiment.
+
+[Verification](verification.json), [activation](activation.json), [ready catalog entry with exact instructions](catalog-entry.json), [quality-report pins](quality-review-link.json), and [final HTTP Research data/source hashes](research-http-progress.json) retain identities, timings and limitations. Registration used the existing activation API once after explicit quality clearance. No browser gameplay or unavailable-browser retry occurred; HTTP shell/catalog/served hash and reviewed native evidence were verified.
+
+SOUL LOOM's prior selection is archived at `local-data/games/registration-history/ir-workshop-20261016T131454Z-dfc7e4b70652.json`; copying that receipt back to `local-data/games/ir-workshop.json` restores it. Older receipts, ROMs, progress and other game entries remain intact.
+
+Final Research reports all 33 games partial: 47 finite subsets = 46 original-function subsets + 1 declared linked-sequence subset, 22 typed, 662,983 fixture pairs; 22,851 bounded L0 / 2,351 static candidates and 10 generated compositions. The added L0 entry is retained-cache reconciliation, not a new export. Mario remains 120 targets / 45 unfinished families; 24 fleet packets are static evidence. A linked sequence composes recovered helpers and is not another recovered source function.
+
+Existing-server source-only refresh took 1.611 s; clean shell copy 31.5 ms (npm command 0.11 s); 11 focused frontend tests passed in 49.06 ms. Single prior/current measurements and missing baseline/queue/CI timing are explicit in the receipt. No dependencies, CI job or broad test stage were added.

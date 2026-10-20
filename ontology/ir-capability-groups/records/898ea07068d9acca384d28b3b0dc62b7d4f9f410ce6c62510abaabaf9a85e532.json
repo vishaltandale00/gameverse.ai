@@ -1,0 +1,195 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "emerald.held-item.metadata.v2",
+  "game_id": "pokemon-emerald-version",
+  "module_id": "emerald.items.metadata",
+  "package_ids": [
+    "emerald.items.effect",
+    "emerald.items.parameter"
+  ],
+  "source_roots": [
+    "080d745c",
+    "080d74dc",
+    "080d7500"
+  ],
+  "proposal_status": "two-new-query-roots-with-retained-private-qualified-clamp-dependency",
+  "canonicalstate": {
+    "owner": "Original immutable gItems ROM table; zero mutable state owners",
+    "record_count": 377,
+    "record_stride": 44,
+    "source_asset_union_bytes": 16546,
+    "emitted_readonly_asset_bytes": 33090,
+    "source_layout": {
+      "path": "local/ir/pokemon-next-20261016/items001/source-layout-evidence.json",
+      "sha256": "72280e40dcd7ae8e06cdfa6b4b34c21596b9f4ec996f7b3e86d0205e960c6c46"
+    },
+    "binding": "Exact embedded source windows, readonly only; no RAM writeback"
+  },
+  "event_order": [
+    "Sanitize full u16 input: values0..376 retain identity, values377..65535 select item0",
+    "Read original item record field: held effect kind or item-specific encoded parameter",
+    "No mutable state, no new atomic transaction, no frame/tick schedule; original caller controls query order"
+  ],
+  "exactpins": {
+    "result": {
+      "path": "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/result.json",
+      "sha256": "db452d892c7c5fc8f38f0c74bafe1149619dfbe45382bb6c79b988b44c081344"
+    },
+    "provider": {
+      "path": "local/roundtrip/emerald-items-ir-20261016-001/provider-report.json",
+      "sha256": "ff92d8664874e38c9366d914a539aaa63c2fcb146f00facf008a040fa298b53e"
+    },
+    "artifact": {
+      "path": "local/roundtrip/emerald-items-ir-20261016-001/rebuilt.gba",
+      "sha256": "e299860e6a5db5a4d1bcf70eeb0b4729b16639d1c7d319ce820174897821ec09"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/source-contract.json",
+      "sha256": "6bbf427435b28b96551eb35e4862ee5faa5d7d1b5ca41165bb8d558a7d6f7e66"
+    },
+    "source_frontier": {
+      "path": "research/ir-workshop/roundtrip-20261016/wave2/frontier/emerald-installed-items-v2.json",
+      "sha256": "7b4a0486eef99fbd72108689dadedcec2343825c79bac6d736ba399ff13f65df"
+    },
+    "independent_qc": {
+      "ir": {
+        "path": "local/roundtrip/qc-review-wave2-20261016/emerald-items-ir-qc.json",
+        "sha256": "88047d68dad0dde36840558e3693b3f54bc2c16a31e211ef5213e4b4effd1cea"
+      },
+      "semantic": {
+        "path": "local/roundtrip/qc-review-wave2-20261016/emerald-items-semantic-qc.json",
+        "sha256": "e6e69303754b8de5e8aa57c1477f84ea6c8a9baccc8859e30de5582d51343298"
+      }
+    },
+    "publication_candidates": {
+      "path": "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/publication-candidates.json",
+      "sha256": "435eeec5fa3cfc23525d707ac3a138487d5fe64c8bdba0f5aaa678bf0aa6cabd"
+    }
+  },
+  "dependency_links": [
+    {
+      "from": "emerald.items.effect",
+      "to_source_root": "080d745c",
+      "kind": "source-call-automatically-inlined",
+      "native_call_pc": "080d74e4"
+    },
+    {
+      "from": "emerald.items.parameter",
+      "to_source_root": "080d745c",
+      "kind": "source-call-automatically-inlined",
+      "native_call_pc": "080d7508"
+    },
+    {
+      "kind": "retained-qualified-original-dependency",
+      "entry": "080d745c",
+      "source_game": "pokemon-emerald-version",
+      "central_package_present": false,
+      "publication_requested": false,
+      "origin": "automatic_highfunction_lift",
+      "compiled_into_both_getter_bodies": true,
+      "installed_as_own_original_entry_replacement_in_this_ROM": true,
+      "artifacts": {
+        "l0.json": {
+          "path": "local/ir/pokemon-next-20261016/items001/clamp/l0.json",
+          "sha256": "f5511fa4d4fd76f3b70b7f96744a7cd0fc1c1fae732af3f7b06e9a4f8ec922cc"
+        },
+        "l1.json": {
+          "path": "local/ir/pokemon-next-20261016/items001/clamp/l1.json",
+          "sha256": "389f58eb2affc5edc92c96501afd2d2c9981cc49fed0f55e839a08ae2a43f9a1"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/pokemon-next-20261016/items001/clamp/validation-adapter.json",
+          "sha256": "0d6080cfe25363e8176b9f52de1e4a44bbfb8b91026cc22adfd5a411346ac35c"
+        },
+        "generated.c": {
+          "path": "local/ir/pokemon-next-20261016/items001/clamp/generated.c",
+          "sha256": "22fcc441e16d87c60acb9d25f41064c5e5cf4703f808ee559ba0a8aac79373e1"
+        },
+        "receipt.json": {
+          "path": "local/ir/pokemon-next-20261016/items001/clamp/receipt.json",
+          "sha256": "981e6eae8bdcd1f2e2b9101bf9e62b220791257bbc966f5ff46686cf170691bb"
+        }
+      },
+      "full_r0_abi": {
+        "path": "local/ir/pokemon-next-20261016/items001/clamp-return-abi.json",
+        "sha256": "ec393ecee406fbcda71ebef8bc59912805b6d32da2bfed397ad7bfb244188ec5"
+      },
+      "checked_dependency_adapter": {
+        "path": "local/ir/pokemon-next-20261016/items001/clamp/dependency-adapter.json",
+        "sha256": "e0f9a23e34281a9355fe9f493bcc1beb034fcb49b168c67a8f91aeb68c4716fd"
+      }
+    }
+  ],
+  "native_eligibility": {
+    "kind": "finite_original_function_and_reconstructed_entry_parity",
+    "original_rom_sha256": "a9dec84dfe7f62ab2220bafaef7479da0929d066ece16a6885f6226db19085af",
+    "rebuilt_rom_sha256": "e299860e6a5db5a4d1bcf70eeb0b4729b16639d1c7d319ce820174897821ec09",
+    "vectors_each": 4096,
+    "explicit_expected_returns_each": 379,
+    "new_original_getter_functions": 2,
+    "fresh_rebuilt_entry_functions": 3,
+    "clamp_original_proof": "authenticated reused4096/379 proof, no new execution credit",
+    "return_abi": {
+      "getters": "u8 source return width",
+      "clamp": "u16 value with exact all-path source machine full-r0 unsigned extension"
+    },
+    "negative": {
+      "outcome": "rejected-as-required",
+      "description": "Copied candidate QuickClaw effect byte26 changed to parameter byte20; original/reference and frozen candidate untouched",
+      "case": 183,
+      "exit_code": 9,
+      "seconds": 0.048908,
+      "compile_calls": 0,
+      "model_calls": 0
+    }
+  },
+  "runtime_capabilities": {
+    "portable_L1": true,
+    "actual_source_entry_replacement": true,
+    "generated_behavior_bytes": 62,
+    "new_getter_behavior_bytes": 48,
+    "existing_clamp_behavior_bytes": 14,
+    "mechanical_binding_bytes": 60,
+    "embedded_captured_readonly_asset_bytes": 33090,
+    "alignment_bytes": 2,
+    "replacement_entry_veneer_bytes": 24,
+    "raw_difference_bytes": 33237,
+    "closed_interchangeable_prefab": false,
+    "whole_game_equivalent": null
+  },
+  "originalhostprerequisites": [
+    "Original item identity and hold-effect dictionaries for exact pinned game version",
+    "Original comparator/caller query sequencing and Enigma Berry alternate path",
+    "Original item ownership, bag/save lifecycle and effect execution remain authoritative"
+  ],
+  "gaps": [
+    "Battle comparator0803cf10 weather/party dispatch",
+    "Action scheduler0803d2e8 bounded expansion",
+    "Enigma Berry override and original host held-item ownership",
+    "Item effect execution, bag/save lifecycle, whole-game native campaign"
+  ],
+  "counts": {
+    "new_distinct_source_functions": 2,
+    "existing_clamp_source_function_deduplicated": 1,
+    "new_central_packages_requested": 2,
+    "fresh_original_getter_comparisons": 8192,
+    "fresh_rebuilt_entry_comparisons": 12288,
+    "reused_original_clamp_comparisons": 4096,
+    "do_not_pool_historical_and_fresh": true,
+    "retained_private_qualified_dependencies": 1,
+    "central_clamp_package_present": false
+  },
+  "timing": {
+    "qualification_seconds": 0.5349099580000001,
+    "provider_seconds": 1.946727042,
+    "overlap": "sequential independent processes, per-stage times nested within their own total",
+    "queue_seconds": null,
+    "comparable_before_measurement": null,
+    "before_gap": "Earlier fixture probe failed before parent native qualification; no valid pre-arena native duration or speedup claimed"
+  },
+  "supersedes_proposal": {
+    "path": "research/ir-workshop/roundtrip-20261016/wave2/emerald-items/library-capability-v1.json",
+    "sha256": "bccb42067812986cae0b6d26ac4bb93bf0937d2bd33f1ec7acf009a02ac58a55"
+  },
+  "revision_reason": "The clamp source root is historically qualified in the private library and installed in this ROM; it has no existing central package. Both published getter bodies already inline that source dependency, so no synthetic central alias or new clamp package is claimed."
+}

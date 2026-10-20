@@ -1,0 +1,182 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ff12.resources.sorted_bucket_reset",
+  "label": "Reset sorted resource bucket heads and record count",
+  "role": "resource_lifecycle",
+  "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ff12.resources.sorted_bucket_reset/package.json",
+  "package_sha256": "6f4a7cd209e6d65751bc8d4962fa6a639f1251a90bf063376e900cf52daa0d4f",
+  "behavior_sha256": "b449f3e3f8413207b1caed03acfcdc78be3bfeeb15ad74e99decee33d39435f7",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 128,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "8544e75cd0abeff8a757c6702cbec60e9d4356791d1bf5350012c2e040d5ecec"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json"
+        ],
+        "frame": "resources.sorted_buckets.bucket_0.head",
+        "quantity": "opaque_sorted_resource_bucket_head_token",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json"
+        ],
+        "frame": "resources.sorted_buckets.bucket_1.head",
+        "quantity": "opaque_sorted_resource_bucket_head_token",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json"
+        ],
+        "frame": "resources.sorted_buckets.bucket_2.head",
+        "quantity": "opaque_sorted_resource_bucket_head_token",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json"
+        ],
+        "frame": "resources.sorted_buckets.bucket_3.head",
+        "quantity": "opaque_sorted_resource_bucket_head_token",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json"
+        ],
+        "frame": "resources.sorted_buckets.allocated_records",
+        "quantity": "resource_record_count",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 5,
+    "collections": []
+  },
+  "lifecycle": {
+    "allocation": false,
+    "clock": "Explicitsource initializer/reset invocation; no frame frequency inferred",
+    "ordering": "Original15198initializer wrapper\u2192automaticreset15178\u2192original150acemptyconsumer; activeinsertions/callbacks remainopen",
+    "storage": "Borrowed same canonical SortedResourceBucketContainer; distinct from choice scene queue",
+    "writes": "Fouru32heads and u8recordcountzero only; allrecordbytes remain"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ff12.resources.sorted_bucket_reset/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Relatedresourcecontainer, NOT earlierchoicequeue closure or newpredicatequalification",
+    "Clearsheadreferences/countbutpreservesrecordbytes; do not use as source-free/destructor/memoryzero helper",
+    "Only emptyconsumer invoked; activeinsertion/sortedorder/callback/lifetimeunproven",
+    "No whole-game source/runtime/portableprefab equivalence",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "borrowed_state": "Onefourbucket/128recordcanonicalowner supplied as entityr0",
+    "native_context": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-context-result.json",
+      "sha256": "d5743442874956fff5e560eea35718656953e5aa56b6f8bc637d90480321aec3"
+    },
+    "ordering": "Reset writes are actualautomaticbody, no nativecallwrapper behavior; only emptyconsumer path checked jointly",
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/original-proof.json",
+      "sha256": "91529c2c2f309b06864378e14a9d4e691a97de1c03581109c35edcbf2f1fc8e6"
+    },
+    "owned_state": [],
+    "preconditions": [
+      "Accessiblecanonicalownermemorycovering0xc11bytes; no pointerdereference needed by reset",
+      "No alias with savedreturnframe; originalcallers obeyAAPCS"
+    ],
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/rebuilt-proof.json",
+      "sha256": "e435a5ae46a856997cc5311686f2a36a7f49d2769cb58a1768d7e6199b806d82"
+    },
+    "reference": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json",
+      "sha256": "61b58d2ce6324d931cbda694ad6db4e313da6a0a9857524aa3b24b2efb8d9870"
+    },
+    "return_type": "void",
+    "services": []
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+    "entry": "08015178"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

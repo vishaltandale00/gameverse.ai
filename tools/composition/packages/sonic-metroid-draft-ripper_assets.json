@@ -1,0 +1,108 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.mzm_ripper_assets",
+  "version": "0.1.0",
+  "concept": {
+    "role": "presentation.extracted_mzm_sprite_closure"
+  },
+  "native_implementation": {
+    "origin": "self_decompilation",
+    "game_id": "metroid-zero-mission",
+    "recovery": {
+      "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "ranges": [],
+      "lift_ref": "local/composition-assets/mzm-flyer-02/assets.c",
+      "lift_sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8",
+      "semantic_status": "raw_original_tile_palette_OAM_data_reextracted_locally",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "identity-pinned own-ROM assettables"
+        ],
+        "ram": [],
+        "hardware": [],
+        "relocations": [
+          "all implementation addresses linkerowned; no foreignROM function calls"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "No claim of full original MZM graphics engine/audio/camera imported",
+        "Common source hitstun and death scheduler are external dependencies; source-live AI package is not whole-MZM decompilation",
+        "Native campaign patrol/freeze/resume, exact originalVRAM/palette/OAM witnesses are recorded separately in research/requests/mzm-ripper-native-game-proof.json; nativefieldwallturn notyetcaptured."
+      ],
+      "data_recovery": {
+        "source_rom": {
+          "ref": "local/roms/Metroid - Zero Mission (USA).gba",
+          "sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37"
+        },
+        "extraction_receipt": {
+          "ref": "local/composition-assets/mzm-flyer-02/receipt.json",
+          "sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd"
+        },
+        "ranges": [
+          {
+            "address": "0x82cbb6c",
+            "size": 561,
+            "sha256": "d71b7af645e4178287910855d275c763884827c1aca8fb8c5846e9b34489a059"
+          },
+          {
+            "address": "0x82cbda0",
+            "size": 32,
+            "sha256": "d4bd112c991a2e95287feee8781b9cc4f2130e0fd2d607607ee0fa8381ec7919"
+          },
+          {
+            "address": "0x82cc014",
+            "size": 140,
+            "sha256": "b7995b25068b013e8d99ab9c7a860e78e05c6eb3a5314155f5c73a837fc49b1d"
+          },
+          {
+            "address": "0x875ec10",
+            "size": 4,
+            "sha256": "db3b3978904c900eb210003a1458bfd00dc39074f47ffa2e4f3c1c87dd4d70f4"
+          },
+          {
+            "address": "0x875ef08",
+            "size": 4,
+            "sha256": "d45258d649e396a726fb1f1ddeb75875f0d2167741ced8fa6a60b47cd1e55e00"
+          }
+        ]
+      }
+    },
+    "kind": "extracted_asset_data"
+  },
+  "ports": [],
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "local/composition-assets/mzm-flyer-02/assets.c",
+          "sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8"
+        },
+        {
+          "ref": "local/composition-assets/mzm-flyer-02/assets.h",
+          "sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a"
+        },
+        {
+          "ref": "local/composition-assets/mzm-flyer-02/receipt.json",
+          "sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/extract_mzm_flyer.py",
+          "sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670"
+        }
+      ],
+      "translation_units": [
+        "local/composition-assets/mzm-flyer-02/assets.c"
+      ],
+      "requires": [],
+      "exports": [],
+      "state_bindings": [],
+      "host_calls": []
+    }
+  }
+}

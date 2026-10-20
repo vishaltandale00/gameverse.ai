@@ -1,0 +1,146 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "metal_slug_advance.selection.visible_frontier",
+  "label": "Refresh selectable frontier using progress and availability entry54",
+  "role": "progression",
+  "source_game": "metal-slug-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/metal_slug_advance.selection.visible_frontier/package.json",
+  "package_sha256": "f1c351c589ead747e3d4ea19735ff44857f541cb935a87ecff787c028e9c32a3",
+  "behavior_sha256": "920e2cc12e5723cab59f12abc00022bd3f18d8fdd6a122a7137ffd9156392661",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 2048,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b70baf5bedecdb6a464d1a81730ad0cde73d9fd33e042328c172ef34b3b2af3b"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "selection_frontier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_progress_selection_frontier",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "dependency_0_dependency_0_collection_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "count": 13,
+      "semantic_type": {
+        "quantity": "packed_two_bit_availability",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_selection_availability_table",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "dependency_0_dependency_0_collection_0",
+        "storage_type": "u16",
+        "count": 13
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "canonical persistent progressbyte andavailabilitybank",
+    "clock": "explicit menu-refresh event",
+    "phase": "original menu initializes visible frontier before rowallocation",
+    "ordering": "progressread\u2192conditionalavailability54query\u2192frontierreturn\u2192external menuconsumer"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "eaa02ce09490f3308fa43ebec5f7ce46acaeef2294c2d9cf92befb7693e40c26",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/metal_slug_advance.selection.visible_frontier/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_dependency_0_Acyclic structured CFG only",
+    "dependency_0_dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Full menu cursor/rowalloc/activation callback not emitted.",
+    "No qualified MetalSlug attack/contact/enemydefeat behavior inferred from generic actor pool helpers.",
+    "Scene task\u2192combat producers and success/defeat predicate ownership remain source-only/missing.",
+    "Save/restore and availabilityflag acquisition remain external source dependencies.",
+    "Narrow read-only frontier transaction; sourcecaller/menu actorlifecycle remains required.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json",
+    "sha256": "c6ebeb93c55a0663d97e4010102b8f3874763f5cac3bce62a5dff3c8f6cb87bb",
+    "source_consumer": "08027a60 uses result+1 as visible menuentrycount",
+    "source_writer": "08009540\u219208007d30 advances sameprogressbyte",
+    "return_domain": [
+      0,
+      5
+    ],
+    "role": "Progression benefit for source selection; not full combat or menu allocator."
+  },
+  "return_meaning": {
+    "quantity": "selection_frontier",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "source_six_entry_menu_visible_frontier",
+    "confidence": 0.99,
+    "evidence": [
+      "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+    ]
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "metal-slug-advance",
+    "entry": "08007d00"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

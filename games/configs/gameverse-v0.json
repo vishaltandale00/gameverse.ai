@@ -19,11 +19,6 @@
       "adapter": "gameverse-gba-worker/0.1.0"
     },
     {
-      "id": "sonic-metroid-movement-v1",
-      "catalogId": "sonic-metroid-movement-v1",
-      "adapter": "gameverse-gba-worker/0.1.0"
-    },
-    {
       "id": "ir-workshop",
       "catalogId": "ir-workshop",
       "adapter": "gameverse-gba-worker/0.1.0"

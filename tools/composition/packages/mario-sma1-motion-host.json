@@ -1,0 +1,363 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma1.character_jump_hover_motion",
+  "version": "0.2-native-context-abi-qualified",
+  "concept": {
+    "role": "movement.character_platformer_parts",
+    "pattern": "character-configured jump onset,held-jump hover,ground friction,charged jump phase and carrier/wrapped integration",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Own indexed USA/Europe ROM SHA1 f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json",
+    "abi": "Four original void(void) operators and two original void(r0 actor*) integrators; explicit player/profile/entities/character parameters/input/frame context; public shared Sma1Motion context ABI24bytes,parameters@12,held@20,frame@22 verified against provider layout",
+    "recovery": {
+      "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "ranges": [
+        {
+          "address": "0x080a7618",
+          "size": 308,
+          "isa": "thumb",
+          "instruction_sha256": "e5c537c0f2cedb49794cd47058177b9613359f3da1c71df4f55f2bade1837fdc",
+          "name": "sma1_gravity_hover",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080a7e80",
+          "size": 352,
+          "isa": "thumb",
+          "instruction_sha256": "f6ec3bc0b85b845f0dd1ae33f03306df5df2961ceb5b655cedd8f35ffcb035a0",
+          "name": "sma1_friction",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080a9808",
+          "size": 346,
+          "isa": "thumb",
+          "instruction_sha256": "01985c687dd92acc4deb878c32d7ce1febfe6a7fe2998ab4e8b2dfd66a4363df",
+          "name": "sma1_jump_onset",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080abaa0",
+          "size": 238,
+          "isa": "thumb",
+          "instruction_sha256": "3426d282e95314849b1d4bdd1aedf6f7fd40a6bfc6789521ea20140f4572b858",
+          "name": "sma1_charged_state_decay",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080abf40",
+          "size": 424,
+          "isa": "thumb",
+          "instruction_sha256": "4399dbf594426ecabe2faa2acd7e07ae4158f3c450d40d483ff915f67548886e",
+          "name": "sma1_integrate_x",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080ac11c",
+          "size": 84,
+          "isa": "thumb",
+          "instruction_sha256": "29c1572215a49d7a74a02d3e039ad15ae6390d2b83fe77da2fa7ac365da3046b",
+          "name": "sma1_integrate_y",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-recovered.c",
+      "lift_sha256": "de05e4e913deadc2f39326b6a055077955b6b9c4b28d1ff7a1d4b063df2a1f7d",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "{\"address\": \"0x08367d00\", \"bytes\": 4096, \"sha256\": \"b09f27434d7adb7590adfe54669c33b1ec2dd7861c039ef10324f7bce628153b\"}",
+          "Original character parameter record explicitly supplied by caller/context"
+        ],
+        "ram": [
+          "Explicit native actor/profile/entities/character parameters/input/frame"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Pure components contain no original native addresses or mutable globals; reviewed context adapter supplies existing storage"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-gameplay-receipt.json"
+      ],
+      "unknowns": [
+        "Native Mario ordinary/charged and Peach held/tapped episodes qualified; full campaign unqualified",
+        "Full input acceleration,terrain/carry/enemy/progression remain separate",
+        "Native character0 Mario maps to08368838 and character1 Peach to08368880; Luigi/Toad mapping not yet witnessed"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "character_motion_context",
+      "direction": "in",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "character_ground_input_carrier",
+        "unit": "native_fields",
+        "frame": "SMB2_main"
+      },
+      "semantic": "Explicit original character coefficients,hover counter,ground/mode/carry flags; original controller owns jump permission"
+    },
+    {
+      "id": "motion",
+      "direction": "out",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "position_velocity_jump_hover_charge",
+        "unit": "native_fields",
+        "frame": "SMB2_main"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "position",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "velocity",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "velocity",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "jump_hover_charge",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "jump_hover_charge",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "character_motion_parts",
+      "clock": "original_main_game_calls",
+      "phases": [
+        "gravity_hover",
+        "friction",
+        "jump_onset",
+        "charged_state_decay",
+        "integrate_x",
+        "integrate_y"
+      ],
+      "reads": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ],
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge"
+      ],
+      "invariants": [
+        "Position signed32 16.16 pixels; motion contribution is arithmetic_shift_right(velocity+carrier,4)",
+        "Jump onset depends on explicit character parameters and speed/carry/charge context",
+        "Held jump supports character-defined ascent and finite hover; original caller owns permission/scheduling"
+      ],
+      "authority": "Exact six native entry replacements; explicit context and original campaign scheduler retained"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "Six own-ROM local operators, no hidden calls"
+    ],
+    "data": [
+      "{\"address\": \"0x08367d00\", \"bytes\": 4096, \"sha256\": \"b09f27434d7adb7590adfe54669c33b1ec2dd7861c039ef10324f7bce628153b\"}",
+      "Character parameter record via declared context pointer"
+    ],
+    "globals": [
+      "Native player/profile/entity/parameter pointers,held mask and frame byte"
+    ],
+    "macros": [
+      "SMA1_NATIVE_BUILD"
+    ],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "Full input acceleration/ground contact/carry and throwing controller",
+      "No whole game or natural character mapping claim"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1_normalize_motion.py",
+    "preconditions": [
+      "Exact indexed USA/Europe ROM",
+      "Original SMB2 actor/context ABI and character coefficient record",
+      "Native main-game permission/contact schedule retained or explicitly adapted"
+    ],
+    "outputs": [
+      "Six closed typed motion operators and context adapter",
+      "Exact shared IR composition plan"
+    ],
+    "semantic_changes": [
+      "None intended"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Position signed32 16.16pixel; velocity accumulator contributes arithmetic shift4 before position addition; underlying velocity unit1/1048576pixel per invocation",
+    "authority_obligation": "Full original terrain and call order retained; character parameters and carrier/wrap mode must be adapted explicitly"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Character-specific jumps and finite hover with ground friction and carrier/wrapped movement",
+    "status": "Local original/C/emitted native and four natural Mario/Peach episodes qualified"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma1-motion-parity.json",
+    "hooks": [],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-host-motion.c",
+          "sha256": "0f6071e075ad5cfc2f832df3240920aac9b541f627b0aa36e294bb109914512b"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-recovered.c",
+          "sha256": "de05e4e913deadc2f39326b6a055077955b6b9c4b28d1ff7a1d4b063df2a1f7d"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-host-motion.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma1_host_gravity_hover",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma1_host_friction",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma1_host_jump_onset",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma1_host_charged_state_decay",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma1_host_integrate_x",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma1_host_integrate_y",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma1_jump_onset",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma1_friction",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [],
+      "host_reads": [
+        {
+          "address": "0x3005cf0",
+          "width": 32
+        },
+        {
+          "address": "0x3001110",
+          "width": 32
+        },
+        {
+          "address": "0x3005cd8",
+          "width": 32
+        },
+        {
+          "address": "0x3005cf4",
+          "width": 32
+        },
+        {
+          "address": "0x300117a",
+          "width": 16
+        },
+        {
+          "address": "0x3001993",
+          "width": 8
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "6144 finite original/C/emitted ARM7TDMI cases spanning complete local gravity/hover,jump onset,friction,charged phase decay and x/y integration",
+      "Mario ordinary vs crouch-charged,Peach held vs tapped: all390 frames per implementation and all images match native original; charged apex184.25px vs219.5px,finite48-tick Peach hover"
+    ],
+    "required_witnesses": [
+      "Natural full-ROM same-private-checkpoint jump/movement parity",
+      "Character-selectable jump/hover mapping"
+    ],
+    "known_limits": [
+      "Not full player controller or bundled Mario Bros",
+      "Native Mario/Peach local motion qualified; Luigi/Toad and full controller/campaign pending"
+    ]
+  }
+}

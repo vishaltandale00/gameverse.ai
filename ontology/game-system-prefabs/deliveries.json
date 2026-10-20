@@ -1,0 +1,732 @@
+{
+  "schema": "gameverse.game-prefab-deliveries/1",
+  "deliveries": [
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/41024112b2664f355b1ce7c7929a188d03c2f0afef55cce8725ca443a37819dc.json",
+      "sha256": "41024112b2664f355b1ce7c7929a188d03c2f0afef55cce8725ca443a37819dc",
+      "validationChecks": [
+        {
+          "id": "sma4.actor-advance-camera-projection",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/eca7ffd7dd67d71f679d06981b4861e2298ac6ebec9ef199b222600945bc6fac.json",
+      "sha256": "eca7ffd7dd67d71f679d06981b4861e2298ac6ebec9ef199b222600945bc6fac",
+      "validationChecks": [],
+      "sourceRef": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/2202a856de0d7c1c9218bf211e852a9918e9e3c42ecc337a122a75e139e7ade6.json",
+      "sha256": "2202a856de0d7c1c9218bf211e852a9918e9e3c42ecc337a122a75e139e7ade6",
+      "validationChecks": [],
+      "sourceRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/delivery.json"
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/driv3r/system-prefab/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/2cf4583789a519b365eb63c61e8701c1aa9efe331e011546faa7a964b17d970b.json",
+      "sha256": "2cf4583789a519b365eb63c61e8701c1aa9efe331e011546faa7a964b17d970b",
+      "validationChecks": [
+        {
+          "id": "driv3r.proximity.requests",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "29c8cdde08bae2ae9f8fa281db5d0bf6a0eb51f9db7fbcbb53cbfa83d5f11cd0",
+          "currentInterfacePins": {
+            "primary": {
+              "packageId": "driv3r.proximity.allocate_record",
+              "packageSha256": "c55f2996aad6919045c6972a1db4ee61a59b08ec3f2b108adc0eb3745d68d146",
+              "behaviorSha256": "d32cb0f2fa7918080abb5c66e1751c002c71ff48d1a1b6c4a90c769d9f73162a"
+            },
+            "secondary": {
+              "packageId": "driv3r.proximity.allocate_secondary_record",
+              "packageSha256": "773fd9069dfa153e735a33ec56fcfe2030473f780b0bf8afb34a37260534356c",
+              "behaviorSha256": "5c84a5164858cc8a8fb0fb9e023bd34c2124ef9ef5823c20c48170b944b11f50"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/f085cfde8e226f958a9d6663b5518ac03c6a0dbea560d47c94bee6d161b74c18.json",
+          "currentReceiptSha256": "3b763fb7e4c67570a2860c0d672630df9d52f970089090745d96021005a39610"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/8f1aa848828249da164f088c65f8a07f88501db4df0426feab95d04ae20c6339.json",
+      "sha256": "8f1aa848828249da164f088c65f8a07f88501db4df0426feab95d04ae20c6339",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/4e448d6ddef00b8a940137c6451a3d6d48933c1dae1f5e63de1a2f284841d0f4.json",
+      "sha256": "4e448d6ddef00b8a940137c6451a3d6d48933c1dae1f5e63de1a2f284841d0f4",
+      "validationChecks": []
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/b26f8be477ed16448a65f085f6a11e86b6e4acf8d5b9a03a24c422ab89e739f4.json",
+      "sha256": "b26f8be477ed16448a65f085f6a11e86b6e4acf8d5b9a03a24c422ab89e739f4",
+      "validationChecks": [
+        {
+          "id": "ffvi.actor0.resolved-hp-effect",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/d124673b8d4b6cee436c73eec9fc9fe61cf4e9358143d21208d5e077a6ecf648.json",
+      "sha256": "d124673b8d4b6cee436c73eec9fc9fe61cf4e9358143d21208d5e077a6ecf648",
+      "validationChecks": [
+        {
+          "id": "gta.actor-membership.activate",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "0ee13c12739ecae3c263d95354cfa5e8e7dff596ce609ca4a216a5d9e989054b",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/209517fe57349cb41adfbf0369bb3b7f418ecc0c68ed072b7b660e9a66c80d9c.json",
+      "sha256": "209517fe57349cb41adfbf0369bb3b7f418ecc0c68ed072b7b660e9a66c80d9c",
+      "validationChecks": [],
+      "sourceRef": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/delivery.json"
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/32f1f5ae28d75ab23fc795e75673a3f1a3adcf89fa5ee0b9b402fcc4fcd5a194.json",
+      "sha256": "32f1f5ae28d75ab23fc795e75673a3f1a3adcf89fa5ee0b9b402fcc4fcd5a194",
+      "validationChecks": []
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/5b9eb207b407d1b1a562892fe9d3cec98a9bd68ea5964b000cab9b61c440893a.json",
+      "sha256": "5b9eb207b407d1b1a562892fe9d3cec98a9bd68ea5964b000cab9b61c440893a",
+      "validationChecks": [],
+      "sourceRef": "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/ceb5339c096c4fde821c68e22433947aa869c3f9d81465f0920c794fc0aa2b9c.json",
+      "sha256": "ceb5339c096c4fde821c68e22433947aa869c3f9d81465f0920c794fc0aa2b9c",
+      "validationChecks": [
+        {
+          "id": "megaman-zero.command-facing-position-response",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json"
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/delivery-frontier-v1.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/c15c8068a5bdece88c58dbc9c9e3790e07d099d55f2176c3035bd2d17946d907.json",
+      "sha256": "c15c8068a5bdece88c58dbc9c9e3790e07d099d55f2176c3035bd2d17946d907",
+      "validationChecks": [
+        {
+          "id": "metal_slug_advance.selection.refresh_frontier",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "56827ee97ba8a23ec5ccdc7e5e252b4f51400907d088ed820f9ec1dd8842383f",
+          "currentInterfacePins": {
+            "frontier": {
+              "packageId": "metal_slug_advance.selection.visible_frontier",
+              "packageSha256": "f1c351c589ead747e3d4ea19735ff44857f541cb935a87ecff787c028e9c32a3",
+              "behaviorSha256": "920e2cc12e5723cab59f12abc00022bd3f18d8fdd6a122a7137ffd9156392661"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/f25fdede32c8a7765c52bd4c968346613ee7f81a20cee024b335aa90de5d7a1e.json",
+          "currentReceiptSha256": "e3f807d3d17fc587e9efe6185f61c4ee15ecd92053cff0d219410264d41a4f15"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/89c547e714eccb0283d3adf3873da128c4ac4f15c4a3c43b48001d050f433d18.json",
+      "sha256": "89c547e714eccb0283d3adf3873da128c4ac4f15c4a3c43b48001d050f433d18",
+      "validationChecks": [
+        {
+          "id": "fusion.prefab.directional_acceleration",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "ec68805bfd3094688b3b51fd3d3007cfd985cb7698f5a92bcaf19b7a4a64c8b7",
+          "currentInterfacePins": {
+            "acceleration": {
+              "packageId": "fusion.motion.directional_acceleration",
+              "packageSha256": "fc3a65be7593b3e9443ce50cc679226cdcf661b179e57df4aed3e58d347ae632",
+              "behaviorSha256": "6f2e1234c04bec9a97d2415d9c0e7c4269549906c3a617bffb4aa60f27b33b3c"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/da4746e4b08a724d935df680b80b161872a76018ca6aefd033b557563674a0e5.json",
+          "currentReceiptSha256": "5c65254993cf3f769ea8241fd1623b6556ba383b704633d09c0c24187a155ec3"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/f2638a3faedbc4bab4315c9af0be3b2e43b0d78a05b01b8bb807eedfe8c58506.json",
+      "sha256": "f2638a3faedbc4bab4315c9af0be3b2e43b0d78a05b01b8bb807eedfe8c58506",
+      "validationChecks": [
+        {
+          "id": "emerald.turn-order.confirmed-pair-exchange",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "25e40d56d22417078fc580ec4159c3a63c66e1c0747028b01398541cc9e86a7c",
+          "currentInterfacePins": {
+            "order_exchange": {
+              "packageId": "emerald.battle.paired_order_swap",
+              "packageSha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8",
+              "behaviorSha256": "a3b918edf0815c6ae5ccbbdd1f501129d1b370f0518598d6d88b88aec79829bc"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/24ce626dc8804fb33d854f64a8a4e65c2a89785201870a70b7a0a4ceaae00b94.json",
+          "currentReceiptSha256": "beb8ee2502924f84653b7af1d36d094103177c2d6994a39b6a945e8abcea6448"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/pokemon-leafgreen-version/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/b950db965c15c0cfdf90dbe028a03559118c9f3510bf3a2d71e7b945ac86699f.json",
+      "sha256": "b950db965c15c0cfdf90dbe028a03559118c9f3510bf3a2d71e7b945ac86699f",
+      "validationChecks": []
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/ca25a1e7aeac8d66f3afaac4f43d765c66d0f93d86af7c6ebc983b2f4ccca12d.json",
+      "sha256": "ca25a1e7aeac8d66f3afaac4f43d765c66d0f93d86af7c6ebc983b2f4ccca12d",
+      "validationChecks": [
+        {
+          "id": "pmd.prefab.input_mask_snapshot",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/delivery.json"
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/1606e36725eb0f6ef5d3e509eaa20634a3ba4557dd0aec962598517a6ef8ab9c.json",
+      "sha256": "1606e36725eb0f6ef5d3e509eaa20634a3ba4557dd0aec962598517a6ef8ab9c",
+      "validationChecks": [],
+      "sourceRef": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/delivery.json"
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/11a77d331dfbadfe11c2863737bdd58d875ec4abb96a17cb3dc33ca337c2da25.json",
+      "sha256": "11a77d331dfbadfe11c2863737bdd58d875ec4abb96a17cb3dc33ca337c2da25",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/61daf8cc17967b551617b5bda8b94d2f924246dfac8385c4d20d3f03c2c771c8.json",
+      "sha256": "61daf8cc17967b551617b5bda8b94d2f924246dfac8385c4d20d3f03c2c771c8",
+      "validationChecks": []
+    },
+    {
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/987181271685460dab845d3f9029f7a06afe9bfdbc9d95fff59b4aeed0501c13.json",
+      "sha256": "987181271685460dab845d3f9029f7a06afe9bfdbc9d95fff59b4aeed0501c13",
+      "validationChecks": [
+        {
+          "id": "tekken-advance.actor-pair-separation",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ],
+      "sourceRef": "research/deep-extraction/resume/tekken-advance/prefab-pass/delivery.json"
+    },
+    {
+      "sourceRef": "research/deep-extraction/resume/wario-land-4/prefab-pass/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/3088c47bb4e7d7c356893b90f150f2b8803deb8a35b82b46c9d9776472ecc525.json",
+      "sha256": "3088c47bb4e7d7c356893b90f150f2b8803deb8a35b82b46c9d9776472ecc525",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/1915b8a866110ea4a5d9e9e28733c3a2e6f0ee0e204b96663822f574a570c672.json",
+      "sha256": "1915b8a866110ea4a5d9e9e28733c3a2e6f0ee0e204b96663822f574a570c672",
+      "validationChecks": [
+        {
+          "id": "sonic-source-air-advance",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "75a5342276b0442f4b894ee32b74e47d08d601e708d8376e1c89e8d8e01011cd",
+          "currentInterfacePins": {
+            "integrate": {
+              "packageId": "sonic.motion.integrate",
+              "packageSha256": "7b4846722fec19c639104dcb51b10d7970469026655c0b9696ae9bd9e337b662",
+              "behaviorSha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462"
+            },
+            "gravity": {
+              "packageId": "sonic.motion.gravity",
+              "packageSha256": "daab08a110263fe6fc4e2c103814b55e6eee783f972983dc2550c479cf44c67e",
+              "behaviorSha256": "2125d4c9097713fc2dc3d12fe35b1c8209b3a310db4aa8f780b6eed0470cdb45"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/979c5c72bb67b61f9bfabab190b9b2b7ade7ef17ba020a2538689162e01553a0.json",
+          "currentReceiptSha256": "898346ffe4281dac79b9fbbc4d6503fe4ffb7c2dfc8a714b70196ad7c64d80a1"
+        },
+        {
+          "id": "sonic-source-air-steering",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "currentCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "composeSha256": "0bb43e2b1fd052b09fce8eed15957f2edea4544d3bd2b7b45235a02182c06fee",
+          "statementSha256": "e282060a3b543b911ba35004cf9c0fec10f9a691d3c4b448053a0e71c0cb77ca",
+          "currentInterfacePins": {
+            "steering": {
+              "packageId": "sonic.motion.air_steering",
+              "packageSha256": "ef7020fbd115cc0c0550ec53e0621ffde248d84515bfb673d9c01b64f9f7d4aa",
+              "behaviorSha256": "287a37af3d95bc71cd35c2827ce57d77957bbd56b6482cfd3571329bd427e9eb"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/d9f4c6f6eef0bae0c924fd3c28055e7e6bf6063b83c7fc4964c347f7995acdcc.json",
+          "currentReceiptSha256": "e956c6f140e65778ec0108f650c61cd5f963c2fb4d847fb71232e867897720fd"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/accepted-game-reconstruction-maps-20261016/need-for-speed-underground/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/b0ad42033f03d801a95be4eba3e318fab9ce7392df25e3e0a097487de73f50f5.json",
+      "sha256": "b0ad42033f03d801a95be4eba3e318fab9ce7392df25e3e0a097487de73f50f5",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/ir-workshop/accepted-game-reconstruction-maps-20261016/super-mario-advance/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/5be021e4d11e481bedc9d50584bf747898109f745df7904d95131db37e834857.json",
+      "sha256": "5be021e4d11e481bedc9d50584bf747898109f745df7904d95131db37e834857",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/ir-workshop/cohesive-extraction-20261016/publication/delivery-aria-v1.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/dae8520c76ff018c91e517af98e15a36033bb450754681ef6f8c5bf44b929224.json",
+      "sha256": "dae8520c76ff018c91e517af98e15a36033bb450754681ef6f8c5bf44b929224",
+      "validationChecks": [
+        {
+          "id": "aria.category3.acquire_observe",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "currentCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "84464caeaf5265366e73c6fc805bd3859a6f7ed0d1c734f8a4f1ada625f9e459",
+          "currentInterfacePins": {
+            "acquire": {
+              "packageId": "aria.progress.category3_acquire",
+              "packageSha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+              "behaviorSha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7"
+            },
+            "query": {
+              "packageId": "aria.progress.category3_count",
+              "packageSha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+              "behaviorSha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/b3879769b184c51fb17e98dc27ed32eae476bde003a293291e5d80e06223846d.json",
+          "currentReceiptSha256": "30b19a4983cd1e04585b0afca8911cde7df02ddf348e0eb7f6950557d5cbe2b1"
+        },
+        {
+          "id": "aria.category3.new_ability_grant",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+          "currentCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "0ab988b6d7b1019cb9631b82d887ddbded3bcbaa502b7aa4c240b88ac827d2a5",
+          "currentInterfacePins": {
+            "acquire": {
+              "packageId": "aria.progress.category3_acquire",
+              "packageSha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+              "behaviorSha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7"
+            },
+            "query": {
+              "packageId": "aria.progress.category3_count",
+              "packageSha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+              "behaviorSha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317"
+            },
+            "enable": {
+              "packageId": "aria.progress.category3_enable",
+              "packageSha256": "b7ba974c146c99dabf9153410e8b0919f1d8eda6401979e5bf1c6d00573aa43b",
+              "behaviorSha256": "0931a10b72208d54eabbb0f4d3eb1616c126458ac274e872cb97b9ebfe9967bf"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/1c51aafded18fa8bc747e4b4bc2c4adc83fd4f8e3080b9c53bd2ea2c688091f5.json",
+          "currentReceiptSha256": "adb52965f61d501169f483d623dfac1d47078644b8d062dfa088bcc5f101c2f8"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/cohesive-extraction-20261016/publication/delivery-db-v1.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/9d044ab507b8f85e3426aabb3c7fa85e39a181c4c213a891ed6180040c2315bf.json",
+      "sha256": "9d044ab507b8f85e3426aabb3c7fa85e39a181c4c213a891ed6180040c2315bf",
+      "validationChecks": [
+        {
+          "id": "db.actor-input.sample-edges-repeat",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "03f720c6a2d7a2a339f9bb29bc4dbd838c5826e9c9c48afe39f0b582fd9bc130",
+          "currentInterfacePins": {
+            "actor_input": {
+              "packageId": "db.input.actor_edges_repeat",
+              "packageSha256": "eee6882b05fea83a7d530cdffd0d549c1a3e106e6284bfda5b87bdee32823a1f",
+              "behaviorSha256": "de55633a24564cfb1777638a695821dc41351f287a03cb9ec68c40e95a93ddac"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/2dda13083a09c490ed7b64b6579c2afe13d5f9643509ec027c86f0c6aa56cd33.json",
+          "currentReceiptSha256": "b435cf29a6f0ff2d4229c600442b7bf4e73246db9577354024c412d66734ca96"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/cohesive-extraction-20261016/publication/delivery-firered-v1.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/d5f0960d388ce5b2191ed6e7a264ef30c9b2c428e3541b5588358c69b11e8693.json",
+      "sha256": "d5f0960d388ce5b2191ed6e7a264ef30c9b2c428e3541b5588358c69b11e8693",
+      "validationChecks": [
+        {
+          "id": "firered.prefab.timed_dialogue_continuation",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ec80a0e6f0eabec2c354f8c1af117ff25ccebd2993026cb3b20fa296164f5d5d",
+          "currentCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "2abd5937a75b3de246a0560e4e8657428e5c574c81b95fa1f2378044a9491a07",
+          "currentInterfacePins": {
+            "timedAck": {
+              "packageId": "firered.text.timed_acknowledgement",
+              "packageSha256": "142db2a5783031bc999a0d22f5af76f2f20f27461f4d8926f04286e5dfd01d79",
+              "behaviorSha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/8f52ba684d0c4e275fea8ed41b78e317d0b8538dd83f2957ad214523788bec33.json",
+          "currentReceiptSha256": "89415f5db71024a4a579b6c9006ed19727588d4d996efcdf14485be695416e12"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/cohesive-extraction-20261016/publication/delivery-kirby-nightmare-v4.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/bcae20a10385ef2c29b37dccd861b6f8961bb186748d8f04d455775e602341f0.json",
+      "sha256": "bcae20a10385ef2c29b37dccd861b6f8961bb186748d8f04d455775e602341f0",
+      "validationChecks": []
+    },
+    {
+      "sourceRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/8eb6a677c0cb6ae77c598c507617dbec2bab64caec2227d71bb3d9c8f0a46a65.json",
+      "sha256": "8eb6a677c0cb6ae77c598c507617dbec2bab64caec2227d71bb3d9c8f0a46a65",
+      "validationChecks": [
+        {
+          "id": "kart-steering-recovery-phase",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5505c30159b2718634ea4104dce5628479acc241ff5443f0816486f0e394316e",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "41b98ffe913022991c77fa0bff61eb7aa0f484a9582fa4c888efa97ee16cb31b",
+          "currentInterfacePins": {
+            "recovery": {
+              "packageId": "kart.steering_recovery",
+              "packageSha256": "39c7c446d406d9e84f9b9cdad8a5655e719f218dbb467148d89febaceafb262f",
+              "behaviorSha256": "7f56fa2547e55697ff753790e325f6deb7a29a8bcd5adf64090c461513a98753"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/564879d38e3ceb4df2e8889380733aebcf96ccfde05f5bc7f38edcdc256a934a.json",
+          "currentReceiptSha256": "366da918c2016bc78b60605ebd2a8d144bc9eec01b7fa5c3d0a0697021e3bf47"
+        },
+        {
+          "id": "kart-driver-steering-accumulation-lane0",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "5505c30159b2718634ea4104dce5628479acc241ff5443f0816486f0e394316e",
+          "currentCatalogSha256": "5505c30159b2718634ea4104dce5628479acc241ff5443f0816486f0e394316e",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "4f32c6272c9b34bd0df7d3ecbbf5fdcffca05d993d6127a5fe85b06148b83c1a",
+          "currentInterfacePins": {
+            "driver_steering": {
+              "packageId": "kart.driver_steering_accumulation_lane0",
+              "packageSha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700",
+              "behaviorSha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/f6fc436bc390b595bac4c77ab201c947bd04f828bf529ebcc1bdc18e41cc36b5.json",
+          "currentReceiptSha256": "c2e93d7ad09be9ee7eb8004a3f8dc8f131f9aa1ddc39f3530ae820686f634f6c"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/690170eb7d44ec1ee72c5179c843873f59a1d31b40193f46ec9bb35e3697dd02.json",
+      "sha256": "690170eb7d44ec1ee72c5179c843873f59a1d31b40193f46ec9bb35e3697dd02",
+      "validationChecks": [
+        {
+          "id": "tmc.learned_techniques.refresh_transaction",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "e748c9ad84f7dae1fffcdfc27845770c7776d078c94c084df58e961b2cf5b81f",
+          "currentInterfacePins": {
+            "derive": {
+              "packageId": "tmc.progress.derive_skills",
+              "packageSha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+              "behaviorSha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63"
+            },
+            "learn": {
+              "packageId": "tmc.progress.inventory_write",
+              "packageSha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7",
+              "behaviorSha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/41b8a359f60b8e834cc134074b4ebb991d0cf4d5ccb2feb123c371025f011031.json",
+          "currentReceiptSha256": "d66a442781db4cf552f61b231face2afee4ea85fbca7dacdfcc0bdd08c088631"
+        },
+        {
+          "id": "tmc.script_learning.beam_eligibility",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ead3e1a8de68d7819b8edb992876c990312bb251f67c92b01f6620ae69457303",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "e0c8bf275e26dd413d53ee1f9c249d863877b5ad0cdfc953b1ebf9c6d2e6d4ef",
+          "currentInterfacePins": {
+            "scriptFull": {
+              "packageId": "tmc.progress.script_inventory_write",
+              "packageSha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+              "behaviorSha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb"
+            },
+            "scriptLow": {
+              "packageId": "tmc.progress.script_inventory_write",
+              "packageSha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+              "behaviorSha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb"
+            },
+            "refresh": {
+              "packageId": "tmc.progress.derive_skills",
+              "packageSha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+              "behaviorSha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63"
+            },
+            "eligibility": {
+              "packageId": "tmc.combat.learned_sword_beam_eligibility",
+              "packageSha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f",
+              "behaviorSha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/1dfd13578fbeeda2f69c924b10747ae437d411cd5ca045eb65f640572e7dc6ac.json",
+          "currentReceiptSha256": "558a2c71d44da832c92c9f4f78b2442ff900f2f99e5ae532a7a7ef5a4201accb"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-reward-phase-03/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/5d01af1c210f25d3ef8c067a68f3b4a3ce226f3e29cc270d3c1de1bce6fd46f4.json",
+      "sha256": "5d01af1c210f25d3ef8c067a68f3b4a3ce226f3e29cc270d3c1de1bce6fd46f4",
+      "validationChecks": [
+        {
+          "id": "mzm.prefab.directional-acceleration",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "31668bf1bb6b815605a6e9fcda430e34c54b5f3a646bc6692a51f6274360e5e7",
+          "currentInterfacePins": {
+            "steer": {
+              "packageId": "mzm.motion.accelerate",
+              "packageSha256": "8d7791c484c2baf7a14ce25187d6d4e2ef25de7efa7ea8bbcf4d205a5aee98ce",
+              "behaviorSha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/cec73952032b56fea7c34136db4f77544360ac831b61eba45e4dcaa348469715.json",
+          "currentReceiptSha256": "fc2e0f1d1778bf290b6f8c96ebc0295d628aee1eb7d931aee21c271d6f631507"
+        },
+        {
+          "id": "mzm.prefab.protected-hit-response",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "83dbf8396edb0885f2260e72dc205d2756dd82477677cbee107651784a065e80",
+          "currentInterfacePins": {
+            "low": {
+              "packageId": "mzm.combat.minimum_reaction2",
+              "packageSha256": "10e7c5a233297b3d89e55c8f5fec1bc200740341bf0dfad25b4aee919135b292",
+              "behaviorSha256": "8ed56cb0d706d01b5b74ffdd566886707186c826a423e4c9184a9f0b2c4b3a61"
+            },
+            "reaction": {
+              "packageId": "mzm.combat.reaction_tick",
+              "packageSha256": "f859519a4d0ad7f9b49a6f8d4a26b8a5908dc785824fb9cf91fbfb6c90195053",
+              "behaviorSha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/fd0ca26e9fad0a24cb144ab796a299c86befa61750790ff8bfc7d67861a0cdc1.json",
+          "currentReceiptSha256": "ceb4d7eb58272c3ecb19b8f447dd0467d871b60d3e8a5d0abce90c707b73db53"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.accepted-hit",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "8533927769558013b6220acc4a8008f28cb7549cd80d16cfc91b19ce3f8047b6",
+          "currentInterfacePins": {
+            "damage": {
+              "packageId": "mzm.combat.impact",
+              "packageSha256": "19cceb6567866d6f3bd4e0ff3dd76db538e2a4920d3a4b1a11ee0190781ff4a9",
+              "behaviorSha256": "ad6aacedd995f7c8f8e4349064fb63d0aa57be39588442a163948a36a8d63280"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/7c1dd75bff4418be17cd143c5cba7072f5935e2c636576da86ed78eb089af55c.json",
+          "currentReceiptSha256": "7f54f1a10bb6940545abc61b60b475435c59bd91d126b5c2127642df1923ef18"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.deflect-response",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "609ad52c735f67252ec386d0421a5cae2e96bdee482c6092084032dcdce584ab",
+          "currentInterfacePins": {
+            "low": {
+              "packageId": "mzm.combat.minimum_reaction2",
+              "packageSha256": "10e7c5a233297b3d89e55c8f5fec1bc200740341bf0dfad25b4aee919135b292",
+              "behaviorSha256": "8ed56cb0d706d01b5b74ffdd566886707186c826a423e4c9184a9f0b2c4b3a61"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/4fdfbb7e9c6171a6513ef0ded1040874b3edb85ae7c1f88681b9a315c023d7af.json",
+          "currentReceiptSha256": "eedab9d87bda3e70d94f8da098fe5917f4eee36dfbbf71257d2a9c0107ebc5d3"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.blocked-response",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "5edc4a84e97194d788102b707fe8a008daeb93ebba6f2ebb1d9498ba62fda5b4",
+          "currentInterfacePins": {
+            "high": {
+              "packageId": "mzm.combat.minimum_reaction3",
+              "packageSha256": "b48562122c7764b2dd72fb794b6dbec701354c8837ecb9dd8e604f545f7f7b12",
+              "behaviorSha256": "bd0437dbddda77da8b4ddbf3b10e7113f5d2ba62278f0eea3c2befbceb281d1e"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/7ff6ba2e4277bf7014adb160bb3039337119ba9af81b92aef676391fea74087f.json",
+          "currentReceiptSha256": "288b2e94af73b138b7e1b5813d726101072ab850f248ac1a874fb7a635e58397"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.eligible-prepass",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "cc42124e1e58fdc89c877d63f9bbbd1ee8d81257c0f71950663b299f593a7e9a",
+          "currentInterfacePins": {
+            "reaction": {
+              "packageId": "mzm.combat.reaction_tick",
+              "packageSha256": "f859519a4d0ad7f9b49a6f8d4a26b8a5908dc785824fb9cf91fbfb6c90195053",
+              "behaviorSha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/12f5934cf2937bf44544a4f1728770e569677e2e0040f4c0eda0cdea70a10c77.json",
+          "currentReceiptSha256": "fb05811839f9c629d196a2eaaf4913a35cb1ab270e38481d55874c243b610c0e"
+        },
+        {
+          "id": "mzm.prefab.equipment-event-readback",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "244fa3185e77b876a40b86d87901d7d499fea21c50479d2654fad76cd156673e",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "880e1d2018a22159f422eef9be201c80cdfdbdda4136ba3600ab7c25b5650c33",
+          "currentInterfacePins": {
+            "acquire": {
+              "packageId": "mzm.progress.acquire",
+              "packageSha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+              "behaviorSha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723"
+            },
+            "events": {
+              "packageId": "mzm.progress.events",
+              "packageSha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+              "behaviorSha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/61961d12eed0504e9262aa1aa29bb4b4982faf4f254bd94184eee9823005dc98.json",
+          "currentReceiptSha256": "db707dead9f69b25b4cf3936a3219b3d99e618d1941c7baa9bd7a44f654035d3"
+        },
+        {
+          "id": "mzm.prefab.resource-aware-defeat-drop",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "0f50f7f4cb1a534de7fa9a96889373767225c647902a7f423bf177107028fdf2",
+          "currentCatalogSha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "e415b6d5fb721626db93f2268c4a4c04e202f66e4ee5117ef06abdd62e37b977",
+          "currentInterfacePins": {
+            "choice": {
+              "packageId": "mzm.lifecycle.choose_defeat_drop",
+              "packageSha256": "e2f216302b06be26227e373de98ff5956a9bab250510265e9cedbb9b1b3026cd",
+              "behaviorSha256": "7f95592b0995958dedfb4d77ead5fa227ca79da0489015f228d9835326ee05e2"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/d4d70aef757028260ade49962614ba01e94b75b7c2a574061739d989f02b128a.json",
+          "currentReceiptSha256": "4dbb47ee174e5834877d3ead3a5d4321802ee779ed5f55ea61b038253c308dca"
+        }
+      ]
+    },
+    {
+      "sourceRef": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/delivery.json",
+      "ref": "ontology/game-system-prefabs/delivery-snapshots/9e79d11afb9f8c88f5b33829bbba5abcf12e7ea412fded5aaeacfda4b2c19f7d.json",
+      "sha256": "9e79d11afb9f8c88f5b33829bbba5abcf12e7ea412fded5aaeacfda4b2c19f7d",
+      "validationChecks": [
+        {
+          "id": "sma2.item.contact_guarded_c2",
+          "receiptValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "currentValidatorSha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+          "receiptCatalogSha256": "d2c824b7068a88cffa27563046739d9902572442276fe9bc3477fc30557f9b89",
+          "currentCatalogSha256": "0f50f7f4cb1a534de7fa9a96889373767225c647902a7f423bf177107028fdf2",
+          "composeSha256": "7b100a980d4719b9e7db2fd75682393d36ea8f0022de9f1b1fe200b574a65b4c",
+          "statementSha256": "ee0fa080f2aa79a0cc97116fdc42c48246db1faf6da25b87e0f30a354df47912",
+          "currentInterfacePins": {
+            "query": {
+              "packageId": "sma2.contact.item_class_c2_query",
+              "packageSha256": "33030d851ed2bcb0873ee0cd9a90e6fdaf37fc92295438a708de4e952717a766",
+              "behaviorSha256": "4899dcc60c119065778db4fca661163dd549d07f6906b3bdc707fe1042ac6062"
+            }
+          },
+          "currentReceiptRef": "ontology/game-system-prefabs/registration-proofs/062936c2c05c30b0b577224f9d9420d90387798acd0538de702fb37ce1999844.json",
+          "currentReceiptSha256": "c6885c5ced9dc111ebee5c324f902884d435c15a27bfa98bd4d1ab5a1d7b3b3f"
+        }
+      ]
+    }
+  ]
+}

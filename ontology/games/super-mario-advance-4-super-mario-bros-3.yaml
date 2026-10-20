@@ -1,0 +1,464 @@
+schema_version: 0
+id: super-mario-advance-4-super-mario-bros-3
+game:
+  title: 'Super Mario Advance 4: Super Mario Bros. 3'
+  platform: gba
+  game_code: AX4E
+  rom_sha1: 69e81f41394f02d64cad206adb26b3cd43690770
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: rom_binary
+    ref: 69e81f41394f02d64cad206adb26b3cd43690770; SHA256 d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9;
+      own indexed USA ROM; no community source input
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3.json
+conventions:
+  scope: 'Own-ROM native gameplay parts: motion/jumps/wall response, enemy stomp and accepted-item form progression.
+    Stomp and natural growth rebuilt through shared IR and compared against actual stock gameplay. Entire controller/ecology/campaign
+    still partial.'
+  units: Position signed32 1/256 pixel; velocity signed8 1/16 pixel per integration invocation. Stage probe confirms
+    ordinary motion. No general per-frame invocation guarantee beyond observed scene.
+components:
+- id: horizontal_velocity_integration
+  facet: movement_physics
+  label: Speed-limited horizontal movement with carrier and orientation inputs
+  summary: The native player integrator clamps signed horizontal speed using a per-player limit, adds an auxiliary
+    signed byte with native wrap semantics, and updates position. A nonzero orientation selector projects displacement
+    through an eight-direction coefficient table; a mode flag controls the left boundary clamp. This is a qualified
+    integration operator, while acceleration, contacts and transform-state production remain dependencies.
+  instantiates:
+  - concept: movement_physics.integration.oriented_signed_velocity
+  reads:
+  - ram[0x03007818]:ptr player record, live witness 0x03003f28; dynamic allocation, do not hardcode witness pointer
+  - player[0x00]:i32 world x in 1/256-pixel units
+  - player[0x04]:i32 world y in 1/256-pixel units
+  - player[0x93]:u8 transform selector; zero ordinary, nonzero selects low3 bits
+  - player[0x1c]:i8 horizontal speed in 1/16-pixel units per invocation
+  - player[0x8a]:u16 cap source, shifted right2
+  - ram[0x0300781c]:ptr auxiliary record; auxiliary[0x0a]:u8 additive motion byte
+  - player[0xa0]:i16 left boundary in pixels
+  - ram[0x03003cb3]:u8 nonzero bypasses boundary clamp
+  - rom[0x0815e394]:i16[16] x/y orientation coefficients
+  writes:
+  - player[0x1c]:i8 capped horizontal speed
+  - player[0x00]:i32 wrapped integrated x
+  - player[0x04]:i32 wrapped integrated y when transform nonzero
+  invariants:
+  - Cap = u16(player[0x8a]) >>2. If abs(i8 vx) >= cap, store signed cap truncated to8 bits; oversized synthetic
+    caps preserve native behavior rather than assume a well-formed caller.
+  - Combined velocity = i8(u8(auxiliary[0x0a] + player[0x1c])); overflow wraps before scaling.
+  - Ordinary mode adds combinedVelocity*16 to x, modulo2^32. Nonzero mode uses index=selector&7 and adds arithmetic-shift-right4(table[index]*combinedVelocity)
+    to x and corresponding table[index+8] term to y.
+  - When bypass==0, clamp signed integrated x to at least i16(player[0xa0])*256. This is a separate edge constraint,
+    not a terrain solver.
+  - Both integration operators write the same world coordinates. Host adapters must define update order and authority;
+    never run alongside a competing unadapted Sonic or Metroid position writer.
+  - Native stage1 witness supports player/world field assignment and ordinary movement; transform modes are instruction-qualified
+    but not demonstrated in natural play.
+  relations:
+  - type: requires
+    target: movement_physics.integration.signed_fall_velocity
+    note: Shared player frame and coordinate units; larger native update caller orders integration, contacts and
+      state changes.
+  evidence: &id003
+  - &id002
+    kind: static_signature
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-evidence.json
+    confidence: 0.98
+    note: Own USA ROM instruction review, exact function/literal/table hashes and saved-LR returns. No downloaded
+      source used.
+  - &id004
+    kind: ghidra_function
+    ref: research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3.json; entries
+      0x080a0f68 and 0x080a1040; caller 0x080932f4
+    confidence: 0.9
+    note: Candidate binary-derived caller connects player record to terrain/input/update system; larger caller remains
+      incompletely reconstructed.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-native-receipt.json
+    confidence: 0.99
+    note: 49,152 original Thumb calls; entire 0x108-byte record matched recovered C with canaries, including 2,820,430
+      instructions. All velocity bytes and 16 transform values tested against six mixed boundary/cap/carrier cases;
+      finite vectors, not full cross-product or whole controller.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-native-receipt.json
+    confidence: 0.95
+    note: 'Stock native SMB3 stage1: RIGHT increases x and horizontal speed, A initiates upward velocity, identical
+      private checkpoint produces 16,192 raw units more ascent after24 frames when A held versus tapped. Source
+      closure for jump policy still missing.'
+  - &id001
+    kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-lowering-receipt.json
+    confidence: 0.99
+    note: Original ROM Thumb, host recovered C and emitted ARM7TDMI Thumb agree across32,768 jump,49,152 integration
+      and65,536 wall vectors. Audio substituted by declared event port. Finite local operators; no complete gameplay/controller
+      proof.
+  - *id001
+  tables:
+    orientation_coefficients:
+      description: Raw signed ROM coefficients, not floating-point approximations. Eight x terms followed by eight
+        y terms.
+      columns:
+      - index
+      - x
+      - y
+      rows:
+      - - 0
+        - 256
+        - 0
+      - - 1
+        - 179
+        - 179
+      - - 2
+        - 0
+        - 256
+      - - 3
+        - -179
+        - 179
+      - - 4
+        - -256
+        - 0
+      - - 5
+        - -179
+        - -179
+      - - 6
+        - 0
+        - -256
+      - - 7
+        - 179
+        - -179
+      evidence:
+      - *id002
+- id: vertical_velocity_integration
+  facet: movement_physics
+  label: One-sided fall-speed cap and orientation-aware vertical movement
+  summary: The vertical integrator caps only nonnegative falling velocity at64 native units and integrates it into
+    player position. In ordinary mode it updates y; orientation mode projects through a second signed table into
+    x and y. Gravity, jump initiation, early-release behavior, grounded state and collision are upstream/downstream
+    policies, not part of this leaf.
+  instantiates:
+  - concept: movement_physics.integration.signed_fall_velocity
+  reads:
+  - ram[0x03007818]:ptr player record, live witness 0x03003f28; dynamic allocation, do not hardcode witness pointer
+  - player[0x00]:i32 world x in 1/256-pixel units
+  - player[0x04]:i32 world y in 1/256-pixel units
+  - player[0x93]:u8 transform selector; zero ordinary, nonzero selects low3 bits
+  - player[0x1d]:i8 vertical velocity in 1/16-pixel units per invocation
+  - rom[0x0815e3b4]:i16[16] vertical transform coefficients
+  writes:
+  - player[0x1d]:i8 upper-capped falling speed
+  - player[0x00]:i32 wrapped integrated x when transform nonzero
+  - player[0x04]:i32 wrapped integrated y
+  invariants:
+  - If signed vy >=64, store64. All negative velocities remain unchanged; this operator does not symmetrically cap
+    rising speed.
+  - Ordinary mode adds signedVelocity*16 to y modulo2^32. With 1/256-pixel position interpretation,64 corresponds
+    to4 pixels per invocation.
+  - Nonzero transform selector uses low3 bits and signed table products arithmetic-shift-right4 for both position
+    axes. No trig dependency or approximated sine table is substituted.
+  - This function never applies gravity or decides whether A starts a jump. A separate native experiment demonstrates
+    variable-height jump behavior but does not reconstruct that complete policy.
+  - State owns velocity and coordinates; scheduling and contact response must be retained or explicitly adapted
+    before composition.
+  evidence: *id003
+  params:
+    fall_speed_cap:
+      value: 64
+      unit: native 1/16-pixel per integration invocation
+      native_value: 64
+      native_unit: i8 velocity units
+      evidence:
+      - *id002
+  tables:
+    orientation_coefficients:
+      description: Eight x terms followed by eight y terms recovered exactly from ROM.
+      columns:
+      - index
+      - x
+      - y
+      rows:
+      - - 0
+        - 0
+        - 256
+      - - 1
+        - -179
+        - 179
+      - - 2
+        - -256
+        - 0
+      - - 3
+        - -179
+        - -179
+      - - 4
+        - 0
+        - -256
+      - - 5
+        - 179
+        - -179
+      - - 6
+        - 256
+        - 0
+      - - 7
+        - 179
+        - 179
+      evidence:
+      - *id002
+- id: buffered_variable_height_jump
+  facet: movement_physics
+  label: Buffered variable-height jumping with speed-sensitive takeoff and run boost
+  summary: The complete native jump/gravity policy uses pressed A to initiate from grounded or buffered contact
+    state and held A to sustain ascent. Initial impulse depends on horizontal speed, then character/rule, boost,
+    carried-state and special-mode gates choose ascent/fall increments. Recovered code exposes sound as an explicit
+    event port and compiles to independently qualified ARM7TDMI code.
+  instantiates:
+  - concept: movement_physics.jump.buffered_variable_height_policy
+  reads:
+  - environment.held:u16 button mask; bit1 is A
+  - environment.pressed:u16 newly pressed mask; bit1 is A
+  - player[0x1c/0x1d]:i8 horizontal/vertical speed in1/16px per invocation
+  - player[0x35]:u8 airborne/contact state; zero allows ordinary initiation
+  - aux[0x38]:u8 jump/contact buffer, decremented before decision
+  - environment.character:u8, precondition0..1
+  - environment.variant_flags/alternate_rules:u8 rule selectors
+  - environment.run_meter:u8, boost threshold0x7f
+  - environment.jump_blocked:u8, nonzero blocks initiation
+  - player[0x71,0x103,0x104]:u8 policy inhibition gates
+  - exact ROM onset,run-threshold and special-cap tables
+  writes:
+  - player[0x1d]:i8 vertical velocity
+  - player[0x35,0x39,0x51,0x73,0x7b]:u8 jump/gravity state
+  - player[0x1e,0x61]:u8 state copied on specific takeoff branch
+  - player[0x20]:u16 boost state and player[0x1f,0x6c]:u8 boost bookkeeping
+  - aux[0x38]:u8 consumed jump/contact buffer
+  - environment.sound_context:u16 and sound_events/sound_id:u8 event output
+  invariants:
+  - Initiation consumes pressed A, not simply held A; aux buffer decrements before permission test.
+  - Ordinary impulse is -56 - onset[abs(signed vx)>>4], before alternate-rule adjustments, boost clamps and the
+    same invocation gravity update.
+  - Ordinary airborne gravity is5, reduced to1 during sufficiently fast ascent with A held; several explicitly recovered
+    special modes override these values. Releasing A therefore changes the arc rather than merely stopping an animation.
+  - A held and no special boost state limits positive vy to16 after update; final vertical integrator applies its
+    separate64 fall cap.
+  - Audio event0x49 is an explicit port. Native qualification intercepts only that audio call; all jump and boost
+    gameplay instructions execute unchanged.
+  - The code/data closure is complete for this local policy and helper, but grounded/contact-buffer producers, accelerated
+    horizontal speed and invocation order are upstream requirements.
+  - Stock stage same-checkpoint held/tap experiment corroborates ordinary variable-height jump; alternate-character
+    and special branches have finite synthetic operator evidence only.
+  relations:
+  - type: requires
+    target: vertical_velocity_integration
+    note: Velocity update and position integration must run in the reviewed host order, with contact response and
+      jump edges.
+  evidence:
+  - *id002
+  - *id004
+  - *id001
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-native-receipt.json
+    confidence: 0.98
+    note: 'Actual stage1 held-vs-tapped A from same checkpoint: held branch y81376, tap branch y97568 after24 frames;
+      x19184 equal. Visually inspected actual screenshots.'
+- id: wall_contact_resolution
+  facet: movement_physics
+  label: Sampled wall contact correction with field-specific merge results
+  summary: A complete local collision response consumes the terrain sampler's selected contact and type bytes. It
+    corrects pixel/tile-edge position, cancels speed into a wall, handles special boundary types and reports which
+    tentative fields the caller should retain. The sampler and full floor/ceiling/actor collision system remain
+    dependencies.
+  instantiates:
+  - concept: movement_physics.collision.sampled_wall_response
+  reads:
+  - contact_selector:u8 precondition0..3, zero means no selected contact
+  - aux[0x28..0x2c]:u8 sampled contact type codes
+  - player[0x00,0x04]:i32 world coordinates in1/256px
+  - player[0x1c,0x1d]:i8 motion channels
+  - player[0x28,0x37,0x70,0x8e,0x103,0x104]:u8 response context
+  - exact ROM edge-offset[4] and probe-axis[256] tables
+  writes:
+  - player[0x00/0x04]:i32 corrected world position
+  - player[0x1c/0x28]:i8 motion channels adjusted/cancelled
+  - player[0x4b,0x70,0x103]:u8 contact bookkeeping
+  - result:u8 changed-field bitmask consumed by native tentative-state merge
+  invariants:
+  - Return0 when contact selector is zero or inhibition flag0x104 bit2/bit8 is set.
+  - Type codes0x15/0x16 use a half-tile phase; types0x61/0x62 have a separate vertical correction branch. Their
+    full game-material names are not inferred.
+  - Ordinary horizontal contact corrects by one pixel or snaps to a16-pixel boundary depending on player[0x70].
+    Inward velocity is cancelled; opposite motion can remain.
+  - Return1 selects corrected x; return2 selects corrected y; return5 selects corrected x plus horizontal speed.
+    This interpretation follows caller0x080988b8 merge masks.
+  - Native finite tests cover all velocity bytes through mixed states, every probe-axis byte index, eight contact
+    types and selector0..3; the full record and return value matched.
+  - The package receives sampled contacts; it does not claim a complete world query or interchangeable terrain representation.
+  evidence:
+  - *id002
+  - *id004
+  - *id001
+- id: enemy_stomp_bounce_and_chain
+  facet: mechanics
+  label: 'Enemy stomping: bounce, health/form transitions and chained rewards'
+  summary: Once native contact logic accepts a top hit, the recovered stomp component bounces the player, decrements
+    an enemy health byte, changes the enemy form/state from exact per-species tables and emits a score-chain reward.
+    The first Goomba was identified in actual stage play and independently stomped with the extracted component
+    reassembled into the original cartridge through the shared IR builder. Other contact eligibility, enemy walking,
+    terrain, scoring and audio services remain explicitly retained host systems.
+  instantiates:
+  - concept: mechanics.combat.enemy_stomp_bounce_chain
+  reads:
+  - enemy[0x00/0x08]:i32 world x/y in1/256px
+  - enemy[0x18]:u16 native species/type
+  - enemy[0x36]:u8 hit-count state
+  - player[0x28/0x35/0x4f]:u8 movement and special-state inputs
+  - player[0x5a]:i16 stomp-chain counter
+  - environment.held:u16 A bit, character/rule/modifier flags
+  - exact native species transform/collision/presentation/wrap traits
+  - world[0xe57]:u8 special-stage reward gate
+  writes:
+  - enemy[0x24]:u8 cooldown=8
+  - enemy[0x36]:u8 decremented and branch-adjusted hit-count state
+  - enemy[0x16/0x18/0x34]:state/type/flatten timer
+  - enemy[0x10/0x12]:i8 horizontal/vertical speed on terminal/transform paths
+  - player[0x1d]:i8 upward bounce; ordinary value-64
+  - player[0x35]:u8 airborne unless special movement state overrides
+  - player[0x5a]:i16 chain increment for eligible reward
+  - world[0xbd2,0xbd4,0xbd5,0xc03..0xc0d]:typed native effect fields
+  - typed score and sound event ports; reviewed host adapter writes0x03002d7c sound context
+  invariants:
+  - Original contact acceptance is a separate dependency. Calling this component does not itself establish that
+    a player/enemy overlap is a valid stomp.
+  - Ordinary bounce sets vy=-64; alternate character/rule branch chooses -48 when A held and -40 otherwise. Special
+    movement can suppress vertical bounce.
+  - Health is a byte decremented with native wrapping. Negative signed result selects reward/transform/flatten logic;
+    this is preserved exactly, not simplified to a universal zero-health test.
+  - Species traits decide whether the enemy loses a form, becomes flattened state3 with timer255, or enters state6
+    with zeroed motion. Do not map all enemies to the same death animation.
+  - Eligible chained rewards consume the previous chain value and then increment it; a special-stage flag suppresses
+    reward and increment together.
+  - Host adapter preserves pre-transform enemy x,y,type for the original score service, declares all player/world
+    side effects and retains exact original audio service.
+  - A generated native cartridge preserves the complete original4MiB outside the declared eight-byte stomp-entry
+    hook; its payload is984 bytes. This is one reusable game component integrated through IR, not a complete recovered
+    game or mashup.
+  evidence:
+  - kind: static_signature
+    ref: tools/composition/packages/mario-sma4-stomp-host.json; tools/composition/native/sma4-usa-stomp.host.json
+    confidence: 0.98
+    note: Exact own-ROM function spans, species-table origin, two original service ranges and explicit r0 actor/global
+      context ABI pinned; no downloaded source.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-host-native-receipt.json
+    confidence: 0.98
+    note: 8,192 finite scenarios over eight native enemy types; original Thumb vs pure recovered rule and emitted
+      host adapter. Full player/actor/world records and declared score/audio events compared. Native audio and score
+      remain pinned original services.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-gameplay-receipt.json
+    confidence: 0.99
+    note: Existing shared IR backend built full native ROM with recovered stomp and reviewed context adapter; actual
+      stage1 same-checkpoint Goomba stomp matched stock across every sampled player/enemy/world state hash and rendered
+      frames. Both clips recorded from emulator; not campaign completion.
+  relations:
+  - type: requires
+    target: vertical_velocity_integration
+    note: Bounce produces native vertical velocity; original controller/integration/contact phases consume it in
+      retained order.
+- id: acquired_form_pickup_progression
+  facet: progression
+  label: 'Collected forms: growth, weapon/form changes and duplicate rewards'
+  summary: Three recovered accepted-item policies distinguish acquiring a new form from collecting an already active
+    form. They schedule native pending-form and growth/transform timers, consume the item and emit ordered reward/audio
+    events, while the original controller applies the form and its abilities. Natural mushroom collection was reproduced
+    with the extracted policy assembled through IR into a complete native cartridge and matched stock gameplay through
+    the visible small-to-large change.
+  instantiates:
+  - concept: progression.ability.accepted_item_form_transition
+  reads:
+  - item[0x00]:i32 world x; item[0x18]:u16 native item type
+  - player[0x37]:u8 current form
+  - player[0x4f]:u8 special transformation context
+  - player[0x14]:u16 presentation/audio context
+  - environment.character:u8 and camera_x:u16
+  writes:
+  - player[0x50]:u8 pending form transition code, separate from current form
+  - player[0x3b/0x3e/0x3f]:u8 growth or transformation timers
+  - player[0x52]:u8 special-state reset for fire/leaf paths
+  - item[0x16]:u8 consumed state zero; item[0x23]:u8 lifetime zero
+  - ordered audio and direct score9 effect ports, each carrying original sound context and character
+  invariants:
+  - Accepted contact is an upstream condition; pickup effects are not a generic overlap test.
+  - Growth pickup schedules code2 when current form0, with ordinary growth timer47. Already powered forms receive
+    the duplicate-item audio/reward path.
+  - Fire-form pickup schedules code3 and timer31 when current form differs from2. The duplicate form2 path rewards
+    without rescheduling that form.
+  - Leaf/form pickup selects pending8 for native item type0xda, otherwise pending4. Matching current form7/3 uses
+    the duplicate path. Native type labels beyond witnessed growth are inferred from rule/ability linkage, not a
+    completed asset catalogue.
+  - Every accepted pickup emits score code9 and consumes the item, including duplicates; event order and per-event
+    spatial/character audio context are preserved.
+  - Pending form is consumed downstream by the original player update; setting a form byte alone does not reconstruct
+    its weapon/flying physics, hurtboxes or presentation.
+  - "Same-private-checkpoint natural growth collection stock versus IR-generated ROM matched all sampled player/item/world\
+    \ state hashes and images through current form0\u21921. Fire/leaf natural collection and subsequent ability\
+    \ campaigns remain unqualified."
+  evidence:
+  - kind: static_signature
+    ref: tools/composition/packages/mario-sma4-powerups-host.json; tools/composition/native/sma4-usa-powerups.host.json
+    confidence: 0.98
+    note: Own-ROM pickup entries0x08068cd4/0x08068d60/0x08068dd0 and folded helper spans pinned, with explicit native
+      context and original score/audio services. No downloaded source.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-policy-receipt.json
+    confidence: 0.98
+    note: 768 original-ROM finite cases matched recovered pure policies across current forms,special contexts,characters
+      and item-type branches. Full player/item bytes and ordered context-bearing events compared.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-gameplay-receipt.json
+    confidence: 0.99
+    note: "Natural mushroom from upper question block collected in actual stock native stage and shared-IR-generated\
+      \ candidate; matching state/frames, current form0\u21921 and grown sprite. Full game/other forms not claimed."
+  relations:
+  - type: requires
+    target: buffered_variable_height_jump
+    note: The retained player update applies acquired form states and changes controller/ability branches; replacing
+      it requires complete capability adaptation.
+proposed_concepts:
+- id: movement_physics.integration.oriented_signed_velocity
+  label: Oriented signed velocity integration
+  definition: Integrate a signed motion channel through an explicit orientation basis with defined wrapping, cap
+    and boundary policy.
+- id: movement_physics.integration.signed_fall_velocity
+  label: Signed fall-velocity integration
+  definition: Integrate a vertical velocity channel with a one-sided downward cap and optional orientation projection.
+- id: movement_physics.jump.buffered_variable_height_policy
+  label: Buffered variable-height jump policy
+  definition: Pressed input and contact buffer choose takeoff, while held input and explicit mode state shape velocity
+    after takeoff.
+- id: movement_physics.collision.sampled_wall_response
+  label: Sampled wall response
+  definition: Resolve a selected sampled terrain contact against actor motion and return field-specific correction
+    ownership.
+- id: mechanics.combat.enemy_stomp_bounce_chain
+  label: Enemy stomp, bounce and chained reward
+  definition: An accepted top contact changes player bounce and enemy health/form while publishing score/sound effects
+    with explicit state authority.
+- id: progression.ability.accepted_item_form_transition
+  label: Accepted-item form progression
+  definition: An accepted pickup schedules a typed player-form transition, consumes its actor and emits ordered
+    effects; duplicates follow explicit reward rules.
+open_questions:
+- Recover horizontal acceleration/run/skid, floor/ceiling sampling and scheduling; jump/gravity and sampled wall
+  response now reconstructed and native-lowered.
+- Recover contact resolution, powerup transitions, stage geometry/entities/assets, game-state transitions and narrative/progression.
+- Prove natural reachability and meanings of nonzero orientation values, carrier motion, boundary-bypass policy
+  and velocity cap sources.
+- Represent both motion primitives in compositional IR with explicit write authority and dependencies before native
+  assembly.
+- Close Goomba walking/terrain/contact eligibility and power-up/progression systems beyond the now recovered native
+  stomp response.
+- Recover downstream pending-form application and firing/flying ability update as separate operators; qualify fire/leaf
+  natural pickups and form-dependent contact/rendering.

@@ -1,0 +1,453 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "pokemon-mystery-dungeon-red-rescue-team",
+  "sourceSystemIds": [
+    "pmd.input_event_publication_and_suppression"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "turn-based-party-battle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Issue dungeon actions, move through tiles, and have world/enemy turns resolve with persistent party/floor state; this delivery only supplies the input snapshot boundary.",
+    "phases": [
+      {
+        "id": "sample_input",
+        "label": "Capture held/pressed/repeated input at accepted source updates",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "KEYINPUT read16 service",
+          "source update scheduler"
+        ],
+        "gaps": [
+          "Sampler and stateful edge/repeat producer not automatically executable-closed."
+        ]
+      },
+      {
+        "id": "publish_snapshot",
+        "label": "Expose stable accumulated command-input masks before clearing accumulation",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "pmd.prefab.input_mask_snapshot"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+          "local/ir/packages/pmd.input.publish/package.json",
+          "local/ir/packages/pmd.input.publish/l1.json",
+          "local/ir/packages/pmd.input.publish/receipt.json"
+        ],
+        "requiredServices": [
+          "accumulated_mask_producer",
+          "publish_input_snapshot_event",
+          "snapshot_consumer"
+        ],
+        "gaps": [
+          "Current generic binding API cannot alias packedu32 publication outputs withu16 pressed/repeat reset ports; retained actual rejection is output narrowing publish.field_0.",
+          "No original dungeon action consumer, actor movement/terrain producer, turn advancement, enemy resolution, progression or recovery is connected.",
+          "Two copied opaque source words and auxiliary reset fields stay component-private; no claim full original global-context aliasing.",
+          "Source mask-domain preconditions are documented; generic graph validator checks storage and semantics, not reachable temporal mask relationships.",
+          "Runtime event dispatch and meaningful dungeon consumer are explicit host dependencies; no stub or newly authored game logic supplied."
+        ]
+      },
+      {
+        "id": "interpret_dungeon_action",
+        "label": "Choose directional movement, command/menu action and action eligibility",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "No qualified original action consumer; input staging does not implement player movement or command selection."
+        ]
+      },
+      {
+        "id": "move_and_advance_turn",
+        "label": "Resolve tile movement, terrain and dungeon action-to-turn boundary",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "Actor/tile shared state and turn owner not recovered in this subsystem; no source schedule inferred from menu frame driver."
+        ]
+      },
+      {
+        "id": "resolve_dungeon_world",
+        "label": "Resolve enemy reactions, damage/resources, floor progression and return/recovery",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No qualified dungeon combat/ecology, floor state or save/recovery module in this delivery."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "sample_input",
+        "to": "publish_snapshot",
+        "kind": "shared-state",
+        "scope": "source update ORs accumulator lanes that source publication reads then clears; caller boundary timing remains open"
+      },
+      {
+        "from": "publish_snapshot",
+        "to": "interpret_dungeon_action",
+        "kind": "host-required",
+        "scope": "supplied consumer must read exposed packed snapshot; no original consumer call is claimed"
+      }
+    ],
+    "missingForCoreGame": [
+      "Original KEYINPUT sampler0800cb74 fails automatic lift with unresolved pointerv2; producer08004954 cannot close sampler callee.",
+      "Current generic binding API cannot alias packedu32 publication outputs withu16 pressed/repeat reset ports; retained actual rejection is output narrowing publish.field_0.",
+      "No original dungeon action consumer, actor movement/terrain producer, turn advancement, enemy resolution, progression or recovery is connected.",
+      "Two copied opaque source words and auxiliary reset fields stay component-private; no claim full original global-context aliasing.",
+      "Source mask-domain preconditions are documented; generic graph validator checks storage and semantics, not reachable temporal mask relationships.",
+      "Runtime event dispatch and meaningful dungeon consumer are explicit host dependencies; no stub or newly authored game logic supplied."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "pmd.bundle.input_publication",
+      "label": "Input mask snapshot publication",
+      "moduleId": "pmd.module.input_event_context",
+      "sourceGame": "pokemon-mystery-dungeon-red-rescue-team",
+      "sourceSystemId": "pmd.input_event_publication_and_suppression",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+      "planIds": [
+        "character-traversal",
+        "turn-based-party-battle"
+      ],
+      "packageIds": [
+        "pmd.input.publish"
+      ],
+      "availability": "published-subset",
+      "scope": "one recovered publication transaction with real mask inputs,packed output slots,and source copy-before-clear; not a basket of independent clears",
+      "gaps": [
+        "Original KEYINPUT sampler0800cb74 fails automatic lift with unresolved pointerv2; producer08004954 cannot close sampler callee.",
+        "Current generic binding API cannot alias packedu32 publication outputs withu16 pressed/repeat reset ports; retained actual rejection is output narrowing publish.field_0.",
+        "No original dungeon action consumer, actor movement/terrain producer, turn advancement, enemy resolution, progression or recovery is connected.",
+        "Two copied opaque source words and auxiliary reset fields stay component-private; no claim full original global-context aliasing.",
+        "Source mask-domain preconditions are documented; generic graph validator checks storage and semantics, not reachable temporal mask relationships.",
+        "Runtime event dispatch and meaningful dungeon consumer are explicit host dependencies; no stub or newly authored game logic supplied."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+        "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+        "local/ir/packages/pmd.input.publish/package.json",
+        "local/ir/packages/pmd.input.publish/l1.json",
+        "local/ir/packages/pmd.input.publish/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "pmd.module.input_event_context",
+        "fields": [
+          "published_heldPressedWord",
+          "published_repeatShortReleaseWord",
+          "accumulated_held",
+          "accumulated_pressed",
+          "accumulated_repeat",
+          "accumulated_shortRelease"
+        ],
+        "aliasRule": "One module instance owns shared input context; accumulatedu16 lanes each bind once; published packedu32 words are retained in the same module. Do not connect copiedu16 views as if canonical aliases. Unknown private words are not merged across instances.",
+        "crossModuleAliasStatus": "blocked for packed output\u2192halfword consumers"
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "Publish stable masks for a supplied movement input consumer",
+          "status": "published-subset",
+          "scope": "input staging only, not movement/action processing",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+            "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+            "local/ir/packages/pmd.input.publish/package.json",
+            "local/ir/packages/pmd.input.publish/l1.json",
+            "local/ir/packages/pmd.input.publish/receipt.json"
+          ]
+        },
+        {
+          "roleId": "command",
+          "capability": "Expose packed pressed/repeat command input for a supplied party/dungeon command consumer",
+          "status": "published-subset",
+          "scope": "snapshot only; command selection/turn advancement absent",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+            "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+            "local/ir/packages/pmd.input.publish/package.json",
+            "local/ir/packages/pmd.input.publish/l1.json",
+            "local/ir/packages/pmd.input.publish/receipt.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "pmd.prefab.input_mask_snapshot",
+        "label": "Publish accumulated input masks as a packed snapshot",
+        "assemblyRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.assembly.json",
+        "validationRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/delivery.json",
+        "packageIds": [
+          "pmd.input.publish"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "readinessScope": "narrow wired input-mask transaction only; host producer/event/consumer must be supplied"
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "pmd.prefab.input_mask_snapshot",
+      "moduleId": "pmd.module.input_event_context",
+      "label": "Publish accumulated input masks as a packed snapshot",
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.assembly.json",
+      "sha256": "00c82be6330972302fbc7fe5cc437a90eb2e70aeae882de7775e9114298a8e00",
+      "validation": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.validation.json",
+      "validationSha256": "c80dbe1b74730291a15f65ac0391ac3cf115c0757b73e5e5718af014b8bda669",
+      "inputs": [
+        {
+          "id": "accumulated_held",
+          "label": "Accumulated held button mask",
+          "storageType": "u16",
+          "default": 16,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 1023
+          },
+          "binding": "accumulated_held",
+          "domainStatus": "source-observed mask vocabulary; semantic host precondition, not enforced by generic assembly validator",
+          "origin": "supplied accumulated mask state; not a recovered hardware sampler"
+        },
+        {
+          "id": "accumulated_pressed",
+          "label": "Accumulated newly pressed button mask",
+          "storageType": "u16",
+          "default": 16,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 1023
+          },
+          "binding": "accumulated_pressed",
+          "domainStatus": "source-observed mask vocabulary; semantic host precondition, not enforced by generic assembly validator",
+          "origin": "supplied accumulated mask state; not a recovered hardware sampler"
+        },
+        {
+          "id": "accumulated_repeat",
+          "label": "Accumulated repeat button mask",
+          "storageType": "u16",
+          "default": 16,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 1023
+          },
+          "binding": "accumulated_repeat",
+          "domainStatus": "source-observed mask vocabulary; semantic host precondition, not enforced by generic assembly validator",
+          "origin": "supplied accumulated mask state; not a recovered hardware sampler"
+        },
+        {
+          "id": "accumulated_shortRelease",
+          "label": "Accumulated short-release button mask",
+          "storageType": "u16",
+          "default": 0,
+          "domain": {
+            "allowed_values": [
+              0,
+              2,
+              256,
+              258
+            ]
+          },
+          "binding": "accumulated_shortRelease",
+          "domainStatus": "source-observed mask vocabulary; semantic host precondition, not enforced by generic assembly validator",
+          "origin": "supplied accumulated mask state; not a recovered hardware sampler"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "heldPressedSnapshot",
+          "binding": "published_heldPressedWord",
+          "storageType": "u32",
+          "meaning": "low16=held,high16=newlyPressed captured before accumulated source lanes clear",
+          "packedLayout": [
+            {
+              "bits": [
+                0,
+                15
+              ],
+              "quantity": "held_button_bitset"
+            },
+            {
+              "bits": [
+                16,
+                31
+              ],
+              "quantity": "newly_pressed_button_bitset"
+            }
+          ],
+          "consumerStatus": "observable external slot; no original dungeon consumer linked"
+        },
+        {
+          "id": "repeatReleaseSnapshot",
+          "binding": "published_repeatShortReleaseWord",
+          "storageType": "u32",
+          "meaning": "low16=repeat,high16=shortRelease captured before accumulated source lanes clear",
+          "packedLayout": [
+            {
+              "bits": [
+                0,
+                15
+              ],
+              "quantity": "repeat_button_bitset"
+            },
+            {
+              "bits": [
+                16,
+                31
+              ],
+              "quantity": "short_release_button_bitset"
+            }
+          ],
+          "consumerStatus": "observable external slot; no original dungeon consumer linked"
+        },
+        {
+          "id": "clearedAccumulation",
+          "binding": [
+            "accumulated_held",
+            "accumulated_pressed",
+            "accumulated_repeat",
+            "accumulated_shortRelease"
+          ],
+          "meaning": "the four bound source event lanes are zero after publication; publication result remains available"
+        }
+      ],
+      "phases": [
+        {
+          "id": "publish_snapshot",
+          "trigger": "explicit supplied host publish_input_snapshot event",
+          "invocations": [
+            "publish"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceInternalOrder": [
+            "capture accumulated source words into published outputs",
+            "clear four accumulated event lanes",
+            "reset auxiliary sentinel array and flags"
+          ]
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "accumulated_mask_producer",
+          "owner": "host-required until source sampler/producer closes",
+          "contract": "set the four input slots before the publication event; source-backed valid masks only",
+          "implementedByPrefab": false
+        },
+        {
+          "id": "publish_input_snapshot_event",
+          "owner": "supplied host",
+          "contract": "invoke publish once at an explicit input publication boundary; no fixed FPS or dungeon-turn assumption",
+          "implementedByPrefab": false
+        },
+        {
+          "id": "snapshot_consumer",
+          "owner": "supplied host; original dungeon action consumer unqualified",
+          "contract": "read observable packed output slots; u16 halfword alias linking is currently unsupported",
+          "implementedByPrefab": false
+        }
+      ],
+      "gaps": [
+        "Original KEYINPUT sampler0800cb74 fails automatic lift with unresolved pointerv2; producer08004954 cannot close sampler callee.",
+        "Current generic binding API cannot alias packedu32 publication outputs withu16 pressed/repeat reset ports; retained actual rejection is output narrowing publish.field_0.",
+        "No original dungeon action consumer, actor movement/terrain producer, turn advancement, enemy resolution, progression or recovery is connected.",
+        "Two copied opaque source words and auxiliary reset fields stay component-private; no claim full original global-context aliasing.",
+        "Source mask-domain preconditions are documented; generic graph validator checks storage and semantics, not reachable temporal mask relationships.",
+        "Runtime event dispatch and meaningful dungeon consumer are explicit host dependencies; no stub or newly authored game logic supplied."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+        "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+        "local/ir/packages/pmd.input.publish/package.json",
+        "local/ir/packages/pmd.input.publish/l1.json",
+        "local/ir/packages/pmd.input.publish/receipt.json"
+      ],
+      "qualificationScope": "Actual generic assembly/Composer binding and lowering. Existing standalone1024-vector finite native receipt and separate16-vector publication witness retained; no new runtime/native execution or composed-runtime qualification.",
+      "defaultConfiguration": {
+        "initialize": {
+          "published_heldPressedWord": 0,
+          "published_repeatShortReleaseWord": 0,
+          "accumulated_held": 16,
+          "accumulated_pressed": 16,
+          "accumulated_repeat": 16,
+          "accumulated_shortRelease": 0
+        },
+        "meaning": "coherent one-direction newly pressed mask0x10, repeat0x10, no short-release; explicit supplied input fixture, not hardware execution",
+        "expectedOutputFromSourceSemantics": {
+          "published_heldPressedWord": 1048592,
+          "published_repeatShortReleaseWord": 16
+        },
+        "expectedOutputStatus": "source-derived expectation only; this configuration has not been newly native-run"
+      },
+      "runtimeQualified": false
+    }
+  ],
+  "exactConsumerBlocker": {
+    "kind": "packed_shared_storage_not_supported",
+    "retainedValidation": {
+      "path": "local/ir/mashup-coverage/pokemon-mystery-dungeon-red-rescue-team/whole-alias-rejected.receipt.json",
+      "sha256": "3b86d3685c1a793b0a4dd49541e54275b05174ca28ac2a38d8b7960e57a78cea"
+    },
+    "message": "output narrowing requires qualified source field domain: publish.field_0",
+    "whyNotWorkaround": "Independent copies or narrowing would lose the source-required word/halfword alias; no copied-state bridge is delivered."
+  },
+  "timing": {
+    "runId": "pmd-prefab-input-mask-snapshot-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit; Python 3.9.6; existing assembly.py/Composer symbolic validation (source hashes in environmentContext)",
+    "queueSeconds": null,
+    "validationSeconds": 0.0032353749999999987,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Existing assembly validation took 0.0032353749999999987 seconds. That validator stage is nested in unavailable overall interactive/queue time; totalSeconds remains null. Existing delivery serialization timing is recorded separately. No validation, build, native execution or other proof was rerun for this metadata fix; retained native qualification timings are not new work.",
+    "deliverySerializationSeconds": 0.018368750000000003,
+    "environmentContext": {
+      "machine": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.9.6",
+      "validatorSources": {
+        "assembly.py": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+        "compose.py": "aa046ba3c7b3b807a906ddd8fb2bd8c53db4baf84cc9b60c3064fb4ecc099946",
+        "lower.py": "01ad1b4263f251c0b0cf4c749e56c8d73567ca53a710ec1db0ba9e4f12ff2df6"
+      }
+    }
+  },
+  "provenancePins": [
+    {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/system.json",
+      "sha256": "ed4c9d687782b3259860aeb5f923db1d9cf0224ce82f2e9c21a677c83e240a0d"
+    },
+    {
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/next-extraction/publication-evidence.json",
+      "sha256": "c9cd345d9abf2d9ad5e93a3b06f3d2cc01fef33a6ad54b99f6992cd7c6d2240c"
+    },
+    {
+      "path": "local/ir/packages/pmd.input.publish/package.json",
+      "sha256": "7b9d17f7da2357bff297447f15f74aa0b30a29ab5e6248f0d2a4a1a3fdd08648"
+    },
+    {
+      "path": "local/ir/packages/pmd.input.publish/l1.json",
+      "sha256": "e78284f48aa118cab56dd5d43c89e0490197e1638aa6508ce2254b0ed89caa08"
+    },
+    {
+      "path": "local/ir/packages/pmd.input.publish/receipt.json",
+      "sha256": "7e2089e960b422c7d128b1c2562aea3ac4e2fd356fe90c60fab3f573ad207a0e"
+    }
+  ]
+}

@@ -2,8 +2,7 @@
   "schemaVersion": 1,
   "initialGames": [
     "firered",
-    "mzm-emerald-wilds-v2",
-    "sonic-metroid-movement-v1"
+    "mzm-emerald-wilds-v2"
   ],
   "games": {
     "firered": {
@@ -40,21 +39,6 @@
       "sourceKind": "Native GBA composition from pinned decompiled source",
       "gameCode": "BMXE",
       "buildRecipe": "tools/gba_mashup/recipes/mzm-emerald-wilds-v2.json"
-    },
-    "sonic-metroid-movement-v1": {
-      "kind": "gba",
-      "name": "Sonic × Metroid",
-      "subtitle": "Sonic’s campaign with Metroid jump and airborne movement.",
-      "repository": "https://github.com/vishaltandale00/gameverse.ai.git",
-      "commit": "fd13f6c1178bf07edbcb188da293f5938223944d",
-      "directory": "tools/composition",
-      "artifact": "game.gba",
-      "baselineSha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
-      "sourceKind": "IR-assembled native GBA from own ROM recovery",
-      "gameCode": "ASOE",
-      "compositionPlan": "tools/composition/plans/sonic-metroid-jump-airborne.json",
-      "qualificationScope": "Native movement build: jump, held/released jump and early-stage traversal recorded. Sonic world and original ground/surface behavior retained; full loop/campaign compatibility, Metroid combat, enemies, upgrades and progression integration pending.",
-      "playNotes": "Movement build · Sonic world and surface momentum; Metroid jump and airborne physics. Combat, enemies and upgrades still use Sonic behavior. Arrows: move · X: jump · Enter: Start."
     }
   },
   "tools": {

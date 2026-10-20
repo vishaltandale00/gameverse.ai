@@ -1,0 +1,392 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ruby.input.initialize",
+  "label": "Initialize button masks and repeat delays",
+  "role": "input_configuration_initialization",
+  "source_game": "pokemon-ruby-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ruby.input.initialize/package.json",
+  "package_sha256": "c1ea474396a17a64dbcfeeee3d53899e71ff347013896a3963e4496eecfe5657",
+  "behavior_sha256": "c331a6b61b3c96d3a6c0cbb12be280b16325c4bf0a6b15d0544e8a5943597e37",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "5341e835972c8b44717602567ad79a49416a2749aa6f98ffa60ee5213c9f4ae6"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "repeat_initial_delay",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "previous_raw_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "new_raw_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "logical_held_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "logical_new_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "raw_edge_or_repeat_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "repeat_interval",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_sampling",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+          "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": "Initializer call; caller main-loop owns invocation and reset sequencing",
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ruby.input.initialize/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "no full input/menu lifecycle qualification",
+    "no catalog publication performed by worker",
+    "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+    "No unresolved pointer alias escapes the recovered state views",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "system": {
+      "path": "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+      "sha256": "f4fe724d3556cc76f2ac51ddf47dc8d0ab4d451d47ce425faca17761745f681a"
+    },
+    "originalL0": {
+      "path": "local/ir/queue-runs/20261016T091004/pokemon-ruby-version/l0/08000400.json",
+      "sha256": "43e518b836f699970c0ffafb8836fbaeb5de9adc40547148275380168a92421c",
+      "canonicalJsonSha256": "395bd137df74024a37d69a504c312c38c1375bd2f385469ee28d7ec3c8d296e9",
+      "adapterL0Sha256": "395bd137df74024a37d69a504c312c38c1375bd2f385469ee28d7ec3c8d296e9",
+      "canonicalAlgorithm": "SHA256(json.dumps(parsed_L0, sort_keys=True).encode()); raw file SHA retained separately"
+    },
+    "provenance": {
+      "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-ruby-version/pokemon-ruby-version/functions.jsonl",
+      "lines": [
+        9,
+        9
+      ],
+      "symbol": "FUN_08000400",
+      "sourceKind": "own_rom_decompiler_analysis_oracle",
+      "compilerInput": false
+    },
+    "qualification": {
+      "status": "pass",
+      "vectors": 512,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "wall_s": 0.21871333399999998,
+      "wholeSystemQualified": false,
+      "wholeGameComplete": false
+    },
+    "domains": {
+      "parameters": [],
+      "fields": [
+        {
+          "irName": "field_0",
+          "domain": null
+        },
+        {
+          "irName": "field_1",
+          "domain": null
+        },
+        {
+          "irName": "field_2",
+          "domain": null
+        },
+        {
+          "irName": "field_3",
+          "domain": null
+        },
+        {
+          "irName": "field_4",
+          "domain": null
+        },
+        {
+          "irName": "field_5",
+          "domain": null
+        },
+        {
+          "irName": "field_6",
+          "domain": null
+        }
+      ]
+    },
+    "services": {
+      "requiredForQualifiedLeaf": [],
+      "externalSystemOnly": [
+        "KEYINPUT sampling unavailable in current compiler",
+        "scheduler ownership and frame relation unresolved"
+      ]
+    },
+    "effects": [
+      "writes repeat delay40 and interval5; clears five masks; does not initialize countdown or latch"
+    ],
+    "opaqueUnknowns": [
+      "physical frame mapping",
+      "latch/countdown lifecycle outside initializer"
+    ],
+    "aliasAndOwnershipEvidence": [
+      {
+        "irName": "field_0",
+        "irKind": "field",
+        "symbol": "initial_delay",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_0",
+          "address": "0x3001760",
+          "widthBits": 16
+        },
+        "interpretationLimits": [
+          "sampler calls are not proven physical frames"
+        ]
+      },
+      {
+        "irName": "field_1",
+        "irKind": "field",
+        "symbol": "raw_previous",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_1",
+          "address": "0x3001798",
+          "widthBits": 16
+        },
+        "interpretationLimits": []
+      },
+      {
+        "irName": "field_2",
+        "irKind": "field",
+        "symbol": "raw_edges",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_2",
+          "address": "0x300179a",
+          "widthBits": 16
+        },
+        "interpretationLimits": []
+      },
+      {
+        "irName": "field_3",
+        "irKind": "field",
+        "symbol": "logical_held",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_3",
+          "address": "0x300179c",
+          "widthBits": 16
+        },
+        "interpretationLimits": []
+      },
+      {
+        "irName": "field_4",
+        "irKind": "field",
+        "symbol": "logical_new",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_4",
+          "address": "0x300179e",
+          "widthBits": 16
+        },
+        "interpretationLimits": []
+      },
+      {
+        "irName": "field_5",
+        "irKind": "field",
+        "symbol": "repeat_mask",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_5",
+          "address": "0x30017a0",
+          "widthBits": 16
+        },
+        "interpretationLimits": []
+      },
+      {
+        "irName": "field_6",
+        "irKind": "field",
+        "symbol": "repeat_interval",
+        "domain": null,
+        "ownership": {
+          "owner": "ruby_input_context",
+          "kind": "shared_state_view",
+          "lifetime": "unknown",
+          "access": "mutable"
+        },
+        "validationAdapter": {
+          "field": "field_6",
+          "address": "0x3001bb0",
+          "widthBits": 16
+        },
+        "interpretationLimits": [
+          "sampler calls are not proven physical frames"
+        ]
+      }
+    ],
+    "semanticUnits": "Rational1/1 is dimensionless button-bitset or menu index; delays are sampler-invocation counts with rational scale1/1; no physical frame/time scale is known. Index signedness and byte wrap are source semantics; menu legal-value invariants remain unknown.",
+    "callOrderContract": "research/deep-extraction/resume/pokemon-ruby-version/next-extraction/l2-contract/system.json",
+    "wholeSubsystemQualified": false
+  }
+}

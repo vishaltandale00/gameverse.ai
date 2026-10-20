@@ -3,6 +3,24 @@
   "scope": "Qualified automatic behavior subset; not complete game ontologies",
   "entries": [
     {
+      "id": "alttp-four-swords.events.bounded_enqueue",
+      "role": "event_service",
+      "record": "alttp-four-swords.events.bounded_enqueue.json",
+      "source_game": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7920519c9978ef9a880c2331cfa869e6fa0d5eb27af98ab26aa3a247105e07aa"
+    },
+    {
+      "id": "aria.cast.first_free_slot",
+      "role": "cast_effect_capacity_query",
+      "record": "aria.cast.first_free_slot.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b97374f01998eb3c4daa527b3f5a34dcafd50dbd1a218ede2b5e6759e2e0371c"
+    },
+    {
       "id": "aria.motion.integrate_x",
       "role": "movement",
       "record": "aria.motion.integrate_x.json",
@@ -21,13 +39,805 @@
       "behavior_sha256": "3d2d65ab65607f8c2fd8be1939d86dc437c28ecabfc6022d35ae5999abfb402e"
     },
     {
+      "id": "aria.progress.category0_acquire",
+      "role": "progression.soul_inventory_acquisition_transaction",
+      "record": "aria.progress.category0_acquire.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5a90dba22ba36ce01f802fb2184c749c88e79116874e0e1767d71124c7c98e4d"
+    },
+    {
+      "id": "aria.progress.category0_pickup_selection_list",
+      "role": "progression.source_pickup_postcommit_consumer",
+      "record": "aria.progress.category0_pickup_selection_list.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8d006d66994667f3a8a0d703902f92d1477a97b36f713bdae76d109d148c72db"
+    },
+    {
+      "id": "aria.progress.category1_acquire",
+      "role": "progression.soul_inventory_acquisition_transaction",
+      "record": "aria.progress.category1_acquire.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "6957194df8be4c992b00f083535af8f050390c333ff27cb99a6fe3db2c18ecb9"
+    },
+    {
+      "id": "aria.progress.category2_acquire",
+      "role": "progression.soul_inventory_acquisition_transaction",
+      "record": "aria.progress.category2_acquire.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "cc13d5a636c61a4c9efe5fbe34b8a2e460cda430096c3f4500a77e36d0399224"
+    },
+    {
+      "id": "aria.progress.category3_acquire",
+      "role": "progression",
+      "record": "aria.progress.category3_acquire.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7"
+    },
+    {
+      "id": "aria.progress.category3_count",
+      "role": "progression.ownership_query",
+      "record": "aria.progress.category3_count.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317"
+    },
+    {
+      "id": "aria.progress.category3_enable",
+      "role": "progression.ability_activation_bit",
+      "record": "aria.progress.category3_enable.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "0931a10b72208d54eabbb0f4d3eb1616c126458ac274e872cb97b9ebfe9967bf"
+    },
+    {
+      "id": "aria.progress.pickup_counter_increment",
+      "role": "progression.source_pickup_postcommit_consumer",
+      "record": "aria.progress.pickup_counter_increment.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9c232edf170a970e5ae42405f11150935a6ce8f29178a602968652fa4838e567"
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_preserve_scalar",
+      "role": "actor_state_application",
+      "record": "crash.actor.apply_phase_payload_preserve_scalar.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "f732a92bdadb2c638c4277eae1ea5a7a194dac5281a1ece0767bebf36bcc7130"
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_reset_scalar",
+      "role": "actor_state_application",
+      "record": "crash.actor.apply_phase_payload_reset_scalar.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8e3c5577ae01bed19cf2876271ef5e8ab40042a0b31bc2a2a4afa724016bf213"
+    },
+    {
+      "id": "crash.actor.motion_target_approach_integrate",
+      "role": "actor_motion_phase",
+      "record": "crash.actor.motion_target_approach_integrate.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "ef278b1c0e72d97b4f50f57486c3f9f8a38510fa5f62228a3e8d2283c0f38bb2"
+    },
+    {
+      "id": "crash.input.direction_lookup",
+      "role": "input_query",
+      "record": "crash.input.direction_lookup.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7ae608717457bb1518d5a4b36c9a0fd2a8112bdb9289d98d9baaff32cde2f26e"
+    },
+    {
+      "id": "crash.progress.query_flag5",
+      "role": "progression_capability_query",
+      "record": "crash.progress.query_flag5.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "fb24f3af1707c5b09d2f741ef74f15aad818f376eea5975bea8589a0cdd8ad66"
+    },
+    {
+      "id": "crash.progress.query_flag6",
+      "role": "progression_capability_query",
+      "record": "crash.progress.query_flag6.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b33b66fd7dabd5d98c4fc1a2e5660804ed3d8def417284fa5e58b3caf96213c6"
+    },
+    {
+      "id": "crash.progress.query_flag7",
+      "role": "progression_capability_query",
+      "record": "crash.progress.query_flag7.json",
+      "source_game": "crash-bandicoot-the-huge-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "17022322f4596a6df460c35a4dcb9077de91bfebc0a5fd7bd0cc8a25a345ba81"
+    },
+    {
+      "id": "db.actor.record_setup.slot1_profile0",
+      "role": "actor_record_setup",
+      "record": "db.actor.record_setup.slot1_profile0.json",
+      "source_game": "dragon-ball-advanced-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a4bde96a8766eb58eabd59475d5ae611cd45f6a2a884de9985840771cdebe629"
+    },
+    {
+      "id": "db.effect.request_cleanup",
+      "role": "effect_lifecycle",
+      "record": "db.effect.request_cleanup.json",
+      "source_game": "dragon-ball-advanced-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "1859301922185b4b985d2b649ae64fb13c27e2db34cffb6ba29caaedbe18512c"
+    },
+    {
+      "id": "db.input.actor_edges_repeat",
+      "role": "input",
+      "record": "db.input.actor_edges_repeat.json",
+      "source_game": "dragon-ball-advanced-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "de55633a24564cfb1777638a695821dc41351f287a03cb9ec68c40e95a93ddac"
+    },
+    {
+      "id": "dba.motion.facing-dependent-input",
+      "role": "actor_horizontal_motion_consumer",
+      "record": "dba.motion.facing-dependent-input.json",
+      "source_game": "dragon-ball-advanced-adventure",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a191279e6ec3e778ffb0e4f546fec0093f879195c8cda0e9b9841ea8e587d4bd"
+    },
+    {
+      "id": "driv3r.contact.initialize_records",
+      "role": "contact_record_initialization",
+      "record": "driv3r.contact.initialize_records.json",
+      "source_game": "driv3r",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7341817acf2563f56fd45e2028d885dce6aaf0471766700ee0cb954e5118b481"
+    },
+    {
+      "id": "driv3r.proximity.allocate_record",
+      "role": "proximity_record_allocation",
+      "record": "driv3r.proximity.allocate_record.json",
+      "source_game": "driv3r",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "d32cb0f2fa7918080abb5c66e1751c002c71ff48d1a1b6c4a90c769d9f73162a"
+    },
+    {
+      "id": "driv3r.proximity.allocate_secondary_record",
+      "role": "proximity_record_allocation",
+      "record": "driv3r.proximity.allocate_secondary_record.json",
+      "source_game": "driv3r",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5c84a5164858cc8a8fb0fb9e023bd34c2124ef9ef5823c20c48170b944b11f50"
+    },
+    {
+      "id": "emerald.battle.paired_order_swap",
+      "role": "battle_ordering",
+      "record": "emerald.battle.paired_order_swap.json",
+      "source_game": "pokemon-emerald-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a3b918edf0815c6ae5ccbbdd1f501129d1b370f0518598d6d88b88aec79829bc"
+    },
+    {
+      "id": "emerald.battle.side_lookup",
+      "role": "battle_ordering",
+      "record": "emerald.battle.side_lookup.json",
+      "source_game": "pokemon-emerald-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b23e063aa95bede7a79f86eb1d1e350ce9d18686c47dc7968b08494007a58a21"
+    },
+    {
+      "id": "emerald.items.effect",
+      "role": "held_item_metadata",
+      "record": "emerald.items.effect.json",
+      "source_game": "pokemon-emerald-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "77ca6b7aca357f35b5cdd022a3c12f69af231a0e1ba9cc0b446d653b6b5386b4"
+    },
+    {
+      "id": "emerald.items.parameter",
+      "role": "held_item_metadata",
+      "record": "emerald.items.parameter.json",
+      "source_game": "pokemon-emerald-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "d14093503305317c436279512ab3e2d598f81cc70a60011546554f1185f93aa3"
+    },
+    {
+      "id": "ff12.choice.entry_transition",
+      "role": "scene_transition",
+      "record": "ff12.choice.entry_transition.json",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5b0c8982de588044f90c38823530dcc65bec5e9393ac4806d105cc0dca9e2296"
+    },
+    {
+      "id": "ff12.private.resource_predicate",
+      "role": "resource_lifecycle",
+      "record": "ff12.private.resource_predicate.json",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7f1e2e9efa1a4cec1c4612f177916b8cb5509c06632366ffd8a69b9aa70de5dd"
+    },
+    {
+      "id": "ff12.resources.sorted_bucket_reset",
+      "role": "resource_lifecycle",
+      "record": "ff12.resources.sorted_bucket_reset.json",
+      "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b449f3e3f8413207b1caed03acfcdc78be3bfeeb15ad74e99decee33d39435f7"
+    },
+    {
+      "id": "ffta.content.read_current_index",
+      "role": "content_context_query",
+      "record": "ffta.content.read_current_index.json",
+      "source_game": "final-fantasy-tactics-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "26340048348468e4be1c8806477c4bc951f42596af9220feac0e21bb4b3d7868"
+    },
+    {
+      "id": "ffta.content.read_index_or_fallback",
+      "role": "content_context_query",
+      "record": "ffta.content.read_index_or_fallback.json",
+      "source_game": "final-fantasy-tactics-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "202c5b2e9ee31393ace10421bc273e66c03a3082aca910b1a2860b3681bdd1ea"
+    },
+    {
+      "id": "ffta.random.next15",
+      "role": "random_state_step",
+      "record": "ffta.random.next15.json",
+      "source_game": "final-fantasy-tactics-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "83693be9411a1518f42204f9572e5485cec06b40e643d9e4507e52004c78c7d3"
+    },
+    {
+      "id": "ffta.terrain.bounds_snapshot",
+      "role": "terrain.bounds_snapshot",
+      "record": "ffta.terrain.bounds_snapshot.json",
+      "source_game": "final-fantasy-tactics-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "f8ea344dcc840a6b474b21e92e165751c76a817f95e586bbecef13e5f3027bed"
+    },
+    {
+      "id": "ffta.terrain.cell_flags_stride16",
+      "role": "terrain.cell_flags_query",
+      "record": "ffta.terrain.cell_flags_stride16.json",
+      "source_game": "final-fantasy-tactics-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "c7ec854e6edfaec8b959f895b893a174b72a4400689373a5118733b56077df1a"
+    },
+    {
+      "id": "ffvi.combat.hp_effect_actor0",
+      "role": "CompleteboundedsourceHP-effecttransaction:originaltargeteffectpreparation\u2192HPhealing/damage/clamp\u2192conditionalpendingKOrequest;separatefromattackderivationandrealizeddefeat.",
+      "record": "ffvi.combat.hp_effect_actor0.json",
+      "source_game": "final-fantasy-vi-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "29b009f747a0918f52f91015449110f97b33382edc9accf501c7a0fa2b10c76e"
+    },
+    {
+      "id": "ffvi.combat.pending_status_filter_actor0",
+      "role": "Originalsourcepending-statusfilter:permissions/currentstatus/HPthreshold\u2192stagedrequests andoptionalalternate-resultbanks; precedes realstatuscallbacks.",
+      "record": "ffvi.combat.pending_status_filter_actor0.json",
+      "source_game": "final-fantasy-vi-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9ac3424511665b721338093ebc84c3a0806d4f1b77a1c7275b7edd2dc9e655a4"
+    },
+    {
+      "id": "ffvi.combat.postcallback_status_settlement_actor0",
+      "role": "One original source-owned caller phase:apply staged status\u2192compatibility commit\u2192retire pendingrequests\u2192restore savedVMcontext. No authored helper schedule.",
+      "record": "ffvi.combat.postcallback_status_settlement_actor0.json",
+      "source_game": "final-fantasy-vi-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "16cfeea37f3a631486095d7a998276ee9f11b1b644d0d44983f77519c0ba7aa1"
+    },
+    {
+      "id": "firered.text.timed_acknowledgement",
+      "role": "interaction",
+      "record": "firered.text.timed_acknowledgement.json",
+      "source_game": "pokemon-firered-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64"
+    },
+    {
+      "id": "firered.text.wait_initialize",
+      "role": "interaction",
+      "record": "firered.text.wait_initialize.json",
+      "source_game": "pokemon-firered-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b3ebe5e0c5c37394399e76efeb94e5da4412d0f9fb9b40778d9b31546c05058c"
+    },
+    {
+      "id": "fusion.motion.directional_acceleration",
+      "role": "movement",
+      "record": "fusion.motion.directional_acceleration.json",
+      "source_game": "metroid-fusion",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "6f2e1234c04bec9a97d2415d9c0e7c4269549906c3a617bffb4aa60f27b33b3c"
+    },
+    {
+      "id": "fusion.player.contact_profile",
+      "role": "draw_distance_and_standing_status",
+      "record": "fusion.player.contact_profile.json",
+      "source_game": "metroid-fusion",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "26efb5bb13cd59bbbca6b0c716a10b4dc5b4c8e541c7974eb50bd11edcf2ce67"
+    },
+    {
+      "id": "fusion.state.transition_snapshot_reset",
+      "role": "lifecycle",
+      "record": "fusion.state.transition_snapshot_reset.json",
+      "source_game": "metroid-fusion",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "d9fa8eb4802096fcb26eaa935158989e6fbfa9522675ba7b0f6b215d368c707b"
+    },
+    {
+      "id": "gta.component.view_priority_metric",
+      "role": "actor.render_priority_metric",
+      "record": "gta.component.view_priority_metric.json",
+      "source_game": "grand-theft-auto",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806"
+    },
+    {
+      "id": "gta.component_list.insert_head",
+      "role": "lifecycle.component_membership.insert_head",
+      "record": "gta.component_list.insert_head.json",
+      "source_game": "grand-theft-auto",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "93e6788eeeeae823b017e01e593c94e552d046aa4ada139b2de53ecdcc3bc582"
+    },
+    {
+      "id": "gta.component_list.unlink",
+      "role": "lifecycle.component_membership.unlink",
+      "record": "gta.component_list.unlink.json",
+      "source_game": "grand-theft-auto",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "cfb5cde92106d9a8b0c7bf7df0b45f2540590f806948fc7377ab4462f1f9d018"
+    },
+    {
+      "id": "kart.driver_steering_accumulation_lane0",
+      "role": "movement",
+      "record": "kart.driver_steering_accumulation_lane0.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce"
+    },
+    {
+      "id": "kart.steering_recovery",
+      "role": "movement",
+      "record": "kart.steering_recovery.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7f56fa2547e55697ff753790e325f6deb7a29a8bcd5adf64090c461513a98753"
+    },
+    {
+      "id": "kart.track_coordinate_bounds",
+      "role": "movement",
+      "record": "kart.track_coordinate_bounds.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "491eb1d7c72b524096168c697ccb5f98ca8cb7164afa54aa143d4139a118074f"
+    },
+    {
+      "id": "kart.turn_recovery_acceleration",
+      "role": "movement",
+      "record": "kart.turn_recovery_acceleration.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "679d349e067bd349ae138f20e58cdb054183ac675e5b5c83f7db3ded62b9712f"
+    },
+    {
+      "id": "kart.vehicle_speed_heading_step",
+      "role": "movement",
+      "record": "kart.vehicle_speed_heading_step.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8a72264dc9a689894a3ab828d0cb0cf4451606db7780eebf66631717c8c05ea5"
+    },
+    {
+      "id": "kart.vehicle_turn_drag_acceleration",
+      "role": "movement",
+      "record": "kart.vehicle_turn_drag_acceleration.json",
+      "source_game": "mario-kart-super-circuit",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "c6a423872eee51585d0cf32f1f9ae87f80fb09f56f4b426312bedc2d9d67fff0"
+    },
+    {
+      "id": "khcom.effect.consume_on_action_kind50",
+      "role": "accepted_action_effect_charge_consumer",
+      "record": "khcom.effect.consume_on_action_kind50.json",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e47cd955293fb1785f2138a036cbd99b670d71b1c8e263704b28e3a08822a7ab"
+    },
+    {
+      "id": "khcom.effect.expiration_gate",
+      "role": "read_only_source_required_expiration_gate_dependency",
+      "record": "khcom.effect.expiration_gate.json",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2982bb9d35fc87d8319191d07dbaeafb15b382e3af6cd84775092daef3281c93"
+    },
+    {
+      "id": "khcom.effect.install_from_descriptor",
+      "role": "source_descriptor_commit_producer",
+      "record": "khcom.effect.install_from_descriptor.json",
+      "source_game": "kingdom-hearts-chain-of-memories",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "31f5fee3241b5b06a49474b80b9baf3d887afd17e1bc975bdb65e45131fd4fd6"
+    },
+    {
+      "id": "kirby-amazing-mirror.actor.callback_phase_reset",
+      "role": "caller-owned actor callback and phase transition reset dependency leaf; full pool/proximity/hop subsystem remains pending",
+      "record": "kirby-amazing-mirror.actor.callback_phase_reset.json",
+      "source_game": "kirby-and-the-amazing-mirror",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5be27fb62885f676b74ecc61e8a8dd0705612fb13ce510101864159bce4da63f"
+    },
+    {
+      "id": "kirby-nightmare.terrain.four_corner_classification_common_map",
+      "role": "terrain_contact_corner_classification",
+      "record": "kirby-nightmare.terrain.four_corner_classification_common_map.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8bb56d7d727144b3a806176825d44f2af4c5ef87a7a6cf0eba1ab0fb042b9a29"
+    },
+    {
+      "id": "kirby-nightmare.terrain.four_corner_classification_one_cell",
+      "role": "terrain_contact_corner_classification",
+      "record": "kirby-nightmare.terrain.four_corner_classification_one_cell.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "ced3af5cfc9a98aa06a134623a9f3646caf9aa567396bd166d04ee55bbe2821b"
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape1",
+      "role": "Read source shape1 signed terrain displacement from shared probe index; specialized leaf of actor contact subsystem.",
+      "record": "kirby-nightmare.terrain.left_displacement_shape1.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "13598a3712166ce92537d426692e806d3629207bb6019c510ffc7d39ca90bff5"
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape2",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.left_displacement_shape2.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "47ab32d094a9d1ca5cdcbd187253ed788388f691c1892f305ba50a517dee465e"
+    },
+    {
+      "id": "kirby-nightmare.terrain.left_displacement_shape3",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.left_displacement_shape3.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "dce6e98560f0be05983ece7b92ab0fc7228769892e8ab7aaa4f4c383d417201b"
+    },
+    {
+      "id": "kirby-nightmare.terrain.point_occupancy_one_cell",
+      "role": "terrain_occupancy",
+      "record": "kirby-nightmare.terrain.point_occupancy_one_cell.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "84f4bf894ee2681be448c58e9592c9eebe8eebfb5aca261426e4fadc4698ce4f"
+    },
+    {
+      "id": "kirby-nightmare.terrain.publish_current_below_top_cell",
+      "role": "terrain_probe_scratch_publication",
+      "record": "kirby-nightmare.terrain.publish_current_below_top_cell.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7247fa262d46a5bc11beedfcae4b19ede0a76f59cf9cc3f6794f009c05be8867"
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape1",
+      "role": "Read source shape1 signed terrain displacement from shared probe index; specialized leaf of actor contact subsystem.",
+      "record": "kirby-nightmare.terrain.right_displacement_shape1.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "0d7b1618063aa49f158d44c249e9ed2150954c25cd54079d7e41dfc871ef919e"
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape2",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.right_displacement_shape2.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "940a7bf795491f9edcf6ddd46c11026a7c21798e8dc66f8aa19e614e6451aa89"
+    },
+    {
+      "id": "kirby-nightmare.terrain.right_displacement_shape3",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.right_displacement_shape3.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a588a786c5aa2137d691053b8b9823fd6aeb61c3bfd9dd3a738675b0b113ab11"
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape1",
+      "role": "Read source shape1 signed terrain displacement from shared probe index; specialized leaf of actor contact subsystem.",
+      "record": "kirby-nightmare.terrain.vertical_displacement_shape1.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7a08bfff78dc7f36701d0d0096f5a805dad7624f4268e3da42618018a2be4387"
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape2",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.vertical_displacement_shape2.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a392cfbe1da89e0657b6bfeb236398b32df97787dc3168ffa9274e93ad90d011"
+    },
+    {
+      "id": "kirby-nightmare.terrain.vertical_displacement_shape3",
+      "role": "terrain_displacement",
+      "record": "kirby-nightmare.terrain.vertical_displacement_shape3.json",
+      "source_game": "kirby-nightmare-in-dream-land",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e036ff498d9bcab1d076a54c7200b2be5004d4f19d60d4c0d4cb29936ed03420"
+    },
+    {
+      "id": "leafgreen.persistence.secure_record_decrypt",
+      "role": "persistence",
+      "record": "leafgreen.persistence.secure_record_decrypt.json",
+      "source_game": "pokemon-leafgreen-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "d98653ca890a5f3f5b909110b5c312b6bc6520229c9368c1812455014a5b3cbc"
+    },
+    {
+      "id": "leafgreen.persistence.secure_record_encrypt",
+      "role": "persistence",
+      "record": "leafgreen.persistence.secure_record_encrypt.json",
+      "source_game": "pokemon-leafgreen-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "3061c220f5b83972850015dea41d303c1a779ac0ab0cf2a43e3c7ca0dea75096"
+    },
+    {
+      "id": "leafgreen.species.ability",
+      "role": "species_traits",
+      "record": "leafgreen.species.ability.json",
+      "source_game": "pokemon-leafgreen-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9d8f701edcfeff5f1e2c13a4e974ce9a1e6f9637ec29e274d9f5f6d07f792615"
+    },
+    {
+      "id": "leafgreen.species.gender",
+      "role": "species_traits",
+      "record": "leafgreen.species.gender.json",
+      "source_game": "pokemon-leafgreen-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8494bbacbd57366e8de6dc4c782ded0f1f99637643a8429bc31e95e6f4e85191"
+    },
+    {
+      "id": "megaman_zero.motion.command_horizontal_step",
+      "role": "movement",
+      "record": "megaman_zero.motion.command_horizontal_step.json",
+      "source_game": "megaman-zero",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "fcdf9cc19d865ea71f03da75f921492785bcb9434dae321d742d151b77edbad2"
+    },
+    {
+      "id": "metal_slug_advance.selection.entry_available",
+      "role": "progression",
+      "record": "metal_slug_advance.selection.entry_available.json",
+      "source_game": "metal-slug-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b6a7a65142cc7650b53296fc0d5c59d4ff6152559f6f8a99d5f4a2970d9a077b"
+    },
+    {
+      "id": "metal_slug_advance.selection.visible_frontier",
+      "role": "progression",
+      "record": "metal_slug_advance.selection.visible_frontier.json",
+      "source_game": "metal-slug-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "920e2cc12e5723cab59f12abc00022bd3f18d8fdd6a122a7137ffd9156392661"
+    },
+    {
+      "id": "mlss.motion.actor_step",
+      "role": "movement",
+      "record": "mlss.motion.actor_step.json",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a2b9fcbda10598912826c0e5d001af4a7e1102875823228ac2e40c14d8614286"
+    },
+    {
+      "id": "mlss.motion.initialize",
+      "role": "movement",
+      "record": "mlss.motion.initialize.json",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "edc71de823be163eef404bc604bb15180f91efd6584523d833e7393a574524bc"
+    },
+    {
+      "id": "mlss.motion.reset",
+      "role": "movement",
+      "record": "mlss.motion.reset.json",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "3d7d34a7e7ba8accc3c6324b442b8b6ad0b2e3e5dd94278ffe6db652edf5c3b9"
+    },
+    {
+      "id": "mlss.motion.update",
+      "role": "movement",
+      "record": "mlss.motion.update.json",
+      "source_game": "mario-and-luigi-superstar-saga",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9440a8e51db80fd38b455bddd3672e7937f0e80d19c87f662e7d33ddd910074e"
+    },
+    {
+      "id": "mmz.input.profile0-producer",
+      "role": "source_input_command_history_update",
+      "record": "mmz.input.profile0-producer.json",
+      "source_game": "megaman-zero",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "3bbe7fc91bc6b65e65ca47aa461511eb34b5f796d9b6b703ae89e1c6f7cc2244"
+    },
+    {
+      "id": "mmz.input.profile1-producer",
+      "role": "source_input_command_history_update",
+      "record": "mmz.input.profile1-producer.json",
+      "source_game": "megaman-zero",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5d06300f5c95f42218615c34d0176fbab9a60eceae30acaa1c6c5b261c42aaf6"
+    },
+    {
+      "id": "mmz.input.profile2-history-initialize",
+      "role": "input_history_initialization",
+      "record": "mmz.input.profile2-history-initialize.json",
+      "source_game": "megaman-zero",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "ef74113c8ad6c6c79d124f0549650bc3fbd4bc326ec30be9604a79bfc1471c72"
+    },
+    {
       "id": "mzm.combat.impact",
       "role": "combat",
       "record": "mzm.combat.impact.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
       "assembly_status": "qualified_typed_ports",
-      "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890"
+      "behavior_sha256": "ad6aacedd995f7c8f8e4349064fb63d0aa57be39588442a163948a36a8d63280"
+    },
+    {
+      "id": "mzm.combat.minimum_reaction2",
+      "role": "combat",
+      "record": "mzm.combat.minimum_reaction2.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8ed56cb0d706d01b5b74ffdd566886707186c826a423e4c9184a9f0b2c4b3a61"
+    },
+    {
+      "id": "mzm.combat.minimum_reaction3",
+      "role": "combat",
+      "record": "mzm.combat.minimum_reaction3.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "bd0437dbddda77da8b4ddbf3b10e7113f5d2ba62278f0eea3c2befbceb281d1e"
+    },
+    {
+      "id": "mzm.combat.reaction_tick",
+      "role": "combat",
+      "record": "mzm.combat.reaction_tick.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e"
+    },
+    {
+      "id": "mzm.lifecycle.choose_defeat_drop",
+      "role": "lifecycle",
+      "record": "mzm.lifecycle.choose_defeat_drop.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "7f95592b0995958dedfb4d77ead5fa227ca79da0489015f228d9835326ee05e2"
+    },
+    {
+      "id": "mzm.lifecycle.enemy_update_gate",
+      "role": "lifecycle",
+      "record": "mzm.lifecycle.enemy_update_gate.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "4813b829de62821ff2dab0374af67c954720da1b54c6ecf2bb24f6df1a256d50"
+    },
+    {
+      "id": "mzm.lifecycle.viewport_retirement",
+      "role": "lifecycle",
+      "record": "mzm.lifecycle.viewport_retirement.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "f2db164d28b50adf5d63e3957611605a548a3d0e9d63fe85c1feb7c9ee6a7236"
     },
     {
       "id": "mzm.motion.accelerate",
@@ -53,8 +863,197 @@
       "record": "mzm.progress.events.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
-      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5"
+    },
+    {
+      "id": "mzm.statue.after-item-timer",
+      "role": "exploration_progression",
+      "record": "mzm.statue.after-item-timer.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "4f333c170939491550c6aaecc4f28ee48fb2e1b4f9ac53eb28d56b7002da23ce"
+    },
+    {
+      "id": "mzm.statue.behavior",
+      "role": "exploration_progression",
+      "record": "mzm.statue.behavior.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "0db22b589e56b3dfa5ee8ec57277ed542afd60b21232ab710aad0d3028818ade"
+    },
+    {
+      "id": "mzm.statue.wait-collected",
+      "role": "exploration_progression",
+      "record": "mzm.statue.wait-collected.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "052c2054a888d65da1c800e23098202ea02d19d39f5df55da16d87e017eb832f"
+    },
+    {
+      "id": "nfs.scene.request_transition",
+      "role": "progression.scene_transition_request",
+      "record": "nfs.scene.request_transition.json",
+      "source_game": "need-for-speed-underground",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "54567b79cfff7ba5f38797be5cd0cc8d97fe4c5bb7ac4955355225bc2c987e80"
+    },
+    {
+      "id": "pmd.input.clear_pressed",
+      "role": "input",
+      "record": "pmd.input.clear_pressed.json",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b64523c6d1c94433430242cd80a67ad17c33f8c0b8f8ae11f66db700c1e908b7"
+    },
+    {
+      "id": "pmd.input.initialize",
+      "role": "input",
+      "record": "pmd.input.initialize.json",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2090e91812a0574f3322a8065d8eb2f31dd6f7c8f58e4800d1c31de7c1a110eb"
+    },
+    {
+      "id": "pmd.input.publish",
+      "role": "input",
+      "record": "pmd.input.publish.json",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e78284f48aa118cab56dd5d43c89e0490197e1638aa6508ce2254b0ed89caa08"
+    },
+    {
+      "id": "pmd.input.suppress_repeat",
+      "role": "input",
+      "record": "pmd.input.suppress_repeat.json",
+      "source_game": "pokemon-mystery-dungeon-red-rescue-team",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2810964a99d0a6e2c44233b4b078f64ecd482705abc2744355610dcd76485606"
+    },
+    {
+      "id": "pop.clock.advance",
+      "role": "mechanical_clock",
+      "record": "pop.clock.advance.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "c1f5e32e4d873fb13b06e5a30e59f6a0f55e2d3d9347ba6ee2c48c154c875ac4"
+    },
+    {
+      "id": "pop.clock.initialize",
+      "role": "mechanical_clock",
+      "record": "pop.clock.initialize.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a90489b21658f51e3a9c8218776d9eee052f6ece48c9f6b537f46f747020b518"
+    },
+    {
+      "id": "pop.clock.read",
+      "role": "mechanical_clock",
+      "record": "pop.clock.read.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "52a5fc85d595ee21b19ad09a2bf81d61462e8e21e7eb5bac234528bbdb07dc1d"
+    },
+    {
+      "id": "pop.recovery.advance_capacity_profile",
+      "role": "recovery",
+      "record": "pop.recovery.advance_capacity_profile.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "31012788fa6791f42bdc17fb7483b2f955a51e57e262c3ea60ae9c22f24367a9"
+    },
+    {
+      "id": "pop.recovery.consume_resource_charge",
+      "role": "recovery",
+      "record": "pop.recovery.consume_resource_charge.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "cdf03a19cd742e44124f1a8b74e0bd5a403a3b8896b8e82fc88cc1aa5cab0b43"
+    },
+    {
+      "id": "pop.world.gate_read",
+      "role": "world_state",
+      "record": "pop.world.gate_read.json",
+      "source_game": "prince-of-persia-the-sands-of-time",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "280c800afa29a6919128404208cef827661f61e3e2254ea8c04c077559c90ac9"
+    },
+    {
+      "id": "ruby.input.initialize",
+      "role": "input_configuration_initialization",
+      "record": "ruby.input.initialize.json",
+      "source_game": "pokemon-ruby-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "c331a6b61b3c96d3a6c0cbb12be280b16325c4bf0a6b15d0544e8a5943597e37"
+    },
+    {
+      "id": "ruby.menu.capture_selected_code_mode1",
+      "role": "source_menu_selected_code_consumer",
+      "record": "ruby.menu.capture_selected_code_mode1.json",
+      "source_game": "pokemon-ruby-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9183dc1d20c0e66de8d26ee47af0ac68a7209df6ba4f07cba986103c32105f47"
+    },
+    {
+      "id": "ruby.menu.navigate_four_row_input",
+      "role": "source_local_menu_navigation",
+      "record": "ruby.menu.navigate_four_row_input.json",
+      "source_game": "pokemon-ruby-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "135417e5fd6a0b751965abe5468799953d65d51c27ac10ab53fc37b040ed3a3c"
+    },
+    {
+      "id": "ruby.species.ability",
+      "role": "species_traits",
+      "record": "ruby.species.ability.json",
+      "source_game": "pokemon-ruby-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "50e34edd597b45431618ad280dabee6c5cbf7db170a5cc0d8da5e1588d92e354"
+    },
+    {
+      "id": "ruby.species.gender",
+      "role": "species_traits",
+      "record": "ruby.species.gender.json",
+      "source_game": "pokemon-ruby-version",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2bc54545cff62e42300a506f6af455340b06cbb686174f2b00de588d68db7e26"
+    },
+    {
+      "id": "shaman.camera.layer1_scroll_publish",
+      "role": "camera",
+      "record": "shaman.camera.layer1_scroll_publish.json",
+      "source_game": "shaman-king-master-of-spirits",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2236d66b6e35433230050d748b7aefaea6018e87c244f5226fe7506b7e40376a"
+    },
+    {
+      "id": "shaman.input.held_read",
+      "role": "input",
+      "record": "shaman.input.held_read.json",
+      "source_game": "shaman-king-master-of-spirits",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a99834b48b229c96fad093506a5083df3c57a4da9f1387249ef01cacff48a51a"
     },
     {
       "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
@@ -138,6 +1137,15 @@
       "behavior_sha256": "5feea688047e5e6a0aa8ce05f3c3f94bfd2f09b9cb0066919be08632a92f1cc9"
     },
     {
+      "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
+      "role": "movement",
+      "record": "sma-4-super-mario-bros-3.combat.actor_x_integration.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9f36bee6125b2d04f4a112a4175d6819646cf707bd71f1545458e872042c07f3"
+    },
+    {
       "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
       "role": "combat",
       "record": "sma-4-super-mario-bros-3.combat.bounce_initializer.json",
@@ -154,6 +1162,24 @@
       "qualified": true,
       "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
       "behavior_sha256": "219324e658ed59978a8b1cc66fc67a5e3236e6a74f57ef5fa3eebb86dfe19b13"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+      "role": "movement",
+      "record": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "5c92048348ce3a97e3f537d89c39ab4d51a0ba60ac2c2c89b5c26e4cdfe65cbb"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.horizontal_integration",
+      "role": "movement",
+      "record": "sma-4-super-mario-bros-3.motion.horizontal_integration.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "18032906ac32a9fb554cac631f22f18440fbd64c626dcde0b32024487d625430"
     },
     {
       "id": "sma-4-super-mario-bros-3.motion.run_boost_helper",
@@ -210,6 +1236,213 @@
       "behavior_sha256": "e02de3bee4305bfe787b36c5858006537cb91b1d42df915cc8a611082fd7c9ee"
     },
     {
+      "id": "sma1.death_update_lives",
+      "role": "combat",
+      "record": "sma1.death_update_lives.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "9278f43cc5d84acddfc774741615c4f8c52decb6c9cc4f021cc6a3be8b26d062"
+    },
+    {
+      "id": "sma1.lifecycle.retry_checkpoint_restore",
+      "role": "checkpoint_retry",
+      "record": "sma1.lifecycle.retry_checkpoint_restore.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "f57fb045e199e58c12df7448da93c938eebe8a454fd56e205eab2dcac21d7c3c"
+    },
+    {
+      "id": "sma2.actor_contact_box",
+      "role": "combat",
+      "record": "sma2.actor_contact_box.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "79f09dc3b7ef023186bf79cb585ad8672f89742532cb88ac7119bdfcbbbd98de"
+    },
+    {
+      "id": "sma2.actor_player_relative_side",
+      "role": "combat",
+      "record": "sma2.actor_player_relative_side.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e8525f84fbd3aef9a9fe2c9ad5332b1fa39dde0861a8cf179cf3e971ec3a657f"
+    },
+    {
+      "id": "sma2.actor_reinitialize",
+      "role": "combat",
+      "record": "sma2.actor_reinitialize.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b8d2d3e7c723f332c018536148c5f3d36ddaf72d1fbb2b4818f3b246118ab2e0"
+    },
+    {
+      "id": "sma2.audio.channel9_active_read",
+      "role": "audio",
+      "record": "sma2.audio.channel9_active_read.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "d8a999b0d320256527be461280392f2795a79d34df8f0b4d255c09d88ad7ca58"
+    },
+    {
+      "id": "sma2.audio.spatial_pan",
+      "role": "audio",
+      "record": "sma2.audio.spatial_pan.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b4dc51bb4081e1f09686918dbe9338c62f8691164388a51284adfa432439fd38"
+    },
+    {
+      "id": "sma2.audio.x_attenuation",
+      "role": "audio",
+      "record": "sma2.audio.x_attenuation.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b527b5523dcc9c7878d700da99dde02433586503d689d1b4b585882827f7b1c8"
+    },
+    {
+      "id": "sma2.auxiliary_slot_clear",
+      "role": "movement",
+      "record": "sma2.auxiliary_slot_clear.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "a96d13c5b67c46acde63d9a5035fb08261e5970bbcef2271d018ce67e15969fc"
+    },
+    {
+      "id": "sma2.auxiliary_vertical_integrate",
+      "role": "movement",
+      "record": "sma2.auxiliary_vertical_integrate.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "897e09d57e534319d429c6b7bba491a9b055fa88c1f871c56ec72f6dbc9ebfd7"
+    },
+    {
+      "id": "sma2.cape_form_transform_finish",
+      "role": "progression",
+      "record": "sma2.cape_form_transform_finish.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "76db549e790b4ae88cf0526d37dd441c03c98c5db4662b0bb86149fa2ecf776a"
+    },
+    {
+      "id": "sma2.carried_attachment_release",
+      "role": "combat",
+      "record": "sma2.carried_attachment_release.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "7e25dbe87cd6cef12cba9a3975a7109e613296d9cba0c5850cfe526e7b9c2a69"
+    },
+    {
+      "id": "sma2.contact.item_class_c2_query",
+      "role": "combat",
+      "record": "sma2.contact.item_class_c2_query.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "4899dcc60c119065778db4fca661163dd549d07f6906b3bdc707fe1042ac6062"
+    },
+    {
+      "id": "sma2.fire_form_transform_finish",
+      "role": "progression",
+      "record": "sma2.fire_form_transform_finish.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "f3ce7ad574df2c6ddd05c6b4546cc35d5e40bc6b37c3c7e5e81b7a8d4c9b760c"
+    },
+    {
+      "id": "sma2.player_contact_box",
+      "role": "combat",
+      "record": "sma2.player_contact_box.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "748cb5f45bd126754749270fe66f233072483ed3f05b2db8a2ae3d6592fa982c"
+    },
+    {
+      "id": "sma2.powered_hurt_recovery",
+      "role": "combat",
+      "record": "sma2.powered_hurt_recovery.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "b6521217ce1a5307ad2d632339a6acb6c7b076f69339f3d5af89e7b02b17745d"
+    },
+    {
+      "id": "sma2.shared_contact_overlap",
+      "role": "combat",
+      "record": "sma2.shared_contact_overlap.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8185790071c0e5425bc57ecc9145f04dcbdf48ea924f1aede7b6facbd20ecd3f"
+    },
+    {
+      "id": "sma2.small_hurt_recovery",
+      "role": "combat",
+      "record": "sma2.small_hurt_recovery.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "e262ef083270f539173a73d23b2e78acfc2151d22ed000a55cbd2df4c84a36d0"
+    },
+    {
+      "id": "sma4.actor_pair_reaction",
+      "role": "combat",
+      "record": "sma4.actor_pair_reaction.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "ac7e59c2fd03d0a60add7cb3bff78640200649fa15322462c869d9d14e340d5b"
+    },
+    {
+      "id": "sma4.actor_pixel_mirror_sync",
+      "role": "movement",
+      "record": "sma4.actor_pixel_mirror_sync.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2439ca866cbce9407a6176ee9cd6525a907c5e46364d21813987e404a4121e69"
+    },
+    {
+      "id": "sma4.clear_actor_active",
+      "role": "combat",
+      "record": "sma4.clear_actor_active.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "c18515022b052dde3276c8a873da506ff8073480f238de3f072b3f8b0b0896fa"
+    },
+    {
+      "id": "sma4.collision.actor_pair_query",
+      "role": "combat",
+      "record": "sma4.collision.actor_pair_query.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "6cf35d914db4823c4ebe83165f6bd61145fb02342e5242aa43a876250ff41863"
+    },
+    {
+      "id": "sonic.motion.air_steering",
+      "role": "movement",
+      "record": "sonic.motion.air_steering.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "287a37af3d95bc71cd35c2827ce57d77957bbd56b6482cfd3571329bd427e9eb"
+    },
+    {
       "id": "sonic.motion.gravity",
       "role": "movement",
       "record": "sonic.motion.gravity.json",
@@ -255,13 +1488,85 @@
       "behavior_sha256": "0bd45089f689d0e4c15e0edf26e866bd0ab4a9449e569d2ceb9fc93eb8e79646"
     },
     {
+      "id": "sonic.world.boundary_stage0",
+      "role": "movement",
+      "record": "sonic.world.boundary_stage0.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "292c85756fcbd314ced854218ed0d928332dd89d4317406325835287bedb55fe"
+    },
+    {
+      "id": "tekken.collision.clear_actor_boxes",
+      "role": "Actor collision-box lifecycle reset; auxiliary to materialization/separation",
+      "record": "tekken.collision.clear_actor_boxes.json",
+      "source_game": "tekken-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "50100f8582c2f1a8a6ee8334e24741cdbd4c4022517a78eead1b4c17c4670c7a"
+    },
+    {
+      "id": "tekken.collision.materialize_actor_boxes",
+      "role": "Four-record position translation and facing mirror; actual contact-phase producer",
+      "record": "tekken.collision.materialize_actor_boxes.json",
+      "source_game": "tekken-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "32c3f5a9d9d0a7c7200faa5cddb2aab747ff5570353ed211b43a49ad5b663c1d"
+    },
+    {
+      "id": "tekken.collision.separate_actor_boxes",
+      "role": "Full source4\u00d74 active-box separation decision: eligibility, contact marker refresh, strict maximum overlap/tie policy and ordered actor position correction",
+      "record": "tekken.collision.separate_actor_boxes.json",
+      "source_game": "tekken-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "92d84f2e7a86a28bacce5f0d6c01ce84d20f0c0c824c5247794c0d9789bb9cae"
+    },
+    {
+      "id": "tekken.combat.damage_knockback_response",
+      "role": "Real impact/KO consumer of pending damage and combo state into canonical defender knockback; not contact predicate, damage producer orHP consumer",
+      "record": "tekken.combat.damage_knockback_response.json",
+      "source_game": "tekken-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "aa73d70ba6fc538f5e1b326d5e539957368e71e615c26cbfcc0ab7ef34b33ee3"
+    },
+    {
+      "id": "tmc.combat.learned_sword_beam_eligibility",
+      "role": "combat",
+      "record": "tmc.combat.learned_sword_beam_eligibility.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c"
+    },
+    {
+      "id": "tmc.input.equipped_item_predicate",
+      "role": "input",
+      "record": "tmc.input.equipped_item_predicate.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "abd807ec5388955b8b4056279de391aa8f6de57ce745ff2fada6506b7e320b53"
+    },
+    {
+      "id": "tmc.input.held_equipped_item",
+      "role": "input",
+      "record": "tmc.input.held_equipped_item.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "00ed565ff3ae96287acb8cfdfbc0c9627e052a95eff25e370ece6b0a3b520c05"
+    },
+    {
       "id": "tmc.progress.derive_skills",
       "role": "progression",
       "record": "tmc.progress.derive_skills.json",
       "source_game": "legend-of-zelda-the-the-minish-cap",
       "qualified": true,
       "assembly_status": "qualified_typed_ports",
-      "behavior_sha256": "3c683d0489f455e5421a875ed3b88970977800b02d1458087816e3dd54ddfef8"
+      "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63"
     },
     {
       "id": "tmc.progress.inventory_read",
@@ -280,6 +1585,69 @@
       "qualified": true,
       "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568"
+    },
+    {
+      "id": "tmc.progress.script_inventory_write",
+      "role": "progression",
+      "record": "tmc.progress.script_inventory_write.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb"
+    },
+    {
+      "id": "wl4.normal-form.afterimage_history_step",
+      "role": "afterimage_history_update",
+      "record": "wl4.normal-form.afterimage_history_step.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "76b9ec68416b5ee90d79ca17da84aa3f612cb5fa2d87949620d7dad0ba9bdc25"
+    },
+    {
+      "id": "wl4.protection.read_query_result",
+      "role": "combat",
+      "record": "wl4.protection.read_query_result.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "54e29988a2e65917b48425dac571f33da52b4e36d81ca468254cdbc00cc0982e"
+    },
+    {
+      "id": "wl4.protection.tag_query_result",
+      "role": "combat",
+      "record": "wl4.protection.tag_query_result.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8b7775929448179778e246b313bb3a734c9282b6fc2e8bb60b6ed28d76629bd0"
+    },
+    {
+      "id": "wl4.protection.test_protected_zero_selector",
+      "role": "combat",
+      "record": "wl4.protection.test_protected_zero_selector.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "39ad453c603a7b10e2ab72ffce41f2d584fc6daa46f9ff0175d9cca636514b2f"
+    },
+    {
+      "id": "wl4.protection.test_unprotected_zero_selector_complement",
+      "role": "combat",
+      "record": "wl4.protection.test_unprotected_zero_selector_complement.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "18ad365003360d8be1f9c40cff0352fb837ce9111b4c8190f67e2dac5304a7f1"
+    },
+    {
+      "id": "wl4.recovery.action60_struggle_step",
+      "role": "protection_recovery_request",
+      "record": "wl4.recovery.action60_struggle_step.json",
+      "source_game": "wario-land-4",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "a65a44cc6a010fc56c3f85af47d32b9a4b5719ce40c2974aed37f83263441a6b"
     }
   ],
   "groups": [
@@ -289,6 +1657,18 @@
       "members": [
         "aria.motion.integrate_x",
         "aria.motion.integrate_y",
+        "fusion.motion.directional_acceleration",
+        "kart.driver_steering_accumulation_lane0",
+        "kart.steering_recovery",
+        "kart.track_coordinate_bounds",
+        "kart.turn_recovery_acceleration",
+        "kart.vehicle_speed_heading_step",
+        "kart.vehicle_turn_drag_acceleration",
+        "megaman_zero.motion.command_horizontal_step",
+        "mlss.motion.actor_step",
+        "mlss.motion.initialize",
+        "mlss.motion.reset",
+        "mlss.motion.update",
         "mzm.motion.accelerate",
         "sma-2-super-mario-world.motion.sma2_decay_run_charge",
         "sma-2-super-mario-world.motion.sma2_gravity",
@@ -297,17 +1677,25 @@
         "sma-2-super-mario-world.motion.sma2_integrate_y",
         "sma-2-super-mario-world.motion.sma2_run_charge",
         "sma-2-super-mario-world.motion.sma2_special_surface",
+        "sma-4-super-mario-bros-3.combat.actor_x_integration",
+        "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+        "sma-4-super-mario-bros-3.motion.horizontal_integration",
         "sma-4-super-mario-bros-3.motion.run_boost_helper",
         "sma-4-super-mario-bros-3.motion.vertical_integration",
         "sma.motion.sma1_friction",
         "sma.motion.sma1_gravity_hover",
         "sma.motion.sma1_integrate_y",
         "sma.motion.sma1_jump_onset",
+        "sma2.auxiliary_slot_clear",
+        "sma2.auxiliary_vertical_integrate",
+        "sma4.actor_pixel_mirror_sync",
+        "sonic.motion.air_steering",
         "sonic.motion.gravity",
         "sonic.motion.integrate",
         "sonic.motion.slope_acceleration",
         "sonic.motion.surface_detach",
-        "sonic.motion.surface_projection"
+        "sonic.motion.surface_projection",
+        "sonic.world.boundary_stage0"
       ],
       "composition_example": "research/automatic-ir/asterion-relay.composition.json",
       "meaning": "Signed directional acceleration, context-dependent gravity, integration, slope projection/acceleration and detachment; surface contact service closure remains separate."
@@ -317,10 +1705,31 @@
       "label": "How hits change an enemy",
       "members": [
         "mzm.combat.impact",
+        "mzm.combat.minimum_reaction2",
+        "mzm.combat.minimum_reaction3",
+        "mzm.combat.reaction_tick",
         "sma-2-super-mario-world.combat.sma2_effect_suppressed",
         "sma-2-super-mario-world.combat.sma2_terminal_state",
         "sma-4-super-mario-bros-3.combat.bounce_initializer",
-        "sma-4-super-mario-bros-3.combat.flatten_initializer"
+        "sma-4-super-mario-bros-3.combat.flatten_initializer",
+        "sma1.death_update_lives",
+        "sma2.actor_contact_box",
+        "sma2.actor_player_relative_side",
+        "sma2.actor_reinitialize",
+        "sma2.carried_attachment_release",
+        "sma2.contact.item_class_c2_query",
+        "sma2.player_contact_box",
+        "sma2.powered_hurt_recovery",
+        "sma2.shared_contact_overlap",
+        "sma2.small_hurt_recovery",
+        "sma4.actor_pair_reaction",
+        "sma4.clear_actor_active",
+        "sma4.collision.actor_pair_query",
+        "tmc.combat.learned_sword_beam_eligibility",
+        "wl4.protection.read_query_result",
+        "wl4.protection.tag_query_result",
+        "wl4.protection.test_protected_zero_selector",
+        "wl4.protection.test_unprotected_zero_selector_complement"
       ],
       "meaning": "HP subtraction, lethal lifecycle/pose/flag updates and reaction state. Projectile/contact dispatch and hit cadence are authored policy in the current new-ROM example."
     },
@@ -328,11 +1737,17 @@
       "id": "progression",
       "label": "What acquisition changes",
       "members": [
+        "aria.progress.category3_acquire",
+        "metal_slug_advance.selection.entry_available",
+        "metal_slug_advance.selection.visible_frontier",
         "mzm.progress.acquire",
         "mzm.progress.events",
+        "sma2.cape_form_transform_finish",
+        "sma2.fire_form_transform_finish",
         "tmc.progress.derive_skills",
         "tmc.progress.inventory_read",
-        "tmc.progress.inventory_write"
+        "tmc.progress.inventory_write",
+        "tmc.progress.script_inventory_write"
       ],
       "meaning": "Equipment ownership/event banks and Minish persistent two-bit inventory linked to derived skill gates. The clean-ROM route consumes acquired capability in an explicitly authored world gate; original campaigns/equip UI are not claimed."
     }

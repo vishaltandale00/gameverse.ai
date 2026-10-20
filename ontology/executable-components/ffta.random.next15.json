@@ -1,0 +1,166 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffta.random.next15",
+  "label": "Advance canonical random state and return masked 15-bit value",
+  "role": "random_state_step",
+  "source_game": "final-fantasy-tactics-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ffta.random.next15/package.json",
+  "package_sha256": "7984ee7140e9a2c9968dba5cb0f46c4076af1bd12b3cca33d49c571fa233ddf4",
+  "behavior_sha256": "83693be9411a1518f42204f9572e5485cec06b40e643d9e4507e52004c78c7d3",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "6c6665a289d58815852215fdf06d9e9eba941674e8153fafd38822043b0f5bc4"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "local/decomps/ffta-decomp/src/random.c",
+          "local/roundtrip/coverage-next-ffta-ir-001/random/l0.json",
+          "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json"
+        ],
+        "frame": "ffta.random.canonical_state",
+        "label": "Canonical random_state; detailed game schema and lifecycle unresolved",
+        "naming_status": "Source-backed helper and offset meaning; no complete game schema claim",
+        "quantity": "prng_state",
+        "storage_type": "u32",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "invoke": "Explicit source function call; no frame clock inferred",
+    "storage": "Borrowed canonical globals, no allocation",
+    "unknown": "Original callers, initialization or seed, saves, scheduler, concurrency and interior entries remain open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ffta.random.next15/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "256 finite source-oracle cases each original and rebuilt; no full game or caller closure",
+    "Internal support, not primary gameplay prefab",
+    "No hidden executable dependency, asset or callback in these leaves",
+    "No new native or source execution for this metadata publication",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "aliasing": "Current index field_0 is the same canonical cell in both readers; PRNG is independent canonical IWRAM state",
+    "borrowed_state": [
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_0",
+        "offset": 50345136,
+        "owner": "global",
+        "width": 32
+      }
+    ],
+    "independent_QC": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-ir-qc.json",
+        "sha256": "f56ecef12935a90264c43086e01972530a1acb5b6bdc386089b6523194e4e4d0"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-context-qc.json",
+        "sha256": "71c0a6a3af7b63a61e08f6abe292e628b2dbeed10d3de552777045dde4f39e6c"
+      }
+    ],
+    "ordering": "No intermodule invocation order or composed capability is proved",
+    "original_proof": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/random/original-proof.json",
+      "sha256": "aaa1459f0bc99b5ad2b15b7495fea5f741076a550479b4877856c7d716c2a113"
+    },
+    "owned_state": [],
+    "preconditions": [
+      "Synchronous Thumb AAPCS with valid disjoint stack and no concurrent writer or IRQ observer",
+      "Borrowed canonical globals remain authoritative; binding snapshots do not create ownership"
+    ],
+    "rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/random/rebuilt-proof.json",
+      "sha256": "fd686a9ab8169ccb8b8b85cba7ebb29d28dd4e14f306adfea118e6a32b0cf2b4"
+    },
+    "reference": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json",
+      "sha256": "c476c27f7abab21f7ebe569398140c646c37ab3b9e706fc75777eaa092611f2f"
+    },
+    "return_type": "u32",
+    "services": [],
+    "source_calls": [],
+    "source_commit": "7f0e9ad222eb7b04f7c87beeefa36965a6e5d476",
+    "source_function": "NextRandom15",
+    "source_oracle": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-oracle.c",
+      "sha256": "4e2ba8710df1c6cf2d51cd66e2066a99e865d8516ba20ee1606677db4f1aa510"
+    },
+    "source_oracle_fixture": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/random-fixtures.json",
+      "sha256": "97a96f9289e2835f93f1239c720077f4e53030d229fb3a35406e5e091e87657a"
+    }
+  },
+  "return_meaning": {
+    "ABI_scope": "Full 32-bit native result compared; mathematical output range 0..32767; pinned C source declares u16",
+    "confidence": 0.95,
+    "domain": {
+      "unsigned_max": 32767,
+      "unsigned_min": 0
+    },
+    "evidence": [
+      "local/decomps/ffta-decomp/src/random.c",
+      "local/roundtrip/coverage-next-ffta-ir-001/random/original-proof.json",
+      "local/roundtrip/coverage-next-ffta-ir-001/random/rebuilt-proof.json"
+    ],
+    "frame": "ffta.random.output15",
+    "label": "Source NextRandom15 output after state advance",
+    "native_qualified_return_type": "u32",
+    "quantity": "pseudo_random_integer",
+    "storage_type": "u32",
+    "unit": {
+      "denominator": 1,
+      "numerator": 1
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-tactics-advance",
+    "entry": "08002804"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

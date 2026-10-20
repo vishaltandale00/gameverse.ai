@@ -1,0 +1,1191 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "pokemon-emerald-version",
+  "sourceSystemIds": [
+    "emerald.battle.turn-order"
+  ],
+  "blueprintIds": [
+    "turn-based-party-battle",
+    "exploration-progression"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Choose commands for a persistent party, resolve ordered battle actions, retain earned party/progression changes and return to exploration. This packet supplies only one order transaction within that core experience.",
+    "phases": [
+      {
+        "id": "exploration_discovery",
+        "label": "Explore and enter encounters or party screens",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "overworld/control/encounter trigger"
+        ],
+        "gaps": [
+          "This bounded source set does not recover overworld traversal, encounter creation or menu-entry boundary."
+        ]
+      },
+      {
+        "id": "party_records",
+        "label": "Read and preserve party records",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "shared persistent record store",
+          "personality/substructure selector",
+          "checksum service"
+        ],
+        "gaps": [
+          "Getter may decrypt, check and mutate flags then re-encrypt the SAME shared record. Modulo expansion/checksum induction/switch remapping remain executable blockers. No full party menu or roster transfer consumer."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0806a518",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                2063,
+                2063
+              ],
+              "recordSha256": "80c67b25e9707634d35bb6dd25141f98a1bd30133f9b72b0e41c0faf4de1c9e4"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0806a674",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                2064,
+                2064
+              ],
+              "recordSha256": "47ed6add65afafc9f2fc3f18ebff45adb6370965ea8498c07f0b85cec62e67fd"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0806a228",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                2060,
+                2060
+              ],
+              "recordSha256": "3db20ae62fd3e9a7da12777ec8bf0e09cc3978f92066e277fed925bfee474a1f"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0806a24c",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                2061,
+                2061
+              ],
+              "recordSha256": "dfbc5f962e8f7d362847029645cdb7974b0fbd19541e2001317661b9da50a95f"
+            }
+          }
+        ]
+      },
+      {
+        "id": "command",
+        "label": "Collect and dispatch a battler command",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "controller/input/menu presentation",
+          "per-battler callback dispatch"
+        ],
+        "gaps": [
+          "Command dispatch table is visible but dynamic controller targets, menu choice consumers and request completion are not portable qualified closure."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803be74",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1328,
+                1328
+              ],
+              "recordSha256": "55a47c5443716ddf17d59b73a4a7490df545c6aaa6a5bcb847b39eca40d85d46"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803b628",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1324,
+                1324
+              ],
+              "recordSha256": "ac277539aef37825a6d4338694d7610c01a5d5b4e0e78a5a80c6737a49a8356a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "decide_order",
+        "label": "Decide priority, speed and tie order",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "weather/ability stateful dispatch",
+          "party getter",
+          "item ROM-table lookup",
+          "badge flag reference",
+          "shared turn RNG"
+        ],
+        "gaps": [
+          "Comparator and nested scheduler remain blocked by item return-range bounds, scheduler collection domains, encrypted party service closure and interior callback ABI."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803cf10",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1333,
+                1333
+              ],
+              "recordSha256": "98046c2bf2738bd7264a2adaca6e403f14c80d68760ad43b7eee21a33ea5b2bc"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d2e8",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1334,
+                1334
+              ],
+              "recordSha256": "84aed521766873e5b2fcb8972e75b8d13260ce27fb2d8c6dc73f6ba1e378e4b2"
+            }
+          }
+        ]
+      },
+      {
+        "id": "apply_order_exchange",
+        "label": "Apply a confirmed paired permutation",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "emerald.turn-order.confirmed-pair-exchange"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          {
+            "id": "confirmed_pair_exchange",
+            "kind": "host-required",
+            "responsibility": "Deliver a resolved pair-exchange event, positions within0..3, while preserving one canonical battle-session order backing.",
+            "implemented": false,
+            "reason": "Recovered whole comparator/scheduler closure remains blocked; no service stub is supplied."
+          }
+        ],
+        "gaps": [
+          "Caller must supply a confirmed nonzero comparison decision and the two order positions. Speed/priority/weather/RNG comparator is not part of this prefab.",
+          "Arguments are fixed finite constants in this graph; changing positions requires graph revalidation. Dynamic lookup of a battler ID through an order array is not admitted.",
+          "Both order lanes need the same battle-session backing; source battler IDs and order positions are different index spaces.",
+          "The default four-entry arrays describe an initialized supplied session, not a recovered battle initializer.",
+          "No action execution, damage, party/menu UI, turn termination, reward or persistent save is provided."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803cedc",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1332,
+                1332
+              ],
+              "recordSha256": "6b204c14cbe33dae60d5bf37b65a3c6386f149f7bbec3ea0c6b81feaafff8fd9"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d2e8",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1334,
+                1334
+              ],
+              "recordSha256": "84aed521766873e5b2fcb8972e75b8d13260ce27fb2d8c6dc73f6ba1e378e4b2"
+            }
+          }
+        ]
+      },
+      {
+        "id": "resolve",
+        "label": "Resolve the scheduled action and its consequences",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "action/script VM",
+          "battle result and resource updates"
+        ],
+        "gaps": [
+          "The continuation stores callback0x0803d819; actual action execution, damage/status, faint/defeat and reward consumers are not recovered here. This is a source boundary, not a resolved action prefab."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d6f0",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1337,
+                1337
+              ],
+              "recordSha256": "cac89f0c285dc9210a68b74c4ede6226f4542cafcc01df4f5970758a3cb67e04"
+            }
+          }
+        ]
+      },
+      {
+        "id": "continuation",
+        "label": "Advance action cursor and start the next turn",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "shared turn/session context",
+          "script/message completion"
+        ],
+        "gaps": [
+          "Cursor/reset/turn-roll writes are visible, but scheduler/controller ownership and complete return-to-command or battle-end path are unqualified."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d6f0",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1337,
+                1337
+              ],
+              "recordSha256": "cac89f0c285dc9210a68b74c4ede6226f4542cafcc01df4f5970758a3cb67e04"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803b628",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1324,
+                1324
+              ],
+              "recordSha256": "ac277539aef37825a6d4338694d7610c01a5d5b4e0e78a5a80c6737a49a8356a"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d580",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1335,
+                1335
+              ],
+              "recordSha256": "07e27cdf0eb617d05597807ee1b37856200cdeb46b5d3702fcf65b6a0e634cc9"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803d6a0",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1336,
+                1336
+              ],
+              "recordSha256": "8ec1d75df1d2dbfb053fea389b5409fc96815a9e71308e282730295a0737398a"
+            }
+          }
+        ]
+      },
+      {
+        "id": "progression_benefit",
+        "label": "Read persistent progression benefit during battle",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+        ],
+        "requiredServices": [
+          "saveblock/special flag aliases"
+        ],
+        "gaps": [
+          "Comparator reads flag0x869 for conditional speed benefit. Acquisition/setter and persistence commit are not recovered by this scope."
+        ],
+        "sourceRefsPins": [
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0809d6ec",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                4197,
+                4197
+              ],
+              "recordSha256": "579168ca98cf2cdb052b6785e7ecadb7baa59a50b29becb5de3c42b6216a152d"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0809d790",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                4200,
+                4200
+              ],
+              "recordSha256": "df48aa50d67765dfb2d017c58dcc3558afe06c8e729993305a9dbc913cc25014"
+            }
+          },
+          {
+            "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "symbol": "0x0803cf10",
+            "source": {
+              "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+              "lines": [
+                1333,
+                1333
+              ],
+              "recordSha256": "98046c2bf2738bd7264a2adaca6e403f14c80d68760ad43b7eee21a33ea5b2bc"
+            }
+          }
+        ]
+      },
+      {
+        "id": "commit_return",
+        "label": "Persist party/progression changes and return to exploration",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "save serialization",
+          "battle teardown and scene return"
+        ],
+        "gaps": [
+          "No source-proven save commit, battle exit or overworld-resume consumer in this dependency set."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "party_records",
+        "to": "decide_order",
+        "kind": "source-call",
+        "scope": "0803cf10->08042828->0806a518 party getter through weather/ability dispatch. This is an actual dependency, not a complete global frame schedule."
+      },
+      {
+        "from": "progression_benefit",
+        "to": "decide_order",
+        "kind": "source-call",
+        "scope": "0803cf10->0809d790(0x869)->0809d6ec flag reference."
+      },
+      {
+        "from": "decide_order",
+        "to": "apply_order_exchange",
+        "kind": "source-call",
+        "scope": "0803d2e8 invokes0803cf10; nonzero return then0803cedc with order positions."
+      },
+      {
+        "from": "apply_order_exchange",
+        "to": "resolve",
+        "kind": "shared-state",
+        "scope": "0803cedc mutates action/battler order lanes;0803d6f0 reads first action lane and selects downstream callback. Not proof of complete action resolution."
+      },
+      {
+        "from": "resolve",
+        "to": "continuation",
+        "kind": "host-required",
+        "scope": "Missing action/script completion event; caller must not infer turn completion from the helper return."
+      },
+      {
+        "from": "continuation",
+        "to": "command",
+        "kind": "host-required",
+        "scope": "Turn-start initializer sets command callback0x0803be75; complete controller lifecycle remains open."
+      }
+    ],
+    "missingForCoreGame": [
+      "This bounded source set does not recover overworld traversal, encounter creation or menu-entry boundary.",
+      "Getter may decrypt, check and mutate flags then re-encrypt the SAME shared record. Modulo expansion/checksum induction/switch remapping remain executable blockers. No full party menu or roster transfer consumer.",
+      "Command dispatch table is visible but dynamic controller targets, menu choice consumers and request completion are not portable qualified closure.",
+      "Comparator and nested scheduler remain blocked by item return-range bounds, scheduler collection domains, encrypted party service closure and interior callback ABI.",
+      "The continuation stores callback0x0803d819; actual action execution, damage/status, faint/defeat and reward consumers are not recovered here. This is a source boundary, not a resolved action prefab.",
+      "Cursor/reset/turn-roll writes are visible, but scheduler/controller ownership and complete return-to-command or battle-end path are unqualified.",
+      "Comparator reads flag0x869 for conditional speed benefit. Acquisition/setter and persistence commit are not recovered by this scope.",
+      "No source-proven save commit, battle exit or overworld-resume consumer in this dependency set."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "emerald.battle.session-order",
+      "label": "Shared Emerald battle-session order phase",
+      "moduleId": "emerald.battle.session",
+      "sourceGame": "pokemon-emerald-version",
+      "sourceSystemId": "emerald.battle.turn-order",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+      "planIds": [
+        "turn-based-party-battle"
+      ],
+      "packageIds": [
+        "emerald.battle.paired_order_swap"
+      ],
+      "availability": "published-subset",
+      "scope": "One meaningful confirmed-pair exchange transaction within source battle order; source-only facets describe larger unfinished dependencies. Side lookup is internal support only, not another primary gameplay module.",
+      "gaps": [
+        "Caller must supply a confirmed nonzero comparison decision and the two order positions. Speed/priority/weather/RNG comparator is not part of this prefab.",
+        "Arguments are fixed finite constants in this graph; changing positions requires graph revalidation. Dynamic lookup of a battler ID through an order array is not admitted.",
+        "Both order lanes need the same battle-session backing; source battler IDs and order positions are different index spaces.",
+        "The default four-entry arrays describe an initialized supplied session, not a recovered battle initializer.",
+        "No action execution, damage, party/menu UI, turn termination, reward or persistent save is provided."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+        "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+        "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+        "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+        "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "one Emerald battle session with external shared order backing",
+        "fields": [
+          "actions_by_turn_order[4]",
+          "battlers_by_turn_order[4]",
+          "battler_side_encodings[4]"
+        ],
+        "references": [
+          "battle battler collection",
+          "chosen actions/moves",
+          "party records",
+          "shared turn roll/global RNG",
+          "persistent flags"
+        ],
+        "aliasRule": "Both order lanes belong to the SAME session and use the SAME position pair. Keep battler IDs distinct from positions; party/header/substructure references alias the original persistent records. A UI role facet does not instantiate a copied session.",
+        "resultSlots": [
+          "selected_side:u8 (ephemeral captured query result, not persistent source state)"
+        ]
+      },
+      "roleFacets": [
+        {
+          "roleId": "turn-order",
+          "capability": "Apply already-confirmed pair permutation",
+          "status": "published-subset",
+          "scope": "Only the two-lane in-place transaction; no comparison decision. Side classification is internal support.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+            "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+            "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+            "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+            "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json",
+            "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+            "local/ir/packages/emerald.battle.side_lookup/package.json",
+            "local/ir/packages/emerald.battle.side_lookup/receipt.json",
+            "local/ir/mashup-coverage/backend-wave07/publication.json",
+            "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803cedc",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1332,
+                  1332
+                ],
+                "recordSha256": "6b204c14cbe33dae60d5bf37b65a3c6386f149f7bbec3ea0c6b81feaafff8fd9"
+              }
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803d2e8",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1334,
+                  1334
+                ],
+                "recordSha256": "84aed521766873e5b2fcb8972e75b8d13260ce27fb2d8c6dc73f6ba1e378e4b2"
+              }
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+              "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+            },
+            {
+              "path": "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+              "sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8"
+            },
+            {
+              "path": "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+              "sha256": "33d0c17a37484a92d1bc1b1c5b1dc68c9daa2f9a76b939b1c18e0051f1f8e334"
+            },
+            {
+              "path": "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json",
+              "sha256": "2840579bc33dfeb769a4a82274022fe12f835ef9360b0fd38e7eba53922b8bcb"
+            }
+          ]
+        },
+        {
+          "roleId": "command",
+          "capability": "Shared command state dispatch boundary",
+          "status": "source-only",
+          "scope": "Callback/table consumers and menu lifecycle incomplete.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803be74",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1328,
+                  1328
+                ],
+                "recordSha256": "55a47c5443716ddf17d59b73a4a7490df545c6aaa6a5bcb847b39eca40d85d46"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "resolve",
+          "capability": "Scheduled action continuation boundary",
+          "status": "source-only",
+          "scope": "Callback0x0803d819 and shared cursor writes observed; effects not supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803d6f0",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1337,
+                  1337
+                ],
+                "recordSha256": "cac89f0c285dc9210a68b74c4ede6226f4542cafcc01df4f5970758a3cb67e04"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "continuation",
+          "capability": "Turn/session reset and next command boundary",
+          "status": "source-only",
+          "scope": "Reset and callback stores observed, full cycle unqualified.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803b628",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1324,
+                  1324
+                ],
+                "recordSha256": "ac277539aef37825a6d4338694d7610c01a5d5b4e0e78a5a80c6737a49a8356a"
+              }
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803d580",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1335,
+                  1335
+                ],
+                "recordSha256": "07e27cdf0eb617d05597807ee1b37856200cdeb46b5d3702fcf65b6a0e634cc9"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "party",
+          "capability": "Referenced persistent roster data",
+          "status": "source-only",
+          "scope": "Shared party-record getter service; roster/menu/update contract incomplete.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0806a674",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  2064,
+                  2064
+                ],
+                "recordSha256": "47ed6add65afafc9f2fc3f18ebff45adb6370965ea8498c07f0b85cec62e67fd"
+              }
+            }
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "emerald.turn-order.confirmed-pair-exchange",
+        "label": "Apply confirmed turn-order pair exchange",
+        "assemblyRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.assembly.json",
+        "validationRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/delivery.json",
+        "packageIds": [
+          "emerald.battle.paired_order_swap"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      },
+      "evidencePins": [
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0803cedc",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              1332,
+              1332
+            ],
+            "recordSha256": "6b204c14cbe33dae60d5bf37b65a3c6386f149f7bbec3ea0c6b81feaafff8fd9"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0803d2e8",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              1334,
+              1334
+            ],
+            "recordSha256": "84aed521766873e5b2fcb8972e75b8d13260ce27fb2d8c6dc73f6ba1e378e4b2"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+        },
+        {
+          "path": "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+          "sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8"
+        },
+        {
+          "path": "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+          "sha256": "33d0c17a37484a92d1bc1b1c5b1dc68c9daa2f9a76b939b1c18e0051f1f8e334"
+        },
+        {
+          "path": "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json",
+          "sha256": "2840579bc33dfeb769a4a82274022fe12f835ef9360b0fd38e7eba53922b8bcb"
+        }
+      ],
+      "recoveredAssemblies": [
+        {
+          "id": "emerald.turn-order.confirmed-pair-exchange",
+          "label": "Apply confirmed turn-order pair exchange",
+          "assemblyRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.assembly.json",
+          "validationRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.validation.json",
+          "descriptorRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/delivery.json",
+          "packageIds": [
+            "emerald.battle.paired_order_swap"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        }
+      ]
+    },
+    {
+      "id": "emerald.party-persistence.source",
+      "label": "Party-record integrity and progression references",
+      "moduleId": "emerald.party.persistent-store",
+      "sourceGame": "pokemon-emerald-version",
+      "sourceSystemId": "emerald.battle.turn-order",
+      "sourceContractRef": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+      "planIds": [
+        "turn-based-party-battle",
+        "exploration-progression"
+      ],
+      "packageIds": [],
+      "availability": "source-only",
+      "scope": "Recovered dependency map for record getter/integrity and badge benefit read. Existing private XOR qualifications are not a published portable party/persistence prefab.",
+      "gaps": [
+        "Shared record views and encryption/checksum ordering not connected in portable executable closure.",
+        "Party selection/menu consumers, progression setters and save commits absent."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+        "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json"
+      ],
+      "canonicalState": {
+        "identity": "one persistent party/progression store referenced by battle session",
+        "fields": [
+          "opaque record key/header words",
+          "shared encrypted48-byte payload",
+          "persistent flag view"
+        ],
+        "aliasRule": "No copied decrypted record or copied progression flags. Transient decrypt/check/read/re-encrypt uses original backing."
+      },
+      "roleFacets": [
+        {
+          "roleId": "party",
+          "capability": "Source-mapped integrity-preserving record access",
+          "status": "source-only",
+          "scope": "Not a party-menu prefab or complete storage transaction.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0806a674",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  2064,
+                  2064
+                ],
+                "recordSha256": "47ed6add65afafc9f2fc3f18ebff45adb6370965ea8498c07f0b85cec62e67fd"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "benefit",
+          "capability": "Source-mapped badge flag battle benefit",
+          "status": "source-only",
+          "scope": "Read/consumer only; acquisition and commit missing.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0809d790",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  4200,
+                  4200
+                ],
+                "recordSha256": "df48aa50d67765dfb2d017c58dcc3558afe06c8e729993305a9dbc913cc25014"
+              }
+            },
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0803cf10",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  1333,
+                  1333
+                ],
+                "recordSha256": "98046c2bf2738bd7264a2adaca6e403f14c80d68760ad43b7eee21a33ea5b2bc"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "ownership",
+          "capability": "Reference persistent ownership/progression flags",
+          "status": "source-only",
+          "scope": "Flag-reference/read dependency only; no award/set transaction.",
+          "evidence": [
+            "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json"
+          ],
+          "evidencePins": [
+            {
+              "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+              "symbol": "0x0809d6ec",
+              "source": {
+                "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+                "lines": [
+                  4197,
+                  4197
+                ],
+                "recordSha256": "579168ca98cf2cdb052b6785e7ecadb7baa59a50b29becb5de3c42b6216a152d"
+              }
+            }
+          ]
+        },
+        {
+          "roleId": "commit",
+          "capability": "Save shared party/progression state",
+          "status": "missing",
+          "scope": "No qualified/source-closed save operation in this packet.",
+          "evidence": []
+        }
+      ],
+      "evidencePins": [
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0806a674",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              2064,
+              2064
+            ],
+            "recordSha256": "47ed6add65afafc9f2fc3f18ebff45adb6370965ea8498c07f0b85cec62e67fd"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0809d790",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              4200,
+              4200
+            ],
+            "recordSha256": "df48aa50d67765dfb2d017c58dcc3558afe06c8e729993305a9dbc913cc25014"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "emerald.turn-order.confirmed-pair-exchange",
+      "moduleId": "emerald.battle.session",
+      "label": "Apply confirmed turn-order pair exchange",
+      "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.assembly.json",
+      "sha256": "2be18128faebea188ba649c1e9b47b13ee0c04037dd625eef25061a6db5c08d8",
+      "validation": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.validation.json",
+      "validationSha256": "e20c4bf7a77b959dd3dcab745eca2e2e135f31adbf4ce81fbe026a2f9382ca75",
+      "inputs": [
+        {
+          "id": "actions_by_turn_order",
+          "label": "Four action codes in current turn order",
+          "storageType": "u8[4]",
+          "default": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "Four opaque action-code bytes; source swap only permutes them. No interpretation or action validity is claimed.",
+          "binding": "state.actions_by_turn_order (collection_0)"
+        },
+        {
+          "id": "battlers_by_turn_order",
+          "label": "Battler handles in the same four order positions",
+          "storageType": "u8[4]",
+          "default": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "domain": "Four byte payloads; source swap preserves all values. Host battle convention uses battler handles0..3. This payload restriction is a host/session obligation, not a qualified collection-domain proof.",
+          "binding": "state.battlers_by_turn_order (collection_1)"
+        },
+        {
+          "id": "first_order_position",
+          "label": "First confirmed order position",
+          "storageType": "u32",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          },
+          "binding": "invocations[0].arguments.param_0"
+        },
+        {
+          "id": "second_order_position",
+          "label": "Second confirmed order position",
+          "storageType": "u32",
+          "default": 1,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          },
+          "binding": "invocations[0].arguments.param_1"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "updated_action_order",
+          "binding": "state.actions_by_turn_order",
+          "meaning": "The two selected action-code entries exchanged in place; all other entries preserved."
+        },
+        {
+          "id": "updated_battler_order",
+          "binding": "state.battlers_by_turn_order",
+          "meaning": "The same two selected battler-handle entries exchanged in place, maintaining pairing with each action."
+        }
+      ],
+      "phases": [
+        {
+          "id": "apply_confirmed_pair",
+          "trigger": "Host supplies confirmed_pair_exchange after its comparator decision. Source scheduler0803d2e8 calls0803cedc only when comparator return is nonzero.",
+          "invocations": [
+            "order_exchange"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceGate": "Source comparator result1 or2 means exchange; this prefab does not compute or validate that decision."
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "confirmed_pair_exchange",
+          "kind": "host-required",
+          "responsibility": "Deliver a resolved pair-exchange event, positions within0..3, while preserving one canonical battle-session order backing.",
+          "implemented": false,
+          "reason": "Recovered whole comparator/scheduler closure remains blocked; no service stub is supplied."
+        }
+      ],
+      "gaps": [
+        "Caller must supply a confirmed nonzero comparison decision and the two order positions. Speed/priority/weather/RNG comparator is not part of this prefab.",
+        "Arguments are fixed finite constants in this graph; changing positions requires graph revalidation. Dynamic lookup of a battler ID through an order array is not admitted.",
+        "Both order lanes need the same battle-session backing; source battler IDs and order positions are different index spaces.",
+        "The default four-entry arrays describe an initialized supplied session, not a recovered battle initializer.",
+        "No action execution, damage, party/menu UI, turn termination, reward or persistent save is provided."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+        "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+        "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+        "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+        "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json"
+      ],
+      "qualificationScope": "Actual generic assembly binding/lowering valid. Source swap leaf has retained1024 native comparisons plus64 strengthened comparisons including all16 ordered position pairs and same-position alias/canaries. This new graph was not native-executed. No full battle-controller qualification.",
+      "runtimeQualified": false,
+      "readyToAdd": true,
+      "sourceRefsPins": [
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0803cedc",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              1332,
+              1332
+            ],
+            "recordSha256": "6b204c14cbe33dae60d5bf37b65a3c6386f149f7bbec3ea0c6b81feaafff8fd9"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/source-evidence.json",
+          "symbol": "0x0803d2e8",
+          "source": {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-emerald-version/pokemon-emerald-version/functions.jsonl",
+            "lines": [
+              1334,
+              1334
+            ],
+            "recordSha256": "84aed521766873e5b2fcb8972e75b8d13260ce27fb2d8c6dc73f6ba1e378e4b2"
+          }
+        },
+        {
+          "path": "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+          "sha256": "8f4b20d6964be5ec681e6509b0fcb608cf3d369d291251fe5b28c6d090643b6e"
+        },
+        {
+          "path": "local/ir/packages/emerald.battle.paired_order_swap/package.json",
+          "sha256": "55a73624c64a6a5ed788e94d8ec04a80c2a568aa45a75af665e3ead6895fd8a8"
+        },
+        {
+          "path": "local/ir/packages/emerald.battle.paired_order_swap/receipt.json",
+          "sha256": "33d0c17a37484a92d1bc1b1c5b1dc68c9daa2f9a76b939b1c18e0051f1f8e334"
+        },
+        {
+          "path": "local/ir/fleet-next/pokemon-emerald-version/causal-boundaries-1/0803cedc/receipt.json",
+          "sha256": "2840579bc33dfeb769a4a82274022fe12f835ef9360b0fd38e7eba53922b8bcb"
+        }
+      ]
+    }
+  ],
+  "smallestGap": {
+    "requestedOwner": "publication_intake",
+    "request": "Publish sourced side_lookup returnMeaning to bind observable side-bit result without changing behavior/native receipt.",
+    "status": "published_additive_return_overlay_and_result_binding_validated",
+    "evidence": [
+      "local/ir/packages/emerald.battle.side_lookup/package.json",
+      "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json"
+    ],
+    "why": "Current published returnMeaning=null prevents useful predicate output. Do not discard it and claim a decision link.",
+    "evidencePins": [
+      {
+        "path": "local/ir/packages/emerald.battle.side_lookup/package.json",
+        "sha256": "d24a63924274f288db08a902dc30e9874e1b9b198092c4291e8403a465432f2f"
+      },
+      {
+        "path": "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json",
+        "sha256": "7349a5513d7a46a7f03e4f3940eb2ca08a566e0b2f10cf0bcbf62671ae749901"
+      }
+    ],
+    "publicationReceipt": {
+      "path": "local/ir/mashup-coverage/backend-wave07/publication.json",
+      "sha256": "33908b9c53a1fbba70f0424195b602716c5d3bb72a7b344d0ab7812ea6c5ff9c"
+    },
+    "package": {
+      "path": "local/ir/packages/emerald.battle.side_lookup/package.json",
+      "sha256": "49482b62ef5c5f02710b043fa0741b91d22a61322b0873dbf7ff0bbab5f3ee23"
+    },
+    "graph": {
+      "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/selected-battler-side.assembly.json",
+      "sha256": "4883d73f9b2d7e925b747a84d8b79ad91568a0199aebd7ec53e9c8cfd84f0851"
+    },
+    "validation": {
+      "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/selected-battler-side.validation.json",
+      "sha256": "ab45cfdb4883a2eb6bb1530df984b8ec5e53cea6e98c5a5e9682376d994784da"
+    },
+    "remaining": "Dynamic handle selection and side-result consumer policy remain unprovided; no full comparator/decision closure."
+  },
+  "timing": {
+    "runId": "emerald-prefab-confirmed-order-exchange-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.005042792000000001,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "metadataAssemblySeconds": 0.019920124999999997,
+    "accounting": "Only narrow actual assembly validator duration is measured. This metadata assembly overlaps its own read/hash work. Historical native1024+64 receipts are reused, not counted as current execution. No compiler/native/game/JVM/export stage ran; interactive start/queue unavailable.",
+    "resultOverlayValidationSeconds": 0.002133625,
+    "metadataResultOverlaySeconds": 0.00042787500000000117
+  },
+  "internalSupportPhases": [
+    {
+      "id": "emerald.turn-order.selected-battler-side",
+      "moduleId": "emerald.battle.session",
+      "label": "Query selected battler side",
+      "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/selected-battler-side.assembly.json",
+      "sha256": "4883d73f9b2d7e925b747a84d8b79ad91568a0199aebd7ec53e9c8cfd84f0851",
+      "validation": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/selected-battler-side.validation.json",
+      "validationSha256": "ab45cfdb4883a2eb6bb1530df984b8ec5e53cea6e98c5a5e9682376d994784da",
+      "inputs": [
+        {
+          "id": "battler_side_encodings",
+          "label": "Side encodings for four battler handles",
+          "storageType": "u8[4]",
+          "default": [
+            0,
+            1,
+            0,
+            1
+          ],
+          "domain": "Four source bytes, only low bit interpreted; other bits remain opaque. Defaults are supplied host fixture values, not recovered initializer.",
+          "binding": "state.battler_side_encodings (collection_0)"
+        },
+        {
+          "id": "selected_battler",
+          "label": "Battler handle to classify",
+          "storageType": "u32",
+          "default": 1,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          },
+          "binding": "invocations[0].arguments.param_0"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "selected_side",
+          "binding": "state.selected_side",
+          "meaning": "Actual captured u8 return value: low bit of selected battler side encoding,0or1. Available to external source-aware routing/benefit consumer; no consumer decision supplied."
+        }
+      ],
+      "phases": [
+        {
+          "id": "query_selected_side",
+          "trigger": "Explicit host query_battler_side event with selected source battler handle. Source comparator0803cf10 calls080a6a30 for side-dependent benefit checks.",
+          "invocations": [
+            "side_query"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "query_battler_side",
+          "kind": "host-required",
+          "responsibility": "Select valid source battler handle and provide stable shared side-encoding collection; consume returned selected_side explicitly.",
+          "implemented": false
+        }
+      ],
+      "gaps": [
+        "Caller supplies a selected battler handle within0..3; order positions and battler handles are distinct.",
+        "Returned0/1 is a side classification only; no command permission, weather benefit, targeting policy or swap decision is computed.",
+        "Dynamic selection from a shared order collection and conditional routing by the returned side remain host obligations.",
+        "This query is independent of confirmed pair exchange; its result is exposed, never silently discarded or claimed as the recovered comparator decision."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/pokemon-emerald-version/next-extraction/system.json",
+        "local/ir/packages/emerald.battle.side_lookup/package.json",
+        "local/ir/packages/emerald.battle.side_lookup/receipt.json",
+        "local/ir/mashup-coverage/backend-wave07/publication.json",
+        "local/ir/fleet-next/pokemon-emerald-version/automatic-lift-1/080a6a30/l0.json"
+      ],
+      "sourceRefsPins": [
+        {
+          "path": "local/ir/packages/emerald.battle.side_lookup/package.json",
+          "sha256": "49482b62ef5c5f02710b043fa0741b91d22a61322b0873dbf7ff0bbab5f3ee23"
+        },
+        {
+          "path": "local/ir/packages/emerald.battle.side_lookup/receipt.json",
+          "sha256": "e67199a0ed98440e0adf5ef58f9972f186c689e24ea74c41ff9a86d22a6a422f"
+        },
+        {
+          "path": "local/ir/mashup-coverage/backend-wave07/publication.json",
+          "sha256": "33908b9c53a1fbba70f0424195b602716c5d3bb72a7b344d0ab7812ea6c5ff9c"
+        }
+      ],
+      "qualificationScope": "Actual generic assembly binding/lowering captures published side-bit return in selected_side. Reuses unchanged source leaf1024 native comparisons; no composed/native graph execution or full comparator qualification.",
+      "runtimeQualified": false,
+      "readyToAdd": false,
+      "primaryEligible": false,
+      "classification": "internal_lookup_support",
+      "primaryExclusionReason": "Standalone side query is internal lookup support; it does not implement turn-order gameplay decisions. Existing result-bound graph/proof retained for future comparator closure."
+    }
+  ],
+  "publicationFreeze": {
+    "status": "final_registered_path_frozen",
+    "policy": "Further improvements go to a versioned candidate directory and require lead notification before registered-path replacement.",
+    "primaryPrefabCount": 1,
+    "internalSupportPhaseCount": 1,
+    "coreGap": "Actual priority/speed comparator and scheduler decision remain external/unrecovered."
+  }
+}

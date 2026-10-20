@@ -1,0 +1,137 @@
+{
+  "schema": "gameverse.prefab-allowlist/1",
+  "prefabs": [
+    {
+      "id": "db.actor-input.sample-edges-repeat",
+      "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.assembly.json",
+      "sha256": "39f94268dab30cc17300ee6eec9d65c68d79ee4725d7b954e3e2865532af68aa",
+      "validation": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/actor-input-press.validation.json",
+      "validationSha256": "3acff777bf8bfcf0eab9aa12f72a84af62f27227bb6ade1c2beaef2e8e7e41d7",
+      "gameId": "dragon-ball-advanced-adventure",
+      "moduleId": "db.actor-input-and-action",
+      "descriptorRef": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/delivery.json",
+      "scope": "Actual Composer binding and lowering accepted; prior finite native proof qualifies original operator subset, not prefab runtime, source scheduler or whole game."
+    },
+    {
+      "id": "emerald.turn-order.confirmed-pair-exchange",
+      "path": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.assembly.json",
+      "sha256": "2be18128faebea188ba649c1e9b47b13ee0c04037dd625eef25061a6db5c08d8",
+      "validation": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/confirmed-order-exchange.validation.json",
+      "validationSha256": "e20c4bf7a77b959dd3dcab745eca2e2e135f31adbf4ce81fbe026a2f9382ca75",
+      "gameId": "pokemon-emerald-version",
+      "moduleId": "emerald.battle.session",
+      "descriptorRef": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/delivery.json",
+      "scope": "Actual generic assembly binding/lowering valid. Source swap leaf has retained1024 native comparisons plus64 strengthened comparisons including all16 ordered position pairs and same-position alias/canaries. This new graph was not native-executed. No full battle-controller qualification."
+    },
+    {
+      "id": "ffvi.actor0.resolved-hp-effect",
+      "path": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.assembly.json",
+      "sha256": "ee7c92664816cc2e3401c6c4a03def28f77120b7e4a84daf4eafa8c0e879d5f5",
+      "validation": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+      "validationSha256": "6d4be89ddc330c4a6d084f993278b25e0d979c7136e41723fd231568523d5e1c",
+      "gameId": "final-fantasy-vi-advance",
+      "moduleId": "ffvi.source.resolved-hp-effect.actor0",
+      "descriptorRef": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/delivery.json",
+      "scope": "Exactpublishedcomponent4096nativepairsINCLUDING50semanticfixtures reused. Actualassembly.py+Composer+lowering passes; five narrow hostbindingchecks pass. No composednativegame,ROMorwholeturn qualification."
+    },
+    {
+      "id": "gta.actor-membership.activate",
+      "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+      "sha256": "19dfe5f3abaef65c9dfb4a0a955b47f6c6b60384ff7b93ebae58c5ea5d747f52",
+      "validation": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+      "validationSha256": "15a57e23f83327fbecfdf58627509042db1316b371ed59fa94fd210d4e01e77a",
+      "gameId": "grand-theft-auto",
+      "moduleId": "gta.actor-render-component-lifecycle",
+      "descriptorRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/delivery.json",
+      "scope": "Actual exact-published-hash graph validation and seven-invocation persistent Composer host check; existing780original/emitted pairs cover588distinct entry states at finite component scope. No new composed original-ROM native qualification."
+    },
+    {
+      "id": "kart-steering-recovery-phase",
+      "path": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.assembly.json",
+      "sha256": "fb4a580679e231e9fce3c0afe62a7891fc401308cc8e97b9a32e4a8dcf6753bb",
+      "validation": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.validation.json",
+      "validationSha256": "087fe1689b10a2faa2576ffe4b644fc0e54acc70e4c3e5c52b38630d6583d8fe",
+      "gameId": "mario-kart-super-circuit",
+      "moduleId": "mario-kart-super-circuit.steering-recovery-phase",
+      "descriptorRef": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/delivery.json",
+      "scope": "Exact published root finite original/native parity reused. Current graph actual Composer symbolic binding/lowering only; no host execution, natural race entry or complete racer-loop proof."
+    },
+    {
+      "id": "megaman-zero.command-facing-position-response",
+      "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.assembly.json",
+      "sha256": "7311990f4093453949d7c6cf411799b9e3e35d54810a44f47e017688b8a2656f",
+      "validation": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json",
+      "validationSha256": "69d1ea31ac04401fdba4760893ea3413aac8dafcd32842d2155794b82bb474db",
+      "gameId": "megaman-zero",
+      "moduleId": "megaman-zero.source-actor-command-motion",
+      "descriptorRef": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json",
+      "scope": "Actual Composer/portable lowering and binding_valid_obligations_unproven only. Reuses1024-case original-function finite native proof; no prefab runtime or full controller proof."
+    },
+    {
+      "id": "mzm.prefab.directional-acceleration",
+      "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.assembly.json",
+      "sha256": "7644a1032098fea24c7660bf7abd2917ee8aaae9419f0687bafaade79ae55d06",
+      "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.validation.json",
+      "validationSha256": "eb09007db0719e8eef265ec8914590f6adc8fdad0abf90af73b8605ac9897f8c",
+      "gameId": "metroid-zero-mission",
+      "moduleId": "mzm.module.player-source-motion",
+      "descriptorRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/delivery.json",
+      "scope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness."
+    },
+    {
+      "id": "mzm.prefab.protected-hit-response",
+      "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.assembly.json",
+      "sha256": "c2b2fa54842a51adb4d8f77303a097f2d7a471fa60e8cfc9e9bc563e85a1c47c",
+      "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.validation.json",
+      "validationSha256": "855c9ba3ebb36c5d2a6be723ba6096daaadccc34db23737838bf814a1bffdd1d",
+      "gameId": "metroid-zero-mission",
+      "moduleId": "mzm.module.enemy-source-record",
+      "descriptorRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/delivery.json",
+      "scope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness."
+    },
+    {
+      "id": "pmd.prefab.input_mask_snapshot",
+      "path": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.assembly.json",
+      "sha256": "00c82be6330972302fbc7fe5cc437a90eb2e70aeae882de7775e9114298a8e00",
+      "validation": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/input-mask-snapshot.validation.json",
+      "validationSha256": "c80dbe1b74730291a15f65ac0391ac3cf115c0757b73e5e5718af014b8bda669",
+      "gameId": "pokemon-mystery-dungeon-red-rescue-team",
+      "moduleId": "pmd.module.input_event_context",
+      "descriptorRef": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/delivery.json",
+      "scope": "Actual generic assembly/Composer binding and lowering. Existing standalone1024-vector finite native receipt and separate16-vector publication witness retained; no new runtime/native execution or composed-runtime qualification."
+    },
+    {
+      "id": "sma4.actor-advance-camera-projection",
+      "path": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json",
+      "sha256": "aad3391700ecd7dd5d506a86957fbf8a45118423d8fec47f8983821058563c9e",
+      "validation": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.validation.json",
+      "validationSha256": "87799af46357ce03ca3c31baca633c82ea3bc371eb404851c928928056d9349d",
+      "gameId": "super-mario-advance-4-super-mario-bros-3",
+      "moduleId": "sma4.actor-runtime-view",
+      "descriptorRef": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/delivery.json",
+      "scope": "ActualComposer +assembly binding/lowering; native-qualified packages individually. No composed native/source-root parity."
+    },
+    {
+      "id": "sonic-source-air-advance",
+      "path": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.assembly.json",
+      "sha256": "4a0ef274802682dabb4f08a25848b28a9163759b484c623cd4aa0d768cc87a11",
+      "validation": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+      "validationSha256": "4e066f10131494a77f581dab83bb78930aca81124ae4c64483e0d2b170a0d57e",
+      "gameId": "sonic-advance",
+      "moduleId": "sonic.usa.character_traversal.air_phase",
+      "descriptorRef": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+      "scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure."
+    },
+    {
+      "id": "tekken-advance.actor-pair-separation",
+      "path": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.assembly.json",
+      "sha256": "bc9413641de9c362b3b4980aabdda8bc361c038aa5212502a195b6b16cf02732",
+      "validation": "research/deep-extraction/resume/tekken-advance/prefab-pass/actor-pair-separation.validation.json",
+      "validationSha256": "4c4176d841ba1e78d7dee30216ea29ba1a1e9f238bc66d966a46f4f408e0d940",
+      "gameId": "tekken-advance",
+      "moduleId": "tekken.actor_box_separation",
+      "descriptorRef": "research/deep-extraction/resume/tekken-advance/prefab-pass/delivery.json",
+      "scope": "Actual generic assembly binding/lowering PASS with current immutable published package; one original source transaction. Separate native1024 original-ROM/L1 finite distinct-actor proof reused. No composed prefab execution, all-state, full fight, physics, animation, damage or game readiness claim."
+    }
+  ]
+}

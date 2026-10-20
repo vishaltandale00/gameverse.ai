@@ -13,7 +13,7 @@ def const(value,t='u32'): return {'op':'const','type':t,'value':value}
 def node(op,t,*args,**kw): return dict(op=op,type=t,args=list(args),**kw)
 
 class Lifter:
-    def __init__(self,l0,rom,callees=None,param_domains=None,object_contract=None,state_domains=None,argument_contract=None,project_load_lanes=False,retained_services=None,service_evidence=None):
+    def __init__(self,l0,rom,callees=None,param_domains=None,object_contract=None,state_domains=None,argument_contract=None,project_load_lanes=False,retained_services=None,service_evidence=None,resource_references=None):
         from bounded_cfg import expand
         try:working,self.cfg_proofs=expand(l0)
         except ValueError as error:raise Unsupported('bounded CFG: '+str(error))from error
@@ -22,7 +22,7 @@ class Lifter:
         self.path_facts={};self.operation_blocks={};self.active_access=None
         self.defs={o['output']:o for b in self.blocks.values()for o in b['ops']if o.get('output')}
         self.loads={};self.phis={};self.access={};self.fields={};self.assets={};self.assumptions=list(self.cfg_proofs);self.expanded=0;self.load_views={};self.project_load_lanes=project_load_lanes;self.params={};self.collections={};self.object_refs={};self.object_contract=object_contract or {};self.state_domains=state_domains or {};self.argument_contract=argument_contract or {};self.reference_loads=set();self.return_value=None;self.expression_nodes=0;self.bound_active=set();self.call_bindings={};self.call_asset_bindings={};self.call_collections={};self.canonical_pool_arguments=set();self.pointer_phis={}
-        self.retained_services={};self.service_calls={};self.service_statements={};self.service_evidence=service_evidence or {}
+        self.retained_services={};self.service_calls={};self.service_statements={};self.service_evidence=service_evidence or {};self.service_frame_proofs=[];self.resource_contracts=resource_references or [];self.resource_stores={};self.bound_resources=[]
         if retained_services:
             from retained_services import validate_service
             if self.state_domains or self.object_contract or self.argument_contract.get('entity_references')or self.argument_contract.get('shared_views')or self.argument_contract.get('readonly_entry_reads'):raise Unsupported('retained host service invalidates state domains and stable reference contracts')
@@ -31,6 +31,20 @@ class Lifter:
                 if key!=entry or key in self.retained_services:raise Unsupported('retained service entry identity mismatch')
                 if any(old['id']==c['id']for old in self.retained_services.values()):raise Unsupported('duplicate retained service symbolic identity')
                 self.retained_services[key]=c
+        # Authenticate service-bearing source callees before CFG specialization or
+        # range proofs can consume caller state/reference assumptions.
+        from inline import imported_services,merge_services
+        inventory=list(self.retained_services.values())
+        for block in self.blocks.values():
+            for operation in block['ops']:
+                if operation['opcode']!='CALL'or not operation.get('inputs'):continue
+                target=self.v[operation['inputs'][0]];entry=f'{int(target["offset"]):08x}'
+                if entry not in self.callees:continue
+                try:inventory.extend(imported_services(*self.callees[entry],rom,self.service_evidence))
+                except ValueError as error:raise Unsupported('retained service dependency: '+str(error))from error
+        try:self.service_inventory=merge_services(inventory)
+        except ValueError as error:raise Unsupported(str(error))from error
+        if self.service_inventory and(self.state_domains or self.object_contract or any(self.argument_contract.get(k)for k in('entity_references','shared_views','readonly_entry_reads'))):raise Unsupported('retained host service dependency invalidates state domains and stable reference contracts')
         self.entity_reference_contracts=[];self.entity_refs={}
         if self.argument_contract.get('entity_references'):
             from entity_reference import validate_contracts
@@ -231,7 +245,7 @@ class Lifter:
                     dep,adapter=self.callees[entry]
                     if entry not in self.callee_range_cache:self.callee_range_cache[entry]=derive(dep)
                     proof=self.callee_range_cache[entry]
-                    if proof is not None and not getattr(self,'retained_services',{})and parameter_abi_matches(dep,adapter):
+                    if proof is not None and not getattr(self,'service_inventory',[])and parameter_abi_matches(dep,adapter):
                         interval=result_interval(proof,adapter,e['type'])
                         if interval is not None:
                             if entry not in self.callee_range_proofs:
@@ -390,11 +404,9 @@ class Lifter:
                         if o.get('output'):self.call_results[o['output']]=o
                         continue
                     if entry not in self.callees:raise Unsupported('unresolved callee closure '+entry)
-                    def contains_service(value):
-                        if isinstance(value,list):return any(contains_service(z)for z in value)
-                        if isinstance(value,dict):return value.get('op')=='retained_native_service'or any(contains_service(z)for z in value.values())
-                        return False
-                    if self.callees[entry][0].get('retained_services')or self.callees[entry][1].get('retained_services')or contains_service(self.callees[entry][0].get('body',[])):raise Unsupported('retained native service dependency import unsupported')
+                    from inline import imported_services
+                    try:imported_services(*self.callees[entry],self.rom,self.service_evidence)
+                    except ValueError as error:raise Unsupported('retained service dependency: '+str(error))from error
                     if o.get('output'):self.call_results[o['output']]=o
                     self.dependencies[entry]=self.callees[entry]
                     dep,da=self.callees[entry];bindings={};asset_bindings={}
@@ -625,6 +637,9 @@ class Lifter:
         return result
     def store(self,o):
         kind,owner,start,size=self.access[o['id']]
+        if o['id']in self.resource_stores:
+            c=self.resource_stores[o['id']]
+            return [{'op':'assign_field','field':c['field'],'value':{'op':'resource_reference','type':'u32','resource':c['id'],'token':c['token']},'provenance':o['id']}]
         e=self.expr(o['inputs'][2]);ss=[]
         if kind=='pool':
             temporary='pool_store_'+str(len(self.pool_store_locals));self.pool_store_locals.append({'name':temporary,'storage_type':e['type']})
@@ -651,11 +666,14 @@ class Lifter:
     def build(self):
         self.pool_store_locals=[]
         self.collect()
+        if self.resource_contracts:
+            from resource_reference import bind
+            self.resource_stores,self.bound_resources=bind(self,self.resource_contracts,self.service_evidence)
         # Root the scalar slice in observable stores and branches. Preserve loads
         # as snapshots at their original ordered position, including before writes.
         for b in self.blocks.values():
             for o in b['ops']:
-                if o['opcode']=='STORE':self.expr(o['inputs'][2])
+                if o['opcode']=='STORE'and o['id']not in self.resource_stores:self.expr(o['inputs'][2])
                 elif o['opcode']=='CBRANCH':self.expr(o['inputs'][1])
                 elif o['opcode']=='CALLIND'and len(o['inputs'])==2 and not self.ignored_return_proof:self.return_value=self.expr(o['inputs'][1])
                 elif o['opcode']=='RETURN'and len(o['inputs'])==2 and not self.ignored_return_proof:self.return_value=self.expr(o['inputs'][1])
@@ -664,7 +682,7 @@ class Lifter:
                     entry=format(int(self.v[o['inputs'][0]]['offset']),'08x')
                     if o['id']in self.service_calls:
                         from retained_services import derive_call
-                        self.service_statements[o['id']]=derive_call(o,self.v,self.service_calls[o['id']],self.expr,self.rom,self.service_evidence,result='value_'+o['output'][1:]if o.get('output')else None)
+                        self.service_statements[o['id']]=derive_call(o,self.v,self.service_calls[o['id']],self.expr,self.rom,self.service_evidence,result='value_'+o['output'][1:]if o.get('output')else None,source_l0=self.l0,proofs=self.service_frame_proofs)
                         continue
                     for p in self.dependencies[entry][1]['parameters']:
                         slot=int(p['register'][1:])+1
@@ -821,6 +839,12 @@ class Lifter:
             source=next(z for z in self.collections.values()if z['name']==c['name'])
             if source.get('canonical_pool'):c['owner']=source['reference'];c['index_role']='bounded_record_handle'
         adapter={'schema':'gameverse.l0.validation-adapter/0.2','entry':self.l0['entry'],'parameters':[dict(p)for p in self.params.values()],'return_type':l1['return_type'],'collections':[dict(c)for c in self.collections.values()],'fields':[dict(name=f['name'],width=f['size']*8,owner=owner[0],argument=owner[1]if owner[0]=='entity'else None,address=None if owner[0]in('entity','reference')else owner[1],offset=start,**({'domain':self.state_domain(owner,start)}if self.state_domain(owner,start)else{}),**({'reference':owner[1]}if owner[0]=='reference'else{}))for(owner,start),f in self.fields.items()],'assets':[{'name':a['name'],'address':a['start'],'bytes':a['end'],**({'derivation':a['derivation']}if a.get('derivation')else{})}for a in self.assets.values()],'assumptions':self.assumptions,'l0_sha256':hashlib.sha256(json.dumps(self.l0,sort_keys=True).encode()).hexdigest()}
+        if self.bound_resources:
+            l1['resource_references']=[{'id':c['id'],'token':c['token']}for c in self.bound_resources]
+            l1['resource_fields']={c['field']:c['id']for c in self.bound_resources}
+            for f in l1['state']:
+                if f['name']in l1['resource_fields']:f['resource_reference']=l1['resource_fields'][f['name']]
+            adapter['resource_references']=self.bound_resources
         if self.object_refs:l1['state_owners']=[{'id':name,'identity':self.object_contract.get(f'{cell:08x}',{}).get('identity',name),'ownership':'distinct_owned_object','lifetime':'invocation','separation':'accessed_views_disjoint_with_evidenced_context_layouts','evidence':self.object_contract.get(f'{cell:08x}',{}).get('evidence',[])}for cell,name in self.object_refs.items()]
         if basic_flow:adapter['cfg_lowering']={'kind':'acyclic_basic_blocks/0.1','blocks':len(self.blocks),'source_ops':sum(len(b['ops'])for b in self.blocks.values()),'phi_edges':'all predecessor inputs snapshotted before any destination assignment','source_l0_unchanged':True}
         if self.ignored_return_proof:adapter['return_projection']=self.ignored_return_proof
@@ -839,6 +863,12 @@ class Lifter:
         if self.assets:
             from readonly_assets import canonicalize
             l1,adapter=canonicalize(l1,adapter,self.rom,{key:value for asset in self.assets.values()for key,value in asset.get('read_views',{}).items()})
+        if self.service_inventory and(self.object_refs or self.entity_refs):raise Unsupported('retained service cannot assume reference stability')
+        if self.service_calls:
+            from retained_services import module_metadata
+            contracts=list({c['id']:c for c in self.service_calls.values()}.values());metadata=module_metadata(contracts)
+            l1['limitations'].extend(metadata.pop('limitations'));l1.update(metadata);adapter['retained_services']=contracts
+        if self.service_frame_proofs:adapter['retained_service_call_frames']=list(self.service_frame_proofs)
         if self.dependencies:
             if self.callee_range_proofs:
                 from callee_ranges import digest
@@ -848,12 +878,7 @@ class Lifter:
                     adapter.setdefault('assumptions',[]).append(proof)
                     adapter.setdefault('callee_return_ranges',[]).append(proof)
             from inline import inline_dependencies
-            l1,adapter=inline_dependencies(l1,adapter,list(self.dependencies.values()))
-        if self.service_calls:
-            from retained_services import module_metadata
-            if self.object_refs or self.entity_refs:raise Unsupported('retained service cannot assume reference stability')
-            contracts=list({c['id']:c for c in self.service_calls.values()}.values());metadata=module_metadata(contracts)
-            l1['limitations'].extend(metadata.pop('limitations'));l1.update(metadata);adapter['retained_services']=contracts
+            l1,adapter=inline_dependencies(l1,adapter,list(self.dependencies.values()),rom=self.rom,service_evidence=self.service_evidence)
         if self.readonly_entry_proofs:
             from readonly_entry import validate_materialized
             l1['preconditions'].extend(validate_materialized(self.readonly_entry_proofs,l1,adapter))

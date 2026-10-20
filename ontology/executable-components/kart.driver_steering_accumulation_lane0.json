@@ -1,0 +1,347 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kart.driver_steering_accumulation_lane0",
+  "label": "Driver steering accumulation and release, source handling lane0",
+  "role": "movement",
+  "source_game": "mario-kart-super-circuit",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kart.driver_steering_accumulation_lane0/package.json",
+  "package_sha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700",
+  "behavior_sha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "979c36051cee99221504867ca1c5771fd1e0dfbde7a2e423db897bd84d732be9"
+  },
+  "configurations": [
+    {
+      "id": "source-character-0-handling-lane0",
+      "label": "Original character 0 steering coefficients, handling lane 0",
+      "source_data_sha256": "bf24c49ffe4d7b1cfc863115fe8f1c447817143b156ee14421e0aa3af623560c",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-1-handling-lane0",
+      "label": "Original character 1 steering coefficients, handling lane 0",
+      "source_data_sha256": "130e56aaaccb05715d31441d0d3740f834de05241c2fb19c9b7ff2ad33b68652",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-2-handling-lane0",
+      "label": "Original character 2 steering coefficients, handling lane 0",
+      "source_data_sha256": "ec8256199434d21539d4409c0a37f9e24a691fd47a08c57e92e08804902a4dd0",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-3-handling-lane0",
+      "label": "Original character 3 steering coefficients, handling lane 0",
+      "source_data_sha256": "4a7220860086ff80edebc7daf5f972e304bf24e4f3d31fd55485fe5158d72354",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-4-handling-lane0",
+      "label": "Original character 4 steering coefficients, handling lane 0",
+      "source_data_sha256": "fc767817e437d452eabdb4ad1df71c7563d5502628bd48cbb929dd71ed52b904",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-5-handling-lane0",
+      "label": "Original character 5 steering coefficients, handling lane 0",
+      "source_data_sha256": "68fb270a1abab92453f449d270f36c2dca2163c39292a12105f901171e9221b4",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-6-handling-lane0",
+      "label": "Original character 6 steering coefficients, handling lane 0",
+      "source_data_sha256": "6bc048cff855697a33472ec1c432279149088dd5e829fb81183debc40558bb40",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    },
+    {
+      "id": "source-character-7-handling-lane0",
+      "label": "Original character 7 steering coefficients, handling lane 0",
+      "source_data_sha256": "84f09358acf3749a480f4626fbb61c3d3612de28793d91ff163b6506322cea69",
+      "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "provenance": [
+        "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+      ]
+    }
+  ],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.motion_flags",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.action_state",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle_step",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.accumulated_turn",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.input_mask",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.handling_lane",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering_recovery.flags",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle_step",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.limit",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle_step",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.reversal_step",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle_step",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.increase_step",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle_step",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.steering.recenter_step",
+        "confidence": 0.97,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 10,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "onepersistentcanonical racersteeringview",
+    "clock": "oneoriginal functioninvocation",
+    "phase": "originaldriver steeringaccumulation; callerentrylegality remainsrequired",
+    "ordering": "sourcecaller08037fd8 schedulesafterinput/steeringstate andbeforeacceleration"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kart.driver_steering_accumulation_lane0/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Privatefinite sourcecomponent; notpublished portablecomponent yet",
+    "768chained scenarioentries individuallyoriginal/native compared, notnaturalrace inputtrace",
+    "Selector0 precondition is explicit; otherlanes and fullcontroller/fullvehicle/trackcontact remainopen",
+    "Failed expectedfixture generatoraliased dictionaries once; fixedcopying, retainedfailedreceipt; no behavior/compilerchange",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "state_owner": "onecanonicalracer; no duplicatedprofile actor",
+    "inputs": [
+      "encoded steeringdemand",
+      "source handlingcoefficients",
+      "action/motion/stateflags"
+    ],
+    "output": "signed accumulatedturn storage",
+    "services": [],
+    "preconditions": [
+      "Exactqualified handlinglane0 selector",
+      "OriginalABI, sameentitystate, nooverlap withoracleframe"
+    ],
+    "source_profile_configs": "Eight originalROM characterprofiles, coefficientbytes unchanged",
+    "physical_units": "Unavailable; noarbitraryconversion todegrees/radians",
+    "remaining_lifecycle": "Controllerpolicy, profilelane1/2, headingconsumer, speedandtrackcontact, inputhardwaremapping unqualified",
+    "shared_racer_flags_semantic_refinement": {
+      "proposal": {
+        "path": "local/ir/source-fleet-restart-20261016/publication/kart-flags-overlay-01/input-proposal.json",
+        "sha256": "81a0cf03efbf6ed021d0031d10badc85716518be83f05be09a08d5b3a329ecee"
+      },
+      "source_contract": {
+        "alias_identity": "Both completeu16 ports are the same original canonical racer flags bitset; one view reads state suppression bits, the existing recovery view performs masked updates to the same source word",
+        "preservation": "Retain old recovery package and its existing binding frame exactly; new driver child metadata adopts that complete meaning",
+        "no_narrowing": "Completeu16 bitset, unit1, no signed encoding or range conversion, no extraction of only selected bits",
+        "canonical_phase_policy": "CPU recovery and driver accumulation remain alternative caller-declared responsibilities on one source racer; no automatic consecutive scheduling",
+        "remaining_gaps": "Full original dispatcher and physical driver/terrain lifecycle unqualified"
+      }
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "mario-kart-super-circuit",
+    "entry": "08038afc"
+  },
+  "domain_contract_fingerprint": "b43708e788975d1e4912987b57906885f7c58da1f54adc9f62ad5ac473152a70",
+  "specialization_subset": true
+}

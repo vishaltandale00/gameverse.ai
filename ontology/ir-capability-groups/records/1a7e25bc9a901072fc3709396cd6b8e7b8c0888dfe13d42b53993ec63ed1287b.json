@@ -1,0 +1,129 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "leafgreen.species.traits.v1",
+  "game_id": "pokemon-leafgreen-version",
+  "module_id": "leafgreen.species.traits",
+  "package_ids": [
+    "leafgreen.species.gender",
+    "leafgreen.species.ability"
+  ],
+  "source_roots": [
+    "08040d4c",
+    "0803f7a0"
+  ],
+  "canonicalstate": {
+    "owner": "Original immutable species table and canonical last-used-ability byte",
+    "table": {
+      "address": 136660944,
+      "bytes": 11536,
+      "fields": {
+        "ability1": 22,
+        "ability2": 23,
+        "genderRatio": 16
+      },
+      "records": 412,
+      "sha256": "59d52667e509ee461319621ee493d4046b7af1337d9b1d9648497dccf660e7ae",
+      "stride": 28
+    },
+    "last_used_ability": 33701226,
+    "source_asset_union_bytes": 11516,
+    "emitted_readonly_asset_bytes": 23019
+  },
+  "event_order": [
+    "Gender reads source ratio then returns fixed encoding or personality-threshold comparison",
+    "Ability chooses source first/second slot from zero/nonzero selector then commits canonical last-used ability",
+    "Original host controls invocation/consumer lifecycle; roots share table, no direct call between them"
+  ],
+  "exactpins": {
+    "provider": {
+      "path": "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/reconstruction/provider-report.json",
+      "sha256": "b3170a6548e1f375aff2e815860de6182bd40b0fe8a96b148e3452c2099ecc7a"
+    },
+    "artifact": {
+      "path": "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/reconstruction/rebuilt.gba",
+      "sha256": "873145392c2f09e61cd90b23d5c0fa014d8924a40cc8db371ec9cc0d718fc9a4"
+    },
+    "source_contract": {
+      "path": "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+      "sha256": "6a8f236991c2ad4787279d250337d6a43a56e34fa748c15bf718b78651034565"
+    },
+    "source_mapping": {
+      "path": "local/ir/pokemon-family-coverage-20261016/delivery001/source-mapping.json",
+      "sha256": "847c502758f1cebbbd11dae04e426b4327a5f69f3a73f99a4a875bdb11545d86"
+    },
+    "dependency_graph": {
+      "path": "local/ir/pokemon-family-coverage-20261016/delivery001/leafgreen-dependency-graph.json",
+      "sha256": "58acbe09b63c9d09f1a71f79b30ea0f36373f0fc53380369792f2544771322a5"
+    },
+    "independent_qc": {
+      "ir": {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/leafgreen-traits-ir-qc.json",
+        "sha256": "9c490fe40ef49116c861f83b296330e1f4dd4ed8c8299e88794a077f21b7697c"
+      },
+      "source_context": {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/pokemon-family-traits-context-qc-e5cca7cce845.json",
+        "sha256": "e5cca7cce84509a15e8aa2e70fa4fee4bd4331c3b9d0fd96a920797d46a0b586"
+      }
+    },
+    "publication_candidates": {
+      "path": "local/ir/pokemon-family-coverage-20261016/delivery001/publication-candidates-v3.json",
+      "sha256": "e42db808918e13f9392b8bd7b0995a6e6f4e005c339b11e0c526777891024825"
+    }
+  },
+  "dependency_links": [
+    {
+      "kind": "shared-original-immutable-species-table",
+      "address": 136660944,
+      "package_ids": [
+        "leafgreen.species.gender",
+        "leafgreen.species.ability"
+      ]
+    },
+    {
+      "kind": "retained-host-consumers",
+      "graph": {
+        "path": "local/ir/pokemon-family-coverage-20261016/delivery001/leafgreen-dependency-graph.json",
+        "sha256": "58acbe09b63c9d09f1a71f79b30ea0f36373f0fc53380369792f2544771322a5"
+      }
+    }
+  ],
+  "native_eligibility": {
+    "kind": "finite_original_and_reconstructed_entry_parity",
+    "vectors_each": 4096,
+    "expected_returns": {
+      "gender": 1903,
+      "ability": 1648
+    },
+    "ability_expected_state_cases": 1648,
+    "return_abi": "source u8; no full-r0 guarantee claimed",
+    "source_matching_elf": null,
+    "source_model_authority": "Existing exact FireRed Rev1 source-build ELF; no matching Ruby/LeafGreen ELF"
+  },
+  "runtime_capabilities": {
+    "portable_L1": true,
+    "actual_source_entry_replacement": true,
+    "generated_behavior_bytes": 72,
+    "mechanical_binding_bytes": 58,
+    "embedded_captured_readonly_asset_bytes": 23019,
+    "raw_difference_bytes": 23165,
+    "closed_interchangeable_prefab": false,
+    "whole_game_equivalent": null
+  },
+  "originalhostprerequisites": [
+    "Exact original species identity dictionary",
+    "Monster record decoding, creation, species/personality authority",
+    "Battle ability effect consumers and canonical global lifetime"
+  ],
+  "gaps": [
+    "PP calculator division bounded-CFG operation budget",
+    "GetMonData record integrity/decryption parents",
+    "Battle effects and full campaign"
+  ],
+  "counts": {
+    "new_distinct_source_functions": 2,
+    "new_central_packages_requested": 2,
+    "fresh_original_comparisons": 8192,
+    "fresh_rebuilt_comparisons": 8192,
+    "captured_assets_not_code": true
+  }
+}

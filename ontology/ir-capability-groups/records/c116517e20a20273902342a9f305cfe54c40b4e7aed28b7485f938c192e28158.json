@@ -1,0 +1,301 @@
+{
+  "canonicalstate": {
+    "adapter_fields": [
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_0",
+        "offset": 1,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_1",
+        "offset": 8,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_2",
+        "offset": 12,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_3",
+        "offset": 44,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_4",
+        "offset": 196,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_5",
+        "offset": 202,
+        "owner": "entity",
+        "width": 8
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_6",
+        "offset": 226,
+        "owner": "entity",
+        "width": 16
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "domain": {
+          "unsigned_max": 29,
+          "unsigned_min": 0
+        },
+        "name": "field_7",
+        "offset": 33687146,
+        "owner": "global",
+        "width": 8
+      }
+    ],
+    "native_domain": {
+      "actual_fixed_actor": "020205a0",
+      "actual_fixed_actor_globalprofile_alias_admitted": false,
+      "actual_source_parent_executed": false,
+      "caller_owned_actor_bytes": 256,
+      "concurrent_or_IRQ_writer": false,
+      "entity_global_disjoint": true,
+      "original_global_profile": "0202066a",
+      "profile_unsigned_max": 29,
+      "profile_unsigned_min": 0,
+      "r0_exact": "02010000",
+      "synchronous": true
+    },
+    "owner": {
+      "alias_rule": "Native proof uses disjoint actor/global. Fixedactor020205a0 makes actor+ca alias global0202066a; canonical equality and caller admission are UNPROVEN, not a detached second game actor.",
+      "global_profile_owner": "original host global profile producer remains OPEN",
+      "kind": "borrowed_source_actor_and_original_global_readonly_profile",
+      "l1_written_fields": [
+        "field_3"
+      ],
+      "qualified_r0_base": "02010000"
+    },
+    "readonly_assets": [
+      {
+        "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/motion-braking-asset.json",
+        "sha256": "5b739994a33566cc177299051a20c9f0cb1f31d805ecd9aa17fdef5a2698ef54"
+      }
+    ]
+  },
+  "capability_phase": {
+    "id": "facing-dependent-motion-evidence-only",
+    "package_id": "dba.motion.facing-dependent-input",
+    "phase_kind": "finite_direct_call_motion_consumer",
+    "ready": false,
+    "scheduled_sequence": null
+  },
+  "composition_eligible": false,
+  "counts": {
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 1,
+    "new_native_runs_for_publication": 0,
+    "prospective_new_central_packages": 1,
+    "qualified_original_vectors": 1024,
+    "qualified_rebuilt_vectors": 1024,
+    "source_span_IR_regenerated_bytes": 0
+  },
+  "exactpins": {
+    "adapter": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/validation-adapter.json",
+      "sha256": "fdd776353e86a5e8ec0e48e0272aaeaf9526a8202f1e236cc4bf19ab0f6639da"
+    },
+    "generated_c": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/generated.c",
+      "sha256": "ac26a6ca76c562cd49c0f6f85df5ac078a1637ce40add5ff0987ff7d06ae33a6"
+    },
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/dba-motion-context-qc.json",
+      "sha256": "3c20a4cd367d173e8b1c7dd190a0f1939953c97bee116a8f07775297d900d156"
+    },
+    "independent_ir_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/dba-motion-ir-qc.json",
+      "sha256": "bcfe7906d35f8d4e750cf09a2585f36e8873e10c8961f64ca09d6877a4a9c4c9"
+    },
+    "l0": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l0.json",
+      "sha256": "0908cbdfaf2b4e40cd794a42cc8a7c1ac2622b7f6c6f98fdbd8a810012ef415e"
+    },
+    "l1": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/l1.json",
+      "sha256": "e100a5aee6947c3a96ce7975a36f0b4b0f71822762a9232cc18e4a9689cfb505"
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/original-proof.json",
+      "sha256": "c753a0007147db035a244fa2a31626d1ff43f24187a24a5a2e2fd080a920e463"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/provider-report.json",
+      "sha256": "7ff29c09e359c1218916f8e2280c6ebe13cd44f1add2f2a8dd65b310df682607"
+    },
+    "publication_records": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-records-v1.json",
+      "sha256": "68cf344bc294d2a562d4b77e5fd3df4f91f5a10ef530faa1c9a4ff456bf1e802"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-dba-motion-installed-002/motion/rebuilt-proof.json",
+      "sha256": "1fe25edf72ce2af1db15349f4e77766c1d49ddb898b6766ef2d923447b4aaf64"
+    },
+    "result": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/result.json",
+      "sha256": "f3ff8e4785ee742d66aece30257bc6a802bd2f4faa49acdbd7128a35303def3c"
+    },
+    "source_asset": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/motion-braking-asset.json",
+      "sha256": "5b739994a33566cc177299051a20c9f0cb1f31d805ecd9aa17fdef5a2698ef54"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/publication-source-contract-v1.json",
+      "sha256": "2e68cc83bed0c2ece2c141fadf62b6fe6cf166f3f06f5721891660e0c55c575a"
+    },
+    "static_callback_prerequisite_only": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/dragon-ball-advanced-adventure/executable-resume-002/callback-proof-receipt.json",
+      "sha256": "19be81eb6df7d28264b19d4a92d630afb8985b1a5ea90667bc437bf8d98dde97"
+    }
+  },
+  "game_id": "dragon-ball-advanced-adventure",
+  "gaps": [
+    "Actual parentcontroller0801cd28 callback/action entry and fullframe scheduling",
+    "Fixedactor020205a0/globalprofile0202066a samebytealias notnativeadmitted",
+    "Original globalprofile producer and actualruntime0..29 enforcement",
+    "Code-ref initializer08018e68\u219208018ec5 and actualBXr1 dispatcher08116a20 notIRsupported",
+    "Task allocator cyclicSSA/nextlist invariant/payload/destructor/audio closure",
+    "Terrain/position/save/lifecycle,intermediate IRQ-visible writes and campaign equivalence",
+    "Composition eligibility false; this is installed research evidence only, not a generally host-usable capability",
+    "Source caller0801cd28\u219208028048 is static evidence only; no joint controller invocation qualified"
+  ],
+  "general_game_replacement_eligible": false,
+  "id": "dba.motion.facing-dependent-input.evidence-only.v1",
+  "module_id": "dba.motion.facing-dependent-input",
+  "native_eligibility": {
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "independent_review": "PASS EVIDENCE ONLY; generaleligibilityFALSE; actualfixedactoralias and parentnotadmitted",
+    "kind": "finite_original_and_rebuilt_direct_entry_parity_only",
+    "limits": {
+      "entity_bytes": 256,
+      "entity_span_limit": 16384,
+      "instructions_per_call": 2048,
+      "object_count": 1,
+      "object_stride": 8192,
+      "reserved_object_bytes": 32768,
+      "stage_timeout_s": 30,
+      "vectors": 1024
+    },
+    "native_domain": {
+      "actual_fixed_actor": "020205a0",
+      "actual_fixed_actor_globalprofile_alias_admitted": false,
+      "actual_source_parent_executed": false,
+      "caller_owned_actor_bytes": 256,
+      "concurrent_or_IRQ_writer": false,
+      "entity_global_disjoint": true,
+      "original_global_profile": "0202066a",
+      "profile_unsigned_max": 29,
+      "profile_unsigned_min": 0,
+      "r0_exact": "02010000",
+      "synchronous": true
+    },
+    "original_proof_reused_for_install": true,
+    "original_rom_sha256": "89a13559f76cf708d679c2d4f1d90d97333205e27dae72b47a7200715c57702e",
+    "rebuilt_rom_sha256": "c15c1c3cf5af64cc20d545abce34f243ebc806a9f10d6837a66e5feecb1f0259",
+    "unique_fixture_identity_count": 1024,
+    "vectors_per_rom": 1024
+  },
+  "no_new_native_or_build_for_metadata": true,
+  "originalhostprerequisites": [
+    {
+      "actual_fixed_actor": "020205a0",
+      "actual_fixed_actor_globalprofile_alias_admitted": false,
+      "actual_source_parent_executed": false,
+      "caller_owned_actor_bytes": 256,
+      "concurrent_or_IRQ_writer": false,
+      "entity_global_disjoint": true,
+      "original_global_profile": "0202066a",
+      "profile_unsigned_max": 29,
+      "profile_unsigned_min": 0,
+      "r0_exact": "02010000",
+      "synchronous": true
+    },
+    {
+      "alias_rule": "Native proof uses disjoint actor/global. Fixedactor020205a0 makes actor+ca alias global0202066a; canonical equality and caller admission are UNPROVEN, not a detached second game actor.",
+      "global_profile_owner": "original host global profile producer remains OPEN",
+      "kind": "borrowed_source_actor_and_original_global_readonly_profile",
+      "l1_written_fields": [
+        "field_3"
+      ],
+      "qualified_r0_base": "02010000"
+    }
+  ],
+  "package_ids": [
+    "dba.motion.facing-dependent-input"
+  ],
+  "proposal_status": "independently-reviewed-installed-research-evidence-only-nonready-capability",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "composition_eligible": false,
+    "current_or_general_ROM_replacement_eligible": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_readonly_asset_bytes": 60,
+    "generated_behavior_bytes": 744,
+    "mechanical_binding_bytes": 108,
+    "outside_cartridge_qualified": false,
+    "portable_L1": true,
+    "raw_difference_bytes": 920,
+    "ready_gameplay_capability": false,
+    "source_parent_execution": false,
+    "source_parent_static_dependency": true,
+    "veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_event_order": [
+    "Static source parent0801cd28 references motion08028048; not jointlyexecuted",
+    "Qualified direct call snapshots disjointborrowedactor/globalprofile",
+    "AutomaticIR consumes helddirections and sourceflags, updates signedhorizontalvelocity",
+    "Mechanicalbinder commits synchronousstate, only velocity differs in L1; no frame/position/controller proof"
+  ],
+  "source_roots": [
+    "08028048"
+  ],
+  "timing": {
+    "allwork_analysis_wall_s": null,
+    "artifact_replay_owner_selfcheck_s": 0.1316555,
+    "before_after_comparison": null,
+    "notes": "No mixedprocess overall sum. Provider includes compilation,installation,reassembly,rebuiltqualification and provenance; originalqualification was reused withoutnative rerun. No comparable earlier installedDBA baseline.",
+    "original_native_stage_s": 0.14807141599999998,
+    "original_qualification_s": 0.33375783400000003,
+    "provider_total_s": 0.894791625,
+    "queue_s": null,
+    "rebuilt_native_stage_s_nested_in_qualification": 0.06505266600000004,
+    "rebuilt_qualification_s_nested_in_provider": 0.20647629099999998,
+    "static_lift_s": 0.040399832999999996,
+    "typed_asset_checks_s": 0.027572833,
+    "typed_asset_mining_s": 0.075577916
+  }
+}

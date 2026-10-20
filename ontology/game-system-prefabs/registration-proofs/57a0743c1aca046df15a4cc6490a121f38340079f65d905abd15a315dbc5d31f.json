@@ -1,0 +1,488 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "reaction": {
+      "package_id": "mzm.combat.reaction_tick",
+      "package_sha256": "f859519a4d0ad7f9b49a6f8d4a26b8a5908dc785824fb9cf91fbfb6c90195053",
+      "behavior_sha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "energy",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.hp",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "energy",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.hp",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_count",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_count",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_selector",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_selector",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": false,
+          "writes": true
+        },
+        {
+          "name": "field_3",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "packed_countdown",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.reaction_invocation_and_contact_marker",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "packed_countdown",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.reaction_invocation_and_contact_marker",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_4",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "counter",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.freeze_invocation",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "counter",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.freeze_invocation",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_row",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.palette_row",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_6",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.normal_palette_selector",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "opaque_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.enemy.normal_palette_selector",
+            "confidence": 0.8,
+            "evidence": [
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+              "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+            ],
+            "naming_status": "source_derived_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_3",
+          "field_4",
+          "field_5",
+          "field_6"
+        ],
+        "writes": [
+          "field_2",
+          "field_3"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "clock": "one explicit eligible source-helper invocation",
+        "phase": "enemy scheduler prepass or source AI caller as applicable; enemy scheduler precedes projectile contacts",
+        "ownership": "record view,not independent persistent copy",
+        "source_system": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+        "shared_state_contract": "entity r0 views source current enemy. Global scratch gate fields alias that enemy only during scheduler DMA staging; no independently persistent scratch entity.",
+        "cross_component_order": "minimum reaction helpers invoked in hit guard; reaction_tick executes on next eligible enemy scheduler invocation following projectile hit; viewport retirement executes after native enemy AI and animation."
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Pool scheduling/DMA and connected contact/death closure not qualified.",
+        "No human gameplay/whole-game proof.",
+        "Annotations do not change executable bytes or narrow input domains. Original receipts remain immutable.",
+        "Position/extent units, palette selectors and complete status/pose enum retain source-specific opaque contracts; no inferred pixel scale.",
+        "Native receipts cover finite synthetic vectors, not all gameplay reachable states.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "87941fa3567885b2d716e536d7593dac6c8ffd4212aa67c4db0b9297087c1070",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [
+      "eligible_prepass"
+    ],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "reaction": {
+        "package_id": "mzm.combat.reaction_tick",
+        "behavior_sha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e",
+        "package_sha256": "f859519a4d0ad7f9b49a6f8d4a26b8a5908dc785824fb9cf91fbfb6c90195053",
+        "bindings": {
+          "field_0": {
+            "slot": "enemy_hp"
+          },
+          "field_1": {
+            "slot": "enemy_palette_count"
+          },
+          "field_2": {
+            "slot": "enemy_palette_selector"
+          },
+          "field_3": {
+            "slot": "enemy_reaction"
+          },
+          "field_4": {
+            "slot": "enemy_freeze"
+          },
+          "field_5": {
+            "slot": "enemy_palette_row"
+          },
+          "field_6": {
+            "slot": "enemy_normal_palette_selector"
+          }
+        }
+      }
+    },
+    "state": {
+      "enemy_hp": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "energy",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.hp"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_palette_count": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "opaque_selector",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.palette_count"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_palette_selector": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "opaque_selector",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.palette_selector"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_reaction": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "packed_countdown",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.reaction_invocation_and_contact_marker"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_freeze": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "counter",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.freeze_invocation"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_palette_row": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "opaque_selector",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.palette_row"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "enemy_normal_palette_selector": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "opaque_selector",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.enemy.normal_palette_selector"
+        },
+        "owner": "external",
+        "shared": true
+      }
+    },
+    "initialize": {
+      "enemy_hp": 0,
+      "enemy_palette_count": 0,
+      "enemy_palette_selector": 0,
+      "enemy_reaction": 0,
+      "enemy_freeze": 0,
+      "enemy_palette_row": 0,
+      "enemy_normal_palette_selector": 0
+    },
+    "invocations": [
+      {
+        "component": "reaction",
+        "arguments": {},
+        "id": "eligible_prepass",
+        "phase": "eligible_prepass"
+      }
+    ],
+    "services": [],
+    "schedule": {
+      "phases": [
+        "eligible_prepass"
+      ]
+    }
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "reaction"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "reaction"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "reaction",
+      "arguments": {}
+    }
+  ],
+  "statement_sha256": "cc42124e1e58fdc89c877d63f9bbbd1ee8d81257c0f71950663b299f593a7e9a",
+  "catalog_sha256": "ea63f6c6dbedef484430e9b5515e18038d006399028c6ec9a72f101851c6721c",
+  "wall_s": 0.003511834000000002
+}

@@ -1,0 +1,267 @@
+{
+  "adapter_version": "sonic-native-traversal/1",
+  "base_rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "cache_selection": {
+    "basis": "Explicit existing candidate selection after fresh config preparation; immutable report/request/generated-source/artifact checks still mandatory",
+    "fixture": "Exact candidate Factory2 checkpoint ancestry retained in pinned fixture recipe; setup is not model gameplay"
+  },
+  "coverage": "Matched bounded repeat of Sonic001 from same source-replayed fixture; source_defined_traversal progress projection fixes stationary grouping without animation-key churn. Same confidence architecture and resource bounds.",
+  "environment_version": "libmgba/0.10.5",
+  "experiment": {
+    "adapter_id": "sonic-native-traversal/1",
+    "calibration_artifact": null,
+    "confidence": 0.65,
+    "confidence_basis": "uncalibrated_provider_score",
+    "fixture_recipe": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-fixture.json",
+      "sha256": "8e5e88d2739c785de4d6470f07e004dbe0b3854ee5b1cfd207f6ee2e8dcc945e"
+    },
+    "goal": "traversal",
+    "margin": 0.2,
+    "max_frames": 960,
+    "max_model_calls": 24,
+    "max_seconds": 60,
+    "max_steps": 12,
+    "memory_profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-memory.json",
+      "sha256": "7b255d6abc65be8d2138642d7630016f5e02b5badf9e38590fab8e2b7439dba3"
+    },
+    "model_timeout": 10,
+    "policy_ref": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f"
+    },
+    "profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-profile-v2.json",
+      "sha256": "4761d882f05822b8ec4920d245d4b98f2a13e3432279e2b6bf6199a5521455d9"
+    },
+    "sid_env_file": "/Users/shishirtandale/Projects/siddarth_pokemon/.env"
+  },
+  "limits": {
+    "attempts": 1,
+    "cost_usd": null,
+    "model_calls": 24,
+    "native_frames": 960,
+    "wall_seconds": 180
+  },
+  "loop_config_ref": "prepared:sonic-traversal-iteration-002",
+  "mechanism_refs": [
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py",
+      "sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py",
+      "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native_build.py",
+      "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py",
+      "sha256": "fc763328b5306d7197b000c6a3b6437a950fb77a13ae2dcb260e3428fc412f0d"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/sonic_adapter.py",
+      "sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py",
+      "sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py",
+      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/sonic_metroid_strategy.py",
+      "sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/plans/sonic-metroid-signal-descent.json",
+      "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native/sonic-usa-whole-game.host.json",
+      "sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7"
+    }
+  ],
+  "mechanism_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+  "preparation": {
+    "execution": "none; no build or provider calls",
+    "limits_preserved": true,
+    "refreshed_pins": [
+      {
+        "after_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "before_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py"
+      },
+      {
+        "after_sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
+        "before_sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py"
+      },
+      {
+        "after_sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+        "before_sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native_build.py"
+      },
+      {
+        "after_sha256": "fc763328b5306d7197b000c6a3b6437a950fb77a13ae2dcb260e3428fc412f0d",
+        "before_sha256": "fc763328b5306d7197b000c6a3b6437a950fb77a13ae2dcb260e3428fc412f0d",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py"
+      },
+      {
+        "after_sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc",
+        "before_sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/sonic_adapter.py"
+      },
+      {
+        "after_sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8",
+        "before_sha256": "ff99245327b2fbebf7cbf193b8b2acb78c04cebe7f17a1c70a608de44acfbba8",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py"
+      },
+      {
+        "after_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "before_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py"
+      },
+      {
+        "after_sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+        "before_sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py"
+      },
+      {
+        "after_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+        "before_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/sonic_metroid_strategy.py"
+      },
+      {
+        "after_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+        "before_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/plans/sonic-metroid-signal-descent.json"
+      },
+      {
+        "after_sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7",
+        "before_sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7",
+        "changed": false,
+        "field": "mechanism_refs",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/composition/native/sonic-usa-whole-game.host.json"
+      },
+      {
+        "after_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "before_sha256": "58e62e5004d882b28f556597289b503ffd7c1f676020100cc7b08f8c2e451ee8",
+        "changed": false,
+        "field": "mechanism_sha256",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/iteration.py"
+      },
+      {
+        "after_sha256": "4761d882f05822b8ec4920d245d4b98f2a13e3432279e2b6bf6199a5521455d9",
+        "before_sha256": "4761d882f05822b8ec4920d245d4b98f2a13e3432279e2b6bf6199a5521455d9",
+        "changed": false,
+        "field": "experiment.profile",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-profile-v2.json"
+      },
+      {
+        "after_sha256": "7b255d6abc65be8d2138642d7630016f5e02b5badf9e38590fab8e2b7439dba3",
+        "before_sha256": "7b255d6abc65be8d2138642d7630016f5e02b5badf9e38590fab8e2b7439dba3",
+        "changed": false,
+        "field": "experiment.memory_profile",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-memory.json"
+      },
+      {
+        "after_sha256": "8e5e88d2739c785de4d6470f07e004dbe0b3854ee5b1cfd207f6ee2e8dcc945e",
+        "before_sha256": "8e5e88d2739c785de4d6470f07e004dbe0b3854ee5b1cfd207f6ee2e8dcc945e",
+        "changed": false,
+        "field": "experiment.fixture_recipe",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/sonic-fixture.json"
+      },
+      {
+        "after_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "before_sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+        "changed": false,
+        "field": "experiment.policy_ref",
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py"
+      }
+    ],
+    "removed_resume_fields": [
+      "cached_build_report"
+    ],
+    "request_sha256": "3066c38b65bf979dfb6421f3087cb295f2e932981e18ebae7c867a99d180d950",
+    "schema": "prefab-iteration-preparation/1",
+    "template_config_ref": "tools/prefab_pipeline/requests/sonic-traversal-v2-template.json",
+    "template_run_id": "sonic-traversal-v2-template",
+    "template_sha256": "34dbb17343a133d4b163df957c3dffddcc3ed5e100935afdaeedf989224a65cf"
+  },
+  "run_id": "sonic-traversal-iteration-002",
+  "schema": "prefab-iteration/1",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "supported_requests": [
+    {
+      "intent": "Retained full native Sonic campaign with original MZM combat/controller/assets; emitted source acquisition/events own connected upgrade progression in task-owned persistent state",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 65536,
+        "subprocess_s": 20
+      },
+      "plan": {
+        "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+        "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025"
+      },
+      "request_id": "sonic-metroid-native-ir-progress-20261016-v1",
+      "rom": {
+        "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+        "sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020"
+      },
+      "schema": "native-prefab-mod-request/1",
+      "strategy_lowering": {
+        "backend": "sonic-metroid-strategy/1",
+        "lowerer": {
+          "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+          "sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8"
+        },
+        "strategy": {
+          "path": "research/deep-extraction/sonic-metroid/strategy.json",
+          "sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931"
+        }
+      }
+    }
+  ],
+  "cached_build_report": {
+    "path": "/Users/shishirtandale/Projects/gameverse.ai/local/prefab-mods/sonic-metroid-native-ir-progress-002/report.json",
+    "sha256": "c85723e2945a1274e30a9fbec89b071a71c79ebbd0c119bc32a5e132a1fa5205"
+  },
+  "comparison_of": {
+    "run_id": "sonic-traversal-iteration-001",
+    "report": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/prefab-mods/sonic-traversal-iteration-001/iteration.json",
+      "sha256": "40921baebc162279a09107d7524a72cc8fa6bf5c57b79bfdd5da7cb5b710aef1"
+    },
+    "change": "Source-defined traversal progress projection in profile v2; exact same candidate and initial fixture, same native/model limits and confidence gate"
+  }
+}

@@ -1,0 +1,824 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "legend-of-zelda-the-the-minish-cap",
+  "sourceSystemIds": [
+    "tmc.learned_sword_charge_release"
+  ],
+  "blueprintIds": [
+    "exploration-progression",
+    "combat-encounter"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Earn techniques, update the same persistent ownership, derive capability eligibility, then use equipped input through legal sword actions and preserve adventure progress. Only ownership/cache transaction is a portable prefab.",
+    "phases": [
+      {
+        "id": "discover-reward",
+        "label": "Earn a technique from a trainer or world event",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "trainer/script request admission",
+          "durable claimed marker"
+        ],
+        "gaps": [
+          "Normal trainer/dialogue route and eligible once-only event are not automatically extracted."
+        ]
+      },
+      {
+        "id": "learn-refresh",
+        "label": "Record learned techniques and refresh abilities",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "tmc.learned_techniques.refresh_transaction"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.assembly.json"
+        ],
+        "requiredServices": [
+          "external canonical accepted inventory bank"
+        ],
+        "gaps": [
+          "Explicit supplied caller transaction; no save backend or automatic scheduler."
+        ]
+      },
+      {
+        "id": "control-and-legal-action",
+        "label": "Consume current input and learned abilities for a legal sword action",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+          "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json"
+        ],
+        "requiredServices": [
+          "same player input/equipment state",
+          "source animation event stream",
+          "canonical sword actor handle"
+        ],
+        "gaps": [
+          "Held-input endpoint is published but is not action permission.",
+          "Actual charge consumer now fails missing item pointer ABI at return-valued held-query call; no fabricated bridge."
+        ]
+      },
+      {
+        "id": "contact-and-cleanup",
+        "label": "Spin attack contact and owner-sensitive retirement",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "sword allocation and scheduler",
+          "terrain/contact dispatcher",
+          "DMA28byte item context release"
+        ],
+        "gaps": [
+          "Historical manual/native oracle does not provide automatic executable L1 of the complete contact/lifetime."
+        ]
+      },
+      {
+        "id": "move-world-save",
+        "label": "Traverse, fight, progress and resume the same adventure",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "player movement and terrain controller",
+          "world/room progression",
+          "enemy and drop lifecycle",
+          "save/reload"
+        ],
+        "gaps": [
+          "Whole movement/encounter/scene/persistence loop is not closed; current transaction must not reset accepted progress."
+        ]
+      },
+      {
+        "id": "discovery",
+        "label": "Encounter a trainer or world reward",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ],
+        "requiredServices": [
+          "Original trainer/script identity, once-only worldclaim"
+        ],
+        "gaps": [
+          "Caller supplies legal script operands and refresh schedule; actual trainer script/once-only world discovery not identified."
+        ]
+      },
+      {
+        "id": "claim",
+        "label": "Admit a first-time learned reward",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/claim-original-01/report.json"
+        ],
+        "requiredServices": [
+          "Scoped automaticclaimCFG specialization"
+        ],
+        "gaps": [
+          "First-only original reward helper observed in8 native cases but automaticclaimL1 is blocked by pre-CFG jump-table specialization."
+        ]
+      },
+      {
+        "id": "ownership-benefit",
+        "label": "Apply learned command, refresh and query beam eligibility",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "tmc.script_learning.beam_eligibility"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+          "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.assembly.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.validation.json"
+        ],
+        "requiredServices": [
+          "Canonical player progression bank and health inputs; trainer/event admission and durable commit remain host/source obligations."
+        ],
+        "gaps": [
+          "Caller supplies legal script operands and refresh schedule; actual trainer script/once-only world discovery not identified.",
+          "Same accepted bank and health/cache owner must be supplied; no automatic persistence or save/restart provided."
+        ]
+      },
+      {
+        "id": "actual-attack",
+        "label": "Spawn, update, collide and retire a sword beam",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ],
+        "requiredServices": [
+          "Animation eventstream",
+          "Beam capacity/entityallocation",
+          "Projectile/contact/lifecycle"
+        ],
+        "gaps": [
+          "Output is source eligibility selector0/15/22, not actor ID or complete attack. Parent animation admission, capacity check, allocation, projectile contact and lifecycle remain external."
+        ]
+      },
+      {
+        "id": "commit",
+        "label": "Preserve accepted progress across return/restart",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json"
+        ],
+        "requiredServices": [
+          "Accepted save/flash commit and reload"
+        ],
+        "gaps": [
+          "Same accepted bank and health/cache owner must be supplied; no automatic persistence or save/restart provided."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "discover-reward",
+        "to": "learn-refresh",
+        "kind": "host-required",
+        "scope": "Source script/event delivers legal learned state; normal trainer scheduling not proven."
+      },
+      {
+        "from": "learn-refresh",
+        "to": "control-and-legal-action",
+        "kind": "shared-state",
+        "scope": "Source controller reads same derived bit0/bit9; no consumer implementation fabricated."
+      },
+      {
+        "from": "control-and-legal-action",
+        "to": "contact-and-cleanup",
+        "kind": "source-call",
+        "scope": "Source item phases use animation events, canonical sword actor and owner-sensitive cleanup; portable closure pending."
+      },
+      {
+        "from": "contact-and-cleanup",
+        "to": "move-world-save",
+        "kind": "host-required",
+        "scope": "Full scheduler/world/save progression remains an explicit unclosed boundary."
+      }
+    ],
+    "missingForCoreGame": [
+      "Trainer/reward admission and accepted save/load are external.",
+      "Capability and held-input results need source legal-action consumer; actual pointer ABI and downstream animation/actor/DMA services remain blocked.",
+      "No full movement, enemy encounter or world progression loop supplied."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "minish-learning-bundle",
+      "label": "Learn techniques and query source sword benefit",
+      "moduleId": "tmc.learned_sword_charge_release",
+      "sourceGame": "legend-of-zelda-the-the-minish-cap",
+      "sourceSystemId": "tmc.learned_sword_charge_release",
+      "sourceContractRef": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+      "planIds": [
+        "exploration-progression",
+        "combat-encounter"
+      ],
+      "packageIds": [
+        "tmc.progress.derive_skills",
+        "tmc.progress.inventory_write",
+        "tmc.combat.learned_sword_beam_eligibility",
+        "tmc.progress.script_inventory_write"
+      ],
+      "availability": "published-subset",
+      "scope": "One canonical campaign inventory and derived capability cache, with explicit script operands, refresh-before-read and external health provider; no trainer/spawn/fullattack lifecycle.",
+      "gaps": [
+        "Trainer/reward admission and accepted save/load are external.",
+        "Capability and held-input results need source legal-action consumer; actual pointer ABI and downstream animation/actor/DMA services remain blocked.",
+        "No full movement, enemy encounter or world progression loop supplied.",
+        "Caller supplies legal script operands and refresh schedule; actual trainer script/once-only world discovery not identified.",
+        "First-only original reward helper observed in8 native cases but automaticclaimL1 is blocked by pre-CFG jump-table specialization.",
+        "Output is source eligibility selector0/15/22, not actor ID or complete attack. Parent animation admission, capacity check, allocation, projectile contact and lifecycle remain external.",
+        "Same accepted bank and health/cache owner must be supplied; no automatic persistence or save/restart provided."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/core-loop.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.assembly.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.validation.json",
+        "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+        "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.assembly.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "One canonical source campaign inventory/derived capability cache and external player health",
+        "fields": [
+          "inventoryBank:u8[64] packed256two-bit states",
+          "learnedSkills:u16 derived12bits",
+          "inventoryBank:u8[64]",
+          "skillCache:u16",
+          "currentHearts:u8",
+          "maximumHearts:u8",
+          "beamEligibility:u32",
+          "two read-only script operand views"
+        ],
+        "aliasRule": "Shared64byte bank and identical derive/refresh owner reused; cache refresh after bankwrite before reader. Phase-local eligibility retires whileinactive and must recompute. No defaultreset/replay."
+      },
+      "roleFacets": [
+        {
+          "roleId": "ownership",
+          "capability": "record learned technique state preserving neighbors apply supplied original learned-state scriptcommand",
+          "status": "published-subset",
+          "scope": "Legal supplied two-bit transaction, not world pickup admission or durable save. Command effect only; original first-onlyworldclaim andtrainer identity remainexternal.",
+          "evidence": [
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/core-loop.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.assembly.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.validation.json",
+            "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+            "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.assembly.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.validation.json"
+          ]
+        },
+        {
+          "roleId": "benefit",
+          "capability": "derive capability mask from learned state refresh capability and select learned swordbeam eligibility",
+          "status": "published-subset",
+          "scope": "Exactstate1 capability refresh. Legal action and movement consumer remain source-only. New source consumer connects real learned capability+hearts tovariantselection. Spawn/attack lifecycle external.",
+          "evidence": [
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/core-loop.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.assembly.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/learned-techniques.validation.json",
+            "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+            "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.assembly.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.validation.json"
+          ]
+        },
+        {
+          "roleId": "attack",
+          "capability": "consume learned capability to choose legal beam variant",
+          "status": "source-only",
+          "scope": "Eligibilityquery published; parent animation guard, capacity/spawn and projectilelifecycle stillneeded for actualattack.",
+          "evidence": [
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+            "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.assembly.json",
+            "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/script-beam-benefit.validation.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "tmc.learned_techniques.refresh_transaction",
+        "label": "Learned techniques \u2192 refreshed capability cache",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.learned_techniques.refresh_transaction.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.learned_techniques.refresh_transaction.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/delivery.json",
+        "packageIds": [
+          "tmc.progress.derive_skills",
+          "tmc.progress.inventory_write"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      },
+      "assemblyVariants": [
+        {
+          "id": "tmc.script_learning.beam_eligibility",
+          "label": "Learn sword-beam techniques \u2192 refreshed eligibility",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.script_learning.beam_eligibility.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.script_learning.beam_eligibility.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/delivery.json",
+          "packageIds": [
+            "tmc.combat.learned_sword_beam_eligibility",
+            "tmc.progress.derive_skills",
+            "tmc.progress.script_inventory_write"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        }
+      ],
+      "phaseIntegrationRef": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/phase-integration-v1.json",
+      "lifecycleAdapterRef": "research/ir-workshop/reusable-pipeline-20261016/phase-lifecycle/minish-adapter.json",
+      "agentExtensionProofRef": "research/ir-workshop/reusable-pipeline-20261016/phase-lifecycle/agent-result.json",
+      "appSelectionStatus": "production_agent_phase_extension_verified;UI_dynamic_selection_not_verified"
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "tmc.learned_techniques.refresh_transaction",
+      "moduleId": "tmc.learned_sword_charge_release",
+      "label": "Learned techniques \u2192 refreshed capability cache",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.learned_techniques.refresh_transaction.assembly.json",
+      "sha256": "e734c0d8870c5ee2b03a13059791abcf81f2844e83ab6fa7c9cab8378f26eea8",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.learned_techniques.refresh_transaction.validation.json",
+      "validationSha256": "dd6853b7e6a7d34e609fbbdc540dfe57d5bb68278418bf613b8c60f73709e286",
+      "inputs": [
+        {
+          "id": "baseLearned",
+          "label": "Base spin technique learned",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "boolean0or1 within source two-bit states0..3; exactlystate1 grants bit0",
+          "binding": "learn invocation with param_0=72: param_1"
+        },
+        {
+          "id": "fastLearned",
+          "label": "Faster charge technique learned",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "boolean0or1 within source two-bit states0..3; exactlystate1 grants bit9",
+          "binding": "learn invocation with param_0=115: param_1"
+        },
+        {
+          "id": "inventoryBank",
+          "label": "Canonical accepted learned-state bank",
+          "storageType": "u8[64]",
+          "default": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "64bytes backing256two-bit slots; zeros are fixtureonly, host imports acceptedbank",
+          "binding": "shared inventoryBank; learn.collection_0 and derive.dependency_0_collection_0"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "capabilityMask",
+          "binding": "learnedSkills",
+          "meaning": "u16 derived twelve-bit cache; default base+fast source-derived expectation513. Composer admission does not execute values."
+        },
+        {
+          "id": "updatedLearnedBank",
+          "binding": "inventoryBank",
+          "meaning": "Same canonical bank with IDs72/115 updated and neighbor slots preserved by qualified source setter."
+        }
+      ],
+      "phases": [
+        {
+          "id": "learnBase",
+          "trigger": "supplied legal base-technique transaction",
+          "invocations": [
+            "learn",
+            "derive"
+          ],
+          "scheduleStatus": "caller-declared"
+        },
+        {
+          "id": "learnFast",
+          "trigger": "supplied legal fast-technique transaction",
+          "invocations": [
+            "learn",
+            "derive"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "external progression owner imports and commits one accepted inventory bank"
+      ],
+      "gaps": [
+        "Trainer/reward admission and accepted save/load are external.",
+        "Capability and held-input results need source legal-action consumer; actual pointer ABI and downstream animation/actor/DMA services remain blocked.",
+        "No full movement, enemy encounter or world progression loop supplied."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/core-loop.json",
+        "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json"
+      ],
+      "qualificationScope": "Actual currentpackage Composer and lowering, status binding_valid_obligations_unproven. Existing finite sourcecomponent native proofs reused; no composedruntime or normal acquisition/save claim.",
+      "packagePins": [
+        {
+          "id": "tmc.progress.derive_skills",
+          "package": {
+            "path": "local/ir/packages/tmc.progress.derive_skills/package.json",
+            "sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f"
+          },
+          "behavior": {
+            "path": "local/ir/packages/tmc.progress.derive_skills/l1.json",
+            "sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63"
+          },
+          "native_receipt": {
+            "path": "local/ir/packages/tmc.progress.derive_skills/receipt.json",
+            "sha256": "410f91c5ec89daf03465b8940184e3cdcf16fb6a306e8165236e1f0377c03d0a"
+          }
+        },
+        {
+          "id": "tmc.progress.inventory_write",
+          "package": {
+            "path": "local/ir/packages/tmc.progress.inventory_write/package.json",
+            "sha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7"
+          },
+          "behavior": {
+            "path": "local/ir/packages/tmc.progress.inventory_write/l1.json",
+            "sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568"
+          },
+          "native_receipt": {
+            "path": "local/ir/packages/tmc.progress.inventory_write/receipt.json",
+            "sha256": "5858032dfff35ebb9afe6a4a064f0db94540ae5198798ebfff27bb2eda055c06"
+          }
+        }
+      ],
+      "settingsPolicy": "Source charge80/40 remain fixed constants; only learned/unlearned transaction inputs are exposed.",
+      "runtimeQualified": false
+    },
+    {
+      "id": "tmc.script_learning.beam_eligibility",
+      "moduleId": "tmc.learned_sword_charge_release",
+      "label": "Learn sword-beam techniques \u2192 refreshed eligibility",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.script_learning.beam_eligibility.assembly.json",
+      "sha256": "bd7d61886e821eb40dac939e0d16f6ff61cd07572ff9cffa928f31970ed7bc51",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/minish-script-beam-04/tmc.script_learning.beam_eligibility.validation.json",
+      "validationSha256": "107573ce71dfa7b777a68a0545af99809ccf6898719325df4dbe4c42f3d08bef",
+      "inputs": [
+        {
+          "id": "fullTechnique",
+          "label": "Full-heart beam learned-state ID",
+          "storageType": "u16",
+          "default": 76,
+          "domain": "Source full-heart techniqueID76; graphconstant. Scriptinterface generic legal IDs0..255.",
+          "binding": "fullTechnique"
+        },
+        {
+          "id": "fullLearnedState",
+          "label": "Full-heart technique learned state",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Source0..3; only1 derivesbit4",
+          "binding": "fullLearnedState"
+        },
+        {
+          "id": "lowTechnique",
+          "label": "Low-heart beam learned-state ID",
+          "storageType": "u16",
+          "default": 79,
+          "domain": "Source low-heart techniqueID79; graphconstant",
+          "binding": "lowTechnique"
+        },
+        {
+          "id": "lowLearnedState",
+          "label": "Low-heart technique learned state",
+          "storageType": "u16",
+          "default": 1,
+          "domain": "Source0..3; only1 derivesbit7",
+          "binding": "lowLearnedState"
+        },
+        {
+          "id": "currentHearts",
+          "label": "Current native heart pool",
+          "storageType": "u8",
+          "default": 24,
+          "domain": "Nativebyte0..255; normal current<=maximum is host/source reachability obligation",
+          "binding": "currentHearts"
+        },
+        {
+          "id": "maximumHearts",
+          "label": "Maximum native heart pool",
+          "storageType": "u8",
+          "default": 24,
+          "domain": "Nativebyte0..255; no display-heart scaling inferred",
+          "binding": "maximumHearts"
+        },
+        {
+          "id": "inventoryBank",
+          "label": "Canonical learned-state bank",
+          "storageType": "u8[64]",
+          "default": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "Fixturezeros only; realhost imports one accepted sourcebank",
+          "binding": "inventoryBank"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "beamEligibility",
+          "binding": "beamEligibility",
+          "meaning": "Captured fullu32 source selector0=noeligiblevariant,15=learnedfull-heartvariant,22=learnedlow-heartvariant; full-heart precedence. Defaultsourceexpected15, hostphase cases passed."
+        },
+        {
+          "id": "skillCache",
+          "binding": "skillCache",
+          "meaning": "Same derivedu16cache from source refresh, defaultsourceexpected144(bits4/7). Owned byrefresh, read byconsumer."
+        },
+        {
+          "id": "learnedBank",
+          "binding": "inventoryBank",
+          "meaning": "Same64bytebank, technique76/79 statesupdated through originalscriptcommand; neighboring slots preserved."
+        }
+      ],
+      "phases": [
+        {
+          "id": "scriptFull",
+          "trigger": "Supplied legal source command operands for technique76",
+          "invocations": [
+            "scriptFull",
+            "refresh"
+          ],
+          "scheduleStatus": "caller-declared"
+        },
+        {
+          "id": "scriptLow",
+          "trigger": "Supplied legal source command operands for technique79",
+          "invocations": [
+            "scriptLow",
+            "refresh"
+          ],
+          "scheduleStatus": "caller-declared"
+        },
+        {
+          "id": "eligibility",
+          "trigger": "Supplied query before external parent capacity/spawn service",
+          "invocations": [
+            "eligibility"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "Canonical player progression bank and health inputs; trainer/event admission and durable commit remain host/source obligations."
+      ],
+      "gaps": [
+        "Caller supplies legal script operands and refresh schedule; actual trainer script/once-only world discovery not identified.",
+        "First-only original reward helper observed in8 native cases but automaticclaimL1 is blocked by pre-CFG jump-table specialization.",
+        "Output is source eligibility selector0/15/22, not actor ID or complete attack. Parent animation admission, capacity check, allocation, projectile contact and lifecycle remain external.",
+        "Same accepted bank and health/cache owner must be supplied; no automatic persistence or save/restart provided.",
+        "Registration mapping is metadata, not a merged runtime qualification. Phase selection/configuration must never initialize or execute accepted progress."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json",
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/closure-result-v4.json",
+        "research/ir-workshop/blueprint-completion-20261016/minish/recovery-result.json"
+      ],
+      "qualificationScope": "Actual registered immutablepackages Composer+lowering admitted binding_valid_obligations_unproven. Newconsumer512original/generatedpairs incl50expectedreturns; private same-sourcephasehostcases pass. No native composedgraph, realtrainer or fullattack qualification.",
+      "packagePins": [
+        {
+          "instance": "scriptFull",
+          "id": "tmc.progress.script_inventory_write",
+          "package": "local/ir/packages/tmc.progress.script_inventory_write/package.json",
+          "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+          "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+          "native_receipt_sha256": "b4c37039c6eba96028289c4a367303464674cfed1d68e635f370fc53a2260d06"
+        },
+        {
+          "instance": "scriptLow",
+          "id": "tmc.progress.script_inventory_write",
+          "package": "local/ir/packages/tmc.progress.script_inventory_write/package.json",
+          "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+          "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+          "native_receipt_sha256": "b4c37039c6eba96028289c4a367303464674cfed1d68e635f370fc53a2260d06"
+        },
+        {
+          "instance": "refresh",
+          "id": "tmc.progress.derive_skills",
+          "package": "local/ir/packages/tmc.progress.derive_skills/package.json",
+          "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+          "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
+          "native_receipt_sha256": "410f91c5ec89daf03465b8940184e3cdcf16fb6a306e8165236e1f0377c03d0a"
+        },
+        {
+          "instance": "eligibility",
+          "id": "tmc.combat.learned_sword_beam_eligibility",
+          "package": "local/ir/packages/tmc.combat.learned_sword_beam_eligibility/package.json",
+          "package_sha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f",
+          "behavior_sha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c",
+          "native_receipt_sha256": "3c606f3f3989497d5eac60469f445d3403506f5e5c3ca1a2ac2929760fb3fdc9"
+        }
+      ],
+      "runtimeQualified": false,
+      "phaseIntegrationRef": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/phase-integration-v1.json",
+      "phaseDefaultPolicy": {
+        "id": "preserve-existing-state-and-defaults",
+        "onVariantSelection": {
+          "executeInvocations": false,
+          "applyGraphInitialize": false,
+          "refreshCapabilities": false,
+          "claimOrAcquire": false,
+          "resetBankOrCache": false,
+          "replaceExistingDefaults": false,
+          "rule": "Selecting, adding a role facet, switching variants or configuring staged operands is a metadata operation. Preserve the accepted module instance, bank, cache, prior old-phase defaults and previously staged phase settings byte-for-byte."
+        },
+        "onFirstModuleCreation": {
+          "rule": "Import the host accepted canonical learned bank/cache when available. A zero bank/cache is permitted only for an explicitly fresh synthetic fixture; graph initialize values are retained test evidence, not a migration or accepted-progress reset.",
+          "noImplicitMigration": true
+        },
+        "onNewPhaseInputCreation": {
+          "preserveExistingValues": true,
+          "scriptOperands": "Create phase-scoped staged input values only when absent. Source IDs76/79 are fixed identities; staged states default1 within0..3, but do not write inventory until explicit execution.",
+          "health": "Borrow the same external player/session current and maximum native hearts. Preserve supplied values/provider; initialize24 only in an explicitly selected synthetic fixture, never as accepted runtime health."
+        },
+        "onExplicitExecution": {
+          "rule": "Invoke only the selected requested phase schedule, once per explicit supplied command event. Graph itself does not establish once-only trainer admission; host must provide event identity/admission and avoid replay. Configuration or variant selection is never an execution event.",
+          "sourceOrder": [
+            "scriptFull",
+            "refresh",
+            "scriptLow",
+            "refresh",
+            "eligibility"
+          ],
+          "firstOnlyClaim": "Original helper08053ff0 is separately observed but not automatically lifted; do not imply this generic script phase enforces first-claim semantics."
+        },
+        "onUnsupportedMerge": "Reject integration visibly if the host cannot preserve the accepted backing/cache and deduplicate the refresh component. Do not import a second standalone prefab instance with fresh progress."
+      }
+    }
+  ],
+  "executableBlocker": {
+    "path": "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/prefab-pass/charge-consumer.failure.json",
+    "sha256": "f1161bff7ab6af8f262170bb6ef275b6d3844a36f987f596dca92fd81fbd6bd1"
+  },
+  "canonicalDetailedMap": {
+    "path": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/prefab-pass/core-loop.json",
+    "sha256": "13830f5f84729c4837c01a30320fe768c3b5c3e026d5f5e03d6973b7c927bb47"
+  },
+  "timing": {
+    "runId": "minish-cache-owner-phase-extension-source-fleet",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.021261792,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "accounting": "Currentgraphvalidation measuresactualComposer/lowering only. Newleafnative512pairandoriginalclaim8case receipts separatelypinned; sourcephasehostcompile separate. No broadoriginalnative rerun, gamebuildor modelwallmeasurement. Additivecentralmerge preservesacceptedrecoveryphase/physicalmoduleidentity; registrar timedseparately."
+  }
+}

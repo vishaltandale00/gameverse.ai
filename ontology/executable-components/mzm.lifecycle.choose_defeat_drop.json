@@ -1,0 +1,527 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.lifecycle.choose_defeat_drop",
+  "label": "Resource-aware original defeat drop choice",
+  "role": "lifecycle",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.lifecycle.choose_defeat_drop/package.json",
+  "package_sha256": "e2f216302b06be26227e373de98ff5956a9bab250510265e9cedbb9b1b3026cd",
+  "behavior_sha256": "7f95592b0995958dedfb4d77ead5fa227ca79da0489015f228d9835326ee05e2",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 8192,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "cb3225c9eb635c5b55fdd22a93fc7077de13423a8cf6d803e808bc76ef637259"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.world.source_counter",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.native_type_enum",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_entropy_input",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.world.scheduler_random_byte",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.world.update_phase_byte",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.energy.capacity",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.missile.capacity",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.super_missile.capacity",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.power_bomb.capacity",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.energy.current",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.missile.current",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.super_missile.current",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.player.power_bomb.current",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 13,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "read-only view of current staged source enemy plus canonical world/player resource context",
+    "clock": "one original common-death helper invocation;no inferred60Hz",
+    "phase": "08011084 invokes after real effects/audio and before same-recordretire/droptransform",
+    "ordering": "Nativecaller must consume u8result:0\u2192statusclear;nonzero mode0\u2192same-recordpickuptransform. Standalone returned choice does not execute that consumer.",
+    "identity": "mzm.module.enemy-source-record;enemy_flags aliases same low-byte flags as accepted-damage core;source global player resources stay world-owned/shared,not independent copies per enemy."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.lifecycle.choose_defeat_drop/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original/emitted u8return/state/ABI proof only;fullr0 outsidecontract.",
+    "No composed original-native death/drop/pickup lifecycle witness.",
+    "Audio/effect allocation,recordretirement/transform,pickupinit/contact/grant/timer/render/save remain explicit external source consumers.",
+    "Source random mixing is deterministic from three provided source inputs;no uniform probability or clock-rate claim.",
+    "Synthetic defaultcontext type23/primarybank/resources is explicit example,not a recovered spawn/world/save.",
+    "Fixturecontext6656directedcases overrides generic first256boundarylabel;remaining1536are synthetic;no extra gameplay coverage implied.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+    "domain": {
+      "field_0": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_1": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_2": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_3": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_4": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_5": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_6": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_7": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_8": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_9": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_10": {
+        "unsigned_min": 0,
+        "unsigned_max": 65535,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_11": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      },
+      "field_12": {
+        "unsigned_min": 0,
+        "unsigned_max": 255,
+        "status": "native storage domain,no narrowing;finite synthetic source cases,notallgameplayreachable"
+      }
+    },
+    "ports": {
+      "field_0": {
+        "slot": "world_source_counter",
+        "meaning": "world_source_counter",
+        "storage_type": "u16"
+      },
+      "field_1": {
+        "slot": "enemy_native_type",
+        "meaning": "enemy_native_type",
+        "storage_type": "u8"
+      },
+      "field_2": {
+        "slot": "enemy_flags",
+        "meaning": "enemy_flags",
+        "storage_type": "u8"
+      },
+      "field_3": {
+        "slot": "scheduler_random_byte",
+        "meaning": "scheduler_random_byte",
+        "storage_type": "u8"
+      },
+      "field_4": {
+        "slot": "world_update_phase_byte",
+        "meaning": "world_update_phase_byte",
+        "storage_type": "u8"
+      },
+      "field_5": {
+        "slot": "player_energy_capacity",
+        "meaning": "player_energy_capacity",
+        "storage_type": "u16"
+      },
+      "field_6": {
+        "slot": "player_missile_capacity",
+        "meaning": "player_missile_capacity",
+        "storage_type": "u16"
+      },
+      "field_7": {
+        "slot": "player_super_missile_capacity",
+        "meaning": "player_super_missile_capacity",
+        "storage_type": "u8"
+      },
+      "field_8": {
+        "slot": "player_power_bomb_capacity",
+        "meaning": "player_power_bomb_capacity",
+        "storage_type": "u8"
+      },
+      "field_9": {
+        "slot": "player_energy_current",
+        "meaning": "player_energy_current",
+        "storage_type": "u16"
+      },
+      "field_10": {
+        "slot": "player_missile_current",
+        "meaning": "player_missile_current",
+        "storage_type": "u16"
+      },
+      "field_11": {
+        "slot": "player_super_missile_current",
+        "meaning": "player_super_missile_current",
+        "storage_type": "u8"
+      },
+      "field_12": {
+        "slot": "player_power_bomb_current",
+        "meaning": "player_power_bomb_current",
+        "storage_type": "u8"
+      }
+    },
+    "defaultConfiguration": {
+      "world_source_counter": 1023,
+      "enemy_native_type": 23,
+      "enemy_flags": 0,
+      "scheduler_random_byte": 0,
+      "world_update_phase_byte": 0,
+      "player_energy_capacity": 100,
+      "player_missile_capacity": 10,
+      "player_super_missile_capacity": 5,
+      "player_power_bomb_capacity": 3,
+      "player_energy_current": 1,
+      "player_missile_current": 0,
+      "player_super_missile_current": 0,
+      "player_power_bomb_current": 0
+    },
+    "return": {
+      "type": "u8",
+      "source_values": [
+        0,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "meaning": "0no source drop,1a..1e originalpickup type identifiers;caller retirement/transform separate",
+      "source_only_resource_labels": {
+        "26": "energy pickup kind20\u2192+20",
+        "27": "energy pickup kind1f\u2192+5",
+        "28": "missilepickupkind21\u2192+2",
+        "29": "supermissilepickupkind22\u2192+2",
+        "30": "powerbombpickupkind23\u2192+1"
+      },
+      "label_evidence": [
+        "08012d14.c",
+        "../08012e98.c"
+      ],
+      "consumer_entry": "08011084"
+    },
+    "descriptorAssets": "One immutable8308byteown-ROMunion;originalsource widths/stride/bias preserved;no mutableRAMowner merged.",
+    "sampler": "(scheduler_random_byte*256+world_source_counter+world_update_phase_byte)&1023;source0remaps1. This is source semantic annotation,not behaviorinput.",
+    "contextFreshness": "Original scheduler stages correct selectedenemy before source death service;host must supply current world capacities/current resource counters and source mix inputs.",
+    "onceOnly": "Originalrecordconsumer prevents later nativeenemydeathdispatch aftertransform/retirement;this read-onlyselector doesnotimplement once-only admission."
+  },
+  "return_meaning": {
+    "quantity": "source_reward_type",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "mzm.enemy.drop_choice",
+    "confidence": 0.95,
+    "evidence": [
+      "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08010eec.c",
+      "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/08011084.c",
+      "research/ir-workshop/source-game-prefabs/metroid-zero-mission/death-drop-v2/capsule.json"
+    ],
+    "naming_status": "source_derived_annotation_not_behavior_input"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "metroid-zero-mission",
+    "entry": "08010eec"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

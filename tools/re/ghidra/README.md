@@ -186,6 +186,22 @@ analyzeHeadless local/re/<id>/ghidra_project gba -process "<rom file>.gba" -noan
 | `returns.json` | Only with `--repair-returns`: exact candidates, accepted instruction addresses, saved-LR criteria, heuristic limitations, script hash and timing. |
 | `headless.log`, `ghidra.log`, `script.log` | Logs. |
 
+Long decompilation batches also write `partial-functions.jsonl` and
+`partial-progress.json`. The journal flushes completed function cohorts (first
+record, then every 64, then the final cohort) so a hard process cap can retain
+already generated C. It is **not** the final export: its status is
+`partial_journal_not_final_export`, and a capped run remains failed. The runner
+records a matching-run journal hash and progress under `partial_journal` when
+no valid final summary exists. Up to the last unflushed cohort can be lost.
+Function boundaries, ABIs and semantics remain unverified in either export.
+
+The initial integration check compared all 668 journal records against the final
+Need for Speed Underground export and found exact record equality, including
+quarantined hardware access directions. Existing corpus runs compiled and
+exercised the changed Java exporter. A comparable before/after timing measurement
+for journal overhead is not available; do not attribute whole-ROM timing changes
+to journaling when discovery size, CFG repair or concurrent work differs.
+
 `local/re/index.json` collects run records and is append-only, keyed by `run_id`.
 Each record holds the start and end times, total wall time, the summed per-ROM wall
 time, the config, the script hash, the source commit and dirty flag, the machine

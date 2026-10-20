@@ -1,0 +1,384 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma2.run_jump_cape_motion",
+  "version": "0.1-native-qualified-local",
+  "concept": {
+    "role": "movement.platformer_controller",
+    "pattern": "charged running, normal/spin jump onset, character-dependent ascent, cape flight and two-axis fixed-point integration",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance-2-super-mario-world:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance-2-super-mario-world",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Indexed own USA/Australia ROM SHA1 5101ddf223d1d918928fe1f306b63a42ada14a5e",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-motion-receipt.json",
+    "abi": "Three original void(void) entry replacements; stack-owned context references exact native player/input/engine/map/profile/scene and immutable coefficients",
+    "recovery": {
+      "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "ranges": [
+        {
+          "address": "0x0806b52c",
+          "size": 90,
+          "isa": "thumb",
+          "instruction_sha256": "1f8d1672dd6eeb5d517301d0e35033903659900cef198ce0fa6bac23d57128cc",
+          "name": "sma2_integrate",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806b5a8",
+          "size": 74,
+          "isa": "thumb",
+          "instruction_sha256": "416be7ec6ca842b3d8f811b6abf194c10fe54619157a3a36aa279c0144548302",
+          "name": "sma2_integrate_x",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806b604",
+          "size": 74,
+          "isa": "thumb",
+          "instruction_sha256": "416be7ec6ca842b3d8f811b6abf194c10fe54619157a3a36aa279c0144548302",
+          "name": "sma2_integrate_y",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806e838",
+          "size": 70,
+          "isa": "thumb",
+          "instruction_sha256": "6af0684fe54d656057111c2c57f63b96000b0d83da4975f2383df4638fcbe594",
+          "name": "sma2_special_surface",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806e88c",
+          "size": 1324,
+          "isa": "thumb",
+          "instruction_sha256": "347355aa3bbb382cdec9d854080babc5a01d27bc01f58335f7e6dba09ab4ea23",
+          "name": "sma2_control",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806f240",
+          "size": 970,
+          "isa": "thumb",
+          "instruction_sha256": "d58ca1d22c58905f5035d748ebd590e1e4457fdc17e5ecaf2c4c9cc1d2500e63",
+          "name": "sma2_vertical",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806f714",
+          "size": 134,
+          "isa": "thumb",
+          "instruction_sha256": "e6e118d5aa1edd6d562adba2c7e6290ffc16e97aa2e3c69c980e261e1287482e",
+          "name": "sma2_gravity",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806f7b8",
+          "size": 86,
+          "isa": "thumb",
+          "instruction_sha256": "501b87398cf3ad8f072f25956986f248bfbacf5a6d4f4bb2526edde2defc4029",
+          "name": "sma2_cape_limit",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806f828",
+          "size": 12,
+          "isa": "thumb",
+          "instruction_sha256": "70da6ad660c5c05e86a4dae0bd33f15f1b0fbcd6cfd6d2d3ed6f863f0ecd353d",
+          "name": "sma2_decay_run_charge",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0806f834",
+          "size": 58,
+          "isa": "thumb",
+          "instruction_sha256": "51bec1a6f5bbac2b6972b06ed50f9420ae86c742f089700f44f2626c60704cd6",
+          "name": "sma2_run_charge",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08071810",
+          "size": 278,
+          "isa": "thumb",
+          "instruction_sha256": "7b5e5ab46b1ab959e71bc7b06f6d271f464bb971ec57848b63ba43083052ddd6",
+          "name": "sma2_ground_effect",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-recovered.c",
+      "lift_sha256": "fc0e1631d644db91a1fdc040a634164b10e1e560ca81c88fe89fd534a63f035b",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "Pinned original audio service"
+        ],
+        "data": [
+          "Own ROM coefficient window08109e00..0810a5ff SHA256 b396734a7653c8053d9063ecb7f462295feb15ff800a27a19d6bcae26f084321"
+        ],
+        "ram": [
+          "Explicit borrowed original player,input,scene,engine,map and profile objects"
+        ],
+        "hardware": [],
+        "relocations": [
+          "No mutable BSS; no speculative actor ABI; noarg adapter owns original global links"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-binary-corpus-round2/sma2-native-motion-01/receipt.json",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json"
+      ],
+      "unknowns": [
+        "Native ordinary/spin gameplay qualified; natural cape/riding/Luigi, terrain/enemies and full campaign remain separate.",
+        "Terrain sampler/contact response, enemies, projectiles and progression retained host systems"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "native_frame_context",
+      "direction": "in",
+      "type": {
+        "scalar": "borrowed_native_state",
+        "quantity": "input_contact_form_character_surface",
+        "unit": "native_fields",
+        "frame": "SMA2_frame"
+      },
+      "semantic": "Controller consumes native contact flags and collision-resolved state; input A=normal jump,R=spin,B=run/cape"
+    },
+    {
+      "id": "traversal_effects",
+      "direction": "out",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "motion_jump_cape_and_effects",
+        "unit": "native_fields",
+        "frame": "SMA2_frame"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "signed16_pixels_plus_u8_fraction",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "velocity",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "signed16_native_1_over_4096_pixels_per_frame",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "traversal",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "jump_spin_charge_cape_state",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "effects",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "native_ground_effects_and_sound_context",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "native_movement",
+      "clock": "original_native_frame_wrappers",
+      "phases": [
+        "integrate",
+        "host_terrain_contact",
+        "control",
+        "vertical"
+      ],
+      "reads": [
+        "position",
+        "velocity",
+        "traversal",
+        "effects"
+      ],
+      "writes": [
+        "position",
+        "velocity",
+        "traversal",
+        "effects"
+      ],
+      "invariants": [
+        "Integration uses signed high velocity byte scaled1/16pixel/frame and split integer/subpixel carry; full16bit velocity retains acceleration fraction",
+        "Character/profile/riding/cape/contact state are explicit contextual inputs",
+        "Host owns collision/contact and frame scheduling; this package does not reorder phases"
+      ],
+      "authority": "Exact original noarg entry replacement; borrowed original context; no mutable allocation"
+    }
+  ],
+  "dependencies": {
+    "data": [
+      "Own ROM coefficient window08109e00..0810a5ff SHA256 b396734a7653c8053d9063ecb7f462295feb15ff800a27a19d6bcae26f084321"
+    ],
+    "globals": [
+      "Four reviewed native context pointer links and fixed player/controls state"
+    ],
+    "macros": [
+      "SMA2_NATIVE_BUILD"
+    ],
+    "hardware": [],
+    "host_services": [
+      "play_sound"
+    ],
+    "unsupported": [
+      "Terrain collision and enemies not recovered by this package",
+      "No full campaign or cross-game physics bridge qualification"
+    ],
+    "status": "closed",
+    "code": [
+      "11 closed recovered functions plus native audio service"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2_normalize_motion.py",
+    "preconditions": [
+      "Exact indexed USA/Australia ROM",
+      "Reviewed fixed state and context pointer ABI",
+      "Original phase scheduling retained or adapter explicitly supplies it"
+    ],
+    "outputs": [
+      "Explicit pure movement context and complete local rules",
+      "Noarg native context adapter and exact shared-IR assembly plan"
+    ],
+    "semantic_changes": [
+      "Original audio call becomes explicit event port in finite oracle; real native adapter retains direct audio order"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Signed16 pixel integer plus unsigned8 subpixel for positions; integrated signed velocity high byte1/16pixel/frame; underlying signed16 velocity1/4096pixel/frame",
+    "authority_obligation": "Borrowed host collision and movement phases must have a single owner; preserve distinct cape/jump/run-charge states"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "A momentum-sensitive platform controller with spin jumps, character-specific jumps and cape flight",
+    "status": "Native local closure and natural ordinary/spin gameplay source-parity qualified"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma2-motion-parity.json",
+    "hooks": [],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-host-motion.c",
+          "sha256": "a1e9869d620de4b9e077bfa4cca1dfcd73dfddf18896ea5c3cc5dc8a645e887d"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-recovered.c",
+          "sha256": "fc0e1631d644db91a1fdc040a634164b10e1e560ca81c88fe89fd534a63f035b"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-host-motion.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma2_host_integrate",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma2_host_control",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "sma2_host_vertical",
+          "return": "void",
+          "args": []
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x809b5cc",
+          "abi": "void(u32)"
+        }
+      ],
+      "host_reads": [
+        {
+          "address": "0x3003f98",
+          "width": 32
+        },
+        {
+          "address": "0x3003f9c",
+          "width": 32
+        },
+        {
+          "address": "0x3002360",
+          "width": 32
+        },
+        {
+          "address": "0x3007a48",
+          "width": 32
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "6144 original versus host-C and emitted ARM7TDMI cases across normal/spin/charge/character/riding/cape/gravity/integration branches",
+      "117 natural frames from private fresh-boot Yoshi house: actual run,normal ascent and spin ascent; full player hashes and all rendered observation hashes match stock/generated ROM"
+    ],
+    "required_witnesses": [
+      "Same natural checkpoint stock versus generated full ROM; compare motion and images"
+    ],
+    "known_limits": [
+      "Finite bounded local coverage; no full campaign",
+      "Native host context owns terrain/enemies/ability activation outside this package",
+      "Two earlier natural probes matched stock but did not reach spin: one struck message block and one exited house. Failed qualification receipts preserved."
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+# Ruby source selection/confirmation closure, attempt 01
+
+Two actual source consumers now pass native original/generated comparisons: selected-code capture `080e7af4` (96 cases, including 24 expected table-coordinate outputs), and callback/phase setter `080e684c` (32 cases, including four source accept/cancel/select/scroll transition values). The setter proves state mutation, not execution or portable compatibility of native callback references. Existing navigation/helper qualifications were reused.
+
+The source caller `080e6fe8` consumes navigation’s r0 changed flag and separately handles A/B/Select. Normal A captures a code then installs the next callback. This is an encoded-code/text-slot editor frontier: `080eb2f4` measures token string length until 0xFF, and `080e7f20` adjusts layout/slot data. No party/battle identity is inferred.
+
+Whole-scene ownership is now sourced: entry `080e62c0` records the caller’s output buffer and return callback; confirm `080e6d9c` invokes commit `080e7dbc`; cancel `080e6ca4` sets result zero and skips commit. Both exit through fade/wait `080e754c` before restoring the original caller callback. Source evidence does not make this whole lifecycle executable.
+
+The highest-value next task was actually narrowed: own-ROM mode initialization proves code counts 1,2,4,6,9 and five one-code modes. A count=1 conditional commit still fails automatic CFG expansion before state-domain specialization. The immutable L0, invariant/disjoint-owner requirements, source ROM windows and minimized reproducer are retained and routed to the compiler owner. The true navigation return-valued export also exposes a terminal CALLIND-result normalization gap, separately minimized. No manual C or worker-written behavior substitutes were used.
+
+`closure-result-v3.json` is the current attempt result; `system-source-v2.json` records source order/state/services and explicit gaps. `publication-candidates-consumer-v1.json` is the versioned selected-code candidate sent to intake. Old registered delivery is untouched. EX062 exported eight exact entries in 3.478058916 s and released the project/JVM lease; no game/ROM generation, browser or broad native campaign. Stage timings are separate/nested as recorded, total interactive session and queue timing are unavailable.

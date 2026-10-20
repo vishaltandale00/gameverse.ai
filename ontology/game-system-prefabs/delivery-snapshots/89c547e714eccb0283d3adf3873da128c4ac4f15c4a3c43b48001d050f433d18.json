@@ -1,0 +1,485 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "metroid-fusion",
+  "sourceSystemIds": [
+    "metroid-fusion.player.jump-transition-contact"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "hazard-recovery"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Explore connected rooms by steering/jumping, resolving terrain and enemies, acquiring traversal abilities and preserving progress. This delivery supplies narrow motion/transition phases only.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Read held and newly pressed controls",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "host.input_sampling"
+        ],
+        "gaps": [
+          "KEYINPUT sampling/edge history not published as qualified portable input module."
+        ]
+      },
+      {
+        "id": "steering",
+        "label": "Update horizontal speed toward source cap",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "fusion.prefab.directional_acceleration"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Position integration and terrain/contact consumer remain source-only; no complete movement controller.",
+          "A chosen invocation schedule is not evidence of original frame reachability."
+        ]
+      },
+      {
+        "id": "jump-init",
+        "label": "Convert jump edge into transition and launch",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source.callback_dispatch"
+        ],
+        "gaps": [
+          "Jump request consumer/driver order open; transition structured-switch asset bounds block executable closure."
+        ]
+      },
+      {
+        "id": "integration",
+        "label": "Move and apply gravity",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "08009d78 guarded table index remains executable blocker; source schedules unproven."
+        ]
+      },
+      {
+        "id": "contact",
+        "label": "Resolve terrain collision and landing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "world.terrain",
+          "source.callback_dispatch"
+        ],
+        "gaps": [
+          "08068b1c needs bounded shared map pointer/dimensions and callback semantics;0800a054 collision closure not qualified."
+        ]
+      },
+      {
+        "id": "combat",
+        "label": "Shoot, contact enemies and manage damage/resources",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "projectile_actor_world",
+          "combat_contact"
+        ],
+        "gaps": [
+          "No qualified Fusion attack/projectile, enemy reaction, defeat/drop, health-hit or invulnerability lifecycle in this delivery."
+        ]
+      },
+      {
+        "id": "progress",
+        "label": "Acquire abilities and use gates/room progression",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "world.progression",
+          "persistence"
+        ],
+        "gaps": [
+          "Ability bit0 selects launch speed but its acquisition/ownership writer, gate consumers, room lifecycle and save persistence are not closed."
+        ]
+      },
+      {
+        "id": "transition-reset",
+        "label": "Preserve internal transition history and clear current motion transients",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Previous snapshot words remain private opaque; no portable public history-output or restore API exists yet.",
+          "Unbound packed flags/default state are not a full source-player configuration.",
+          "This is a separate transition cleanup phase. Do not invoke it immediately after every acceleration before its movement consumer.",
+          "Private historical words have no canonical observable saved-state binding/consumer; reset-only transaction is not a primary reusable card."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "jump-init",
+        "kind": "source-call",
+        "scope": "08006590 calls edge gate08005f60; full driver and request-consumer binding open."
+      },
+      {
+        "from": "steering",
+        "to": "integration",
+        "kind": "shared-state",
+        "scope": "08006240 writes vx0300125e consumed by08009d78; invocation order remains unproven."
+      },
+      {
+        "from": "integration",
+        "to": "contact",
+        "kind": "host-required",
+        "scope": "Integration/collision phase scheduling is required but not claimed source-proven."
+      },
+      {
+        "from": "jump-init",
+        "to": "transition-reset",
+        "kind": "source-call",
+        "scope": "08008fa0 calls08004d60 before request-specific switch initialization, including requestfe path."
+      },
+      {
+        "from": "combat",
+        "to": "progress",
+        "kind": "host-required",
+        "scope": "Enemy/resource/ability progression producer and consumer missing; no guessed source order."
+      }
+    ],
+    "missingForCoreGame": [
+      "KEYINPUT sampling/edge history not published as qualified portable input module.",
+      "Jump request consumer/driver order open; transition structured-switch asset bounds block executable closure.",
+      "08009d78 guarded table index remains executable blocker; source schedules unproven.",
+      "08068b1c needs bounded shared map pointer/dimensions and callback semantics;0800a054 collision closure not qualified.",
+      "No qualified Fusion attack/projectile, enemy reaction, defeat/drop, health-hit or invulnerability lifecycle in this delivery.",
+      "Ability bit0 selects launch speed but its acquisition/ownership writer, gate consumers, room lifecycle and save persistence are not closed.",
+      "Two phase prefabs represent one source player. Full actor/private-state backing across phases remains an explicit host/compiler obligation; do not create independent copied players.",
+      "Source audio side-effect optionality remains unqualified outside these call-free members.",
+      "Private historical words have no canonical observable saved-state binding/consumer; reset-only transaction is not a primary reusable card."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "fusion.player.motion-transition",
+      "label": "Player directional acceleration response",
+      "moduleId": "fusion.player.source-motion-transition",
+      "sourceGame": "metroid-fusion",
+      "sourceSystemId": "metroid-fusion.player.jump-transition-contact",
+      "sourceContractRef": "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+      "planIds": [
+        "character-traversal",
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "fusion.motion.directional_acceleration",
+        "fusion.state.transition_snapshot_reset"
+      ],
+      "availability": "published-subset",
+      "scope": "Configured source acceleration/clamp produces signed horizontal velocity; transition snapshot/reset retained only as internal source phase support.",
+      "gaps": [
+        "KEYINPUT sampling/edge history not published as qualified portable input module.",
+        "Jump request consumer/driver order open; transition structured-switch asset bounds block executable closure.",
+        "08009d78 guarded table index remains executable blocker; source schedules unproven.",
+        "08068b1c needs bounded shared map pointer/dimensions and callback semantics;0800a054 collision closure not qualified.",
+        "No qualified Fusion attack/projectile, enemy reaction, defeat/drop, health-hit or invulnerability lifecycle in this delivery.",
+        "Ability bit0 selects launch speed but its acquisition/ownership writer, gate consumers, room lifecycle and save persistence are not closed.",
+        "Two phase prefabs represent one source player. Full actor/private-state backing across phases remains an explicit host/compiler obligation; do not create independent copied players.",
+        "Source audio side-effect optionality remains unqualified outside these call-free members."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+        "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.validation.json",
+        "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "one source player current-state owner plus distinct previous-transition historical copy",
+        "fields": [
+          "facing_mask",
+          "native_y",
+          "signed_vx",
+          "signed_vy",
+          "private packed current and historical lanes"
+        ],
+        "aliasRule": "Current packed byte/halfword/word lanes share backing. Historical state is copied before current reset. The two phase graphs are not permission to duplicate actor state; current graph API only shares public velocity/facing slots where exact frames match. Facing frame labels currently differ, so no whole-player alias closure is claimed."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "Directional acceleration and signed cap",
+          "status": "published-subset",
+          "scope": "Horizontal velocity mutation only; no controller/terrain integration",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.validation.json"
+          ]
+        },
+        {
+          "roleId": "history-recovery",
+          "capability": "Internal transition copy/reset support",
+          "status": "source-only",
+          "scope": "Qualified source routine proof retained, but private history lacks canonical public input/output/consumer; not an addable recovery prefab.",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.validation.json"
+          ]
+        },
+        {
+          "roleId": "terrain",
+          "capability": "Source terrain lookup/contact",
+          "status": "source-only",
+          "scope": "Map domains and callback closure pending",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+          ]
+        }
+      ],
+      "recoveredAssemblies": [
+        {
+          "id": "fusion.prefab.directional_acceleration",
+          "label": "Directional acceleration and capped speed",
+          "assemblyRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.assembly.json",
+          "validationRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.validation.json",
+          "descriptorRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/delivery.json",
+          "packageIds": [
+            "fusion.motion.directional_acceleration"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false,
+          "availability": "published-subset"
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "fusion.prefab.directional_acceleration",
+        "label": "Directional acceleration and capped speed",
+        "assemblyRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.assembly.json",
+        "validationRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/delivery.json",
+        "packageIds": [
+          "fusion.motion.directional_acceleration"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "availability": "published-subset"
+      },
+      "internalSupportPhases": [
+        {
+          "id": "fusion.prefab.transition_reset",
+          "assemblyRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.assembly.json",
+          "validationRef": "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.validation.json",
+          "availability": "internal-support-only",
+          "gap": "Private historical words have no canonical observable saved-state binding/consumer; reset-only transaction is not a primary reusable card."
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "fusion.prefab.directional_acceleration",
+      "moduleId": "fusion.player.source-motion-transition",
+      "label": "Directional acceleration and capped speed",
+      "path": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.assembly.json",
+      "sha256": "e5d44baa15836ab1fca33d80ca11474196045d9ed0e425f00111b3ec2eab42f8",
+      "validation": "research/deep-extraction/resume/metroid-fusion/prefab-pass/directional-acceleration.validation.json",
+      "validationSha256": "b5b881b19685729181ceba339765339af0950b7823acae53a5ed2b43ed54660d",
+      "inputs": [
+        {
+          "id": "facing",
+          "label": "Source facing mask",
+          "storageType": "u16",
+          "default": 16,
+          "domain": "raw u16; bit0x10 selects positive acceleration branch; other source bits preserved",
+          "binding": "state.acceleration_field_0"
+        },
+        {
+          "id": "initial_velocity",
+          "label": "Initial signed horizontal velocity",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "u16 two-complement source encoding, coordinate/8 per invocation; no pixel/frame-rate conversion",
+          "binding": "state.acceleration_field_1"
+        },
+        {
+          "id": "acceleration",
+          "label": "Signed acceleration increment",
+          "storageType": "u16",
+          "default": 4,
+          "domain": "qualified raw low16 encoding; practical runtime invariant remains caller obligation",
+          "binding": "invocations[0].arguments.param_0"
+        },
+        {
+          "id": "speed_cap",
+          "label": "Signed branch speed cap",
+          "storageType": "u32",
+          "default": 160,
+          "domain": "qualified u32 source ABI; original routine narrows/compares according to its recovered operations",
+          "binding": "invocations[0].arguments.param_1"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "capped_velocity",
+          "binding": "state.acceleration_field_1",
+          "meaning": "Resulting signed acceleration/clamp output for a later motion integration consumer; this prefab does not integrate position."
+        }
+      ],
+      "phases": [
+        {
+          "id": "acceleration-step",
+          "trigger": "Explicit host steering-step invocation",
+          "invocations": [
+            "acceleration"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Position integration and terrain/contact consumer remain source-only; no complete movement controller.",
+        "A chosen invocation schedule is not evidence of original frame reachability."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+        "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json"
+      ],
+      "packageIds": [
+        "fusion.motion.directional_acceleration"
+      ],
+      "qualificationScope": "Actual generic assembly Composer and lowering, binding_valid_obligations_unproven; reused original-function256-vector native receipt per member; no composed native run or complete L2.",
+      "runtimeQualified": false,
+      "readyToAdd": true,
+      "availability": "published-subset"
+    }
+  ],
+  "timing": {
+    "runId": "fusion-prefab-pass-motion-transition",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0052229999999999985,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "metadataPackagingSeconds": 0.019499292,
+    "accounting": "Two actual narrow assembly validator durations summed; Composer/lowering nested inside validation. Original native receipts reused, no rerun. Full interactive/queue duration unavailable."
+  },
+  "verification": {
+    "deliverySchemaRef": "ontology/recovered-prefab-delivery.schema.json",
+    "schemaValidation": "jsonschema unavailable; explicit required-field, wholeGameReady=false, graph/receipt SHA256 and actual validator status checks passed",
+    "verificationSeconds": 0.000521
+  },
+  "internalSupportPhases": [
+    {
+      "id": "fusion.prefab.transition_reset",
+      "moduleId": "fusion.player.source-motion-transition",
+      "label": "Transition motion reset with retained internal history",
+      "path": "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.assembly.json",
+      "sha256": "19a19ba9a17d51222ff2b8cefcd9de90bdc2b621dcfe9b43921015b62fb3c28a",
+      "validation": "research/deep-extraction/resume/metroid-fusion/prefab-pass/transition-reset.validation.json",
+      "validationSha256": "0ca7b6bfb7f2b989a4cef3961943788706d8fc18cc50d32c49f309dfb0601d66",
+      "inputs": [
+        {
+          "id": "current_facing",
+          "label": "Facing mask at transition boundary",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "raw u16; wider packed-state branch flags remain private/default",
+          "binding": "state.snapshot_field_12"
+        },
+        {
+          "id": "current_y",
+          "label": "Source vertical coordinate",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "raw native coordinate, not pixel-calibrated",
+          "binding": "state.snapshot_field_14"
+        },
+        {
+          "id": "current_vx",
+          "label": "Horizontal velocity before transition reset",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "raw signed source velocity",
+          "binding": "state.snapshot_field_15"
+        },
+        {
+          "id": "current_vy",
+          "label": "Vertical velocity before transition reset",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "raw signed source velocity",
+          "binding": "state.snapshot_field_16"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "reset_vx",
+          "binding": "state.snapshot_field_15",
+          "meaning": "Current horizontal speed after source transition clear; previous value remains inside private copied historical state."
+        },
+        {
+          "id": "reset_vy",
+          "binding": "state.snapshot_field_16",
+          "meaning": "Current vertical speed after source transition clear; no checkpoint/save restore claim."
+        }
+      ],
+      "phases": [
+        {
+          "id": "transition-boundary",
+          "trigger": "Explicit host transition request; source08008fa0 calls snapshot/reset before request-specific initialization",
+          "invocations": [
+            "snapshot"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Previous snapshot words remain private opaque; no portable public history-output or restore API exists yet.",
+        "Unbound packed flags/default state are not a full source-player configuration.",
+        "This is a separate transition cleanup phase. Do not invoke it immediately after every acceleration before its movement consumer."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+        "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08004d60.json"
+      ],
+      "packageIds": [
+        "fusion.state.transition_snapshot_reset"
+      ],
+      "qualificationScope": "Actual generic assembly Composer and lowering, binding_valid_obligations_unproven; reused original-function256-vector native receipt per member; no composed native run or complete L2.",
+      "runtimeQualified": false,
+      "readyToAdd": false,
+      "availability": "internal-support-only",
+      "acceptanceGap": "Private historical words have no canonical observable saved-state binding/consumer; reset-only transaction is not a primary reusable card."
+    }
+  ],
+  "productAcceptance": {
+    "primaryAccepted": [
+      "fusion.prefab.directional_acceleration"
+    ],
+    "internalSupportOnly": [
+      "fusion.prefab.transition_reset"
+    ],
+    "reason": "Actual signed velocity output is useful; private-history reset alone is not a complete canonical observable transaction.",
+    "metadataOnly": true,
+    "metadataFixSeconds": 0.0003543750000000005
+  }
+}

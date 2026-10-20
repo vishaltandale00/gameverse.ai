@@ -19,13 +19,15 @@
       "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
       "ranges": [],
       "lift_ref": "tools/composition/components/sonic_metroid/render.c",
-      "lift_sha256": "dc106f82ac39231a0a121df26c1d194c6a6a38c7b514d42b16a05913377256f3",
+      "lift_sha256": "ae6e63769bbf81d9beab9d5b511c05e851b6e091ba90f6ce2f4fdc952b7bd673",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
         "calls": [
           "state",
-          "world"
+          "world",
+          "ripper_assets",
+          "ripper_bridge"
         ],
         "data": [],
         "ram": [
@@ -81,15 +83,23 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/render.c",
-          "sha256": "dc106f82ac39231a0a121df26c1d194c6a6a38c7b514d42b16a05913377256f3"
+          "sha256": "ae6e63769bbf81d9beab9d5b511c05e851b6e091ba90f6ce2f4fdc952b7bd673"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+          "sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
           "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+          "sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07"
+        },
+        {
+          "ref": "local/composition-assets/mzm-flyer-02/assets.h",
+          "sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a"
         }
       ],
       "translation_units": [
@@ -103,6 +113,14 @@
         },
         {
           "id": "composition.sonic_metroid_world",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.mzm_ripper_assets",
+          "version": "0.1.0"
+        },
+        {
+          "id": "composition.sonic_metroid_ripper_bridge",
           "version": "0.1.0-draft"
         }
       ],

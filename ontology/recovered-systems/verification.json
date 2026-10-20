@@ -1,0 +1,26 @@
+{
+  "outcome": "pass",
+  "analysisRecords": 57,
+  "pointerFacts": 1157,
+  "explicitEdges": 78,
+  "automaticContracts": 112,
+  "wallSeconds": 0.023397417000000004,
+  "scope": "Source hashes, exact JSON pointers, identity/counts/readiness only; no semantic, native or gameplay qualification",
+  "queueSeconds": null,
+  "buildSeconds": null,
+  "simulationSeconds": null,
+  "context": {
+    "runId": "ontology-integrity-20261016T135946.273129Z",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "sourceState": "Workspace snapshot; script and index hashes identify uncommitted changes.",
+    "indexSha256": "b64492ed3302544981ba07d6e7c27fb8107980d41c76d1e359dceeb2d357dc75",
+    "validatorSha256": "6a15a47028e1c8801b6ef1fdde6083204279888c67578b703bd5feab68c7a05a",
+    "ingesterSha256": "0975159b47e96bccc599bf3cce61f6ed53166204002d7d015a8a00ef76caa488",
+    "sourceManifestSha256": "3282cfafd6bd0a175c29a653d5266d72ae41064ffd570aef8509432eccd6eed7",
+    "python": "3.9.6",
+    "machine": "macOS-27.0.1-arm64-arm-64bit",
+    "adapter": "not-invoked",
+    "loop": "not-invoked",
+    "timing": "wallSeconds covers validation only; context collection/report serialization excluded; no overlapping execution stages."
+  }
+}

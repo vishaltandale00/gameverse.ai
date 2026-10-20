@@ -1,0 +1,413 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "leafgreen.persistence.secure_record_encrypt",
+  "label": "Encrypt one shared creature record payload",
+  "role": "persistence",
+  "source_game": "pokemon-leafgreen-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/package.json",
+  "package_sha256": "8e04bb2fdf463f6872535b4df544e1a2c52b77eda2691e901f67e0109474be3d",
+  "behavior_sha256": "3061c220f5b83972850015dea41d303c1a779ac0ab0cf2a43e3c7ca0dea75096",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b55346e5c6720aaa52b262d726d84d00208d710ecb38027b5b8de817120c6bc5"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.key_0",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_0"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.key_1",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_1"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_0",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_2"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_1",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_3"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_2",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_4"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_3",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_5"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_4",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_6"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_5",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_7"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_6",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_8"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_7",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_9"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_8",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_10"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_9",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_11"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_10",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_12"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitpattern",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "creature_secure_record.payload_word_11",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json#0x0803f90c/field_13"
+        ],
+        "naming_status": "source_observed_unsigned_storage_bitpattern_not_gameplay_quantity"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 14,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one_shared_creature_record",
+    "clock": "explicit_invocation",
+    "phase": "encrypt_secure_record_payload",
+    "representation_before": "plaintext secure payload",
+    "representation_after": "encrypted secure payload",
+    "ordering": [
+      "Record payload word0 through word11 in source order.",
+      "Each word XOR key0 then key1, preserving both stores."
+    ],
+    "aliases": "Every field binds same record-relative word in all codec/accessor instances; no per-leaf record copies."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Names/meaning of logical fields inside any word remain unknown without shuffled-view resolution.",
+    "No move acquisition/checksum/controller/persistence system closure claimed.",
+    "Opaque bitpattern ports must retain exact32bits; do not reinterpret as HP,position,PP,moveID or bonuses.",
+    "Actual graph admission proves symbolic interface/lowering, not complete secure-record transaction or runtime representation reachability.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/semantic-evidence.json",
+    "sha256": "88fecc5266cef2abfd0b3d0a8c0172550443ff7accee1bc0c81a090b36382098",
+    "scope": "Reviewed source-supported bitpattern semantics and representation phase transitions",
+    "derivation": {
+      "source": "original-l0.json own-ROM exported HighFunction",
+      "transform": "existing generic bounded_cfg.expand; exhaustive runtime-edge expansion with edge-selected SSA phis; 16 visits/1024 ops caps",
+      "actualCompilerInput": "l0.json artifact maps to retained expanded-l0.json",
+      "derivation": "expansion-proof.json pins compact canonical raw source/derived hashes and per-op original source mapping",
+      "qualification": "Existing receipt covers exact L1/generated C/adapter and original LeafGreen native entry; no new qualification runs.",
+      "reviewStatus": "prepared_requires_derivation_review_before_catalog_approval",
+      "canonicalHashDistinction": "Adapter canonical L0 uses json.dumps(sort_keys=True) default separators; expansion proof uses compact separators."
+    },
+    "source_identity": {
+      "game": "pokemon-leafgreen-version",
+      "entry": "0x0803f90c",
+      "rom_sha256": "2f978f635b9593f6ca26ec42481c53a6b39f6cddd894ad5c062c1419fac58825",
+      "original_l0": {
+        "path": "local/ir/fleet-next/pokemon-leafgreen-version/bounded-pass2/0803f90c/l0.json",
+        "sha256": "b188ac320de4226a6af9ea35e72617df52f546770a9558dcd94f073252d56d75",
+        "canonicalJsonSha256": "73d28e0b1848caba10c8de737cc80e443dcdc9c5c6af59858d99471a386061c1",
+        "canonicalAlgorithm": "SHA256(json.dumps(parsed_L0,sort_keys=True).encode()); file SHA256 separately retained"
+      },
+      "compiler_input": {
+        "path": "local/ir/fleet-next/pokemon-leafgreen-version/bounded-pass2/0803f90c/expanded-l0.json",
+        "sha256": "12868f228b20d54bca0a02b4bd95bb92dacdc84b243c5d68523d9b96475c6bc2",
+        "canonicalJsonSha256": "1998124dd5e920ed5b31e92acbf0da81ed51f065a55c22ce22ac9d165e4e1256",
+        "adapterL0Sha256": "1998124dd5e920ed5b31e92acbf0da81ed51f065a55c22ce22ac9d165e4e1256",
+        "canonicalAlgorithm": "SHA256(json.dumps(parsed_L0,sort_keys=True).encode()); file SHA256 separately retained"
+      }
+    },
+    "frozen_derivation_runtime": {
+      "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/derivation-runtime.json",
+      "sha256": "7c7c706941fd1c53339d98d50f86fc49b1f359a4c0d7537e582a8c6054cc9fa7"
+    }
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "leafgreen.persistence.secure_record_encrypt",
+        "source_game": "pokemon-leafgreen-version",
+        "package": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/package.json",
+          "sha256": "8e04bb2fdf463f6872535b4df544e1a2c52b77eda2691e901f67e0109474be3d"
+        },
+        "package_sha256": "8e04bb2fdf463f6872535b4df544e1a2c52b77eda2691e901f67e0109474be3d",
+        "behavior": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/l1.json",
+          "sha256": "3061c220f5b83972850015dea41d303c1a779ac0ab0cf2a43e3c7ca0dea75096"
+        },
+        "behavior_sha256": "3061c220f5b83972850015dea41d303c1a779ac0ab0cf2a43e3c7ca0dea75096",
+        "native_receipt": {
+          "path": "local/ir/packages/leafgreen.persistence.secure_record_encrypt/receipt.json",
+          "sha256": "b55346e5c6720aaa52b262d726d84d00208d710ecb38027b5b8de817120c6bc5"
+        },
+        "native_receipt_sha256": "b55346e5c6720aaa52b262d726d84d00208d710ecb38027b5b8de817120c6bc5",
+        "graph_request": {
+          "path": "research/deep-extraction/resume/pokemon-leafgreen-version/mashup-coverage/decode-encode-graph.json",
+          "sha256": "1d7cafced61ed635d77ccbe238c783bdfc76e24394f0b7ef0859994cb237c4bc"
+        },
+        "graph_receipt": {
+          "path": "local/ir/mashup-coverage/pokemon-leafgreen-version/graph-admission.json",
+          "sha256": "93a8170638348f7107e5e12f2438190f11f83fe6d7909db35e84d3af3b9cb093"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/metal-slug-advance/coverage-pass/admitted-assembly-snapshot.py",
+          "sha256": "2a45ef9868ac9bff2be1f7b97c00b8501857a8bbb3e4d1a7d0de175c3e9e0758"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/mashup-coverage/pokemon-leafgreen-version/catalog-a170d569e7e444850507a594ce2914f2d99a84f0722a4ef2407cf8817232df13.json",
+          "sha256": "a170d569e7e444850507a594ce2914f2d99a84f0722a4ef2407cf8817232df13"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "component_instance": "encode",
+        "graph_invocation_count": 2,
+        "statement_sha256": "9d92430144f5f9807e5f98fb1bc4f851a8abb745e2883fa5a5311880b691339d",
+        "source_admission_pins": {
+          "path": "local/ir/mashup-coverage/pokemon-leafgreen-version/graph-admission-pins.json",
+          "sha256": "2cd1a5ffbefce62f0b5a967d86c1adda7e7989191e7aaa62ddd5ef6079ed0391"
+        },
+        "limitations": [
+          "Symbolic binding, ownership, input-domain and ordered-invocation validation only",
+          "Caller lifecycle obligations remain unproven; no native composed graph or whole source system claim"
+        ]
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "pokemon-leafgreen-version",
+    "entry": "0803f90c"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

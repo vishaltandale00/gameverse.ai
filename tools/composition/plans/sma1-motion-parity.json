@@ -1,0 +1,297 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mario-sma1-motion-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "super-mario-advance",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "Own-ROM SMB2 movement parts; bundled Mario Bros excluded"
+  },
+  "execution": {
+    "clock": "original_main_game_calls",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "gravity_hover",
+      "friction",
+      "jump_onset",
+      "charged_state_decay",
+      "integrate_x",
+      "integrate_y"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "position",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "velocity",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "velocity",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "jump_hover_charge",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "jump_hover_charge",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "components": [
+    {
+      "id": "motion",
+      "provides": [
+        "movement.character_jump_hover@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "position",
+          "phase": "gravity_hover",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "friction",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "jump_onset",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "charged_state_decay",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "integrate_x",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "integrate_y",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "gravity_hover",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "friction",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "jump_onset",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "charged_state_decay",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "integrate_x",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "integrate_y",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "gravity_hover",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "friction",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "jump_onset",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "charged_state_decay",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "integrate_x",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "jump_hover_charge",
+          "phase": "integrate_y",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-lift-evidence.json",
+        "evidence_refs": [
+          "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "native-controller-context",
+      "detail": "Whole original input acceleration/terrain/carry/permission and frame schedule retained; local movement parts do not replace them"
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sma1-usa-motion.host.json",
+      "sha256": "919eaf3bf1248fa6b6e3ecada5fbe81b8b5448ee46bd54fe7561ea9adc3ce580"
+    },
+    "packages": [
+      {
+        "instance": "motion",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma1-motion-host.json",
+          "sha256": "4a96df2e80b58c5ab2034170eb54386db4a679bbe1a19e462470509bd6e7142f"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "gravity_hover",
+        "instance": "motion",
+        "symbol": "sma1_host_gravity_hover",
+        "args": []
+      },
+      {
+        "host_hook": "friction",
+        "instance": "motion",
+        "symbol": "sma1_host_friction",
+        "args": []
+      },
+      {
+        "host_hook": "jump_onset",
+        "instance": "motion",
+        "symbol": "sma1_host_jump_onset",
+        "args": []
+      },
+      {
+        "host_hook": "charged_state_decay",
+        "instance": "motion",
+        "symbol": "sma1_host_charged_state_decay",
+        "args": []
+      },
+      {
+        "host_hook": "integrate_x",
+        "instance": "motion",
+        "symbol": "sma1_host_integrate_x",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "integrate_y",
+        "instance": "motion",
+        "symbol": "sma1_host_integrate_y",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 8192,
+    "timeout_s": 15,
+    "max_build_s": 30
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.input.held_equipped_item",
+  "label": "Read held input for equipped item",
+  "role": "input",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tmc.input.held_equipped_item/package.json",
+  "package_sha256": "46251a3981ad25caa2cc0ac15708494eea1b59c745db6f3d8cd2105afdd62102",
+  "behavior_sha256": "00ed565ff3ae96287acb8cfdfbc0c9627e052a95eff25e370ece6b0a3b520c05",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "47dfe4f966b9211d32423d2b0040eabf84d7075e7687d95693f25f0ec7c5b0c1"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "item_identity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "item.activation",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "equipped_item_identity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.equipment.A",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "equipped_item_identity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.equipment.B",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "input_bitmask",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.input.held_item_buttons",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 4,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "no owned mutable state",
+    "clock": "explicit invocation; observes current equipment/input snapshot",
+    "writes": false,
+    "allocation": false,
+    "retained_runtime_services": false,
+    "entity_requirement": "Borrowed live item context; no independent cloned player or item ownership."
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "cba8cb51e5c4bdf45dace3b11a4b040d02015cc27de2eae71eb120af08c4c30c",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tmc.input.held_equipped_item/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "These two roots implement one input predicate boundary; do not count them as two complete independent mechanics.",
+    "Historical inventory and learned ability\u2192charge/release system remain separately scoped in source L2; full action closure is blocked.",
+    "Human item-name enumeration is not recovered in these roots.",
+    "Input bits beyond lowA/B are outside this predicate meaning; no physics or timing units inferred.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_l2_contract": {
+      "path": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/system.json",
+      "sha256": "4a8fd4ce7992a78df1863f9ec6b54138b9d254ff4f5de9f65e57e743dc68c8bb"
+    },
+    "pinned_machine_citation_maps": {
+      "path": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json",
+      "sha256": "e1462616c6536893a1397dd7ff5e1306851541705383f65e5f78ed20eca9f7b2"
+    },
+    "parameter_meanings": {},
+    "return_meaning": {
+      "quantity": "boolean",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "item.input_query",
+      "confidence": 0.95,
+      "evidence": [
+        "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+      ]
+    },
+    "borrowed_state": "Read-only item identity and the same player session equipment IDs; held-input wrapper also reads current held button mask. No mutable owned state.",
+    "aliases": "Shared item/player read views preserved by inlining; duplicate matching equipment chooses A before B.",
+    "services": [],
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "dependency_0_Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "dependency_0_No unresolved pointer alias escapes the recovered state views",
+      "r0 identifies readable live item context with byte+1.",
+      "Equipment IDs and held mask use the same player session; duplicate A/B IDs retain A precedence.",
+      "This predicate result alone does not imply learned skill, allowed player state, successful allocation or legal charge transition."
+    ],
+    "domains": "Identity fields are categorical u8 values; helper mask fullu32, wrapper held masku16; result fullu32 exactly0or1. No item-name enumeration or physics units recovered.",
+    "ordering": "Equipment comparison A precedes B on mismatch; chosen mask is ANDed with input then converted to boolean. Wrapper samples held mask before inlined predicate.",
+    "qualification_scope": "finite original/generated function comparisons with42source-derived expected result cases; no parent charge/lifecycle gameplay qualification",
+    "units_limit": "All annotated quantities dimensionless rational1; categorical IDs and bitmasks have no physical scale.",
+    "l0_identity": {
+      "canonical_json_sha256": "c2f36fcff62dc60ad5bf096d735f83961c4e3aa7f7690998ce081901462fd709",
+      "adapter_l0_sha256": "c2f36fcff62dc60ad5bf096d735f83961c4e3aa7f7690998ce081901462fd709",
+      "matches": true,
+      "convention": "SHA256(json.dumps(parsedL0,sort_keys=True).encode()); raw ABI L0 artifact hash is separately pinned."
+    }
+  },
+  "return_meaning": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "item.input_query",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-extraction/publication-source-evidence.json"
+    ]
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "tmc.input.held_equipped_item",
+        "source_game": "legend-of-zelda-the-the-minish-cap",
+        "package": {
+          "path": "local/ir/packages/tmc.input.held_equipped_item/package.json",
+          "sha256": "46251a3981ad25caa2cc0ac15708494eea1b59c745db6f3d8cd2105afdd62102"
+        },
+        "package_sha256": "46251a3981ad25caa2cc0ac15708494eea1b59c745db6f3d8cd2105afdd62102",
+        "behavior": {
+          "path": "local/ir/packages/tmc.input.held_equipped_item/l1.json",
+          "sha256": "00ed565ff3ae96287acb8cfdfbc0c9627e052a95eff25e370ece6b0a3b520c05"
+        },
+        "behavior_sha256": "00ed565ff3ae96287acb8cfdfbc0c9627e052a95eff25e370ece6b0a3b520c05",
+        "native_receipt": {
+          "path": "local/ir/packages/tmc.input.held_equipped_item/receipt.json",
+          "sha256": "47dfe4f966b9211d32423d2b0040eabf84d7075e7687d95693f25f0ec7c5b0c1"
+        },
+        "native_receipt_sha256": "47dfe4f966b9211d32423d2b0040eabf84d7075e7687d95693f25f0ec7c5b0c1",
+        "graph_request": {
+          "path": "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/coverage-pass/held-result-projection.graph.json",
+          "sha256": "6c41821fb5c17a3b42d29d49a6bcc010baf7b59f89ecff9a7229c40c20e0b0f7"
+        },
+        "graph_receipt": {
+          "path": "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/coverage-pass/held-result-projection.after-metadata.result.json",
+          "sha256": "47b433f03c58fa9840df8dbc9d7ffa6e3856961fcfa0a7dd20c925ccea3e42d7"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/metal-slug-advance/coverage-pass/admitted-assembly-snapshot.py",
+          "sha256": "2a45ef9868ac9bff2be1f7b97c00b8501857a8bbb3e4d1a7d0de175c3e9e0758"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/legend-of-zelda-the-the-minish-cap/coverage-pass/catalog-after-metadata.snapshot.json",
+          "sha256": "a170d569e7e444850507a594ce2914f2d99a84f0722a4ef2407cf8817232df13"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "component_instance": "heldInput",
+        "graph_invocation_count": 1,
+        "statement_sha256": "5581e5de7e6b83cda4358dd6551f05b2917175156e5aa06a13e100b40813087f",
+        "source_admission_pins": {
+          "path": "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/coverage-pass/return-binding-resolution.json",
+          "sha256": "7a744e00e606c66ac24e411b9af086c8a2d1c72a3ff156f5ee75c9aeba77cc6d"
+        },
+        "limitations": [
+          "Source-proven fullu32 Boolean return binding only",
+          "Caller lifecycle obligations remain unproven; no native composed graph or whole source system claim"
+        ]
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  }
+}

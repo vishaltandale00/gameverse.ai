@@ -1,0 +1,24 @@
+# Prince of Persia: bounded causal closure
+
+All games remain partial; Mario retains depth priority. This packet maps one ROM-derived mechanic: terrain-class `0x81` triggers a five-unit shared-resource hit, protection blocks repeated hits, and the original timer reopens the hit gate. It is static evidence, with no new executable component or native qualification.
+
+In update owner `0x0800b4f8` (mode 1), calls occur in this order: timer/drain `0x08013620`, terrain query `0x08013d5c`, six-cell hazard predicate `0x080133b4`, then conditional hit `0x080134d8`. The same sequence occurs in `0x0800aa38` and `0x0800b8c4`. The hit saturates the shared byte resource at zero after subtracting five, sets actor flag `0x0200`, and sets its timer to 110. Eligible updates increment it to 121, clear that same flag, and permit another hit. Since the owner ticks before querying the hazard, expiry may permit a hit within the same update. Eleven eligible update calls follow initialization; native frame rate is unproven. Resource-as-health and hazard identity are inferences.
+
+The causal chain is therefore **terrain predicate → resource subtraction/protection → repeat-hit rejection → timer expiry → renewed eligibility**. It is not a complete controller. World gate bit 0 suppresses the timer/predicate. The timer function first runs an independent pulse-gated drain (`0x08013668`); that call cannot be discarded as presentation.
+
+State must remain symbolic and aliased: actor flags have byte and halfword access to the same storage; shared resource is reached through a separate global object and is distinct from actor byte `+0x82`. The `0x60`-stride history serializer `0x08012d10` captures timer, flags and shared resource; restore `0x08013094` restores timer/flags and raises shared resource only when the saved value is greater. Dynamic history extent, references and ordering remain unresolved. Addresses belong to L0/validation bindings, not portable component state.
+
+Compiler-relevant blockers:
+
+- Historical `0x080134d8` lifting failed at unresolved pointer `v28`; timer/predicate failed at missing callee `0x0806bbf0`.
+- The apparent decompiler jump-table exits are cached HighFunction `CALLIND` to input `lr` at `0x0801361a`, `0x08013662`, and `0x080134d6`. Repair return/ABI lowering before classifying these as gameplay callbacks.
+- Effect wrapper `0x08027940` calls `0x08027578` with no recovered argument operands in L0, although callers supply position/value/style/facing. The latter allocates number-effect actors through shared allocator `0x08081ac8`; its side effects are not yet safe to omit.
+- Gate `0x0806bbf0`, pulse `0x08091504`, remainder `0x08094d64`, and audio/event `0x08091634` have own-ROM function records but no cached L0 in this game. C is evidence/oracle only and must never become compiler input.
+
+[packet.json](packet.json) pins the ROM, full export, and each available target HighFunction by SHA256, with exact addresses, call PCs, prioritized dependencies, state aliases, and blockers. ROM SHA256 is `36d0d7abff2b6cfa8839f139a51ab5e1c10573effc99a8008af1808f4d9cf355`; full functions export SHA256 is `a7b33d8fbaa5bf8d7fb96e55c56e9b1f2bd0d50dd2259d860ae29912117ed49f`.
+
+The broader cached export contains 1,910 records. All 800 cached HighFunction files were compared with the bounded census; none are extra beyond it. The 801st JSON is `export-summary.json`, not a function. A local tree search found no additional Prince of Persia L0/qualification/receipt/report JSON outside the queue-run directory. Existing captures do not qualify this closure. Historical discovery retained 19 static candidates and zero native-qualified/composable/closure-ready counts; its export and static census took 12.753879 and 0.474361 seconds respectively (13.235870 seconds total, overlapping those stages). No historical finite native qualification for this closure was found.
+
+This pass checked all 16 target records and verified both ROM/export hashes. Input parsing, target hashing, ROM hashing and assertions took **0.038609 seconds** on the current machine; this excludes earlier investigation and artifact writing. No builds, native runs, dependencies, compiler changes or global queue changes were made. Queue/build/simulation/native durations and before/after comparisons are unavailable for this static-only work.
+
+Next: compiler owner should resolve aliased shared roots and `lr` return lowering using the cached functions, then obtain a bounded missing-dependency L0 export when authorized. Qualify resource boundaries, timer 110/120/121, world-gate suppression, same-update expiry/re-hit, history restore and allocator/service side effects through finite original-versus-emitted native cases before publishing a component. Terrain, terminal outcomes, scene progression and full-game behavior remain open.

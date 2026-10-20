@@ -113,7 +113,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#top_down_projection",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -136,7 +136,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#eight_direction_walk",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -169,7 +169,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#tile_collision_and_sliding",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -197,7 +197,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#minish_shrink",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -280,6 +280,22 @@
         {
           "game_id": "legend-of-zelda-the-the-minish-cap",
           "component_id": "four_sword_clones"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "sword_actions_own_rom"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "bilateral_contact_combat_own_rom"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "octorok_patrol_aim_spit_own_rom"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "learned_sword_capability_gate_own_rom"
         }
       ],
       "requires": [
@@ -307,7 +323,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_toolkit",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -335,7 +351,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#sword_combat",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -358,7 +374,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_vulnerability_ai",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -391,7 +407,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#four_sword_clones",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -410,10 +426,47 @@
             }
           ],
           "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/sword-qualification.json",
+          "scope": "9-action sword controller; controlled native house fixture, not story acquisition, enemy damage or whole-campaign qualification",
+          "confidence": 0.99
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/sword-contact-qualification.json",
+          "scope": "All3native sword actor actions plus frame-specific hitboxes/contact response; actual renderer/controller/actor integration in controlled fixture",
+          "confidence": 0.99
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/contact-qualification.json",
+          "scope": "Own-ROM sword action controller + contact actor + bilateral damage/resource transaction, composed into entire native cartridge; controlled sword/skill/enemy grant, not story acquisition or campaign",
+          "confidence": 0.99
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/octorok-qualification.json",
+          "scope": "Recovered complete ordinary4state/3subtype Octorok AI alongside recovered sword/contact packages; controlled native grant; native move/collision/projectile-update/generic death services retained",
+          "confidence": 0.99
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/progression-qualification.json",
+          "scope": "Persistent inventory transaction\u2192derived skill mask\u2192real sword legal-action and80/40charge gates, alongside4prior recovered packages. Controlled event delivery, not trainer/story route or world gate",
+          "confidence": 0.99
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "assembly_status": "Five own-ROM IR packages assemble sword actions, hitboxes, damage/recoil, enemy patrol/aim/spit and persistent skill gates. Native controlled encounters and learning events qualified; story/world routes, matrix selection, generic death and cross-game adapters remain explicit limits.",
+      "native_package_refs": [
+        "research/deep-extraction/minish-cap/sword.package.json",
+        "research/deep-extraction/minish-cap/sword-contact.package.json",
+        "research/deep-extraction/minish-cap/contact.package.json",
+        "research/deep-extraction/minish-cap/octorok.package.json",
+        "research/deep-extraction/minish-cap/progression.package.json"
+      ]
     },
     {
       "id": "legend-of-zelda-the-the-minish-cap:ai",
@@ -476,7 +529,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#aligned_charge_ai",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -494,7 +547,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#wander_shooter_ai",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -517,7 +570,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hopping_pursuer_ai",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -540,7 +593,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#guarded_swordsman_ai",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -593,6 +646,10 @@
         {
           "game_id": "legend-of-zelda-the-the-minish-cap",
           "component_id": "flag_banks"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "learned_sword_capability_gate_own_rom"
         }
       ],
       "requires": [
@@ -620,7 +677,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#dungeon_lock_and_key",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -653,7 +710,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_gated_obstacles",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -686,7 +743,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#kinstone_fusion",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -729,7 +786,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#flag_banks",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -743,10 +800,19 @@
             }
           ],
           "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "own_rom_native_qualification",
+          "ref": "research/deep-extraction/minish-cap/progression-qualification.json",
+          "scope": "Persistent inventory transaction\u2192derived skill mask\u2192real sword legal-action and80/40charge gates, alongside4prior recovered packages. Controlled event delivery, not trainer/story route or world gate",
+          "confidence": 0.99
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "native_package_refs": [
+        "research/deep-extraction/minish-cap/progression.package.json"
+      ]
     },
     {
       "id": "legend-of-zelda-the-the-minish-cap:story",
@@ -808,7 +874,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#story_progress_gate",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -826,7 +892,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hint_systems",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -849,7 +915,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#dialogue_and_scripts",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -867,7 +933,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#story_intro_and_credits",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "capture_frame",
@@ -957,7 +1023,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#scale_parallax_backgrounds",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -975,7 +1041,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#bg_layer_stack",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -1003,7 +1069,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hud",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -1026,7 +1092,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#music_system",
-          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "canonical_file_sha256": "99a4b879b72f582c9e066c8281bafed44bbbe2d298dfa4e6a73dba4fc8670798",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -1416,7 +1482,599 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:54:30.871994+00:00",
+      "rom_sha1": "b4bd50e4131b027c334547b4524e2dbbd4227130",
+      "status": "ok",
+      "function_records": 7048,
+      "pseudo_c_generated": 7048,
+      "process_wall_s": 22.3,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "Five own-ROM packages compose sword action, contact actor/hitboxes, damage/recoil/iframes, Octorok patrol/aim/spit and persistent learned-capability gates. Native controlled enemy defeat, projectiles and acquisition\u2192charge/spin gates match original trace/video; story/world routes and remaining native services remain explicit limits.",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/legend-of-zelda-the-the-minish-cap/legend-of-zelda-the-the-minish-cap/functions.jsonl",
+      "export_sha256": "da96d1412e6aefa74a9dc3b92c92778794d67a9ecd13419643f15dc1c8afec05",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/legend-of-zelda-the-the-minish-cap/legend-of-zelda-the-the-minish-cap/summary.json",
+      "summary_sha256": "0b88815729a5b8d810bbf8dd43cf56f05b2cb5b42f6ca8253f58bf9ca0beef02",
+      "warning_function_count": 135,
+      "unknown_register_function_count": 33,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x08016b34",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08016b6c",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x08016bdc",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08016bf8",
+          "io_ref": [
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x08016c3c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08016ca8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08016cf4",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2PA",
+            "BG2PB",
+            "BG2PC",
+            "BG2PD",
+            "BG2VOFS",
+            "BG2X",
+            "BG2X+2",
+            "BG2Y",
+            "BG2Y+2",
+            "BG3CNT",
+            "BG3HOFS",
+            "BG3PA",
+            "BG3PB",
+            "BG3PC",
+            "BG3PD",
+            "BG3VOFS",
+            "BG3X",
+            "BG3X+2",
+            "BG3Y",
+            "BG3Y+2",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "MOSAIC",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x08016df8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08016e78",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c25c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c2f0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c5e0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c6b0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801c85c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801d5ec",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801d610",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801d66c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801d6c0",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x0801d754",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801d7ec",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801da90",
+          "io_ref": [
+            "DISPCNT",
+            "DMA0CNT_H",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x0801dda0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801e160",
+          "io_ref": [
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0801e1ec",
+          "io_ref": [
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x0801e49c",
+          "io_ref": [
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08050b3c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08055e6c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08055f70",
+          "io_ref": [
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08056020",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA0CNT_H",
+            "DMA0SAD",
+            "DMA1CNT_H",
+            "DMA2CNT_H",
+            "DMA3CNT_H",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0805616c",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0SAD",
+            "DMA1CNT_L",
+            "DMA1SAD",
+            "DMA2CNT_L",
+            "DMA2SAD",
+            "DMA3CNT_L",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08056260",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "IME",
+            "KEYCNT"
+          ]
+        },
+        {
+          "entry": "0x0805732c",
+          "io_ref": [
+            "BG3HOFS"
+          ]
+        },
+        {
+          "entry": "0x080575c8",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08057e7c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08058004",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08058084",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080580b0",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x080582a0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080582f8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0805884c",
+          "io_ref": [
+            "BG2PA"
+          ]
+        },
+        {
+          "entry": "0x0805a114",
+          "io_ref": [
+            "BG3HOFS"
+          ]
+        },
+        {
+          "entry": "0x0805da08",
+          "io_ref": [
+            "BG3HOFS"
+          ]
+        },
+        {
+          "entry": "0x0805e870",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0806d138",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0806d164",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0807d280",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a4418",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a5f48",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080a67c4",
+          "io_ref": [
+            "BG3CNT"
+          ]
+        },
+        {
+          "entry": "0x080ade74",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080af320",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080aff48",
+          "io_ref": [
+            "IO_0e0"
+          ]
+        },
+        {
+          "entry": "0x080b022c",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_X+1",
+            "SOUND2CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_H+1",
+            "SOUND4CNT_L+1",
+            "SOUNDCNT_L",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x080b0370",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "FIFO_A",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_H",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x080b04a8",
+          "io_ref": [
+            "SOUNDBIAS+1"
+          ]
+        },
+        {
+          "entry": "0x080b0590",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "TM0CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080b0600",
+          "io_ref": [
+            "DMA1CNT_H",
+            "TM0CNT_H",
+            "TM0CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080b0674",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080b0a98",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_L+1"
+          ]
+        },
+        {
+          "entry": "0x080b0b54",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_L",
+            "SOUND1CNT_L+1",
+            "SOUND1CNT_X",
+            "SOUND2CNT_H",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_H+1",
+            "SOUND3CNT_L",
+            "SOUND3CNT_L+1",
+            "SOUND3CNT_X",
+            "SOUND4CNT_H",
+            "SOUND4CNT_L+1",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_L+1",
+            "SOUNDCNT_X",
+            "WAVE_RAM",
+            "WAVE_RAM+12",
+            "WAVE_RAM+4",
+            "WAVE_RAM+8"
+          ]
+        },
+        {
+          "entry": "0x080b1504",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080b1568",
+          "io_ref": [
+            "DMA3CNT_H",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080b16ac",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/legend-of-zelda-the-the-minish-cap/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 0,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review",
+      "assemblable_packages": [
+        "research/deep-extraction/minish-cap/sword.package.json",
+        "research/deep-extraction/minish-cap/sword-contact.package.json",
+        "research/deep-extraction/minish-cap/contact.package.json",
+        "research/deep-extraction/minish-cap/octorok.package.json",
+        "research/deep-extraction/minish-cap/progression.package.json"
+      ],
+      "gameplay_evidence_ref": "research/deep-extraction/minish-cap/contact-qualification.json",
+      "enemy_AI_evidence_ref": "research/deep-extraction/minish-cap/octorok-qualification.json",
+      "progression_evidence_ref": "research/deep-extraction/minish-cap/progression-qualification.json"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

@@ -1,0 +1,151 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "leafgreen.species.ability",
+  "label": "Select species ability and publish last-used ability",
+  "role": "species_traits",
+  "source_game": "pokemon-leafgreen-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/leafgreen.species.ability/package.json",
+  "package_sha256": "1f8ed84992b613a4b1af3646e3b2d175935320b730fcb1ab670818e1a4311989",
+  "behavior_sha256": "9d8f701edcfeff5f1e2c13a4e974ce9a1e6f9637ec29e274d9f5f6d07f792615",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "8faa710368ae2975345c4d32f3c536e7ffa8910c9a69f3294634f702a9768a21"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "domain": {
+        "unsigned_max": 411,
+        "unsigned_min": 0
+      },
+      "name": "param_0",
+      "storage_type": "u32"
+    },
+    {
+      "domain": {},
+      "name": "param_1",
+      "storage_type": "u8"
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_ability_identity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "leafgreen.last_used_ability",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+          "local/ir/pokemon-family-coverage-20261016/delivery001/source-mapping.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "Original own-ROM species table; ability writes canonical original last-used byte",
+    "clock": "Explicit source invocation",
+    "phase": "Monster construction/query and battle metadata, original consumers retained",
+    "ordering": "Roots share immutable table; no new direct call or atomic pair inferred"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/leafgreen.species.ability/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original/rebuilt4096 vector proof, not full game campaign",
+    "Original source matching ELF unavailable; source mapping uses exact independently source-linked instruction template",
+    "Outside species0..411 unsupported; no invalid-species fallback invented",
+    "Captured immutable data bytes distinct from behavior",
+    "Monster record decryption/construction and battle effect lifecycle remain host",
+    "Source template authority is the existing exact FireRed Rev1 source-build ELF; Ruby/LeafGreen have own-ROM+L0+unique-template correspondence, no matching own-game ELF.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+    "sha256": "6a8f236991c2ad4787279d250337d6a43a56e34fa748c15bf718b78651034565"
+  },
+  "return_meaning": {
+    "quantity": "source_ability_identity",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "leafgreen.species_traits",
+    "confidence": 1.0,
+    "evidence": [
+      "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+      "local/ir/pokemon-family-coverage-20261016/delivery001/source-mapping.json"
+    ],
+    "encoding_scope": "u8 source ability enum"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_species_identity",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "leafgreen.species_traits",
+      "confidence": 1.0,
+      "evidence": [
+        "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+        "local/ir/pokemon-family-coverage-20261016/delivery001/source-mapping.json"
+      ],
+      "domain_semantics": "Species0..411; all source valid records"
+    },
+    "param_1": {
+      "quantity": "alternate_ability_selector",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "leafgreen.species_traits",
+      "confidence": 1.0,
+      "evidence": [
+        "local/ir/pokemon-family-coverage-20261016/frozen-runtime/local/leafgreen/source-contract.json",
+        "local/ir/pokemon-family-coverage-20261016/delivery001/source-mapping.json"
+      ],
+      "domain_semantics": "Every u8 value; zero selects first, every nonzero selects second"
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "pokemon-leafgreen-version",
+    "entry": "08040d4c"
+  },
+  "domain_contract_fingerprint": "346db8f67ab5969c17750607d6a24991292ce091a0cecb55490b96eb681126a5",
+  "specialization_subset": false
+}

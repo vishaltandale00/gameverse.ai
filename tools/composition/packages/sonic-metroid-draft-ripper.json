@@ -1,0 +1,158 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.mzm_ripper",
+  "version": "0.1.0",
+  "concept": {
+    "role": "ecology.recovered_mzm_live_flyer"
+  },
+  "native_implementation": {
+    "origin": "self_decompilation",
+    "game_id": "metroid-zero-mission",
+    "recovery": {
+      "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "ranges": [
+        {
+          "address": "0x801bd8c",
+          "size": 94,
+          "instruction_sha256": "cfa047c4861e066fcf4925ca1e3fc8858ccb85b8140925e262b8479cba69427e",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801bdfc",
+          "size": 24,
+          "instruction_sha256": "4efb5a1bd582f17faaf4e8f463fa846431dc186341bf3404d7615dc0dc068870",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801be1c",
+          "size": 92,
+          "instruction_sha256": "5cac2b13cedd932221c5f0f07c13037ce7147c10663420a6809aebccca113e14",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801be88",
+          "size": 24,
+          "instruction_sha256": "76e25497adc9a5fb9497c28539cb63d36436caebdca3413c13eb111b76eca1ca",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801bea8",
+          "size": 46,
+          "instruction_sha256": "335d58e766d0ae72938fca923331866a77fd3583e235cc4f60771e7c3acec993",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801bee0",
+          "size": 22,
+          "instruction_sha256": "f501f4e33aed36ee4496db2783dd486c8c584ef2e1978087aa902bdf6028ec1e",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x801befc",
+          "size": 118,
+          "instruction_sha256": "4f0b6cc0107a8ce12e482465ef2b228db07b0bd9c6fb2a9bd0a511e6a23e017d",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x800d32c",
+          "size": 64,
+          "instruction_sha256": "4e97e85def0720d9eb7d9c7e3efecb97f330c0194e41c9aeba61c6cd0f4aae83",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x800fbc8",
+          "size": 50,
+          "instruction_sha256": "fc79b6372bc6f84c72822257dd085d1488b9f0c42c09949abb049c4f5d03ffc3",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        },
+        {
+          "address": "0x800fc00",
+          "size": 54,
+          "instruction_sha256": "cae3c6e5c32da4dd34fbaca56dd2adb46cc05aded3cec7ff4adfa0b4926b0a7b",
+          "boundary_status": "own-ROM function entry/return checked by originalnative execution",
+          "role": "live_controller_or_animation"
+        }
+      ],
+      "lift_ref": "tools/composition/components/sonic_metroid/mzm_ripper.c",
+      "lift_sha256": "d652252eef9e69e49b42e90396dcc0d5fb37009276983e441871a923071c8c4a",
+      "semantic_status": "qualified_original_live_controller_with_explicit_terrain_animation_ports",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "explicitanimationduration/maxHPports"
+        ],
+        "ram": [],
+        "hardware": [],
+        "relocations": [
+          "all implementation addresses linkerowned; no foreignROM function calls"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/mzm-ripper-qualification-05/report.json"
+      ],
+      "unknowns": [
+        "No claim of full original MZM graphics engine/audio/camera imported",
+        "Common source hitstun and death scheduler are external dependencies; source-live AI package is not whole-MZM decompilation",
+        "Native campaign patrol/freeze/resume, exact originalVRAM/palette/OAM witnesses are recorded separately in research/requests/mzm-ripper-native-game-proof.json; nativefieldwallturn notyetcaptured."
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "u16x2",
+        "quantity": "position",
+        "unit": "1/4px",
+        "frame": "world-y-down"
+      }
+    },
+    {
+      "id": "terrain",
+      "type": {
+        "scalar": "u8",
+        "quantity": "collisionclassification",
+        "unit": "code",
+        "frame": "probe-y-minus4px-x-plusminus9px"
+      }
+    }
+  ],
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/mzm_ripper.c",
+          "sha256": "d652252eef9e69e49b42e90396dcc0d5fb37009276983e441871a923071c8c4a"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+          "sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07"
+        },
+        {
+          "ref": "research/requests/mzm-ripper-live-controller.json",
+          "sha256": "790f881c16560679a4ab209da9196b03d32dac61dbc1ffce42557bac791421dd"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/mzm_ripper.c"
+      ],
+      "requires": [],
+      "exports": [],
+      "state_bindings": [],
+      "host_calls": []
+    }
+  }
+}

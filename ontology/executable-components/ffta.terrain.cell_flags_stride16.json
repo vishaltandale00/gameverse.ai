@@ -1,0 +1,141 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffta.terrain.cell_flags_stride16",
+  "label": "Read terrain cell flags in a bounded stride16 domain",
+  "role": "terrain.cell_flags_query",
+  "source_game": "final-fantasy-tactics-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ffta.terrain.cell_flags_stride16/package.json",
+  "package_sha256": "1493cdc5d11f615169974c95915c715e3480446d0c395302b89e661264125194",
+  "behavior_sha256": "c7ec854e6edfaec8b959f895b893a174b72a4400689373a5118733b56077df1a",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "25d2f25408808d3c81f5219756f8d30cfb05da387fab3b95d54036f8a103e826"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 15
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "terrain_row_stride",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.row_major",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 511,
+      "semantic_type": {
+        "quantity": "interleaved_terrain_backing_byte_window",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.row_major_storage",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 511
+      }
+    ]
+  },
+  "lifecycle": {
+    "invoke": "explicit original-function invocation; no frame rate inferred",
+    "storage": "borrowed current terrain context; no owned world state created",
+    "teardown": "none; caller retains references",
+    "unknown": "grid initialization/reload/owner lifetime and original caller schedule unresolved"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ffta.terrain.cell_flags_stride16/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic helper states only; no native root/L2/gameplay or whole-game qualification.",
+    "Original terrain bit meanings, unit capability identities, allocation and reload lifetimes remain unresolved.",
+    "No compiler, test, native, JVM or lift execution in this metadata publication pass.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json",
+    "sha256": "675aed690993ee4f7dc0011f5236e456385dd31bb47463aa18e676af9b8d7d19"
+  },
+  "return_meaning": {
+    "quantity": "terrain_flags_bitset",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "battle_grid.cell_flags",
+    "confidence": 0.95,
+    "evidence": [
+      "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+    ]
+  }
+}

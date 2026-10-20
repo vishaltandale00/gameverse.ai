@@ -1,0 +1,201 @@
+{
+  "ancestor": {
+    "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/library-capability-v1.json",
+    "sha256": "a74dc8689683529bd329b3db6ebed0b312e5aca17655ffd6f00bf0e6cd1911a4"
+  },
+  "canonicalstate": {
+    "adapter_entity_fields": [
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_0",
+        "offset": 0,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_1",
+        "offset": 4,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_2",
+        "offset": 8,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_3",
+        "offset": 12,
+        "owner": "entity",
+        "width": 32
+      },
+      {
+        "address": null,
+        "argument": "r0",
+        "name": "field_4",
+        "offset": 3088,
+        "owner": "entity",
+        "width": 8
+      }
+    ],
+    "alias_rule": "Bind actualsourceowner memory consistently through original15198wrapper and150acemptyconsumer, no detachedfieldcopies outside mechanical synchronousbinder",
+    "owner": "Borrowed SortedResourceBucketContainer entityr0; not priorchoiceSceneContext/linkedresourcequeue",
+    "readonly_assets": [],
+    "storage": "Canonicalfourbucketheads/128recordslots/count in same sourceowner; initializer doesnotclearrecordbytes orfreeanything"
+  },
+  "counts": {
+    "existing_choice_predicate_counted": false,
+    "fresh_original_native_comparisons": 128,
+    "fresh_rebuilt_native_comparisons": 128,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 1,
+    "new_native_runs_for_publication": 0,
+    "original_context_cases": 4,
+    "prospective_new_central_packages": 1,
+    "rebuilt_context_cases": 4
+  },
+  "event_order": [
+    "Original15198initializerwrapper invokes08015178 literalcallback",
+    "Freshautomaticallyrecovered15178body resetsfouru32heads and oneu8recordcount tozero",
+    "Original150acemptyconsumer reads samezeroheads, executesnocallbacks, re-clearsheads/count andpreservesotherbytes",
+    "Fourcandidatefixturecallsactually entersemittedbinding; noopemittedbodymutant failsrequiredzerooutcome exit6"
+  ],
+  "exactpins": {
+    "adapter": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/validation-adapter.json",
+      "sha256": "5456337e6cefd430973726fa6eb1be4f499f86ad665064fadf8b2755567e51ed"
+    },
+    "context_proof_and_negative": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-context-result.json",
+      "sha256": "d5743442874956fff5e560eea35718656953e5aa56b6f8bc637d90480321aec3"
+    },
+    "generated_c": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/generated.c",
+      "sha256": "2a297d8538fb8cc24ad0355b6270dec55276b25539c6bb757ecdc1dcc26e1765"
+    },
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/ff12-bucket-reset-context-qc.json",
+      "sha256": "a649f7004ea2cacedd4dc60020a38b2902037b2534dc6cc6b9a984272fe60940"
+    },
+    "independent_ir_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/ff12-bucket-reset-ir-qc.json",
+      "sha256": "c84ad481d9b9bc477c9d803c75f01e296a1dc78ae239c10e79a53edc3310a903"
+    },
+    "l0": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/l0.json",
+      "sha256": "73a8192b7c8fe81fef1cbf0391683372a28fedf467192cce214d0cde52908a49"
+    },
+    "l1": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/l1.json",
+      "sha256": "202067123bfedeb6e0ac1816972cff48e177a77f491b99d66d83e263d1572a0b"
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/original-proof.json",
+      "sha256": "91529c2c2f309b06864378e14a9d4e691a97de1c03581109c35edcbf2f1fc8e6"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/provider-report.json",
+      "sha256": "b1606d53856c6dafe1f7eef43217dd5f9dc72c1df876f62433fe685219116352"
+    },
+    "publication_candidates": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/publication-candidates.json",
+      "sha256": "4edd54263ce33bdd6749b5ff2e21473eee469a52c0721331367aa61401a830d8"
+    },
+    "queue_link_cell_frontier": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/queue-link-cell-frontier.json",
+      "sha256": "00b4359297092f548b3a2a4c72ccd7078264fb6a05040a5abf528365363ae839"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-bucket-reset-ir-002/bucket_reset/rebuilt-proof.json",
+      "sha256": "e435a5ae46a856997cc5311686f2a36a7f49d2769cb58a1768d7e6199b806d82"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/queue-closure-002/reset-source-contract.json",
+      "sha256": "61b58d2ce6324d931cbda694ad6db4e313da6a0a9857524aa3b24b2efb8d9870"
+    }
+  },
+  "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+  "gaps": [
+    "Source15114insertion/sortedorder/active150accallbackconsumer not jointlyqualified",
+    "Actualparentconstructors/gameplay/input/render/save/IRQ notqualified",
+    "Originalchoicequeue registration08015210/unlink080151ec requireunsupportedcanonicalwritablelinkcell references",
+    "Relatedchoiceconstructor128recordinitializer08015070 exceedshard64cap; no bypass"
+  ],
+  "id": "ff12.sorted-resource-buckets.source-reset.v1",
+  "module_id": "ff12.resources.sorted_bucket_reset",
+  "native_eligibility": {
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "actual_emitted_binding_entries": 4,
+    "certificate_boundary": "Leafnativeproof+exactexpectedcontext/negative independenteligibility review; not semanticadmissionfrombyteQCalone orfullactiveconsumer proof",
+    "context_cases": {
+      "original": 4,
+      "rebuilt": 4
+    },
+    "fixture_scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "independent_review": "PASS finite scope; not generalclosedsubstitution certificate",
+    "kind": "finite_original_and_reconstructed_leaf_parity_plus_actual_original_wrapper_emptyconsumer_context",
+    "limits": {
+      "entity_bytes": 3104,
+      "entity_span_limit": 16384,
+      "instructions_per_call": 2048,
+      "object_count": 1,
+      "object_stride": 8192,
+      "reserved_object_bytes": 32768,
+      "stage_timeout_s": 30,
+      "vectors": 128
+    },
+    "original_rom_sha256": "bbafb77d2be577ca0a4bfcbec9fc3004b589f24478ec5e406d61645296449422",
+    "rebuilt_rom_sha256": "0b80ecac5019d5846c4dce0f16f84a3fd5f90814aab288aec90cb9674b6dbaa2",
+    "vectors": {
+      "fresh_original": 128,
+      "fresh_rebuilt": 128
+    }
+  },
+  "originalhostprerequisites": [
+    "Accessiblecanonicalownerextent0xc11bytes and originalsourcewrapper15198/consumer150ac retained",
+    "Nativeproof excludesconcurrent/IRQobservedintermediatewriteordering",
+    "Sortedrecordbytes are preservedbut maynotbeconsideredliveaftercountreset; activeinsertion/callbackpolicy remainsoriginalhostopen",
+    "Originalchoicequeue canonicalprev/tailcell aliasfeature stillblocked and distinct"
+  ],
+  "package_ids": [
+    "ff12.resources.sorted_bucket_reset"
+  ],
+  "proposal_status": "independently-reviewed-finite-native-witness-central-publication-pending",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": true,
+    "downstream_joint_lifecycle_scope": "Originalsourceinitializerwrapper and actualsourceemptybucketconsumer only",
+    "embedded_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 14,
+    "mechanical_binding_bytes": 54,
+    "original_entry": "08015178",
+    "portable_L1": true,
+    "raw_difference_bytes": 75,
+    "replacement_entry_veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "08015178"
+  ],
+  "timing": {
+    "context_total_seconds": 0.31339487499999996,
+    "provider_total_seconds": 1.265373208,
+    "queue_seconds": null,
+    "scope": "Separateboundedprovider andcontextstages; no newexecutionforcapabilitymetadata"
+  }
+}

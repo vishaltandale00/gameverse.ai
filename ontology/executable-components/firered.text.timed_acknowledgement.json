@@ -1,0 +1,262 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "firered.text.timed_acknowledgement",
+  "label": "Advance timed page wait and return acknowledgement",
+  "role": "interaction",
+  "source_game": "pokemon-firered-version",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/firered.text.timed_acknowledgement/package.json",
+  "package_sha256": "142db2a5783031bc999a0d22f5af76f2f20f27461f4d8926f04286e5dfd01d79",
+  "behavior_sha256": "be0c3d6bc3e52a2023a8cf8e6d5e3f776b16292d22110e2e7d5eb18e98511f64",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "2c456e31a5b6b0c3beca457abf9e9fdde608ab26289e36308a5afde627a5e707"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "text_wait_invocation_counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "text_context",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+          "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "caller-owned shared text or audio context",
+    "clock": "explicit invocation",
+    "ordering": "Original call context and effects specified in source_contract; no assumed video-frame clock"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/firered.text.timed_acknowledgement/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Metadata annotations refer to unchanged actual IR fields; qualification does not extend to text controller or full L2.",
+    "Shared context alias and caller sequencing must be enforced when composed.",
+    "Video frames are not evidenced as one-to-one with text invocations.",
+    "Opaque fields intentionally unannotated in field_annotations.",
+    "Finite 256-vector leaf equivalence only; no complete controller or L2 qualification.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "system": {
+      "path": "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json",
+      "sha256": "c548ffa6b3ad12b1691c8eacf2d4dfa5e8c8284df6d2029c8d09d9672d73327a"
+    },
+    "provenance": {
+      "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-firered-version/pokemon-firered-version/functions.jsonl",
+      "lines": [
+        140,
+        140
+      ],
+      "symbol": "FUN_0800561c",
+      "sourceKind": "own_rom_decompiler_analysis_oracle",
+      "compilerInput": false
+    },
+    "fieldMapping": [
+      {
+        "irName": "field_0",
+        "irKind": "field",
+        "storageType": "u8",
+        "symbol": "text.waitCounter",
+        "quantity": "text_wait_invocation_counter",
+        "unit": {
+          "kind": "invocation_count",
+          "numerator": 1,
+          "denominator": 1,
+          "clock": "explicit text-wait invocation; video-frame equivalence unproved"
+        },
+        "frame": "text_context",
+        "ownership": {
+          "kind": "shared_reference",
+          "lifetime": "caller-owned context lifetime; native leaf qualification uses isolated fixtures",
+          "mutation": "written"
+        },
+        "validationAdapter": {
+          "field": "field_0",
+          "owner": "entity",
+          "widthBits": 8,
+          "argument": "r0",
+          "offsetBytes": 22
+        },
+        "evidence": [
+          {
+            "path": "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+            "op": "op16",
+            "pc": "0x08005636",
+            "observedEffect": "If pre-call counter differs from selected threshold, increment modulo256; return true only if pre-call counter already equals threshold."
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-firered-version/pokemon-firered-version/functions.jsonl",
+            "lines": [
+              140,
+              140
+            ],
+            "symbol": "FUN_0800561c",
+            "role": "decompiler analysis oracle; not compiler input"
+          }
+        ],
+        "annotationStatus": "source_observed_metadata_does_not_change_qualified_l1",
+        "opaqueUnknowns": []
+      },
+      {
+        "irName": "field_1",
+        "irKind": "field",
+        "storageType": "u8",
+        "symbol": "session.waitThresholdSelector",
+        "quantity": "opaque_session_selector",
+        "unit": "unknown",
+        "frame": "shared_session_context",
+        "ownership": {
+          "kind": "shared_reference",
+          "lifetime": "caller-owned context lifetime; native leaf qualification uses isolated fixtures",
+          "mutation": "read_only"
+        },
+        "validationAdapter": {
+          "field": "field_1",
+          "owner": "global",
+          "widthBits": 8,
+          "argument": null,
+          "address": "0x203adfa"
+        },
+        "evidence": [
+          {
+            "path": "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+            "op": "op0",
+            "pc": "0x08005624",
+            "observedEffect": "Compare to2; choose threshold50 when equal,120 otherwise. Broader session meaning unknown."
+          },
+          {
+            "path": "local/re/experiments/20261016-binary-corpus-round2/pokemon-firered-version/pokemon-firered-version/functions.jsonl",
+            "lines": [
+              140,
+              140
+            ],
+            "symbol": "FUN_0800561c",
+            "role": "decompiler analysis oracle; not compiler input"
+          }
+        ],
+        "annotationStatus": "source_observed_metadata_does_not_change_qualified_l1",
+        "opaqueUnknowns": [
+          "Physical unit and broader producer/state meaning unresolved."
+        ]
+      }
+    ],
+    "returnSemantic": {
+      "storageType": "u8",
+      "quantity": "acknowledgement_boolean",
+      "unit": "dimensionless",
+      "frame": "pre_invocation_wait_counter",
+      "evidence": "Return compares saved pre-increment counter to selected50/120 threshold."
+    },
+    "domains": {
+      "parameters": [],
+      "fields": [
+        {
+          "irName": "field_0",
+          "storageDomain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255
+          },
+          "restriction": "No narrowed gameplay domain was asserted for original finite qualification."
+        },
+        {
+          "irName": "field_1",
+          "storageDomain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255
+          },
+          "restriction": "No narrowed gameplay domain was asserted for original finite qualification."
+        }
+      ]
+    },
+    "services": {
+      "runtimeExternalCalls": [],
+      "externalStateReads": [
+        "session.waitThresholdSelector"
+      ],
+      "effectScope": "Leaf-only state effects; no rendering/audio/memory service substitution."
+    },
+    "aliasConstraints": [],
+    "qualification": {
+      "status": "finite_native_pass",
+      "receipt": "local/ir/fleet-next/pokemon-firered-version/lift/0800561c/receipt.json",
+      "receiptSha256": "36ee8965e0139b13a3b8cef3212285d4db3b6f24537bc0b81e9e9e0f599ee384",
+      "vectors": 256,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "outcome": "pass",
+      "fullSubsystemQualified": false
+    },
+    "originalL0Identity": {
+      "path": "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+      "sha256": "477951cc07f255de72110042156f2f9d6ce228d681ac11e6a5f989de5fc90cef",
+      "canonicalJsonSha256": "619d5530b250e7121b7dbb581674118ebaf32628a5fe734749199f50510f772b",
+      "adapterL0Sha256": "619d5530b250e7121b7dbb581674118ebaf32628a5fe734749199f50510f772b",
+      "canonicalAlgorithm": "SHA256(json.dumps(parsed_L0, sort_keys=True).encode()); raw file hash separate"
+    },
+    "validationAdapterIdentity": {
+      "rawSha256": "a835f87b83b5f2cb2dcb4e90d11ea8590cc9fbac898983776cb9b47b6da5230e",
+      "canonicalJsonSha256": "7923c16d248498c13370cd99470a3238aa215488208e635b0efb37e8e5b48159",
+      "canonicalAlgorithm": "SHA256(json.dumps(parsed_adapter, sort_keys=True).encode())"
+    },
+    "preconditions": [
+      "Input record and referenced context storage must not alias the oracle saved stack; source receipt ABI assumptions retained.",
+      "Preserve shared packed fields and same-context identity when sequencing the leaves."
+    ],
+    "openSystemServices": [
+      "Input MMIO snapshot binding",
+      "Canonical window rendering/backing memory",
+      "BIOS0x0c memory effect",
+      "Bounded sound-driver loop"
+    ],
+    "unitLimits": "Wait counters count explicit text-wait invocations; no numeric conversion to video frames is evidenced."
+  },
+  "return_meaning": {
+    "quantity": "acknowledgement_boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "text_wait_pre_invocation_counter",
+    "confidence": 0.95,
+    "evidence": [
+      "local/ir/queue-runs/20261016T091004/pokemon-firered-version/l0/0800561c.json",
+      "research/deep-extraction/resume/pokemon-firered-version/next-extraction/system.json"
+    ]
+  }
+}

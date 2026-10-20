@@ -1,0 +1,19 @@
+# Combat and progression capability bundles
+
+Five source module records expose meaningful responsibilities without making a separate instance for every function or card. `bundles.json` mirrors `src/game-system-combat-progression-bundles.js`; `moduleId` is the identity used to share one chosen module between role cards. `existingCandidateIds` enrich current candidates; Minish's `sourceOnlyCandidateIds` must keep the sword consumer source-only.
+
+| Bundle | Responsibilities included together | Usable boundary | Still missing |
+| --- | --- | --- | --- |
+| Zero Mission | HP mutation, lethal return/state, packed recovery countdown and palette selector | Existing accepted-damage → later eligible-reaction core, imported once | Contact admission, enemy scheduler/identity services, rendering and species death/drop/retirement |
+| Minish Cap | Learned ownership, explicit capability refresh and equipped held-input query | Existing shared-bank learning core, imported once | Trainer/save delivery and full charged sword consumer, animation, canonical actor, terrain and cleanup |
+| Aria | Ownership query, duplicate handling, conditional bank rollback and final adjustment | One category-specific original acquisition root, selected from four admitted graph variants | World pickup, claimed marker, equip, casting, MP/slot/effect lifecycle and save |
+| Wario | Stored protection predicate from the canonical player timer | Single zero-selector query with typed stored output | Actual hurt/recovery/aging/hazard lifecycle; return-only helpers omitted |
+| Tekken | World box materialization and geometry reset on one actor | Shared embedded geometry publication/reset graph | Complete4×4 separator, source schedule, contact/impact/HP/KO and round progression |
+
+Aria's four acquisition packages each retain an individual512-vector finite native receipt. They specialize categories0/1/2/3 with legal index ranges0..55/0..25/0..35/0..7; they are alternative source domains, not four copies of an inventory. Category3's bank views alias the same4 bytes. The original acquisition root includes query and adjustments internally; the graph does not recreate that transaction as detached scratch components. Signed source narrowing and nibble preservation remain part of its contract. No new native execution was performed here.
+
+Wario now contains only the protection query's actual typed stored predicate output. Its untyped return and disconnected complement/read/tag helpers are omitted. Tekken now uses an explicit caller initialization sample: clear first, then materialize. Final geometry stays available for its real consumer; cleanup is a later lifecycle operation. This is not a recovered simulation frame. Their graph admissions establish typed bindings and lowering, not full source lifecycle or composed original-ROM parity. All six new exact graphs are marked ready to add through the fixed allowlist endpoint, alongside existing MZM and Minish cores.
+
+`verification.json` pins source descriptors, package manifests, behaviors, original native receipts and the six actual graphs admitted in this scoped run. Initial six admissions took0.023463 seconds. The two repaired graphs passed scoped revalidation in **0.008663 seconds aggregate**; unchanged Aria admissions were reused. This is validation time; no ROM/build/native campaign or external queue measurement was run. Existing MZM/Minish generated cores and evidence are referenced unchanged. No comparable prior validation baseline is available, and no build or CI performance change is claimed.
+
+A facet's `published-subset` status qualifies only its written scope. A lethal flag does not close defeat/rewards; a derived ability mask does not implement a sword action; geometry reset is not campaign save. Source-only facets remain visible as missing integration obligations even when another responsibility in the same module is executable.

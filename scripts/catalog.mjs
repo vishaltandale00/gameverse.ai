@@ -54,7 +54,9 @@ async function irWorkshopGame() {
     if (status.state !== 'completed' || status.outcome !== 'pass' || status.qualification?.outcome !== 'pass'
       || status.artifacts?.rom_sha256 !== receipt.sha256 || hash(bytes) !== receipt.sha256
       || status.request_sha256 !== receipt.requestSha256) throw Error('IR qualification or cartridge identity changed');
-    return { ...descriptor, name: receipt.title, ready: true, receipt, qualificationScope: 'Native connected-route QA passed; broader game coverage remains incomplete.', artifactUrl: `/artifacts/${receipt.sha256}.gba` };
+    return { ...descriptor, name: receipt.title,
+      playNotes: typeof receipt.playNotes === 'string' && receipt.playNotes.trim() && receipt.playNotes.length <= 1000 ? receipt.playNotes.trim() : descriptor.playNotes,
+      ready: true, receipt, qualificationScope: 'Native connected-route QA passed; broader game coverage remains incomplete.', artifactUrl: `/artifacts/${receipt.sha256}.gba` };
   } catch (error) {
     return { ...descriptor, ready: false, reason: error.code === 'ENOENT' ? 'Build and qualify a component mix in Mashup, then add it to Play.' : 'The generated artifact or qualification receipt could not be verified.' };
   }

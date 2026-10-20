@@ -1,0 +1,306 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "minish.canonical-entry-reconstruction.v1",
+  "game_id": "legend-of-zelda-the-the-minish-cap",
+  "module_id": "tmc.learned_sword_charge_release",
+  "package_ids": [
+    "tmc.progress.inventory_read",
+    "tmc.progress.inventory_write"
+  ],
+  "source_roots": [
+    "0807ca84",
+    "0807caa0"
+  ],
+  "proposal_status": "metadata-only-existing-package-capability-sole-publisher-validation-pending",
+  "package_identities": [
+    {
+      "id": "tmc.progress.inventory_read",
+      "version": "0.1.0",
+      "origin": "automatic_highfunction_lift",
+      "central_package_unchanged": true,
+      "source_entry": "0807ca84",
+      "central": {
+        "package.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/package.json",
+          "sha256": "78f23bd0349fd9cfe1ef48ab3c95081017750fac94d556add0f019dffc5e9c3e"
+        },
+        "l0.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/l0.json",
+          "sha256": "68be728a6b73f70a90e7d5032655f1515fc16123478ee1893d43ca7af01ea1d1"
+        },
+        "l1.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/l1.json",
+          "sha256": "81de4588a711ef7460a424f26d6021fa65ac2a96908ccda7226a7340b2f563ae"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/validation-adapter.json",
+          "sha256": "8bcc9064e64e7e7e2f444f6a4a8fec4b9fdeaf72a365bb0c98a6c60e8dc40a74"
+        },
+        "receipt.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/receipt.json",
+          "sha256": "d072d9e53ca35dc6c7286fdfa544c37a3087607a1b8e0c4c56bb995984204f49"
+        },
+        "generated.c": {
+          "path": "local/ir/packages/tmc.progress.inventory_read/generated.c",
+          "sha256": "ba4e16606e4240efebb2f50aa07388903330cae69395693c15085c866162b0aa"
+        }
+      },
+      "installed_evidence": {
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/l0.json",
+          "sha256": "27de12b3a61999650e516b7865dfaec030483a6ea5d14bf5005fae0492934b4d"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/l1.json",
+          "sha256": "109d55e9e32c08bf6ddea25d8b423013392116a79afb50fbc99b1be416c0d538"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/validation-adapter.json",
+          "sha256": "d5ec53f55b0e4bfaf96aaf3295f788e809979250558bd669d68fde8478479dcb"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/generated.c",
+          "sha256": "ba4e16606e4240efebb2f50aa07388903330cae69395693c15085c866162b0aa"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/original-proof.json",
+          "sha256": "07e372fc1cfdfc0fad543e1c5f536197dc9c439bd0f0e62ec51b21f8a2ec1139"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/read/rebuilt-proof.json",
+          "sha256": "3bdbf392c9e6715217b83ed936d4ccf67b6bdff86ed417d583b4ba6320183541"
+        }
+      },
+      "same_emitted_behavior_c": true,
+      "same_adapter_json_semantics": true
+    },
+    {
+      "id": "tmc.progress.inventory_write",
+      "version": "0.1.0",
+      "origin": "automatic_highfunction_lift",
+      "central_package_unchanged": true,
+      "source_entry": "0807caa0",
+      "central": {
+        "package.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/package.json",
+          "sha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7"
+        },
+        "l0.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/l0.json",
+          "sha256": "c3623c95efabc2f55941c2c0ada18dd1aa028610e667501509dc1c6d96103f2c"
+        },
+        "l1.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/l1.json",
+          "sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/validation-adapter.json",
+          "sha256": "8323cb86613b8de304436ab430cf49287204e038551706c9cf36ea586590d99b"
+        },
+        "receipt.json": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/receipt.json",
+          "sha256": "5858032dfff35ebb9afe6a4a064f0db94540ae5198798ebfff27bb2eda055c06"
+        },
+        "generated.c": {
+          "path": "local/ir/packages/tmc.progress.inventory_write/generated.c",
+          "sha256": "2202c313395628d33493e722839ab2d4c4afe41bbf95f6843a6eb1fe0dcd94bf"
+        }
+      },
+      "installed_evidence": {
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/l0.json",
+          "sha256": "bdc336ce9b4f1f005e9dae24a023bd9539b1556966d7e810bc9063d704f23cf2"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/l1.json",
+          "sha256": "16d69837b456e7ffe884c5a9b2736e2fccb63c86155a7716a69b778debef1d47"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/validation-adapter.json",
+          "sha256": "586e87f84d11b07c8c5af788e4a065a3716df01132bb686c187a2538bdc5948d"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/generated.c",
+          "sha256": "2202c313395628d33493e722839ab2d4c4afe41bbf95f6843a6eb1fe0dcd94bf"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/original-proof.json",
+          "sha256": "f0d64456dd4c6b7e5c6df8fe7ea634c43c6fdae4ce1666bb3c54c3718e94e3b4"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-minish-ir/write/rebuilt-proof.json",
+          "sha256": "320fdd362d53f5029a8cdb59d6fde15bb3dd4e4adb068716489a12addf5646eb"
+        }
+      },
+      "same_emitted_behavior_c": true,
+      "same_adapter_json_semantics": true
+    }
+  ],
+  "canonicalstate": {
+    "owner": "Existing canonical gSave.inventory campaign storage",
+    "existing_module_id": "tmc.learned_sword_charge_release",
+    "storage_address": "0x02002b32",
+    "storage_type": "u8",
+    "count": 64,
+    "bits_per_item": 2,
+    "package_views": {
+      "tmc.progress.inventory_read": [
+        {
+          "address": 33565490,
+          "count": 64,
+          "name": "collection_0",
+          "refs": [
+            "op3"
+          ],
+          "size": 1
+        }
+      ],
+      "tmc.progress.inventory_write": [
+        {
+          "address": 33565490,
+          "count": 64,
+          "name": "collection_0",
+          "refs": [
+            "op6",
+            "op15"
+          ],
+          "size": 1
+        }
+      ]
+    },
+    "alias_rule": "One shared physical bank; both source adapters bind the same address. No detached per-package inventory copies.",
+    "phase_attachment": "inventory_write already participates in learned_sword_charge_release; existing central inventory_read is a same-bank query, not another state owner.",
+    "readonly_assets": []
+  },
+  "capability_phase": {
+    "id": "minish-canonical-entry-reconstruction",
+    "phase_kind": "source-invoked-canonical-inventory-query-and-writer",
+    "scheduled_sequence": null,
+    "ordering_claim": "Static GiveItem conditional read-before-write only; no joint caller execution."
+  },
+  "event_order": [
+    "Each GetInventoryValue invocation reads a selected packed two-bit slot and returns its current value. Each SetInventoryValue invocation replaces the selected slot and returns its previous value.",
+    "Original GiveItem in src/itemUtils.c reads GetInventoryValue(item) before its branch; when the item is not a bottle and the old value is zero it subsequently calls SetInventoryValue(item,1), with PutItemOnSlot in between. This is conditional original caller order.",
+    "ScriptCommand_GetInventoryValue and ScriptCommand_SetInventoryValue are separate handlers whose order is chosen by the original script stream. No mandatory write-then-read transaction or authored forced schedule is admitted."
+  ],
+  "originalhostprerequisites": [
+    "Original gSave.inventory backing accessible at0x02002b32..0x02002b71 during synchronous invocation.",
+    "Qualification itemIDs0..255 and writevalues0..3; complete caller domains/save-load schedule remain open.",
+    "No concurrent/interrupt observer of mechanical full-bank writeback is covered."
+  ],
+  "exactpins": {
+    "result": {
+      "path": "research/ir-workshop/coverage-wave-next/minish-cap/result.json",
+      "sha256": "732e9c1170e082c4010aff4b6c7ae2f8f48370cde0f9e0f1bb477f8e3948fa70"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/coverage-next-minish-ir/provider-report.json",
+      "sha256": "20bcb8be4d1181013f1efaad994d097807dae8743d89701e2226e8fc869c7ce4"
+    },
+    "profile": {
+      "path": "research/ir-workshop/coverage-wave-next/minish-cap/profile.json",
+      "sha256": "cbbc3d9f9dee00a6d995fd8a124eb7d8a650d3a691a6373ff84cc515f0deb3f0"
+    },
+    "identified_assets": {
+      "path": "research/ir-workshop/coverage-wave-next/minish-cap/assets.json",
+      "sha256": "ebfc711a9c8989383600ae6948a7e9ea68efc0268560981bb920b8d6401c177a"
+    },
+    "independent_ir_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/minish-ir-qc.json",
+      "sha256": "0f2b4c263fc87edd6016a8b226b7fe33096467d8a0046eb51a7b1b3daa03861f"
+    },
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/minish-context-qc.json",
+      "sha256": "3e77b4db5fed93a7f890b67e9bde7e3fc5c2639214ace1d397b68a5a010f9281"
+    },
+    "read_original_proof": {
+      "path": "local/roundtrip/coverage-next-minish-ir/read/original-proof.json",
+      "sha256": "07e372fc1cfdfc0fad543e1c5f536197dc9c439bd0f0e62ec51b21f8a2ec1139"
+    },
+    "read_rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-minish-ir/read/rebuilt-proof.json",
+      "sha256": "3bdbf392c9e6715217b83ed936d4ccf67b6bdff86ed417d583b4ba6320183541"
+    },
+    "write_original_proof": {
+      "path": "local/roundtrip/coverage-next-minish-ir/write/original-proof.json",
+      "sha256": "f0d64456dd4c6b7e5c6df8fe7ea634c43c6fdae4ce1666bb3c54c3718e94e3b4"
+    },
+    "write_rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-minish-ir/write/rebuilt-proof.json",
+      "sha256": "320fdd362d53f5029a8cdb59d6fde15bb3dd4e4adb068716489a12addf5646eb"
+    },
+    "source_0": {
+      "path": "local/decomps/tmc/src/playerUtils.c",
+      "sha256": "6d984bc4274a7f1a1b0ed2595ac22dcd63b5125ac55edbf89df2bcd4e0ad6e0a"
+    },
+    "source_1": {
+      "path": "local/decomps/tmc/src/itemUtils.c",
+      "sha256": "b958fea2e3b7630252034072a52d2657699ed879f1ed6b0c862e0e2c1138fc0b"
+    },
+    "source_2": {
+      "path": "local/decomps/tmc/src/script.c",
+      "sha256": "45c2887b5a7f49b815c2bcff56c9500771ca3532831886ba91e42f6d877164ed"
+    },
+    "source_3": {
+      "path": "local/decomps/tmc/include/save.h",
+      "sha256": "47f74cce38762b6fc1b7b088f4dd77d601030fe673884c9d77ab6391ea35a59e"
+    }
+  },
+  "native_eligibility": {
+    "kind": "finite-original-and-reconstructed-entry-parity",
+    "certificate_boundary": "Native receipts plus independent scoped context review; byteQC alone is not semantic admission. No whole-game or joint caller qualification.",
+    "original_rom_sha256": "bedc74df62755f705398273de8ed3bc59be610cf55760d0b9aa277f1f5035e73",
+    "rebuilt_rom_sha256": "f98eba7d3bea2b1ae8160a571229a8f96d309daf133169ff2a2bd5c8032a4b71",
+    "vectors_per_entry": 256,
+    "original_proof_origin": "fresh-native-qualification",
+    "fixture_scope": "deterministic boundaries and synthetic fields; not gameplay traces",
+    "independent_review": "pass_scoped",
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ]
+  },
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "portable_L1": true,
+    "generated_behavior_bytes": 54,
+    "mechanical_binding_bytes": 112,
+    "alignment_bytes": 2,
+    "replacement_entry_veneer_bytes": 16,
+    "embedded_readonly_asset_bytes": 0,
+    "identified_original_palette_bytes": 160,
+    "data_regenerated_bytes": 0,
+    "raw_difference_bytes": 184,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "whole_game_equivalent": null
+  },
+  "counts": {
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "new_native_runs_for_publication": 0,
+    "fresh_original_native_comparisons": 512,
+    "fresh_rebuilt_native_comparisons": 512,
+    "existing_roots_installed": 2,
+    "new_physical_state_owners": 0,
+    "do_not_pool_historical_and_fresh": true
+  },
+  "gaps": [
+    "Whole GiveItem/script paths not jointly executed.",
+    "No save persistence, trainer/event schedule or complete matching sourceELF proof.",
+    "160B palette identified original-host only, not module-owned embedded or regenerated asset."
+  ],
+  "publication_constraints": {
+    "sole_publisher": "/root/publication_intake",
+    "new_ready_cards": 0,
+    "new_packages": 0,
+    "frozen_results_unchanged": true,
+    "scope": "Attach evidence to existing packageIDs and canonical state roles only; lane performs no central writes."
+  },
+  "timing": {
+    "provider_total_seconds": 1.489037916,
+    "queue_seconds": null,
+    "scope": "Metadata generation only; no native/build/simulation/model work for publication."
+  }
+}

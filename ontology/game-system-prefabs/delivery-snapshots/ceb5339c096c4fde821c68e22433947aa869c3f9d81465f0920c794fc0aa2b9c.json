@@ -1,0 +1,628 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "megaman-zero",
+  "sourceSystemIds": [
+    "megaman-zero.air-entry-motion-contact-landing"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "melee-action"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move one persistent actor using source commands, react to terrain/landing, and perform actions with a complete attack/contact/defeat lifecycle; only the narrow command-response phase is portable today.",
+    "phases": [
+      {
+        "id": "input-command",
+        "label": "Capture effective input and update actor commands",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json"
+        ],
+        "requiredServices": [
+          "canonical input/actor lifetime"
+        ],
+        "gaps": [
+          "Pointer-return control-map selector blocks producer automatic closure."
+        ]
+      },
+      {
+        "id": "command-motion",
+        "label": "Apply current direction command to facing and horizontal position",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "megaman-zero.command-facing-position-response"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+          "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+          "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Hardware/effective input\u2192command ring producer is outside this prefab boundary; caller supplies current source command storage/index.",
+          "One explicit invocation only; no frame frequency or repeated scheduler is supplied.",
+          "No terrain correction, vertical motion, gravity, landing, animation, attack, damage or actor allocation supplied.",
+          "Native integer source-role units only; no pixel/time conversion or full legal live-game magnitude range.",
+          "Source ring producer is modulo64 while published reader retains256-entry u8 storage domain; default index0 lies in source ring subset."
+        ]
+      },
+      {
+        "id": "motion-contact",
+        "label": "Resolve terrain, vertical motion and landing on same actor",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "terrain/map",
+          "shape/reference lifetime",
+          "animation",
+          "source actor scheduler"
+        ],
+        "gaps": [
+          "Nested actor animation references, dynamic dispatcher and signed division remain unclosed."
+        ]
+      },
+      {
+        "id": "action-combat",
+        "label": "Admit actions and resolve attack/contact/defeat",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json"
+        ],
+        "requiredServices": [
+          "attack allocator/lifetime",
+          "hit eligibility",
+          "damage/death/drop cleanup"
+        ],
+        "gaps": [
+          "Secondary source dispatch exists; full combat semantics and executable consumers remain unproved."
+        ]
+      },
+      {
+        "id": "presentation-recovery",
+        "label": "Present committed actor and recover lifecycle",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/megaman-zero/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "camera/render",
+          "spawn/checkpoint/save"
+        ],
+        "gaps": [
+          "No closed rendering, spawn/death/recovery or persistence boundary."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input-command",
+        "to": "command-motion",
+        "kind": "shared-state",
+        "scope": "Original producer and motion consumer use the same actor command ring/index; automatic producer blocked, not an executable graph edge."
+      },
+      {
+        "from": "command-motion",
+        "to": "motion-contact",
+        "kind": "source-call",
+        "scope": "Original air-step calls horizontal response before terrain, Y/contact, gravity and landing."
+      },
+      {
+        "from": "motion-contact",
+        "to": "action-combat",
+        "kind": "source-call",
+        "scope": "Actor parent runs mode-motion dispatch before secondary action dispatch; complete combat semantics remain open."
+      },
+      {
+        "from": "action-combat",
+        "to": "presentation-recovery",
+        "kind": "host-required",
+        "scope": "Further services/lifecycle required; not a proved complete source runtime phase."
+      }
+    ],
+    "missingForCoreGame": [
+      "Hardware/effective input\u2192command ring producer is outside this prefab boundary; caller supplies current source command storage/index.",
+      "One explicit invocation only; no frame frequency or repeated scheduler is supplied.",
+      "No terrain correction, vertical motion, gravity, landing, animation, attack, damage or actor allocation supplied.",
+      "Native integer source-role units only; no pixel/time conversion or full legal live-game magnitude range.",
+      "Source ring producer is modulo64 while published reader retains256-entry u8 storage domain; default index0 lies in source ring subset.",
+      "Close pointer-return input producer, actor/shared terrain refs, callback target domains, signed division loop, attack admission/lifetime/damage/defeat and allocation/recovery."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "megaman-zero.command-motion-source-bundle",
+      "label": "Source actor command response",
+      "moduleId": "megaman-zero.source-actor-command-motion",
+      "sourceGame": "megaman-zero",
+      "sourceSystemId": "megaman-zero.air-entry-motion-contact-landing",
+      "sourceContractRef": "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+      "planIds": [
+        "character-traversal",
+        "melee-action"
+      ],
+      "packageIds": [
+        "megaman_zero.motion.command_horizontal_step"
+      ],
+      "availability": "published-subset",
+      "scope": "One coherent source transaction: read current command\u2192conditional facing update\u2192horizontal position response. It is not the controller/core loop.",
+      "gaps": [
+        "Hardware/effective input\u2192command ring producer is outside this prefab boundary; caller supplies current source command storage/index.",
+        "One explicit invocation only; no frame frequency or repeated scheduler is supplied.",
+        "No terrain correction, vertical motion, gravity, landing, animation, attack, damage or actor allocation supplied.",
+        "Native integer source-role units only; no pixel/time conversion or full legal live-game magnitude range.",
+        "Source ring producer is modulo64 while published reader retains256-entry u8 storage domain; default index0 lies in source ring subset."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+        "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+        "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+        "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "one actor instance for all response facets",
+        "fields": [
+          "command storage/index",
+          "horizontal coordinate",
+          "horizontal magnitude",
+          "packed facing flags",
+          "facing selector"
+        ],
+        "aliasRule": "All slots represent the same supplied actor instance; source command producer must write the same ring/index backing before invoking response."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "command-facing-horizontal-response",
+          "status": "published-subset",
+          "scope": "Horizontal response only, not input sampling or terrain controller.",
+          "evidence": [
+            "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+            "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+            "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+            "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json"
+          ]
+        },
+        {
+          "roleId": "fighter-control",
+          "capability": "command-facing-horizontal-response",
+          "status": "published-subset",
+          "scope": "Same module instance supplies movement-facing response; no melee attack/contact behavior added.",
+          "evidence": [
+            "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+            "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+            "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+            "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "megaman-zero.command-facing-position-response",
+        "label": "Direction command \u2192 facing and horizontal position",
+        "assemblyRef": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.assembly.json",
+        "validationRef": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json",
+        "packageIds": [
+          "megaman_zero.motion.command_horizontal_step"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "megaman-zero.command-facing-position-response",
+      "moduleId": "megaman-zero.source-actor-command-motion",
+      "label": "Direction command \u2192 facing and horizontal position",
+      "path": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.assembly.json",
+      "sha256": "7311990f4093453949d7c6cf411799b9e3e35d54810a44f47e017688b8a2656f",
+      "validation": "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json",
+      "validationSha256": "69d1ea31ac04401fdba4760893ea3413aac8dafcd32842d2155794b82bb474db",
+      "inputs": [
+        {
+          "id": "commandStorage",
+          "label": "Current source command storage",
+          "storageType": "u8[256]",
+          "default": [
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "Current command byte:0 neutral,4 negative direction,8 positive direction. These are source command bits, not physical button labels.",
+          "binding": "actorCommandStorage"
+        },
+        {
+          "id": "commandIndex",
+          "label": "Current command history index",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "Source producer modulo64 subset0..63; reader retains full u8 domain.",
+          "binding": "actorCommandIndex"
+        },
+        {
+          "id": "horizontalMagnitude",
+          "label": "Horizontal step in native source units",
+          "storageType": "u32",
+          "default": 512,
+          "domain": "512 is observed in original air-state setup; full legal live-game magnitude range unknown. No pixels/second conversion.",
+          "binding": "actorHorizontalStepMagnitude"
+        },
+        {
+          "id": "position",
+          "label": "Current horizontal coordinate in native source units",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Native32-bit wrap arithmetic; no supplied world bounds.",
+          "binding": "actorHorizontalPosition"
+        },
+        {
+          "id": "facingFlags",
+          "label": "Existing packed actor flags",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "Preserve all bits except source facing bit updated when direction bits present.",
+          "binding": "actorFacingFlags"
+        },
+        {
+          "id": "facingSelector",
+          "label": "Existing facing selector",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "Retained when no direction command; source updates0/1 on active direction.",
+          "binding": "actorFacingSelector"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "position",
+          "binding": "actorHorizontalPosition",
+          "meaning": "Updated native horizontal coordinate; positive command adds magnitude, negative subtracts using source wrap arithmetic."
+        },
+        {
+          "id": "facing",
+          "binding": "actorFacingSelector",
+          "meaning": "Source0/1 facing selector updated only when directional command active."
+        },
+        {
+          "id": "flags",
+          "binding": "actorFacingFlags",
+          "meaning": "Same packed flags with source facing bit conditionally changed; other bits preserved."
+        }
+      ],
+      "defaultResult": {
+        "kind": "source-derived arithmetic expectation, not newly executed runtime fixture",
+        "actorHorizontalPosition": 512,
+        "actorFacingSelector": 1,
+        "actorFacingFlags": 16,
+        "basis": "At current storage byte8/index0 and magnitude512, source sign is positive and source facing flag bit is set."
+      },
+      "configurationScope": "Default command8/native magnitude512 is an explicit supplied configuration; not a claim the original game initializes every actor with this state.",
+      "phases": [
+        {
+          "id": "command-response",
+          "trigger": "caller supplies current source command storage and invokes this response once",
+          "invocations": [
+            "airHorizontal"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Hardware/effective input\u2192command ring producer is outside this prefab boundary; caller supplies current source command storage/index.",
+        "One explicit invocation only; no frame frequency or repeated scheduler is supplied.",
+        "No terrain correction, vertical motion, gravity, landing, animation, attack, damage or actor allocation supplied.",
+        "Native integer source-role units only; no pixel/time conversion or full legal live-game magnitude range.",
+        "Source ring producer is modulo64 while published reader retains256-entry u8 storage domain; default index0 lies in source ring subset."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/megaman-zero/prefab-pass/source-core-loop.json",
+        "research/deep-extraction/resume/megaman-zero/next-extraction/system.json",
+        "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+        "research/deep-extraction/resume/megaman-zero/prefab-pass/command-response.validation.json"
+      ],
+      "qualificationScope": "Actual Composer/portable lowering and binding_valid_obligations_unproven only. Reuses1024-case original-function finite native proof; no prefab runtime or full controller proof."
+    }
+  ],
+  "packagePins": [
+    {
+      "id": "megaman_zero.motion.command_horizontal_step",
+      "package": {
+        "path": "local/ir/packages/megaman_zero.motion.command_horizontal_step/package.json",
+        "sha256": "8f07c8517a3789cb624a4db0ad744a33eb1a8793f5d9c6a7e9bba4a45386ce5d"
+      },
+      "behavior": {
+        "path": "local/ir/packages/megaman_zero.motion.command_horizontal_step/l1.json",
+        "sha256": "fcdf9cc19d865ea71f03da75f921492785bcb9434dae321d742d151b77edbad2"
+      },
+      "receipt": {
+        "path": "local/ir/packages/megaman_zero.motion.command_horizontal_step/receipt.json",
+        "sha256": "94fc8f63c2ac6c29b20118614039e3fc24c06f9516bab899b164ecc0da7ff618"
+      }
+    }
+  ],
+  "smallestGapReceipt": {
+    "path": "local/ir/fleet-next/megaman-zero/prefab-pass/input-gap-receipt.json",
+    "sha256": "201bee2c861c4977f3a69d3dbc094b74a1de7bf88c7fdbce4117f6649cbd74e9"
+  },
+  "loweringReceipt": {
+    "path": "local/ir/fleet-next/megaman-zero/prefab-pass/command-response.lowering-receipt.json",
+    "sha256": "005a7ad219d5b1427815c7a0a66f35a6b424de930e0c86bf8ff32a1d47dbc38d"
+  },
+  "timing": {
+    "runId": "megaman-zero-prefab-command-response",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0031139170000000008,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "inputGapAutomaticSeconds": 0.5725555,
+    "composerLoweringSeconds": 0.0044523750000000015,
+    "descriptorConsolidationSeconds": 0.036193542,
+    "accounting": "Validation, targeted automatic gap attempt and Composer/lowering measured separately; interactive total unavailable. No native/build rerun. Initial raw Composer mismatch preserved separately; matching assembly overlay corrects bound write-only state preservation."
+  }
+}

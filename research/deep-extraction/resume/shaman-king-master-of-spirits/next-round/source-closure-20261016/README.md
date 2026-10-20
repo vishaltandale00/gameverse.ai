@@ -1,0 +1,11 @@
+# Shaman original solid-contact source phase
+
+[result.candidate03.json](result.candidate03.json) records the current bounded milestone. The original ROM dispatcher `08001794` ran with two linked actor records and one source-format hitbox per actor. It constructed both Q8 stack bounds and called original `08001610` exactly once in each of four cases. This is original-ROM execution, not emitted-IR qualification.
+
+All four [source fixtures](original-pair-source-receipt.candidate01.json) passed: inward horizontal separation; inward vertical separation and original `0x40` rate response; outward motion retaining positions while zeroing horizontal rates; and equal penetration selecting vertical response. Checks compare both complete actor records, reciprocal contact pointers, contact flags, source-generated stack bounds, preserved descriptor/frame/hitbox data, actor canaries and callee-saved registers/SP.
+
+The C fixture driver supplies data and assertions and calls original ROM instructions through libmgba. It contains no recovered replacement behavior. Its minimal RAM descriptor/hitbox data are structured synthetic test inputs, not claimed original level assets. Compilation took0.070038917s, original execution0.086152208s, total0.173929042s. The four cases executed2,018 original Thumb instructions. No game/ROM build, JVM or broad native campaign ran.
+
+The [source-system candidate](solid-pair-system.candidate01.json) preserves original actor aliases, hitbox admission, callback order and service boundaries. Current automatic lifting still fails on the final `r0`/`r2` actor-pointer merge at `0800177e`. The shared compiler owner has the exact source operation and confirmed fixtures; it must preserve both actor backing objects. Do not retry that unchanged lift before the generic fix.
+
+The camera consumer was also resolved as an honest hardware boundary: a source ROM literal is `04000010`, the BG0 horizontal-offset destination. Portable MMIO/service lifting remains open. BIOSsqrt, division, camera byref/live ABI and overlay/frame lifecycle remain separate gaps. The registered zero-primary-prefab delivery is unchanged; none of these source fixtures makes a complete camera, combat system or game available.

@@ -5,7 +5,7 @@ void gv_stage_begin(GvState *s,GvPlayer *p)
     s->stage=(uint8_t)level;s->terrain=GV_R32(0x03005a0c);
     gv_zero(s->prefabs,sizeof(s->prefabs));gv_zero(s->aliens,sizeof(s->aliens));
     gv_zero(s->natives,sizeof(s->natives));gv_zero(s->shots,sizeof(s->shots));gv_zero(s->drops,sizeof(s->drops));
-    gv_zero(s->mzm_native,sizeof(s->mzm_native));gv_zero(s->mzm_alien,sizeof(s->mzm_alien));
+    gv_zero(s->rippers,sizeof(s->rippers));gv_zero(s->mzm_native,sizeof(s->mzm_native));gv_zero(s->mzm_alien,sizeof(s->mzm_alien));
     s->morph=0;s->ledge=0;s->momentum=0;
     s->visited|=1u<<level;s->energy=s->max_energy;
     if(s->upgrades&GV_MISSILE)s->missiles=s->max_missiles;
@@ -30,16 +30,16 @@ static void activate_prefab(GvState *s,GvPlayer *p,const GvPrefabSpec *spec,unsi
         f->kind=GV_GATE;f->param=GV_GATE_ICE;
         for(unsigned i=0;i<8;i++)if(!s->aliens[i].active){
             int x=spec->x-60,y=gv_floor_y(x,ground,112)+spec->y_offset-32;
-            gv_zero(&s->mzm_alien[i],sizeof(s->mzm_alien[0]));
+            gv_zero(&s->mzm_alien[i],sizeof(s->mzm_alien[0]));gv_zero(&s->rippers[i],sizeof(s->rippers[0]));
             s->aliens[i]=(GvAlien){x*256,y*256,x*256,160,(int16_t)y,6,0,0,GV_FLYER,0,spec->id,2};break;
         }
     }
     if(spec->kind==GV_ALIEN){
         for(unsigned i=0;i<8;i++)if(!s->aliens[i].active){
-            int y=f->y-(spec->param==GV_FLYER?64:spec->param==GV_GUARDIAN?20:10);
-            unsigned hp=spec->param==GV_GUARDIAN?60:spec->param==GV_PIRATE?16:spec->param==GV_CRAWLER?4:6;
-            gv_zero(&s->mzm_alien[i],sizeof(s->mzm_alien[0]));
-            s->aliens[i]=(GvAlien){spec->x*256,y*256,spec->x*256,0,(int16_t)y,(uint16_t)hp,0,0,spec->param,0,spec->id,spec->reserved?2:1};break;
+            int y=f->y-(spec->param==GV_FLYER?64:spec->param==GV_GUARDIAN?20:spec->param==GV_RIPPER?40:10);
+            unsigned hp=spec->param==GV_RIPPER?20:spec->param==GV_GUARDIAN?60:spec->param==GV_PIRATE?16:spec->param==GV_CRAWLER?4:6;
+            gv_zero(&s->mzm_alien[i],sizeof(s->mzm_alien[0]));gv_zero(&s->rippers[i],sizeof(s->rippers[0]));
+            s->aliens[i]=(GvAlien){spec->x*256,y*256,spec->x*256,0,(int16_t)y,(uint16_t)hp,0,0,spec->param,0,spec->id,(spec->reserved && spec->param!=GV_RIPPER)?2:1};break;
         }
         f->active=2;
     }

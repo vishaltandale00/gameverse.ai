@@ -3786,7 +3786,201 @@ components:
   - kind: capture_frame
     ref: capture:frontend:keyframe f002582 ("The tiny Picori appeared from the sky...")
     confidence: 0.9
+- id: sword_actions_own_rom
+  facet: mechanics
+  label: Skill-gated sword action controller with native actor ownership
+  summary: Independently recovered all nine sword actions from the original USA cartridge into a native IR package.
+    The controller owns swing, charge, charged hold, release, spin, greatspin, airborne and dash technique transitions,
+    player action flags, beam availability requests and cleanup. The composed attack actor also recovers animation-frame
+    hitboxes, spin/airborne attack kinds, recoil handoff, contact interruptions, terrain effects and terminal cleanup.
+    Two plans use the same C/backend; the alternate
+    selects40update charge instead of the native skill-conditioned80/40. A controlled native sword-grant fixture
+    actually swings, charges, spins and releases the real sword actor; original/parity traces and videos match.
+  instantiates:
+  - concept: mechanics.ability.skill_gated_charge_release_actor_lifecycle
+  reads:
+  - input.item_slot_held_and_fresh
+  - item.action_timer_animation_flags
+  - player.skill_bits_pose_motion_state
+  - world.existing_sword_beam_actor
+  writes:
+  - item.action_timer_loop_flags
+  - player.technique_movement_authority
+  - player.active_item_slot_mask
+  - world.native_sword_entity_ownership
+  params:
+    native_charge:
+      value: 80
+      unit: gameplay updates
+    fast_skill_charge:
+      value: 40
+      unit: gameplay updates
+    greatspin_max_loops:
+      value: [10, 15]
+      unit: loops conditional on learned skill
+  invariants:
+  - Skill bits gate charge, greatspin, beam, airborne and dash techniques
+  - Losing held input during uncharged windup cancels; charged release enters spin
+  - An ordinary beam request first checks native entity existence
+  - Cleanup clears owned sword pointer and charge state and releases the exact item slot
+  - Sword actor owns exact frame hitbox centers/extents and contact recoil; final enemy HP matrix and broadphase remain retained
+  - Renderer, allocator and player movement remain explicit retained native services
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/minish-cap/sword.package.json; own-ROM0x08075314..0x080759f4 and9entry action table0x0811bd44
+    confidence: 0.99
+  - kind: capture_telemetry
+    ref: research/deep-extraction/minish-cap/sword-qualification.json
+    confidence: 0.99
+    note: 9,216 original/emitted controller cases; actual native controlled fixture, not story acquisition or enemy damage.
+  - kind: capture_telemetry
+    ref: research/deep-extraction/minish-cap/sword-contact-qualification.json
+    confidence: 0.99
+    note: Further3,072 original/emitted actor cases; composed native controller+actor preserves trace/video and changes charge by plan.
+- id: bilateral_contact_combat_own_rom
+  facet: mechanics
+  label: Sword contact resolves damage, recoil, invulnerability and native enemy defeat
+  summary: Independently recovered the resolved contact transaction and native heart damage policy. It applies
+    both sides of a twelve-byte interaction row, handles armor and weapon modifiers, saturating health, recoil,
+    stun, invulnerability minima and parent responses, and requests hit effects. Composed with the independently
+    recovered sword controller and attack actor through the shared IR backend. Actual native Octorok HP falls from 2 to 0
+    at frame 36 and the original death controller retires it; a practice plan from the same C leaves it alive at 2 HP.
+    These are controlled native grants, not claims of normal story acquisition or fully recovered enemy AI.
+  instantiates:
+  - concept: mechanics.combat.bilateral_contact_response_transaction
+  reads:
+  - collision.resolved_twelve_byte_row
+  - actor_pair.HP_strength_kind_and_iframes
+  - native.modifier_selector_and_heart_pool
+  - attack.parent_identity
+  writes:
+  - actor_pair.HP_collision_enabled_recoil_stun_and_iframes
+  - player.heart_pool_and_entity_HP_mirror
+  - attack.parent_recoil_and_attacker_identity
+  - world.hit_effect_requests
+  invariants:
+  - Each damage leg is suppressed by its own zero row strength
+  - Player damage floors at one after defense modifiers; enemy-side weapon damage has no minimum floor
+  - Lethal HP clamps to zero and clears collision-active bit; retained native death controller runs later
+  - Contact only raises invulnerability timers to row minima
+  - Native broadphase, matrix selection, enemy AI and death animation remain declared retained dependencies
+  - Three recovered packages and two plans compile through the same backend without per-plan C changes
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/minish-cap/contact.package.json; own-ROM0x08018308,0x08017874,0x080526a0
+    confidence: 0.99
+  - kind: capture_telemetry
+    ref: research/deep-extraction/minish-cap/contact-qualification.json
+    confidence: 0.99
+    note: 8,192 original/emitted transaction cases; native original/parity traces and videos identical, practice plan prevents HP debit.
+  relations:
+  - type: requires
+    target: sword_actions_own_rom
+- id: octorok_patrol_aim_spit_own_rom
+  facet: mechanics
+  label: Patrol, align, telegraph, spit and recover enemy AI
+  summary: Independently recovered all four ordinary Octorok actions and three subtype decision policies.
+    Patrol bounds, randomized rest/walk cadence, target-region checks, cardinal alignment, telegraph, projectile
+    emission retry/consume and recovery are assembled beside sword/contact combat. A controlled native subtype 2
+    encounter actually walks, aligns, enters spit at frame 222 and allocates original native projectiles; original
+    and assembled traces and videos match. Native movement collision, projectile updates and generic enemy death
+    remain explicit host dependencies.
+  instantiates:
+  - concept: mechanics.enemy.bounded_patrol_align_telegraph_emit_recover
+  reads:
+  - enemy.subtype_patrol_region_and_position
+  - target.available_position_and_heading
+  - enemy.animation_emission_and_end_events
+  - random.word_stream
+  writes:
+  - enemy.phase_timer_facing_and_heading
+  - enemy.animation_request
+  - world.projectile_spawn_request
+  params:
+    rest_duration:
+      value: [24, 32, 40, 48, 56, 64, 72, 80]
+      unit: gameplay updates
+    walk_duration_choices:
+      value: [30, 60, 60, 90]
+      unit: gameplay updates (duplicate 60 weights probability)
+    aligned_spit_probability:
+      value: [0.75, 1.0, 1.0]
+      unit: conditional probability for subtypes 0, 1, 2
+  invariants:
+  - Subtype 0patrols randomly; subtype 1sometimes chases in bounds; subtype 2prefers a target inside its region
+  - Leaving patrol bounds biases cardinal heading toward region center
+  - Spit requires quantized alignment before the subtype probability test
+  - Failed allocation retains the emission event for retry; success clears the event once
+  - Animation end returns to a newly randomized rest interval
+  - Native RNG draw ordering is preserved
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/minish-cap/octorok.package.json; own-ROM0x0801ead0,0x0801ebc8..0x0801ee18
+    confidence: 0.99
+  - kind: capture_telemetry
+    ref: research/deep-extraction/minish-cap/octorok-qualification.json
+    confidence: 0.99
+    note: 6,144 original/emitted cases; real native subtype 2rest/walk/spit/projectiles, identical original/parity trace/video.
+  relations:
+  - type: requires
+    target: bilateral_contact_combat_own_rom
+- id: learned_sword_capability_gate_own_rom
+  facet: mechanics
+  label: Persistent learned items unlock sword techniques and faster charge
+  summary: Independently recovered packed item ownership and twelve-bit sword capability derivation. Only
+    persistent state 1 counts as learned; other item states remain distinct. Native learning events update the bank
+    and refresh capability bits. With identical held-A input, unlearned Spin Attack cannot charge or spin; learned
+    item 0x48 enables both, and additional learned item 0x73 shortens charge by 40 updates. Original and five-component
+    assembled cartridge traces and videos match. Event delivery is controlled native API use, not a played trainer
+    story or a spatial world-gate claim.
+  instantiates:
+  - concept: mechanics.progression.persistent_ownership_derived_action_capability
+  reads:
+  - progression.persistent_four_state_item_slots
+  writes:
+  - progression.persistent_item_state
+  - player.derived_sword_capability_mask
+  params:
+    persistent_inventory_slots:
+      value: 256
+      unit: two-bit slots in 64 bytes
+    derived_capabilities:
+      value: 12
+      unit: learned sword capability bits
+  invariants:
+  - Setter returns old state and preserves neighboring slots
+  - Only inventory state 1 enables a derived skill; states 2 and 3 do not
+  - Refresh clears stale capabilities before deriving all twelve bits
+  - Base charge skill is required before faster-charge skill has an effect
+  - Native learning changes legal sword actions without changing controller C or IR plan
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/minish-cap/progression.package.json; own-ROM0x0807ca84,0x0807caa0,0x0807aee4
+    confidence: 0.99
+  - kind: capture_telemetry
+    ref: research/deep-extraction/minish-cap/progression-qualification.json
+    confidence: 0.99
+    note: 12,800 original/emitted cases plus actual native persistent event→charge/spin gate and80/40 charge timing.
+  relations:
+  - type: requires
+    target: sword_actions_own_rom
 proposed_concepts:
+- id: mechanics.progression.persistent_ownership_derived_action_capability
+  label: Persistent learned ownership derives legal action capabilities
+  definition: A durable item state is normalized into a capability mask consumed by action guards, allowing
+    acquisition to unlock or alter concrete behavior while preserving distinct unlearned inventory states.
+- id: mechanics.enemy.bounded_patrol_align_telegraph_emit_recover
+  label: Bounded patrol with aligned telegraph and projectile emission
+  definition: An enemy selects movement within a region, aligns toward a valid target, telegraphs an attack,
+    allocates a projectile on an animation event and recovers on animation end while retaining retry semantics.
+- id: mechanics.combat.bilateral_contact_response_transaction
+  label: Bilateral contact damage and response transaction
+  definition: A resolved interaction row applies each side's damage, recoil, stun and invulnerability policy,
+    propagates owner responses and retires lethal health through a separately owned enemy lifecycle.
+- id: mechanics.ability.skill_gated_charge_release_actor_lifecycle
+  label: Learned charge-release technique with owned attack actor
+  definition: An item state machine gates actions on learned skills, arbitrates player movement and action flags,
+    transitions timed charge into release/spin and owns its attack actor through cleanup.
 - id: ai.boss.scale_shift_interior_boss
   label: Scale-shift interior boss
   definition: Boss fight with a phase that requires the player to change size (or form) to enter the boss's body
@@ -4068,3 +4262,4 @@ open_questions:
 - Many enemies (Gleerok, Gyorg pair, Vaati forms, Moldorm, Madderpillar, Acro Bandits, Wizzrobes) were not decomposed
   in detail.
 - The save.h comment for dungeonItems contradicts the code; the code (map 1, compass 2, big key 4) was followed.
+

@@ -1,0 +1,5 @@
+The reviewed metadata-only switch repair stopped before mutation because the saved project has no existing Thumb instruction at `0807bbfc`. The JVM process completed in 3.760975292 seconds; the original project manifest is unchanged. Its exit code was zero, but no success sentinel exists, so no postscript output is admitted. No new lift, generated C, or native qualification ran.
+
+The source table, zero-depth frame, two same-body destinations, and canonical WorldSide charge semantics remain pinned in the proof. This is a saved-project instruction-discovery blocker. Existing published install/accepted-action proofs and graph002 ownership/order obligations remain preserved. Record advance is a separate source event, and no complete cycle or ready prefab is claimed.
+
+Next: discovery owner must review a bounded way to recover the exact missing target without relaxing the current preflight silently; then request a new permit. The current workflow prohibits instruction insertion, disassembly, function clearing, and terminal overrides.

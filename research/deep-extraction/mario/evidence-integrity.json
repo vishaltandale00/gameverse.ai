@@ -24,6 +24,993 @@
       "new_targets": 5,
       "total_targets": 75,
       "scope": "Own-ROM accepted item/reserve table and clock/transformation target ranges; no native qualification implied."
+    },
+    {
+      "outcome": "pass_metadata_integrity_only",
+      "new_instruction_and_data_spans": 73,
+      "fixture_cases": 8,
+      "wall_s": 0.004184375000000001,
+      "scope": "Source hashes, JSON and current adapter pin only; actual 8-case native qualification is separately retained by automatic compiler."
     }
-  ]
+  ],
+  "resume_integration_checks": [
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:31:51.159926+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "sma4.actor_contact_shape_a"
+      ],
+      "total_targets": 76,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-sma4/targets.json",
+          "targets_added": [
+            "sma4.actor_contact_shape_a"
+          ],
+          "packet_sha256": "05181b7ca8d3a37a3d3944b30c1735273a22b0b1c3791281eb91037cfcb2af6d",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.014824958999999999,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    },
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:32:30.512896+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "mlss.input_edges_repeat",
+        "mlss.input_sensitive_rate",
+        "mlss.actor_vertical_init",
+        "mlss.actor_vertical_update",
+        "mlss.actor_vertical_reset",
+        "mlss.actor_contact_quantize",
+        "mlss.actor_contact_vertical_cleanup",
+        "mlss.actor_scheduler",
+        "mlss.mb.input_edges",
+        "mlss.mb.frame_dispatch"
+      ],
+      "total_targets": 86,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-superstar/targets.json",
+          "targets_added": [
+            "mlss.input_edges_repeat",
+            "mlss.input_sensitive_rate",
+            "mlss.actor_vertical_init",
+            "mlss.actor_vertical_update",
+            "mlss.actor_vertical_reset",
+            "mlss.actor_contact_quantize",
+            "mlss.actor_contact_vertical_cleanup",
+            "mlss.actor_scheduler",
+            "mlss.mb.input_edges",
+            "mlss.mb.frame_dispatch"
+          ],
+          "packet_sha256": "0def40139b8e1c959759b0d72ee3521e95d79dc125d74a78d74298c47033d88c",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.112561167,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    },
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:32:41.830026+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "sma4.actor_contact_overlap"
+      ],
+      "total_targets": 87,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-sma4/targets.json",
+          "targets_added": [
+            "sma4.actor_contact_overlap"
+          ],
+          "packet_sha256": "0f4388554846d4bf9d1dbfc87995e51a832017c64497b5af51ec3b3991c09b9a",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.016123084000000003,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    },
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:33:13.730490+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "sma1.player_state_dispatch",
+        "sma1.scene_tick_death_completion",
+        "sma1.scene_phase_dispatch",
+        "sma1.completion_selector_dispatch",
+        "sma1.retry_checkpoint_consumer",
+        "sma1.zero_lives_consumer",
+        "sma1.retry_checkpoint_restore",
+        "sma1.reset_health_and_stage_fields"
+      ],
+      "total_targets": 95,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-sma1/targets.json",
+          "targets_added": [
+            "sma1.player_state_dispatch",
+            "sma1.scene_tick_death_completion",
+            "sma1.scene_phase_dispatch",
+            "sma1.completion_selector_dispatch",
+            "sma1.retry_checkpoint_consumer",
+            "sma1.zero_lives_consumer",
+            "sma1.retry_checkpoint_restore",
+            "sma1.reset_health_and_stage_fields"
+          ],
+          "packet_sha256": "a185f07615d80b6d60c1b62e021bcf058693dcd27122fe4bebe3a5ce00a31a0a",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.029550291,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    },
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:33:15.571280+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "sma2.actor_transient_reset",
+        "sma2.actor_descriptor_begin",
+        "sma2.actor_descriptor_fields",
+        "sma2.actor_reinitialize",
+        "sma2.scene_random_pair_update",
+        "sma2.actor_player_relative_side"
+      ],
+      "total_targets": 101,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-sma2/targets.json",
+          "targets_added": [
+            "sma2.actor_transient_reset",
+            "sma2.actor_descriptor_begin",
+            "sma2.actor_descriptor_fields",
+            "sma2.actor_reinitialize",
+            "sma2.scene_random_pair_update",
+            "sma2.actor_player_relative_side"
+          ],
+          "packet_sha256": "5f29c397ac4a51fa28f82e8c7e9c94370aca044500c0e650bd70fb7db4c352d4",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.030190165999999997,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    },
+    {
+      "run_id": "mario-evidence-integration-2026-10-16T10:33:41.272605+00:00",
+      "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+      "outcome": "pass_metadata_integrity_only",
+      "baseline_targets_preserved": 75,
+      "new_target_ids": [
+        "kart.racer_update",
+        "kart.input_speed_policy",
+        "kart.acceleration_state",
+        "kart.surface_contact",
+        "kart.contact_recovery",
+        "kart.character_class_profiles",
+        "kart.pair_contact",
+        "kart.impact_resource_loss",
+        "kart.homing_projectile",
+        "kart.cpu_route_heading",
+        "kart.cpu_heading_slew",
+        "kart.cpu_speed_policy",
+        "kart.checkpoint_lap_crossing",
+        "kart.track_checkpoint_producer",
+        "kart.race_phase_finish",
+        "kart.racer_reset",
+        "kart.packed_item_cleanup",
+        "kart.record_defaults_merge",
+        "kart.flash_sector_program"
+      ],
+      "total_targets": 120,
+      "packets": [
+        {
+          "packet_ref": "research/deep-extraction/mario/parallel-kart/targets.json",
+          "targets_added": [
+            "kart.racer_update",
+            "kart.input_speed_policy",
+            "kart.acceleration_state",
+            "kart.surface_contact",
+            "kart.contact_recovery",
+            "kart.character_class_profiles",
+            "kart.pair_contact",
+            "kart.impact_resource_loss",
+            "kart.homing_projectile",
+            "kart.cpu_route_heading",
+            "kart.cpu_heading_slew",
+            "kart.cpu_speed_policy",
+            "kart.checkpoint_lap_crossing",
+            "kart.track_checkpoint_producer",
+            "kart.race_phase_finish",
+            "kart.racer_reset",
+            "kart.packed_item_cleanup",
+            "kart.record_defaults_merge",
+            "kart.flash_sector_program"
+          ],
+          "packet_sha256": "5d03f395a7b6c39665150dd9340048fc1b56133f7b0aab2f0c0ec3664af5f013",
+          "status": "validated_own_ROM_instruction_export_and_available_L0_hashes_static_only"
+        }
+      ],
+      "wall_s": 0.070311208,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "environment": {
+        "platform": "macOS-27.0.1-arm64-arm-64bit",
+        "python": "3.9.6"
+      },
+      "limits": "Integration/hash verification only, no build, simulation, emitted behavior or native qualification. Queue/build/native timing unavailable because those stages were not run. Existing own-ROM-only SMA2 08069640 intentionally lacks export/L0. Existing finite qualification records preserved; no full-game/family completion claim."
+    }
+  ],
+  "resume_final_snapshot": {
+    "run_id": "mario-final-evidence-integration-20261016",
+    "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "outcome": "pass_metadata_integrity_only",
+    "updated_utc": "2026-10-16T10:34:16.087242+00:00",
+    "total_targets": 120,
+    "original_targets_preserved": 75,
+    "new_targets": 45,
+    "incomplete_families": 45,
+    "l0_context_profiles": 9,
+    "checks": {
+      "instruction_spans": 120,
+      "source_export_pins": 119,
+      "l0_pins": 38,
+      "separate_pc_envelopes": 15,
+      "analysis_excerpt_pins": 19
+    },
+    "packets": [
+      {
+        "ref": "research/deep-extraction/mario/parallel-sma1/targets.json",
+        "sha256": "a185f07615d80b6d60c1b62e021bcf058693dcd27122fe4bebe3a5ce00a31a0a",
+        "targets": 8,
+        "highfunction_targets": 0
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-sma2/targets.json",
+        "sha256": "5f29c397ac4a51fa28f82e8c7e9c94370aca044500c0e650bd70fb7db4c352d4",
+        "targets": 6,
+        "highfunction_targets": 6
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-sma4/targets.json",
+        "sha256": "0f4388554846d4bf9d1dbfc87995e51a832017c64497b5af51ec3b3991c09b9a",
+        "targets": 2,
+        "highfunction_targets": 2
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-superstar/targets.json",
+        "sha256": "0def40139b8e1c959759b0d72ee3521e95d79dc125d74a78d74298c47033d88c",
+        "targets": 10,
+        "highfunction_targets": 8
+      },
+      {
+        "ref": "research/deep-extraction/mario/parallel-kart/targets.json",
+        "sha256": "5d03f395a7b6c39665150dd9340048fc1b56133f7b0aab2f0c0ec3664af5f013",
+        "targets": 19,
+        "highfunction_targets": 15
+      }
+    ],
+    "wall_s": 0.598632333,
+    "queue_s": null,
+    "build_s": null,
+    "native_s": null,
+    "environment": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.9.6"
+    },
+    "qualification_limit": "No native/build qualification run by evidence integrator. New static evidence does not promote counters/readiness. 119 export pins; SMA2 cape leaf08069640 remains own-ROM instruction-only. Kart14/15 HighFunction PCs extend beyond declared span; separately hashed PC envelopes do not establish boundaries."
+  },
+  "fleet_next_mining_aggregation": {
+    "status": "five_source_contracts_and_twelve_local_native_L1_root_subsets_verified",
+    "records": [
+      {
+        "game_id": "mario-and-luigi-superstar-saga",
+        "contract_ref": "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+        "contract_sha256": "72776d2f5b784c5dcf1c20f2a1718a19168805e8d18f3be99ea4c5d85871caf9",
+        "L2_executable": false,
+        "local_native_qualified_L1": [
+          {
+            "id": "mlss.motion.initialize",
+            "receipt_ref": "local/ir/fleet-next/superstar/attempt02-directed/080401f0/receipt.json",
+            "receipt_sha256": "b1b44b5f83380173386a47ea76cc51aa6ead14ac9ab2cc68113bb52034fcc759",
+            "vectors": 1024,
+            "wall_s": 0.217382875
+          },
+          {
+            "id": "mlss.motion.update",
+            "receipt_ref": "local/ir/fleet-next/superstar/attempt02-directed/080402c4/receipt.json",
+            "receipt_sha256": "4183beb679c6ff3bb09c1dff7b96593fbe1cc3ac6bae33bfe4dbc28bb75fa739",
+            "vectors": 1024,
+            "wall_s": 0.191850792
+          },
+          {
+            "id": "mlss.motion.reset",
+            "receipt_ref": "local/ir/fleet-next/superstar/attempt01/08047eb8/receipt.json",
+            "receipt_sha256": "59d1c64e5dda6c66b2be8f9889a5ba2b56458a48b569a54604992485cb238500",
+            "vectors": 1024,
+            "wall_s": 0.194717209
+          }
+        ]
+      },
+      {
+        "game_id": "mario-kart-super-circuit",
+        "contract_ref": "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+        "contract_sha256": "1727e493315f2f20c070bf9e6baece3438f90c529cb955a4be547efdd370cfc6",
+        "L2_executable": false,
+        "local_native_qualified_L1": [
+          {
+            "id": "kart.steering_recovery",
+            "receipt_ref": "local/ir/fleet-next/kart/steering-recovery-fixtures/receipt.json",
+            "receipt_sha256": "4de4df585fa350ed6dab36c6634397b79349f01cd87e27a91d83b3d8c03660d1",
+            "vectors": 4096,
+            "wall_s": 0.205971416
+          },
+          {
+            "id": "kart.track_coordinate_bounds",
+            "receipt_ref": "local/ir/fleet-next/kart/closure-parts/08032c50/receipt.json",
+            "receipt_sha256": "d89b0513671a1068cc2f88f00c1c2ccd28e36b0fdae8c375bd3453651bfbe2da",
+            "vectors": 4096,
+            "wall_s": 0.197144166
+          },
+          {
+            "id": "kart.turn_recovery_acceleration",
+            "receipt_ref": "local/ir/fleet-next/kart/closure-parts/0803daec/receipt.json",
+            "receipt_sha256": "4a01183a6d91075514217433626afc5c0792b6c0ff8e42bcd3c4d352697e8779",
+            "vectors": 4096,
+            "wall_s": 0.19238429199999998
+          }
+        ]
+      },
+      {
+        "game_id": "super-mario-advance-4-super-mario-bros-3",
+        "contract_ref": "research/deep-extraction/mario/parallel-sma4/next-extraction/l2-contract.json",
+        "contract_sha256": "c7142e2dfc4ec31d33a2477e081ced316bafc193e5929543f11bde2d1fe8103d",
+        "L2_executable": false,
+        "local_native_qualified_L1": [
+          {
+            "id": "sma4.actor_pixel_mirror_sync",
+            "receipt_ref": "local/ir/fleet-next/sma4/08047c40/receipt.json",
+            "receipt_sha256": "02b767f84cadc90ed9ded4c9f20cbb84cdc88baee60a85c16b8e46e8a37f4fce",
+            "vectors": 4096,
+            "wall_s": 0.221735708
+          }
+        ]
+      },
+      {
+        "game_id": "super-mario-advance",
+        "contract_ref": "research/deep-extraction/mario/parallel-sma1/next-extraction/l2-contract.json",
+        "contract_sha256": "6c28942f3de5eec5d623c40e4ff43845caadad367dc8c6a1338a6cd44fc71fc0",
+        "L2_executable": false,
+        "local_native_qualified_L1": [
+          {
+            "id": "sma1.horizontal_deceleration",
+            "entry": "080a7e80",
+            "receipt_ref": "local/ir/fleet-next/sma1/friction-expected-cases/receipt.json",
+            "receipt_sha256": "78ed348642183b010d78335ad8c743de0d85b038772bb4883cc9d6a5b2a6acbc",
+            "vectors": 1024,
+            "wall_s": 0.245608958
+          }
+        ]
+      },
+      {
+        "game_id": "super-mario-advance-2-super-mario-world",
+        "contract_ref": "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+        "contract_sha256": "768b8dc029c2ce9aa3f7e39ab059ef321b040fb860b89d50afd04080e0e484c8",
+        "L2_executable": false,
+        "local_native_qualified_L1": [
+          {
+            "id": "sma2.player_contact_box",
+            "entry": "0803407c",
+            "receipt_ref": "local/ir/fleet-next/sma2/contact01/0803407c/receipt.json",
+            "receipt_sha256": "d81e6f611cb1cea9856ef9ab7acc21e50bef8fa677c44bdfd23669df954e7357",
+            "vectors": 4096,
+            "wall_s": 0.365033792
+          },
+          {
+            "id": "sma2.actor_contact_box",
+            "entry": "0802f290",
+            "receipt_ref": "local/ir/fleet-next/sma2/contact02/0802f290/receipt.json",
+            "receipt_sha256": "e2d6146be6c07703759ad5579c621cd35542691b40bcb7c0b4dae65ad6e24dde",
+            "vectors": 4096,
+            "wall_s": 0.288378709,
+            "focused_receipt": {
+              "ref": "local/ir/fleet-next/sma2/contact-boundaries01/0802f290/receipt.json",
+              "sha256": "831091a51c090321860bef951a93e2343499d49dab5e5d66c9f9159912ff4855",
+              "vectors": 3072,
+              "wall_s": 0.26224112499999996
+            }
+          },
+          {
+            "id": "sma2.shared_contact_overlap",
+            "entry": "08034198",
+            "receipt_ref": "local/ir/fleet-next/sma2/contact02/08034198/receipt.json",
+            "receipt_sha256": "e4db80bae73b15746fc0ba550490f60244821e0b751645d2616aae55f1ba8a42",
+            "vectors": 4096,
+            "wall_s": 0.25564462500000007,
+            "focused_receipt": {
+              "ref": "local/ir/fleet-next/sma2/contact-boundaries01/08034198/receipt.json",
+              "sha256": "ce122a69d8f75b8d4ec7891810caba97388c05a99eebb61f08b90128e96f0ad1",
+              "vectors": 784,
+              "wall_s": 0.21169037499999993
+            }
+          },
+          {
+            "id": "sma2.actor_player_relative_side",
+            "entry": "0802f1b8",
+            "receipt_ref": "local/ir/fleet-next/sma2/contact01/0802f1b8/receipt.json",
+            "receipt_sha256": "a2659a53de3b5e81ccf816c967573094aea721cd1a10248990f8983128e120c3",
+            "vectors": 4096,
+            "wall_s": 0.23101025000000003,
+            "focused_receipt": {
+              "ref": "local/ir/fleet-next/sma2/contact-boundaries01/0802f1b8/receipt.json",
+              "sha256": "c9edcb5b6baf74c7ee556e5ae948cd70345592cffc505bdca1a5d51f86aad1be",
+              "vectors": 300,
+              "wall_s": 0.201145958
+            }
+          }
+        ]
+      }
+    ],
+    "limit": "Latest selected root receipts checked, not a re-run or full subsystem qualification. Previously retained additional runs are not summed here; no catalog or coverage counters changed.",
+    "verification_runs": [
+      {
+        "wall_s": 0.002259334,
+        "scope": "Superstar/Kart stable contracts and selected root artifact/receipt hashes"
+      },
+      {
+        "wall_s": 0.0010900839999999998,
+        "scope": "SMA4 stable contract and selected root artifact/receipt hashes"
+      },
+      {
+        "wall_s": 0.0029702500000000007,
+        "scope": "SMA1/SMA2 stable contracts and selected root artifact/receipt hashes"
+      }
+    ],
+    "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "updated_utc": "2026-10-16T13:31:02.078927+00:00",
+    "environment": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.9.6"
+    },
+    "selected_root_vectors": 36864,
+    "limits": "Twelve local automatic L1 roots have selected finite native receipts; not twelve complete mechanics or executable L2s. Focused/earlier retained receipts are additional runs, not unique state counts. No game/ROM/composition generated. Existing global catalog/qualification counts not changed by evidence integrator; compiler-owner publication remains separate."
+  },
+  "mashup_admission_aggregation": {
+    "schema": "gameverse.mario.mashup-coverage-aggregation/0.1",
+    "updated_utc": "2026-10-16T14:17:53.956362+00:00",
+    "status": "five_games_admission_receipts_aggregated_obligations_unproven",
+    "games": 5,
+    "graph_counts": {
+      "valid": 10,
+      "rejected": 2
+    },
+    "records": [
+      {
+        "lane": "sma1",
+        "packet_ref": "research/deep-extraction/mario/parallel-sma1/mashup-coverage/coverage.json",
+        "packet_sha256": "e814e9331c94710077b9a0759fe559e022efebdbdc3d121deff89ee4dc3c8fe2",
+        "graphs": [
+          {
+            "id": "sma1.gravity-jump",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma1/mashup-coverage/gravity-jump.graph.json",
+              "sha256": "a749b935643dc73e9738e22e341c33fdaa8212ffe038626c52e8cf40096b7410"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma1/gravity-jump.receipt.json",
+              "sha256": "e4f70d8f047ab4dac1edc825145e5c25ba80fedb91e42a03c977f25ccd5d2391"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.011753917,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "3b21773315799e28f5bc99c5a0a72856d95a33374298a575f7f9ddf827eb9fdd"
+          },
+          {
+            "id": "sma1.jump-next-gravity",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma1/mashup-coverage/jump-next-gravity.graph.json",
+              "sha256": "f76269d769afb759614e6116a371659eef3932ca8c85b1c7b15507a09e359a8b"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma1/jump-next-gravity.receipt.json",
+              "sha256": "4a89189cec8db771ac0bd6624b35fdda2858a87c067b0ebe9b583fd7d7db8b11"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.012569332999999999,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "ffdfd7e8742565b1331999022a935f220fe3d6e25cd6f63419d0e502b607494f"
+          }
+        ],
+        "qualification_scope": "Real Composer/lowering binding admission using published package identities and reused native proofs; no new native parity, executable whole L2 or gameplay acceptance."
+      },
+      {
+        "lane": "sma2",
+        "packet_ref": "research/deep-extraction/mario/parallel-sma2/mashup-coverage/receipt.json",
+        "packet_sha256": "c12429606d0ed257a031f7b8cbe7ac63475ba7002bdfa4d2c0f7d2bb48e7178f",
+        "graphs": [
+          {
+            "id": "sma2.contact_preparation_with_relative_support",
+            "graph": {
+              "path": "local/ir/mashup-coverage/sma2/contact-graph.json",
+              "sha256": "33bf629a81390eb63a61632cc00e25d5baefe0b30c0cf664d038bb8fa8b494f7"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma2/admission-result.json",
+              "sha256": "ee10af9332c5df3dd82eaa85377cde105ad014c60f3fc1db6fb4b0e3108feab1"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.012176666999999999,
+            "errors": [],
+            "warnings": [
+              "player_box: unbound source state remains private with zero/default configuration: field_0, field_1, field_10, field_4, field_9",
+              "actor_box: unbound source state remains private with zero/default configuration: field_2",
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "4e552e47844992d61430bd51aa2072e6ceb19768c88bb3a71c36506fa35bf646"
+          }
+        ],
+        "qualification_scope": "Real Composer/lowering binding admission using published package identities and reused native proofs; no new native parity, executable whole L2 or gameplay acceptance."
+      },
+      {
+        "lane": "sma4",
+        "packet_ref": "research/deep-extraction/mario/parallel-sma4/mashup-coverage/coverage.json",
+        "packet_sha256": "3653f692b4736c752429de8ae6e2072f05536f1f803f3ea52984f2482af1cb5a",
+        "graphs": [
+          {
+            "id": "sma4.shared-camera-mirrors",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma4/mashup-coverage/shared-camera-mirrors.graph.json",
+              "sha256": "3ee8988da9b6b45c8c46bffdbedfb6ebae2fc57c605db4fbd1a4142b89b536e0"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma4/shared-camera-mirrors.receipt.json",
+              "sha256": "da114f63eb1a8cb706ec597697c06b71c77ca917033beb8962c3d7978c45b7fb"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.01085475,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "ddb1aa350f198d6997ca22c6aa887126f5f385e705624e6a45fb24852a789afd"
+          },
+          {
+            "id": "sma4.pair-query",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma4/mashup-coverage/pair-query.graph.json",
+              "sha256": "7b66ca03b10c35a4b12781564d34c3c089eb8bdeecdb11d0530d30c2135db196"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma4/pair-query.receipt.json",
+              "sha256": "4622fc309b0184f1482015562df4a900630a4f686177b2950f3e1b9f01a3f62a"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.011794625,
+            "errors": [],
+            "warnings": [
+              "pair_query: unbound source state remains private with zero/default configuration: field_10, field_12, field_14, field_18, field_8",
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "cdb0e5fe56b36743074b7dd28e0d5eb3d9f312b16c6d0677ffef8e9752a983b4"
+          },
+          {
+            "id": "sma4.rejected-mirrors-to-query",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma4/mashup-coverage/rejected-mirrors-to-query.graph.json",
+              "sha256": "e9b7f36d1e0f0b06ea266deff6ad2eb332023736d3593579e4fcf95d8ff97f64"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/sma4/rejected-mirrors-to-query.receipt.json",
+              "sha256": "5cdf4f7b40f2b9d87038b81866df441113539532ceb6f65bbed37b60db90917b"
+            },
+            "valid": false,
+            "status": "invalid",
+            "wall_s": 0.0014889169999999993,
+            "errors": [
+              {
+                "code": "assembly_contract",
+                "message": "narrowing conversion requires fitting explicit source domain: pair_query.field_0"
+              }
+            ],
+            "warnings": [],
+            "statement_sha256": null
+          }
+        ],
+        "qualification_scope": "Real Composer/lowering binding admission using published package identities and reused native proofs; no new native parity, executable whole L2 or gameplay acceptance."
+      },
+      {
+        "lane": "kart",
+        "packet_ref": "research/deep-extraction/mario/parallel-kart/mashup-coverage/result.json",
+        "packet_sha256": "28044f10b74926d723b3d15fd7b0d901d6a8886938a07cf0e7cda0147ee0a5e1",
+        "graphs": [
+          {
+            "id": "kart.steering-single",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/mashup-coverage/steering-single.graph.json",
+              "sha256": "3e841ee8010b8f779ea091fd4d0678b0c94e3cc7837ca7bce65b27606b35dee2"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/kart/steering-single.receipt.json",
+              "sha256": "bf08f4d09ec20bff1fa08d7201bd534c6bea60438034bdf4b20e5ca49e3422ff"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.011993792,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "0e15ae7a9c051ec313784fec1a4a184cd787dd1d15f51f336b92ee07f59e7e84"
+          },
+          {
+            "id": "kart.turn-single",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/mashup-coverage/turn-single.graph.json",
+              "sha256": "5b1ee4295fd1c00ba79c82052b017b7ba3df8c529eb6797d09492ea5d6abd56b"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/kart/turn-single.receipt.json",
+              "sha256": "35edee36736adde29b40c3a56c80bfbcefffb1b68fb2b5f305d348e2f45dc94b"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.011468708000000001,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "88df6ae382bb2f82c7e335541206ef8488cdbe920e01b516a8a80fbb470ba479"
+          },
+          {
+            "id": "kart.bounds-single",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/mashup-coverage/bounds-single.graph.json",
+              "sha256": "074f503ddf83e3d635a1bf4eed355fb0f18d349f179b25125606cbf94a0e7d15"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/kart/bounds-single.receipt.json",
+              "sha256": "f2f6e33b67808171c06aef07a28785e8f93cf577a5c8c239df1c8480d6241302"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.011188792,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "316be763a485b6680894b357affc71618d47fff9f0c702e00b0f9e451dde48a9"
+          },
+          {
+            "id": "kart.steering-then-turn",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/mashup-coverage/steering-then-turn.graph.json",
+              "sha256": "75380a1593c7603aac31a5934040e1cde02223a8fb170e65ad2ddbb65cf2b83b"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/kart/steering-then-turn.receipt.json",
+              "sha256": "55ce098ea6cd8676f8200e0ccb2d37db035b82fbc75a9e9b9d2fcdff79f2de63"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.012496832999999999,
+            "errors": [],
+            "warnings": [
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "06e9c0ae79a538bd683d53b04d0fbc2b95a183c07d96d313f9db610568903cb8"
+          },
+          {
+            "id": "kart.reject-private-secondary-alias",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/mashup-coverage/reject-private-secondary-alias.graph.json",
+              "sha256": "c65f41d6347d3d9f95cf4356fa3138bcbb6f86be09e15a5fb8d9d4418dfcf99c"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/kart/reject-private-secondary-alias.receipt.json",
+              "sha256": "6fb18b3c94abd06156e0b5c261d6a260337c8ec05b6317228964a678a19bc050"
+            },
+            "valid": false,
+            "status": "invalid",
+            "wall_s": 0.0004589579999999989,
+            "errors": [
+              {
+                "code": "assembly_contract",
+                "message": "private opaque field cannot be a public binding: steering.field_1"
+              }
+            ],
+            "warnings": [],
+            "statement_sha256": null
+          }
+        ],
+        "qualification_scope": "Real Composer/lowering binding admission using published package identities and reused native proofs; no new native parity, executable whole L2 or gameplay acceptance."
+      },
+      {
+        "lane": "superstar",
+        "packet_ref": "research/deep-extraction/mario/parallel-superstar/mashup-coverage/summary.json",
+        "packet_sha256": "033cbd02d3797dd7de35e8b71dbdc0125b6f6ea0ef025fbb4e4dfc53b5e46c2e",
+        "graphs": [
+          {
+            "id": "mlss.public-lifecycle",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-superstar/mashup-coverage/public-lifecycle.graph.json",
+              "sha256": "90e4b28c7d3acca1956da66abc27cef57cca88ea0fd0db4aab037cf063d0b0a7"
+            },
+            "receipt": {
+              "path": "local/ir/mashup-coverage/superstar/public-lifecycle.receipt.json",
+              "sha256": "043b25860c0256bcdaa1545b2ae939af50620632a84858f5190cc83662dd3287"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "wall_s": 0.012271833,
+            "errors": [],
+            "warnings": [
+              "initialize: unbound source state remains private with zero/default configuration: field_0, field_1, field_11, field_12, field_13, field_3, field_8, field_9",
+              "update: unbound source state remains private with zero/default configuration: field_0, field_1, field_5, field_6, field_7, field_9",
+              "reset: unbound source state remains private with zero/default configuration: field_2",
+              "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+            ],
+            "statement_sha256": "ab10f41ba430358c8cc85d758161faa3165865ad6d340bbde5350c492a970cfe"
+          }
+        ],
+        "qualification_scope": "Real Composer/lowering binding admission using published package identities and reused native proofs; no new native parity, executable whole L2 or gameplay acceptance."
+      }
+    ],
+    "metadata_verification_wall_s": 0.0021649589999999993,
+    "new_native_runs": 0,
+    "new_JVM_exports": 0,
+    "new_game_ROMs": 0,
+    "limits": [
+      "Admission validates binding identities/ownership/semantics/order and lowering only; reused finite root qualification does not prove the graph.",
+      "SMA2 shared rectangle preparation feeds overlap but no published return meanings; modes and actor shape stay private/default.",
+      "SMA4 direct mirror-to-query rejected for width/frame projection gap; existing linked query keeps internal shared scratch.",
+      "Superstar only public flags/counter are shared; separate opaque physical actor copies prevent full lifecycle assembly.",
+      "Kart connected public recovery phase does not establish canonical racer/private-secondary alias or source scheduler.",
+      "SMA1 jump-to-next-gravity has genuine velocity/hover dataflow, but intervening terrain/integration/frame scheduler remain obligations."
+    ]
+  },
+  "prefab_reconstruction_aggregation": {
+    "schema": "gameverse.mario.prefab-reconstruction-aggregation/1",
+    "updated_utc": "2026-10-16T15:09:09.564802+00:00",
+    "deliveredGames": 5,
+    "readyCallablePhasePrefabs": 2,
+    "runtimeQualifiedPrefabs": 0,
+    "records": [
+      {
+        "gameId": "super-mario-advance",
+        "delivery": {
+          "path": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/delivery.json",
+          "sha256": "f72956c2432ccc42fb3d16a2a342e676b18258e1064a5b5da2addbc6f88849af"
+        },
+        "allowlist": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/prefab-allowlist.json",
+        "prefabs": [],
+        "coreLoopPhaseCounts": {
+          "source-only": 8,
+          "missing": 3
+        },
+        "wholeGameReady": false,
+        "blueprintIds": [
+          "character-traversal",
+          "hazard-recovery"
+        ]
+      },
+      {
+        "gameId": "super-mario-advance-2-super-mario-world",
+        "delivery": {
+          "path": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/delivery.json",
+          "sha256": "82f25de70d8fb284799548e47c69766eb770ab82ba92d0b37fdf3f5e1d43a875"
+        },
+        "allowlist": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/prefab-allowlist.json",
+        "prefabs": [],
+        "coreLoopPhaseCounts": {
+          "source-only": 11,
+          "missing": 1
+        },
+        "wholeGameReady": false,
+        "blueprintIds": [
+          "combat-encounter",
+          "character-traversal",
+          "exploration-progression",
+          "hazard-recovery"
+        ]
+      },
+      {
+        "gameId": "super-mario-advance-4-super-mario-bros-3",
+        "delivery": {
+          "path": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/delivery.json",
+          "sha256": "41024112b2664f355b1ce7c7929a188d03c2f0afef55cce8725ca443a37819dc"
+        },
+        "allowlist": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/prefab-allowlist.json",
+        "prefabs": [
+          {
+            "id": "sma4.actor-advance-camera-projection",
+            "moduleId": "sma4.actor-runtime-view",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.assembly.json",
+              "sha256": "aad3391700ecd7dd5d506a86957fbf8a45118423d8fec47f8983821058563c9e"
+            },
+            "validation": {
+              "path": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/actor-advance-project.validation.json",
+              "sha256": "87799af46357ce03ca3c31baca633c82ea3bc371eb404851c928928056d9349d"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "readyToAdd": true,
+            "runtimeQualified": false,
+            "requiredServices": [
+              {
+                "id": "actor_phase_admission",
+                "status": "external-host-required",
+                "scope": "Source scheduler/eligibility must admit exactly one actor phase; not implemented by scaffold."
+              },
+              {
+                "id": "camera_state",
+                "status": "external-input",
+                "scope": "Supply canonical camera offsets before invocation."
+              }
+            ],
+            "gaps": [
+              "Caller supplies active actor, velocity and camera; no source eligibility/freeze/cull/controller decisions.",
+              "Graph has one actor field view; canonical18scheduled/15allocatable pool handles and reserved lifecycle are external obligations.",
+              "Integrator original world+bd2 delta is preserved as private component.field_2 but has no published semantic port; consumers remain outside.",
+              "Camera u16 output to collision u8 input requires original lowbyte projection and frame mapping; no contact closure.",
+              "No native execution of this newly wired graph; source package proofs reused only."
+            ]
+          }
+        ],
+        "coreLoopPhaseCounts": {
+          "source-only": 5,
+          "usable-prefab": 1,
+          "missing": 1
+        },
+        "wholeGameReady": false,
+        "blueprintIds": [
+          "character-traversal",
+          "combat-encounter"
+        ]
+      },
+      {
+        "gameId": "mario-kart-super-circuit",
+        "delivery": {
+          "path": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/delivery.json",
+          "sha256": "888c97381c1c4e60859df9495886f90e68b532553fe6bb58354bad758c7420d9"
+        },
+        "allowlist": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/prefab-allowlist.json",
+        "prefabs": [
+          {
+            "id": "kart-steering-recovery-phase",
+            "moduleId": "mario-kart-super-circuit.steering-recovery-phase",
+            "graph": {
+              "path": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.assembly.json",
+              "sha256": "fb4a580679e231e9fce3c0afe62a7891fc401308cc8e97b9a32e4a8dcf6753bb"
+            },
+            "validation": {
+              "path": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.validation.json",
+              "sha256": "087fe1689b10a2faa2576ffe4b644fc0e54acc70e4c3e5c52b38630d6583d8fe"
+            },
+            "valid": true,
+            "status": "binding_valid_obligations_unproven",
+            "readyToAdd": true,
+            "runtimeQualified": false,
+            "requiredServices": [],
+            "gaps": [
+              "One original recovery transaction only; no throttle/brake/hop/drift controller or full vehicle step",
+              "Private secondary storage remains internal zero-default and can be cleared by original routine; not an external alias port",
+              "Host explicitly supplies legal invocation timing and one persistent module instance; no physical angular units inferred",
+              "Do not wire this instance to turn recovery as one canonical racer until secondary-storage alias is supported"
+            ]
+          }
+        ],
+        "coreLoopPhaseCounts": {
+          "source-only": 9,
+          "usable-prefab": 1
+        },
+        "wholeGameReady": false,
+        "blueprintIds": [
+          "racing-session",
+          "hazard-recovery"
+        ]
+      },
+      {
+        "gameId": "mario-and-luigi-superstar-saga",
+        "delivery": {
+          "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/delivery.json",
+          "sha256": "eca7ffd7dd67d71f679d06981b4861e2298ac6ebec9ef199b222600945bc6fac"
+        },
+        "allowlist": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/prefab-allowlist.json",
+        "prefabs": [],
+        "coreLoopPhaseCounts": {
+          "source-only": 2,
+          "missing": 6
+        },
+        "wholeGameReady": false,
+        "blueprintIds": [
+          "character-traversal",
+          "turn-based-party-battle",
+          "exploration-progression",
+          "dialogue-interactive-scenes"
+        ]
+      }
+    ],
+    "metadataVerificationWallSeconds": 0.0009663330000000015,
+    "scope": "Incremental source-derived prefab phase admission and whole-game gap maps. ReadyToAdd means callable symbolic wiring, not composed native/runtime qualification or full game. Experience/site/API owners integrate delivery+allowlists separately.",
+    "productUsefulReadyPrefabs": 2,
+    "sourceOnlyCorePhases": 35,
+    "missingCoreResponsibilities": 11,
+    "productFilter": "Internal opaque descriptor initialization, flag reset and death countdown are not useful primary prefab cards. Ready phase count includes only connected actor advance/projection and scoped Kart steering recovery.",
+    "boundedSourceClosureAdvances": [
+      {
+        "game": "super-mario-advance",
+        "scope": "retry checkpoint restoration; downstream fixed-point/world rehydration pending",
+        "receipt_ref": "local/ir/prefab-reconstruction/sma1/retry-expected/receipt.json",
+        "native_vectors": 1024,
+        "expected_state_cases": 8,
+        "native_qualification_wall_s": 0.271644,
+        "export_wall_s": 3.852505709
+      },
+      {
+        "game": "mario-and-luigi-superstar-saga",
+        "scope": "automatically linked init-to-update same actor; no new original root and no ready primary movement prefab",
+        "artifact_root": "local/ir/prefab-reconstruction/superstar/init-update-linked",
+        "native_vectors": 1024,
+        "native_qualification_wall_s": 0.246994625
+      }
+    ]
+  }
 }

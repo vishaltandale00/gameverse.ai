@@ -1,0 +1,128 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.progress.category3_acquire",
+  "label": "Acquire category3 packed soul quantity with alias-preserving rollback",
+  "role": "progression",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.progress.category3_acquire/package.json",
+  "package_sha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+  "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "249a3eb713a82dc5191815ae310958b4335b1ce98abf7dda7ad0b8ee1cb9189b"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 3,
+        "unsigned_max": 3
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 7
+      }
+    },
+    {
+      "name": "param_2",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 4,
+      "semantic_type": {
+        "quantity": "packed_four_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "inventory.soul.category3",
+        "confidence": 0.95,
+        "evidence": [
+          "research/automatic-ir/aria-soul-next-round/acceptance-plan.json"
+        ],
+        "naming_status": "source_derived_inventory_layout_not_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 4
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "254537d8b569929bffc710e69cae4df22bc7e7793c2d6a17a5ec2628e1f2d985",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "5f09e96b1db01d54ae8c0024c0789f393abf495027499dba29277d928df26aea",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.progress.category3_acquire/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Exact category3 invocation precondition; other categories remain unqualified by this package",
+    "dependency_0_Index0..7 only; low-level source functions do not enforce capacity",
+    "dependency_0_One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+    "dependency_0_No cast, enemy, pickup, equip or complete progression lifecycle claim",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_Exact category3 invocation precondition; other categories remain unqualified by this package",
+    "dependency_1_Index0..7 only; low-level source functions do not enforce capacity",
+    "dependency_1_One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+    "dependency_1_No cast, enemy, pickup, equip or complete progression lifecycle claim",
+    "Exact category3 invocation precondition; other categories remain unqualified by this package",
+    "Index0..7 only; low-level source functions do not enforce capacity",
+    "One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+    "No cast, enemy, pickup, equip or complete progression lifecycle claim",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

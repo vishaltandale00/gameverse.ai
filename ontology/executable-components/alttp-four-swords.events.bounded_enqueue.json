@@ -1,0 +1,135 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "alttp-four-swords.events.bounded_enqueue",
+  "label": "Append an opaque event to the bounded actor event queue",
+  "role": "event_service",
+  "source_game": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/alttp-four-swords.events.bounded_enqueue/package.json",
+  "package_sha256": "fb17f40d42d1647377a74f9b63a497e1e5d15a247a03aa902ae90d2b482717a1",
+  "behavior_sha256": "7920519c9978ef9a880c2331cfa869e6fa0d5eb27af98ab26aa3a247105e07aa",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 64,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "c1306e084e215a4bfce21a3dcec6e8f5f1fe9f74758a628eb1c3fde919de6742"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "event_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "shared_event_queue.occupancy",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/legend-of-zelda-the-a-link-to-the-past-and-four-swords/l0/08003dfc.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u16",
+      "count": 9,
+      "semantic_type": {
+        "quantity": "opaque_event_tag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "shared_event_queue.opaque_event_identifiers",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/legend-of-zelda-the-a-link-to-the-past-and-four-swords/l0/08003dfc.json",
+          "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u16",
+        "count": 9
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "shared_event_queue_service_state",
+    "clock": "explicit_enqueue_invocation",
+    "ordering": "source count increment precedes write to previous count slot; drain snapshots then clears count before eligibility gates",
+    "capacity": 8,
+    "qualified_input_count_min": 0,
+    "qualified_input_count_max": 8
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/alttp-four-swords.events.bounded_enqueue/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Qualified enqueue subset requires input count0..8; no claim that this is a proven whole-game invariant.",
+    "Capacity is8; conservative adapter models9 lanes because its count domain includes8. The ninth lane is a sentinel and stayed unchanged in the explicit boundary fixture suite.",
+    "Strong retained receipt covers64 native comparisons including36 explicit count/event cases, unchanged ninth sentinel and16-byte external collection canaries. Additional1024-vector qualification remains separately retained; no reruns performed.",
+    "Event tags are opaque identifiers. No sound, combat, progression or game-specific meaning is assigned.",
+    "Queue service state is shared across callers; do not instantiate an independent queue per actor or callback.",
+    "Source drain resets count before actor/global eligibility gates and may discard pending events; delivery/driver dependencies and timed-toggle controller remain unqualified.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/next-extraction/system.json",
+    "sha256": "e1683925bc7a4cb36d4f6e4283a1b81c8ab08175b18bf6ebf317a52fddc4ef50",
+    "status": "source_backed_full_controller_open_service_subset_finite_qualified",
+    "qualified_service": "bounded_enqueue",
+    "parameters": {
+      "param_0": {
+        "storage_type": "u16",
+        "meaning": "opaque event tag",
+        "units": "identifier; no magnitude interpretation"
+      }
+    },
+    "source_domain": {
+      "count_min": 0,
+      "count_max": 8,
+      "capacity": 8,
+      "global_invariant_proven": false
+    },
+    "ordering": "Append uses prior count slot; queue reset/drain is separate and unqualified. Source timed-toggle enqueues activation tag before timer reload; no wrapper replaces source gates.",
+    "canonical_l0_sha256": "70e366ebb881f5e76e19d1af0f9904765101cace236d7aa7dc0ecfc5d0bbf9ed",
+    "adapter_l0_sha256": "70e366ebb881f5e76e19d1af0f9904765101cace236d7aa7dc0ecfc5d0bbf9ed",
+    "raw_l0_sha256": "aff8b97763c1cceffa7c38ac8986c45313acb6ad5aa31ff33e9dbeeaf4d82dc4"
+  }
+}

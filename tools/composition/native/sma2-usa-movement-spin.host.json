@@ -1,0 +1,131 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "super-mario-advance-2-super-mario-world",
+  "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+  "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+  "rom_bytes": 4194304,
+  "append_address": "0x8400000",
+  "output_bytes": 8388608,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Whole original campaign/contact scheduling retained; own recovered movement and accepted spin impact composed through four entry replacements",
+    "argument_constants": [],
+    "argument_reads": [
+      {
+        "address": "0x3003f98",
+        "width": 32
+      },
+      {
+        "address": "0x3003f9c",
+        "width": 32
+      },
+      {
+        "address": "0x3002360",
+        "width": 32
+      },
+      {
+        "address": "0x3007a48",
+        "width": 32
+      },
+      {
+        "address": "0x3002b94",
+        "width": 16
+      },
+      {
+        "address": "0x3002c04",
+        "width": 16
+      },
+      {
+        "address": "0x3002c08",
+        "width": 16
+      },
+      {
+        "address": "0x3002b68",
+        "width": 16
+      }
+    ],
+    "global_context_writes": [
+      "Original player at03003fa0..0300409f, controls sound context at03002b68, native scene ground effect slots02f0..032f",
+      "Player+0c:i16 bounce and+ec:i16 chain",
+      "Scene native effect/particle/reward records and ring cursor",
+      "Engine score/life fields and profile score; camera-relative sound context03002b68"
+    ],
+    "phase_obligation": "Original integration then terrain/collision then horizontal/jump control then vertical policy; original wrappers own all call frequency and conditional scheduling; accepted spin contact stays at its original enemy-update dispatcher phase, without moving it across player phases"
+  },
+  "hooks": [
+    {
+      "id": "integrate",
+      "address": "0x806b52c",
+      "preimage": "00b50c4a0c481318",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "return": "void",
+      "phase": "integrate",
+      "writes": [
+        "position",
+        "velocity",
+        "traversal",
+        "effects"
+      ]
+    },
+    {
+      "id": "control",
+      "address": "0x806e88c",
+      "preimage": "f0b50027294b2a48",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "return": "void",
+      "phase": "control",
+      "writes": [
+        "position",
+        "velocity",
+        "traversal",
+        "effects"
+      ]
+    },
+    {
+      "id": "vertical",
+      "address": "0x806f240",
+      "preimage": "70b5244a24495018",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "return": "void",
+      "phase": "vertical",
+      "writes": [
+        "position",
+        "velocity",
+        "traversal",
+        "effects"
+      ]
+    },
+    {
+      "id": "spin",
+      "address": "0x802fd38",
+      "preimage": "10b5041cfff766ff",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "accepted_spin_contact",
+      "writes": [
+        "enemy_terminal",
+        "velocity",
+        "traversal",
+        "effects",
+        "reward_progress"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "play_sound",
+      "address": "0x809b5cc",
+      "isa": "thumb",
+      "abi": "void(u32)",
+      "preimage": "f0b54f464646c0b4",
+      "range_size": 336,
+      "range_sha256": "e6e4481a55c533da0eaa897d9864ece94fc5f05eb9fa86a7ae1cb2e4ff8e3f0a"
+    }
+  ]
+}

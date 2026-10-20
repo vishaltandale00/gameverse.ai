@@ -1,0 +1,186 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kart.vehicle_speed_heading_step",
+  "label": "Vehicle speed update and heading velocity decomposition",
+  "role": "movement",
+  "source_game": "mario-kart-super-circuit",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kart.vehicle_speed_heading_step/package.json",
+  "package_sha256": "aedf0f4b4086e0ca5e23257aca9c1f32940bbd3e462350604584b9b316af83de",
+  "behavior_sha256": "8a72264dc9a689894a3ab828d0cb0cf4451606db7780eebf66631717c8c05ea5",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d82ee4416d727916d3efcd452ae036f213b7a7086e7f263ff3a77cf54478bffb"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.velocity.axis_0.storage",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.velocity.axis_1.storage",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.heading.wrapped_storage",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.longitudinal_speed.fraction_bits",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.longitudinal_speed.integer_storage",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.longitudinal_acceleration.storage",
+        "confidence": 0.96,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/vehicle-dynamics-source-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "One canonical racer state view",
+    "clock": "One original function invocation",
+    "phase": "Original vehicle update phase; actual caller admission and original timing required",
+    "ordering": "Source caller relative order pinned separately; no invented complete scheduler"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kart.vehicle_speed_heading_step/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Two finite-qualified original functions; not a recovered full driving/race loop",
+    "No source terrain query, road friction, hop/drift lifecycle or scene scheduler closed",
+    "Full speed-word cross-root public binding needs an explicit source-backed structural adapter or canonical shared backing",
+    "Each original function retains private canonical adapter partition; no falsely independent speed aliases",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "ownedState": "Canonical racer; preserve speed-word alias relationship across consumers",
+    "services": [],
+    "units": "Storage counts; physical angular, distance and time units unavailable",
+    "sourceOrder": "Exact caller ordering is in pinned source contract; both functions are separate conditional source phases",
+    "profileInput": "Original copied profile bands remain caller-owned read-only state during invocation",
+    "return": "void; observable outputs are actual in-place speed, velocity, turn or acceleration state",
+    "privateOpaque": "No scalar pointer addresses or field halves are equated with unrelated public quantities",
+    "scope": "Finite original-native differential qualification only; complete vehicle or race controller unproven"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "mario-kart-super-circuit",
+    "entry": "08038200"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

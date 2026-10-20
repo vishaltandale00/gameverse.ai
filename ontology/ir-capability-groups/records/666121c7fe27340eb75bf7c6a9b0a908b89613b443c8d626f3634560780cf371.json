@@ -1,0 +1,208 @@
+{
+  "canonicalstate": {
+    "adapter_entity": {
+      "resource_node.owner_token": {
+        "address": null,
+        "argument": "r0",
+        "name": "field_0",
+        "offset": 0,
+        "owner": "entity",
+        "width": 32
+      }
+    },
+    "alias_rule": "Predicate read comes from exact same node word0 written by original registration08015210 and cleared by original unlink080151ec. No detached owner token or shadow queue created. Nodeprev/tail canonical cell pointers remain original host.",
+    "binding_scope": "Generated wrapper reads canonical entityr0 word0 into IRstate synchronously. Readonly IR query; no allocation or source-state writes by predicate.",
+    "owner": "Borrowed canonical resource node entity supplied in r0; original resource queue owns lifetime and association. Distinct from the parent choice SceneContext; never bind predicate r0 to SceneContext base.",
+    "readonly_assets": [],
+    "source_parent": "Original scene allocation contains resource nodes at scene+0x940,+0x95c,+0x978 and destructors additionally visit scene+0x424,+0xc. Each node passed as its own r0 reference."
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "fresh_original_native_comparisons": 128,
+    "fresh_rebuilt_native_comparisons": 128,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "new_native_runs_for_publication": 0,
+    "original_lifecycle_cases": 12,
+    "prospective_new_central_packages": 1,
+    "publication_pending": true,
+    "rebuilt_lifecycle_cases": 12
+  },
+  "event_order": [
+    "Original context initializer0818dfc8, heap allocator08011e3c and constructor0801bed0 establish one same scene allocation.",
+    "Original08015210 registers three embedded nodes in each of six insertion orders. Native fixture checks every owner/head/prev/next/tail alias, calls original080151ec on middle node, checks canonical predecessor/successor links, and reappends same node through08015210.",
+    "Original0801d100 applies A or B with original feedback/audio on same scene, selected result is captured before deletion. Fullwrapper0801d490 is not executed.",
+    "Original deleting scene0801d40c visits node978,95c,940,424,c through original resource destructor08015270. It invokes original08015264 entry now hooked to emitted IRpredicate5times per scene,60entries across12fixtures.",
+    "Predicate returns fullu32Boolean from borrowed ownerword. Nonzero original08015270 dispatches original080151ec to unlink and clear same node; empty two nodes skip unlink. Original deleting base then frees/coalesces same heap block.",
+    "All recorded queue/phase/selection/feedback/heap state matches original across twelve candidate fixtures, excluding only instruction counters. Emittedfalse negative leaves resource/queue state and unchanged oracle rejects exit17."
+  ],
+  "exactpins": {
+    "adapter": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/validation-adapter.json",
+      "sha256": "e3524067f91c3db6d65f576227a5edbb7ffb022cc2e0c673355f24ad1b329e98"
+    },
+    "context_proof": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/ir-lifecycle-result.json",
+      "sha256": "c06d8342bb698dd058807e5727ffebd98cc3e2a12004bba0bee58457f5ea9a7c"
+    },
+    "dependency_frontier": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/dependency-frontier.json",
+      "sha256": "db8b33967e7d0bd308f295a8be4e9e25ab7c31057cb0ba0a01eed3dbd93cbd19"
+    },
+    "execution_context": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/execution-process-context.json",
+      "sha256": "5731944527481095f15c08f4981ae2b787c7a43d17d68417151da441c15c6511"
+    },
+    "fixtures": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/fixtures.json",
+      "sha256": "80b7c2eb357594c96f8f64ccb77ebc1e22a785a057e167955ed00af4267d894e"
+    },
+    "generated_c": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/generated.c",
+      "sha256": "70705169a7c5e5792ce19e13eb55e93b1579d05a7647bb136b3733f6ed5be489"
+    },
+    "independent_qc": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/ff12-predicate-ir-layout-restored-qc.json",
+      "sha256": "f771f2f3b61a6cf9c975b9566fbd8b2be57ce3421597be23c9b8fee9761bf2dc"
+    },
+    "l0": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/l0.json",
+      "sha256": "43d3692ba7ebe60c502fb7d4740390150517e2631d4c732aacc10f52df203c40"
+    },
+    "metadata_restoration": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/metadata-restoration.json",
+      "sha256": "d921d8b72b92c8d0b416e2e706f12c08e91f0028cb478b6fe3e8eb9024db9829"
+    },
+    "negative_proof": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/ir-negative-result-v2.json",
+      "sha256": "b8b8d87627d54d56f93f4a6c137d1a6345ae5954767f35c15e57e3f1cc8d96b5"
+    },
+    "nondestructive_fix_closure": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/nondestructive-fix-closure.json",
+      "sha256": "44c5af7177d9562d7e275d707ca7a6b5f924d8cd006dc1f1d92584bc21474f6e"
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/original-proof.json",
+      "sha256": "165695e95f355bc051dcec20e8ed889231ba23dcba297cdf75154552f7de7d89"
+    },
+    "prepared_behavior": {
+      "path": "local/ir/mashup-coverage/publication-intake/ir-coverage-wave-ff12-01/ff12.private.resource_predicate/l1.json",
+      "sha256": "7f1e2e9efa1a4cec1c4612f177916b8cb5509c06632366ffd8a69b9aa70de5dd"
+    },
+    "prepared_package": {
+      "path": "local/ir/mashup-coverage/publication-intake/ir-coverage-wave-ff12-01/ff12.private.resource_predicate/package.json",
+      "sha256": "bba31588d96b800ce886d37deedc94a380be0b5cfa6341863db05654832aae46"
+    },
+    "prepared_receipt": {
+      "path": "local/ir/mashup-coverage/publication-intake/ir-coverage-wave-ff12-01/ff12.private.resource_predicate/receipt.json",
+      "sha256": "77546bdc3c50bc4cbc5a2cba5ce2e46bae02ac2f5a7edaafc73a36813fa839ba"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/provider-report.json",
+      "sha256": "12ed920f417422e0bc1cb2713fc17ca400dbb8dc692897e883c33a0a465de65c"
+    },
+    "publication_candidates": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/publication-candidates.json",
+      "sha256": "82df9eac906a3b4a7992f66d2eeb30493d004490a3785d0a5d13663ad10d048c"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-ff12-predicate-ir-001/resource_predicate/rebuilt-proof.json",
+      "sha256": "8c8ef6d9a4a67803e4c27326f2f1ac3486a04137e3a462274e5eb4777fe912bf"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/resource-predicate-source.json",
+      "sha256": "f6179ee47c851054db477580ee60e0e2e42807429334867b34acc470e45edc87"
+    }
+  },
+  "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+  "gaps": [
+    "Canonical writable ownerhead/predecessornext tail/prevlinkcell IR and literal callback specialization stillopen.",
+    "Mode128audio referencefield binding not supported; original audio retained.",
+    "Actual wrapper0801d490 return/phase10/11 exit, input/IRQ/frame/render/fade, full activevoice and heapfailure unclosed.",
+    "Actual game reachability and general queue integrity are not proven by ownerword nonzero query.",
+    "Historical freshprocess/templateguard caveats retained; later helper fix does not retroactively relabel oldnativeproof."
+  ],
+  "id": "ff12.resource_owner.original-teardown-predicate.v1",
+  "module_id": "ff12.private.resource_predicate",
+  "native_eligibility": {
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "actual_emitted_binding_entries": 60,
+    "certificate_boundary": "Exact native witness links and independent source/context review; byteQC empty scoped_native certificate array is not semantic authority. No fullscene/portable/generalclosedsubstitution admission.",
+    "context_cases": {
+      "original": 12,
+      "rebuilt": 12
+    },
+    "do_not_pool_historical_and_fresh": true,
+    "expected_return_cases_each_leaf": 6,
+    "fixture_input_sha256": "7a6d402a7a224ae786c86eb09869a4c56f7237522609fa8ca6e3f09af1316eef",
+    "fixture_scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_and_reconstructed_entry_parity_with_actual_original_resource_destructor_consumer",
+    "limits": {
+      "entity_bytes": 256,
+      "entity_span_limit": 16384,
+      "instructions_per_call": 2048,
+      "object_count": 1,
+      "object_stride": 8192,
+      "reserved_object_bytes": 32768,
+      "stage_timeout_s": 30,
+      "vectors": 128
+    },
+    "original_rom_sha256": "bbafb77d2be577ca0a4bfcbec9fc3004b589f24478ec5e406d61645296449422",
+    "proof_links": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/native-eligibility-links.json",
+      "sha256": "f06b9535a82812cf8a830805549bc89d41fe817ae17721e29b989e34995aef05"
+    },
+    "rebuilt_rom_sha256": "554b6f831910b40952eee8b04a8cd4578e51f698c1a2812db4f3a3b89c5116e5",
+    "vectors": {
+      "fresh_original_leaf": 128,
+      "fresh_rebuilt_leaf": 128,
+      "historical_prior_leaf_original_generated": 128
+    }
+  },
+  "originalhostprerequisites": [
+    "Exact originalROMbbafb... and generated candidate554b... pinned in nativeproofs, original runtime context/heap/constructor retained.",
+    "Borrow accessible canonical resource node, not arbitrary SceneContext. Preserve source node lifetime through query/unlink and final heap deletion.",
+    "No real KEYINPUT polling/IRQ/frame scheduler/fade/render timing or active audio voice lifecycle established by synthetic source states.",
+    "No concurrent writer or interrupt-visible intermediate binding state observer in finite qualification; no whole game alias safety claim."
+  ],
+  "package_identity": {
+    "behavior_sha256": "7f1e2e9efa1a4cec1c4612f177916b8cb5509c06632366ffd8a69b9aa70de5dd",
+    "id": "ff12.private.resource_predicate",
+    "origin": "automatic_highfunction_lift",
+    "prospective_destination": "local/ir/packages/ff12.private.resource_predicate/package.json",
+    "status": "privately_prepared_publication_pending",
+    "version": "0.1.0"
+  },
+  "package_ids": [
+    "ff12.private.resource_predicate"
+  ],
+  "proposal_status": "frozen-new-central-package-candidate-existing-qualified-source-root",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": true,
+    "downstream_joint_lifecycle_scope": "Finite actual original resource-destructor consumer in twelve synthetic source-state lifecycle fixtures only; full wrapper, clock and gameplay reachability unproven",
+    "embedded_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 8,
+    "mechanical_binding_bytes": 26,
+    "original_entry": "08015264",
+    "portable_L1": true,
+    "raw_difference_bytes": 42,
+    "replacement_entry_veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "08015264"
+  ],
+  "timing": {
+    "provider_total_seconds": 1.0537492080000002,
+    "queue_seconds": null,
+    "scope": "Previously retained generated compilation+leaf proofs. Capability metadata creation adds no native/compiler/game run."
+  }
+}

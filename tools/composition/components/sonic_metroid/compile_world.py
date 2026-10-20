@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[4]
 KINDS={'relic':1,'gate':2,'alien':3,'recharge':4,'heat':5,'freeze_gateway':6}
 UPGRADES=['morph','missile','bomb','high_jump','ice','varia','speed','screw']
 GATES=['beam','missile','bomb','high_jump','ice_platform','speed','screw']
-ALIENS=['crawler','flyer','pirate','guardian']
+ALIENS=['crawler','flyer','pirate','guardian','ripper']
 FONT={
 'A':['01110','10001','10001','11111','10001','10001','10001'],
 'B':['11110','10001','10001','11110','10001','10001','11110'],
@@ -118,7 +118,10 @@ def compile_world(doc):
     assert rule['support_must_respawn'] and support.get('renewable') and support['kind']=='alien'
     assert abs(support['x']-p['x'])<=rule['max_horizontal_separation_px']<=80
     assert set(rule['abilities'])=={'ice','high_jump'}
-   pf.append('{%d,%d,%d,%d,%d,%d}'%(KINDS[k],n,ident,1 if p.get('renewable') else 0,p['x'],p.get('floor_offset',0)))
+   radius=p.get('patrol_radius_px',0)
+   assert not radius or k=='alien' and v=='ripper' and radius%8==0 and 16<=radius<=120
+   aux=radius//8 if k=='alien' and v=='ripper' else 1 if p.get('renewable') else 0
+   pf.append('{%d,%d,%d,%d,%d,%d}'%(KINDS[k],n,ident,aux,p['x'],p.get('floor_offset',0)))
   lines.append('{%s,%s,%d,%d,%d,0,{%s}},'%(json.dumps(s['region']),json.dumps(s['entry']),len(pf),s.get('heat',False),s.get('guardian',False),','.join(pf)))
  lines+=['};','const GvReturnSpec gv_return_variants[]={']
  variants=doc.get('return_variants',[]);variant_keys=set();variant_ledgers=set()

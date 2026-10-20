@@ -1,6 +1,12 @@
 #include "game.h"
+#include "../../../../local/composition-assets/mzm-flyer-02/assets.h"
 void gv_restore_palette(GvState *s)
 {
+    if(s->mzm_palette_valid && s->mzm_palette<=15){
+        int same=1;for(unsigned i=0;i<16;i++)if(GV_R16(0x03001920+s->mzm_palette*32+i*2)!=gv_mzm_flyer_palette[i])same=0;
+        if(same){for(unsigned i=0;i<16;i++)GV_R16(0x03001920+s->mzm_palette*32+i*2)=s->mzm_palette_backup[i];GV_R32(0x03001100)|=2;}
+    }
+    s->mzm_palette_valid=0;
     if(!s->palette_valid || s->palette>15)return;
     int same=1;for(unsigned i=0;i<16;i++)if(GV_R16(0x03001920+s->palette*32+i*2)!=gv_palette[i])same=0;
     if(same){for(unsigned i=0;i<16;i++)GV_R16(0x03001920+s->palette*32+i*2)=s->palette_backup[i];GV_R32(0x03001100)|=2;}
@@ -19,6 +25,42 @@ static int lease_palette(GvState *s)
         GV_R32(0x03001100)|=2;return 1;
     }
     return 0;
+}
+/* A second actual unused OBJ palette lease preserves all16 source colors;
+ * no recoloring/downsampling or screenshots stand in for the original assets. */
+static int lease_mzm_art(GvState *s)
+{
+    if(!s->mzm_tiles){
+        unsigned ptr=(unsigned)(uintptr_t)((GvVramAllocate)0x08006b55)(64);
+        if(ptr<0x06010000 || ptr+64*32>0x06018000)return 0;
+        s->mzm_tiles=ptr;for(unsigned i=0;i<512;i++)GV_R32(ptr+i*4)=gv_mzm_flyer_tiles[i];
+    }
+    unsigned used=1u<<s->palette,count=GV_R8(0x030011b0);
+    for(unsigned i=0;i<count && i<128;i++)if(!(GV_R16(0x03001b80+i*8)&0x2000))used|=1u<<(GV_R16(0x03001b84+i*8)>>12);
+    for(int bank=15;bank>=0;bank--)if(!(used&(1u<<bank))){
+        s->mzm_palette=(uint8_t)bank;s->mzm_palette_valid=1;
+        for(unsigned i=0;i<16;i++){s->mzm_palette_backup[i]=GV_R16(0x03001920+bank*32+i*2);GV_R16(0x03001920+bank*32+i*2)=gv_mzm_flyer_palette[i];}
+        GV_R32(0x03001100)|=2;return 1;
+    }
+    return 0;
+}
+static void draw_ripper(GvState *s,const MzmRipper *m,int x,int y)
+{
+    if(x<-48 || x>287 || y<-32 || y>191 || m->animation>2 || m->frame>3)return;
+    unsigned image=gv_mzm_flyer_scripts[m->animation][m->frame].frame;if(image>=5)return;
+    const GvMzmFrame *f=&gv_mzm_flyer_frames[image];unsigned base=(s->mzm_tiles-0x06010000)/32;
+    static const uint8_t widths[3][4]={{8,16,32,64},{16,32,32,64},{8,8,16,32}};
+    int drawn=0;
+    for(unsigned i=0;i<f->count;i++){
+        if(GV_R8(0x030011b0)>=124)break;
+        GvMzmPart part=f->parts[i];unsigned shape=part.a0>>14,size=part.a1>>14;if(shape>2)continue;
+        int dx=part.a1&511,dy=(int8_t)part.a0;if(dx>=256)dx-=512;
+        unsigned flip=0;if(m->flags&0x40){dx=-dx-widths[shape][size];flip=0x1000;}
+        uint16_t *o=((GvOamAllocate)0x080047fd)(12);if((uintptr_t)o==GV_R32(0x0300642c))break;
+        o[0]=(uint16_t)((part.a0&0xff00)|((y+dy)&255));o[1]=(uint16_t)(((part.a1&0xfe00)^flip)|((x+dx)&511));
+        o[2]=(uint16_t)(((base+part.tile)&1023)|((s->mzm_palette&15)<<12)|0x400);drawn=1;
+    }
+    if(drawn)s->mzm_ripper_draws++;
 }
 static void tile(GvState *s,int x,int y,unsigned number,int large,int flip,int hud)
 {
@@ -57,11 +99,16 @@ void gv_draw_game(GvState *s,GvPlayer *p)
         }else if(f->kind==GV_RECHARGE)tile(s,x-8,y-16,88,1,0,0);
         else if(f->kind==GV_HEAT){for(int j=-4;j<=4;j++)tile(s,x+j*24,y-16-(s->frame+j*7)%32,69,0,0,0);}
     }
+    int mzm_ready=0;
+    for(unsigned i=0;i<8;i++)if(s->aliens[i].active && s->aliens[i].species==GV_RIPPER){mzm_ready=lease_mzm_art(s);break;}
     for(unsigned i=0;i<8;i++){
         GvAlien *a=&s->aliens[i];if(!a->active)continue;int x=gv_px(a->x)-cx-8,y=gv_px(a->y)-cy-8;
-        unsigned shape=72+(a->species-1)*4;tile(s,x,y,shape,1,a->vx<0,0);
+        unsigned shape=72+(a->species-1)*4;
+        if(a->species==GV_RIPPER){if(mzm_ready)draw_ripper(s,&s->rippers[i],x+8,y+8);
+            unsigned radius=gv_ripper_radius(s,a);if(radius){int home=gv_px(a->home_x)-cx;tile(s,home-(int)radius-4,y+4,71,0,0,0);tile(s,home+(int)radius-4,y+4,71,0,0,0);}}
+        else tile(s,x,y,shape,1,a->vx<0,0);
         if(a->freeze){tile(s,x-2,y-3,69,0,0,0);tile(s,x+10,y+10,69,0,0,0);}
-        else if(a->state && (s->frame&8))tile(s,x+4,y-9,70,0,0,0);
+        else if(a->species!=GV_RIPPER && a->state && (s->frame&8))tile(s,x+4,y-9,70,0,0,0);
         if(a->species==GV_GUARDIAN){tile(s,x+8,y-8,shape,1,1,0);tile(s,x,y+8,shape,1,0,0);}
     }
     for(unsigned i=0;i<8;i++){

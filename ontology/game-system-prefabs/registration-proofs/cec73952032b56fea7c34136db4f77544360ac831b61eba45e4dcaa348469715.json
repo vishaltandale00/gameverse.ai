@@ -1,0 +1,231 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "steer": {
+      "package_id": "mzm.motion.accelerate",
+      "package_sha256": "8d7791c484c2baf7a14ce25187d6d4e2ef25de7efa7ea8bbcf4d205a5aee98ce",
+      "behavior_sha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r2",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "controls",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "controls",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r2",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 32
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 32
+            },
+            "frame": "world.x.right",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u16"
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u16"
+        }
+      ],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [
+          "field_1"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Semantic annotation has not been independently scored against game rendering"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "110d0ff5a89ac22234ca53f08de6d3432c61dbef123f22b5e1165c98266579dc",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "steer": {
+        "package_id": "mzm.motion.accelerate",
+        "behavior_sha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6",
+        "package_sha256": "8d7791c484c2baf7a14ce25187d6d4e2ef25de7efa7ea8bbcf4d205a5aee98ce",
+        "bindings": {
+          "field_0": {
+            "slot": "player_source_direction"
+          },
+          "field_1": {
+            "slot": "player_signed_velocity"
+          }
+        }
+      }
+    },
+    "state": {
+      "player_source_direction": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "controls"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "player_signed_velocity": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 32
+          },
+          "frame": "world.x.right"
+        },
+        "owner": "external",
+        "shared": true
+      }
+    },
+    "initialize": {
+      "player_source_direction": 16,
+      "player_signed_velocity": 0
+    },
+    "invocations": [
+      {
+        "component": "steer",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u16",
+            "value": 4
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u16",
+            "value": 128
+          }
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "steer"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "steer"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "steer",
+      "arguments": {
+        "param_0": {
+          "op": "const",
+          "type": "u16",
+          "value": 4
+        },
+        "param_1": {
+          "op": "const",
+          "type": "u16",
+          "value": 128
+        }
+      }
+    }
+  ],
+  "statement_sha256": "31668bf1bb6b815605a6e9fcda430e34c54b5f3a646bc6692a51f6274360e5e7",
+  "catalog_sha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+  "wall_s": 0.011073624999999997
+}

@@ -1,0 +1,421 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma1.run_charge_carry_throw_controller",
+  "version": "0.1-native-qualified-local",
+  "concept": {
+    "role": "movement.carry_throw_platformer_controller",
+    "pattern": "input-directed running/skidding,crouch-charged jumps,character/context speed limits and clearance-tested carried actor release",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance:movement_view",
+      "super-mario-advance:actors_ai"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Own indexed USA/Europe ROM SHA1 f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-controller-receipt.json",
+    "abi": "Original noarg main SMB2 controller; pointer-context v1 calls to selected motion dependency; explicit tilemap,carried actor,input and frame state; audio retained",
+    "recovery": {
+      "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "ranges": [
+        {
+          "address": "0x080a7774",
+          "size": 1178,
+          "isa": "thumb",
+          "instruction_sha256": "334a7ba4528a8a6689d56acac597bb1937eb40c4a23e9a18412ce629309adf64",
+          "name": "sma1_ctl_control",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080a7c7c",
+          "size": 480,
+          "isa": "thumb",
+          "instruction_sha256": "ceb9b7673ac547eff9e2ec96aa01b87f96772663a02a40f8c52644efc29343b6",
+          "name": "sma1_ctl_gait",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080a8008",
+          "size": 482,
+          "isa": "thumb",
+          "instruction_sha256": "7b6d2e51332c47ac82cd425b119d5f4cf664dd1c421183b0cf80aad1e1b42afa",
+          "name": "sma1_ctl_speed_cap_throw",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080ab60c",
+          "size": 1040,
+          "isa": "thumb",
+          "instruction_sha256": "b9092a144bb7141828c6ec925408f0444c862f4765f0a897b946e8d8b36cdf8e",
+          "name": "sma1_ctl_throw",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080a9dd0",
+          "size": 244,
+          "isa": "thumb",
+          "instruction_sha256": "12a02963d2b102eb6ff295310b2f4fae15a69b33fe2700ca93d5a92f64501eae",
+          "name": "sma1_ctl_throw_probe",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0804b270",
+          "size": 414,
+          "isa": "thumb",
+          "instruction_sha256": "b0261e3b476f32b14a280e23f980b952e68b9f415d08a93e27a7a78685d4dee8",
+          "name": "sma1_ctl_sample_tile",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080b1358",
+          "size": 56,
+          "isa": "thumb",
+          "instruction_sha256": "2c89ec033941c803d560d4c537aa8196adca7a7d1b1ebc2f2d4b469afc24bbd2",
+          "name": "sma1_ctl_character_sound",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x080b1c9c",
+          "size": 182,
+          "isa": "thumb",
+          "instruction_sha256": "941d879d94e1baba3156f536024f2f734b7806587b0638b22871d8e98337abf4",
+          "name": "sma1_ctl_skid_effect",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-controller-recovered.c",
+      "lift_sha256": "b139acb973e1fe79e3a37b2ffa8ed7502d1989c424496365141c6a4ac98f8c62",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "Selected exact motion dependency: public jump_onset/friction pointer-context ABI",
+          "Pinned native audio service"
+        ],
+        "data": [
+          "Coefficient window inherited from exact motion dependency",
+          "Throw category flags0836273c..0836283b",
+          "Skid dispatch specialization to sole reachable argument1, original table word target080b1c9d"
+        ],
+        "ram": [
+          "Borrowed player/profile/entities/character context",
+          "Explicit current tilemap02000000; orientation/phase selects retained row/column layout"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Original audio only external service; controller calls dependency functions by typed link symbol,not patched address",
+          "No mutable BSS or duplicate included provider implementation"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-controller-receipt.json"
+      ],
+      "unknowns": [
+        "Natural full-controller/carry-throw qualification pending",
+        "Terrain response,enemy health/contact and full progression remain separate",
+        "Skid helper specialization exports only controller argument1 path"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "native_controller_context",
+      "direction": "in",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "input_ground_character_carry_tilemap",
+        "unit": "native_fields",
+        "frame": "SMB2_main"
+      }
+    },
+    {
+      "id": "controlled_motion_and_release",
+      "direction": "out",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "velocity_charge_carried_actor_effects",
+        "unit": "native_fields",
+        "frame": "SMB2_main"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "position",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "velocity",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "velocity",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "jump_hover_charge",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "jump_hover_charge",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "carried_actor",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "carried_actor",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "controller_effects",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "controller_effects",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "input_edges",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "input_edges",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "terrain_query",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "terrain_query",
+        "unit": "native_fields",
+        "frame": "SMB2_main_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "run_charge_throw",
+      "clock": "original_native_controller_call",
+      "phases": [
+        "input_jump_charge",
+        "accelerate_or_friction",
+        "context_speed_limit",
+        "clearance_probe",
+        "carried_release"
+      ],
+      "reads": [
+        "position",
+        "velocity",
+        "jump_hover_charge",
+        "carried_actor",
+        "controller_effects",
+        "input_edges",
+        "terrain_query"
+      ],
+      "writes": [
+        "position",
+        "velocity",
+        "jump_hover_charge",
+        "carried_actor",
+        "controller_effects",
+        "input_edges",
+        "terrain_query"
+      ],
+      "invariants": [
+        "Crouch charge increments to60 under retained grounded/down/context gates",
+        "B or R changes character/context speed cap; pressedB releases held actor when accepted",
+        "Throw probe uses explicit tilemap/layout and exact passable native tile categories",
+        "Only one controller writes movement and consumes edges; native dependency is linked once"
+      ],
+      "authority": "Original main SMB2 controller entry only; retained full native permission/contact schedule"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "Selected mario.sma1.character_jump_hover_motion exact package version,public Sma1Motion pointer context",
+      "Eight own recovered controller/query/sound/skid leaves plus specialized skid dispatcher"
+    ],
+    "data": [
+      "Exact inherited character/coefficient context and additional throw category flags"
+    ],
+    "globals": [
+      "Player/profile/entities/character pointers,held/pressed/frame/phase and current native tilemap"
+    ],
+    "macros": [
+      "SMA1_NATIVE_BUILD",
+      "SMA1_MOTION_EXTERNAL"
+    ],
+    "hardware": [],
+    "host_services": [
+      "play_sound"
+    ],
+    "unsupported": [
+      "Only native skid type1 is reachable in recovered controller closure",
+      "General contact/terrain response and complete enemy/progression packages"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1_normalize_controller.py",
+    "preconditions": [
+      "Exact own indexed ROM",
+      "Selected qualified motion package/version and shared pointer-context ABI",
+      "Original carried actor layout,current map,contact flags and frame schedule"
+    ],
+    "outputs": [
+      "Reusable full local running/jump-charge/throw controller",
+      "Actual tile-clearance sampler and native actor release semantics"
+    ],
+    "semantic_changes": [
+      "Sole reachable skid dispatch argument1 statically resolved to pinned target080b1c9d; no reachable behavior change intended"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Position signed32 16.16pixel; velocity accumulator contributes arithmetic shift4 before position addition; underlying velocity unit1/1048576pixel per invocation",
+    "authority_obligation": "Ground/standing/carry eligibility remains original host; controller owns acceleration/charge/throw after those inputs; tilemap layout supplied explicitly"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Run,jump and charge,then release carried objects through clearance-tested contextual throws",
+    "status": "Original/C/emitted dependency-linked native controller qualified; full-ROM natural qualification pending"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma1-controller-motion-parity.json",
+    "hooks": [],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-host-controller.c",
+          "sha256": "0d54e3bc004c26e0f710e409f0f5793807156c20d1763707f90b32a427e16d22"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-controller-recovered.c",
+          "sha256": "b139acb973e1fe79e3a37b2ffa8ed7502d1989c424496365141c6a4ac98f8c62"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-native-abi.h",
+          "sha256": "58ddaf2322bb78aad780b7699b54d8d3277225bb081bf9352415ad78025d902a"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-recovered.c",
+          "sha256": "de05e4e913deadc2f39326b6a055077955b6b9c4b28d1ff7a1d4b063df2a1f7d"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-host-controller.c"
+      ],
+      "requires": [
+        {
+          "id": "mario.sma1.character_jump_hover_motion",
+          "version": "0.2-native-context-abi-qualified"
+        }
+      ],
+      "exports": [
+        {
+          "symbol": "sma1_host_controller",
+          "return": "void",
+          "args": []
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x080b551c",
+          "abi": "void(u32)"
+        }
+      ],
+      "host_reads": [
+        {
+          "address": "0x3005cf0",
+          "width": 32
+        },
+        {
+          "address": "0x3001110",
+          "width": 32
+        },
+        {
+          "address": "0x3005cd8",
+          "width": 32
+        },
+        {
+          "address": "0x3005cf4",
+          "width": 32
+        },
+        {
+          "address": "0x300117a",
+          "width": 16
+        },
+        {
+          "address": "0x3001993",
+          "width": 8
+        },
+        {
+          "address": "0x0300117c",
+          "width": 16
+        },
+        {
+          "address": "0x03001992",
+          "width": 8
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "2048 original/C/emitted-native controller scenarios including both facing directions,ground/air/down charge,character caps,carried entity types,throw tile clearance,skid slots,ordered sound ports",
+      "Provider context ABI independently asserted against actual selected provider source"
+    ],
+    "required_witnesses": [
+      "Full composed native movement/controller natural Mario charge and Peach hover",
+      "Natural carried-object release"
+    ],
+    "known_limits": [
+      "Finite local operator context,not full reachable-state proof",
+      "Other enemy contacts,terrain response,health/campaign not reconstructed"
+    ]
+  }
+}

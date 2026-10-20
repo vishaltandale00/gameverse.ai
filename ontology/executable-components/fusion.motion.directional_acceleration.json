@@ -1,0 +1,109 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "fusion.motion.directional_acceleration",
+  "label": "Directional acceleration and signed speed clamp",
+  "role": "movement",
+  "source_game": "metroid-fusion",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/fusion.motion.directional_acceleration/package.json",
+  "package_sha256": "fc3a65be7593b3e9443ce50cc679226cdcf661b179e57df4aed3e58d347ae632",
+  "behavior_sha256": "6f2e1234c04bec9a97d2415d9c0e7c4269549906c3a617bffb4aa60f27b33b3c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "a4dc52081d1dd22900844d989e1f0682e70c6d0d798f180379cc2735a49810e2"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16",
+      "domain": {}
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.facing_mask",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 8
+        },
+        "frame": "player.native_coordinate.x.increasing_per_invocation",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared_symbolic_player_context_with_explicit_previous_snapshot",
+    "clock": "explicit_function_invocation",
+    "ordering": "08004d60 snapshot-before-reset internally; driver/interfunction frame order remains unqualified",
+    "phase": "source_entry_invocation"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/fusion.motion.directional_acceleration/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Native coordinate unit is source coordinate, not pixels; per-invocation velocity does not establish frame-rate or scheduler semantics.",
+    "Packed mixed-purpose fields and previous snapshot words remain private opaque; do not infer independent nonaliasing players.",
+    "Partial L1 members only; complete jump/contact L2 and gameplay reachability remain unqualified.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+}

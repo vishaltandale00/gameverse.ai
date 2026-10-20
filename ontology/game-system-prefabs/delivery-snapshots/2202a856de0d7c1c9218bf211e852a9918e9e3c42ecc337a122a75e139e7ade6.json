@@ -1,0 +1,380 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "crash-bandicoot-the-huge-adventure",
+  "sourceContractRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json",
+  "sourceSystemIds": [],
+  "blueprintIds": [
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Control one live source actor through phase-dependent motion requests, contact feedback and scene outcomes while preserving its controller and world identity. This is a source-reconstructed goal, not a runnable game.",
+    "phases": [
+      {
+        "id": "scene_actor_create",
+        "label": "Create one actor and its controller",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "original allocator",
+          "actor/controller constructors",
+          "scene asset/map setup"
+        ],
+        "gaps": [
+          "Original scene creation is not a portable executable assembly.",
+          "Controller mapping and actor references must outlive all calls."
+        ],
+        "observation": "Source scene root creates global actor, normal-mode controller and mapping, then binds controller.actor to the same actor and actor.controller back-reference."
+      },
+      {
+        "id": "input_capture",
+        "label": "Sample held and newly pressed controls",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "KEYINPUT sampling boundary",
+          "pause/menu input policy"
+        ],
+        "gaps": [
+          "Direction lookup is published; complete sampler/stateful input producer is not this prefab."
+        ],
+        "observation": "Normal scene loop samples hardware into overlapping held/pressed lanes before actor update; pause branch resamples after returning."
+      },
+      {
+        "id": "actor_controller_admission",
+        "label": "Select allowed actor state transitions",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "live actor feedback/contact producers",
+          "source descriptor/state callbacks"
+        ],
+        "gaps": [
+          "Contact/status values are consumed, but a complete terrain producer is not supplied.",
+          "Nested controller-to-actor reference cannot currently lift."
+        ],
+        "observation": "Controller state dispatch can reach phase/request producer under source state/contact/input guards; it must retain one actor identity."
+      },
+      {
+        "id": "phase_payload_apply",
+        "label": "Apply phase-selected native actor parameters",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Both apply leaves are finite-native-qualified but their numeric public IO meanings are unpublished/unknown.",
+          "Source producer/consumer/rearm closure remains unresolved; no useful ready prefab yet."
+        ],
+        "observation": "Phase request selects original mapping payload; exactly one of reset-scalar or preserve-scalar apply methods executes synchronously, then dirty is cleared."
+      },
+      {
+        "id": "actor_world_updates",
+        "label": "Update the live actor and other scene objects",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "actor eligibility/update callbacks",
+          "original object-list update",
+          "world/map contact",
+          "source feedback/presentation"
+        ],
+        "gaps": [
+          "Outer loop callback services and complete actor/world update are not portable.",
+          "No fixed FPS or guessed generic integration order."
+        ],
+        "observation": "Normal scene branch updates first object lists, then eligible global actor via descriptor, then remaining scene-object lists and feedback; nested actor update structure remains open."
+      },
+      {
+        "id": "phase_rearm",
+        "label": "Advance phase and permit a new request",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "source animation/timeline completion signals",
+          "mechanically relevant audio/state callbacks retained until proven independent"
+        ],
+        "gaps": [
+          "Rearm timing, complete lifecycle initialization and callback effects are not executable closure."
+        ],
+        "observation": "Source rearm changes phase/cycle and clears latch; contact/input branch can also clear latch; repeated producer calls before rearm must remain idempotent."
+      },
+      {
+        "id": "scene_outcome_cleanup",
+        "label": "Commit scene outcome and release scene resources",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+        ],
+        "requiredServices": [
+          "source scene-completion policy",
+          "progress-count update",
+          "object teardown",
+          "render/audio teardown"
+        ],
+        "gaps": [
+          "Exit/cleanup and progress effects remain source-only.",
+          "No save/reload or complete level-gameplay claim."
+        ],
+        "observation": "Loop exit checks source completion/actor flags, records scene-specific outcome, disposes object lists and releases display resources."
+      }
+    ],
+    "edges": [
+      {
+        "from": "scene_actor_create",
+        "to": "input_capture",
+        "kind": "source-call",
+        "scope": "Scene creation root calls scene run root after binding original actor/controller."
+      },
+      {
+        "from": "input_capture",
+        "to": "actor_controller_admission",
+        "kind": "shared-state",
+        "scope": "Source sampled held/pressed lanes observed by actor/controller callbacks; callback subgraph not yet portable."
+      },
+      {
+        "from": "actor_controller_admission",
+        "to": "phase_payload_apply",
+        "kind": "shared-state",
+        "scope": "Same controller pending request/dirty latch consumed by original mapping/apply method."
+      },
+      {
+        "from": "phase_payload_apply",
+        "to": "actor_world_updates",
+        "kind": "shared-state",
+        "scope": "Same actor output channels retained for subsequent source actor services; source-specific nested scheduling unresolved."
+      },
+      {
+        "from": "actor_world_updates",
+        "to": "phase_rearm",
+        "kind": "event",
+        "scope": "Native contact/timeline feedback participates in original phase evolution, not an invented central clock."
+      },
+      {
+        "from": "phase_rearm",
+        "to": "actor_controller_admission",
+        "kind": "shared-state",
+        "scope": "Latch clear permits later eligible request on same controller; no forced immediate invocation."
+      },
+      {
+        "from": "actor_world_updates",
+        "to": "scene_outcome_cleanup",
+        "kind": "source-call",
+        "scope": "Original scene loop completion/actor flag branch runs outcome/cleanup."
+      }
+    ],
+    "missingForCoreGame": [
+      "Automatic producer lift still rejects nested controller.actor reference; exact private reproducible failure retained.",
+      "Numeric actor/payload channels have unknown physical quantity/frame in current published contracts, so a complete observable phase application graph is rejected.",
+      "Actual consumer mapping, exclusive apply dispatch, dirty clear and rearm cannot be substituted with an authored orchestration wrapper.",
+      "Original input/contact/actor/world lifecycle and mechanically relevant services remain required.",
+      "Close terrain/contact production and real actor update scheduling.",
+      "Close scene outcome, initialization/teardown and persistent progression policies before gameplay claims."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "crash.source.phase-motion-cycle",
+      "label": "Phase request \u2192 actor parameter application \u2192 rearm",
+      "moduleId": "crash.actor-controller.normal_mode",
+      "sourceGame": "crash-bandicoot-the-huge-adventure",
+      "sourceContractRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "crash.actor.apply_phase_payload_reset_scalar",
+        "crash.actor.apply_phase_payload_preserve_scalar"
+      ],
+      "availability": "published-subset",
+      "scope": "Source-reconstructed shared actor/controller cycle with two independently finite-native-qualified apply variants; no ready portable full-phase prefab.",
+      "gaps": [
+        "Automatic producer lift still rejects nested controller.actor reference; exact private reproducible failure retained.",
+        "Numeric actor/payload channels have unknown physical quantity/frame in current published contracts, so a complete observable phase application graph is rejected.",
+        "Actual consumer mapping, exclusive apply dispatch, dirty clear and rearm cannot be substituted with an authored orchestration wrapper.",
+        "Original input/contact/actor/world lifecycle and mechanically relevant services remain required."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+        "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json",
+        "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.validation.json",
+        "local/ir/fleet-next/crash-bandicoot-the-huge-adventure/prefab-pass/producer-attempt.json"
+      ],
+      "canonicalState": {
+        "identity": "one normal-mode original controller bound to one global actor, with original scene lifetime",
+        "fields": [
+          "controller phase/latch/request/dirty/mode",
+          "actor sign flags and native parameter channels",
+          "borrowed synchronous payload triple",
+          "input held/pressed packed context"
+        ],
+        "aliasRule": "Controller.actor and global actor are the same backing record; actor.controller is back-reference. Never copy actor state independently between phases; stack payload remains distinct borrowed view."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "source phase admission and parameter application",
+          "status": "published-subset",
+          "scope": "Published apply methods cover payload writes only. Producer/consumer/rearm and full movement/terrain remain source-only.",
+          "evidence": [
+            "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/core-loop-evidence.json",
+            "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/source-l2-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "crash.phase0.apply.proposed",
+        "label": "Source phase-zero payload application (blocked)",
+        "assemblyRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.assembly.json",
+        "validationRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/delivery.json",
+        "packageIds": [
+          "crash.actor.apply_phase_payload_reset_scalar"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [],
+  "blockedCandidates": [
+    {
+      "id": "crash.phase0.apply.proposed",
+      "graph": {
+        "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.assembly.json",
+        "sha256": "7e6dc90d6b765532c218ddd32e268e3ab3a2732da0252be8255f05cdf098ea6b"
+      },
+      "validation": {
+        "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.validation.json",
+        "sha256": "abe31213fee63cbdff937a44680b736d35bc53e25fac335230bc6498da9f3677"
+      },
+      "status": "invalid",
+      "error": [
+        {
+          "code": "assembly_contract",
+          "message": "state requires known quantity/frame: actorChannelA"
+        }
+      ],
+      "sourceInputs": {
+        "phase": 0,
+        "actorSignFlags": 0,
+        "phasePayloadA": 8,
+        "phasePayloadB": 18,
+        "phasePayloadC": 1280
+      },
+      "intendedOutputs": [
+        "same actor native channels would receive source payload A/B/C; reset variant also assigns scalar channelA; no physical-unit interpretation claimed"
+      ],
+      "sourcePhaseOrder": [
+        "caller supplies already-selected source payload",
+        "apply selected method synchronously",
+        "original consumer clears dirty afterward; not present as executable graph root"
+      ],
+      "notAllowlisted": true
+    }
+  ],
+  "backendBlockers": [
+    {
+      "owner": "/root/compiler_shared_state",
+      "attempt": {
+        "path": "local/ir/fleet-next/crash-bandicoot-the-huge-adventure/prefab-pass/producer-attempt.json",
+        "sha256": "e206f889568415c2fa912137e9b27b84781148b6a84a9c6a4fd7c364a7e0b0dc"
+      },
+      "compiler_sha256": "b674f2f6f605bf1deef94f5c7791aaa7b205c48c88415379361159387de9b3a3",
+      "error": "unresolved pointer v57",
+      "reproducer": "PYTHONDONTWRITEBYTECODE=1 python3 -c \"import sys,json,pathlib;sys.path.insert(0,'tools/behavior_ir');from lift import Lifter;Lifter(json.load(open('local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/080151c8.json')),pathlib.Path('local/roms/Crash Bandicoot - The Huge Adventure (USA).gba').read_bytes()).build()\"",
+      "requirement": "Represent nested controller.actor as canonical shared reference; source evidence proves binding to global actor."
+    },
+    {
+      "owner": "/root/compiler_shared_state",
+      "validation": {
+        "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/phase0-apply-proposed.validation.json",
+        "sha256": "abe31213fee63cbdff937a44680b736d35bc53e25fac335230bc6498da9f3677"
+      },
+      "requirement": "Publish sourced IO channel contracts or finite source profile/defaultconfiguration with observable outputs. Unknown physical units may remain explicit; do not invent them."
+    }
+  ],
+  "packagePins": [
+    {
+      "id": "crash.actor.apply_phase_payload_reset_scalar",
+      "package": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/package.json",
+        "sha256": "cf6d56fd80b172dd3bbadb0fbdacfd223fd7e731c286b75f07e0a7539576d7ad"
+      },
+      "behavior": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/l1.json",
+        "sha256": "46c89be877420a3da6acf5494b5d2686ed5a2309bdd6430a09ee58ab8d525659"
+      },
+      "qualification": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/receipt.json",
+        "sha256": "146e90d5a9809338eaabb6ab3bc098153014221874bc188470e68ee375a42e78"
+      },
+      "vectors": 1536
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_preserve_scalar",
+      "package": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/package.json",
+        "sha256": "32e0653e7bce7f2f2326a70147a0963e1bd2cdc10541e473bd50264766958e55"
+      },
+      "behavior": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/l1.json",
+        "sha256": "86d316e4d6ab5ff3b9368dd9053da144e09b22e921f9ab31f60b91083d063652"
+      },
+      "qualification": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/receipt.json",
+        "sha256": "dd34b785deca6cb85cd4d3183fb1adf8648ccfe97be81506ea6a3aeb455aa6a2"
+      },
+      "vectors": 1792
+    }
+  ],
+  "reusedProofs": {
+    "nativeReruns": false,
+    "changedRecoveredComponents": false,
+    "previousBindingOnlyAdmission": {
+      "path": "local/ir/fleet-next/crash-bandicoot-the-huge-adventure/coverage-pass/single-apply-result.json",
+      "sha256": "d540e31ee583e5115fa5d06733ca9d8008791f639883532de8b7b727e4992925"
+    },
+    "warning": "The old positive admission used private zero payload defaults and is not a meaningful prefab."
+  },
+  "timing": {
+    "runId": "crash-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0002685829999999993,
+    "producerLiftSeconds": 0.006640083999999999,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "metadataPreparationSeconds": 0.05232795800000001,
+    "accounting": "Validation and producer lift are independent narrow stages. No full interactive stopwatch. Existing native proof timings retained in original receipts, not counted as current work."
+  },
+  "nextAction": "Compiler intake should resolve canonical nested actor reference and source-native numeric channel contract/profile. Then retry exact proposed observable phase graph before allowlisting. Do not expose inert zero payload graph or chain exclusive variants."
+}

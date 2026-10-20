@@ -1,0 +1,265 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mlss.motion.initialize",
+  "label": "Superstar actor motion initialize",
+  "role": "movement",
+  "source_game": "mario-and-luigi-superstar-saga",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mlss.motion.initialize/package.json",
+  "package_sha256": "4152e6e0cde0c3e04c30e999e3a2437c472f2ff9352f547561001aa7c95daa5a",
+  "behavior_sha256": "edc71de823be163eef404bc604bb15180f91efd6584523d833e7393a574524bc",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "7093d01298081c11fdfd35f1838d8f19d616fbc9a8d6275909854e59a7c70e25"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {}
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {}
+    },
+    {
+      "name": "param_2",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.motion.motion_flags",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/reviewed-export-records.json",
+          "local/ir/fleet-next/superstar/attempt02-directed/080401f0/l0.json"
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "invocation_count_or_inactive_sentinel",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.motion.update_invocations",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/reviewed-export-records.json",
+          "local/ir/fleet-next/superstar/attempt02-directed/080401f0/l0.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 14,
+    "collections": []
+  },
+  "lifecycle": {
+    "clock": "explicit invocation; game cadence unknown",
+    "actor_lifetime": "unknown caller owned",
+    "state": "source init and reset lifecycle only"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mlss.motion.initialize/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Unknown physical motion units and outer actor/world aliases",
+    "Finite synthetic parity; init-to-update sequence assembly pending",
+    "Opaque fields remain private and unannotated",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "canonical_actor": {
+      "ownership": "borrowed_canonical_actor_instance",
+      "aliases": {
+        "field_0": "actor.base_height",
+        "field_1": "actor.height_offset",
+        "field_2": "actor.motion_flags",
+        "field_3": "actor.active_motion_parameter",
+        "field_4": "actor.saved_motion_parameter",
+        "field_5": "actor.velocity_decrement",
+        "field_6": "actor.saved_combined_height",
+        "field_7": "actor.saved_height_offset",
+        "field_8": "actor.initial_velocity",
+        "field_9": "actor.current_velocity",
+        "field_10": "actor.elapsed_or_inactive",
+        "field_11": "actor.default_motion_parameter",
+        "field_12": "actor.default_initial_velocity",
+        "field_13": "actor.default_velocity_decrement"
+      },
+      "requirement": "Matching aliases across roots share one backing actor; do not instantiate independent copies",
+      "world_aliases": "unknown_outside_accessed_actor_slices"
+    },
+    "order": [
+      {
+        "before": "initialize",
+        "after": "update",
+        "evidence": "source-derived shared active counter and initialized velocity consumed by update; not qualified caller transaction"
+      },
+      {
+        "before": "update_termination_test",
+        "after": "reset",
+        "evidence": "real callee automatically inlined inside qualified update",
+        "status": "native_qualified_inside_update"
+      }
+    ],
+    "lifecycle": {
+      "clock": "explicit invocation; game cadence unknown",
+      "actor_lifetime": "unknown caller owned",
+      "state": "source init and reset lifecycle only"
+    },
+    "parameter_return": {
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32",
+          "domain": {}
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {}
+        },
+        {
+          "name": "param_2",
+          "storage_type": "u32",
+          "domain": {}
+        }
+      ],
+      "return_type": "void",
+      "domain": "Exact serialized unsigned storage widths; signed source comparisons/sign extensions preserved by L1; no additional domain reduction",
+      "initializer_sentinels": "Overrides select signed-short defaults when -1; default fields remain opaque"
+    },
+    "physical_units": "unknown; no position/velocity/acceleration ports proposed",
+    "dimensionless_units": "Unit1 applies only to bitsets and invocation counts, not physical motion quantities",
+    "private_opaque_fields": {
+      "field_0": {
+        "private_role": "base_height",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_1": {
+        "private_role": "height_offset",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_3": {
+        "private_role": "active_motion_parameter",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_4": {
+        "private_role": "saved_motion_parameter",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_5": {
+        "private_role": "velocity_decrement",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_6": {
+        "private_role": "saved_combined_height",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_7": {
+        "private_role": "saved_height_offset",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_8": {
+        "private_role": "initial_velocity",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_9": {
+        "private_role": "current_velocity",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_11": {
+        "private_role": "default_motion_parameter",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_12": {
+        "private_role": "default_initial_velocity",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      },
+      "field_13": {
+        "private_role": "default_velocity_decrement",
+        "quantity": "unknown",
+        "physical_unit": "unavailable",
+        "public_port": false
+      }
+    },
+    "services": {
+      "closed_root_services": [],
+      "limit": "No services in these lifted root bodies; scheduler/input/terrain and gameplay reachability remain outside qualification"
+    },
+    "native_limits": {
+      "vectors": 1024,
+      "fixture_scope": "finite synthetic parity only; no gameplay traces",
+      "init_update_transaction_qualified": false,
+      "update_reset_dependency_qualified": false
+    },
+    "semantic_limit": "Operational source roles do not establish a jump/controller or physical unit calibration"
+  },
+  "source_root_identity": {
+    "source_game": "mario-and-luigi-superstar-saga",
+    "entry": "080401f0"
+  },
+  "domain_contract_fingerprint": "2b14b17546005c6616b8301dcf53192129ed20acccece7279947e303b8cd417c",
+  "specialization_subset": false
+}

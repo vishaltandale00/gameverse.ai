@@ -1,0 +1,238 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.player_contact_box",
+  "label": "Sma2 Player Contact Box",
+  "role": "combat",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.player_contact_box/package.json",
+  "package_sha256": "8981374c94e429296c2f9834962be5a01486aa3a02234348ec47f99a332b6bdb",
+  "behavior_sha256": "748cb5f45bd126754749270fe66f233072483ed3f05b2db8a2ae3d6592fa982c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b4d60bddebbdcdf91fdcd28e01aa5457657f205d4f2f62e16780dfaf1188006c"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_0x3007a48",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_1",
+      "identity": "observed_0x3003f98",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_2",
+      "identity": "observed_0x3002360",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_x_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_y_pixel",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_x",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_y",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_width",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "distance",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl"
+        ],
+        "label": "player_box_height",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 11,
+    "collections": []
+  },
+  "lifecycle": "Caller-owned invocation; original subsystem assembly and outer schedule remain unqualified.",
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.player_contact_box/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite original/emitted qualification only; no complete mechanic or game claim.",
+    "Unannotated state remains private opaque source storage; preserve distinct roles and exact alias/order contracts.",
+    "L2 source-backed contract is nonexecutable; no arbitrary compatible substitution established.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_contract_ref": "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+    "L2_executable": false,
+    "source_root_identity": "0803407c",
+    "alias_service_order_constraints": "Full original source facts retained in pinned contract; shared actor/scene/scratch owner relationships must not be split.",
+    "unannotated_fields": [
+      "field_0",
+      "field_1",
+      "field_4",
+      "field_9",
+      "field_10"
+    ],
+    "parameter_contract": "Original parameters and domains only as recorded in pinned L1/adapter and source evidence; no semantic parameter fields added.",
+    "return_contract": "Original qualified ABI return; exact semantics only as recorded in pinned source evidence.",
+    "field_roles": {
+      "field_0": "original crouch selector",
+      "field_1": "original facing selector",
+      "field_4": "one-shot scene override consumed by preparation",
+      "field_9": "original engine mode selector",
+      "field_10": "original profile form selector"
+    },
+    "opaque_and_service_limits": [
+      "Mode/form/crouch selectors remain separate opaque enums; no cross-game enum equivalence inferred",
+      "No external service callees inside qualified root; full hurt/reward/audio caller is pending"
+    ],
+    "alias_constraints": [
+      "actor argument aliases the same canonical scene backing as collision scratch; no independent actor/world copies",
+      "Scratch writes survive rejected downstream overlap and are overwritten by later preparation calls"
+    ],
+    "domain_limits": [
+      "Original signed16 pixel narrowing and wrap are mechanical",
+      "Actor shape selector is masked to sixty-four source records; retained table spans overlap neighboring starts at last selector",
+      "Synthetic admitted scene view slots do not establish full scheduler reachability"
+    ]
+  },
+  "source_root_identity": {
+    "source_game": "super-mario-advance-2-super-mario-world",
+    "entry": "0803407c"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

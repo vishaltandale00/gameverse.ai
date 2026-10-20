@@ -1,0 +1,17 @@
+# Tekken actor-box contact phase: automatic extraction attempt
+
+[system.json](system.json) records source-backed L2 state, transitions, services and call order. It does not claim executable qualification. Own-ROM HighFunction was the only automatic compiler input; no manual C, generated game or composition was used.
+
+The new causal result is the actual order around separation: the scheduler case calls pair control/separation at `0x08008584`, conditionally updates each active actor through `0x0800d638`, then calls pair geometry at `0x080085a4`. Actor update snapshots current x/y into `+0x20/+0x24`, then integrates movement. Pair geometry materializes A's boxes, then B's, queries attack/hurt overlap in both directions, then calls impact only for successful queries. Separation therefore consumes previously materialized boxes before this path integrates and rebuilds them. Reordering materialization before separation would change the recovered phase relationship.
+
+Current automatic attempts are retained under `local/ir/fleet-next/tekken-advance/`. Raw separator lifting rejects a typed loop-carried pointer; bounded separator expansion cannot prove exact terminating induction. Materializer and box-clear bounded expansion reject the signed countdown. In the clear helper, exact SSA countdown is `3→2→1→0→0xffffffff`, and signed `-1 < countdown` ends the loop. The compiler owner received this minimal reproducible failure. The actual pair caller also remains blocked by its input/controller dependency `0x0800fdac`.
+
+The cached scheduler export `0x080080d0` ends before its dispatch table/case bodies. Original ROM BL bytes prove the local order; no function was invented at a case label and no JVM was run. Complete scheduler ownership/reachability remains a repair target. Contact bit 3 is refreshed and preserved in shared actor flags, but a direct downstream bit-3 branch consumer has not been established.
+
+No native work was run because no executable L1 was produced. The old 4,096-vector manual-C oracle is historical and is not automatic proof. Full combat, HP/KO/round progression, move semantics and persistence remain partial.
+
+Five bounded probe subprocesses took 0.256122292 s in aggregate on this machine; stages are sequential. Individual actual wall times and failure traces are in `probe-summary.json` and each `attempt.json`. Contract construction/hashing took 0.024856291 s, including 0.006366417 s targeted disassembly (exact value in system.json); these nested durations must not be summed. Queue and total interactive analysis time are unavailable. No CI/build infrastructure changed, so no comparable before/after build measurement exists.
+
+Next action: consume the compiler owner's bounded-countdown/typed-loop repair, rerun only these changed targets, then run original-versus-automatically-emitted native differential over box activation, threshold/touching, mirror/negative-coordinate, tie and correction-gap cases. Preserve the observed frame phase and distinct-actor qualification precondition. Source L2 can be ingested now; executable status must remain false until actual receipts pass.
+
+[result.json](result.json) pins the source system, compiler files and five retained attempts. Final source/attempt consistency check passed for 12 function references and five failures in 0.023369750 s. This check includes hash collection and manifest construction; it is not a native evaluation. The source contract has been sent to the ontology owner; the compiler owner has the minimal failing countdown for repair.

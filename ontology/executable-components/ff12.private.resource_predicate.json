@@ -1,0 +1,146 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ff12.private.resource_predicate",
+  "label": "Check whether resource node carries a queue owner",
+  "role": "resource_lifecycle",
+  "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ff12.private.resource_predicate/package.json",
+  "package_sha256": "bba31588d96b800ce886d37deedc94a380be0b5cfa6341863db05654832aae46",
+  "behavior_sha256": "7f1e2e9efa1a4cec1c4612f177916b8cb5509c06632366ffd8a69b9aa70de5dd",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 128,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "77546bdc3c50bc4cbc5a2cba5ce2e46bae02ac2f5a7edaafc73a36813fa839ba"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/resource-predicate-source.json"
+        ],
+        "frame": "choice.resource_node.owner",
+        "quantity": "opaque_resource_owner_token",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "allocation": false,
+    "clock": "Explicit predicate invocation by source resource destructor; no tick/frame inference",
+    "ordering": "Original registration publishes owner; resource destructor queries same node; nonzero allows original unlink clearing that node; scene deletion owns final free",
+    "phase": "Internal owner-presence query before unlink",
+    "storage": "Borrowed canonical resource node word; owner managed by original registration/unlink functions",
+    "writes": false
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ff12.private.resource_predicate/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Internal dependency only, not a fullchoice/gameplay/readyportableprefab",
+    "Scene queue registration/unlink aliases and literalcallbacks remain originalnative",
+    "Audio, IRQ,render, frameinput, fullwrapperresult, allocationfailure and genuinegameplayreachability remainopen",
+    "No new distinct sourcefunction recovered by this publication; central catalog registration is a separatescope",
+    "Synthetic bounded native state fixtures, not game trace or wholeROM semantic equivalence",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "alias_rule": "Original node memory authoritative; query makes no independent owner or queue state",
+    "borrowed_state": "Oneu32opaque owner token from the canonical resource node supplied by source caller",
+    "dependencies": {
+      "source_consumer": "08015270",
+      "source_parent": "0801d40c",
+      "source_producer": "08015210",
+      "source_retirement": "080151ec"
+    },
+    "native_eligibility": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/native-eligibility-links.json",
+      "sha256": "f06b9535a82812cf8a830805549bc89d41fe817ae17721e29b989e34995aef05"
+    },
+    "owned_state": [],
+    "preconditions": [
+      "Canonical accessible resource node memory supplied by original caller; no unresolved outsidealias lifetime guarantee claimed",
+      "Ownerpresent is only nonzero test, not pointer validity or queue integrity"
+    ],
+    "qualification": "128 original/generated fullu32leaf comparisons on original and128on candidate; actual original destructor invokes emitted binding60times across12scene fixtures; emittedfalse negative rejected",
+    "reference": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/resource-predicate-source.json",
+      "sha256": "f6179ee47c851054db477580ee60e0e2e42807429334867b34acc470e45edc87"
+    },
+    "return_domain": {
+      "values": [
+        0,
+        1
+      ]
+    },
+    "return_meaning": {
+      "confidence": 0.95,
+      "evidence": [
+        "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/resource-predicate-source.json"
+      ],
+      "frame": "choice.resource_node.ownership",
+      "quantity": "resource_owner_present",
+      "storage_type": "u32",
+      "unit": {
+        "denominator": 1,
+        "numerator": 1
+      }
+    },
+    "services": []
+  },
+  "return_meaning": {
+    "confidence": 0.95,
+    "evidence": [
+      "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/final-fantasy-i-and-ii-dawn-of-souls/resource-predicate-source.json"
+    ],
+    "frame": "choice.resource_node.ownership",
+    "quantity": "resource_owner_present",
+    "storage_type": "u32",
+    "unit": {
+      "denominator": 1,
+      "numerator": 1
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+    "entry": "08015264"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

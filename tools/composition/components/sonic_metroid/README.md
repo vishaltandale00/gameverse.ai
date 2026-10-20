@@ -109,3 +109,60 @@ beam4→2→0HP, emitted reaction/death fields, native creature removal/drop, an
 exact cartridge identity. The fresh coast→firstboss→Factory route and Factory
 Varia/heat route also pass on that cartridge. These are bounded witnesses;
 later bosses/finale still need their own natural-play acceptance.
+
+## Original Metroid flyer controller and graphics
+
+The species0x16/17 live-controller package recovers patrol, actual terrain-driven
+turning, turn/recovery animation, byte-width clocks and initializer state from
+the user's MZM cartridge. `mzm_ripper.c` takes explicit terrain, animation
+duration and random-input ports. Its28-byte state is portable; the native
+bridge converts quarter-pixel displacement to Sonic Q8 and supplies real
+current-plane terrain queries.6912 originalThumb/hostC/emittedThumb cases pass,
+including actual original empty/solid/out-of-bounds collision processing.
+This is the live controller closure; common damage/freeze/death dependencies
+remain explicitly owned by the composed impact/host graph. Other alien roles
+still use their declared authored patterns.
+
+`extract_mzm_flyer.py` reextracts the original64tiles, palette, five OAM frames
+and duration scripts from the exact MZM ROM. `assemble.py` runs it when the
+private local asset directory is absent. Both local Sonic and MZM cartridges
+are therefore required to reproduce this graph. Raw assets/generated asset C
+remain in ignored `local/`; committed packages contain identities and recipes.
+The native builder separately verifies the second cartridge hash, data-range
+hashes and extraction receipt. Static asset extraction is never mislabeled as
+a dynamic behavior witness. A deliberately corrupted range is rejected.
+
+The renderer leases64nativeOBJtiles and a second currently unused palette
+bank, preserving all original colors and OAM composition. Scene reset/relay
+restore palettes and clear/free both tile leases. Real-cartridge VRAM, palette
+and OAM bytes match the extracted originals; the capture shows the original
+flyer frozen, then resuming its patrol. See the compact native game proof in
+`research/requests/mzm-ripper-native-game-proof.json`. This does not claim the
+entire original MZM graphics, audio or enemy engine has been imported.
+
+## Candidate26 authored habitat witness
+
+Candidate25 and its qualification remain preserved. Candidate26 separately adds
+an optional `patrol_radius_px` (8px units, 16–120px) to the world prefab. The
+bridge and visible boundary markers supply an authored habitat classification
+to the original recovered controller; they do not reverse velocity or bypass
+its turn states. Zero retains native physical terrain only.
+
+The exact candidate26 cartridge `ef7d653159328e9ab4ac0d67eb63dd212e9c6c8f7382eaf7b683627cb0396605`
+now has real native Ice pause/thaw and habitat-driven patrol→turn→recovery→opposite
+patrol evidence. Its own fresh-game ancestry also passes first boss/capsule,
+Factory Varia/heat and both original moving handles. The old high-speed input
+macro failed against the new patrol; a bounded actual diagonal Ice passage
+repairs that route. Both attempts remain retained. The qualifier includes that
+input fallback, and probes now retain supplied state hashes/action lists and
+observe the native collision plane.
+
+`research/requests/mzm-ripper-habitat-proof.json` pins all 41 source snapshots,
+nine byte-identical checkpoint ancestry links, screenshots/video, timing and
+failed later route attempts. The retained clean build took 0.827131s; the native
+habitat witness took 0.378829s and boss/Factory continuation 10.737751s. These are
+separate/nested stage contexts, not CI measurements or repeated-run estimates.
+Candidate26 stalls later beneath native Factory Act 2 geometry around x2390, plane 1;
+wall kicks execute but do not clear the overhang. No authored lock exists at
+that position. Later bosses/finale remain unqualified; no forced plane,
+teleport, speculative movement edit or terrain bypass was added.

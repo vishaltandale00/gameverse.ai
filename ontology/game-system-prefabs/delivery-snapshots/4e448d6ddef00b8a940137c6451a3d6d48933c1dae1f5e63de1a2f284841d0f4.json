@@ -1,0 +1,430 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "final-fantasy-tactics-advance",
+  "sourceContractRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json",
+  "blueprintIds": [
+    "turn-based-party-battle",
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Choose an actor/action, admit its destination against occupied units and capability-conditioned terrain, commit the original action result, then continue the turn. No primary executable prefab is currently supplied; two internal terrain support operations have binding/lowering proof.",
+    "phases": [
+      {
+        "id": "command",
+        "label": "Select acting unit and command",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "original command/turn owner"
+        ],
+        "gaps": [
+          "No proven source caller/dispatcher for08132208."
+        ]
+      },
+      {
+        "id": "turn_order",
+        "label": "Choose eligible actor and turn phase",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "original turn queue and actor lifecycle"
+        ],
+        "gaps": [
+          "Source turn manager and action context lifetime unresolved."
+        ]
+      },
+      {
+        "id": "action_candidate",
+        "label": "Derive action destination candidate",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "direction helpers",
+          "entity occupancy callbacks",
+          "readiness query"
+        ],
+        "gaps": [
+          "08098e7c dependencies not closed; preserve actor aliases."
+        ]
+      },
+      {
+        "id": "map_bounds",
+        "label": "Snapshot current map rectangle",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "Host supplies borrowed current rectangle state and retains four distinct output byte views."
+        ],
+        "gaps": [
+          "Does not evaluate availability or terrain permissions.",
+          "Support-only source operation; not a primary game-building prefab without a decision consumer."
+        ],
+        "internalSupportPhaseId": "ffta.terrain.rectangle_snapshot"
+      },
+      {
+        "id": "terrain_admission",
+        "label": "Admit terrain and compare adjusted cell level",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "canonical grid",
+          "unit capabilities",
+          "adjusted terrain level"
+        ],
+        "gaps": [
+          "0801cc7c stack-output binding unresolved; flags return-semantic projection requested."
+        ]
+      },
+      {
+        "id": "action_commit",
+        "label": "Commit admitted action result coordinates",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "original action context owner"
+        ],
+        "gaps": [
+          "08132208 writes success flag and result coordinates; executable closure missing."
+        ]
+      },
+      {
+        "id": "continuation",
+        "label": "Resolve remaining action effects and next turn",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+        ],
+        "requiredServices": [
+          "original effect/turn continuation services"
+        ],
+        "gaps": [
+          "Damage, resource, animation, rewards, party persistence and next-turn behavior are not supplied."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "command",
+        "to": "turn_order",
+        "kind": "host-required",
+        "scope": "Required turn ownership, not a recovered schedule."
+      },
+      {
+        "from": "turn_order",
+        "to": "action_candidate",
+        "kind": "host-required",
+        "scope": "Original dispatcher/caller unresolved."
+      },
+      {
+        "from": "action_candidate",
+        "to": "terrain_admission",
+        "kind": "source-call",
+        "scope": "08098e7c calls0812e3e8 only after original direction/readiness/occupancy checks."
+      },
+      {
+        "from": "terrain_admission",
+        "to": "map_bounds",
+        "kind": "source-call",
+        "scope": "0812e3e8 validity helper0801cc7c calls0801cd4c before cell availability read; call is conditional."
+      },
+      {
+        "from": "terrain_admission",
+        "to": "action_commit",
+        "kind": "event",
+        "scope": "Successful query plus adjusted-level and optional secondary-unit checks produces result coordinates; no unconditional graph concatenation."
+      },
+      {
+        "from": "action_commit",
+        "to": "continuation",
+        "kind": "host-required",
+        "scope": "No next-turn continuation source closure proven."
+      }
+    ],
+    "missingForCoreGame": [
+      "The original turn/action-dispatch owner and phase invocation remain unresolved.",
+      "Grid validity, flags, adjusted terrain-level consumers and action result coordinate commit are not executable as one source root.",
+      "Actual original rectangle initialization/reload and overlapping output pointers remain outside this qualified subset.",
+      "Acting-unit/party state, turn queue, command admission, action resources/effects, battle outcome and persistence have no closed original loop here."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "ffta.terrain.current_map_rectangle",
+      "label": "Current terrain rectangle snapshot",
+      "moduleId": "ffta.terrain.current_map_rectangle",
+      "sourceGame": "final-fantasy-tactics-advance",
+      "sourceContractRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json",
+      "planIds": [
+        "character-traversal",
+        "turn-based-party-battle"
+      ],
+      "packageIds": [
+        "ffta.terrain.bounds_snapshot"
+      ],
+      "availability": "source-only",
+      "scope": "Original action destination/terrain admission chain is source-backed and incomplete. Qualified bounds/flag helpers remain internal support; neither supplies the actual terrain/capability decision consumer.",
+      "gaps": [
+        "The original turn/action-dispatch owner and phase invocation remain unresolved.",
+        "Grid validity, flags, adjusted terrain-level consumers and action result coordinate commit are not executable as one source root.",
+        "Actual original rectangle initialization/reload and overlapping output pointers remain outside this qualified subset."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json",
+        "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+      ],
+      "canonicalState": {
+        "identity": "borrowed current original terrain rectangle plus four distinct invocation output bytes",
+        "fields": [
+          "origin_x:u8",
+          "origin_y:u8",
+          "width:u8",
+          "height:u8",
+          "snapshot outputs:u8x4"
+        ],
+        "aliasRule": "Input rectangle remains one externally authoritative owner; each output byte is a distinct accessed view. No grid/actor owner or stride identity inferred."
+      },
+      "roleFacets": [
+        {
+          "roleId": "resolve",
+          "capability": "source_action_destination_terrain_admission",
+          "status": "source-only",
+          "scope": "Original guard/capability/action consumer not executable; copied bounds and raw flags are support only.",
+          "evidence": [
+            "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "ffta.terrain.rectangle_snapshot",
+        "label": "Snapshot current map bounds",
+        "assemblyRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-rectangle-snapshot.assembly.json",
+        "validationRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-rectangle-snapshot.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/delivery.json",
+        "packageIds": [
+          "ffta.terrain.bounds_snapshot"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "scope": "Internal support proof only; not a primary prefab"
+      }
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "ffta-source-prefab-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0021240840000000018,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Actual symbolic validation wall only; manifest assembly measured separately. Old finite native receipts reused, no runtime/native rerun or full interactive time measurement.",
+    "metadataAssemblySeconds": 0.018115125,
+    "additionalResultBindingSeconds": 0.0029141659999999993,
+    "metadataCorrectionSeconds": 0.0010977920000000002
+  },
+  "sourceComplete": false,
+  "executableSystem": false,
+  "hostDependenciesDistinct": true,
+  "targetedClosure": [
+    {
+      "gap": "Published flags helper lacks return_meaning for actual output binding",
+      "owner": "publication_intake",
+      "proposal": {
+        "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/flag-return-projection-proposal.json",
+        "sha256": "cb54d2a33678fffa7abbafc2c6f283657e7ae40d164aad8fd618e3bcd440c576"
+      },
+      "status": "closed_metadata_projection_and_actual_result_binding_support_only",
+      "publicationPackage": {
+        "path": "local/ir/packages/ffta.terrain.cell_flags_stride16/package.json",
+        "sha256": "1493cdc5d11f615169974c95915c715e3480446d0c395302b89e661264125194"
+      },
+      "resultBindingReceipt": {
+        "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-flags-result-support.validation.json",
+        "sha256": "9ae962ce91376860586022522b4ac57b0e931c216d031eaf03eda885d737f53a"
+      }
+    },
+    {
+      "gap": "Validity helper caller-stack callee-output linkage",
+      "owner": "compiler_shared_state",
+      "status": "exact old executable reproducer sent; owner status requested",
+      "reproducer": "local/ir/fleet-next/final-fantasy-tactics-advance/closure_attempt.py"
+    }
+  ],
+  "internalSupportPhases": [
+    {
+      "id": "ffta.terrain.rectangle_snapshot",
+      "moduleId": "ffta.terrain.current_map_rectangle",
+      "label": "Snapshot current map bounds",
+      "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-rectangle-snapshot.assembly.json",
+      "sha256": "1b82fcb1f755206686a5bc545193db1247694dce7e0b67df3514241e8632dccf",
+      "validation": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-rectangle-snapshot.validation.json",
+      "validationSha256": "a120b218dfe3c1bba601189003d9c07a2cfa478818aa4c5a0c5283c318d9a20b",
+      "inputs": [
+        {
+          "id": "origin_x",
+          "label": "Current map origin X",
+          "storageType": "u8",
+          "default": 2,
+          "domain": "source byte0..255; defaults are explicit host-supplied configuration, not recovered runtime state",
+          "binding": "rectangle_field_4"
+        },
+        {
+          "id": "origin_y",
+          "label": "Current map origin Y",
+          "storageType": "u8",
+          "default": 3,
+          "domain": "source byte0..255; defaults are explicit host-supplied configuration, not recovered runtime state",
+          "binding": "rectangle_field_5"
+        },
+        {
+          "id": "width",
+          "label": "Current map rectangle width",
+          "storageType": "u8",
+          "default": 8,
+          "domain": "source byte0..255; defaults are explicit host-supplied configuration, not recovered runtime state",
+          "binding": "rectangle_field_6"
+        },
+        {
+          "id": "height",
+          "label": "Current map rectangle height",
+          "storageType": "u8",
+          "default": 6,
+          "domain": "source byte0..255; defaults are explicit host-supplied configuration, not recovered runtime state",
+          "binding": "rectangle_field_7"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "width",
+          "binding": "output_field_0",
+          "meaning": "Snapshot width in grid cells"
+        },
+        {
+          "id": "height",
+          "binding": "output_field_1",
+          "meaning": "Snapshot height in grid cells"
+        },
+        {
+          "id": "origin_x",
+          "binding": "output_field_2",
+          "meaning": "Snapshot origin X in the source battle grid"
+        },
+        {
+          "id": "origin_y",
+          "binding": "output_field_3",
+          "meaning": "Snapshot origin Y in the source battle grid"
+        }
+      ],
+      "phases": [
+        {
+          "id": "snapshot",
+          "trigger": "explicit supplied host request at a valid current-rectangle boundary",
+          "invocations": [
+            "snapshot"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        "Host supplies borrowed current rectangle state and retains four distinct output byte views."
+      ],
+      "gaps": [
+        "The original turn/action-dispatch owner and phase invocation remain unresolved.",
+        "Grid validity, flags, adjusted terrain-level consumers and action result coordinate commit are not executable as one source root.",
+        "Actual original rectangle initialization/reload and overlapping output pointers remain outside this qualified subset."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/source-coreloop.json",
+        "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+      ],
+      "qualificationScope": "Actual assembly.py Composer/binding/lowering only. Reuses retained1024-vector original-function native proof; new graph is not native runtime qualified.",
+      "packagePins": [
+        {
+          "path": "local/ir/packages/ffta.terrain.bounds_snapshot/package.json",
+          "sha256": "a954d44f9aa631ece09c5ac80ffa018326e47ae2d39e94a81e8e158749797852"
+        },
+        {
+          "path": "local/ir/packages/ffta.terrain.bounds_snapshot/l1.json",
+          "sha256": "f8ea344dcc840a6b474b21e92e165751c76a817f95e586bbecef13e5f3027bed"
+        },
+        {
+          "path": "local/ir/packages/ffta.terrain.bounds_snapshot/receipt.json",
+          "sha256": "647cbcd414c67f401ce2a246680e825c172f00c755bb7df194521685b5359e8b"
+        },
+        {
+          "path": "ontology/executable-components/ffta.terrain.bounds_snapshot.json",
+          "sha256": "df156f52b409459cabbb6873feac97f123086a702e99faeda1b6fbf94d44ecd6"
+        }
+      ],
+      "primaryGameBuildingPrefab": false,
+      "readyToAdd": false,
+      "classification": "internal_support_phase_only",
+      "rejectionReason": "Snapshot copy lacks actual source terrain/capability decision consumer; source operation qualification is not primary prefab utility."
+    },
+    {
+      "id": "ffta.terrain.flags_result_internal_support",
+      "label": "Read raw cell flags with captured result",
+      "classification": "internal_support_phase_only",
+      "primaryGameBuildingPrefab": false,
+      "readyToAdd": false,
+      "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-flags-result-support.assembly.json",
+      "sha256": "48cdeedc8ab5f663fa3eb049ab8a8fb24667e1e7b5e269c445b2fbe98ea56cb7",
+      "validation": "research/deep-extraction/resume/final-fantasy-tactics-advance/prefab-pass/terrain-flags-result-support.validation.json",
+      "validationSha256": "9ae962ce91376860586022522b4ac57b0e931c216d031eaf03eda885d737f53a",
+      "status": "binding_valid_obligations_unproven",
+      "outputs": [
+        {
+          "id": "observed_flags",
+          "binding": "observed_flags",
+          "meaning": "Raw terrain flag byte; no flag-bit identity or capability/terrain admission decision supplied."
+        }
+      ],
+      "packagePins": [
+        {
+          "path": "local/ir/packages/ffta.terrain.cell_flags_stride16/package.json",
+          "sha256": "1493cdc5d11f615169974c95915c715e3480446d0c395302b89e661264125194"
+        },
+        {
+          "path": "local/ir/packages/ffta.terrain.cell_flags_stride16/l1.json",
+          "sha256": "c7ec854e6edfaec8b959f895b893a174b72a4400689373a5118733b56077df1a"
+        },
+        {
+          "path": "local/ir/packages/ffta.terrain.cell_flags_stride16/receipt.json",
+          "sha256": "25d2f25408808d3c81f5219756f8d30cfb05da387fab3b95d54036f8a103e826"
+        }
+      ],
+      "qualifyingDomain": "x/y0..15, stride16,511byte accessed window; no original allocation extent or invariant claim.",
+      "newNativeExecution": false,
+      "sourceConsumerGap": "Published query has no actual capability-conditioned terrain admission consumer; not a primary prefab."
+    }
+  ],
+  "productGuard": {
+    "primaryPrefabCount": 0,
+    "reason": "Neither bounds copy nor isolated flags result query includes actual source terrain/capability decision consumer.",
+    "nextPriorityOwner": "/root/blueprint_completion_lead",
+    "noFurtherWork": "No new consumer/native/breadth work until targeted priority from lead."
+  }
+}

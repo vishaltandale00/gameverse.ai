@@ -1,0 +1,451 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "crash.actor.motion_target_approach_integrate",
+  "label": "Advance source actor velocity toward targets and integrate both coordinates",
+  "role": "actor_motion_phase",
+  "source_game": "crash-bandicoot-the-huge-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/crash.actor.motion_target_approach_integrate/package.json",
+  "package_sha256": "8757213d24f428869f942d530c69a992daf4ec4932efefabff5606f5293ea83b",
+  "behavior_sha256": "ef278b1c0e72d97b4f50f57486c3f9f8a38510fa5f62228a3e8d2283c0f38bb2",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 126,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "ab21ee7c66da43d5c4903347e6ab45ebdf04a64a0260770d487aea4d68dc30b5"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.world_x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.world_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "crash.actor.motion_direction",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.world_x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.world_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "crash.actor.motion_invocation_y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 12,
+    "collections": []
+  },
+  "lifecycle": {
+    "invoke": "one eligible original actor motionphase with prepared canonicalactor input",
+    "clock": "per eligible motioninvocation, no FPS",
+    "ownership": "one actor backing; separate global lastverticalvelocity mirror retained",
+    "order": "motionbeforecontrollerapplication; newpayloadfeedsnexteligiblemotionstep"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/crash.actor.motion_target_approach_integrate/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "126 finite exact fixtures only; not all actorstates.",
+    "Terrain/controller/rearm and completeparent remain open.",
+    "Source-local1/256 coordinates; no automatic crossgame unittranslation.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_evidence": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json",
+      "sha256": "117bffc8b087dd7ca6d6bbc90c6388625eafbf5dd0ebe0e99a02daaee740ef4a"
+    },
+    "qualification": {
+      "scope": "126exact sameactor twoaxisphasefixtures: horizontalapproachbothsigns/zero/steps; verticalactualphase triples8,18/14/6,1280 plusnegative,stationary,targetcrossing; previouspose/directionflags/globalvelocitymirror/return checked",
+      "case_ids": [
+        "case0-vx-256-tx-128-ax0-vy8-ty1280-ay18",
+        "case1-vx-256-tx-128-ax0-vy8-ty1280-ay14",
+        "case2-vx-256-tx-128-ax0-vy8-ty1280-ay6",
+        "case3-vx-256-tx-128-ax0-vy-8-ty-1280-ay18",
+        "case4-vx-256-tx-128-ax0-vy0-ty0-ay0",
+        "case5-vx-256-tx-128-ax0-vy1279-ty1280-ay18",
+        "case6-vx-256-tx-128-ax0-vy1281-ty1280-ay18",
+        "case7-vx-256-tx-128-ax32-vy8-ty1280-ay18",
+        "case8-vx-256-tx-128-ax32-vy8-ty1280-ay14",
+        "case9-vx-256-tx-128-ax32-vy8-ty1280-ay6",
+        "case10-vx-256-tx-128-ax32-vy-8-ty-1280-ay18",
+        "case11-vx-256-tx-128-ax32-vy0-ty0-ay0",
+        "case12-vx-256-tx-128-ax32-vy1279-ty1280-ay18",
+        "case13-vx-256-tx-128-ax32-vy1281-ty1280-ay18",
+        "case14-vx-256-tx0-ax0-vy8-ty1280-ay18",
+        "case15-vx-256-tx0-ax0-vy8-ty1280-ay14",
+        "case16-vx-256-tx0-ax0-vy8-ty1280-ay6",
+        "case17-vx-256-tx0-ax0-vy-8-ty-1280-ay18",
+        "case18-vx-256-tx0-ax0-vy0-ty0-ay0",
+        "case19-vx-256-tx0-ax0-vy1279-ty1280-ay18",
+        "case20-vx-256-tx0-ax0-vy1281-ty1280-ay18",
+        "case21-vx-256-tx0-ax32-vy8-ty1280-ay18",
+        "case22-vx-256-tx0-ax32-vy8-ty1280-ay14",
+        "case23-vx-256-tx0-ax32-vy8-ty1280-ay6",
+        "case24-vx-256-tx0-ax32-vy-8-ty-1280-ay18",
+        "case25-vx-256-tx0-ax32-vy0-ty0-ay0",
+        "case26-vx-256-tx0-ax32-vy1279-ty1280-ay18",
+        "case27-vx-256-tx0-ax32-vy1281-ty1280-ay18",
+        "case28-vx-256-tx128-ax0-vy8-ty1280-ay18",
+        "case29-vx-256-tx128-ax0-vy8-ty1280-ay14",
+        "case30-vx-256-tx128-ax0-vy8-ty1280-ay6",
+        "case31-vx-256-tx128-ax0-vy-8-ty-1280-ay18",
+        "case32-vx-256-tx128-ax0-vy0-ty0-ay0",
+        "case33-vx-256-tx128-ax0-vy1279-ty1280-ay18",
+        "case34-vx-256-tx128-ax0-vy1281-ty1280-ay18",
+        "case35-vx-256-tx128-ax32-vy8-ty1280-ay18",
+        "case36-vx-256-tx128-ax32-vy8-ty1280-ay14",
+        "case37-vx-256-tx128-ax32-vy8-ty1280-ay6",
+        "case38-vx-256-tx128-ax32-vy-8-ty-1280-ay18",
+        "case39-vx-256-tx128-ax32-vy0-ty0-ay0",
+        "case40-vx-256-tx128-ax32-vy1279-ty1280-ay18",
+        "case41-vx-256-tx128-ax32-vy1281-ty1280-ay18",
+        "case42-vx0-tx-128-ax0-vy8-ty1280-ay18",
+        "case43-vx0-tx-128-ax0-vy8-ty1280-ay14",
+        "case44-vx0-tx-128-ax0-vy8-ty1280-ay6",
+        "case45-vx0-tx-128-ax0-vy-8-ty-1280-ay18",
+        "case46-vx0-tx-128-ax0-vy0-ty0-ay0",
+        "case47-vx0-tx-128-ax0-vy1279-ty1280-ay18",
+        "case48-vx0-tx-128-ax0-vy1281-ty1280-ay18",
+        "case49-vx0-tx-128-ax32-vy8-ty1280-ay18",
+        "case50-vx0-tx-128-ax32-vy8-ty1280-ay14",
+        "case51-vx0-tx-128-ax32-vy8-ty1280-ay6",
+        "case52-vx0-tx-128-ax32-vy-8-ty-1280-ay18",
+        "case53-vx0-tx-128-ax32-vy0-ty0-ay0",
+        "case54-vx0-tx-128-ax32-vy1279-ty1280-ay18",
+        "case55-vx0-tx-128-ax32-vy1281-ty1280-ay18",
+        "case56-vx0-tx0-ax0-vy8-ty1280-ay18",
+        "case57-vx0-tx0-ax0-vy8-ty1280-ay14",
+        "case58-vx0-tx0-ax0-vy8-ty1280-ay6",
+        "case59-vx0-tx0-ax0-vy-8-ty-1280-ay18",
+        "case60-vx0-tx0-ax0-vy0-ty0-ay0",
+        "case61-vx0-tx0-ax0-vy1279-ty1280-ay18",
+        "case62-vx0-tx0-ax0-vy1281-ty1280-ay18",
+        "case63-vx0-tx0-ax32-vy8-ty1280-ay18",
+        "case64-vx0-tx0-ax32-vy8-ty1280-ay14",
+        "case65-vx0-tx0-ax32-vy8-ty1280-ay6",
+        "case66-vx0-tx0-ax32-vy-8-ty-1280-ay18",
+        "case67-vx0-tx0-ax32-vy0-ty0-ay0",
+        "case68-vx0-tx0-ax32-vy1279-ty1280-ay18",
+        "case69-vx0-tx0-ax32-vy1281-ty1280-ay18",
+        "case70-vx0-tx128-ax0-vy8-ty1280-ay18",
+        "case71-vx0-tx128-ax0-vy8-ty1280-ay14",
+        "case72-vx0-tx128-ax0-vy8-ty1280-ay6",
+        "case73-vx0-tx128-ax0-vy-8-ty-1280-ay18",
+        "case74-vx0-tx128-ax0-vy0-ty0-ay0",
+        "case75-vx0-tx128-ax0-vy1279-ty1280-ay18",
+        "case76-vx0-tx128-ax0-vy1281-ty1280-ay18",
+        "case77-vx0-tx128-ax32-vy8-ty1280-ay18",
+        "case78-vx0-tx128-ax32-vy8-ty1280-ay14",
+        "case79-vx0-tx128-ax32-vy8-ty1280-ay6",
+        "case80-vx0-tx128-ax32-vy-8-ty-1280-ay18",
+        "case81-vx0-tx128-ax32-vy0-ty0-ay0",
+        "case82-vx0-tx128-ax32-vy1279-ty1280-ay18",
+        "case83-vx0-tx128-ax32-vy1281-ty1280-ay18",
+        "case84-vx256-tx-128-ax0-vy8-ty1280-ay18",
+        "case85-vx256-tx-128-ax0-vy8-ty1280-ay14",
+        "case86-vx256-tx-128-ax0-vy8-ty1280-ay6",
+        "case87-vx256-tx-128-ax0-vy-8-ty-1280-ay18",
+        "case88-vx256-tx-128-ax0-vy0-ty0-ay0",
+        "case89-vx256-tx-128-ax0-vy1279-ty1280-ay18",
+        "case90-vx256-tx-128-ax0-vy1281-ty1280-ay18",
+        "case91-vx256-tx-128-ax32-vy8-ty1280-ay18",
+        "case92-vx256-tx-128-ax32-vy8-ty1280-ay14",
+        "case93-vx256-tx-128-ax32-vy8-ty1280-ay6",
+        "case94-vx256-tx-128-ax32-vy-8-ty-1280-ay18",
+        "case95-vx256-tx-128-ax32-vy0-ty0-ay0",
+        "case96-vx256-tx-128-ax32-vy1279-ty1280-ay18",
+        "case97-vx256-tx-128-ax32-vy1281-ty1280-ay18",
+        "case98-vx256-tx0-ax0-vy8-ty1280-ay18",
+        "case99-vx256-tx0-ax0-vy8-ty1280-ay14",
+        "case100-vx256-tx0-ax0-vy8-ty1280-ay6",
+        "case101-vx256-tx0-ax0-vy-8-ty-1280-ay18",
+        "case102-vx256-tx0-ax0-vy0-ty0-ay0",
+        "case103-vx256-tx0-ax0-vy1279-ty1280-ay18",
+        "case104-vx256-tx0-ax0-vy1281-ty1280-ay18",
+        "case105-vx256-tx0-ax32-vy8-ty1280-ay18",
+        "case106-vx256-tx0-ax32-vy8-ty1280-ay14",
+        "case107-vx256-tx0-ax32-vy8-ty1280-ay6",
+        "case108-vx256-tx0-ax32-vy-8-ty-1280-ay18",
+        "case109-vx256-tx0-ax32-vy0-ty0-ay0",
+        "case110-vx256-tx0-ax32-vy1279-ty1280-ay18",
+        "case111-vx256-tx0-ax32-vy1281-ty1280-ay18",
+        "case112-vx256-tx128-ax0-vy8-ty1280-ay18",
+        "case113-vx256-tx128-ax0-vy8-ty1280-ay14",
+        "case114-vx256-tx128-ax0-vy8-ty1280-ay6",
+        "case115-vx256-tx128-ax0-vy-8-ty-1280-ay18",
+        "case116-vx256-tx128-ax0-vy0-ty0-ay0",
+        "case117-vx256-tx128-ax0-vy1279-ty1280-ay18",
+        "case118-vx256-tx128-ax0-vy1281-ty1280-ay18",
+        "case119-vx256-tx128-ax32-vy8-ty1280-ay18",
+        "case120-vx256-tx128-ax32-vy8-ty1280-ay14",
+        "case121-vx256-tx128-ax32-vy8-ty1280-ay6",
+        "case122-vx256-tx128-ax32-vy-8-ty-1280-ay18",
+        "case123-vx256-tx128-ax32-vy0-ty0-ay0",
+        "case124-vx256-tx128-ax32-vy1279-ty1280-ay18",
+        "case125-vx256-tx128-ax32-vy1281-ty1280-ay18"
+      ],
+      "source_order": "Root consumes actor state already present. Parent applies controller payload after current motion; no new sameframeproducer sequence claimed."
+    },
+    "parameters": [],
+    "return_storage_type": "u32",
+    "return_meaning": {
+      "quantity": "predicate",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "crash.actor.motion_changed",
+      "confidence": 0.98,
+      "evidence": [
+        "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+      ]
+    },
+    "services": "No calls/hardware/allocator; retain globalverticalvelocitymirror write",
+    "canonicalState": "Same actor position/previousposition/velocity/targets/steps; never detached copies",
+    "sourceRootStatus": "original-function finite-qualified cohesive motionphase, not controller or completegame",
+    "compilerInput": "Own-ROM HighFunction only"
+  },
+  "return_meaning": {
+    "quantity": "predicate",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "crash.actor.motion_changed",
+    "confidence": 0.98,
+    "evidence": [
+      "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json"
+    ]
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "crash-bandicoot-the-huge-adventure",
+    "entry": "0800b270"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

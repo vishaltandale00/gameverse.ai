@@ -1,0 +1,197 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffta.terrain.bounds_snapshot",
+  "label": "Read current terrain rectangle into four distinct output bytes",
+  "role": "terrain.bounds_snapshot",
+  "source_game": "final-fantasy-tactics-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ffta.terrain.bounds_snapshot/package.json",
+  "package_sha256": "a954d44f9aa631ece09c5ac80ffa018326e47ae2d39e94a81e8e158749797852",
+  "behavior_sha256": "f8ea344dcc840a6b474b21e92e165751c76a817f95e586bbecef13e5f3027bed",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "647cbcd414c67f401ce2a246680e825c172f00c755bb7df194521685b5359e8b"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_width",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "grid_cells.x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_height",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "grid_cells.y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_origin_x",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_origin_y",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_origin_x",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_origin_y",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "battle_grid.y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_width",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "grid_cells.x",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "rectangle_height",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "grid_cells.y",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 8,
+    "collections": []
+  },
+  "lifecycle": {
+    "invoke": "explicit original-function invocation; no frame rate inferred",
+    "storage": "borrowed current terrain context; no owned world state created",
+    "teardown": "none; caller retains references",
+    "unknown": "grid initialization/reload/owner lifetime and original caller schedule unresolved"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ffta.terrain.bounds_snapshot/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic helper states only; no native root/L2/gameplay or whole-game qualification.",
+    "Original terrain bit meanings, unit capability identities, allocation and reload lifetimes remain unresolved.",
+    "No compiler, test, native, JVM or lift execution in this metadata publication pass.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/final-fantasy-tactics-advance/next-extraction/publication-source-contract.json",
+    "sha256": "675aed690993ee4f7dc0011f5236e456385dd31bb47463aa18e676af9b8d7d19"
+  }
+}

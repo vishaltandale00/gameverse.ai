@@ -1,0 +1,324 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "mario-and-luigi-superstar-saga",
+  "sourceSystemIds": [
+    "mlss.motion.lifecycle"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "turn-based-party-battle",
+    "exploration-progression",
+    "dialogue-interactive-scenes"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Paired exploration feeding party-command encounters, timed action/defense, earned resources/story progression and persistent return. This is a reconstruction target, not recovered behavior.",
+    "phases": [
+      {
+        "id": "paired-overworld",
+        "label": "Control paired characters and traverse rooms",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+          "research/deep-extraction/mario/parallel-superstar/targets.json"
+        ],
+        "requiredServices": [
+          "Source actor owner and scheduler",
+          "Input and terrain producers"
+        ],
+        "gaps": [
+          "Actor motion subset only; character identity, separation/following, input/action mapping, terrain and timing unknown"
+        ]
+      },
+      {
+        "id": "motion-status-reset",
+        "label": "Reset motion flag/counter bookkeeping",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.assembly.json",
+          "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          "Caller-declared reset event"
+        ],
+        "gaps": [
+          "Private motion fields remain root-local; no full actor lifecycle or physical cancel/restore claim",
+          "No init/update private-state sharing, ground contact, input or gameplay-reachability proof",
+          "Caller supplies reset trigger; source scheduler cadence unknown"
+        ]
+      },
+      {
+        "id": "battle-command",
+        "label": "Choose a party action",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Turn ownership, legal command selection and resource transaction not recovered"
+        ]
+      },
+      {
+        "id": "timing-defense",
+        "label": "Resolve timed attack and defense",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Timing windows, command/defense state machine and target mapping not recovered"
+        ]
+      },
+      {
+        "id": "enemy-encounter",
+        "label": "Enter encounter and resolve enemies/bosses",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Overworld contact-to-battle transition, enemy AI, attack telegraphs and boss phases not recovered"
+        ]
+      },
+      {
+        "id": "abilities-resources",
+        "label": "Acquire/use abilities, gear and resources",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Acquisition/equip legality, HP/points/items/currency/stat transactions not recovered"
+        ]
+      },
+      {
+        "id": "story-world",
+        "label": "Advance rooms, story flags and conversations",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Room scripts, choices, story gates, quest flags and world graph not recovered"
+        ]
+      },
+      {
+        "id": "persistence-return",
+        "label": "Commit progress and return between battle/overworld",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/automatic-ir/mario-mechanic-coverage.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Shared party/save state, scene ownership, save/load/newgame/death recovery not recovered"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "paired-overworld",
+        "to": "motion-status-reset",
+        "kind": "host-required",
+        "scope": "Caller must explicitly request bookkeeping reset; no recovered scene/frame event claimed"
+      }
+    ],
+    "missingForCoreGame": [
+      "Actor motion subset only; character identity, separation/following, input/action mapping, terrain and timing unknown",
+      "Private motion fields remain root-local; no full actor lifecycle or physical cancel/restore claim",
+      "No init/update private-state sharing, ground contact, input or gameplay-reachability proof",
+      "Caller supplies reset trigger; source scheduler cadence unknown",
+      "Turn ownership, legal command selection and resource transaction not recovered",
+      "Timing windows, command/defense state machine and target mapping not recovered",
+      "Overworld contact-to-battle transition, enemy AI, attack telegraphs and boss phases not recovered",
+      "Acquisition/equip legality, HP/points/items/currency/stat transactions not recovered",
+      "Room scripts, choices, story gates, quest flags and world graph not recovered",
+      "Shared party/save state, scene ownership, save/load/newgame/death recovery not recovered"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "mlss-motion-status-reset-prefab",
+      "label": "Superstar motion status reset",
+      "moduleId": "mlss.motion.lifecycle",
+      "sourceGame": "mario-and-luigi-superstar-saga",
+      "sourceSystemId": "mlss.motion.lifecycle",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "mlss.motion.reset"
+      ],
+      "availability": "source-only",
+      "scope": "Internal support phase only; meaningful motion module still needs source caller/private-state and physical-port closure.",
+      "gaps": [
+        "Private motion fields remain root-local; no full actor lifecycle or physical cancel/restore claim",
+        "No init/update private-state sharing, ground contact, input or gameplay-reachability proof",
+        "Caller supplies reset trigger; source scheduler cadence unknown"
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+        "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.assembly.json",
+        "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.validation.json",
+        "local/ir/prefab-reconstruction/superstar/status-reset-host/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "One reset component instance; canonical module mlss.motion.lifecycle",
+        "fields": [
+          "motionFlags",
+          "invocationCounter"
+        ],
+        "aliasRule": "Public slots bind exactly once to this component. Private saved/active parameter and motion fields belong to this same root instance; no cross-root identity implied."
+      },
+      "roleFacets": [
+        {
+          "roleId": "recovery",
+          "capability": "motion_status_bookkeeping_reset",
+          "status": "source-only",
+          "scope": "Clear source flag bit and write inactive sentinel only; no player recovery/respawn/terrain promise.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+            "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.validation.json",
+            "local/ir/prefab-reconstruction/superstar/status-reset-host/receipt.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mlss.motion.status_reset",
+        "label": "Motion status reset",
+        "assemblyRef": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.assembly.json",
+        "validationRef": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.validation.json",
+        "descriptorRef": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/delivery.json",
+        "packageIds": [
+          "mlss.motion.reset"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "timing": {
+    "runId": "20261016-superstar-prefab-status-reset",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0028730000000000006,
+    "buildSeconds": 0.040779209000000004,
+    "nativeSeconds": 0.10832370799999999,
+    "hostExecutionSeconds": 0.053640084,
+    "totalSeconds": 0.344286918,
+    "beforeAfter": null,
+    "accounting": "Non-overlapping measured admission + host compile/execution + linked extraction/qualification; nativeSeconds is nested within linkedExtractionQualificationSeconds and must not be added again. Semantic review/packetwriting/queue and beforeafter unavailable.",
+    "linkedExtractionQualificationSeconds": 0.246994625
+  },
+  "counts": {
+    "usefulPortablePrefabs": 0,
+    "fullActorLifecycles": 0,
+    "newSourceNativeRuns": 1,
+    "newGameRoms": 0,
+    "internalSupportPhases": 1
+  },
+  "pendingClosure": {
+    "requestedOwner": "/root/compiler_shared_state",
+    "request": "Smallest actual automatic init-to-update linked closure or canonical privateowner support; preserve physical fields opaque",
+    "status": "sameactorlinkedsequence1024native_pass; reviewintakepending; usefulphysicalcallerandportsmissing"
+  },
+  "internalSupportPhases": [
+    {
+      "id": "mlss.motion.status_reset",
+      "moduleId": "mlss.motion.lifecycle",
+      "label": "Reset motion status bookkeeping",
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.assembly.json",
+      "sha256": "b68d2fe234e89f27b06785a1211d85f1bbfb5c0c18a5f48c0136779895075d8d",
+      "validation": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/motion-status-reset.validation.json",
+      "validationSha256": "04fca77f41b68126aee57d3cde9377a587da8c2dfe7f11d102799f16976a17bc",
+      "inputs": [
+        {
+          "id": "motionFlags",
+          "label": "Current source motion flags",
+          "storageType": "u8",
+          "default": 255,
+          "domain": "Source u8 bitset,0..255; opaque bits preserved except sourcebit0x20",
+          "binding": "motionFlags"
+        },
+        {
+          "id": "invocationCounter",
+          "label": "Current invocation counter or inactive sentinel",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Exactu32 storage; source signedinactive -1 is0xffffffff",
+          "binding": "invocationCounter"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "motionFlags",
+          "binding": "motionFlags",
+          "meaning": "Sourcebit0x20 cleared; all other flagbits preserved"
+        },
+        {
+          "id": "invocationCounter",
+          "binding": "invocationCounter",
+          "meaning": "Source inactive sentinel0xffffffff"
+        }
+      ],
+      "phases": [
+        {
+          "id": "reset-status",
+          "trigger": "Explicit caller-declared bookkeeping reset request",
+          "invocations": [
+            "statusReset"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Private motion fields remain root-local; no full actor lifecycle or physical cancel/restore claim",
+        "No init/update private-state sharing, ground contact, input or gameplay-reachability proof",
+        "Caller supplies reset trigger; source scheduler cadence unknown"
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-superstar/next-extraction/l2-contract.json",
+        "local/ir/packages/mlss.motion.reset/package.json",
+        "local/ir/packages/mlss.motion.reset/receipt.json",
+        "local/ir/prefab-reconstruction/superstar/status-reset-host/receipt.json"
+      ],
+      "qualificationScope": "Actual assembly admission/lowering plus256flag hostcases with repeatedcalls. Reuses source1024native parity proof; no newROM qualification or fullL2 claim.",
+      "hostCheck": {
+        "path": "local/ir/prefab-reconstruction/superstar/status-reset-host/receipt.json",
+        "sha256": "4722ddf664db28617c144486bfb301f6c3fae4ddcfc4af76398c1939ee49d31f"
+      },
+      "packagePins": [
+        {
+          "id": "mlss.motion.reset",
+          "path": "local/ir/packages/mlss.motion.reset/package.json",
+          "sha256": "b7fdd6e54d82a99cbb93715827df0b495380faedcb5da2d1e63295c18d767703",
+          "behaviorSha256": "3d7d34a7e7ba8accc3c6324b442b8b6ad0b2e3e5dd94278ffe6db652edf5c3b9"
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "linkedClosure": {
+    "path": "local/ir/prefab-reconstruction/superstar/init-update-linked/summary.json",
+    "status": "native1024_pass",
+    "origin": "automatic_highfunction_linked_sequence",
+    "newOriginalRoots": 0,
+    "scope": "Declared init-zero-overrides then update on one canonicalactor; privatephysicalfields stayopaque; notreadyprimary"
+  }
+}

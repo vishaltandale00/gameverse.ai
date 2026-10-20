@@ -1,0 +1,238 @@
+{
+  "schema": "gameverse.prefab-delivery-contract/1",
+  "purpose": "Incremental source-game reconstruction into useful reusable wired game-system phases. No generated game, ROM, demo or whole-game readiness claim.",
+  "ownership": {
+    "workers": "Write only your private game prefab-pass directory. Do not edit central src/, API allowlists, ontology indexes or another game's artifacts.",
+    "semanticLead": "Owns blueprint definitions, candidate integration, role eligibility and canonical reusable module identity.",
+    "compilerIntake": "Owns publication of changed/new qualified package contracts and current immutable pins.",
+    "siteOwner": "Owns the exact prefab ID/path allowlist and frontend packaging.",
+    "uiOwner": "Owns ready-prefab add/configure/reuse flow. One module instance across its role facets; no copied actor/world state."
+  },
+  "outputDirectory": "research/deep-extraction/resume/<gameId>/prefab-pass-20261016/ (or an already agreed private equivalent)",
+  "requiredFiles": [
+    "delivery.json",
+    "prefab-allowlist.json",
+    "<prefab>.assembly.json",
+    "<prefab>.validation.json"
+  ],
+  "deliverySchema": "ontology/recovered-prefab-delivery.schema.json",
+  "deliveryExample": {
+    "schema": "gameverse.game-prefab-delivery/1",
+    "gameId": "your-existing-game-id",
+    "sourceSystemIds": [
+      "existing normalized source ID; omit only when exact sourceContractRef is supplied"
+    ],
+    "blueprintIds": [
+      "one or more blueprint IDs below"
+    ],
+    "coreLoop": {
+      "playerOutcome": "Recognizable core experience for this source game.",
+      "phases": [
+        {
+          "id": "stable-source-phase",
+          "label": "Player-facing responsibility",
+          "status": "usable-prefab|internal-consumed|source-only|missing",
+          "prefabIds": [],
+          "sourceRefs": [],
+          "requiredServices": [],
+          "gaps": [],
+          "parentPrefabIds": []
+        }
+      ],
+      "edges": [
+        {
+          "from": "phase-id",
+          "to": "phase-id",
+          "kind": "source-call|shared-state|event|host-required",
+          "scope": "Actual source boundary; not a guessed total frame schedule."
+        }
+      ],
+      "missingForCoreGame": [
+        "Specific missing consumer, producer, runtime service or lifecycle boundary; do not say only full game missing."
+      ],
+      "wholeGameReady": false
+    },
+    "bundles": [
+      {
+        "id": "source-specific-bundle-id",
+        "label": "Useful system phase",
+        "moduleId": "canonical same-instance source-module identity",
+        "sourceGame": "existing-game-id",
+        "sourceSystemId": "existing source ID when present",
+        "sourceContractRef": "exact existing packet when no normalized source ID exists",
+        "planIds": [
+          "blueprint-id"
+        ],
+        "packageIds": [],
+        "availability": "published-subset|source-only",
+        "scope": "Exact supplied behavior",
+        "gaps": [],
+        "evidence": [],
+        "canonicalState": {
+          "identity": "one actor/session/world owner",
+          "fields": [],
+          "aliasRule": "what must share backing"
+        },
+        "roleFacets": [
+          {
+            "roleId": "role from chosen blueprint",
+            "capability": "meaningful contribution",
+            "status": "published-subset|source-only|missing",
+            "scope": "role-specific actual scope",
+            "evidence": []
+          }
+        ],
+        "recoveredAssembly": {
+          "id": "globally unique prefab ID",
+          "label": "Narrow useful capability",
+          "assemblyRef": "repo-relative graph",
+          "validationRef": "repo-relative validation",
+          "descriptorRef": "repo-relative delivery.json",
+          "packageIds": [],
+          "readyToAdd": false,
+          "runtimeQualified": false
+        }
+      }
+    ],
+    "prefabs": [
+      {
+        "id": "globally unique prefab ID",
+        "moduleId": "same bundle identity",
+        "label": "Useful source phase",
+        "path": "repo-relative assembly.json",
+        "sha256": "exact file SHA256",
+        "validation": "repo-relative validation.json",
+        "validationSha256": "exact receipt SHA256",
+        "inputs": [
+          {
+            "id": "semantic input",
+            "label": "Meaningful setting",
+            "storageType": "u16",
+            "default": 1,
+            "domain": "source-evidenced domain",
+            "binding": "canonical state slot or invocation argument"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "semantic output",
+            "binding": "actual state/result slot",
+            "meaning": "What the consumer can use"
+          }
+        ],
+        "phases": [
+          {
+            "id": "phase",
+            "trigger": "source event or explicit supplied host event",
+            "invocations": [
+              "component instance IDs"
+            ],
+            "scheduleStatus": "source-proven|caller-declared"
+          }
+        ],
+        "requiredServices": [],
+        "gaps": [],
+        "sourceRefs": [],
+        "qualificationScope": "Symbolic binding/lowering only unless a separately retained execution receipt proves more."
+      }
+    ],
+    "timing": {
+      "runId": "stable ID",
+      "sourceCommit": "commit",
+      "environment": "machine/toolchain",
+      "queueSeconds": null,
+      "validationSeconds": null,
+      "buildSeconds": null,
+      "nativeSeconds": null,
+      "totalSeconds": null,
+      "beforeAfter": null,
+      "accounting": "Nested stages identified; unavailable metrics remain null, not zero."
+    }
+  },
+  "allowlistFormat": {
+    "schema": "gameverse.prefab-allowlist/1",
+    "prefabs": [
+      {
+        "id": "same globally unique prefab ID",
+        "path": "repo-relative assembly.json",
+        "sha256": "exact graph SHA256",
+        "validation": "repo-relative validation.json"
+      }
+    ]
+  },
+  "blueprints": {
+    "character-traversal": [
+      "control",
+      "terrain",
+      "camera",
+      "recovery"
+    ],
+    "exploration-progression": [
+      "discovery",
+      "ownership",
+      "benefit",
+      "commit"
+    ],
+    "combat-encounter": [
+      "attack",
+      "contact",
+      "reaction",
+      "defeat"
+    ],
+    "melee-action": [
+      "fighter-control",
+      "action",
+      "contact",
+      "reaction",
+      "defeat"
+    ],
+    "turn-based-party-battle": [
+      "command",
+      "turn-order",
+      "resolve",
+      "continuation",
+      "party"
+    ],
+    "racing-session": [
+      "drive",
+      "track",
+      "race-progress",
+      "race-incidents",
+      "race-session"
+    ],
+    "dialogue-interactive-scenes": [
+      "scene-trigger",
+      "dialogue",
+      "choice",
+      "scene-effect",
+      "scene-lifecycle"
+    ],
+    "hazard-recovery": [
+      "hazard-contact",
+      "resource-hit",
+      "protection",
+      "history-recovery",
+      "checkpoint"
+    ],
+    "actors-world-lifecycle": [
+      "actor-lifecycle",
+      "proximity",
+      "actor-update",
+      "world-contact",
+      "world-view"
+    ]
+  },
+  "qualityGates": [
+    "Deliver1\u20133 useful actual wired assemblies when existing qualification supports them. Source-only reconstruction is honest when closure is blocked; do targeted closure work rather than fabricate a graph.",
+    "A single source routine may be a useful coherent transaction. Do not pad it with unrelated calls to make it multi-function.",
+    "Bind real observable outputs. Never discard a predicate return and claim its consumer is connected. Never clear geometry before its intended consumer unless describing an explicit separate cleanup phase.",
+    "Use current published immutable package/behavior pins and actual tools/behavior_ir/assembly.py validation. Newly lowered code or native source modules are not automatically published portable prefabs.",
+    "Keep canonical actor/world/session state and original aliasing, result capture, invocation/phase order and source domains. Explicit host schedules may be useful but must say caller-declared.",
+    "No arbitrary same-type wiring, source order guessed from addresses, invented service stubs, fresh gameplay logic, unsafe domain widening or automatic cross-game compatibility.",
+    "A facet describes exactly what the module supplies to that role. Ground/contact inputs do not prove a terrain producer; lethal flags do not close death/drop; held input does not grant an ability.",
+    "Publish one delivery manifest per game; keep independently valid prefab entries so central integration can accept useful pieces immediately without waiting for all fleet games.",
+    "Reuse existing receipts; run only narrow graph/host checks for newly added connections. No broad campaigns/native reruns without a specific unresolved behavior reason.",
+    "Product acceptance is separate from schema/Composer validity. Bookkeeping-only reset, initializer, getter/setter or predicate artifacts without a meaningful connected game responsibility stay internalSupportPhases and are not primary ready prefabs. No forced numeric quota.",
+    "A core phase may use status internal-consumed with parentPrefabIds only when a registered useful parent prefab actually implements it. It is not an independently addable module or missing standalone capability. Unconnected reset/init/query proof remains internalSupportPhases, never implicit parent coverage."
+  ]
+}

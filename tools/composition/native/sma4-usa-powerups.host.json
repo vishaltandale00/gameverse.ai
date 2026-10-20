@@ -1,0 +1,102 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "super-mario-advance-4-super-mario-bros-3",
+  "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+  "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+  "rom_bytes": 4194304,
+  "append_address": "0x8400000",
+  "output_bytes": 8388608,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Entire4MiB USA game retained except three exact accepted-pickup entries; original contact detection, form application/abilities,levels and saves retained",
+    "argument_constants": [],
+    "argument_reads": [
+      {
+        "address": "0x3007818",
+        "width": 32
+      },
+      {
+        "address": "0x3003750",
+        "width": 16
+      },
+      {
+        "address": "0x3002d77",
+        "width": 8
+      },
+      {
+        "address": "0x3002d7c",
+        "width": 16
+      },
+      {
+        "address": "0x3002d80",
+        "width": 16
+      }
+    ],
+    "global_context_writes": [
+      "player through0x03007818: exact pending form/growth/transform timers, special-state reset",
+      "global0x03002d7c:u16 context and0x03002d80:u16 character audio context"
+    ],
+    "phase_obligation": "Original contact dispatcher selects one accepted pickup entry; original pending-form application phase remains in full host controller"
+  },
+  "hooks": [
+    {
+      "id": "growth",
+      "address": "0x8068cd4",
+      "preimage": "30b5051c0a4c2168",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "pickup",
+      "writes": [
+        "item_state",
+        "player_form_state",
+        "effect_state"
+      ]
+    },
+    {
+      "id": "fire",
+      "address": "0x8068d60",
+      "preimage": "70b5041c0e490f4d",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "pickup",
+      "writes": [
+        "item_state",
+        "player_form_state",
+        "effect_state"
+      ]
+    },
+    {
+      "id": "leaf",
+      "address": "0x8068dd0",
+      "preimage": "f0b5041c0c490d4d",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "pickup",
+      "writes": [
+        "item_state",
+        "player_form_state",
+        "effect_state"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "play_sound",
+      "address": "0x80e4040",
+      "isa": "thumb",
+      "abi": "void(u16,constvoidptr)",
+      "preimage": "f0b54f464646c0b4",
+      "range_size": 336,
+      "range_sha256": "f0d75ccf1a1819ab4eeacc8a3d4fb95e6f971dc748846f222588574c892cf142"
+    },
+    {
+      "id": "score_direct",
+      "address": "0x08091050",
+      "isa": "thumb",
+      "abi": "void(constvoidptr,u8)",
+      "preimage": "f0b5041c09060e0e",
+      "range_size": 244,
+      "range_sha256": "23957313cc0280aec365abb07a2c1bf946cf7e93abfdb1e71a483d532a1f146c"
+    }
+  ]
+}

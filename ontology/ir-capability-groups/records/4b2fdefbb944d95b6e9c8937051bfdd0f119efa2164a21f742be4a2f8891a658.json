@@ -1,0 +1,344 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "aria.canonical-entry-reconstruction.v1",
+  "game_id": "castlevania-aria-of-sorrow",
+  "module_id": "aria.actor.motion",
+  "package_ids": [
+    "aria.motion.integrate_x",
+    "aria.motion.integrate_y"
+  ],
+  "source_roots": [
+    "0806d430",
+    "0806d460"
+  ],
+  "proposal_status": "metadata-only-existing-package-capability-sole-publisher-validation-pending",
+  "package_identities": [
+    {
+      "id": "aria.motion.integrate_x",
+      "version": "0.1.0",
+      "origin": "automatic_highfunction_lift",
+      "central_package_unchanged": true,
+      "source_entry": "0806d430",
+      "central": {
+        "package.json": {
+          "path": "local/ir/packages/aria.motion.integrate_x/package.json",
+          "sha256": "3247326dc292e6f44d2fa9396f7c3aff8027b0b4d09ef8942ffa649024c011f1"
+        },
+        "l0.json": {
+          "path": "local/ir/packages/aria.motion.integrate_x/l0.json",
+          "sha256": "ca0e663675f6a9a912d4495d0d8c6fd2ae0d24f2088686df492d05f203d35222"
+        },
+        "l1.json": {
+          "path": "local/ir/packages/aria.motion.integrate_x/l1.json",
+          "sha256": "b97f0bab6e299245ea79da7360184ee601d792c826530386aa9905cad3ad458e"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/packages/aria.motion.integrate_x/validation-adapter.json",
+          "sha256": "d17f7c094d91f2ef322bf16e96aa7e7b679e2217a9554c26608ff31df2325007"
+        },
+        "receipt.json": {
+          "path": "local/ir/packages/aria.motion.integrate_x/receipt.json",
+          "sha256": "2b15c058e3afb8e6d893c19014db65af06ca00cc421e8e7009eb22b6c13b8f92"
+        },
+        "generated.c": {
+          "path": "local/ir/packages/aria.motion.integrate_x/generated.c",
+          "sha256": "ed18210f5913b14efea4c91ece02847ac4c31534d3aaf5a8b801f0f83cf9de5a"
+        }
+      },
+      "installed_evidence": {
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/l0.json",
+          "sha256": "7908c6420f3a937b797f581ab1722e785c06aff946894d08e6f699c351fae241"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/l1.json",
+          "sha256": "b97f0bab6e299245ea79da7360184ee601d792c826530386aa9905cad3ad458e"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/validation-adapter.json",
+          "sha256": "d17f7c094d91f2ef322bf16e96aa7e7b679e2217a9554c26608ff31df2325007"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/generated.c",
+          "sha256": "ed18210f5913b14efea4c91ece02847ac4c31534d3aaf5a8b801f0f83cf9de5a"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/original-proof.json",
+          "sha256": "2b15c058e3afb8e6d893c19014db65af06ca00cc421e8e7009eb22b6c13b8f92"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/x/rebuilt-proof.json",
+          "sha256": "126b25519bfd0364428289936baeb4450dd1a132576c0f8225d94fc7690e4164"
+        }
+      },
+      "same_emitted_behavior_c": true,
+      "same_adapter_json_semantics": true
+    },
+    {
+      "id": "aria.motion.integrate_y",
+      "version": "0.1.0",
+      "origin": "automatic_highfunction_lift",
+      "central_package_unchanged": true,
+      "source_entry": "0806d460",
+      "central": {
+        "package.json": {
+          "path": "local/ir/packages/aria.motion.integrate_y/package.json",
+          "sha256": "a25c786527021c834acfedf71a3071da2335ba5c6ecd43c77587461a156097a5"
+        },
+        "l0.json": {
+          "path": "local/ir/packages/aria.motion.integrate_y/l0.json",
+          "sha256": "7330cb077af41eea36202a2e90df2ae3730ab9cef777806789f4520482c23926"
+        },
+        "l1.json": {
+          "path": "local/ir/packages/aria.motion.integrate_y/l1.json",
+          "sha256": "3d2d65ab65607f8c2fd8be1939d86dc437c28ecabfc6022d35ae5999abfb402e"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/packages/aria.motion.integrate_y/validation-adapter.json",
+          "sha256": "cd1d054a235281a69c7349a3d17efd90fac65d828b74cecd7ebfebdd30f4e17c"
+        },
+        "receipt.json": {
+          "path": "local/ir/packages/aria.motion.integrate_y/receipt.json",
+          "sha256": "40edf340366b47101a5cd5d9be21560ca1f8141349cddeca23b7092690a0ed44"
+        },
+        "generated.c": {
+          "path": "local/ir/packages/aria.motion.integrate_y/generated.c",
+          "sha256": "ed18210f5913b14efea4c91ece02847ac4c31534d3aaf5a8b801f0f83cf9de5a"
+        }
+      },
+      "installed_evidence": {
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/l0.json",
+          "sha256": "3d422f1e50fdeb37d0971810358ab1e2086cbdbe3d79b3e387e28fbe964ac63e"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/l1.json",
+          "sha256": "3d2d65ab65607f8c2fd8be1939d86dc437c28ecabfc6022d35ae5999abfb402e"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/validation-adapter.json",
+          "sha256": "cd1d054a235281a69c7349a3d17efd90fac65d828b74cecd7ebfebdd30f4e17c"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/generated.c",
+          "sha256": "ed18210f5913b14efea4c91ece02847ac4c31534d3aaf5a8b801f0f83cf9de5a"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/original-proof.json",
+          "sha256": "40edf340366b47101a5cd5d9be21560ca1f8141349cddeca23b7092690a0ed44"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-aria-ir/y/rebuilt-proof.json",
+          "sha256": "47e30d7dec0a220a5b6e748669149de7d488d48c7d0513cf19731363c424fab9"
+        }
+      },
+      "same_emitted_behavior_c": true,
+      "same_adapter_json_semantics": true
+    }
+  ],
+  "canonicalstate": {
+    "owner": "One borrowed original actor r0 shared by X/Y views",
+    "module_id": "aria.actor.motion",
+    "group_kind": "source-owned canonical actor-motion capability group",
+    "new_physical_owner": false,
+    "actor_pool_identity": "unknown; original host supplies allocation/identity/lifetime",
+    "package_views": {
+      "aria.motion.integrate_x": [
+        {
+          "name": "field_0",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 64
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 72
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 80
+        }
+      ],
+      "aria.motion.integrate_y": [
+        {
+          "name": "field_0",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 68
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 76
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 84
+        }
+      ]
+    },
+    "semantic_views": {
+      "x": {
+        "position_offset": 64,
+        "velocity_offset": 72,
+        "acceleration_offset": 80
+      },
+      "y": {
+        "position_offset": 68,
+        "velocity_offset": 76,
+        "acceleration_offset": 84
+      }
+    },
+    "alias_rule": "Disjoint fields of the SAME borrowed actor; no per-axis copies and no alias to campaign soul inventory or cast-effect pool.",
+    "readonly_assets": []
+  },
+  "capability_phase": {
+    "id": "aria-canonical-entry-reconstruction",
+    "phase_kind": "original-caller-selected-complete-axis-integration",
+    "scheduled_sequence": null,
+    "ordering_claim": "Static original X-before-Y on same actor/cap; no joint caller lifecycle proof."
+  },
+  "event_order": [
+    "Each complete axis entry adds acceleration to velocity with wrapping arithmetic, applies directional signed speed cap if r1 is nonzero, then adds resulting velocity to position.",
+    "Original code_080211F0.s at _08022992 loads actor r5 into r0 and cap0x40000 into r1, calls sub_0806D430, then reloads r0/r1 and calls sub_0806D460. This is actual static source caller order.",
+    "Native entry proofs are independent; the caller sequence was not jointly executed. Original conditional reachability and scheduling remain host-required. No authored forced X/Y schedule or actor allocation."
+  ],
+  "originalhostprerequisites": [
+    "Aligned disjoint mutable actor RAM covering offsets0x40..0x57; allocation/pool/lifetime host-required.",
+    "r1 unrestricted uint32; signed machine comparisons and wrapping updates retained.",
+    "No incomingr3 use; veneer clobber compatible; no concurrent/IRQ observer qualified."
+  ],
+  "exactpins": {
+    "result": {
+      "path": "research/ir-workshop/coverage-wave-next/aria/result.json",
+      "sha256": "6d6adaff89108af138749a4c21c7bac5f4e38850c65cfd85ae558b83fd01b724"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/coverage-next-aria-ir/provider-report.json",
+      "sha256": "a7177a8d5d0c31f599593624fcb27c88dd05c347c773175a0347c872db4e6e4b"
+    },
+    "profile": {
+      "path": "research/ir-workshop/coverage-wave-next/aria/profile.json",
+      "sha256": "1458495c8183db814b785dfa6c85bd2b5af6b6c5efd9d05ac7103ec2ee7ff328"
+    },
+    "identified_assets": {
+      "path": "research/ir-workshop/coverage-wave-next/aria/assets.json",
+      "sha256": "0938eda0bea6dea8d614a9ecf1060bb89d7cd33efe4b3aa4797d8884567fd482"
+    },
+    "independent_ir_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/aria-ir-qc.json",
+      "sha256": "67e47d6a62531ab5a826f264365b3a773d4d98b6898b85508fae0037d2b8629d"
+    },
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/aria-context-qc.json",
+      "sha256": "382db5e413a72802e717e4ea8d7075422ec9673064a5e9d5cd91dacf70463e32"
+    },
+    "x_original_proof": {
+      "path": "local/roundtrip/coverage-next-aria-ir/x/original-proof.json",
+      "sha256": "2b15c058e3afb8e6d893c19014db65af06ca00cc421e8e7009eb22b6c13b8f92"
+    },
+    "x_rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-aria-ir/x/rebuilt-proof.json",
+      "sha256": "126b25519bfd0364428289936baeb4450dd1a132576c0f8225d94fc7690e4164"
+    },
+    "y_original_proof": {
+      "path": "local/roundtrip/coverage-next-aria-ir/y/original-proof.json",
+      "sha256": "40edf340366b47101a5cd5d9be21560ca1f8141349cddeca23b7092690a0ed44"
+    },
+    "y_rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-aria-ir/y/rebuilt-proof.json",
+      "sha256": "47e30d7dec0a220a5b6e748669149de7d488d48c7d0513cf19731363c424fab9"
+    },
+    "source_native_oracle": {
+      "path": "local/roundtrip/coverage-next-aria-source-oracle/receipt.json",
+      "sha256": "a472f653574844c35435c2f46d2c4f9386215e6fab3ae29f80acba0b49ba6b20"
+    },
+    "source_0": {
+      "path": "local/decomps/cvaos/asm/code/code_08060B98.s",
+      "sha256": "289aa84cf1bc0fac1beccddd0f1f74fb00ef629a24149dd147982b9b1ac3201a"
+    },
+    "source_1": {
+      "path": "local/decomps/cvaos/asm/code/code_080211F0.s",
+      "sha256": "2feabfaeaacc02f80b11259c0060459ae4b1a1163c4975dcaf4212534347f3c4"
+    }
+  },
+  "native_eligibility": {
+    "kind": "finite-original-and-reconstructed-entry-parity",
+    "certificate_boundary": "Native receipts plus independent scoped context review; byteQC alone is not semantic admission. No whole-game or joint caller qualification.",
+    "original_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+    "rebuilt_rom_sha256": "bba1027147d781e33f10a8e77a18098c83d09bf0f022cdd452f146933dde8fd0",
+    "vectors_per_entry": 16384,
+    "original_proof_origin": "exact-retained-qualified-proof-no-duplicate-original-run",
+    "fixture_scope": "deterministic boundaries and synthetic fields; not gameplay traces",
+    "independent_review": "pass_scoped",
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ]
+  },
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "portable_L1": true,
+    "generated_behavior_bytes": 112,
+    "mechanical_binding_bytes": 88,
+    "alignment_bytes": 0,
+    "replacement_entry_veneer_bytes": 16,
+    "embedded_readonly_asset_bytes": 0,
+    "identified_original_palette_bytes": 512,
+    "data_regenerated_bytes": 0,
+    "raw_difference_bytes": 214,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "whole_game_equivalent": null
+  },
+  "counts": {
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "new_native_runs_for_publication": 0,
+    "fresh_original_native_comparisons": 0,
+    "retained_original_native_comparisons": 32768,
+    "fresh_rebuilt_native_comparisons": 32768,
+    "existing_roots_installed": 2,
+    "new_capability_groups": 1,
+    "new_physical_state_owners": 0,
+    "do_not_pool_historical_and_fresh": true
+  },
+  "gaps": [
+    "Actor caller/schedule/collision/lifecycle not jointly executed.",
+    "Capability group adds no physical owner; actor pool identity remains unknown.",
+    "SourceASM96B exact oracle is separate provenance with0 installedbyte credit.512B palette identified original host only, not regenerated assets.",
+    "No complete sourceELF or whole-game equivalence."
+  ],
+  "publication_constraints": {
+    "sole_publisher": "/root/publication_intake",
+    "new_ready_cards": 0,
+    "new_packages": 0,
+    "frozen_results_unchanged": true,
+    "scope": "Attach evidence to existing packageIDs and canonical state roles only; lane performs no central writes."
+  },
+  "timing": {
+    "provider_total_seconds": 0.8732538329999999,
+    "queue_seconds": null,
+    "scope": "Metadata generation only; no native/build/simulation/model work for publication."
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "schema": "gameverse.game-prefab-deliveries/1",
+  "deliveries": [
+    {
+      "ref": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/delivery.json",
+      "sha256": "888c97381c1c4e60859df9495886f90e68b532553fe6bb58354bad758c7420d9",
+      "validationChecks": [
+        {
+          "id": "kart-steering-recovery-phase",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/mario/parallel-sma4/prefab-reconstruction/delivery.json",
+      "sha256": "41024112b2664f355b1ce7c7929a188d03c2f0afef55cce8725ca443a37819dc",
+      "validationChecks": [
+        {
+          "id": "sma4.actor-advance-camera-projection",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/delivery.json",
+      "sha256": "eca7ffd7dd67d71f679d06981b4861e2298ac6ebec9ef199b222600945bc6fac",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/delivery.json",
+      "sha256": "78061c74cf8dc3fa290a3ba6d06d45a3def3f62ec788fc9e7f6a9023d09bd4c8",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/delivery.json",
+      "sha256": "2202a856de0d7c1c9218bf211e852a9918e9e3c42ecc337a122a75e139e7ade6",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/dragon-ball-advanced-adventure/prefab-pass/delivery.json",
+      "sha256": "96ac7e90b7d1ae219b89616d971c6e11678ae677c8dc41e1fb57926c26d72cf0",
+      "validationChecks": [
+        {
+          "id": "db.actor-input.sample-edges-repeat",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/delivery.json",
+      "sha256": "b26f8be477ed16448a65f085f6a11e86b6e4acf8d5b9a03a24c422ab89e739f4",
+      "validationChecks": [
+        {
+          "id": "ffvi.actor0.resolved-hp-effect",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/grand-theft-auto/system-prefab/delivery.json",
+      "sha256": "d124673b8d4b6cee436c73eec9fc9fe61cf4e9358143d21208d5e077a6ecf648",
+      "validationChecks": [
+        {
+          "id": "gta.actor-membership.activate",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "0ee13c12739ecae3c263d95354cfa5e8e7dff596ce609ca4a216a5d9e989054b",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/delivery.json",
+      "sha256": "209517fe57349cb41adfbf0369bb3b7f418ecc0c68ed072b7b660e9a66c80d9c",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/delivery.json",
+      "sha256": "210b7e7cb4556f0847b0d5c42a2209332ca87caf47d20ec65763693a82b967e4",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/legend-of-zelda-the-a-link-to-the-past-and-four-swords/prefab-pass/delivery.json",
+      "sha256": "5b9eb207b407d1b1a562892fe9d3cec98a9bd68ea5964b000cab9b61c440893a",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/megaman-zero/prefab-pass/delivery.json",
+      "sha256": "ceb5339c096c4fde821c68e22433947aa869c3f9d81465f0920c794fc0aa2b9c",
+      "validationChecks": [
+        {
+          "id": "megaman-zero.command-facing-position-response",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/metal-slug-advance/prefab-pass/delivery.json",
+      "sha256": "94d76d1d6fddbfd92d01356623f392b06ec7fb9d2b1085e0b01a3d50fc51c4c2",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/pokemon-emerald-version/prefab-pass/delivery.json",
+      "sha256": "30db6d19526351c2a448c4cbba54a6ba1a1c0c7706cf8af8f596a9b97152f32a",
+      "validationChecks": [
+        {
+          "id": "emerald.turn-order.confirmed-pair-exchange",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/pokemon-firered-version/prefab-pass/delivery.json",
+      "sha256": "d1763a8e4b9c21fb0e917b96e21ab95394bf5947cbcb3b725e151fb79d69b9ca",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/pokemon-mystery-dungeon-red-rescue-team/prefab-pass/delivery.json",
+      "sha256": "ca25a1e7aeac8d66f3afaac4f43d765c66d0f93d86af7c6ebc983b2f4ccca12d",
+      "validationChecks": [
+        {
+          "id": "pmd.prefab.input_mask_snapshot",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/resume/pokemon-ruby-version/prefab-pass/delivery.json",
+      "sha256": "1606e36725eb0f6ef5d3e509eaa20634a3ba4557dd0aec962598517a6ef8ab9c",
+      "validationChecks": []
+    },
+    {
+      "ref": "research/deep-extraction/resume/tekken-advance/prefab-pass/delivery.json",
+      "sha256": "987181271685460dab845d3f9029f7a06afe9bfdbc9d95fff59b4aeed0501c13",
+      "validationChecks": [
+        {
+          "id": "tekken-advance.actor-pair-separation",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+      "sha256": "ba8e983742babab79d09d1339cce68571f716d51e41dd012c5963c3e2e934a0b",
+      "validationChecks": [
+        {
+          "id": "sonic-source-air-advance",
+          "receiptValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    },
+    {
+      "ref": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/delivery.json",
+      "sha256": "d1f932ba3422a63f1c8343d0593901bfdc8b15fed30fb6956d67282eafb2745b",
+      "validationChecks": [
+        {
+          "id": "mzm.prefab.directional-acceleration",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        },
+        {
+          "id": "mzm.prefab.protected-hit-response",
+          "receiptValidatorSha256": "98c4775e890981792bd1d3d9906d08d0cf660a46d6b72c1fe29200a7c5e69c18",
+          "currentValidatorSha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+          "receiptCatalogSha256": "eca7a41af7736353c1f991eed0a4cdd03ee9daedadcf0cfd1b55a62e3af70228",
+          "currentCatalogSha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        }
+      ]
+    }
+  ]
+}

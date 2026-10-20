@@ -1,0 +1,621 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "metroid-zero-mission",
+  "sourceContractRef": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+  "blueprintIds": [
+    "character-traversal",
+    "combat-encounter",
+    "hazard-recovery",
+    "exploration-progression"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Explore connected rooms with pose-based Samus movement,earn equipment,fire limited projectiles,resolve enemy contacts and survive through energy/resource recovery.",
+    "phases": [
+      {
+        "id": "player-control",
+        "label": "Move Samus through pose-controlled acceleration",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.directional-acceleration"
+        ],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c"
+        ],
+        "requiredServices": [
+          "source controller/input eligibility"
+        ],
+        "gaps": [
+          "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+          "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+          "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+        ]
+      },
+      {
+        "id": "world-traversal",
+        "label": "Resolve terrain,jump,landing,doors and camera",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800c4b4.c"
+        ],
+        "requiredServices": [
+          "terrain adapter",
+          "position integration",
+          "room loading",
+          "source camera/render"
+        ],
+        "gaps": [
+          "No closed source player locomotion or room/terrain controller package;acceleration is not traversal."
+        ]
+      },
+      {
+        "id": "weapon-request",
+        "label": "Choose equipped weapon,capacity,cooldown and allocate projectile",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0804ee88.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804ed94.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804ede4.c"
+        ],
+        "requiredServices": [
+          "input shot request",
+          "shared projectile allocator",
+          "source audio"
+        ],
+        "gaps": [
+          "Source scheduler recovered;capacity counts,allocation,equipment and cooldown must close without independent pools."
+        ]
+      },
+      {
+        "id": "projectile-contact",
+        "label": "Update projectile motion,hit acceptance and retirement",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0804fd9c.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804f954.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08050b64.c"
+        ],
+        "requiredServices": [
+          "source terrain/projectile physics",
+          "bounded pool traversal",
+          "effect allocator"
+        ],
+        "gaps": [
+          "Contact loops/descriptor bank unresolved;finite impact alone does not establish projectilehit."
+        ]
+      },
+      {
+        "id": "accepted-enemy-damage",
+        "label": "Apply already accepted damage to same enemy",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/closure/system.json",
+          "research/ir-workshop/game-system-assembly-20261016/closure/damage-reaction.assembly.json"
+        ],
+        "requiredServices": [
+          "accepted source contact",
+          "eligible enemy scheduler"
+        ],
+        "gaps": [
+          "Existing recovered damage\u2192reaction core referenced,not duplicated in this pass;full guard/AI/death remains open."
+        ],
+        "relatedPrefabIds": [
+          "mzm.enemy.accepted-damage-and-reaction"
+        ],
+        "availabilityNote": "Existing separately delivered accepted-damage core retained as external context;not a newly accepted local prefab entry in this delivery."
+      },
+      {
+        "id": "protected-enemy-response",
+        "label": "Handle protected contacts without HP loss",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.protected-hit-response"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source guard outcome",
+          "next eligible enemy prepass"
+        ],
+        "gaps": [
+          "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+          "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+          "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state."
+        ]
+      },
+      {
+        "id": "enemy-ai-defeat",
+        "label": "Patrol,turn,death,drop or retirement",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0801befc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08011084.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010eec.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c"
+        ],
+        "requiredServices": [
+          "source type dispatch",
+          "DMA staging",
+          "audio/effect/drop services"
+        ],
+        "gaps": [
+          "Lethal pose0x62\u2192Ripper common death path known;drop bank pointer/native services unresolved.",
+          "Offscreen viewport retirement is separate from lethal completion;do not substitute."
+        ]
+      },
+      {
+        "id": "player-health-resources",
+        "label": "Resolve player contact damage,suit reduction and resource pickup",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0800e634.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08012e98.c"
+        ],
+        "requiredServices": [
+          "accepted enemy contact",
+          "suit flags",
+          "resource caps",
+          "hurt/death continuation"
+        ],
+        "gaps": [
+          "OwnROM source formulas retained;no automatic qualified playerhealth or resource pickup lifecycle."
+        ]
+      },
+      {
+        "id": "equipment-progression",
+        "label": "Acquire source equipment and commit/query event flags",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c"
+        ],
+        "requiredServices": [
+          "pickup accepted event",
+          "same persistent eventbank",
+          "save adapter"
+        ],
+        "gaps": [
+          "Acquisition and event packages finite-qualified;sharedbank collection meaning/return semantics await owner metadata publication before actual assembled readback.",
+          "Equipped consumer and save/room/story delivery not closed."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "player-control",
+        "to": "world-traversal",
+        "kind": "host-required",
+        "scope": "acceleration output must enter actual position/terrain controller;not recovered here"
+      },
+      {
+        "from": "equipment-progression",
+        "to": "weapon-request",
+        "kind": "shared-state",
+        "scope": "source acquisition0300153c ownedweaponbits differ from equippedbeam0300153d;equip producer is missing"
+      },
+      {
+        "from": "weapon-request",
+        "to": "projectile-contact",
+        "kind": "source-call",
+        "scope": "0804ee88 allocates and invokes0804fd9c before per-projectile type update"
+      },
+      {
+        "from": "projectile-contact",
+        "to": "accepted-enemy-damage",
+        "kind": "source-call",
+        "scope": "0804fd9c\u2192080505ac\u219208050424 only accepted source damage branch"
+      },
+      {
+        "from": "projectile-contact",
+        "to": "protected-enemy-response",
+        "kind": "source-call",
+        "scope": "080505ac guard paths choose minimum2or3 independently of damage"
+      },
+      {
+        "from": "accepted-enemy-damage",
+        "to": "enemy-ai-defeat",
+        "kind": "event",
+        "scope": "lethal pose request reaches species dispatch on later eligible enemy tick;not immediate retirement"
+      },
+      {
+        "from": "enemy-ai-defeat",
+        "to": "equipment-progression",
+        "kind": "event",
+        "scope": "drop transforms same source record;pickup contact and reward acceptance still missing"
+      }
+    ],
+    "missingForCoreGame": [
+      "Raw held/pressed input\u2192source pose controller and terrain/position/room/camera closure.",
+      "Acquired-versus-equipped state transition and actual shot request/capacity/allocation cooldown services.",
+      "Source projectile pool traversal,vulnerability tables,collision and effect side effects.",
+      "Species AI and lethal\u2192drop/retirement service closure;no assumed death fromHP0.",
+      "Player suit-scaled damage,hurt/death continuation,pickup cap grants and persistent save integration."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "mzm.bundle.player-directional-acceleration",
+      "label": "Player directional acceleration",
+      "moduleId": "mzm.module.player-source-motion",
+      "sourceGame": "metroid-zero-mission",
+      "sourceContractRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "mzm.motion.accelerate"
+      ],
+      "availability": "published-subset",
+      "scope": "One eligible source directional acceleration phase;not full movement",
+      "gaps": [
+        "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+        "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+        "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+      ],
+      "evidence": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008cf8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json"
+      ],
+      "canonicalState": {
+        "identity": "one source player record",
+        "fields": [
+          "player_source_direction",
+          "player_signed_velocity"
+        ],
+        "aliasRule": "Direction and prior velocity bind same source player record;do not initialize a new velocity per call."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "apply directional acceleration to retained player velocity",
+          "status": "published-subset",
+          "scope": "eligible branch only;no raw keyboard\u2192pose dispatch",
+          "evidence": [
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mzm.prefab.directional-acceleration",
+        "label": "Directional acceleration and signed speed cap",
+        "assemblyRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.assembly.json",
+        "validationRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.validation.json",
+        "descriptorRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/delivery.json",
+        "packageIds": [
+          "mzm.motion.accelerate"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    },
+    {
+      "id": "mzm.bundle.protected-hit-response",
+      "label": "Protected enemy hit response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "sourceGame": "metroid-zero-mission",
+      "sourceContractRef": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+      "planIds": [
+        "combat-encounter",
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "mzm.combat.minimum_reaction2",
+        "mzm.combat.minimum_reaction3",
+        "mzm.combat.reaction_tick"
+      ],
+      "availability": "published-subset",
+      "scope": "Source guard response variants and separately eligible reaction prepass",
+      "gaps": [
+        "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+        "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+        "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json"
+      ],
+      "canonicalState": {
+        "identity": "one source enemy record with retained same physical offsets",
+        "fields": [
+          "enemy_reaction",
+          "enemy_hp",
+          "enemy_palette_count",
+          "enemy_palette_selector",
+          "enemy_freeze",
+          "enemy_palette_row",
+          "enemy_normal_palette_selector"
+        ],
+        "aliasRule": "Source record identity persists across callbacks;source scratch is staged view of same enemy,never separate persistent state."
+      },
+      "roleFacets": [
+        {
+          "roleId": "reaction",
+          "capability": "protected-contact response and deferred visual recovery",
+          "status": "published-subset",
+          "scope": "source min2or3state response;no hit acceptance/full enemy lifecycle",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json"
+          ]
+        },
+        {
+          "roleId": "protection",
+          "capability": "source guard branch preserves HP and marks minimum reaction",
+          "status": "published-subset",
+          "scope": "host-selected protected outcome only;does not decide player immunity or suit damage",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mzm.prefab.protected-hit-response",
+        "label": "Protected hit response and deferred recovery",
+        "assemblyRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.assembly.json",
+        "validationRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.validation.json",
+        "descriptorRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/delivery.json",
+        "packageIds": [
+          "mzm.combat.minimum_reaction2",
+          "mzm.combat.minimum_reaction3",
+          "mzm.combat.reaction_tick"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "mzm.prefab.directional-acceleration",
+      "moduleId": "mzm.module.player-source-motion",
+      "label": "Directional acceleration and signed speed cap",
+      "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.assembly.json",
+      "sha256": "7644a1032098fea24c7660bf7abd2917ee8aaae9419f0687bafaade79ae55d06",
+      "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.validation.json",
+      "validationSha256": "eb09007db0719e8eef265ec8914590f6adc8fdad0abf90af73b8605ac9897f8c",
+      "inputs": [
+        {
+          "id": "sourceDirection",
+          "label": "Source facing/direction bits",
+          "storageType": "u16",
+          "default": 16,
+          "domain": "fullu16;source bit0x10 selects positive direction,clear selects negative",
+          "binding": "player_source_direction"
+        },
+        {
+          "id": "acceleration",
+          "label": "Acceleration per eligible call",
+          "storageType": "u16",
+          "default": 4,
+          "domain": "source s16 argument representation;positive tunable example4",
+          "binding": "steer.param_0",
+          "defaultOrigin": "synthetic-explicit-example"
+        },
+        {
+          "id": "speedCap",
+          "label": "Signed speed cap magnitude",
+          "storageType": "u16",
+          "default": 128,
+          "domain": "source s16 argument;positive tunable example128",
+          "binding": "steer.param_1",
+          "defaultOrigin": "synthetic-explicit-example"
+        },
+        {
+          "id": "previousVelocity",
+          "label": "Previous signed horizontal velocity",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "two-complement s16 storage",
+          "binding": "player_signed_velocity"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "velocity",
+          "binding": "player_signed_velocity",
+          "meaning": "Source acceleration with signed saturation updates same player velocity;not position displacement."
+        }
+      ],
+      "phases": [
+        {
+          "id": "source-eligible-acceleration",
+          "trigger": "Host already selected eligible player pose branch and matching held direction as source080084dc does",
+          "invocations": [
+            "steer"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "player-input-pose-eligibility",
+          "provided": false,
+          "obligation": "source controller dispatch/input resolution determines whether call occurs"
+        }
+      ],
+      "gaps": [
+        "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+        "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+        "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008cf8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+      ],
+      "qualificationScope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "emittedCore": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.core.c"
+    },
+    {
+      "id": "mzm.prefab.protected-hit-response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Protected hit response and deferred recovery",
+      "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.assembly.json",
+      "sha256": "c2b2fa54842a51adb4d8f77303a097f2d7a471fa60e8cfc9e9bc563e85a1c47c",
+      "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.validation.json",
+      "validationSha256": "855c9ba3ebb36c5d2a6be723ba6096daaadccc34db23737838bf814a1bffdd1d",
+      "inputs": [
+        {
+          "id": "guardOutcome",
+          "label": "Source protected-hit branch",
+          "storageType": "enum",
+          "default": "reaction2",
+          "domain": [
+            "reaction2",
+            "reaction3"
+          ],
+          "binding": "select variant assembly,not arbitrary source numeric rewrite"
+        },
+        {
+          "id": "enemyHp",
+          "label": "Existing enemy HP",
+          "storageType": "u16",
+          "default": 10,
+          "domain": "sourceu16;syntheticinitial10",
+          "binding": "enemy_hp"
+        },
+        {
+          "id": "packedReaction",
+          "label": "Current packed reaction marker/countdown",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "low7countdown/highbitmarker;fullbytepreserved",
+          "binding": "enemy_reaction"
+        },
+        {
+          "id": "sourceDisplayContext",
+          "label": "Source freeze and palette selectors",
+          "storageType": "record",
+          "default": "zero synthetic setup only",
+          "domain": "retain source identity/opaque selectors;hostvalid values",
+          "binding": "enemy_freeze,enemy_palette_count,enemy_palette_row,enemy_normal_palette_selector,enemy_palette_selector"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "reaction",
+          "binding": "enemy_reaction",
+          "meaning": "At least source2or3countdown with highmarker preserved,then decremented only on separately invoked eligible reaction phase."
+        },
+        {
+          "id": "displaySelector",
+          "binding": "enemy_palette_selector",
+          "meaning": "Source HP/freeze/counter-dependent display selector;does not render assets."
+        },
+        {
+          "id": "hpPreserved",
+          "binding": "enemy_hp",
+          "meaning": "Protected-hit helpers do not reduce HP."
+        }
+      ],
+      "phases": [
+        {
+          "id": "protected-contact-response",
+          "trigger": "Source080505ac guard resolves deflectflag0x40 to minimum2 OR blockedflag8/descriptor rejection to minimum3",
+          "invocations": [
+            "low (reaction2 variant) OR high (reaction3 variant)"
+          ],
+          "scheduleStatus": "source-proven"
+        },
+        {
+          "id": "later-eligible-enemy-reaction",
+          "trigger": "Next eligible source enemy scheduler prepass;not automatically in contact callback",
+          "invocations": [
+            "reaction"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "contact-vulnerability-dispatch",
+          "provided": false,
+          "obligation": "host supplies actual source-resolved protected outcome;no guessed eligibility"
+        },
+        {
+          "id": "eligible-enemy-scheduler",
+          "provided": false,
+          "obligation": "host preserves original enemy-before-projectile frame schedule and staged state identity"
+        },
+        {
+          "id": "source-effect-rendering",
+          "provided": false,
+          "obligation": "source guard effect allocator remains separate;core mutates response state only"
+        }
+      ],
+      "gaps": [
+        "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+        "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+        "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json"
+      ],
+      "qualificationScope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "emittedCore": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit.core.c",
+      "variants": [
+        {
+          "id": "reaction2",
+          "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.assembly.json",
+          "sha256": "c2b2fa54842a51adb4d8f77303a097f2d7a471fa60e8cfc9e9bc563e85a1c47c",
+          "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-low.validation.json"
+        },
+        {
+          "id": "reaction3",
+          "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-high.assembly.json",
+          "sha256": "4788347a8bf554e3c3acd370b6d488a4c186417f57406502fc08c89baf627a89",
+          "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-high.validation.json"
+        }
+      ],
+      "countingPolicy": "one prefab,module and card with two source guard variants;not two independent mechanics"
+    }
+  ],
+  "timing": {
+    "runId": "mzm-source-prefab-phases-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.006282000000000003,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.239602959,
+    "beforeAfter": null,
+    "accounting": "totalSeconds is measured narrow phase build script only;includes graph validation plus nested host compilation/assertions. No ROM/game build or native rerun;source inspection/interactive elapsed and queue unavailable. Different workloads provide no speedup baseline."
+  }
+}

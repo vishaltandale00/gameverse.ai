@@ -1,0 +1,329 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mario-sma2-movement-spin-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "super-mario-advance-2-super-mario-world",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "Exact own indexed ROM with recovered controller and noarg native adapter"
+  },
+  "execution": {
+    "clock": "original_host_native_entry_dispatch",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "integrate",
+      "control",
+      "vertical",
+      "accepted_spin_contact"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "position",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "signed16_pixels_plus_u8_fraction",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "velocity",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "signed16_native_1_over_4096_pixels_per_frame",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "traversal",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "jump_spin_charge_cape_state",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "effects",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "native_ground_effects_and_sound_context",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "enemy_terminal",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "enemy_terminal",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "reward_progress",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "reward_progress",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "components": [
+    {
+      "id": "motion",
+      "provides": [
+        "movement.run_jump_cape@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "position",
+          "phase": "integrate",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "position",
+          "phase": "vertical",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "integrate",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "vertical",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "traversal",
+          "phase": "integrate",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "traversal",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "traversal",
+          "phase": "vertical",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effects",
+          "phase": "integrate",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effects",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effects",
+          "phase": "vertical",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json",
+        "evidence_refs": [
+          "local/re/experiments/20261016-binary-corpus-round2/sma2-native-motion-01/receipt.json"
+        ]
+      }
+    },
+    {
+      "id": "spin",
+      "provides": [
+        "combat.spin_stomp@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "enemy_terminal",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "velocity",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "traversal",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effects",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "reward_progress",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-lift-evidence.json",
+        "evidence_refs": [
+          "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "host-contact-schedule",
+      "detail": "Full original host retains terrain, collision, enemies and exact conditional call schedule; no whole campaign qualification"
+    },
+    {
+      "id": "native-interleaving",
+      "detail": "Phases are names of original native entries, not a replacement scheduler. Original host retains exact conditional ordering and collision-before-accepted-impact semantics; do not infer a universal frame order from this phase list."
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sma2-usa-movement-spin.host.json",
+      "sha256": "7eb114d074baca7457ec6b8dc66c4163b9afc5727577c8984779803086279cf4"
+    },
+    "packages": [
+      {
+        "instance": "motion",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma2-motion-host.json",
+          "sha256": "4b39e526614858443d449bbec6d77563f8d89ad8b156e5cb066045374936a9b9"
+        }
+      },
+      {
+        "instance": "spin",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma2-spin-host.json",
+          "sha256": "896038d832dbfdce01a27e4c19bc286d51f451132d678cc3ffa6dedf3d454528"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "integrate",
+        "instance": "motion",
+        "symbol": "sma2_host_integrate",
+        "args": []
+      },
+      {
+        "host_hook": "control",
+        "instance": "motion",
+        "symbol": "sma2_host_control",
+        "args": []
+      },
+      {
+        "host_hook": "vertical",
+        "instance": "motion",
+        "symbol": "sma2_host_vertical",
+        "args": []
+      },
+      {
+        "host_hook": "spin",
+        "instance": "spin",
+        "symbol": "sma2_host_spin",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 8192,
+    "timeout_s": 15,
+    "max_build_s": 30
+  }
+}

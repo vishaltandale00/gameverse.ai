@@ -1,0 +1,114 @@
+{
+  "schema": "prefab-iteration/1",
+  "run_id": "aria-first-soul-iteration-001",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "environment_version": "libmgba/0.10.5",
+  "adapter_version": "aria-readonly-reward-fragment/1",
+  "loop_config_ref": "tools/prefab_pipeline/requests/aria-first-soul-iteration.json",
+  "mechanism_sha256": "f7a69244326f62af8871e2c25776e990a02713aefdab9760a93651bd9ed821ae",
+  "base_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "limits": {
+    "attempts": 1,
+    "model_calls": 24,
+    "native_frames": 7000,
+    "wall_seconds": 180,
+    "cost_usd": null
+  },
+  "supported_requests": [
+    {
+      "schema": "native-prefab-mod-request/1",
+      "request_id": "aria-first-soul-hunt-20261016",
+      "intent": "First unowned soul hunt: actual combat causes native soul pickup, homing collection and original persistent ability inventory; owned souls use original reward RNG",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 16384,
+        "subprocess_s": 20
+      },
+      "strategy_lowering": {
+        "backend": "reward-strategy/1",
+        "strategy": {
+          "path": "research/deep-extraction/castlevania/first-soul-strategy.json",
+          "sha256": "7a7f248b3808c88b144273c9ceec008537d3baae2737f5fa79ac465fc15f84e8"
+        },
+        "lowerer": {
+          "path": "tools/prefab_pipeline/reward_strategy.py",
+          "sha256": "59d500c8841d9f49d21707e526b58bd1c615ab0c95a6075aa4d88bdd1eae58a5"
+        },
+        "instance": "reward"
+      },
+      "hook_edits": [
+        {
+          "host_hook": "enemy_defeat",
+          "symbol": "gv_aos_first_soul_native",
+          "constant_arguments": {
+            "1": 1
+          }
+        }
+      ],
+      "plan": {
+        "path": "research/deep-extraction/castlevania/acquisition-parity.plan.json",
+        "sha256": "3ab306457c03248c7ff2ab0ac9371c9626bd2237a250f892ddb51ca7cdec846c"
+      },
+      "rom": {
+        "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+        "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+      }
+    }
+  ],
+  "experiment": {
+    "profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/first-soul-profile.json",
+      "sha256": "c166f48fd17cc39e0abc6fabfcc4e5bec295fa2a136a89777b33c100d8f8a785"
+    },
+    "memory_profile": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/ir-workshop/prefab-model-verification-20261016/first-soul-memory.json",
+      "sha256": "056a2d95f68e45d557e38f7559f15a1ae6d2e0ee9e0f622076f2016a84ea5b03"
+    },
+    "fixture_recipe": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/research/deep-extraction/castlevania/defeat-gameplay.json",
+      "sha256": "a69350e8436b30c8adb8a9d272c095c36e179d805e401b2fc78d22f343436699"
+    },
+    "sid_env_file": "/Users/shishirtandale/Projects/siddarth_pokemon/.env",
+    "goal": "soul_acquisition",
+    "max_steps": 12,
+    "max_model_calls": 24,
+    "max_frames": 960,
+    "max_seconds": 60,
+    "model_timeout": 10,
+    "confidence": 0.65,
+    "margin": 0.2,
+    "confidence_basis": "uncalibrated_provider_score",
+    "calibration_artifact": null,
+    "policy_ref": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "189a326703cf5c5364529b58b48988354d05eda81e2dba61eaf712e97898ea9d"
+    }
+  },
+  "coverage": "Fresh exact-candidate source-scripted fixture, then real DecisionAI with uncertainty-driven MultimodalAI escalation; new native soul acquisition and continued game only; active equip/cast and campaign remain unqualified",
+  "mechanism_refs": [
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/experiment.py",
+      "sha256": "908ebde7bbc890f27758f6b463840c63006f352643c26938ffcc08fbc09a47ce"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/aria_adapter.py",
+      "sha256": "d15ae4a7f17c12e35f2dba50beecd059ae08f9ea0f861daa00ba7f0eb89a50c0"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/core.py",
+      "sha256": "e7e3ae2de39a3fffe1dfaf76aa1d18307979bb5c42968461b6265bb3280a57fc"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/playtester/models.py",
+      "sha256": "189a326703cf5c5364529b58b48988354d05eda81e2dba61eaf712e97898ea9d"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/re/session/bridge.py",
+      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e"
+    },
+    {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/tools/prefab_pipeline/native_mod.py",
+      "sha256": "38d3821c837ebc728285239604e59126547391c6b2b3015cce226f8f87c65bbe"
+    }
+  ]
+}

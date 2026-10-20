@@ -1,0 +1,417 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "acquire": {
+      "package_id": "mzm.progress.acquire",
+      "package_sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+      "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "weapons.owned",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "weapons.owned",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.owned",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.owned",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_state_usage_and_existing_motion_unit_review"
+            ],
+            "naming_status": "analysis_annotation_not_a_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u8"
+        }
+      ],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "dependency_0_collection_0",
+          "storage_type": "u32",
+          "count": 8,
+          "provenance": [
+            "op12",
+            "op19",
+            "op28",
+            "op35"
+          ],
+          "meaning": {
+            "quantity": "packed_event_bank",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.progress.source_event_bank",
+            "confidence": 0.95,
+            "evidence": [
+              "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+              "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [
+          "field_0",
+          "field_1"
+        ],
+        "collection_reads": [
+          "dependency_0_collection_0"
+        ],
+        "collection_writes": [
+          "dependency_0_collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Semantic annotation has not been independently scored against game rendering"
+      ]
+    },
+    "events": {
+      "package_id": "mzm.progress.events",
+      "package_sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+      "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+      "fields": [],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32"
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u8"
+        }
+      ],
+      "return_type": "u8",
+      "return_meaning": {
+        "quantity": "boolean",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.progress.event_operation_result",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c"
+        ],
+        "description": "read op>=3 returns prior bit;set1/toggle2 returns inverse prior bit;clear0 returns prior bit;invalid event ID returns0"
+      },
+      "collections": [
+        {
+          "name": "collection_0",
+          "storage_type": "u32",
+          "count": 8,
+          "provenance": [
+            "op12",
+            "op19",
+            "op28",
+            "op35"
+          ],
+          "meaning": {
+            "quantity": "packed_event_bank",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "mzm.progress.source_event_bank",
+            "confidence": 0.95,
+            "evidence": [
+              "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+              "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [],
+        "writes": [],
+        "collection_reads": [
+          "collection_0"
+        ],
+        "collection_writes": [
+          "collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "64cef439964ece18bc43c4c8d1c2babb8df4a2f28f05f6bfba715756c7d88183",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "acquire": {
+        "package_id": "mzm.progress.acquire",
+        "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+        "package_sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+        "bindings": {
+          "field_0": {
+            "slot": "owned_weapon_bits"
+          },
+          "field_1": {
+            "slot": "owned_ability_bits"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_collection_0": "persistent_event_bank"
+        }
+      },
+      "events": {
+        "package_id": "mzm.progress.events",
+        "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+        "package_sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+        "bindings": {},
+        "collection_bindings": {
+          "collection_0": "persistent_event_bank"
+        }
+      }
+    },
+    "state": {
+      "owned_weapon_bits": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "weapons.owned"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "owned_ability_bits": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "abilities.owned"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "persistent_event_bank": {
+        "storage_type": "u32",
+        "count": 8,
+        "semantic_type": {
+          "quantity": "packed_event_bank",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.progress.source_event_bank"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "event_read_result": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "boolean",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "mzm.progress.event_operation_result"
+        },
+        "owner": "events"
+      }
+    },
+    "initialize": {
+      "owned_weapon_bits": 0,
+      "owned_ability_bits": 0,
+      "persistent_event_bank": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "event_read_result": 0
+    },
+    "invocations": [
+      {
+        "component": "acquire",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u8",
+            "value": 35
+          }
+        }
+      },
+      {
+        "component": "events",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 8
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u8",
+            "value": 3
+          }
+        },
+        "result": {
+          "slot": "event_read_result"
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 2,
+  "ordered_components": [
+    "acquire",
+    "events"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "acquire"
+    },
+    {
+      "kind": "qualified_component",
+      "id": "events"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "acquire",
+      "arguments": {
+        "param_0": {
+          "op": "const",
+          "type": "u8",
+          "value": 35
+        }
+      }
+    },
+    {
+      "op": "invoke",
+      "component": "events",
+      "arguments": {
+        "param_0": {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        "param_1": {
+          "op": "const",
+          "type": "u8",
+          "value": 3
+        }
+      },
+      "result": {
+        "slot": "event_read_result"
+      }
+    }
+  ],
+  "statement_sha256": "880e1d2018a22159f422eef9be201c80cdfdbdda4136ba3600ab7c25b5650c33",
+  "catalog_sha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+  "wall_s": 0.022868459000000004
+}

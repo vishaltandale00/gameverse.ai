@@ -444,9 +444,11 @@
   },
   "coverage": {
     "status": "partial",
-    "depth": "scene_and_prior_only",
-    "canonical_component_count": 0,
-    "canonical_facets": [],
+    "depth": "instruction_verified_pair_collision_with_native_witness",
+    "canonical_component_count": 1,
+    "canonical_facets": [
+      "mechanics"
+    ],
     "source_supported_piece_count": 0,
     "missing": [
       "Player-facing movement, combat and progression source semantics; helpers do not establish these",
@@ -454,21 +456,475 @@
       "Calibrated user skill and strategy evidence",
       "Full asset-to-source/address reuse catalogue"
     ],
-    "granular_records_not_summarized": [],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "paired_active_box_separation",
+        "label": "Paired active-box separation with a proximity gate",
+        "facet": "mechanics"
+      }
+    ],
     "not_claimed": [
       "All mechanics extracted",
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:52:16.500114+00:00",
+      "rom_sha1": "8b21cd57cacf172f963dfc7ead4fa127a8a63870",
+      "status": "ok",
+      "function_records": 424,
+      "pseudo_c_generated": 424,
+      "process_wall_s": 9.8,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/functions.jsonl",
+      "export_sha256": "b694e57ef1f4d8bdce4c44a30651d561da504d38a944fed8a306c74e61f682fb",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/tekken-advance/tekken-advance/summary.json",
+      "summary_sha256": "84322972c443f0ca097aaad3952bcee3167f8ed7918f488970bc641338f6351f",
+      "warning_function_count": 350,
+      "unknown_register_function_count": 24,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080005f8",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08000714",
+          "io_ref": [
+            "IE",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0800085c",
+          "io_ref": [
+            "DMA0CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08000898",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x0800092c",
+          "io_ref": [
+            "BG0CNT",
+            "DISPCNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x080040e4",
+          "io_ref": [
+            "WIN0H"
+          ]
+        },
+        {
+          "entry": "0x08006118",
+          "io_ref": [
+            "DISPCNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0800626c",
+          "io_ref": [
+            "DISPCNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08006454",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080065e0",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08006678",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08006bc8",
+          "io_ref": [
+            "IME",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08006c3c",
+          "io_ref": [
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08006c80",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08006cdc",
+          "io_ref": [
+            "IME",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08006d7c",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08006d94",
+          "io_ref": [
+            "TM3CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080080b4",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080080d0",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08008f52",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08008f54",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080090d2",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080090d6",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080090f0",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0800b378",
+          "io_ref": [
+            "BG2CNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0800b3e8",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0800b438",
+          "io_ref": [
+            "BG2PA",
+            "DISPSTAT",
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x0800b4b0",
+          "io_ref": [
+            "BG2CNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0800b4e4",
+          "io_ref": [
+            "BG2CNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0800b518",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801623c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801626a",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801a418",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801a604",
+          "io_ref": [
+            "BG2CNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0801a674",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0801a6a4",
+          "io_ref": [
+            "BG2CNT",
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x0801a984",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801a9ac",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801f65c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x0801f840",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0801fe20",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1SAD"
+          ]
+        },
+        {
+          "entry": "0x0802046c",
+          "io_ref": [
+            "IO_0e0"
+          ]
+        },
+        {
+          "entry": "0x08020728",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_X+1",
+            "SOUND2CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_H+1",
+            "SOUND4CNT_L+1",
+            "SOUNDCNT_L",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x0802086c",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "FIFO_A",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_H",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x08020938",
+          "io_ref": [
+            "TM0CNT_H",
+            "TM0CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080209dc",
+          "io_ref": [
+            "SOUNDBIAS+1"
+          ]
+        },
+        {
+          "entry": "0x08020ac8",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08020b2c",
+          "io_ref": [
+            "DMA1CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08020f24",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_L+1"
+          ]
+        },
+        {
+          "entry": "0x08020fdc",
+          "io_ref": [
+            "SOUND1CNT_H",
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_L",
+            "SOUND1CNT_L+1",
+            "SOUND2CNT_L",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_H",
+            "SOUND3CNT_H+1",
+            "SOUND3CNT_L",
+            "SOUND3CNT_L+1",
+            "SOUND4CNT_L",
+            "SOUND4CNT_L+1",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_L+1",
+            "WAVE_RAM",
+            "WAVE_RAM+12",
+            "WAVE_RAM+4",
+            "WAVE_RAM+8"
+          ]
+        },
+        {
+          "entry": "0x08021988",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080219c0",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08021a48",
+          "io_ref": [
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08021a8c",
+          "io_ref": [
+            "DMA3CNT_H",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME",
+            "WAITCNT"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/tekken-advance/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 17,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review",
+      "reviewed_operator_count": 1,
+      "isolated_native_operator_vectors": 4096,
+      "native_operator_witness": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/tekken-box-native-receipt.json",
+      "semantic_review_ref": "ontology/games/tekken-advance.yaml"
+    }
   },
   "provenance": {
-    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
-    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "recorded_at": "2026-10-16T07:05:03.135178+00:00",
+    "method": "ROM-first Ghidra self-decompilation plus ARM binutils instruction audit; own recovered C and isolated native Thumb differential qualification where individually linked. No community source input to these new operators.",
     "rom_sha1": "8b21cd57cacf172f963dfc7ead4fa127a8a63870",
-    "canonical": null,
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/tekken-advance.yaml",
+      "sha256": "f2236a363fc588edea06306ffdddb4aa762995dec3db8094895197d257b66e03",
+      "scope": "New direct-ROM self-decompilation and local instruction review; isolated native witnesses where individually listed. Partial operators, not complete game recovery."
+    },
     "source_repositories": [],
-    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "source_to_rom_mapping": "Native addresses are taken directly from the indexed ROM whose SHA1 is recorded. No external repository-to-ROM mapping is needed for these components.",
     "capture_run_id": "20261016T004328-0e248f",
     "capture_frame_sha256": {
       "local/captures-experiments/20261016-current-scripts/tekken-advance/gameplay/keyframes/f002101_scene.png": "a88164f64b17ed8d6abf42c3b4d075d915a9989d277999905232f9e5cb00f35c",

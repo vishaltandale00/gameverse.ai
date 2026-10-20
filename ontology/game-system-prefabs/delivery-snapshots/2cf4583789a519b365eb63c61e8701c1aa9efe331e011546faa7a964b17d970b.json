@@ -1,0 +1,940 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "driv3r",
+  "sourceContractRef": "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json",
+  "blueprintIds": [
+    "actors-world-lifecycle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Reconstruct Driv3r city action around control sampling, actor/world updates and proximity activation. Vehicle driving, contact response and camera ownership remain explicit missing work; the available prefab only prepares proximity records.",
+    "wholeGameReady": false,
+    "phases": [
+      {
+        "id": "input-capture",
+        "label": "Sample held and newly pressed controls",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/input-sampling.source.c",
+          "research/deep-extraction/resume/driv3r/system-prefab/input-sampling.original.asm.txt",
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [
+          "hardware input sampler",
+          "frame and pause input ownership"
+        ],
+        "gaps": [
+          "No portable MMIO sampler or vehicle/actor button mapping is supplied."
+        ],
+        "observation": "Original04d08 reads KEYINPUT, inverts10bits, derives held and rising-edge masks; caller runs it before04dd4."
+      },
+      {
+        "id": "vehicle-control",
+        "label": "Translate controls into vehicle/actor requests",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/controller-frontier.original.asm.txt"
+        ],
+        "requiredServices": [
+          "vehicle mode and input policy",
+          "complete controller body"
+        ],
+        "gaps": [
+          "Throttle/brake/steering/on-foot mapping is not proven.",
+          "Retained04dd4 decompilation has boundary/mode failures; do not treat it as a complete driving controller."
+        ],
+        "observation": "Source scheduler reaches04dd4 after input; initial bytes show guarded counters and a source service, not a recovered vehicle controller."
+      },
+      {
+        "id": "motion",
+        "label": "Integrate vehicle and actor motion",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [
+          "position/velocity integration",
+          "vehicle parameters",
+          "motion clock"
+        ],
+        "gaps": [
+          "No native-qualified Driv3r movement or vehicle dynamics producer exists.",
+          "Proximity consumers use fixed-point source positions, but consumption does not prove their producer."
+        ],
+        "observation": "Position values are observed by the activation scanner; no source-complete motion transfer is claimed."
+      },
+      {
+        "id": "world-discovery",
+        "label": "Discover nearby source world records",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/nearby-world-records.source.c",
+          "research/deep-extraction/resume/driv3r/system-prefab/nearby-world-records.source-record.json"
+        ],
+        "requiredServices": [
+          "stable scene/profile backing",
+          "bounded nested world tables"
+        ],
+        "gaps": [
+          "Nested profile offsets/lookup domains and loop lifetimes are unqualified.",
+          "Nearby grid/object discovery is not proof of collision response."
+        ],
+        "observation": "b67a0 scans25 nearby grid cells from shifted X/Z, collects up to32 entries and materializes up to8 source records under descriptor flags."
+      },
+      {
+        "id": "contacts",
+        "label": "Resolve vehicle/world contacts",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/nearby-world-records.source.c"
+        ],
+        "requiredServices": [
+          "collision/contact geometry",
+          "response and damage ownership"
+        ],
+        "gaps": [
+          "No source-qualified vehicle contact manifold, response, crash or damage transaction is provided."
+        ],
+        "observation": "Spatial grid data exists; physical contact semantics remain unestablished."
+      },
+      {
+        "id": "allocation-requests",
+        "label": "Prepare primary and secondary proximity requests",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "driv3r.proximity.requests"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt",
+          "research/deep-extraction/resume/driv3r/mashup-coverage/080b3198.original.asm.txt",
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Raw profile words remain private source-format context with fixed validation payloads.",
+          "These requests do not instantiate/render actors or execute distance activation."
+        ],
+        "observation": "Original adjacent allocators share one16-record pool; primary then secondary suppress duplicate selectors and choose first empty slot, otherwise slot0."
+      },
+      {
+        "id": "record-update",
+        "label": "Update source proximity record flags",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/record-update-frontier.source.c",
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [
+          "original service0877a1c8",
+          "profile pointer ownership"
+        ],
+        "gaps": [
+          "Source service closure and full profile domains are not qualified."
+        ],
+        "observation": "Original33b8 compares profile X/Z against actor position, updates guards and seven record descriptor flags; called before activation."
+      },
+      {
+        "id": "activation",
+        "label": "Check proximity and activate selected record",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/next-extraction/080b357c.oracle.c",
+          "research/deep-extraction/resume/driv3r/next-extraction/system.json",
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [
+          "candidate service0816d5fc",
+          "type conversion08171244",
+          "resource initialization08171db4",
+          "original effect0877a1c8"
+        ],
+        "gaps": [
+          "Scanner and service closure are not executable prefabs.",
+          "Resource initialization512-store VRAM loop exceeds current default bounded expansion."
+        ],
+        "observation": "Source scanner retires distant entries, gates input/range/flags, snapshots actor state and sets type-specific channels after the two allocation calls and updater."
+      },
+      {
+        "id": "camera-world-view",
+        "label": "Project and present the city scene",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt"
+        ],
+        "requiredServices": [
+          "camera owner and projection",
+          "world rendering",
+          "asset lifetime"
+        ],
+        "gaps": [
+          "No qualified camera/projection contract or complete render boundary has been identified.",
+          "Resource VRAM clearing is not a recovered camera or renderer."
+        ],
+        "observation": "The caller invokes further scene services; their camera/render ownership is not inferred from addresses."
+      },
+      {
+        "id": "progress-recovery",
+        "label": "Persist mission/session progress and recover",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [
+          "save/checkpoint contract",
+          "mission objective consumers",
+          "recovery policy"
+        ],
+        "gaps": [
+          "Source progress events and save compatibility are not connected to this prefab."
+        ],
+        "observation": "No mission-completion or whole-session recovery claim."
+      }
+    ],
+    "edges": [
+      {
+        "from": "input-capture",
+        "to": "vehicle-control",
+        "kind": "source-call",
+        "scope": "Original scheduler04d08 precedes04dd4; does not establish vehicle input mapping."
+      },
+      {
+        "from": "vehicle-control",
+        "to": "motion",
+        "kind": "host-required",
+        "scope": "Required missing control-to-motion contract, not recovered source wiring."
+      },
+      {
+        "from": "motion",
+        "to": "world-discovery",
+        "kind": "shared-state",
+        "scope": "World discovery consumes source X/Z position; producer/clock remains unproven."
+      },
+      {
+        "from": "world-discovery",
+        "to": "contacts",
+        "kind": "host-required",
+        "scope": "A future source contact resolver needs world geometry; no automatic compatible collision bridge is asserted."
+      },
+      {
+        "from": "allocation-requests",
+        "to": "record-update",
+        "kind": "source-call",
+        "scope": "Original caller executes3198 then32a8 then33b8 over shared source state."
+      },
+      {
+        "from": "record-update",
+        "to": "activation",
+        "kind": "source-call",
+        "scope": "Original caller executes33b8 then357c; service closure remains open."
+      },
+      {
+        "from": "activation",
+        "to": "camera-world-view",
+        "kind": "host-required",
+        "scope": "Presentation consumes activation state only through missing source contracts."
+      },
+      {
+        "from": "activation",
+        "to": "progress-recovery",
+        "kind": "host-required",
+        "scope": "Persistent objectives/recovery require an explicit missing consumer."
+      }
+    ],
+    "missingForCoreGame": [
+      "Source vehicle/on-foot input-to-control mapping and ownership.",
+      "Source-complete movement integration and vehicle dynamics.",
+      "World lookup bounds plus physical contact/response transaction.",
+      "Complete proximity scanner and its actual services/resource effects.",
+      "Camera/projection/render and asset lifecycle.",
+      "Mission event consumers, persistence/checkpoints and recovery.",
+      "Invocation-to-frame clock and full gameplay qualification."
+    ]
+  },
+  "bundles": [
+    {
+      "id": "driv3r-proximity-request-system",
+      "label": "Proximity allocation requests",
+      "moduleId": "driv3r.proximity-request-pool",
+      "sourceGame": "driv3r",
+      "sourceContractRef": "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json",
+      "planIds": [
+        "actors-world-lifecycle"
+      ],
+      "packageIds": [
+        "driv3r.proximity.allocate_record",
+        "driv3r.proximity.allocate_secondary_record"
+      ],
+      "availability": "published-subset",
+      "scope": "Two source-adjacent duplicate-suppressed allocation requests over the same pool, in original order; a useful preparation phase for the missing activation consumer.",
+      "gaps": [
+        "This prefab prepares record requests; it does not instantiate, update or render actors and does not run the source distance/input activation scanner.",
+        "One shared192-byte packed pool is mandatory for both source requests. Import another prefab instance only when a distinct pool is intended.",
+        "The eight raw profile words and active-selector/activation-guard context are private fixed validation payloads/defaults; no full scene-profile domain or coordinate units are qualified.",
+        "The two components each have128 exact individual native fixtures. This graph has symbolic binding/lowering validation only; the paired sequence was not separately native qualified.",
+        "The original caller discards inferredr0 outputs. No scalar or pointer result is exposed.",
+        "The caller supplies an explicit invocation clock. Relative primary\u2192secondary order is source-proven, but full frame, pause, mission and persistence policies remain open."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/driv3r/system-prefab/core-loop-map.json",
+        "research/deep-extraction/resume/driv3r/system-prefab/service-contracts.json",
+        "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/mashup-coverage/080b3198.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json"
+      ],
+      "instanceDefaults": {
+        "kind": "caller-declared empty request pool",
+        "initialize": {
+          "active_selector": 0,
+          "allocation_lane": 0,
+          "activation_guard": 0,
+          "primary_permission_1": 1,
+          "primary_permission_0": 1,
+          "primary_profile_word_0": 305419896,
+          "primary_profile_word_1": 2271560481,
+          "primary_profile_word_2": 4294934528,
+          "primary_profile_word_3": 65535,
+          "proximity_records": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_permission_0": 1,
+          "secondary_permission_1": 1,
+          "secondary_profile_word_0": 305419896,
+          "secondary_profile_word_1": 2271560481,
+          "secondary_profile_word_2": 4294934528,
+          "secondary_profile_word_3": 65535
+        },
+        "runtimeQualified": false,
+        "scope": "Source request permissions enabled, lane0, empty pool; private payload words mirror fixed native fixture words. This whole paired instance seed is not a separate native trace."
+      },
+      "canonicalState": {
+        "identity": "One source world proximity request pool per prefab instance",
+        "fields": [
+          "proximity_records",
+          "allocation_lane",
+          "active_selector",
+          "activation_guard"
+        ],
+        "aliasRule": "Primary and secondary must bind the same pool and shared lane/guard/selector slots. Their four-word profile payloads remain distinct private source views."
+      },
+      "roleFacets": [
+        {
+          "roleId": "actor-lifecycle",
+          "capability": "Prepare source activation records with duplicate suppression and deterministic allocation/reuse",
+          "status": "published-subset",
+          "scope": "Record allocation only. No actor constructor, full actor update or retirement lifecycle is supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/driv3r/system-prefab/core-loop-map.json",
+            "research/deep-extraction/resume/driv3r/system-prefab/service-contracts.json",
+            "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/mashup-coverage/080b3198.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json"
+          ]
+        },
+        {
+          "roleId": "proximity",
+          "capability": "Queue primary and secondary source proximity requests in one pool",
+          "status": "published-subset",
+          "scope": "Preparation only; actual range/input gating and selected-record activation are source-only missing consumers.",
+          "evidence": [
+            "research/deep-extraction/resume/driv3r/system-prefab/core-loop-map.json",
+            "research/deep-extraction/resume/driv3r/system-prefab/service-contracts.json",
+            "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/mashup-coverage/080b3198.original.asm.txt",
+            "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "driv3r.proximity.requests",
+        "label": "Driv3r proximity request pool",
+        "assemblyRef": "research/deep-extraction/resume/driv3r/system-prefab/proximity-requests.assembly.json",
+        "validationRef": "research/deep-extraction/resume/driv3r/system-prefab/proximity-requests.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/driv3r/system-prefab/delivery.json",
+        "packageIds": [
+          "driv3r.proximity.allocate_record",
+          "driv3r.proximity.allocate_secondary_record"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "driv3r.proximity.requests",
+      "moduleId": "driv3r.proximity-request-pool",
+      "label": "Driv3r proximity request pool",
+      "path": "research/deep-extraction/resume/driv3r/system-prefab/proximity-requests.assembly.json",
+      "sha256": "a911b1e1a7d0e3bab16f9bf407465468320d69d44d7ae76ece20bc2ad8551e72",
+      "validation": "research/deep-extraction/resume/driv3r/system-prefab/proximity-requests.validation.json",
+      "validationSha256": "9bf0fa97eb337907bbc04ff769b97ce89561d50a183478801b5aa36ebb0e84a2",
+      "inputs": [
+        {
+          "id": "allocation_lane",
+          "label": "Source lane",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "0 or1. These are the exact lane/permission values exercised in the retained native fixtures.",
+          "binding": "allocation_lane",
+          "meaning": "0 selects the original first lane;1 selects its alternate lane."
+        },
+        {
+          "id": "primary_permission_0",
+          "label": "Primary request, first lane",
+          "storageType": "u8",
+          "default": 1,
+          "domain": "0 or1. These are the exact lane/permission values exercised in the retained native fixtures.",
+          "binding": "primary_permission_0",
+          "meaning": "Enable or suppress the primary record request in lane0."
+        },
+        {
+          "id": "primary_permission_1",
+          "label": "Primary request, alternate lane",
+          "storageType": "u8",
+          "default": 1,
+          "domain": "0 or1. These are the exact lane/permission values exercised in the retained native fixtures.",
+          "binding": "primary_permission_1",
+          "meaning": "Enable or suppress the primary record request in lane1."
+        },
+        {
+          "id": "secondary_permission_0",
+          "label": "Secondary request, first lane",
+          "storageType": "u8",
+          "default": 1,
+          "domain": "0 or1. These are the exact lane/permission values exercised in the retained native fixtures.",
+          "binding": "secondary_permission_0",
+          "meaning": "Enable or suppress the secondary record request in lane0."
+        },
+        {
+          "id": "secondary_permission_1",
+          "label": "Secondary request, alternate lane",
+          "storageType": "u8",
+          "default": 1,
+          "domain": "0 or1. These are the exact lane/permission values exercised in the retained native fixtures.",
+          "binding": "secondary_permission_1",
+          "meaning": "Enable or suppress the secondary record request in lane1."
+        }
+      ],
+      "outputs": [
+        {
+          "id": "proximity_records",
+          "binding": "proximity_records",
+          "storageType": "u8",
+          "count": 192,
+          "meaning": "One shared pool of16 source records, each12bytes: active/type byte, selector byte, four little-endian halfword payloads and two cleared bytes. Consumer activation is separate."
+        }
+      ],
+      "phases": [
+        {
+          "id": "primary-request",
+          "trigger": "Explicit host invocation with source request permissions/context",
+          "invocations": [
+            "primary"
+          ],
+          "scheduleStatus": "source-proven",
+          "scope": "First of the two adjacent original allocation calls; host invocation clock remains caller-declared."
+        },
+        {
+          "id": "secondary-request",
+          "trigger": "Same invocation after primary request",
+          "invocations": [
+            "secondary"
+          ],
+          "scheduleStatus": "source-proven",
+          "scope": "Second original allocation call shares the same pool and sees primary changes."
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "This prefab prepares record requests; it does not instantiate, update or render actors and does not run the source distance/input activation scanner.",
+        "One shared192-byte packed pool is mandatory for both source requests. Import another prefab instance only when a distinct pool is intended.",
+        "The eight raw profile words and active-selector/activation-guard context are private fixed validation payloads/defaults; no full scene-profile domain or coordinate units are qualified.",
+        "The two components each have128 exact individual native fixtures. This graph has symbolic binding/lowering validation only; the paired sequence was not separately native qualified.",
+        "The original caller discards inferredr0 outputs. No scalar or pointer result is exposed.",
+        "The caller supplies an explicit invocation clock. Relative primary\u2192secondary order is source-proven, but full frame, pause, mission and persistence policies remain open."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/driv3r/system-prefab/core-loop-map.json",
+        "research/deep-extraction/resume/driv3r/system-prefab/service-contracts.json",
+        "research/deep-extraction/resume/driv3r/system-prefab/080b32a8.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/system-prefab/loop-schedule.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/mashup-coverage/080b3198.original.asm.txt",
+        "research/deep-extraction/resume/driv3r/system-prefab/secondary-source-contract.json"
+      ],
+      "qualificationScope": "Actual Composer binding, package identity, shared ownership, ordering and code lowering pass. Reuses two individual caller-scoped state-effect proofs of128 exact fixtures each; only128secondary fixtures are new this phase. No paired native execution, random/profile-domain coverage, actor activation or whole-game readiness is claimed.",
+      "privateContext": {
+        "slots": [
+          "active_selector",
+          "activation_guard",
+          "primary_profile_word_0",
+          "primary_profile_word_1",
+          "primary_profile_word_2",
+          "primary_profile_word_3",
+          "secondary_profile_word_0",
+          "secondary_profile_word_1",
+          "secondary_profile_word_2",
+          "secondary_profile_word_3"
+        ],
+        "scope": "Fixed source-format validation payload/context. Profile words are not original city coordinates, a vehicle setup or free gameplay tuning knobs.",
+        "defaults": {
+          "active_selector": 0,
+          "activation_guard": 0,
+          "primary_profile_word_0": 305419896,
+          "primary_profile_word_1": 2271560481,
+          "primary_profile_word_2": 4294934528,
+          "primary_profile_word_3": 65535,
+          "secondary_profile_word_0": 305419896,
+          "secondary_profile_word_1": 2271560481,
+          "secondary_profile_word_2": 4294934528,
+          "secondary_profile_word_3": 65535
+        }
+      },
+      "proofFixtureInitialize": {
+        "kind": "separate component entry fixture sets",
+        "pairedExecutionQualified": false,
+        "sources": [
+          {
+            "packageId": "driv3r.proximity.allocate_record",
+            "fixtureRef": "local/ir/packages/driv3r.proximity.allocate_record/fixtures.json",
+            "fixtureSha256": "7262e15d47e60ac82644b498e4458b01f44d405d7df7dc47e8729f28395fff4e",
+            "scope": "128 explicit source-derived fixtures: 2 selected lanes \u00d7 4 source classes (first empty, duplicate guard, full-pool reuse, permission guard) \u00d7 16 record slots. The same four profile words are fixed across all rows. Complete 192-byte pool output and 32 surrounding canary bytes are checked. No random vectors or gameplay traces were executed."
+          },
+          {
+            "packageId": "driv3r.proximity.allocate_secondary_record",
+            "fixtureRef": "local/ir/packages/driv3r.proximity.allocate_secondary_record/fixtures.json",
+            "fixtureSha256": "84e247e5c068a0b38ca6e46eaf186bd0a03ea04084ed7812fa941c06092de6d1",
+            "scope": "128 explicit source-derived fixtures: 2 selected lanes \u00d7 4 source classes (first empty, duplicate guard, full-pool reuse, permission guard) \u00d7 16 record slots. The same four profile words are fixed across all rows. Complete 192-byte pool output and 32 surrounding canary bytes are checked. No random vectors or gameplay traces were executed."
+          }
+        ]
+      },
+      "instanceDefaults": {
+        "kind": "caller-declared empty request pool",
+        "initialize": {
+          "active_selector": 0,
+          "allocation_lane": 0,
+          "activation_guard": 0,
+          "primary_permission_1": 1,
+          "primary_permission_0": 1,
+          "primary_profile_word_0": 305419896,
+          "primary_profile_word_1": 2271560481,
+          "primary_profile_word_2": 4294934528,
+          "primary_profile_word_3": 65535,
+          "proximity_records": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_permission_0": 1,
+          "secondary_permission_1": 1,
+          "secondary_profile_word_0": 305419896,
+          "secondary_profile_word_1": 2271560481,
+          "secondary_profile_word_2": 4294934528,
+          "secondary_profile_word_3": 65535
+        },
+        "runtimeQualified": false,
+        "scope": "Source request permissions enabled, lane0, empty pool; private payload words mirror fixed native fixture words. This whole paired instance seed is not a separate native trace."
+      }
+    }
+  ],
+  "timing": {
+    "runId": "driv3r-system-prefab-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.017614666999999997,
+    "nativeSeconds": 0.07898720799999998,
+    "buildSeconds": 0.03793412500000001,
+    "totalSeconds": 0.35148725099999995,
+    "beforeAfter": null,
+    "accounting": "Sum of measured nonoverlapping static lift/lower, new secondary native qualification total, and paired graph validation. Native compile/build/evaluation stages are nested within qualification total and must not be added again. Primary proof is reused, not rerun or new credit. Interactive research/publication queue/CI timing unavailable; no comparable build-latency baseline."
+  }
+}

@@ -1,0 +1,385 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "final-fantasy-i-and-ii-dawn-of-souls",
+  "sourceContractRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+  "blueprintIds": [
+    "dialogue-interactive-scenes"
+  ],
+  "coreLoop": {
+    "playerOutcome": "An existing choice scene enters its menu, presents a cursor, accepts a selection or cancellation, then restores caller state and returns the selected result. This map covers that scene, not the broader RPG battle or field loop.",
+    "phases": [
+      {
+        "id": "construct",
+        "label": "Allocate and initialize the choice scene",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+        ],
+        "requiredServices": [
+          "heap allocator",
+          "entry fade and renderer setup"
+        ],
+        "gaps": [
+          "Allocation failure and full resource initialization remain unresolved."
+        ]
+      },
+      {
+        "id": "entry-ready",
+        "label": "Advance choice entry and reveal the cursor",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+        ],
+        "requiredServices": [
+          "Host supplies the same canonical scene at one eligible phase-6 invocation."
+        ],
+        "gaps": [
+          "Only one eligible transition update is delivered.",
+          "Finite-qualified entry timer/cursor support is retained internally; it is not a primary player-choice prefab."
+        ]
+      },
+      {
+        "id": "navigate",
+        "label": "Sample input and navigate the choices",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+        ],
+        "requiredServices": [
+          "KEYINPUT sampler",
+          "ordered feedback/audio"
+        ],
+        "gaps": [
+          "Literal callback specialization and audio/input services remain open."
+        ]
+      },
+      {
+        "id": "return",
+        "label": "Restore caller context and preserve result",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+        ],
+        "requiredServices": [
+          "exit fade",
+          "shared display context"
+        ],
+        "gaps": [
+          "Context restore is privately qualified with opaque wider lane meanings; result wrapper is source-only."
+        ]
+      },
+      {
+        "id": "cleanup",
+        "label": "Destroy scene resources and return selection",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+        ],
+        "requiredServices": [
+          "resource destructors",
+          "heap lifecycle"
+        ],
+        "gaps": [
+          "Complete destruction and host lifetime qualification remain open."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "construct",
+        "to": "entry-ready",
+        "kind": "source-call",
+        "scope": "Source lifecycle enters phase6; transition receives retained scene state."
+      },
+      {
+        "from": "entry-ready",
+        "to": "navigate",
+        "kind": "shared-state",
+        "scope": "Transition writes phase7 and cursor state; source dispatcher selects navigation on next eligible iteration."
+      },
+      {
+        "from": "navigate",
+        "to": "return",
+        "kind": "event",
+        "scope": "A/B writes phase10; next scene iteration consumes exit state before lifecycle fade/restore."
+      },
+      {
+        "from": "return",
+        "to": "cleanup",
+        "kind": "source-call",
+        "scope": "Wrapper copies selected result before destructor, then returns it afterward."
+      }
+    ],
+    "missingForCoreGame": [
+      "Input polling MMIO and the shared edge mask are not executable services here.",
+      "Phase-7 navigation requires callback target specialization and ordered feedback/audio closure.",
+      "Frame IRQ flag ownership, rendering, fade, allocation/destruction and scene-loop lowering remain open.",
+      "Caller result return is source-backed; the complete executable choice/result lifecycle is not delivered.",
+      "Actual screen, bundled engine identity, RPG battle/turn resolution and world progression remain unconfirmed."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "ff12.choice_scene.entry_transition.bundle",
+      "label": "Choice entry and cursor readiness",
+      "moduleId": "ff12.choice_scene.entry_transition",
+      "sourceGame": "final-fantasy-i-and-ii-dawn-of-souls",
+      "sourceContractRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+      "planIds": [
+        "dialogue-interactive-scenes"
+      ],
+      "packageIds": [
+        "ff12.choice.entry_transition"
+      ],
+      "availability": "source-only",
+      "scope": "Source scene structure and internally qualified timer/cursor support. No complete navigation-to-confirmed/cancelled-result behavior is supplied.",
+      "gaps": [
+        "Published transition does not sample input or run navigation.",
+        "Renderer consumes cursor and shadow state through unresolved services; this graph does not display a menu.",
+        "Full phase-7 consumer is blocked on literal callback specialization, ordered feedback service and shared input ownership.",
+        "Allocator, IRQ frame flag, fade and destructor services remain mandatory for the original scene lifecycle.",
+        "Actual gameplay screen and FFI/FFII engine identity remain unconfirmed.",
+        "Editable FF12 prefab configuration is not implemented in the central UI helper.",
+        "Primary player-choice module requires actual navigation and confirmation/cancellation result consumption; timer/cursor support alone is not eligible."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+        "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json",
+        "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "One caller-owned original choice scene",
+        "fields": [
+          "phase",
+          "transitionTicks",
+          "selection",
+          "cursorX",
+          "cursorY",
+          "cursorVisible",
+          "registerDirty",
+          "displayControl",
+          "background2Scroll",
+          "background3Scroll",
+          "windowInput",
+          "windowOutput",
+          "blendControl"
+        ],
+        "aliasRule": "All fields share original scene backing across entry, navigation and presentation. Importing this subset must not create detached cursor or counter copies."
+      },
+      "roleFacets": [
+        {
+          "roleId": "choice",
+          "capability": "choice-entry readiness",
+          "status": "source-only",
+          "scope": "Source entry/readiness support only; actual navigation and confirmed/cancelled result consumer remain unresolved.",
+          "evidence": [
+            "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+            "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json",
+            "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.validation.json"
+          ]
+        }
+      ],
+      "internalSupportAssembly": {
+        "id": "ff12.choice.entry_transition_step",
+        "label": "Choice-entry transition update",
+        "assemblyRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.assembly.json",
+        "validationRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/delivery.json",
+        "packageIds": [
+          "ff12.choice.entry_transition"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "primaryPrefab": false
+      }
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "ff12-prefab-source-coreloop-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.002566374999999999,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "descriptorSeconds": 0.017160542,
+    "beforeAfter": null,
+    "accounting": "Validation receipt wall time covers real binding/Composer/lowering. Descriptor generation is a separate metadata stage. Native proof is reused; no native/build stage ran. Full interactive analysis duration and queue time are unavailable.",
+    "productFilterMetadataSeconds": 0.00010837500000000083
+  },
+  "internalSupportPhases": [
+    {
+      "id": "ff12.choice.entry_transition_step",
+      "moduleId": "ff12.choice_scene.entry_transition",
+      "label": "Advance choice entry and reveal the cursor",
+      "path": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.assembly.json",
+      "sha256": "411b0c6e1b445914709a15a62058448229e9ebc35a5cda071448bbabf4cab243",
+      "validation": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/choice-entry-step.validation.json",
+      "validationSha256": "b60d79975a70179292f897ecc97c2b3d3cb760b4454353a205d744d4554db8a1",
+      "inputs": [
+        {
+          "id": "transitionTicks",
+          "label": "Previous eligible transition invocations",
+          "storageType": "u32",
+          "default": 15,
+          "domain": {
+            "min": 0,
+            "max": 15,
+            "scope": "legal two-choice phase-6 entry profile; exact source storage is not narrowed"
+          },
+          "binding": {
+            "kind": "initialize",
+            "slot": "transitionTicks"
+          },
+          "meaning": "Original counter value before this call; not elapsed frames or seconds."
+        },
+        {
+          "id": "selection",
+          "label": "Selected option in a two-choice scene",
+          "storageType": "u32",
+          "default": 0,
+          "domain": {
+            "min": 0,
+            "max": 1,
+            "scope": "legal two-choice phase-6 entry profile; exact source storage is not narrowed"
+          },
+          "binding": {
+            "kind": "initialize",
+            "slot": "selection"
+          },
+          "meaning": "Two-choice source entry profile. Cancellation sentinel 2 is outside this entry profile; full source storage remains unchanged."
+        }
+      ],
+      "outputs": [
+        {
+          "id": "phase",
+          "binding": {
+            "kind": "state",
+            "slot": "phase"
+          },
+          "meaning": "Phase 7 means the source scheduler will enter navigation on the next eligible iteration.",
+          "storageType": "u8"
+        },
+        {
+          "id": "transitionTicks",
+          "binding": {
+            "kind": "state",
+            "slot": "transitionTicks"
+          },
+          "meaning": "Retained transition counter",
+          "storageType": "u32"
+        },
+        {
+          "id": "cursorX",
+          "binding": {
+            "kind": "state",
+            "slot": "cursorX"
+          },
+          "meaning": "Cursor horizontal position",
+          "storageType": "u16"
+        },
+        {
+          "id": "cursorY",
+          "binding": {
+            "kind": "state",
+            "slot": "cursorY"
+          },
+          "meaning": "Cursor vertical position",
+          "storageType": "u16"
+        },
+        {
+          "id": "cursorVisible",
+          "binding": {
+            "kind": "state",
+            "slot": "cursorVisible"
+          },
+          "meaning": "Cursor visibility flag",
+          "storageType": "u8"
+        },
+        {
+          "id": "registerDirty",
+          "binding": {
+            "kind": "state",
+            "slot": "registerDirty"
+          },
+          "meaning": "Pending register update flag",
+          "storageType": "u8"
+        }
+      ],
+      "phases": [
+        {
+          "id": "transition",
+          "trigger": "Host supplies one eligible phase-6 scene update.",
+          "invocations": [
+            "choiceTransition"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceOrderEvidence": "Source dispatcher0801ca98 case6 invokes0801d074; this graph retains that one function call without recreating its enclosing loop."
+        }
+      ],
+      "requiredServices": [
+        "Host supplies the same canonical scene at one eligible phase-6 invocation."
+      ],
+      "gaps": [
+        "Published transition does not sample input or run navigation.",
+        "Renderer consumes cursor and shadow state through unresolved services; this graph does not display a menu.",
+        "Full phase-7 consumer is blocked on literal callback specialization, ordered feedback service and shared input ownership.",
+        "Allocator, IRQ frame flag, fade and destructor services remain mandatory for the original scene lifecycle.",
+        "Actual gameplay screen and FFI/FFII engine identity remain unconfirmed.",
+        "Editable FF12 prefab configuration is not implemented in the central UI helper."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+        "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/prefab-pass/coreloop.json"
+      ],
+      "qualificationScope": "Actual assembly binding/Composer/lowering passed. Existing 256-vector finite native qualification applies to the exact published component; the prefab graph was not executed as a runtime L2 system.",
+      "defaultSourceExpected": {
+        "phase": 7,
+        "transitionTicks": 0,
+        "selection": 0,
+        "cursorX": 84,
+        "cursorY": 104,
+        "cursorVisible": 1,
+        "registerDirty": 1
+      },
+      "runtimeQualified": false,
+      "packagePins": [
+        {
+          "path": "local/ir/packages/ff12.choice.entry_transition/package.json",
+          "sha256": "dcdc427b1b140c05538f3e266a32e8151f4d997876de3e0e83c3956eddadd663"
+        }
+      ],
+      "behaviorPins": [
+        {
+          "path": "local/ir/packages/ff12.choice.entry_transition/l1.json",
+          "sha256": "5b0c8982de588044f90c38823530dcc65bec5e9393ac4806d105cc0dca9e2296"
+        }
+      ],
+      "configurationStatus": "Recorded source-entry defaults are part of the assembly. Editable FF12 initializer controls are not implemented in the current central UI helper.",
+      "supportStatus": "internal_source_scene_support_only",
+      "primaryPrefab": false,
+      "reason": "Entry timer/cursor bookkeeping does not accept a player selection or produce a confirmed/cancelled result. Retain existing exact graph proof only.",
+      "graphValidationStatus": "binding_valid_obligations_unproven"
+    }
+  ],
+  "productFilter": {
+    "status": "source_map_registered_no_primary_prefab",
+    "primaryPrefabCount": 0,
+    "internalSupportPhaseCount": 1,
+    "reason": "A choice-entry timer/cursor update is support bookkeeping. Primary player choice requires navigation through a confirmed or cancelled result consumer.",
+    "noNewExecution": true
+  }
+}

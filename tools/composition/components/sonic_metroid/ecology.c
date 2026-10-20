@@ -30,7 +30,7 @@ void gv_ecology_step(GvState *s,GvPlayer *p)
         }
         int x=gv_px(a->x),y=gv_px(a->y),px=gv_px(p->x),py=gv_px(p->y);
         if(gv_abs(x-px)>360)continue;
-        int hit=gv_hit_shots_state(s,x,y,a->species==GV_GUARDIAN?18:10,a->species==GV_GUARDIAN?22:10,
+        int hit=a->species==GV_RIPPER?gv_ripper_hit(s,a):gv_hit_shots_state(s,x,y,a->species==GV_GUARDIAN?18:10,a->species==GV_GUARDIAN?22:10,
                             &a->hp,&a->freeze,a->species==GV_GUARDIAN && a->state==0?8|16:2|8|16,&s->mzm_alien[i]);
         if(hit==2){defeat(s,a,x,y);continue;}
         if(a->freeze){
@@ -41,7 +41,8 @@ void gv_ecology_step(GvState *s,GvPlayer *p)
             continue;
         }
         a->clock++;
-        if(a->species==GV_CRAWLER){
+        if(a->species==GV_RIPPER){gv_ripper_step(s,a,i);}
+        else if(a->species==GV_CRAWLER){
             if(!a->vx)a->vx=128;
             int nx=gv_px(a->x+a->vx),floor=gv_floor_y(nx,y+9,24);
             if(gv_abs(floor-y-9)>12 || gv_is_solid(nx+(a->vx>0?9:-9),y))a->vx=-a->vx;
@@ -73,7 +74,7 @@ void gv_ecology_step(GvState *s,GvPlayer *p)
         if(gv_abs(x-px)<(a->species==GV_GUARDIAN?22:16) && gv_abs(y-py)<(a->species==GV_GUARDIAN?30:20)){
             if((s->upgrades&GV_SCREW) && (p->flags&4) && (p->flags&2)){
                 gv_apply_impact(s,&s->mzm_alien[i],&a->hp,a->hp);defeat(s,a,x,y);
-            }else gv_damage_player(s,p,a->species==GV_GUARDIAN?30:15);
+            }else gv_damage_player(s,p,a->species==GV_GUARDIAN?30:a->species==GV_RIPPER?10:15);
         }
     }
 }

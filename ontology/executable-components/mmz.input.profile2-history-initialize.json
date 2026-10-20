@@ -1,0 +1,148 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mmz.input.profile2-history-initialize",
+  "label": "Initialize actor command history (profile 2)",
+  "role": "input_history_initialization",
+  "source_game": "megaman-zero",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mmz.input.profile2-history-initialize/package.json",
+  "package_sha256": "9f476208d3c4f8db0076dbf4795311ced6f9e39bcdddbd89ccb57ffa17f23713",
+  "behavior_sha256": "ef74113c8ad6c6c79d124f0549650bc3fbd4bc326ec30be9604a79bfc1471c72",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "83d5875b8a6d1245b966accbc74c4ba1c187f0f80b3c38c58be62b5dad3dce24"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/initializer-result.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "new_command_bit_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/initializer-result.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "command_history_index",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "dependency_0_collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/initializer-result.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "command_history_bit_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 14,
+    "collections": [
+      {
+        "id": "dependency_0_collection_0",
+        "storage_type": "u8",
+        "count": 64
+      },
+      {
+        "id": "dependency_0_collection_1",
+        "storage_type": "u32",
+        "count": 2
+      }
+    ]
+  },
+  "lifecycle": {
+    "clock": "explicit_source_function_invocation",
+    "ordering": "source producer before same-actor ring fill and bitmap clear; full parent lifecycle open",
+    "phase": "actor_history_initialization",
+    "storage": "same_actor_canonical_ring_and_bitmap"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "7ef6ce1e36bb429779445eadeca6261d5b30a35cca0238a2c15a4003125debd0",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mmz.input.profile2-history-initialize/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_dependency_0_Acyclic structured CFG only",
+    "dependency_0_dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Selector2 domain only; no runtime profile guard or all-live-callers proof",
+    "Current/general accepted ROM replacement eligibility is false",
+    "Full source allocator/inputauthority/parent scheduler/interrupt-visible ordering remain open",
+    "Installed fixture candidate is separate from portable component qualification and exact captured original-ROM strata",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "local/roundtrip/weak-wave-megaman-initializer-003/initializer-group.json",
+    "sha256": "e68e777e8836ef74eba008158d7a0ba3597f3f6231eeab3976cd18714adbd427"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "megaman-zero",
+    "entry": "0801b254"
+  },
+  "domain_contract_fingerprint": "df768b71710deeb2ff4854c3b59f55a6f9a10e9c43c4542e7190ed7c29120d3a",
+  "specialization_subset": true
+}

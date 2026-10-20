@@ -1,0 +1,887 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "scriptFull": {
+      "package_id": "tmc.progress.script_inventory_write",
+      "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+      "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "script_cursor",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "source_item_id",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255
+          },
+          "meaning": {
+            "quantity": "source_item_id",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "script_cursor",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "two_bit_inventory_state",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          },
+          "meaning": {
+            "quantity": "two_bit_inventory_state",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "dependency_0_collection_0",
+          "storage_type": "u8",
+          "count": 64,
+          "provenance": [
+            "op6",
+            "op15"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "campaign",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [],
+        "collection_reads": [
+          "dependency_0_collection_0"
+        ],
+        "collection_writes": [
+          "dependency_0_collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "caller_owned_script_context_and_campaign_bank",
+        "clock": "explicit_script_command_invocation",
+        "phase": "script_effect_before_explicit_capability_refresh",
+        "ordering": "parser dispatch provides cursor; handler does not advance parser or refresh cache"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "Qualified item ID 0..255 and state 0..3 only",
+        "No trainer script or once-only claim identified",
+        "Return value outside source parser state-effects view",
+        "No accepted external-media persistence claim",
+        "512 total native fixtures including 8 expected source cases, not exhaustive 256x4 Cartesian input coverage.",
+        "Caller must supply distinct readonly cursor+2..6 and 28-byte script context; 64-byte learned bank alias shared with published setter; no parser stream, trainer, cache refresh or external persistence claim.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    },
+    "scriptLow": {
+      "package_id": "tmc.progress.script_inventory_write",
+      "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+      "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "script_cursor",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "source_item_id",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255
+          },
+          "meaning": {
+            "quantity": "source_item_id",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "script_cursor",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "two_bit_inventory_state",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          },
+          "meaning": {
+            "quantity": "two_bit_inventory_state",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "script_command",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "dependency_0_collection_0",
+          "storage_type": "u8",
+          "count": 64,
+          "provenance": [
+            "op6",
+            "op15"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "campaign",
+            "confidence": 0.9,
+            "evidence": [
+              "research/ir-workshop/blueprint-completion-20261016/minish/source-routes.json"
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [],
+        "collection_reads": [
+          "dependency_0_collection_0"
+        ],
+        "collection_writes": [
+          "dependency_0_collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "caller_owned_script_context_and_campaign_bank",
+        "clock": "explicit_script_command_invocation",
+        "phase": "script_effect_before_explicit_capability_refresh",
+        "ordering": "parser dispatch provides cursor; handler does not advance parser or refresh cache"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "Qualified item ID 0..255 and state 0..3 only",
+        "No trainer script or once-only claim identified",
+        "Return value outside source parser state-effects view",
+        "No accepted external-media persistence claim",
+        "512 total native fixtures including 8 expected source cases, not exhaustive 256x4 Cartesian input coverage.",
+        "Caller must supply distinct readonly cursor+2..6 and 28-byte script context; 64-byte learned bank alias shared with published setter; no parser stream, trainer, cache refresh or external persistence claim.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    },
+    "refresh": {
+      "package_id": "tmc.progress.derive_skills",
+      "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+      "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "dependency_0_collection_0",
+          "storage_type": "u8",
+          "count": 64,
+          "provenance": [
+            "op3"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "campaign",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0"
+        ],
+        "writes": [
+          "field_0"
+        ],
+        "collection_reads": [
+          "dependency_0_collection_0"
+        ],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+      ]
+    },
+    "eligibility": {
+      "package_id": "tmc.combat.learned_sword_beam_eligibility",
+      "package_sha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f",
+      "behavior_sha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "health",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.health.current",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "health",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.health.current",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "health_capacity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.health.maximum",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "health_capacity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.health.maximum",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "u32",
+      "return_meaning": {
+        "quantity": "sword_beam_eligibility",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "combat.sword.beam_eligibility",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/legend-of-zelda-the-the-minish-cap/next-round/source-closure-20261016/source-evidence.json"
+        ]
+      },
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2"
+        ],
+        "writes": [],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "no owned mutable state; borrowed canonical player health and same derived capability cache",
+        "clock": "explicit eligibility query at source swing event, no frequency inference",
+        "writes": false,
+        "allocation": false,
+        "ordering": "Source refresh precedes consuming cache; original swing uses query result before capacity/spawn/technique selection."
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Function-level finite original/generated qualification only, not projectile/scene/gameplay.",
+        "Return selectors0/15/22 are native categorical eligibility variants; do not reinterpret as damage or spawned entity IDs.",
+        "Native heartpool unit is retained; no heart-to-pixel/time or display-heart scale inferred.",
+        "Synthetic qualification includes robust boundary fields not all reachable gameplay states.",
+        "Normal trainer discovery and once-only reward event remain unclosed.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "6c5317ccca2d9df40598a3b24b6d4bc8e89971ed17629c17f5e52baf8541e9be",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "scriptFull": {
+        "package_id": "tmc.progress.script_inventory_write",
+        "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+        "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+        "bindings": {
+          "field_0": {
+            "slot": "fullTechnique"
+          },
+          "field_1": {
+            "slot": "fullLearnedState"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_collection_0": "inventoryBank"
+        }
+      },
+      "scriptLow": {
+        "package_id": "tmc.progress.script_inventory_write",
+        "package_sha256": "8c4f0d2a527db3ae02302f67080d94eacb5f485223ad3740c9e44b401e30e09e",
+        "behavior_sha256": "bd7089cacfe79b0392463896ccfcc17e2219a193769c1c909876e1958bea15bb",
+        "bindings": {
+          "field_0": {
+            "slot": "lowTechnique"
+          },
+          "field_1": {
+            "slot": "lowLearnedState"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_collection_0": "inventoryBank"
+        }
+      },
+      "refresh": {
+        "package_id": "tmc.progress.derive_skills",
+        "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+        "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
+        "bindings": {
+          "field_0": {
+            "slot": "skillCache"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_collection_0": "inventoryBank"
+        }
+      },
+      "eligibility": {
+        "package_id": "tmc.combat.learned_sword_beam_eligibility",
+        "package_sha256": "129a2846b3285506048b63188b60f3ae716e5c6266c6e9961b09f33eeddfbc8f",
+        "behavior_sha256": "2e7919aaeb6e382e1b0b9083639d888ae7faed13c08867b3022e8e1de9d2b10c",
+        "bindings": {
+          "field_0": {
+            "slot": "currentHearts"
+          },
+          "field_1": {
+            "slot": "maximumHearts"
+          },
+          "field_2": {
+            "slot": "skillCache"
+          }
+        },
+        "collection_bindings": {}
+      }
+    },
+    "state": {
+      "inventoryBank": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "packed_two_bit_inventory",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "campaign"
+        },
+        "owner": "external",
+        "shared": true,
+        "count": 64
+      },
+      "fullTechnique": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "source_item_id",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "script_command"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "fullLearnedState": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "two_bit_inventory_state",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "script_command"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "lowTechnique": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "source_item_id",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "script_command"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "lowLearnedState": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "two_bit_inventory_state",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "script_command"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "skillCache": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "abilities.derived"
+        },
+        "owner": "refresh",
+        "shared": true
+      },
+      "currentHearts": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "health",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "player.health.current"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "maximumHearts": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "health_capacity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "player.health.maximum"
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "beamEligibility": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "sword_beam_eligibility",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "combat.sword.beam_eligibility"
+        },
+        "owner": "eligibility",
+        "shared": false
+      }
+    },
+    "initialize": {
+      "inventoryBank": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "fullTechnique": 76,
+      "fullLearnedState": 1,
+      "lowTechnique": 79,
+      "lowLearnedState": 1,
+      "skillCache": 0,
+      "currentHearts": 24,
+      "maximumHearts": 24,
+      "beamEligibility": 0
+    },
+    "invocations": [
+      {
+        "component": "scriptFull",
+        "arguments": {}
+      },
+      {
+        "component": "refresh",
+        "arguments": {}
+      },
+      {
+        "component": "scriptLow",
+        "arguments": {}
+      },
+      {
+        "component": "refresh",
+        "arguments": {}
+      },
+      {
+        "component": "eligibility",
+        "arguments": {},
+        "result": {
+          "slot": "beamEligibility"
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 5,
+  "ordered_components": [
+    "scriptFull",
+    "refresh",
+    "scriptLow",
+    "refresh",
+    "eligibility"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "scriptFull"
+    },
+    {
+      "kind": "qualified_component",
+      "id": "refresh"
+    },
+    {
+      "kind": "qualified_component",
+      "id": "scriptLow"
+    },
+    {
+      "kind": "qualified_component",
+      "id": "refresh"
+    },
+    {
+      "kind": "qualified_component",
+      "id": "eligibility"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "scriptFull",
+      "arguments": {}
+    },
+    {
+      "op": "invoke",
+      "component": "refresh",
+      "arguments": {}
+    },
+    {
+      "op": "invoke",
+      "component": "scriptLow",
+      "arguments": {}
+    },
+    {
+      "op": "invoke",
+      "component": "refresh",
+      "arguments": {}
+    },
+    {
+      "op": "invoke",
+      "component": "eligibility",
+      "arguments": {},
+      "result": {
+        "slot": "beamEligibility"
+      }
+    }
+  ],
+  "statement_sha256": "e0c8bf275e26dd413d53ee1f9c249d863877b5ad0cdfc953b1ebf9c6d2e6d4ef",
+  "catalog_sha256": "db1d2d67d8367141ca4fa03eeffe8ec40c22ee29734594d6fb89f90c0909e2d4",
+  "wall_s": 0.013331625000000003
+}

@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createSelectionRequests} from '../src/system-selection-requests.js';
+test('late same-role prefab response cannot replace a newer choice; other roles remain independent',()=>{const requests=createSelectionRequests(),first=requests.begin('combat','reaction'),other=requests.begin('combat','contact'),latest=requests.begin('combat','reaction');assert.equal(requests.isCurrent(first),false);assert.equal(requests.isCurrent(latest),true);assert.equal(requests.isCurrent(other),true);});
+test('module removal and plan changes invalidate pending selection work even after returning to a plan',()=>{const requests=createSelectionRequests(),removed=requests.begin('combat','reaction');requests.invalidateRole('combat','reaction');assert.equal(requests.isCurrent(removed),false);const beforeSwitch=requests.begin('combat','reaction');requests.invalidateAll();const afterSwitch=requests.begin('combat','reaction');assert.equal(requests.isCurrent(beforeSwitch),false);assert.equal(requests.isCurrent(afterSwitch),true);});

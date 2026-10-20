@@ -1,4 +1,5 @@
-import { packagesForSelections, sourceGamesForSelections, selectionBlockers, createIrSubmission } from './ir-workshop-model.js';
+import { preserveView } from './view-state.js';
+import { packagesForSelections, sourceGamesForSelections, selectionBlockers, createIrSubmission, selectionContract } from './ir-workshop-model.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const roles = { movement: ['01', 'Movement', 'Steering, gravity and integration'], combat: ['02', 'Combat', 'Damage and lethal actor state'], progression: ['03', 'Progression', 'Persistent acquisition and the gate'] };
@@ -22,21 +23,22 @@ export async function createIrWorkshop({ element, games, getParents, setParents,
 
   function packageDetails(component) {
     const rows = (component.ports || []).map(port => `<tr><td>${esc(port.id)}</td><td>${esc(port.direction)}</td><td>${esc(port.storage_type)}</td><td>${esc(unit(port.semantic_type))}</td></tr>`).join('');
-    return `<article class="ir-package"><div><strong>${esc(component.label || component.id)}</strong><span>${esc(name(component.source_game))}</span></div><code>${esc(component.id)}</code><p>${esc(component.qualification?.status === 'pass' ? `${Number(component.qualification.vectors || 0).toLocaleString()} original/native oracle cases · ${String(component.assembly_status || 'qualification_scope_unspecified').replaceAll('_', ' ')}` : 'Qualification incomplete')}</p>${rows ? `<div class="ir-port-scroll"><table><caption>Typed ports and coordinate units</caption><thead><tr><th>Port</th><th>Flow</th><th>Storage</th><th>Meaning · units · frame</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}${(component.collection_ports || []).length ? `<p>Shared collections: ${esc(JSON.stringify(component.collection_ports))}</p>` : ''}<p>Dependencies: ${esc(component.dependencies?.length ? JSON.stringify(component.dependencies) : 'Closed within this executable package')}</p><p class="ir-limit">${esc((component.limitations || []).join(' · '))}</p></article>`;
+    return `<article class="ir-package"><div><strong>${esc(component.label || component.id)}</strong><span>${esc(name(component.source_game))}</span></div><code>${esc(component.id)}</code><p>${esc(component.qualification?.status === 'pass' ? `${Number(component.qualification.vectors || 0).toLocaleString()} original/native oracle cases · ${String(component.assembly_status || 'qualification_scope_unspecified').replaceAll('_', ' ')}` : 'Qualification incomplete')}</p>${rows ? `<div class="ir-port-scroll"><table><caption>Typed ports and coordinate units</caption><thead><tr><th>Port</th><th>Flow</th><th>Storage</th><th>Meaning · units · frame</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}${(component.collection_ports || []).length ? `<p>Shared collections: ${esc(JSON.stringify(component.collection_ports))}</p>` : ''}<p>Dependencies: ${esc(component.dependencies?.length ? JSON.stringify(component.dependencies) : 'Closed within this executable package')}</p><p class="ir-limit">${esc((component.limitations || []).join(' · '))}</p><p>Package SHA-256 <code>${esc(component.package_sha256 || 'Unavailable')}</code><br>Behavior SHA-256 <code>${esc(component.behavior_sha256 || 'Unavailable')}</code></p>${component.source_contract ? `<details><summary>Recovered source contract and bounds</summary><pre>${esc(JSON.stringify(component.source_contract, null, 2))}</pre></details>` : ''}${component.parameters?.length ? `<details><summary>Parameter domains</summary><pre>${esc(JSON.stringify(component.parameters, null, 2))}</pre></details>` : ''}</article>`;
   }
 
-  function render() {
+  function render() { return preserveView(element, () => {
     const blockers = selectionBlockers(catalog, selections, getParents());
-    element.innerHTML = `<section class="ir-composer" aria-labelledby="ir-heading"><div class="ir-section-heading"><div><p class="eyebrow">EXECUTABLE COMPONENTS / NATIVE GBA</p><h2 id="ir-heading">Assemble the rules.</h2></div><span class="ir-live-label"><span class="tiny-dot green"></span> Local compiler</span></div><p class="ir-intro">These choices select recovered executable behavior. Changing a component changes the generated IR and cartridge.</p><div class="ir-roles">${Object.entries(roles).map(([role, [number, label, description]]) => {
-      const option = catalog.roles[role]?.find(item => item.id === selections[role]);
-      const components = (option?.packages || []).map(id => catalog.components.find(item => item.id === id)).filter(Boolean);
-      return `<article class="ir-role"><div class="ir-role-heading"><span>${number}</span><h3>${label}</h3></div><p>${description}</p><label class="ir-select-label" for="ir-${role}">Choose ${label.toLowerCase()}<select id="ir-${role}" data-ir-role="${role}" ${busy ? 'disabled' : ''}>${(catalog.roles[role] || []).map(item => `<option value="${esc(item.id)}" ${item.id === selections[role] ? 'selected' : ''} ${item.status !== 'available' ? 'disabled' : ''}>${esc(item.label)}${item.status !== 'available' ? ' — adapter pending' : ''}</option>`).join('')}</select></label><div class="ir-source-tags">${[...new Set(components.map(item => item.source_game))].map(id => `<span>${esc(name(id))}</span>`).join('')}</div><details><summary>${components.length} concrete package${components.length === 1 ? '' : 's'} · ports & evidence</summary>${components.map(packageDetails).join('')}</details></article>`;
+    element.innerHTML = `<section class="ir-composer" aria-labelledby="ir-heading"><div class="ir-section-heading"><div><p class="eyebrow">EXECUTABLE COMPONENTS / NATIVE GBA</p><h2 id="ir-heading">Assemble the rules.</h2></div><div><span class="ir-live-label"><span class="tiny-dot green"></span> Local compiler</span><button type="button" data-ir-refresh ${busy ? 'disabled' : ''}>Refresh choices ↻</button></div></div><p class="ir-intro">These choices select recovered executable behavior. Changing a component changes the generated IR and cartridge.</p><div class="ir-roles">${Object.entries(roles).map(([role, [number, label, description]]) => {
+      const contract = selectionContract(catalog,role,selections[role]);
+      const option = contract?.option, components = contract?.packages || [];
+      return `<article class="ir-role"><div class="ir-role-heading"><span>${number}</span><h3>${label}</h3></div><p>${description}</p><p class="ir-option-count">${(catalog.roles[role] || []).filter(item => item.status === 'available').length} supported choices</p><label class="ir-select-label" for="ir-${role}">Choose ${label.toLowerCase()}<select id="ir-${role}" data-ir-role="${role}" ${busy ? 'disabled' : ''}>${(catalog.roles[role] || []).map(item => `<option value="${esc(item.id)}" ${item.id === selections[role] ? 'selected' : ''} ${item.status !== 'available' ? 'disabled' : ''}>${esc(item.label)}${item.status !== 'available' ? ' — adapter pending' : ''}</option>`).join('')}</select></label><div class="ir-source-tags">${[...new Set(components.map(item => item.source_game))].map(id => `<span>${esc(name(id))}</span>`).join('')}</div><details class="ir-option-contract"><summary>Selected option · binding contract & limits</summary><code>${esc(option?.id)}</code><pre>${esc(JSON.stringify(option, null, 2))}</pre></details><details><summary>${components.length} concrete package${components.length === 1 ? '' : 's'} · ports & evidence</summary>${components.map(packageDetails).join('')}</details></article>`;
     }).join('')}</div><div class="ir-contract"><span>One explicit frame graph</span><p>The preset binds state, units and lifecycle order. The compiler checks those bindings and emits the required conversions; the completed receipt shows what was used.</p></div>${blockers.length ? `<div class="ir-blockers" role="status"><strong>This mix needs an adapter.</strong><ul>${blockers.map(text => `<li>${esc(text.replace(/^([a-z0-9-]+):/, (_, id) => name(id) + ':'))}</li>`).join('')}</ul><p>Use the component selectors to assemble a supported mix, or remove the unsupported source game.</p></div>` : ''}<div class="ir-build-controls"><label for="ir-title">Cartridge title<input id="ir-title" maxlength="12" pattern="[A-Za-z0-9 _-]+" value="${esc(title)}" ${busy ? 'disabled' : ''}></label><button class="primary" data-ir-build ${busy || blockers.length ? 'disabled' : ''}>${busy ? 'Compiler running…' : 'Build & qualify GBA'} <span>↗</span></button><button data-ir-download ${blockers.length ? 'disabled' : ''}>Save IR request ↓</button></div><p class="ir-authorship">${esc(catalog.generation.authored_boundary)} No model key is needed for this deterministic build.</p><p class="ir-message" data-ir-message role="status" aria-live="polite"></p><div data-ir-run></div></section>`;
     for (const select of element.querySelectorAll('[data-ir-role]')) select.onchange = () => {
       selections[select.dataset.irRole] = select.value;
       setParents(sourceGamesForSelections(catalog, selections));
       render();
     };
+    element.querySelector('[data-ir-refresh]').onclick = refreshCatalog;
     element.querySelector('#ir-title').oninput = event => { title = event.target.value; updateBuildButton(); };
     element.querySelector('[data-ir-build]').onclick = submit;
     element.querySelector('[data-ir-download]').onclick = () => {
@@ -44,6 +46,14 @@ export async function createIrWorkshop({ element, games, getParents, setParents,
       catch (error) { message(error.message); }
     };
     if (lastRun) renderRun();
+  }); }
+  async function refreshCatalog() {
+    if (busy) return;
+    try {
+      const next = await api('/api/ir/catalog');
+      for (const [role, options] of Object.entries(next.roles)) if (!options.some(item => item.id === selections[role] && item.status === 'available')) selections[role] = options.find(item => item.status === 'available')?.id || '';
+      catalog = next; render(); message('Component choices refreshed from the local compiler. Current valid selections are retained.');
+    } catch (error) { message(error.message); }
   }
   function updateBuildButton() { element.querySelector('[data-ir-build]').disabled = busy || !/^[A-Za-z0-9 _-]{1,12}$/.test(title) || selectionBlockers(catalog, selections, getParents()).length > 0; }
   function request() { return createIrSubmission(catalog, selections, getParents(), title, getIntent(), crypto.randomUUID()); }
@@ -79,5 +89,5 @@ export async function createIrWorkshop({ element, games, getParents, setParents,
   render();
   const remembered = localStorage.getItem('gameverse-ir-last-run');
   if (remembered) { try { lastRun = await api(`/api/ir/runs/${remembered}`); busy = !['completed', 'failed', 'interrupted'].includes(lastRun.state); render(); if (busy) poll(); } catch { /* no retained run on this server */ } }
-  return { updateParents: render };
+  return { updateParents: render, refreshCatalog };
 }

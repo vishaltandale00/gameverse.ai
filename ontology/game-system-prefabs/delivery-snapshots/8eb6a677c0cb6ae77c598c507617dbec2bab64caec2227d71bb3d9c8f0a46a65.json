@@ -1,0 +1,592 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "mario-kart-super-circuit",
+  "blueprintIds": [
+    "racing-session",
+    "hazard-recovery"
+  ],
+  "sourceContractRef": "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+  "coreLoop": {
+    "playerOutcome": "Drive a race against opponents, resolve track/item incidents, complete laps and preserve results; currently only local recovery transactions are executable-qualified",
+    "phases": [
+      {
+        "id": "vehicle",
+        "label": "Vehicle",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Signed velocity integration and ordered racer update; complete controller/contact closure not executable"
+        ]
+      },
+      {
+        "id": "steering",
+        "label": "Steering",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Steering recovery leaf finite-qualified; full0803bc00 blocked by nested profile pointer"
+        ]
+      },
+      {
+        "id": "surface",
+        "label": "Surface",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Track classification, mutation and contact effects; pointer tree unresolved"
+        ]
+      },
+      {
+        "id": "track",
+        "label": "Track",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Track coordinate bounds leaf finite-qualified; route geometry and terrain services source-only"
+        ]
+      },
+      {
+        "id": "opponents",
+        "label": "Opponents",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Route heading/heading slew/speed policy identified; fullprofile/table closure blocked"
+        ]
+      },
+      {
+        "id": "laps",
+        "label": "Laps",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Track-gated checkpoint producer\u2192lap/finish crossing0803b7b8; complete ranking/scene consumers open"
+        ]
+      },
+      {
+        "id": "items",
+        "label": "Items",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Homing object owner/target/cleanup source evidence; pickup/use/pool closure unqualified"
+        ]
+      },
+      {
+        "id": "rules",
+        "label": "Rules",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Mode-specific race phase/finish countdown; cup/unlock outcomes unqualified"
+        ]
+      },
+      {
+        "id": "persistence",
+        "label": "Persistence",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Record image/default merge +flash program source evidence; schema/checksum/commit/reload closure open"
+        ]
+      },
+      {
+        "id": "steering-recovery-subphase",
+        "label": "Recover steering state after an incident",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "kart-steering-recovery-phase"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "One original recovery transaction only; no throttle/brake/hop/drift controller or full vehicle step",
+          "Private secondary storage remains internal zero-default and can be cleared by original routine; not an external alias port",
+          "Host explicitly supplies legal invocation timing and one persistent module instance; no physical angular units inferred",
+          "Do not wire this instance to turn recovery as one canonical racer until secondary-storage alias is supported"
+        ]
+      },
+      {
+        "id": "driver-steering-accumulation",
+        "label": "Accumulate steering demand and recenter on release",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "kart-driver-steering-accumulation-lane0"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Source lane0 only; original driver state controller can select lanes1/2/3 and remains unqualified",
+          "Turn output is original storage; heading update, speed/terrain and actual input hardware mapping remain unconnected",
+          "Host supplies source-legal invocation timing and canonical racer inputs; graph is not the complete original race schedule",
+          "Do not infer angular physical units or equate this output with recovery heading offset merely because both use16bits"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "vehicle",
+        "to": "track",
+        "kind": "source-call",
+        "scope": "Source racer update classifies checkpoint/surface after integration"
+      },
+      {
+        "from": "track",
+        "to": "surface",
+        "kind": "source-call",
+        "scope": "Source track queries feed surface/contact response; pointer closure pending"
+      },
+      {
+        "from": "steering-recovery-subphase",
+        "to": "steering",
+        "kind": "shared-state",
+        "scope": "Subset responsibility only; full steering source profile-pointer closure remains blocked"
+      },
+      {
+        "from": "laps",
+        "to": "rules",
+        "kind": "source-call",
+        "scope": "Finish flags feed race phase consumer; full linked transaction pending"
+      },
+      {
+        "from": "rules",
+        "to": "persistence",
+        "kind": "host-required",
+        "scope": "Commit producer/consumer relationship unresolved; not an authored source edge"
+      }
+    ],
+    "missingForCoreGame": [
+      "Canonical racer/track backing and invocation scheduler",
+      "Inputs/controller legality",
+      "Track geometry/query tree",
+      "Opponent and item lifecycle ownership",
+      "Lap/rank/rule/persistence transactions",
+      "Nested profile pointer in full steering root blocks automatic linked closure; bounded attempt retained",
+      "Private recovery-secondary and public turn-angle source storage alias cannot be independently copied"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "kart-steering-recovery-wired-phase",
+      "label": "Driver steering and source recovery phases",
+      "moduleId": "mario-kart-super-circuit.steering-recovery-phase",
+      "sourceGame": "mario-kart-super-circuit",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+      "planIds": [
+        "racing-session",
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "kart.steering_recovery",
+        "kart.driver_steering_accumulation_lane0"
+      ],
+      "availability": "published-subset",
+      "scope": "One canonical source racer with alternative driver-demand accumulation and CPU steering-recovery responsibilities, selected by caller; no automatic sequence or full vehicle lifecycle.",
+      "gaps": [
+        "One original recovery transaction only; no throttle/brake/hop/drift controller or full vehicle step",
+        "Private secondary storage remains internal zero-default and can be cleared by original routine; not an external alias port",
+        "Host explicitly supplies legal invocation timing and one persistent module instance; no physical angular units inferred",
+        "Do not wire this instance to turn recovery as one canonical racer until secondary-storage alias is supported",
+        "Source lane0 only; original driver state controller can select lanes1/2/3 and remains unqualified",
+        "Turn output is original storage; heading update, speed/terrain and actual input hardware mapping remain unconnected",
+        "Host supplies source-legal invocation timing and canonical racer inputs; graph is not the complete original race schedule",
+        "Do not infer angular physical units or equate this output with recovery heading offset merely because both use16bits"
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.assembly.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/kart-steering-recovery-phase.validation.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/kart-driver-steering.assembly.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/kart-driver-steering.validation.json"
+      ],
+      "canonicalState": {
+        "identity": "One canonical source racer shared by accepted recovery and driver phase variants",
+        "fields": [
+          "racer_action",
+          "recovery_angle",
+          "racer_phase",
+          "recovery_flags",
+          "recovery_step",
+          "steering demand",
+          "action/motion/steering state flags",
+          "signed accumulated turn",
+          "private fixed handling lane and copied coefficients"
+        ],
+        "aliasRule": "Extend the accepted steering-recovery-phase module, preserving its existing recovery phase and backing. Only racer_action and recovery_flags alias existing slots; other driver state is disjoint source storage. CPU recovery and driver accumulation are alternative caller-selected phases, not a forced sequence."
+      },
+      "roleFacets": [
+        {
+          "roleId": "drive",
+          "capability": "driver_steering_and_source_recovery_phases",
+          "status": "published-subset",
+          "scope": "Alternative original driver accumulation and CPU recovery phases on the same canonical racer; source caller decides branch. No full steering/heading/throttle/track controller.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+            "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+          ]
+        },
+        {
+          "roleId": "history-recovery",
+          "capability": "recover_steering_state",
+          "status": "published-subset",
+          "scope": "Original recenter/step-decay/completion state only; no checkpoint/respawn",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "kart-steering-recovery-phase",
+        "label": "Steering recovery phase",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-steering-recovery-phase.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-steering-recovery-phase.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/delivery.json",
+        "packageIds": [
+          "kart.steering_recovery"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      },
+      "sourceSystemId": "mario-kart-super-circuit.source-system.cbba0d958e",
+      "assemblyVariants": [
+        {
+          "id": "kart-driver-steering-accumulation-lane0",
+          "label": "Driver steering accumulation and release",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-driver-steering-accumulation-lane0.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-driver-steering-accumulation-lane0.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/delivery.json",
+          "packageIds": [
+            "kart.driver_steering_accumulation_lane0"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "kart-steering-recovery-phase",
+      "moduleId": "mario-kart-super-circuit.steering-recovery-phase",
+      "label": "Steering recovery phase",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-steering-recovery-phase.assembly.json",
+      "sha256": "fb4a580679e231e9fce3c0afe62a7891fc401308cc8e97b9a32e4a8dcf6753bb",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-steering-recovery-phase.validation.json",
+      "validationSha256": "087fe1689b10a2faa2576ffe4b644fc0e54acc70e4c3e5c52b38630d6583d8fe",
+      "inputs": [
+        {
+          "id": "racer_action",
+          "label": "Source racer action state",
+          "storageType": "u8",
+          "default": 11,
+          "domain": "u8 original encoded enum; caller entry legality unresolved",
+          "binding": "racer_action"
+        },
+        {
+          "id": "recovery_angle",
+          "label": "Wrapped recovery angle storage",
+          "storageType": "u16",
+          "default": 8192,
+          "domain": "u16 storage interpreted signed by original routine; physical unit unavailable",
+          "binding": "recovery_angle"
+        },
+        {
+          "id": "racer_phase",
+          "label": "Source motion phase",
+          "storageType": "u8",
+          "default": 11,
+          "domain": "u8 original encoded enum",
+          "binding": "racer_phase"
+        },
+        {
+          "id": "recovery_flags",
+          "label": "Recovery direction and preserved source flags",
+          "storageType": "u16",
+          "default": 256,
+          "domain": "u16 original bitset; caller preserves unrelated owner bits",
+          "binding": "recovery_flags"
+        },
+        {
+          "id": "recovery_step",
+          "label": "Signed recovery step storage",
+          "storageType": "u16",
+          "default": 4096,
+          "domain": "u16 twos-complement signed source value; original cap and decay apply",
+          "binding": "recovery_step"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "racer_action",
+          "binding": "racer_action",
+          "meaning": "Original completion clears action state; consumer observes source action enum"
+        },
+        {
+          "id": "racer_phase",
+          "binding": "racer_phase",
+          "meaning": "Original completion clears motion phase"
+        },
+        {
+          "id": "recovery_angle",
+          "binding": "recovery_angle",
+          "meaning": "Original wrapped addition and recenter result"
+        },
+        {
+          "id": "recovery_step",
+          "binding": "recovery_step",
+          "meaning": "Original signed step decay result"
+        },
+        {
+          "id": "recovery_flags",
+          "binding": "recovery_flags",
+          "meaning": "Original masked completion flags with unrelated bits retained"
+        }
+      ],
+      "phases": [
+        {
+          "id": "recovery-step",
+          "trigger": "explicit host recovery-step call",
+          "invocations": [
+            "recovery"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "One original recovery transaction only; no throttle/brake/hop/drift controller or full vehicle step",
+        "Private secondary storage remains internal zero-default and can be cleared by original routine; not an external alias port",
+        "Host explicitly supplies legal invocation timing and one persistent module instance; no physical angular units inferred",
+        "Do not wire this instance to turn recovery as one canonical racer until secondary-storage alias is supported"
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json",
+        "research/deep-extraction/mario/parallel-kart/next-extraction/semantic-port-proposals.json"
+      ],
+      "qualificationScope": "Exact published root finite original/native parity reused. Current graph actual Composer symbolic binding/lowering only; no host execution, natural race entry or complete racer-loop proof.",
+      "publishedPins": [
+        {
+          "path": "local/ir/packages/kart.steering_recovery/package.json",
+          "sha256": "39c7c446d406d9e84f9b9cdad8a5655e719f218dbb467148d89febaceafb262f"
+        },
+        {
+          "path": "local/ir/packages/kart.steering_recovery/l1.json",
+          "sha256": "7f56fa2547e55697ff753790e325f6deb7a29a8bcd5adf64090c461513a98753"
+        },
+        {
+          "path": "local/ir/packages/kart.steering_recovery/receipt.json",
+          "sha256": "fbfc5732599006ffd5f5df895e94695968bfa555633ebf363b49c9fe10723afe"
+        }
+      ],
+      "defaultStatus": "Caller-supplied storage scenario within retained unconstrained fixture domains; not source race-start default",
+      "callableStateContract": {
+        "onePersistentInstance": true,
+        "privateOpaqueFields": [
+          "recovery.field_1"
+        ],
+        "sharedState": "One recovery state retained between calls; all public ports are in/out because conditional source writes preserve previous values",
+        "order": "one original recovery routine per explicit host call",
+        "servicePolicy": "No runtime calls; no fabricated service stubs"
+      },
+      "composerEvidence": {
+        "path": "local/ir/prefab-reconstruction/kart/steering-phase.composer-statements.c",
+        "sha256": "41b98ffe913022991c77fa0bff61eb7aa0f484a9582fa4c888efa97ee16cb31b",
+        "invocations": 1
+      }
+    },
+    {
+      "id": "kart-driver-steering-accumulation-lane0",
+      "moduleId": "mario-kart-super-circuit.steering-recovery-phase",
+      "label": "Driver steering accumulation and release",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-driver-steering-accumulation-lane0.assembly.json",
+      "sha256": "06e056d9a262735f673087c2d01f42a04b874abe6aac69d5720603d875585da5",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/kart-driver-01/kart-driver-steering-accumulation-lane0.validation.json",
+      "validationSha256": "4cff39a2c3c5451ca782367066547d8f0475b0a70f691fc1ffc50d4a246c3527",
+      "inputs": [
+        {
+          "id": "steering_demand",
+          "label": "Encoded steering demand",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Original mask100/200 select positive/negative turn;0 releases; physical button identity unavailable",
+          "binding": "steering_demand"
+        },
+        {
+          "id": "racer_action",
+          "label": "Original racer action state",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "Original fullu8 source state;5..8 and13 suppress this routine; caller supplies legal state",
+          "binding": "racer_action"
+        },
+        {
+          "id": "racer_motion_flags",
+          "label": "Source vehicle motion flags",
+          "storageType": "u32",
+          "default": 0,
+          "domain": "Original flag80 clears turn; unrelated source bits retained as input",
+          "binding": "racer_motion_flags"
+        },
+        {
+          "id": "recovery_flags",
+          "label": "Canonical racer control flags",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Original packed source flags;600-mask equal200 suppresses update",
+          "binding": "recovery_flags"
+        },
+        {
+          "id": "steering_turn",
+          "label": "Accumulated signed turn state",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Original signed16 wrap storage; no physical angle/time conversion",
+          "binding": "steering_turn"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "steering_turn",
+          "binding": "steering_turn",
+          "meaning": "Original signed turn buildup, reverse response, limit settling and release recenter result; downstream heading consumer still open"
+        }
+      ],
+      "phases": [
+        {
+          "id": "driver-steering-step",
+          "trigger": "Explicit host invocation at source driver-steering responsibility",
+          "invocations": [
+            "driver_steering"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Source lane0 only; original driver state controller can select lanes1/2/3 and remains unqualified",
+        "Turn output is original storage; heading update, speed/terrain and actual input hardware mapping remain unconnected",
+        "Host supplies source-legal invocation timing and canonical racer inputs; graph is not the complete original race schedule",
+        "Do not infer angular physical units or equate this output with recovery heading offset merely because both use16bits"
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+        "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/README.md"
+      ],
+      "qualificationScope": "Published original root4096native comparisons reused incl3008expected and768chained source scenarios; new phase graph actual Composer binding/lowering only, no composed native/full-race schedule qualification",
+      "packagePins": [
+        {
+          "id": "kart.driver_steering_accumulation_lane0",
+          "manifestPath": "local/ir/packages/kart.driver_steering_accumulation_lane0/package.json",
+          "manifestSha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700",
+          "behaviorSha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce",
+          "qualificationReceipt": "local/ir/packages/kart.driver_steering_accumulation_lane0/receipt.json",
+          "qualificationReceiptSha256": "979c36051cee99221504867ca1c5771fd1e0dfbde7a2e423db897bd84d732be9"
+        }
+      ],
+      "configurationOptions": [
+        {
+          "id": "source-character-0-handling-lane0",
+          "label": "Original character 0 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-1-handling-lane0",
+          "label": "Original character 1 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-2-handling-lane0",
+          "label": "Original character 2 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-3-handling-lane0",
+          "label": "Original character 3 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-4-handling-lane0",
+          "label": "Original character 4 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-5-handling-lane0",
+          "label": "Original character 5 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-6-handling-lane0",
+          "label": "Original character 6 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        },
+        {
+          "id": "source-character-7-handling-lane0",
+          "label": "Original character 7 steering coefficients, handling lane 0",
+          "sourceRomSha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90"
+        }
+      ],
+      "configurationPolicy": "Eight original character coefficient rows; selected source handlinglane0 remains private fixedprecondition; no arbitrary handling sliders",
+      "sameInstanceRule": "Extend the accepted steering-recovery-phase module, preserving its existing recovery phase and backing. Only racer_action and recovery_flags alias existing slots; other driver state is disjoint source storage. CPU recovery and driver accumulation are alternative caller-selected phases, not a forced sequence.",
+      "phaseDefaultPolicy": "This standalone graph supplies a driver example. Integration must preserve accepted module state/defaults; selecting a phase never resets or duplicates shared action/flags. Caller establishes legal branch/mode before invoking."
+    }
+  ],
+  "timing": {
+    "runId": "kart-canonical-racer-phase-extension-source-fleet",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.011793249999999998,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Current graph validation only. Qualified native timings retained in versioned result and per-root receipts, not rerun for publication. Total end-to-end work time unavailable. Additivecentralmerge preservesacceptedrecoveryphase/physicalmoduleidentity; registrar timedseparately."
+  },
+  "closureAttempt": {
+    "path": "local/ir/prefab-reconstruction/kart/source-steering-closure/result.json",
+    "sha256": "50c3288d08a082ce6720e8094134b19567fd4fcf7700cceb16cd323f407dd0ab"
+  },
+  "existingBundleRelationship": "Adds a concrete original recovery-phase host boundary; does not duplicate or promote the existing broad source-only Mario Kart racer capability card"
+}

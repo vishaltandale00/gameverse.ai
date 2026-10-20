@@ -1,0 +1,373 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "shaman-king-master-of-spirits",
+  "sourceSystemIds": [
+    "shaman.camera.map_pan"
+  ],
+  "blueprintIds": [
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move through source-game scenes with control, terrain, visible camera feedback, combat/ability actions and persistent progression; this delivery supplies only the scroll-publication phase.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Read sampled held buttons",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "requiredServices": [
+          "input sampling and game scene scheduler"
+        ],
+        "gaps": [
+          "Published getter alone does not connect to a player controller; excluded from prefab."
+        ]
+      },
+      {
+        "id": "camera-follow",
+        "label": "Update map-like camera target and follow position",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "requiredServices": [
+          "exact BIOSsqrt and division semantics"
+        ],
+        "gaps": [
+          "Camera target/smoothing08021dd4 remains unqualified: BIOSsqrt CALLOTHER semantic service, signed division loop, live call ABI and caller-stack byref binding remain open."
+        ]
+      },
+      {
+        "id": "scroll-publication",
+        "label": "Internal layer-one scroll-publication support",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json",
+          "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+          "local/ir/packages/shaman.camera.layer1_scroll_publish/l1.json",
+          "local/ir/packages/shaman.camera.layer1_scroll_publish/receipt.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Produces buffer state only; hardware consumer remains host-required.",
+          "Qualified internal transaction only; not eligible as standalone primary prefab."
+        ]
+      },
+      {
+        "id": "scroll-display",
+        "label": "Flush shared layer offsets and render overlays",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "requiredServices": [
+          "BG hardware flush and scene/render scheduling"
+        ],
+        "gaps": [
+          "BG scroll consumer080009c8 is not executable: current automatic lift fails unresolved pointer v7; exact private receipt pinned.",
+          "Overlay and BG producer/consumer must share one camera/layer backing, never copied per role.",
+          "Host frame trigger and BG hardware transfer remain required and unqualified; no source frame schedule is claimed."
+        ]
+      },
+      {
+        "id": "movement-terrain",
+        "label": "Player motion and terrain interaction",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+          "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "This bounded evidence establishes map-like camera panning, not a recovered player controller or terrain/contact solver."
+        ]
+      },
+      {
+        "id": "combat-abilities",
+        "label": "Attack, contact, reaction and spirit ability loop",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No qualified attack/contact/reaction/resource/acquisition subsystem is supplied by this packet."
+        ]
+      },
+      {
+        "id": "progression-recovery",
+        "label": "Scene progression, persistence and recovery",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "No playable scene activation, persistence, defeat/retry or progression closure is supplied."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "camera-follow",
+        "kind": "source-call",
+        "scope": "Held-direction consumer0802245c uses getter0800064c then calls08021dd4; this is map-like panning, not certified player motion."
+      },
+      {
+        "from": "camera-follow",
+        "to": "scroll-publication",
+        "kind": "source-call",
+        "scope": "08021dd4 passes layer1 and shifted smoothed coordinates to08000e20."
+      },
+      {
+        "from": "scroll-publication",
+        "to": "scroll-display",
+        "kind": "shared-state",
+        "scope": "08000e20 layer1 stores and080009c8 flush read same0x810-stride layer record; executable consumer currently blocked."
+      }
+    ],
+    "missingForCoreGame": [
+      "BG scroll consumer080009c8 is not executable: current automatic lift fails unresolved pointer v7; exact private receipt pinned.",
+      "Camera target/smoothing08021dd4 remains unqualified: BIOSsqrt CALLOTHER semantic service, signed division loop, live call ABI and caller-stack byref binding remain open.",
+      "Overlay and BG producer/consumer must share one camera/layer backing, never copied per role.",
+      "Host frame trigger and BG hardware transfer remain required and unqualified; no source frame schedule is claimed.",
+      "Actual player motion/terrain solver, attack/contact/reaction/defeat, spirit resources/acquisition and persistence/recovery are not recovered by these two tiny leaves."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "shaman.layer1-scroll-buffer",
+      "label": "Layer-one scroll publication",
+      "moduleId": "shaman.camera.layer1-buffer",
+      "sourceGame": "shaman-king-master-of-spirits",
+      "sourceSystemId": "shaman.camera.map_pan",
+      "sourceContractRef": "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "shaman.camera.layer1_scroll_publish"
+      ],
+      "availability": "source-only",
+      "scope": "Source camera module with qualified internal coordinate-publication support; no primary executable camera prefab.",
+      "gaps": [
+        "BG scroll consumer080009c8 is not executable: current automatic lift fails unresolved pointer v7; exact private receipt pinned.",
+        "Camera target/smoothing08021dd4 remains unqualified: BIOSsqrt CALLOTHER semantic service, signed division loop, live call ABI and caller-stack byref binding remain open.",
+        "Overlay and BG producer/consumer must share one camera/layer backing, never copied per role.",
+        "Host frame trigger and BG hardware transfer remain required and unqualified; no source frame schedule is claimed."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+        "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/l1.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "shaman.camera.layer1-buffer",
+        "fields": [
+          "scroll_x:u16",
+          "scroll_y:u16",
+          "scroll_pending:u8"
+        ],
+        "aliasRule": "One layer buffer instance owns all three fields; downstream source BG flush must bind this same backing. Camera/overlay role facets must not instantiate copies."
+      },
+      "roleFacets": [
+        {
+          "roleId": "camera",
+          "capability": "Publish masked layer-one scroll outputs in source store order",
+          "status": "source-only",
+          "scope": "Full camera facet unqualified; masked coordinate publication is internal support only.",
+          "evidence": [
+            "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+            "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json",
+            "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+            "local/ir/packages/shaman.camera.layer1_scroll_publish/l1.json",
+            "local/ir/packages/shaman.camera.layer1_scroll_publish/receipt.json"
+          ]
+        }
+      ],
+      "internalSupportPhases": [
+        "shaman.camera.layer1-scroll-transaction"
+      ],
+      "internalAssemblyProof": {
+        "id": "shaman.camera.layer1-scroll-transaction",
+        "label": "Publish layer-one scroll coordinates",
+        "assemblyRef": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/layer1-scroll.assembly.json",
+        "validationRef": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/layer1-scroll.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/delivery.json",
+        "packageIds": [
+          "shaman.camera.layer1_scroll_publish"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "internalOnly": true
+      }
+    }
+  ],
+  "prefabs": [],
+  "consumerClosureAttempt": {
+    "path": "local/ir/fleet-next/shaman-king-master-of-spirits/prefab-pass/consumer-attempt.json",
+    "sha256": "7ca4c2835f6d860d610d21baf4a441336441357e2be0914a3568a3418f02d5e2"
+  },
+  "timing": {
+    "runId": "shaman-prefab-pass-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0026344160000000005,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "metadataPreparationSeconds": 0.017867624999999998,
+    "consumerStaticAttemptSeconds": 0.092663333,
+    "accounting": "Only graph validation/lowering and one static consumer closure attempt ran. Historical256-vector native receipt reused; no new native/build/ROM/JVM. Interactive/queue/total time unavailable; stages not summed."
+  },
+  "internalSupportPhases": [
+    {
+      "id": "shaman.camera.layer1-scroll-transaction",
+      "moduleId": "shaman.camera.layer1-buffer",
+      "label": "Publish layer-one scroll coordinates",
+      "path": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/layer1-scroll.assembly.json",
+      "sha256": "4fdf3fa1937e7628d6d9466a64292ba270dc72cf82a65acb672f2e4dfe880509",
+      "validation": "research/deep-extraction/resume/shaman-king-master-of-spirits/prefab-pass/layer1-scroll.validation.json",
+      "validationSha256": "fe55f56030393d44be6d54d3a117b97943664567f5fcef3bf072567c2a166b4d",
+      "inputs": [
+        {
+          "id": "horizontal-scroll",
+          "label": "Horizontal scroll coordinate",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "unsigned0..65535; original low9bits retained",
+          "binding": "invocations[0].arguments.param_1",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "background_layer_one.horizontal"
+        },
+        {
+          "id": "vertical-scroll",
+          "label": "Vertical scroll coordinate",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "unsigned0..65535; original low9bits retained",
+          "binding": "invocations[0].arguments.param_2",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "background_layer_one.vertical"
+        },
+        {
+          "id": "fixed-layer",
+          "label": "Source layer-one subset",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "exact1; not configurable across layers",
+          "binding": "invocations[0].arguments.param_0"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "scroll-x",
+          "binding": "scroll_x",
+          "meaning": "horizontal coordinate masked to0..511"
+        },
+        {
+          "id": "scroll-y",
+          "binding": "scroll_y",
+          "meaning": "vertical coordinate masked to0..511"
+        },
+        {
+          "id": "pending",
+          "binding": "scroll_pending",
+          "meaning": "pending byte set1 after both coordinate stores; source BG flusher does not gate scroll writes on it"
+        }
+      ],
+      "phases": [
+        {
+          "id": "publish",
+          "trigger": "explicit host request to publish scroll coordinates",
+          "invocations": [
+            "scroll"
+          ],
+          "scheduleStatus": "caller-declared",
+          "withinRoutineOrdering": "original X store then Y store then pending flag"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "BG scroll consumer080009c8 is not executable: current automatic lift fails unresolved pointer v7; exact private receipt pinned.",
+        "Camera target/smoothing08021dd4 remains unqualified: BIOSsqrt CALLOTHER semantic service, signed division loop, live call ABI and caller-stack byref binding remain open.",
+        "Overlay and BG producer/consumer must share one camera/layer backing, never copied per role.",
+        "Host frame trigger and BG hardware transfer remain required and unqualified; no source frame schedule is claimed."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+        "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/l1.json",
+        "local/ir/packages/shaman.camera.layer1_scroll_publish/receipt.json"
+      ],
+      "qualificationScope": "Actual assembly.py Composer binding/lowering pass only. Existing automatic source setter native receipt passed256 vectors; no assembled graph native execution or connected camera qualification.",
+      "hostConsumption": {
+        "service": "BG layer offset consumer",
+        "stateIdentity": "shaman.camera.layer1-buffer",
+        "requiredSharedSlots": [
+          "scroll_x",
+          "scroll_y",
+          "scroll_pending"
+        ],
+        "status": "unqualified host-required boundary"
+      },
+      "primaryPrefabEligible": false,
+      "productStatus": "internal_camera_support_only",
+      "eligibilityGap": "Requires connected source target\u2192follow/projection plus actual visible consumer; coordinate setter alone is not a primary camera/game capability."
+    }
+  ],
+  "productAdmission": {
+    "primaryPrefabCount": 0,
+    "status": "source_game_map_with_internal_support",
+    "reason": "Standalone layer-scroll setter is internal presentation support, not a new primary game-building capability.",
+    "requiredForPrimaryCamera": [
+      "Source target\u2192follow/projection connection",
+      "Actual visible consumer with shared camera/layer backing",
+      "Exact BIOSsqrt/division services and caller-stack byref/ABI closure"
+    ],
+    "proofRerun": false
+  },
+  "artifactPins": [
+    {
+      "path": "research/deep-extraction/resume/shaman-king-master-of-spirits/next-extraction/system.json",
+      "sha256": "541a57072ac543be4aff4c56e2da2d301dca81939a28321854a031ddcb7bc7e1"
+    },
+    {
+      "path": "research/deep-extraction/resume/shaman-king-master-of-spirits/packet.json",
+      "sha256": "bfdf5c1233c1f0dee1272b6d46c8fa1067d2764577535403c384aae1cf7d6dea"
+    },
+    {
+      "path": "local/ir/packages/shaman.camera.layer1_scroll_publish/package.json",
+      "sha256": "a9dc507f7bf00426cee9a5cb340cc3a1ceb859463b978c4884ace33b50e52872"
+    },
+    {
+      "path": "local/ir/packages/shaman.camera.layer1_scroll_publish/l1.json",
+      "sha256": "2236d66b6e35433230050d748b7aefaea6018e87c244f5226fe7506b7e40376a"
+    },
+    {
+      "path": "local/ir/packages/shaman.camera.layer1_scroll_publish/receipt.json",
+      "sha256": "60727fe40f0d5605c69b959b7fc07852befdff2fcc09dc5b9a51f9a80746d81c"
+    }
+  ]
+}

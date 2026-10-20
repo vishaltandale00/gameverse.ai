@@ -29,6 +29,9 @@ game:
       macros.h; first function asm/code/code_08014548.s; README, database.json, LICENSE, cvaos_us.sha1; capture
       summary/phase, model label files; four keyframes (frontend 866,1899,4959; attract1052) inspected. Corpus briefs/schema/seeds
       and existing decompositions consulted.
+  - kind: own_rom_deep_recovery
+    ref: research/deep-extraction/castlevania/defeat-qualification.json; actual whole-ROM IR parity/double-XP builds
+      and native early-corridor gameplay
 conventions:
   evidence_scope: Partial GPT extraction of directly inspected source and capture evidence; no local-model recall.
     The source contains many anonymous fields and assembly bodies. Missing system coverage is explicit in open_questions.
@@ -700,11 +703,12 @@ components:
   facet: mechanics
   label: Red-soul cast converts MP to bounded active entities
   summary: An independently ROM-recovered casting transaction requires Up plus newly pressed configured attack,
-    a legal actor state, compatible active effect ownership, strictly more MP than the selected cost, capacity
-    and a free entity. Allocation failure consumes no MP. Successful casts publish an entity slot and metadata;
-    some ability modes zero movement and enter a cast pose with timer32. The versioned IR package emits a294-byte
-    native component with explicit allocator, animation and effect-lifecycle dependencies; it is not yet an
-    integrated projectile system.
+    a legal actor state, compatible active effect ownership, strictly more MP than the selected cost, capacity and
+    a free entity. Allocation failure consumes no MP. Successful casts publish an entity slot and metadata; some
+    ability modes zero movement and enter a cast pose with timer32. The versioned IR package emits a294-byte native
+    component with explicit allocator, animation and effect-lifecycle dependencies; it is not yet an integrated
+    projectile system. A separate qualified ability.package.json now supplies the native casting adapter and independently
+    recovered starter-bone/contact-partner lifecycle; other ability callbacks remain retained original implementations.
   instantiates:
   - concept: mechanics.ability.resource_costed_entity_cast
   evidence:
@@ -725,8 +729,8 @@ components:
       finite cases,550 successful casts. Allocator and two animation service boundaries are explicitly stubbed;
       no projectile or player-session qualification.
   - kind: static_signature
-    ref: research/deep-extraction/castlevania/cast-recovery.json; USA cast transaction0x08034624 and original
-      descriptor/slot helpers; IR research/deep-extraction/castlevania/cast.package.json
+    ref: research/deep-extraction/castlevania/cast-recovery.json; USA cast transaction0x08034624 and original descriptor/slot
+      helpers; IR research/deep-extraction/castlevania/cast.package.json
     confidence: 0.98
     note: Actual ROM instructions and ability table decoded independently; old community-source evidence remains
       separately attributed.
@@ -766,17 +770,17 @@ components:
       - *id001
   invariants:
   - MP must strictly exceed cost; exactly enough MP rejects the cast.
-  - An active effect of a different type blocks changing to the newly equipped type; at zero active count the
-    active type changes before later rejection checks.
-  - Eight tracking slots and a separate selected-type active limit both constrain casting; failure at either
-    leaves MP untouched.
+  - An active effect of a different type blocks changing to the newly equipped type; at zero active count the active
+    type changes before later rejection checks.
+  - Eight tracking slots and a separate selected-type active limit both constrain casting; failure at either leaves
+    MP untouched.
   - Successful allocation is the transaction boundary for MP debit and slot publication.
-  - Casting does not increment active_count; effect initialization/destruction must own that count and exact
-    slot cleanup.
-  - Nonzero cast modes enter state10, timer32, zero velocity/acceleration; zero mode enters state2 through
-    another animation event.
-  - The emitted policy has no hidden engine globals; allocation and animation/lifecycle services must be bound
-    explicitly before composition can run it in a game.
+  - Casting does not increment active_count; effect initialization/destruction must own that count and exact slot
+    cleanup.
+  - Nonzero cast modes enter state10, timer32, zero velocity/acceleration; zero mode enters state2 through another
+    animation event.
+  - The emitted policy has no hidden engine globals; allocation and animation/lifecycle services must be bound explicitly
+    before composition can run it in a game.
   - Finite isolated comparison includes boundary stubs; effect AI, attack collisions, acquisition rules, rendering
     and full gameplay remain outside the qualification.
   relations:
@@ -1947,6 +1951,142 @@ components:
   relations:
   - type: modulates
     target: sample_audio
+- id: enemy_defeat_rewards_own_rom
+  facet: progression
+  label: Enemy defeat connects combat to XP, souls and equipment discovery
+  summary: Own-ROM recovered once-only reward transaction marks the enemy defeated, applies XP and then tries a
+    soul, item, currency or MP drop in that priority. Luck, current soul ownership, accessory and legal drop location
+    affect the tests; exact RNG consumption is preserved. A portable C policy with a versioned retained-service
+    host adapter builds whole native cartridges through the IR backend. Actual Zombie defeat gives1XP in original/parity
+    and2XP under the alternate plan without C edits.
+  instantiates:
+  - concept: progression.rewards.prioritized_soul_item_and_resource_drops
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/castlevania/enemy-reward-descriptors.json; own-ROM0x080683bc..0x08068688; IR research/deep-extraction/castlevania/defeat.package.json
+    confidence: 0.99
+    note: 115 independently decoded reward descriptors; full transaction reconstructed from original instructions,
+      no community source input
+  - kind: capture_telemetry
+    ref: research/deep-extraction/castlevania/defeat-qualification.json
+    confidence: 0.99
+    note: 14,720 original/emitted cases; three native cartridge gameplay recordings; parity trace/video identical;
+      original/parity/double XP1/1/2
+  reads:
+  - enemy.species
+  - enemy.rewarded_flag
+  - character.experience
+  - character.luck
+  - character.accessory
+  - character.soul_ownership
+  - mode.reward_suppression
+  - enemy.reward_descriptor
+  - world.drop_location
+  - random.ordered_stream
+  writes:
+  - enemy.rewarded_flag
+  - campaign.bestiary
+  - character.experience
+  - campaign.item_discovery
+  - world.at_most_one_reward_spawn_request
+  params:
+    experience_cap:
+      value: 99999999
+      unit: XP points
+    experience_equipment_factor:
+      value: 307
+      unit: multiplier numerator/256
+    soul_probability_denominator:
+      value: max(16,8*rarity-(signed_luck>>4)+32)
+      unit: RNG modulus
+    item_probability_denominator:
+      value: max(16,4*rarity-(signed_luck>>4)+16)
+      unit: RNG modulus
+  invariants:
+  - Reward flag commits even when modes suppress XP and drops
+  - No resource reward repeats for the same defeated entity
+  - Soul success skips tile/item/currency/MP tests
+  - Failed native spawn allocation does not fall through to another reward
+  - Defeat dispatch owns trigger; offscreen despawn is not defeat
+  - Native host retains authentic RNG, tile query, level-up and pickup entities; those internals are not independently
+    portable yet
+  relations:
+  - type: requires
+    target: soul_inventory_banks
+  - type: requires
+    target: level_growth
+  - type: requires
+    target: entity_pool
+- id: starter_bone_lifecycle_own_rom
+  facet: mechanics
+  label: MP-costed bone projectile with moving contact partner and owned cleanup
+  summary: An independently reconstructed casting host adapter and starter-bone update create a visible ballistic
+    bone plus a separate moving hitbox partner. Both entities consume active capacity and release exact tracked
+    slots. Bone gravity, spin, terrain linger, hit retirement, viewport exit, allocation failure and cleanup are
+    recovered into native C and assembled beside defeat rewards through the IR builder. Actual native casts debit
+    MP, defeat a Zombie and return active count/slots to zero; a second plan changes wall linger32to16without editing
+    C.
+  instantiates:
+  - concept: mechanics.ability.resource_cast_projectile_contact_lifecycle
+  evidence:
+  - kind: static_signature
+    ref: research/deep-extraction/castlevania/ability.package.json; own-ROM cast0x08034624, bone0x08026008, partner0x08025f70,
+      sine0x080009e4
+    confidence: 0.99
+  - kind: capture_telemetry
+    ref: research/deep-extraction/castlevania/ability-qualification.json
+    confidence: 0.99
+    note: 2560original/emitted bone cases,5376cast-adapter cases; actual original/parity video/trace identical and
+      alternate IR plan changes lifecycle
+  reads:
+  - sampled.up_held_and_attack_edge
+  - actor.cast_pose
+  - character.MP
+  - ability.cost_and_cap
+  - effects.active_type_count_slots
+  - caster.facing_position
+  - world.terrain
+  - engine.hit_liveness_flag
+  writes:
+  - character.MP
+  - actor.cast_pose_and_motion_lock
+  - projectile.velocity_angle_spin_phase_timer
+  - effects.active_count
+  - effects.exact_slot_handles
+  - partner.moving_contact_position
+  - world.projectile_and_contact_entity_lifetime
+  params:
+    horizontal_speed:
+      value: 4
+      unit: pixels/update
+    initial_vertical_speed:
+      value: -1.125
+      unit: pixels/update
+    gravity:
+      value: 0.125
+      unit: pixels/update squared
+    speed_cap:
+      value: 8
+      unit: pixels/update
+    terrain_linger:
+      value: 32
+      unit: updates
+    native_active_entities_per_bone:
+      value: 2
+      unit: tracked entity handles
+  invariants:
+  - Each bone needs an affine slot and an independently allocated contact partner
+  - Allocation failure releases published slot without refunding already-debited MP
+  - Initialization increments ownership once for bone and once via partner allocation
+  - Main and partner each decrement count and release their own exact slot
+  - Viewport culling is not enemy collision; terrain/contact retirement rules are separate
+  - Same package and native backend compile32or16linger by plan argument only
+  - Collision/damage engine and rendering are explicitly retained native host services
+  relations:
+  - type: requires
+    target: red_soul_cast
+  - type: requires
+    target: enemy_defeat_rewards_own_rom
 proposed_concepts:
 - id: ui_hud.input.priority_arbitrated_override
   label: Edge, held and repeated input with priority override
@@ -2041,13 +2181,21 @@ proposed_concepts:
 - id: audio.control.priority_and_target_volume
   label: Priority arbitration and stateful song-volume ramps
   definition: Audio requests arbitrate by priority while per-player state ramps volume toward explicit targets.
+- id: progression.rewards.prioritized_soul_item_and_resource_drops
+  label: Prioritized reward pipeline on enemy defeat
+  definition: A lethal transition produces bounded XP and at most one ownership/luck/equipment-conditioned reward
+    while preventing duplicate grants.
+- id: mechanics.ability.resource_cast_projectile_contact_lifecycle
+  label: Owned projectile and moving hitbox lifecycle
+  definition: Resource-costed casting composes physical projectile, collision partner, bounded lifetime and exactly
+    owned active-slot/count cleanup.
 open_questions:
 - 'Extract the actual player movement state machine from remaining anonymous C/ASM: ground speed, acceleration,
   gravity, jump cut, coyote/buffer behavior, slide/backdash, collision edge cases and animation cancel windows.
   Fixed-point coordinate helpers are not a recovered physics model.'
 - Enemy AI state/attack graphs, bosses, damage-to-enemy formulas, weakness/resistance catalogue, hitboxes, weapon
-  timings, and exact drop/soul acquisition probabilities remain unmined; no enemy skill/strategy claims are supplied
-  from recall.
+  timings, and soul/item pickup acquisition and long-run balance remain unqualified; own-ROM defeat/drop probability
+  transaction is now recovered; no enemy skill/strategy claims are supplied from recall.
 - Trace blue/guardian, yellow/passive and ability soul implementations, equip validation and activation/drain/refresh
   rules; the persistent slots alone do not establish their complete semantics.
 - Reconcile SoulInventory_GetSoulTotal type-3 double-counting and two-bank role semantics with assembly/runtime

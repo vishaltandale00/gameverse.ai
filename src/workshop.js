@@ -1,18 +1,22 @@
+import { preserveView } from './view-state.js';
+import { createMechanicAssembly } from './mechanic-assembly.js';
 import { createIrWorkshop } from './ir-workshop.js';
+import { createImprovementWorkbench } from './improvement-workbench.js';
 import { filterGames } from './workshop-model.js';
 import { DIMENSIONS, bundlesFor, defaultChoices, dependencyNotes, createMashupRequest, evidenceLabel } from './mashup-model.js';
 const $=selector=>document.querySelector(selector);
 const esc=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const colors=['#dc7248','#6b8874','#8e80a3','#cc9a3d','#608ca2','#bf7f8f','#8e9364','#797b80'];
 let catalog,byId,focused='metroid-zero-mission',axis='text:mechanics',selected=new Set(['sonic-advance','metroid-zero-mission']);
-let refreshingResearch=false, irWorkshop;
+let refreshingResearch=false, irWorkshop, mechanicAssembly;
 let choices=null,foundationId='metroid-zero-mission',evidenceOnly=false,query='',showAll=false,lastSerialized='';
 const msg=text=>{$('#workshop-status').textContent=text;};
 const pretty=value=>String(value).replace(/_/g,' ').replace(/^text:/,'');
 const short=(text,n=25)=>text.length>n?`${text.slice(0,n-1)}…`:text;
 const tint=id=>colors[catalog.games.findIndex(g=>g.id===id)%colors.length];
 function go(id){focused=id;renderMap();renderInspector();}
-function toggle(id){if(selected.has(id))selected.delete(id);else if(selected.size<4)selected.add(id);else{msg('This brief supports up to four parent worlds. Remove one before adding another.');return;}normalizeChoices();renderCatalog();renderInspector();renderDraft();renderMap();}
+function toggle(id){return preserveView($('#discover-view'),()=>{if(selected.has(id))selected.delete(id);else if(selected.size<4)selected.add(id);else{msg('This brief supports up to four parent worlds. Remove one before adding another.');return;}normalizeChoices();renderCatalog();renderInspector();renderDraft();renderMap();});}
+
 function renderMap() {
   const previousFocus = document.activeElement?.closest('.map-node')?.dataset.game;
   const view = catalog.views[axis], ids = catalog.games.map(g=>g.id), xs=ids.map(id=>view.xy[id][0]), ys=ids.map(id=>view.xy[id][1]);
@@ -58,16 +62,17 @@ function renderInspector(){
  const game=byId[focused];
  $('#inspect-name').textContent=game.shortName;$('#inspect-code').textContent=game.gameCode;
  $('#inspect-summary').textContent=game.components.length?`${game.components.length} source-linked component records. Coverage is partial.`:game.portrait?.coverage?.research_progress?.function_records?'Binary extraction has produced code candidates. Gameplay components still need semantic review.':'ROM indexed. Gameplay components still need extraction and source review.';
+ const packet=catalog.progress?.fleet?.games?.find(g=>g.id===game.id);
  const progress=game.portrait?.coverage?.research_progress;$('#inspect-research-progress').innerHTML=progress?`<section class="mining-game-progress"><span>SELF-DECOMPILATION · PARTIAL RESEARCH</span><strong>${esc(pretty(progress.status||'unknown'))}</strong><p>${progress.function_records==null?'Function count unavailable':`${Number(progress.function_records).toLocaleString()} function records`} · ${progress.pseudo_c_generated==null?'Pseudo-C count unavailable':`${Number(progress.pseudo_c_generated).toLocaleString()} pseudo-C outputs`}</p><p>Gameplay meaning: ${esc(progress.mechanic_validation||'separate review required')}. Whole-game decompilation remains unproven.</p>${progress.failure?`<p class="mining-progress-failure">${esc(progress.failure)}</p>`:''}<small>${progress.recorded_at?`Recorded ${esc(new Date(progress.recorded_at).toLocaleString())}`:'Update time unavailable'}</small></section>`:'';
+ if(packet)$('#inspect-research-progress').insertAdjacentHTML('beforeend',`<section class="mining-game-progress"><span>STATIC EVIDENCE PACKET · PARTIAL</span><strong>${esc(pretty(packet.reported_status||packet.state))}</strong><p>${esc(packet.next_action||'Further qualification required.')}</p><small>${esc(packet.packet||'')} · This fleet performed no native build or qualification.</small></section>`);
  $('#inspect-add').textContent=selected.has(game.id)?'Remove from mix −':'Add to mix +';$('#inspect-add').onclick=()=>toggle(game.id);
  $('#inspect-source').replaceChildren();
  for(const ref of game.sourceReferences){const p=document.createElement('p'),url=ref.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+/),pin=ref.match(/\b[a-f0-9]{40}\b/);if(url){const a=document.createElement('a');a.href=url[0]+(pin?`/tree/${pin[0]}`:'');a.target='_blank';a.rel='noreferrer';a.textContent='Decompiled source ↗';p.append(a);}const small=document.createElement('span');small.textContent=ref;p.append(small);$('#inspect-source').append(p);}
  if(game.ontologyPath){const p=document.createElement('p');p.textContent=game.ontologyPath;$('#inspect-source').append(p);}
 }
 function normalizeChoices(){const parents=[...selected].map(id=>byId[id]);if(!selected.has(foundationId))foundationId=parents[0]?.id||'';if(!choices)choices=defaultChoices(parents);for(const d of DIMENSIONS)if(choices[d.id]?.mode==='parent'&&!selected.has(choices[d.id].parent_game_id))choices[d.id].parent_game_id=parents[0]?.id;}
-function renderDraft(){
+function renderDraft(){return preserveView($('#discover-view'),()=>{
  irWorkshop?.updateParents();
- const control=document.activeElement;const focusToken=control?.dataset.direction?`[data-direction="${control.dataset.direction}"][value="${control.value}"]`:control?.dataset.defer?`[data-defer="${control.dataset.defer}"]`:control?.dataset.parent?`#${control.id}`:null;
  normalizeChoices();const parents=[...selected].map(id=>byId[id]);$('#mix-count').textContent=String(selected.size).padStart(2,'0');
  $('#mix-sources').innerHTML=parents.map((game,i)=>`<div class="parent-card"><div class="parent-card-heading"><span class="parent-letter source-color-${catalog.games.findIndex(g=>g.id===game.id)%8}">${String.fromCharCode(65+i)}</span><button data-remove="${game.id}" aria-label="Remove ${esc(game.shortName)}">×</button></div><label class="sr-only" for="parent-${i}">Parent world ${String.fromCharCode(65+i)}</label><select id="parent-${i}" data-parent="${game.id}">${catalog.games.map(g=>`<option value="${g.id}" ${g.id===game.id?'selected':''} ${selected.has(g.id)&&g.id!==game.id?'disabled':''}>${esc(g.shortName)}</option>`).join('')}</select><small>${game.components.length?`${game.components.length} component records · source review available`:'ROM indexed · extraction needed'}</small></div>`).join('')||'<p class="empty-note">Choose worlds from Explore to begin.</p>';
  for(const b of $('#mix-sources').querySelectorAll('[data-remove]'))b.onclick=()=>toggle(b.dataset.remove);
@@ -82,13 +87,34 @@ function renderDraft(){
  for(const select of $('#mix-components').querySelectorAll('[data-bridge]'))select.onchange=()=>{choices[select.dataset.bridge].bridge_id=select.value;select.closest('.design-choice').querySelector('.bridge-option strong').textContent=select.selectedOptions[0].textContent;renderDependencies();updateRequest();};
  for(const button of $('#mix-components').querySelectorAll('[data-defer]'))button.onclick=()=>{const c=choices[button.dataset.defer];c.mode=c.mode==='defer'?'parent':'defer';c.parent_game_id||=parents[0]?.id;renderDraft();};
  for(const field of $('#mix-components').querySelectorAll('[data-choice-note]'))field.oninput=()=>{choices[field.dataset.choiceNote].notes=field.value;updateRequest();};
- renderDependencies();updateRequest();if(focusToken)document.querySelector(focusToken)?.focus({preventScroll:true});
-}
+ renderDependencies();updateRequest();
+});}
+
 function renderDependencies(){const notes=dependencyNotes([...selected].map(id=>byId[id]),choices,foundationId);$('#dependency-count').textContent=`${notes.length} CONNECTIONS TO REVIEW`;$('#dependency-notes').innerHTML=notes.map(n=>`<article class="dependency-note"><span class="dependency-kind">${({bridge:'Bridge to define',review:'Conditional conflict',companion:'Required companion',research:'Research gap',creative:'Creative direction'})[n.level]}</span><h4>${esc(n.title)}</h4><p>${esc(n.text)}</p></article>`).join('');}
 function updateRequest(){let error='',request;try{request=createMashupRequest(catalog,[...selected],choices,$('#mix-intent').value,foundationId);}catch(e){error=e.message;}const count=DIMENSIONS.filter(d=>choices?.[d.id]?.mode!=='defer').length;$('#choice-count').textContent=`${String(count).padStart(2,'0')} KEY CHOICES`;$('#export-attempt').disabled=!!error;$('#copy-draft').disabled=!!error;$('#draft-type').textContent='OPTIONAL DESIGN NOTES';$('#draft-readiness').textContent=error||`${selected.size} parent worlds · ${count} broad decisions · source references included. Creative direction only; executable selections are configured above.`;lastSerialized=request?JSON.stringify(request,null,2):'';}
 function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function initTabs(){for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>{const view=b.dataset.view;document.body.dataset.view=view;for(const btn of document.querySelectorAll('[data-view]')){btn.classList.toggle('active',btn===b);btn.setAttribute('aria-current',btn===b?'page':'false');}$('#discover-view').hidden=view==='play';$('#play-view').hidden=view!=='play';window.scrollTo({top:0,behavior:'instant'});};$('#jump-workshop').onclick=()=>document.querySelector('[data-view="workshop"]').click();}
-initTabs();const initialView=new URLSearchParams(location.search).get('view')||'play';document.querySelector(`[data-view="${['discover','workshop','play'].includes(initialView)?initialView:'workshop'}"]`).click();
+// The body also has data-view for CSS. Only navigation buttons own page changes;
+// binding that selector on the body makes every bubbled click navigate to the top.
+const navigationTabs=()=>document.querySelectorAll('.main-nav button[data-view]');
+function initTabs(){
+ let currentView;
+ for(const button of navigationTabs())button.onclick=()=>{
+  const view=button.dataset.view;
+  if(currentView===view)return;
+  currentView=view;document.body.dataset.view=view;
+  for(const tab of navigationTabs()){
+   tab.classList.toggle('active',tab===button);
+   tab.setAttribute('aria-current',tab===button?'page':'false');
+  }
+  $('#discover-view').hidden=view==='play';$('#play-view').hidden=view!=='play';
+  window.scrollTo({top:0,behavior:'instant'});
+ };
+ $('#jump-workshop').onclick=()=>document.querySelector('.main-nav button[data-view="workshop"]').click();
+}
+initTabs();const initialView=new URLSearchParams(location.search).get('view')||'play';document.querySelector(`.main-nav button[data-view="${['discover','workshop','play'].includes(initialView)?initialView:'workshop'}"]`).click();
+const improvementPanel=document.createElement('div');
+$('#mechanic-assembly-workbench').before(improvementPanel);
+createImprovementWorkbench({element:improvementPanel});
 try{
  const response=await fetch('/games/research.json');if(!response.ok)throw Error('Research catalog unavailable.');catalog=await response.json();byId=Object.fromEntries(catalog.games.map(g=>[g.id,g]));
  $('#research-count').textContent=catalog.games.length;$('#ontology-count').textContent=catalog.games.filter(g=>g.components.length).length;$('#all-components-count').textContent=catalog.games.reduce((n,g)=>n+g.components.length,0);
@@ -96,25 +122,37 @@ try{
  $('#copy-draft').onclick=async()=>{try{await navigator.clipboard.writeText(lastSerialized);msg('Optional design notes copied. Use the executable selectors to build the current supported mix.');}catch{download(JSON.parse(lastSerialized),'gameverse-mashup-request.json');msg('Clipboard unavailable. Your build brief was downloaded.');}};
  $('#export-attempt').onclick=()=>{try{download(createMashupRequest(catalog,[...selected],choices,$('#mix-intent').value,foundationId),'gameverse-mashup-request.json');msg('Optional design notes exported. They are creative context; the executable selectors submit the real IR build request.');}catch(error){msg(error.message);}};
  $('#seed-example').onclick=()=>{selected=new Set(['sonic-advance','metroid-zero-mission']);foundationId='metroid-zero-mission';choices=defaultChoices([...selected].map(id=>byId[id]));$('#mix-intent').value='A side-view action game with responsive steering, momentum, field combat and persistent abilities that open a return route.';renderDraft();renderCatalog();renderMap();renderInspector();msg('A supported starting mix is selected. The executable component selectors determine the actual IR build.');};
- $('#explore-parents').onclick=e=>{e.preventDefault();document.querySelector('[data-view="discover"]').click();};$('#research-provenance').textContent=`Snapshot ${catalog.snapshotDate} · source ${catalog.sourceCommit.slice(0,8)} · ${Object.keys(catalog.views).length} views · cached embedding model revision unavailable`;
+ $('#explore-parents').onclick=e=>{e.preventDefault();document.querySelector('.main-nav button[data-view="discover"]').click();};$('#research-provenance').textContent=`Snapshot ${catalog.snapshotDate} · source ${catalog.sourceCommit.slice(0,8)} · ${Object.keys(catalog.views).length} views · cached embedding model revision unavailable`;
+ mechanicAssembly=createMechanicAssembly({element:$('#mechanic-assembly-workbench'),catalog});
+
  irWorkshop=await createIrWorkshop({element:$('#ir-workbench'),games:byId,getParents:()=>[...selected],getIntent:()=>$('#mix-intent').value,setParents:ids=>{selected=new Set(ids);normalizeChoices();renderCatalog();renderInspector();renderDraft();renderMap();}});
  renderMap();renderInspector();renderCatalog();renderDraft();updateMiningInfo();startResearchRefresh();
 }catch(error){msg(error.message);$('#research-load-error').hidden=false;}
 
+function renderProgress(){
+ let panel=$('#research-progress');
+ if(!panel){panel=document.createElement('section');panel.id='research-progress';panel.className='pipeline-progress';panel.setAttribute('aria-label','Executable research progress');$('.library-section').before(panel);}
+ const progress=catalog.progress;
+ if(!progress?.pipeline?.objective_status){panel.hidden=true;return;}panel.hidden=false;
+ const p=progress.pipeline,m=progress.mario||{},f=progress.fleet||{},n=value=>Number.isFinite(value)?value.toLocaleString():'Unavailable';
+ panel.innerHTML=`<div class="pipeline-heading"><div><span class="eyebrow">EXECUTABLE RESEARCH</span><h2>All ${n(p.rom_inventory)} games remain partial</h2></div><small>Pipeline snapshot · ${esc(p.updated_utc||'date unavailable')}</small></div><div class="pipeline-metrics"><p><strong>${n(p.retained_native_qualified_packages)}</strong><span>retained native-qualified subsets</span></p><p><strong>${n(p.typed_port_subset_packages)}</strong><span>typed-port subsets of those packages</span></p><p><strong>${n(m.targets)} / ${n(m.openFamilies)}</strong><span>Mario targets / unfinished families</span></p><p><strong>${n(f.readyPackets)}</strong><span>static evidence packets ready</span></p></div><p class="pipeline-limit">${n(p.bounded_l0_exports)} bounded L0 exports · ${n(p.bounded_static_l1_candidates)} static candidates. ${Number.isFinite(p.original_function_package_subsets)&&Number.isFinite(p.declared_linked_sequence_package_subsets)?`${n(p.original_function_package_subsets)} original-function subsets + ${n(p.declared_linked_sequence_package_subsets)} declared linked-sequence subsets; linked sequences are compositions of recovered helpers, not additional recovered source functions. `:''}Discovery targets and evidence packets require further lifting and qualification. Retained finite subsets do not establish whole-game recovery; all five Mario games remain incomplete.</p><details><summary>Evidence scope & current blockers</summary><p>${esc(f.scope||'Fleet scope unavailable')}. Fleet packet readiness adds no native qualification.</p>${(Array.isArray(p.active_blockers)?p.active_blockers:[]).map(b=>`<p>${esc(typeof b==='string'?b:JSON.stringify(b))}</p>`).join('')}<p>Mario inventory: ${esc(m.updatedAt||'date unavailable')} · Fleet: ${esc(f.updatedAt||'date unavailable')}</p><p>Source status commit: ${esc(p.source_commit_at_snapshot||'unavailable')} · Export hashes pin the working-tree inputs.</p>${(progress.sources||[]).map(source=>`<code>${esc(source.path)} · ${esc(source.sha256.slice(0,12))}</code>`).join('')}</details>`;
+}
 function updateMiningInfo(status={}){
+ renderProgress();
  const counts=status.counts||catalog.counts||{},updated=status.updatedAt||catalog.updatedAt;
  $('#mining-updated').textContent=updated?`Updated ${new Date(updated).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`:`Saved snapshot ${catalog.snapshotDate}`;
- $('#mining-counts').textContent=`${counts.games||catalog.games.length} games · ${counts.components??catalog.games.reduce((n,g)=>n+g.components.length,0)} component records · ${counts.pieces??0} design pieces · ${counts.sourceSupportedPieces??0} source-supported (partial)`;
+ $('#mining-counts').textContent=`${counts.games||catalog.games.length} source games · ${catalog.executableComponents?.length??0} published mechanic contracts · ${catalog.recoveredSystems?.systems?.length??0} system analyses · partial coverage`;
  $('#mining-map-note').textContent=`Map retained · ${status.embeddingSnapshotDate||catalog.embeddingSnapshotDate||catalog.snapshotDate}`;
 }
-function applyResearch(next){
+function applyResearch(next){return preserveView($('#discover-view'),()=>{
  if([...selected].some(id=>!next.games.some(game=>game.id===id)))throw Error('An update omits a selected parent. Your current brief is retained.');
  const open=[...document.querySelectorAll('.design-choice .direction-details[open]')].map(el=>el.closest('.design-choice').id);
- catalog=next;byId=Object.fromEntries(catalog.games.map(g=>[g.id,g]));
+ catalog=next;mechanicAssembly?.updateCatalog(next);byId=Object.fromEntries(catalog.games.map(g=>[g.id,g]));
  $('#research-count').textContent=catalog.games.length;$('#ontology-count').textContent=catalog.games.filter(g=>g.components.length).length;$('#all-components-count').textContent=catalog.games.reduce((n,g)=>n+g.components.length,0);
  renderMap();renderInspector();renderCatalog();renderDraft();for(const id of open)document.querySelector(`#${id} .direction-details`)?.setAttribute('open','');
  $('#research-provenance').textContent=`Research updated ${catalog.updatedAt||catalog.snapshotDate} · source ${catalog.sourceCommit.slice(0,8)} · embedding map retained from ${catalog.embeddingSnapshotDate||catalog.snapshotDate}`;
-}
+});}
+
 async function checkResearch(manual=false){
  if(refreshingResearch||document.hidden||!$('#player').hidden)return;
  refreshingResearch=true;$('#refresh-research').disabled=true;
@@ -124,7 +162,7 @@ async function checkResearch(manual=false){
   const version=catalog.researchVersion||catalog.sourceCommit;
   if(status.version!==version){
    if(!manual&&document.activeElement?.matches('input,textarea,select')){$('#mining-message').textContent='New research is available. Refresh when you are ready; your current choices are retained.';return;}
-   const data=await fetch('/games/research.json');if(!data.ok)throw Error('The new research could not be loaded. Your current brief is retained.');const next=await data.json();if(!Array.isArray(next.games)||!next.views)throw Error('The update is incomplete. Your current brief is retained.');if(!$('#player').hidden)return;applyResearch(next);$('#mining-message').textContent='Research updated. Your parent worlds, choices and notes are retained.';
+   const data=await fetch('/games/research.json');if(!data.ok)throw Error('The new research could not be loaded. Your current brief is retained.');const next=await data.json();if(!Array.isArray(next.games)||!next.views)throw Error('The update is incomplete. Your current brief is retained.');if(!$('#player').hidden)return;preserveView($('#home'),()=>{applyResearch(next);$('#mining-message').textContent='Research updated. Your parent worlds, choices and notes are retained.';});
   }else if(manual)$('#mining-message').textContent='Research is current. The embedding map keeps its original snapshot.';
  }catch(error){$('#mining-message').textContent=error.message;}finally{refreshingResearch=false;$('#refresh-research').disabled=false;}
 }

@@ -40,6 +40,12 @@
               "unsigned_max": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "signed_min": {
+                "type": "integer"
+              },
+              "signed_max": {
+                "type": "integer"
               }
             },
             "additionalProperties": false
@@ -143,9 +149,19 @@
               "unsigned_max": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "signed_min": {
+                "type": "integer"
+              },
+              "signed_max": {
+                "type": "integer"
               }
             },
             "additionalProperties": false
+          },
+          "resource_reference": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
           }
         },
         "required": [
@@ -306,7 +322,8 @@
           },
           "ownership": {
             "enum": [
-              "distinct_owned_object"
+              "distinct_owned_object",
+              "shared_record_view"
             ]
           },
           "lifetime": {
@@ -316,7 +333,8 @@
           },
           "separation": {
             "enum": [
-              "accessed_views_disjoint_with_evidenced_context_layouts"
+              "accessed_views_disjoint_with_evidenced_context_layouts",
+              "only_proven_disjoint_accessed_slices_scalarized"
             ]
           },
           "evidence": {
@@ -324,9 +342,113 @@
             "items": {
               "type": "string"
             }
+          },
+          "container": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
           }
         },
         "additionalProperties": false
+      }
+    },
+    "retained_services": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+          },
+          "implementation": {
+            "const": "preserved_native_opaque"
+          },
+          "binding_scope": {
+            "const": "source_pinned_native_only"
+          },
+          "arguments": {
+            "type": "array",
+            "maxItems": 7,
+            "items": {
+              "enum": [
+                "u8",
+                "u16",
+                "u32"
+              ]
+            }
+          },
+          "return_type": {
+            "enum": [
+              "void",
+              "u32"
+            ]
+          },
+          "dependency_closure": {
+            "const": "OPEN"
+          },
+          "synchronization": {
+            "const": "flush_reload_all_bound_state"
+          },
+          "memory_effects": {
+            "const": {
+              "reads": "unknown",
+              "writes": "unknown",
+              "optimization_barrier": "all_host_memory",
+              "reference_stability": "unknown"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "implementation",
+          "binding_scope",
+          "arguments",
+          "return_type",
+          "dependency_closure",
+          "synchronization",
+          "memory_effects"
+        ]
+      }
+    },
+    "execution_scope": {
+      "const": "source_pinned_native_only"
+    },
+    "semantic_closure": {
+      "const": "OPEN"
+    },
+    "resource_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "token"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+          },
+          "token": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          }
+        }
+      }
+    },
+    "resource_fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
       }
     }
   },
@@ -572,6 +694,33 @@
             "collection",
             "index"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "type",
+            "resource",
+            "token"
+          ],
+          "properties": {
+            "op": {
+              "const": "resource_reference"
+            },
+            "type": {
+              "const": "u32"
+            },
+            "resource": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+            },
+            "token": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4294967295
+            }
+          }
         }
       ]
     },
@@ -788,8 +937,144 @@
           "required": [
             "op"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "leave_scope"
+            },
+            "provenance": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "control_flow"
+            },
+            "form": {
+              "const": "acyclic_basic_blocks/0.1"
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+            },
+            "blocks": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4096,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+                  },
+                  "body": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/statement"
+                    }
+                  }
+                },
+                "required": [
+                  "label",
+                  "body"
+                ]
+              }
+            },
+            "provenance": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op",
+            "form",
+            "start",
+            "blocks",
+            "provenance"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "jump"
+            },
+            "label": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+            },
+            "provenance": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op",
+            "label",
+            "provenance"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "retained_native_service"
+            },
+            "service": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+            },
+            "arguments": {
+              "type": "array",
+              "maxItems": 7,
+              "items": {
+                "$ref": "#/$defs/expression"
+              }
+            },
+            "provenance": {
+              "type": "string",
+              "minLength": 1
+            },
+            "result": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+            }
+          },
+          "required": [
+            "op",
+            "service",
+            "arguments",
+            "provenance"
+          ]
         }
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "retained_services"
+        ]
+      },
+      "then": {
+        "required": [
+          "execution_scope",
+          "semantic_closure"
+        ]
+      }
+    }
+  ]
 }

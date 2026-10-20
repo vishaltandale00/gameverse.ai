@@ -1,0 +1,196 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffta.content.read_index_or_fallback",
+  "label": "Read optional content index or current fallback",
+  "role": "content_context_query",
+  "source_game": "final-fantasy-tactics-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ffta.content.read_index_or_fallback/package.json",
+  "package_sha256": "04103ded3a5af49994c823acb37cc2734b77c046456a285546b31aa89bc04079",
+  "behavior_sha256": "202c5b2e9ee31393ace10421bc273e66c03a3082aca910b1a2860b3681bdd1ea",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "10bffd000e3cc89d1ba147526c21d1a2a23fe1be01c06427bbb9ce2c10448ac8"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "local/decomps/ffta-decomp/src/content_index.c",
+          "local/roundtrip/coverage-next-ffta-ir-001/fallback/l0.json",
+          "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json"
+        ],
+        "frame": "ffta.content.canonical_context.current_index",
+        "label": "Canonical current_index; detailed game schema and lifecycle unresolved",
+        "naming_status": "Source-backed helper and offset meaning; no complete game schema claim",
+        "quantity": "opaque_content_identifier",
+        "storage_type": "u16",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 0.95,
+        "evidence": [
+          "local/decomps/ffta-decomp/src/content_index.c",
+          "local/roundtrip/coverage-next-ffta-ir-001/fallback/l0.json",
+          "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json"
+        ],
+        "frame": "ffta.content.canonical_context.optional_index",
+        "label": "Canonical optional_index; detailed game schema and lifecycle unresolved",
+        "naming_status": "Source-backed helper and offset meaning; no complete game schema claim",
+        "quantity": "opaque_content_identifier",
+        "storage_type": "u16",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "invoke": "Explicit source function call; no frame clock inferred",
+    "storage": "Borrowed canonical globals, no allocation",
+    "unknown": "Original callers, initialization or seed, saves, scheduler, concurrency and interior entries remain open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ffta.content.read_index_or_fallback/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "256 finite source-oracle cases each original and rebuilt; no full game or caller closure",
+    "Internal support, not primary gameplay prefab",
+    "No hidden executable dependency, asset or callback in these leaves",
+    "No new native or source execution for this metadata publication",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "aliasing": "Current index field_0 is the same canonical cell in both readers; PRNG is independent canonical IWRAM state",
+    "borrowed_state": [
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_0",
+        "offset": 33562992,
+        "owner": "global",
+        "width": 16
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_1",
+        "offset": 33562994,
+        "owner": "global",
+        "width": 16
+      }
+    ],
+    "independent_QC": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-ir-qc.json",
+        "sha256": "f56ecef12935a90264c43086e01972530a1acb5b6bdc386089b6523194e4e4d0"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-context-qc.json",
+        "sha256": "71c0a6a3af7b63a61e08f6abe292e628b2dbeed10d3de552777045dde4f39e6c"
+      }
+    ],
+    "ordering": "No intermodule invocation order or composed capability is proved",
+    "original_proof": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/fallback/original-proof.json",
+      "sha256": "30ec806124cf40a7f4c013f61ca84a7b00a1db87e9d9336febc7cdc1377a91a2"
+    },
+    "owned_state": [],
+    "preconditions": [
+      "Synchronous Thumb AAPCS with valid disjoint stack and no concurrent writer or IRQ observer",
+      "Borrowed canonical globals remain authoritative; binding snapshots do not create ownership"
+    ],
+    "rebuilt_proof": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/fallback/rebuilt-proof.json",
+      "sha256": "e2db26ca12541963ecee5030b9f55bce4c61fe6130a5a69d4a363ca147790e3a"
+    },
+    "reference": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json",
+      "sha256": "c476c27f7abab21f7ebe569398140c646c37ab3b9e706fc75777eaa092611f2f"
+    },
+    "return_type": "u16",
+    "services": [],
+    "source_calls": [],
+    "source_commit": "7f0e9ad222eb7b04f7c87beeefa36965a6e5d476",
+    "source_function": "ReadContentIndexOrFallback",
+    "source_oracle": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-oracle.c",
+      "sha256": "4e2ba8710df1c6cf2d51cd66e2066a99e865d8516ba20ee1606677db4f1aa510"
+    },
+    "source_oracle_fixture": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/fallback-fixtures.json",
+      "sha256": "b400a04fb74f83848f272c9cc2f1401df6aa78eb248242ba060fe0117ae5a458"
+    }
+  },
+  "return_meaning": {
+    "ABI_scope": "Qualified low 16-bit return per original u16 source declaration; high 16 bits and caller-saved registers are not return meaning",
+    "confidence": 0.95,
+    "domain": {
+      "unsigned_max": 65535,
+      "unsigned_min": 0
+    },
+    "evidence": [
+      "local/decomps/ffta-decomp/src/content_index.c",
+      "local/roundtrip/coverage-next-ffta-ir-001/fallback/original-proof.json",
+      "local/roundtrip/coverage-next-ffta-ir-001/fallback/rebuilt-proof.json"
+    ],
+    "frame": "ffta.content.canonical_context.index",
+    "label": "Nonzero optional index, otherwise current index",
+    "native_qualified_return_type": "u16",
+    "quantity": "opaque_content_identifier",
+    "storage_type": "u16",
+    "unit": {
+      "denominator": 1,
+      "numerator": 1
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-tactics-advance",
+    "entry": "0800a024"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

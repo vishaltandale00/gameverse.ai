@@ -498,7 +498,222 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:56:27.072979+00:00",
+      "rom_sha1": "067e1511ab6becf797f1bbd321a858e96a0349af",
+      "status": "ok",
+      "function_records": 5288,
+      "pseudo_c_generated": 5288,
+      "process_wall_s": 20.3,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/metal-slug-advance/metal-slug-advance/functions.jsonl",
+      "export_sha256": "6b631b45d264f2b8988253c6564ef76daeb0669ef883dc47f0d7d30f0cf8a27b",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/metal-slug-advance/metal-slug-advance/summary.json",
+      "summary_sha256": "e1ea0f4bbc4f5c425a139354f8d0ceed8373e9cfd7bfa446e1eec8a515dc2e85",
+      "warning_function_count": 4947,
+      "unknown_register_function_count": 37,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080001d4",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08000868",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0800092c",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BLDALPHA",
+            "BLDCNT",
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08000a74",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002b00",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002fd0",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x080712f8",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080718d8",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1SAD"
+          ]
+        },
+        {
+          "entry": "0x08071f24",
+          "io_ref": [
+            "IO_0e0"
+          ]
+        },
+        {
+          "entry": "0x080721e0",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_X+1",
+            "SOUND2CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_H+1",
+            "SOUND4CNT_L+1",
+            "SOUNDCNT_L",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x08072324",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "FIFO_A",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_H",
+            "SOUNDCNT_X"
+          ]
+        },
+        {
+          "entry": "0x080723f0",
+          "io_ref": [
+            "TM0CNT_H",
+            "TM0CNT_L",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08072494",
+          "io_ref": [
+            "SOUNDBIAS+1"
+          ]
+        },
+        {
+          "entry": "0x08072580",
+          "io_ref": [
+            "DMA1CNT_H",
+            "DMA1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080725e4",
+          "io_ref": [
+            "DMA1CNT_H"
+          ]
+        },
+        {
+          "entry": "0x080729dc",
+          "io_ref": [
+            "SOUND1CNT_H+1",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_L",
+            "SOUND4CNT_L+1"
+          ]
+        },
+        {
+          "entry": "0x08072a94",
+          "io_ref": [
+            "SOUND1CNT_H",
+            "SOUND1CNT_H+1",
+            "SOUND1CNT_L",
+            "SOUND1CNT_L+1",
+            "SOUND2CNT_L",
+            "SOUND2CNT_L+1",
+            "SOUND3CNT_H",
+            "SOUND3CNT_H+1",
+            "SOUND3CNT_L",
+            "SOUND3CNT_L+1",
+            "SOUND4CNT_L",
+            "SOUND4CNT_L+1",
+            "SOUNDBIAS+1",
+            "SOUNDCNT_L+1",
+            "WAVE_RAM",
+            "WAVE_RAM+12",
+            "WAVE_RAM+4",
+            "WAVE_RAM+8"
+          ]
+        },
+        {
+          "entry": "0x080733d8",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08073438",
+          "io_ref": [
+            "DMA3CNT_H",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x0807357c",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/metal-slug-advance/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 57,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

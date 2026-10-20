@@ -1,0 +1,421 @@
+{
+  "asset_candidate_scope": {
+    "candidate_bytes": 2706,
+    "classification": "Source-consumer typed tile/mapping/pointer/header spans; reused action60domain evidence, not new action60IR.",
+    "generic_bundle_admission": "pending separate owner; no credit to newhelper IR or distinctfunctioncount",
+    "partition_credit_bytes": 0,
+    "regenerated_bytes": 0
+  },
+  "canonicalstate": {
+    "auxiliary_scalar_globals": [
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_0",
+        "offset": 50338104,
+        "owner": "global",
+        "width": 8
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_1",
+        "offset": 50338105,
+        "owner": "global",
+        "width": 8
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_2",
+        "offset": 50338290,
+        "owner": "global",
+        "width": 16
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_3",
+        "offset": 50338292,
+        "owner": "global",
+        "width": 16
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_4",
+        "offset": 50344376,
+        "owner": "global",
+        "width": 16
+      },
+      {
+        "address": 0,
+        "argument": null,
+        "name": "field_5",
+        "offset": 50344378,
+        "owner": "global",
+        "width": 8
+      }
+    ],
+    "canonical_player_module": "wl4.player.normal-form.protection",
+    "distinct_history_arrays": [
+      {
+        "address": 50344248,
+        "count": 32,
+        "name": "collection_0",
+        "refs": [
+          "op59"
+        ],
+        "size": 2
+      },
+      {
+        "address": 50344312,
+        "count": 32,
+        "name": "collection_1",
+        "refs": [
+          "op72"
+        ],
+        "size": 2
+      }
+    ],
+    "ownership": "Source canonical current-player module with distinct auxiliary afterimage kind/lifetime and position-history subobjects; do not instantiate a second physical player or detached histories.",
+    "ownership_proof": {
+      "evidence": [
+        {
+          "path": "local/ir/fleet-next/wario-land-4/next-round/source-closure-20261016/source-verified-age-export-v1/l0/08015218.json",
+          "sha256": "57a8261c5665f8abf779deee18eadef7a07e4301532e712eae0e176f0fcb0df6"
+        },
+        {
+          "path": "local/decomps/warioland4/include/wario.h",
+          "sha256": "9a62b72362a22810751670e141de2a3bea6c2cc572d90aaea0dbe4a2458b6cfb"
+        },
+        {
+          "path": "local/decomps/warioland4/src/game_screen_gfx.c",
+          "sha256": "23d03581c6214ccb0b7a743246fd4e363534c5d5b25b65a9849d03ef50043f4e"
+        },
+        {
+          "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/validation-adapter.json",
+          "sha256": "77a4d45ddddcbde9062072fa59773c70491127f0fb9d9fc8b8711f4f8fe30d68"
+        },
+        {
+          "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/validation-adapter.json",
+          "sha256": "d92037e984c4a4fd53f111368bc255dea604b8956d9c85b02ae78e07a45e2084"
+        }
+      ],
+      "kind": "source-parent-and-renderer-association-not-same-cell-alias",
+      "proof": [
+        "Original08015218source root touches canonicalplayerprotection0300189c and invokes0800ff64 indefault afterimage maintenance; fullparent isSTATICONLY.",
+        "Published WarioData canonicalplayer globals and source GameScreenDrawWario jointly consume currentplayerpOamData andgUnk3001938/history arrays for sameplayer afterimages.",
+        "Header declares WarioAfterimageData with distinctpreviousXPositions[32] andpreviousYPositions[32]; helper STOREs use two disjointcanonicalglobal64bytespans.",
+        "Helper remainingupdates03001939,cursor030031b8 andready030031ba are distinctfrom playerprotection0300189c; commonplayerownership doesnotalias thesecells."
+      ],
+      "shared_physical_player": true
+    },
+    "readonly_assets": [],
+    "storage_roles": {
+      "afterimage_kind": [
+        "0x03001938",
+        "u8"
+      ],
+      "cursor": [
+        "0x030031b8",
+        "u16 stored/s16 comparison after increment"
+      ],
+      "previous_x": [
+        "0x030019f2",
+        "u16"
+      ],
+      "previous_y": [
+        "0x030019f4",
+        "u16"
+      ],
+      "ready": [
+        "0x030031ba",
+        "u8"
+      ],
+      "remaining_updates": [
+        "0x03001939",
+        "u8"
+      ],
+      "x_history": [
+        "0x03003138",
+        "u16[32]"
+      ],
+      "y_history": [
+        "0x03003178",
+        "u16[32]"
+      ]
+    }
+  },
+  "capability_phase": {
+    "id": "afterimage-history-step",
+    "package_id": "wl4.normal-form.afterimage_history_step",
+    "phase_kind": "source-invoked-afterimage-lifetime-and-history-dependency",
+    "requires_query_execution": false,
+    "scheduled_sequence": null
+  },
+  "counts": {
+    "asset_partition_credit": 0,
+    "asset_regeneration_credit": 0,
+    "native_original": 256,
+    "native_rebuilt": 256,
+    "new_central_packages_registered_by_this_proposal": 0,
+    "new_distinct_source_functions": 1,
+    "new_distinct_source_roots": 1,
+    "new_packages_prospective": 1,
+    "prior_action60_repeated": false
+  },
+  "exactpins": {
+    "adapter": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/validation-adapter.json",
+      "sha256": "77a4d45ddddcbde9062072fa59773c70491127f0fb9d9fc8b8711f4f8fe30d68"
+    },
+    "dependency_frontier": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-frontier-001.json",
+      "sha256": "28b96c92d720d5942a79133bc0c8179cf7ba6dbda8522fde67a5081bbda701c7"
+    },
+    "existing_canonical_module_delivery": {
+      "path": "research/deep-extraction/resume/wario-land-4/prefab-pass/delivery.json",
+      "sha256": "3088c47bb4e7d7c356893b90f150f2b8803deb8a35b82b46c9d9776472ecc525"
+    },
+    "existing_canonical_player_adapter": {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/validation-adapter.json",
+      "sha256": "d92037e984c4a4fd53f111368bc255dea604b8956d9c85b02ae78e07a45e2084"
+    },
+    "existing_canonical_player_package": {
+      "path": "local/ir/packages/wl4.protection.test_protected_zero_selector/package.json",
+      "sha256": "ab85b7c9c65902141a20e11f14b68fc4e9984d8e963f489624e753daffb16c5b"
+    },
+    "fixtures": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/age-afterimage-20261016/fixtures.json",
+      "sha256": "b01f86ff877700c78ce9aeb1f2766f850fa91ffe923b8a24d494a9f9b83dae1f"
+    },
+    "fresh_behavior": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/l1.json",
+      "sha256": "25eec6aec1c66481dc4d908e47be31094b2b60f4beae17e77c9d56656f191922"
+    },
+    "fresh_generated_c": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/generated.c",
+      "sha256": "1615e691dc7bbc1f61fd3c6fccfdecb60a893513d306a8f185ee9396dc7d4053"
+    },
+    "native_binary": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.bin",
+      "sha256": "267c493a69995c4d1ad209c4ffbdc8a85ed20830dcbc6f6be78d9add866d26aa"
+    },
+    "native_elf": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.elf",
+      "sha256": "e1f6ddd61b9fc5667ac78bfae7236cfdc75213b3d98769f7738732e8cd89da40"
+    },
+    "original_proof": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/original-proof.json",
+      "sha256": "0b915585356584375ec7733b8790112260741eb79f706f745e3d9adb7ae62f36"
+    },
+    "profile": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/age-afterimage-20261016/ir-profile.json",
+      "sha256": "f1d29ac66bdd645d572c8888a2d1f1f4cb11c1a39cfe07f953d618f120bd8e17"
+    },
+    "prospective_prepared_behavior": {
+      "path": "local/ir/mashup-coverage/publication-intake/coverage-wave-next-wario-history-01/wl4.normal-form.afterimage_history_step/l1.json",
+      "sha256": "76b9ec68416b5ee90d79ca17da84aa3f612cb5fa2d87949620d7dad0ba9bdc25"
+    },
+    "prospective_prepared_manifest": {
+      "path": "local/ir/mashup-coverage/publication-intake/coverage-wave-next-wario-history-01/prepared-manifest.json",
+      "sha256": "976d103986770185ae5e1c6df04a49bca525771caf394022d6c25185acdfa740"
+    },
+    "prospective_prepared_package": {
+      "path": "local/ir/mashup-coverage/publication-intake/coverage-wave-next-wario-history-01/wl4.normal-form.afterimage_history_step/package.json",
+      "sha256": "ad7371dd3d0a7089e645d03a1a0b55b4ea60b2edcb6709f04ce99898009fcaa6"
+    },
+    "prospective_prepared_receipt": {
+      "path": "local/ir/mashup-coverage/publication-intake/coverage-wave-next-wario-history-01/wl4.normal-form.afterimage_history_step/receipt.json",
+      "sha256": "167adb561429304d86131de745d11a6bc63782873b3f9cbd9f20b607cdec7947"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/provider-report.json",
+      "sha256": "4227172373d69e851905b67d52b6e18e3b4ecaa25a9a59de756ed0da43ce2309"
+    },
+    "qc_context": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/wario-age-context-qc.json",
+      "sha256": "f48d92bf103a981cecf94f772ad85a490dff659ee5b4a07b96c54d18f74007ec"
+    },
+    "qc_ir": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/wario-age-ir-qc.json",
+      "sha256": "7bebd211fa64699816e6f5d771e992a81d5456c4ab957f3e0cdd9f563c580c36"
+    },
+    "rebuilt_proof": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/rebuilt-proof.json",
+      "sha256": "a67d4a351e36f282c0fd208317e02b6aaad3c9d38346b314d2a2d2a04484a1e4"
+    },
+    "source_asset_candidate": {
+      "path": "local/roundtrip/weak-wave-wario-assets-action60-001/source-typed-assets.json",
+      "sha256": "f98135689e22a516a26a320e2e4a306e761057562fdfb72594628972ee0bbaa5"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/wario-land-4/age-afterimage-20261016/source-contract.json",
+      "sha256": "5c4eff4c6acc5f348a444b38ad73502dac81155c27ff4a49b395b278440d2b26"
+    },
+    "source_l0": {
+      "path": "local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/l0.json",
+      "sha256": "4a5a5cfc0f06147a98670a8a75dd7b252ef4057aaab474d73adcbe840f850d1b"
+    },
+    "source_parent_l0_static_only": {
+      "path": "local/ir/fleet-next/wario-land-4/next-round/source-closure-20261016/source-verified-age-export-v1/l0/08015218.json",
+      "sha256": "57a8261c5665f8abf779deee18eadef7a07e4301532e712eae0e176f0fcb0df6"
+    }
+  },
+  "game_id": "wario-land-4",
+  "gaps": [
+    "No parent age execution/call-order native claim",
+    "Parent08015218 nestedpath ROM rows and persistent graphics pointer writes unsupported",
+    "Source callback cadence and host scratch/lifecycle remain unresolved",
+    "This datahistory dependency is not protection timer ownership; shared phase context does not alias distinct globals",
+    "Source parent age still requires nestedROMrow/persistentgraphicsreference semantics; root not regenerated.",
+    "Originalrenderer/VRAM transfer, initialization/save/campaign notexecuted."
+  ],
+  "id": "wl4.afterimage-history.source-entry-replacement.v1",
+  "module_id": "wl4.player.normal-form.protection",
+  "native_eligibility": {
+    "QC_scope": "IRQCrawcomparisonfailedexpected260differences but artifactintegrity/outputcoverage pass; independentcontextQCpass_scoped. Nativeproofreceipts areeligibilityauthority, notemptybyteQCcertificate list.",
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "fixture_input_sha256": "e58be838bdb5a77e7b747f063890a566e6c79e1efc141ca4f532da29d2fa84a0",
+    "kind": "full-helper finite original/reconstructed-entry parity",
+    "limits": {
+      "entity_bytes": 256,
+      "entity_span_limit": 16384,
+      "instructions_per_call": 2048,
+      "object_count": 1,
+      "object_stride": 8192,
+      "reserved_object_bytes": 32768,
+      "stage_timeout_s": 30,
+      "vectors": 256
+    },
+    "native_scope": "Allfullhelper effects included; no cachedL1 reuse, parentage/rendererSTATICONLY. Qualification contains152sourceexpectedcases plusremaining syntheticboundary/randomvectors.",
+    "original_rom_sha256": "d16c7bf6e62bb84049fff1b387108fbd1e6e2cd38ca994ab5310dd9cbf9ba414",
+    "preserved_history_lanes_checked": 64,
+    "rebuilt_rom_sha256": "36ff6260b0a05cf69fa70c7803d459b37140691db6de655fcf6ec4d63d8b8782",
+    "source_RAM_canary_bytes_each": 13,
+    "source_expected_fullcollection_cases_each": 152,
+    "source_expected_fullstate_cases_each": 152,
+    "vectors_per_rom": 256
+  },
+  "no_new_native_or_build_for_metadata": true,
+  "originalhostprerequisites": [
+    "Canonicalplayer afterimage state and its2historybuffers, previousposition producers and explicit sourcehelper invocation.",
+    "No concurrent observer/writer during bounded call proof; binding snapshots/writesback canonical storage synchronously.",
+    "No host callback rate or automatic query/action60 phase order inferred."
+  ],
+  "package_identity": {
+    "behavior_sha256": "76b9ec68416b5ee90d79ca17da84aa3f612cb5fa2d87949620d7dad0ba9bdc25",
+    "existing_action60_package_not_included": true,
+    "id": "wl4.normal-form.afterimage_history_step",
+    "origin": "automatic_highfunction_lift",
+    "prospective_new_central_package": true,
+    "version": "0.1.0"
+  },
+  "package_ids": [
+    "wl4.normal-form.afterimage_history_step"
+  ],
+  "proposal_status": "prospective-source-qualified-package-nonready-capability",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "binding_bytes": 164,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_asset_bytes": 0,
+    "new_behavior_bytes": 88,
+    "original_entry": "0800ff64",
+    "parent_age_execution": false,
+    "portable_L1": true,
+    "raw_difference_bytes": 260,
+    "ready_gameplay_capability": false,
+    "renderer_execution": false,
+    "source_parent_static_dependency": true,
+    "veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_event_order": [
+    "Incoming timer0 resets kind/cursor/ready, leaves timer and both64-byte histories unchanged.",
+    "Incoming timer nonzero decrements timer, writes both positions to slot(cursor&31), increments full16-bit cursor, then sets ready1 only when signed16(newcursor)>31; otherwise preserves ready.",
+    "Timer1 invocation still commits final history sample; the next timer0 invocation resets flags without modifying history."
+  ],
+  "source_roots": [
+    "0800ff64"
+  ],
+  "timing": {
+    "before_provenance_seconds": 0.819078333,
+    "measurement_boundary": "Immediately before final receipt serialization; final receipt write excluded",
+    "stages_nested_in_total": [
+      {
+        "command": [
+          "cc",
+          "-target",
+          "armv4t-none-eabi",
+          "-mcpu=arm7tdmi",
+          "-mthumb",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-Os",
+          "-c",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/bound.c",
+          "-o",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/bound.o"
+        ],
+        "name": "compile_history",
+        "outcome": "pass",
+        "seconds": 0.02573420799999998,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "command": [
+          "arm-none-eabi-ld",
+          "-T",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.ld",
+          "-e",
+          "native_history",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/history/bound.o",
+          "-o",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.elf"
+        ],
+        "name": "link",
+        "outcome": "pass",
+        "seconds": 0.0039763749999999765,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "command": [
+          "arm-none-eabi-nm",
+          "-S",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.elf"
+        ],
+        "name": "symbols",
+        "outcome": "pass",
+        "seconds": 0.004020165999999992,
+        "stderr": "",
+        "stdout": "08800000 00000058 T lifted_history\n08800058 000000a4 T native_history\n"
+      },
+      {
+        "command": [
+          "arm-none-eabi-objcopy",
+          "-O",
+          "binary",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.elf",
+          "/Users/shishirtandale/Projects/gameverse.ai/local/roundtrip/weak-wave-wario-age-afterimage-ir-001/native.bin"
+        ],
+        "name": "binary",
+        "outcome": "pass",
+        "seconds": 0.0033666659999999626,
+        "stderr": "",
+        "stdout": ""
+      }
+    ],
+    "total_seconds": 0.856914542
+  }
+}

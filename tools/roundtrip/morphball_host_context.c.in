@@ -1,0 +1,103 @@
+/* Host source-valid bounded coordinate-trigger context. Exact native engine
+   functions own all script progression, presentation tasks and completion. */
+#define SWAP_CALLBACK @CALLBACK@
+#define SWAP_SCRIPT @SCRIPT@
+#define CTX 0x03000eb0
+#define DONOR_SPRITE (CTX+16)
+#define DONOR_PMT (DONOR_SPRITE+56)
+static uint32_t byte_word(struct mCore*c,uint32_t a){uint32_t value=0;for(unsigned i=0;i<4;i++)value|=c->busRead8(c,a+i)<<(i*8);return value;}
+static int prepare_host(struct mCore*c,unsigned scene,unsigned x,unsigned y,unsigned map){
+ uint32_t result;movement_context(c,1,0);
+ zero(c,0x02010000,0x6000);zero(c,gSprites,68*2);
+ c->busWrite32(c,VMap,64);c->busWrite32(c,VMap+4,64);
+ for(unsigned i=0;i<64*64;i++)c->busWrite16(c,0x02010000+i*2,0x3000);
+ c->busWrite32(c,gMapHeader,0x02012200);c->busWrite32(c,gMapHeader+4,0x083b51fc);
+ c->busWrite32(c,0x02012200,50);c->busWrite32(c,0x02012204,50);
+ c->busWrite32(c,0x02012210,0x02012240);c->busWrite32(c,0x02012214,0x02012240);
+ c->busWrite32(c,0x02012254,0x02012280);c->busWrite32(c,0x02012280,0);
+ c->busWrite8(c,gSaveBlock1+4,3);c->busWrite8(c,gSaveBlock1+5,map);
+ c->busWrite16(c,gSaveBlock1,x-7);c->busWrite16(c,gSaveBlock1+2,y-7);
+ c->busWrite16(c,gSaveBlock1+0x10d8,scene);
+ for(unsigned i=0;i<7*24;i++)c->busWrite8(c,gSaveBlock1+0x8e0+i,c->busRead8(c,0x083b5064+i));
+ c->busWrite8(c,gObjectEvents+8,255);c->busWrite8(c,gObjectEvents+9,map);c->busWrite8(c,gObjectEvents+10,3);c->busWrite8(c,gObjectEvents+11,0x33);
+ c->busWrite16(c,gObjectEvents+16,x);c->busWrite16(c,gObjectEvents+18,y);c->busWrite8(c,gObjectEvents+24,0x44);
+ c->busWrite8(c,gObjectEvents+36,1);c->busWrite8(c,gObjectEvents+36+4,1);c->busWrite8(c,gObjectEvents+36+5,55);
+ c->busWrite8(c,gObjectEvents+36+8,7);c->busWrite8(c,gObjectEvents+36+9,2);c->busWrite8(c,gObjectEvents+36+10,3);
+ c->busWrite8(c,gObjectEvents+36+11,0x33);c->busWrite16(c,gObjectEvents+36+16,53);c->busWrite16(c,gObjectEvents+36+18,27);
+ c->busWrite8(c,gSprites+62,1);c->busWrite8(c,gSprites+68+62,1);
+ for(unsigned index=0;index<2;index++){
+  uint32_t info=c->busRead32(c,0x0839fe20+(index?55:0)*4),sprite=gSprites+index*68;
+  uint32_t oam=c->busRead32(c,info+16);for(unsigned i=0;i<8;i++)c->busWrite8(c,sprite+i,c->busRead8(c,oam+i));
+  c->busWrite32(c,sprite+8,c->busRead32(c,info+24));c->busWrite32(c,sprite+12,c->busRead32(c,info+28));c->busWrite32(c,sprite+16,c->busRead32(c,info+32));
+ }
+ c->busWrite8(c,gSaveBlock2,0xbb);c->busWrite8(c,gSaveBlock2+1,0xff);
+ c->busWrite32(c,0x03003d90,0x0841f4b4);zero(c,0x020204b4,12);
+ c->busWrite8(c,0x020204b4+3,28);c->busWrite8(c,0x020204b4+4,6);c->busWrite32(c,0x020204b4+8,0x02013000);
+ c->busWrite16(c,0x0300311c,0);c->busWrite16(c,0x0300311e,0);
+ if(!call(c,0x080773d0,0,0,&result)||!call(c,0x08069508,0,0,&result))return 0;
+ return 1;
+}
+static int script_tick(struct mCore*c,unsigned keys,uint32_t*result){
+ c->busWrite16(c,0x0300311e,keys);
+ if(!call(c,0x08069abc,0,0,result))return 0;
+ uint32_t unused;if(!call(c,0x0807758c,0,0,&unused))return 0;
+ /* Original AnimateSprites invokes this actual held-action consumer. Run the
+    source movement segment for our two active fixture records, so the native
+    freeze task's face-direction action finishes before releaseall. */
+ for(unsigned index=0;index<2;index++){
+  uint32_t object=gObjectEvents+index*36;
+  if((c->busRead8(c,object)&0x41)==0x41&&!(c->busRead8(c,object)&0x80))
+   if(!call(c,0x08064520,object,gSprites+index*68,&unused))return 0;
+ }
+ return 1;
+}
+static int script_start(struct mCore*c,uint32_t wrapper){uint32_t result;return call(c,0x08069af8,wrapper,0,&result);}
+static int ability(struct mCore*c,unsigned *owned){uint32_t result;if(!call(c,FlagGet,0x82f,0,&result))return 0;*owned=result;return 1;}
+#define REQUIRE(x) do{if(!(x)){fprintf(stderr,"cycle check line%d: %s\n",__LINE__,#x);return 0;}}while(0)
+static int candidate_cycle(struct mCore*c,uint32_t wrapper,unsigned y,unsigned*notification_ticks){
+ uint32_t result;unsigned owned=0;
+ REQUIRE(prepare_host(c,1,53,y,2));REQUIRE(script_start(c,wrapper));
+ uint8_t save_before[0x3d68],profile_before[0xf24];
+ for(unsigned i=0;i<sizeof(save_before);i++)save_before[i]=c->busRead8(c,gSaveBlock1+i);
+ for(unsigned i=0;i<sizeof(profile_before);i++)profile_before[i]=c->busRead8(c,gSaveBlock2+i);
+ unsigned notify_before=notification_calls,fanfare_before=fanfare_calls,grants_before=ability_grants;
+ unsigned ticks=0;for(;ticks<8;ticks++){REQUIRE(script_tick(c,0,&result));REQUIRE(ability(c,&owned));if(owned)break;}
+ REQUIRE(ticks<8);REQUIRE(notification_calls==notify_before+1);REQUIRE(fanfare_calls==fanfare_before+1);REQUIRE(ability_grants==grants_before+1);
+ REQUIRE(c->busRead8(c,CTX)==1);REQUIRE(c->busRead8(c,CTX+1)==2);
+ REQUIRE(c->busRead32(c,CTX+12)==wrapper+11);
+ REQUIRE(c->busRead32(c,CTX+4)==(SWAP_CALLBACK|1));REQUIRE(c->busRead32(c,CTX+8)==SWAP_SCRIPT+5);
+ REQUIRE(c->busRead8(c,DONOR_SPRITE+36)==35);REQUIRE(c->busRead16(c,DONOR_PMT)==1000);
+ REQUIRE(c->busRead16(c,gSaveBlock1+0x10d8)==1);REQUIRE(c->busRead8(c,gObjectEvents+36)&1);
+ REQUIRE(call(c,0x0806996c,0,0,&result));REQUIRE(result==1);
+ /* An actual early A edge cannot bypass unfinished text/fanfare readiness. */
+ REQUIRE(script_tick(c,1,&result));REQUIRE(c->busRead8(c,CTX+1)==2);REQUIRE(c->busRead16(c,DONOR_PMT)==1000);
+ for(ticks=0;ticks<600;ticks++){
+  REQUIRE(script_tick(c,0,&result));REQUIRE(c->busRead8(c,CTX+1)==2);
+  REQUIRE(c->busRead16(c,gSaveBlock1+0x10d8)==1);REQUIRE(c->busRead16(c,DONOR_PMT)==1000);
+  REQUIRE(call(c,0x08069530,0,0,&result));if(result){REQUIRE(call(c,0x08071cb0,0,0,&result));if(result)break;}
+ }
+ REQUIRE(ticks<600);*notification_ticks=ticks+1;
+ unsigned ack_before=ack_calls;REQUIRE(script_tick(c,0,&result));REQUIRE(ack_calls>ack_before);REQUIRE(c->busRead8(c,CTX+1)==2);
+ REQUIRE(script_tick(c,1,&result));REQUIRE(c->busRead8(c,CTX+1)==1);
+ /* Native callback TRUE yields first; native bytecode continuation is later. */
+ REQUIRE(c->busRead16(c,gSaveBlock1+0x10d8)==1);REQUIRE(c->busRead8(c,gObjectEvents+36)&1);
+ REQUIRE(script_tick(c,0,&result));REQUIRE(result==0);REQUIRE(c->busRead8(c,CTX+1)==0);
+ REQUIRE(c->busRead16(c,gSaveBlock1+0x10d8)==2);REQUIRE(!(c->busRead8(c,gObjectEvents+36)&1));
+ REQUIRE(c->busRead8(c,gSaveBlock1+0xee0+0x92/8)&(1u<<(0x92&7)));
+ REQUIRE(call(c,0x0806996c,0,0,&result));REQUIRE(result==0);
+ REQUIRE(c->busRead32(c,CTX+104)==0);for(unsigned i=0;i<60;i++)REQUIRE(c->busRead8(c,DONOR_SPRITE+i)==0);
+ for(unsigned i=76;i<92;i++)REQUIRE(c->busRead8(c,CTX+i)==0);
+ REQUIRE(c->busRead32(c,CTX+92)==gScriptCmdTable);REQUIRE(c->busRead32(c,CTX+96)==gScriptCmdTableEnd);
+ REQUIRE(c->busRead32(c,CTX+12)==wrapper+11);
+ REQUIRE(notification_calls==notify_before+1);REQUIRE(fanfare_calls==fanfare_before+1);
+ REQUIRE(ability(c,&owned));REQUIRE(owned==1);
+ unsigned action,flags;REQUIRE(movement(c,2,&action,&flags));REQUIRE(action==64);REQUIRE(flags&128);
+ for(unsigned i=0;i<3;i++){REQUIRE(script_tick(c,0,&result));REQUIRE(result==0);}
+ REQUIRE(notification_calls==notify_before+1);REQUIRE(ability_grants==grants_before+1);
+ for(unsigned i=0;i<sizeof(save_before);i++){
+  unsigned mask=i==0xfe5?0x80:i==0xee0+0x92/8?(1u<<(0x92&7)):(i==0x10d8||i==0x10d9||i==0x1002||i==0x1003)?255:0;
+  REQUIRE(!((save_before[i]^c->busRead8(c,gSaveBlock1+i))&~mask));
+ }
+ for(unsigned i=0;i<sizeof(profile_before);i++)REQUIRE(profile_before[i]==c->busRead8(c,gSaveBlock2+i));
+ return 1;
+}

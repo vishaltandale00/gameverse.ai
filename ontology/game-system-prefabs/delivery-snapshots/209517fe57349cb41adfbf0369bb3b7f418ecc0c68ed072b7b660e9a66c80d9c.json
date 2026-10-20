@@ -1,0 +1,339 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "kingdom-hearts-chain-of-memories",
+  "sourceSystemIds": [
+    "khcom.source.periodic-resource-effect"
+  ],
+  "blueprintIds": [
+    "combat-encounter"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Select and commit a legal card/action, affect a live canonical combat actor, apply guarded resource/reaction changes, consume and expire temporary effects, then retire or continue encounter without duplicated state. This intended source core experience is not executable-complete.",
+    "phases": [
+      {
+        "id": "action-commit",
+        "label": "Select and commit a source action record",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "linked-list iteration and stable selected-node reference",
+          "descriptor allocator/callback registration",
+          "input admission and source audio/event request"
+        ],
+        "gaps": [
+          "Card/deck-facing identity and full comparison/reload policies unresolved; no actioncommit package published."
+        ],
+        "sourceModuleIds": [
+          "khcom.card_action_record_lifecycle"
+        ]
+      },
+      {
+        "id": "attack-contact",
+        "label": "Admit one attack against the same live combat actor",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "attack owner/lifetime",
+          "contact dispatch and pending-impact producer"
+        ],
+        "gaps": [
+          "No contact admission producer or exactly-once attack lifetime recovered here."
+        ],
+        "sourceModuleIds": []
+      },
+      {
+        "id": "resource-reaction",
+        "label": "Apply pending impact and choose reaction on canonical actor",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "random/effect request",
+          "reaction controller/reset",
+          "return-valued dispatch ABI"
+        ],
+        "gaps": [
+          "Shared combat view source mapped; no damage/reaction dispatcher executable package."
+        ],
+        "sourceModuleIds": [
+          "khcom.damage_reaction_dispatch"
+        ]
+      },
+      {
+        "id": "effect-activation",
+        "label": "Install effect and initialize descriptor charge count",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "interpolation signed division",
+          "callback registration",
+          "canonical side/descriptor ownership"
+        ],
+        "gaps": [
+          "Only gate is published; installation and duration-init consumers fail arithmetic/alias closure."
+        ],
+        "sourceModuleIds": [
+          "khcom.effect_install_recover_expire"
+        ]
+      },
+      {
+        "id": "effect-consumption",
+        "label": "Apply eligible periodic recovery and consume source effect charge",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "unsigned remainder",
+          "canonical world-side state",
+          "real controller update boundary"
+        ],
+        "gaps": [
+          "Mode2 still consumes; source120update phase cadence unresolved; runtime loop and nestedowner lift blockers."
+        ],
+        "sourceModuleIds": [
+          "khcom.effect_install_recover_expire"
+        ]
+      },
+      {
+        "id": "effect-expiration",
+        "label": "Clear exhausted effect in mechanically necessary presentation updater",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "qualified gate predicate result",
+          "remaining formatter/signed ratio",
+          "callback transition"
+        ],
+        "gaps": [
+          "Gate alone does not clear effect; top-levelreturn_meaning missing for resultcapture; full updater not executable."
+        ],
+        "sourceModuleIds": [
+          "khcom.effect_install_recover_expire"
+        ]
+      },
+      {
+        "id": "encounter-continuation",
+        "label": "Retire attacks/actors and complete or recover encounter",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "actor/list cleanup",
+          "scene/loss/win transition",
+          "progress persistence"
+        ],
+        "gaps": [
+          "No complete victory/death/scene/persistence boundary."
+        ],
+        "sourceModuleIds": [
+          "khcom.actor_encounter_lifetime"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "action-commit",
+        "to": "effect-activation",
+        "kind": "source-call",
+        "scope": "Conditional effect descriptor installation and source task registration; not complete action-to-damage order."
+      },
+      {
+        "from": "attack-contact",
+        "to": "resource-reaction",
+        "kind": "host-required",
+        "scope": "Pending impact producer/contact admission missing; edge is required boundary, not recovered executable linkage."
+      },
+      {
+        "from": "effect-activation",
+        "to": "effect-consumption",
+        "kind": "shared-state",
+        "scope": "Actor.effectOwner reads canonical side effect kind/remaining initialized by source descriptor; scheduler delay/order unresolved."
+      },
+      {
+        "from": "effect-consumption",
+        "to": "resource-reaction",
+        "kind": "source-call",
+        "scope": "Within0801e854 status branch precedes shared combat0801adac update onActor+0x40."
+      },
+      {
+        "from": "effect-consumption",
+        "to": "effect-expiration",
+        "kind": "shared-state",
+        "scope": "Decremented canonical remaining is consumed by later display updater; exact same-frame schedule unknown."
+      },
+      {
+        "from": "resource-reaction",
+        "to": "encounter-continuation",
+        "kind": "host-required",
+        "scope": "Terminal source reaction selector is not a complete defeat/retirement continuation."
+      }
+    ],
+    "missingForCoreGame": [
+      "Card/deck-facing identity and full comparison/reload policies unresolved; no actioncommit package published.",
+      "No contact admission producer or exactly-once attack lifetime recovered here.",
+      "Shared combat view source mapped; no damage/reaction dispatcher executable package.",
+      "Only gate is published; installation and duration-init consumers fail arithmetic/alias closure.",
+      "Mode2 still consumes; source120update phase cadence unresolved; runtime loop and nestedowner lift blockers.",
+      "Gate alone does not clear effect; top-levelreturn_meaning missing for resultcapture; full updater not executable.",
+      "No complete victory/death/scene/persistence boundary."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "khcom.encounter.card_effect_lifecycle",
+      "label": "Card action, resource reaction and effect lifetime",
+      "moduleId": "khcom.encounter.canonical_actor_action_world",
+      "sourceGame": "kingdom-hearts-chain-of-memories",
+      "sourceSystemId": "khcom.source.periodic-resource-effect",
+      "sourceContractRef": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json",
+      "planIds": [
+        "combat-encounter"
+      ],
+      "packageIds": [
+        "khcom.effect.expiration_gate"
+      ],
+      "availability": "source-only",
+      "scope": "One canonical encounter module mapped across action-record commitment, actor/combat resource changes, effect charge lifetime and mandatory presentation expiration. Only an isolated gate dependency is executable; no supplied core-loop prefab.",
+      "gaps": [
+        "Card/deck-facing identity and full comparison/reload policies unresolved; no actioncommit package published.",
+        "No contact admission producer or exactly-once attack lifetime recovered here.",
+        "Shared combat view source mapped; no damage/reaction dispatcher executable package.",
+        "Only gate is published; installation and duration-init consumers fail arithmetic/alias closure.",
+        "Mode2 still consumes; source120update phase cadence unresolved; runtime loop and nestedowner lift blockers.",
+        "Gate alone does not clear effect; top-levelreturn_meaning missing for resultcapture; full updater not executable.",
+        "No complete victory/death/scene/persistence boundary."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+        "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+      ],
+      "canonicalState": {
+        "identity": "one source encounter with canonical Actor/combat view, primary/secondary WorldSide, selected ActionContext and borrowed DisplayContext",
+        "fields": [
+          "Actor current/max resource, pending damage and reactionflags/timers",
+          "Actor.effectOwner and WorldSide backlink",
+          "WorldSide effect kind/remaining",
+          "ActionContext selected record, listheads, side descriptors",
+          "DisplayContext discriminants, ratio and latch"
+        ],
+        "aliasRule": "combatView=Actor+0x40; combat.current+0x2c is Actor.current+0x6c. Actor.effectOwner and effect installer/expiration share canonical WorldSide. Keep selected node lists and action descriptors on same ActionContext. Gate owns no copied context."
+      },
+      "roleFacets": [
+        {
+          "roleId": "attack",
+          "capability": "source action record commitment and lifetime frontier",
+          "status": "source-only",
+          "scope": "Comparison, selected record countdown, next-node/list selection mapped; actual attack creation/contact not supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "reaction",
+          "capability": "source pending-impact resource mutation and effect charge lifecycle",
+          "status": "source-only",
+          "scope": "Source damage/reaction dispatch and recovery consumption mapped on same actor; neither executable core supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "defeat",
+          "capability": "source terminal reaction frontier",
+          "status": "missing",
+          "scope": "Terminal flags are observed but enemy/actor cleanup, victory and scene return unresolved.",
+          "evidence": [
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+            "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-extraction/system.json"
+          ]
+        }
+      ],
+      "readyToAdd": false,
+      "runtimeQualified": false,
+      "recoveredAssembly": null
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "khcom-prefab-pass-core-loop-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": null,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Source-map stage time in pinnedmap; priorComposer/native receipts reused, not current validation/native duration. No new graph executables could be justified from one published gate. Interactive total unavailable.",
+    "deliveryMetadataSeconds": 0.020381999999999997
+  },
+  "sourceLoopMap": {
+    "path": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/source-loop-map.json",
+    "sha256": "7221eea97e92e2ebd96bcac4928b433147770d8cb662d918819496257d9dbcf1"
+  },
+  "allowlist": {
+    "path": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/prefab-pass/prefab-allowlist.json",
+    "sha256": "a25296bdfee412dad4ffed2890afe2b1e6b04fd93a621882fc5be85116c3cbe8"
+  },
+  "targetedGap": {
+    "path": "local/ir/fleet-next/kingdom-hearts-chain-of-memories/prefab-pass/targeted-gap.json",
+    "sha256": "b8a66e86fde01d94ea30aae6db369886b6f986ba1555d317baac044e22d89f34"
+  },
+  "publishedPackagePins": [
+    {
+      "path": "local/ir/packages/khcom.effect.expiration_gate/package.json",
+      "sha256": "e842491c5d22fc2701dc6f64293ac410b38ea636060311987a1e6a336762812d"
+    }
+  ],
+  "prefabReadiness": {
+    "usefulPrefabCount": 0,
+    "reason": "Only source-required read-only gate published; singleton does not supply meaningful coherent loop. No disconnected leaf basket constructed.",
+    "priorAdmissionDoesNotEqualPrefab": true
+  },
+  "sharedOwnerRequests": [
+    {
+      "owner": "/root/mashup_binding_integration",
+      "gap": "source-proven gate return contract admission"
+    },
+    {
+      "owner": "/root/compiler_shared_state",
+      "gap": "source expiration/recovery arithmetic loops, canonicalalias and continuationABI"
+    }
+  ],
+  "restrictionsObserved": [
+    "private owned roots only",
+    "oldproofs preserved",
+    "no game/ROM/demo",
+    "no manualC compilerinput",
+    "no native rerun or JVM",
+    "no central source/index/allowlist edits"
+  ]
+}

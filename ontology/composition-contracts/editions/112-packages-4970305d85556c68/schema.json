@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "edition",
+    "components",
+    "relations",
+    "sourceContracts",
+    "counts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "gameverse.composition-contracts/1"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "packageRef",
+          "behaviorSha256",
+          "publicPorts",
+          "privateState",
+          "lifecycle",
+          "qualification",
+          "provenance"
+        ],
+        "properties": {
+          "publicPorts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "l1Binding",
+                "direction",
+                "storageType",
+                "semanticType",
+                "evidence"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "direction": {
+                  "enum": [
+                    "in",
+                    "out",
+                    "inout"
+                  ]
+                },
+                "l1Binding": {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "name"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "const": "field"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "kind",
+          "validationStatus",
+          "automaticBinding",
+          "requires"
+        ],
+        "properties": {
+          "kind": {
+            "const": "exact-signature-candidate"
+          },
+          "validationStatus": {
+            "const": "not-validated"
+          },
+          "automaticBinding": {
+            "const": false
+          }
+        }
+      }
+    }
+  }
+}

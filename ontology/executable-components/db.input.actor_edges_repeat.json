@@ -1,0 +1,196 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "db.input.actor_edges_repeat",
+  "label": "Actor suppression, held edges and directional repetition",
+  "role": "input",
+  "source_game": "dragon-ball-advanced-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/db.input.actor_edges_repeat/package.json",
+  "package_sha256": "eee6882b05fea83a7d530cdffd0d549c1a3e106e6284bfda5b87bdee32823a1f",
+  "behavior_sha256": "de55633a24564cfb1777638a695821dc41351f287a03cb9ec68c40e95a93ddac",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "eaa45e89d490c583d0da82d06b626d1366d28478cc2c198e0b530f02e9747a12"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "control_flag_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.control",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "repeat_countdown",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input_invocation",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "held_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "newly_pressed_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "newly_released_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "repeat_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.input",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "selected_button_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "input_source",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/080149dc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "source_actor_and_shared_context_backing",
+    "clock": "explicit_invocation",
+    "phase": "input",
+    "ordering": "Preserve serialized L1 body order; caller order source-backed in L2 only",
+    "source_subsystem_qualified": false
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/db.input.actor_edges_repeat/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite isolated operator receipt; no connected subsystem, gameplay reachability or complete game claim.",
+    "Canonical actor aliases and shared context state remain shared; no independent field copies.",
+    "No manual/recovered C input; generated.c is compiler output from serialized own-ROM HighFunction.",
+    "Unannotated fields/collections retain unknown quantity/unit meaning; all original state must survive. Parameter and return domains/meanings live in pinned source contract/citations, never new L1 parameter fields.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+    "sha256": "d60a8d42c1271d77fa4a64a958b9c5456efe622151ef2ee02ae2a8efeea15368"
+  }
+}

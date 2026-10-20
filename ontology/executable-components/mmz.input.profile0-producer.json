@@ -1,0 +1,225 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mmz.input.profile0-producer",
+  "label": "Update actor commands (source profile 0)",
+  "role": "source_input_command_history_update",
+  "source_game": "megaman-zero",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mmz.input.profile0-producer/package.json",
+  "package_sha256": "2f3cbf296c71bdf57fbaf27e00cb475a2953cb41c9c152b74a4724438e6516fc",
+  "behavior_sha256": "3bbe7fc91bc6b65e65ca47aa461511eb34b5f796d9b6b703ae89e1c6f7cc2244",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "87364748d6c7ce9b3ed0835263db8cf3a04b7c2f5080e19a31ccaa8df559403d"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "new_command_bit_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "command_history_index",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "effective_input_bit_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "command_history_bit_mask",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "collection_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "count": 2,
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/megaman-zero/general-producer-result-v1.json"
+        ],
+        "frame": "actor_command_history",
+        "quantity": "command_history_bitmap_word",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 64
+      },
+      {
+        "id": "collection_1",
+        "storage_type": "u32",
+        "count": 2
+      }
+    ]
+  },
+  "lifecycle": {
+    "clock": "explicit_source_function_invocation",
+    "ordering": "Advance same ring index; source immutable map derives command; preserve lock bits; commit command/edge/bitmap/marker. No implicit scheduling or profile configuration.",
+    "phase": "conditional_source_profile_command_update",
+    "storage": "same_actor_canonical_ring_and_bitmap"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "57ab950f177d1d927fd0486b7777fd00900700bb60822d75a8c5622b6b64f598",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mmz.input.profile0-producer/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Exact actor control-selector domain 0 only; caller must already establish it; no auto-selector configuration or runtime guard.",
+    "This is another specialization of existing source root0801b29c, not a new distinct source function.",
+    "Source-exact normalized HighFunction with pinned raw root, original pure selector, normalizer and supplement; do not label normalized SSA an unmodified raw export.",
+    "Outside-cartridge original-vs-generated oracle qualification only; no original-entry replacement or ROM artifact.",
+    "Unspecialized dynamic actor/ROM selector and all-live-caller/lifetime closure remain open; general ROM eligibility false.",
+    "3028 native behavior bytes;16 logical readonly ROM bytes folded into instructions,0 extra asset payload/binder bytes.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "auto_selector_configuration": false,
+    "closed_interchangeable_prefab": false,
+    "frozen_profile_result": {
+      "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/profile-result.json",
+      "sha256": "c2a9ffcf11849237754d6ea11937b69e01f2c278befd5de50230838d9eaf3d99"
+    },
+    "general_ROM_eligible": false,
+    "prior_classifier_scope_flags_preserved_as_contract": {
+      "actual_source_entry_install": false,
+      "auto_selector_configuration": false,
+      "closed_interchangeable_prefab": false,
+      "general_ROM_eligible": false,
+      "outside_cartridge_qualified": true,
+      "source_exact_profiles": [
+        0
+      ],
+      "whole_game_equivalent": null
+    },
+    "raw_and_normalized_source_provenance": {
+      "actor_selector_materialized_in_adapter": true,
+      "caller_must_establish_exact_profile": true,
+      "compiler_input": "source-exact normalized own-ROM HighFunction, NOT unmodified raw export",
+      "metadata_scope_correction": {
+        "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/normalization-scope-supplement.json",
+        "sha256": "d6ee3aedc30f9ef7efc57d31065171c4cc2130d4c29a78be3a90547932c7af13"
+      },
+      "normalized_root": {
+        "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/normalized-producer.json",
+        "sha256": "de7f95573afcbd714af72bddd35d3598a1153a5dac810878709d879df979adea"
+      },
+      "operation": "Pure selector callee branch specialized to exact caller selector 0 then its original SSA inlined at actual source call; compiler imports readonly mapper scalar fields as immutable ROM assets. No authored behavior C.",
+      "proof": {
+        "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/profile0/normalization-proof.json",
+        "sha256": "5d44482df462f89f46abe4eb422cd53189ff63e50d9f94b00037bc06734138e2"
+      },
+      "raw_root": {
+        "path": "local/roundtrip/weak-wave-megaman-general-frozen-002/source-evidence/0801b29c-raw-l0.json",
+        "sha256": "4d893a5ba8ff54bbc312a6b8a114075bf63670feb3e66bd14f21340bdf66adc3"
+      }
+    },
+    "source_exact_profiles": [
+      0
+    ],
+    "whole_game_equivalent": null
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "megaman-zero",
+    "entry": "0801b29c"
+  },
+  "domain_contract_fingerprint": "d5c0cdc415045d9355b4547d23e7c75bef45ea8f4474386aace811728ed5dcaf",
+  "specialization_subset": true
+}

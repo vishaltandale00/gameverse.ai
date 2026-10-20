@@ -1,0 +1,371 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma4.powerup_pickup_host_bundle",
+  "version": "0.1-source-parity",
+  "concept": {
+    "role": "progression.acquired_player_form",
+    "pattern": "accepted growth,fire and leaf items create pending form transitions, timers and typed rewards",
+    "facets": [
+      "mechanics",
+      "progression"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance-4-super-mario-bros-3:progression"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance-4-super-mario-bros-3",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Indexed own USA ROM SHA1 69e81f41394f02d64cad206adb26b3cd43690770",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-policy-receipt.json",
+    "abi": "r0 original item actor; explicit player/global context; three accepted-pickup entries with retained original application phase",
+    "recovery": {
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "ranges": [
+        {
+          "address": "0x8068cd4",
+          "size": 112,
+          "isa": "thumb",
+          "instruction_sha256": "22e64e405ff9d94dbbdd0f563a3d2f08bad6b521c99b9d66f0f7af6440ebcb7a",
+          "name": "growth_pickup",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8068d60",
+          "size": 112,
+          "isa": "thumb",
+          "instruction_sha256": "bc96534958a8c2fb8c64c588c6d6d3449895ae164575c5085a31e3274968afb9",
+          "name": "fire_pickup",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8068dd0",
+          "size": 164,
+          "isa": "thumb",
+          "instruction_sha256": "d445f7ab6f5514c856a9690d3a0faa1655f44cc9d45b40ec97a2358b683e9393",
+          "name": "leaf_pickup",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8068aa4",
+          "size": 64,
+          "isa": "thumb",
+          "instruction_sha256": "04a79d7141af971c0137002861091a85140243a62aafceff31024f9b0d463229",
+          "name": "growth_audio_helper",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8068ae4",
+          "size": 24,
+          "isa": "thumb",
+          "instruction_sha256": "5e7a2792b134d96d732fdbf0094b55f1e89d488acbc82945f2aa163eb0c92a2f",
+          "name": "reward_consume_helper",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8068b90",
+          "size": 68,
+          "isa": "thumb",
+          "instruction_sha256": "3aed23d8e37d10305a46f318d1a359784fd48229da3d4158748c6a70f5dab5d6",
+          "name": "special_growth_helper",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-recovered.c",
+      "lift_sha256": "1a7066493a11c9b82cdd8a26b56a73dc1e52b950df66b269dde8683c05c39a35",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "Pinned original play_sound and score_direct services"
+        ],
+        "data": [],
+        "ram": [
+          "Reviewed native item and player fields",
+          "Camera,character and per-event audio context explicit from host contract"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Pure pickup rules contain no native addresses; context adapter owns service routing",
+          "Audio events preserve each original event context and ordering"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-binary-corpus-round2/sma4-powerup-policy-01/receipt.json",
+        "local/re/experiments/20261016-binary-corpus-round2/sma4-powerup-live-07/probe.json"
+      ],
+      "unknowns": [
+        "Three local pickup effects recovered; original contact test and pending-form application/weapon ability update remain retained host dependencies",
+        "Natural growth-item collection observed; fire/leaf natural collection and full campaign not yet qualified"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "accepted_item_contact",
+      "direction": "in",
+      "type": {
+        "scalar": "native_item_ptr",
+        "quantity": "accepted_pickup",
+        "unit": "one_native_contact",
+        "frame": "host_collision"
+      }
+    },
+    {
+      "id": "pending_form_and_effects",
+      "direction": "out",
+      "type": {
+        "scalar": "u8_state_and_events",
+        "quantity": "player_form_transition_and_reward",
+        "unit": "native_form_codes_timers_score",
+        "frame": "host_player_update"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "item_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "consumed_item",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_form_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "pending_growth_form",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "effect_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "sound_and_score_effects",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "pickup",
+      "clock": "original_accepted_contact_event",
+      "phases": [
+        "choose_new_or_duplicate_form",
+        "schedule_native_transform",
+        "consume_item",
+        "emit_ordered_effects"
+      ],
+      "reads": [
+        "item_state",
+        "player_form_state"
+      ],
+      "writes": [
+        "item_state",
+        "player_form_state",
+        "effect_state"
+      ],
+      "invariants": [
+        "Pending form is consumed by original controller; pickup alone is not a full ability implementation",
+        "Audio context is captured per event, including special growth branch coordinate context"
+      ],
+      "authority": "Exclusive replacement for three accepted-pickup handler entries; native collision and form application remain host owned"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-powerup.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-recovered.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-freestanding-runtime.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-runtime.c"
+    ],
+    "data": [],
+    "globals": [
+      "Reviewed player pointer,camera,character,audio contexts"
+    ],
+    "macros": [
+      "SMA4_NATIVE_BUILD"
+    ],
+    "hardware": [],
+    "host_services": [
+      "play_sound",
+      "score_direct"
+    ],
+    "unsupported": [
+      "Full contact query and pending form application/weapon/flying updates retained from exact original host",
+      "No complete asset,save migration or whole campaign recovery"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-recovered.c",
+    "preconditions": [
+      "Exact indexed USA ROM and recovered source closure",
+      "Native item/player record ABI",
+      "Original downstream form-application phase retained or explicitly adapted"
+    ],
+    "outputs": [
+      "Three pure pickup effects and reviewed native context adapter",
+      "Typed native source-parity plan"
+    ],
+    "semantic_changes": [
+      "None intended; ordered context-bearing sound and score events replace hidden calls in pure operator"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "Original native fixed point retained",
+    "authority_obligation": "Pickup sets pending form; a separate declared application phase owns current form and ability behavior"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Collect forms and abilities through growth,fire and leaf item rules with duplicate-item rewards",
+    "status": "Source parity candidate; native host gameplay qualification pending"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "tools/composition/plans/sma4-powerup-parity.json",
+    "hooks": [],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-powerup.c",
+          "sha256": "bfc02a253e584a521341f4eb2f3ede8afd0ad573c55a53d250d6cf9c706edfd4"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-recovered.c",
+          "sha256": "1a7066493a11c9b82cdd8a26b56a73dc1e52b950df66b269dde8683c05c39a35"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-freestanding-runtime.c",
+          "sha256": "9fcd06c9031785be5d2a052508675359f6c21d99bc35680412d8087a85628d46"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-runtime.c",
+          "sha256": "ab75e393e369653450e814cded48f2c35574a1f7e9e18c24f3fefbe55b5e14bf"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-host-powerup.c",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-runtime.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma4_host_growth",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma4_host_fire",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma4_host_leaf",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "item",
+          "storage": "host-r0-actor",
+          "bytes": 112,
+          "lifetime": "native-entity",
+          "writes": [
+            {
+              "offset": 22,
+              "width": 8,
+              "quantity": "consumed_item_state"
+            },
+            {
+              "offset": 35,
+              "width": 8,
+              "quantity": "consumed_item_lifetime"
+            }
+          ],
+          "allocation": "None; original item retained until consumed. Player context side effects explicitly declared in IR and host contract."
+        }
+      ],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x80e4040",
+          "abi": "void(u16,constvoidptr)"
+        },
+        {
+          "service": "score_direct",
+          "address": "0x08091050",
+          "abi": "void(constvoidptr,u8)"
+        }
+      ],
+      "host_reads": [
+        {
+          "address": "0x3007818",
+          "width": 32
+        },
+        {
+          "address": "0x3003750",
+          "width": 16
+        },
+        {
+          "address": "0x3002d77",
+          "width": 8
+        },
+        {
+          "address": "0x3002d7c",
+          "width": 16
+        },
+        {
+          "address": "0x3002d80",
+          "width": 16
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "768 original-ROM accepted-pickup policy comparisons across forms,special states,characters and type variants",
+      "Natural growth mushroom collected from stock stage1; current form0\u21921 and actual grown sprite recorded"
+    ],
+    "required_witnesses": [
+      "Original stock versus IR-generated pickup ROM at same private natural-collection checkpoint",
+      "All player/item/world hashes and images agree",
+      "Full fire/leaf ability and progression qualification remains separate"
+    ],
+    "known_limits": [
+      "Local pickup effects only; item movement,collision and form application retained in host",
+      "No whole-game decompilation or cross-game mashup claim"
+    ]
+  }
+}

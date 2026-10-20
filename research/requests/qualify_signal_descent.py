@@ -25,8 +25,15 @@ def run(rom,out):
   r=stage('ice_platform',lambda:ice(rom,out/'coast/checkpoint-7.ss',out/'ice-platform'));assert r['outcome']=='frozen_creature_platform_opened_gate'
   stage('first_act',lambda:campaign(rom,Path(r['checkpoint']),out/'first-act',3600));r=json.loads((out/'first-act/report.json').read_text());initial=r.get('stage_transition_state',r['checkpoint'])
   stage('native_stage_transition',lambda:game(rom,out/'transition',{'initial_state':initial,'actions':[{'name':'settle-native-stage','keys':[],'frames':720,'save':12}]}))
-  r=stage('high_speed',lambda:game(rom,out/'high-speed',{'initial_state':str(out/'transition/checkpoint-12.ss'),'actions':[{'name':'high-jump-cache','keys':['RIGHT'],'frames':65},{'name':'high-gate-blocks-ground','keys':['RIGHT'],'frames':60},{'name':'high-jump-opens-route','keys':['RIGHT','A'],'frames':22},{'name':'land','keys':['RIGHT','B'],'frames':90},{'name':'speed-cache','keys':['RIGHT','B'],'frames':90,'save':16}]}));assert r['events'][-1]['state']['upgrades']==95
-  stage('second_act',lambda:campaign(rom,out/'high-speed/checkpoint-16.ss',out/'second-act',6000,10700));r=json.loads((out/'second-act/report.json').read_text())
+  r=stage('high_speed',lambda:game(rom,out/'high-speed',{'initial_state':str(out/'transition/checkpoint-12.ss'),'actions':[{'name':'high-jump-cache','keys':['RIGHT'],'frames':65},{'name':'high-gate-blocks-ground','keys':['RIGHT'],'frames':60},{'name':'high-jump-opens-route','keys':['RIGHT','A'],'frames':22},{'name':'land','keys':['RIGHT','B'],'frames':90},{'name':'speed-cache','keys':['RIGHT','B'],'frames':90,'save':16}]}))
+  speed_state=out/'high-speed/checkpoint-16.ss'
+  if r['events'][-1]['state']['upgrades']==31:
+   # Candidate26's authored habitat keeps its invulnerable source Ripper on
+   # the route. Use acquired Ice through actual aim/fire input, then pass it.
+   r=stage('ripper_ice_passage',lambda:game(rom,out/'ripper-ice-passage',{'initial_state':str(speed_state),'actions':[{'name':'close-diagonal-range','keys':['RIGHT'],'frames':7},{'name':'ice-diagonal','keys':['L','UP','RIGHT','B'],'frames':8},{'name':'cross-frozen-patrol','keys':['RIGHT'],'frames':70},{'name':'reach-speed-cache','keys':['RIGHT','B'],'frames':50,'save':22}]}))
+   speed_state=out/'ripper-ice-passage/checkpoint-22.ss'
+  assert r['events'][-1]['state']['upgrades']==95
+  stage('second_act',lambda:campaign(rom,speed_state,out/'second-act',6000,10700));r=json.loads((out/'second-act/report.json').read_text())
   stage('native_boss',lambda:boss(rom,Path(r['checkpoint']),out/'native-boss'));r=json.loads((out/'native-boss/report.json').read_text());assert r['outcome']=='native_boss_defeated_and_removed'
   r=stage('native_switch',lambda:capsule(rom,Path(r['checkpoint']),out/'native-switch'));assert r['outcome']=='native_switch_pressed' and r['final_level']==2
   report['factory_checkpoint']=r['checkpoint'];report['outcome']='prefix_passed_actual_native_flow'

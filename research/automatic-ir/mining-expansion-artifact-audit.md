@@ -1,0 +1,13 @@
+# Mining expansion and Mashup delivery audit
+
+Audit completed 2026-10-16T14:21:40+00:00 in 0.019390s. Scope was final, bounded source/proof pins, catalog counts, UI/API restoration and static data freshness. No ROM bytes were hashed and no game was generated. This audit did not rerun builds, tests or native qualification; the separate site delivery recorded its source export, clean shell copy and focused tests in the pinned `final-timings.json`.
+
+The compiler extraction snapshot remains historical: `FINAL-source-manifest.json` identity is `d3eb5ed01dc9dbc10433ddde82a7afb501b6593e15e4f0350fa8a1134261e030` and its 966 member pins matched at that checkpoint in 0.022031s. App and binding-integration files changed after extraction; this audit does **not** claim that the current tree still matches all 966 historical member pins. The separately pinned app delivery manifest `graph-delivery.json` matches its recorded hash, and all 38 listed app/backend/proof pin checks match.
+
+The recovered-systems index currently records 33 games, 57 analysis records, 33 partial source-system contracts, 24 prior analyses, 112 automatic package records (87 typed), and zero recovered executable L2 or complete games. These counts describe the pinned ontology/extraction checkpoint, while the app’s latest full executable catalog count is 115. The final HTTP proof explicitly identifies that three-record difference as a concurrent publication and keeps pipeline and composition indices at the 112-package/87-typed checkpoint.
+
+The app delivers a generic mechanic graph that sends state, port, and order bindings to the real Composer while keeping build/activation workflows. HTTP proof records two valid and seven invalid assembly validations, plus bad-JSON (400), cross-origin (403), and oversized-request (413) handling. It records the original workshop routes as HTTP 200 and expected creation/missing-run validation responses (415/404). This checks binding validity, not execution or native behavior.
+
+`games/research.json` and `dist/games/research.json` are byte-identical at SHA256 `a8bd6a122f6eb32457511fd21f1f9f15bf2d7b2c1bde648f03390ea1278f8cd0`. The Sonic × Metroid files are absent as specifically requested. Cinder’s active registration is absent, its archive is preserved, and the prior mistaken 410 responses are retained as historical evidence marked reversed. The IR placeholder is not ready; the two existing non-IR games remain in the catalog. No new ROM or registration was created. Browser DOM/screenshot/gameplay was unavailable and is not claimed.
+
+All bounded hash pins match: **True**. Recorded consistency checks match: **True**. Detailed expected/actual hashes, path pins, counts and exceptions are in the JSON record.

@@ -1,0 +1,340 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "mzm.morph-ball.running-shoes.source-cluster-swap.v1",
+  "game_id": "metroid-zero-mission",
+  "module_id": "mzm.progression.mobility-acquisition",
+  "package_ids": [],
+  "source_roots": [
+    "08013080",
+    "0801312c",
+    "080131a0",
+    "08013270"
+  ],
+  "typed_module_refs": [
+    {
+      "id": "mzm.morph_ball.init",
+      "entry": "08013080",
+      "qualification": "static_automatic_source_IR_with_cluster_native_evidence_only",
+      "individually_native_qualified": false,
+      "native_installable_generic_emitter": false,
+      "artifacts": {
+        "l0.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/init/l0.json",
+          "sha256": "1a2430d610579229d7c361725337909dd0e8b3ce123784bbff4bf3f71370a39d"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/init/l1.json",
+          "sha256": "b8998966aa885e43731034532289f4b112f3ff8ceae6cd629332359e2c170060"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/init/validation-adapter.json",
+          "sha256": "d9aff67123c83b4ccd4403c96b71d7fab5eef3ae7a591be9cae9cab19465acac"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/init/generated.c",
+          "sha256": "ae43a92f2c4d78f672f95f2f1d2697f26c2441c3dc8437a567a7449a7e2f30b6"
+        }
+      }
+    },
+    {
+      "id": "mzm.morph_ball.get",
+      "entry": "0801312c",
+      "qualification": "static_automatic_source_IR_with_cluster_native_evidence_only",
+      "individually_native_qualified": false,
+      "native_installable_generic_emitter": false,
+      "artifacts": {
+        "l0.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/get/l0.json",
+          "sha256": "138e27cb02630a74a44357d2222b76b415fe9c5abf81b0e77d2a949b8b7c4862"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/get/l1.json",
+          "sha256": "6d06cc1c86943a5cbdcf47cf1828c972c30e9925e83c39b054f13d2de86304d3"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/get/validation-adapter.json",
+          "sha256": "c73a8a148470e072c021dce4830ff2b2ec90fdc663c34782a8b06d07fb1720e0"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/get/generated.c",
+          "sha256": "b989acd189a8bdd18a5ecc0b1dd2d84148712560439bbc67229afef175489766"
+        }
+      }
+    },
+    {
+      "id": "mzm.morph_ball.flash",
+      "entry": "080131a0",
+      "qualification": "static_automatic_source_IR_with_cluster_native_evidence_only",
+      "individually_native_qualified": false,
+      "native_installable_generic_emitter": false,
+      "artifacts": {
+        "l0.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/flash/l0.json",
+          "sha256": "d6b9ec72c440bf35742fdf8f471717e14b1f2c5e5bfc842ede5bf07040d22e8f"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/flash/l1.json",
+          "sha256": "a8e78d26064581d06524911da822c41c89818d5fcb9fdba1309e84fd8a214abd"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/flash/validation-adapter.json",
+          "sha256": "c2eecd05ec918af1805f7fccefefa5f49b8ebe4c73a1b8e657dcb4647715eb2d"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/flash/generated.c",
+          "sha256": "b6f832a881348200ce11bcf2b96ca2a584aae2c24764e6ff3637dd5b4603f299"
+        }
+      }
+    },
+    {
+      "id": "mzm.morph_ball.dispatch",
+      "entry": "08013270",
+      "qualification": "static_automatic_source_IR_with_cluster_native_evidence_only",
+      "individually_native_qualified": false,
+      "native_installable_generic_emitter": false,
+      "artifacts": {
+        "l0.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/dispatch/l0.json",
+          "sha256": "3dd916ae32fd834bc45c82be81a2a6831cd417596f15c875da5b8b597f8c1e81"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/dispatch/l1.json",
+          "sha256": "ede39d8fa62c76241ef29eeb5963bc2cdda9360426298c2e5fb4a6dfa45e1f55"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/dispatch/validation-adapter.json",
+          "sha256": "18419805df488a0bd9c4a58bb4e9140ea9952dd4db4069254f306ed0dfb2c527"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/dispatch/generated.c",
+          "sha256": "14d1c1822b47550a03f054a38ca9896b1ab87ed41a55ce9aea6a31ce5b03923e"
+        }
+      }
+    }
+  ],
+  "canonicalstate": {
+    "source_owner": "mzm.progression.mobility-acquisition",
+    "layout": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/source-state-layout.json",
+      "sha256": "0b9d1808cced5068643d8bab1371ffa31d369a9f774044875e52fe5960d7ed65"
+    },
+    "actor_view": "Original selected56-byte gCurrentSprite record, canonical native scheduler owns synchronization and secondary allocation. No second player/actor invented.",
+    "equipment": "gEquipment.suitMisc ownership bit64 distinct from suitMiscActivation active-use bit. Host projection uses FR running ownership; active Morph Ball controls are not transferred.",
+    "host_projection": "Captured recipe binds FR running ownership, acknowledgement and release to original consumers; source scratch/global fields do not become generic host aliases."
+  },
+  "event_order": [
+    "Donor Init suppresses already-owned pickup, otherwise configures selected actor and native decorative spawn.",
+    "Collision-admitted Get grants ownership before banner acknowledgement; dispatcher and Flash retain original source phase behavior.",
+    "Captured FR coordinate-wrapper path applies donor policy then native acknowledgement/retirement/release; original native B-running consumer observes ownership."
+  ],
+  "exactpins": {
+    "source_lift": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/receipt.json",
+      "sha256": "25697be78ea0c7c5b39618381d1b6d29c007e7484cf7d4530db113959b65122d"
+    },
+    "source_state_audit": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/state-audit.json",
+      "sha256": "54feef6f56e58a2d2479b70e59548f28879f00ff2d853d65a1fde0d8a81cd5e5"
+    },
+    "generic_emission_boundary": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/emission-boundary.json",
+      "sha256": "09b65c0a1306e5fa466c24f7e52ee4dbca39bb554f0b26accfd200b8668420de"
+    },
+    "resource_service_specification": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/specification.json",
+      "sha256": "a69ce78e25ac44dc9b1d2a8fa270e0495e72167a06ca10bdcc4eafc2f3509c99"
+    },
+    "source_state_layout": {
+      "path": "local/roundtrip/mzm-behavior-swap-20261016/source-state-layout.json",
+      "sha256": "0b9d1808cced5068643d8bab1371ffa31d369a9f774044875e52fe5960d7ed65"
+    },
+    "spawn_service_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/behavior-swap/mzm/spawn-services.json",
+      "sha256": "a15a96ec8a43a1e145f53cad4a3f3a74ce0597890d223177eb82ed23c26a6e51"
+    },
+    "donor_behavior_contract": {
+      "path": "local/behavior-swap-20261016/dsl/mzm-morph-ball.node.json",
+      "sha256": "964977902f427f85c9d8220d9bc2ed1e75881513de8a8d3f3fdcc1481ffc7d20"
+    },
+    "host_behavior_contract": {
+      "path": "local/behavior-swap-20261016/dsl/firered-running-shoes.node.json",
+      "sha256": "fa0a4375cbd462653a87afa2c5bf200d87f4e85f6d4e5006c74d59923e848f88"
+    },
+    "donor_full_DSL_tree": {
+      "path": "local/behavior-swap-20261016/dsl/mzm.behavior-tree.json",
+      "sha256": "116bc8c56f792a94d7865578038a52a30502f61be4573f5b99f537a91d4bbde4"
+    },
+    "host_full_DSL_tree": {
+      "path": "local/behavior-swap-20261016/dsl/firered.behavior-tree.json",
+      "sha256": "28a51ea3a17a48c47a4b7f10c99bd0a66275bd3b58e5b85698183429fe5a5085"
+    },
+    "request": {
+      "path": "local/behavior-swap-20261016/dsl/request-003/request.json",
+      "sha256": "15162c22cf2a4692da8413cd6e8b8985f95bdbd2446cafdb41f49507237a3402"
+    },
+    "source_recipe": {
+      "path": "local/behavior-swap-20261016/adapter-recipe-002.json",
+      "sha256": "99642dc4ba84a27923b1678d333b072e0082da104b214da23f55cf6e8c305d23"
+    },
+    "captured_recipe": {
+      "path": "local/behavior-swap-20261016/fr-captured-request-003/recipe.json",
+      "sha256": "072e2e702c580c794197418d32bf68f9f3e50a4ce497a262e661e0049d9482ce"
+    },
+    "installed_build": {
+      "path": "local/behavior-swap-20261016/fr-installed-001/build-report.json",
+      "sha256": "9176068af20b11e8ffaede393f49a4bc07a734b37874e7416c5f584c22c3d683"
+    },
+    "source_independent_replay": {
+      "path": "local/behavior-swap-20261016/fr-source-independent-001/build-report.json",
+      "sha256": "d1d02c0f2fbf0160a08b8f288e49ebea27e17cb3af9e826be0ef9fe2e838d416"
+    },
+    "donor_native_cluster": {
+      "path": "research/ir-workshop/behavior-swap-20261016/native-proof/aux-mzm-paired-001/receipt.json",
+      "sha256": "955589294271fc8e4df12ed7bedaeda8c5d797359accd4a0ebae96246e8ec328"
+    },
+    "host_native_consumer": {
+      "path": "research/ir-workshop/behavior-swap-20261016/native-proof/fr-installed-final-002/receipt.json",
+      "sha256": "0dd053fc66c74cee93141f927a70ecff5520d7298f53713f79aad815fecb0b73"
+    },
+    "qualification_attempt_index": {
+      "path": "research/ir-workshop/behavior-swap-20261016/native-proof/qualification-index.json",
+      "sha256": "2254ead8465e9eb755751ad5ec8c9c03ea0d3ebb12c74b33a5c2179ae550b74e"
+    },
+    "native_feedback_receipt.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/receipt.json",
+      "sha256": "e6d7263b48253d2d87acbe56ddcb6253f89353107ceb0ed9e4aa02999db7ffc3"
+    },
+    "native_feedback_mzm-feedback.node.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/mzm-feedback.node.json",
+      "sha256": "e1652f814c8bff840c09b433eb1916426f32c4707040ae84374d5448748dc274"
+    },
+    "native_feedback_firered-feedback.node.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/firered-feedback.node.json",
+      "sha256": "6f8282316274ecaf3b2e36c160bb84812957069e4035796e0a8ca58c319e24df"
+    },
+    "native_feedback_mzm.behavior-tree.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/mzm.behavior-tree.json",
+      "sha256": "c82a0515094fd26d36036966698968f80c3005d0cc596d3864750254821e7d71"
+    },
+    "native_feedback_firered.behavior-tree.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/firered.behavior-tree.json",
+      "sha256": "c4e7783bb6b0e0ab6ea786329340a31d1b9491cee5d12eac442741c7eb7766fb"
+    },
+    "native_feedback_discovery-receipt.json": {
+      "path": "local/behavior-swap-20261016/dsl/native-feedback-001/discovery-receipt.json",
+      "sha256": "c6eb57cd4d9337dfba06d53a062c421b68c67707efea33f05acbb1b818c209ec"
+    },
+    "review_qc-codec": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-codec.json",
+      "sha256": "324b0cf8cf14688977d57fde60e09701535e8364bd1fd00bf7eba60c59b4b5db"
+    },
+    "review_qc-source": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-source.json",
+      "sha256": "589bc7b2c24ad9df895c20ab280f2aa635893cdb38ad23334570a0aa4cf5634a"
+    },
+    "review_qc-recipe": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-recipe.json",
+      "sha256": "954b169d8bbead573f2aa8490768139429a3d3d9e5f700a7e8c13ae0d7bb15fe"
+    },
+    "review_qc-resource": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-resource.json",
+      "sha256": "c893d206c8f1fbf8b6141830d93855b71a1c4802e7622d6062ff66ccf683ec81"
+    },
+    "review_qc-stack-services": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-stack-services.json",
+      "sha256": "a561749a628fa054047ab3e2646c7d9fda0ecde5eb36121d4c6fb74468f0627c"
+    },
+    "review_qc-early": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-early.json",
+      "sha256": "4b3836ab838b7d066a8a9259a7b7c80da19152bb3ec8f6ec552f0b02721ac07f"
+    },
+    "review_qc-install": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-install.json",
+      "sha256": "66abbbca24f759318b7270c985adcb2dfabef70c6fd194dbef85866626b9ff66"
+    },
+    "review_qc-final": {
+      "path": "research/ir-workshop/behavior-swap-20261016/qc-final.json",
+      "sha256": "3af572736fb330d3a33bd8680b882a34109fe6ce6f7dd32c0054b14fa4a3f402"
+    }
+  },
+  "dependencylinks": [
+    {
+      "kind": "source-behavior-system-contract",
+      "role": "donor_behavior_contract",
+      "ref": {
+        "path": "local/behavior-swap-20261016/dsl/mzm-morph-ball.node.json",
+        "sha256": "964977902f427f85c9d8220d9bc2ed1e75881513de8a8d3f3fdcc1481ffc7d20"
+      }
+    },
+    {
+      "kind": "source-behavior-system-contract",
+      "role": "host_behavior_contract",
+      "ref": {
+        "path": "local/behavior-swap-20261016/dsl/firered-running-shoes.node.json",
+        "sha256": "fa0a4375cbd462653a87afa2c5bf200d87f4e85f6d4e5006c74d59923e848f88"
+      }
+    },
+    {
+      "kind": "backend-specific-native-cluster",
+      "role": "explicit-resource-codec-and-service-binding",
+      "recipe": {
+        "path": "local/behavior-swap-20261016/fr-captured-request-003/recipe.json",
+        "sha256": "072e2e702c580c794197418d32bf68f9f3e50a4ce497a262e661e0049d9482ce"
+      },
+      "source_specification": {
+        "path": "local/roundtrip/mzm-behavior-swap-20261016/full-lift-02/specification.json",
+        "sha256": "a69ce78e25ac44dc9b1d2a8fa270e0495e72167a06ca10bdcc4eafc2f3509c99"
+      }
+    }
+  ],
+  "native_eligibility": {
+    "scope": "Four-source-root cluster only, source-valid isolated dispatcher traces and exact captured FR recipe/native consumer; not four independent original-function qualification receipts.",
+    "donor_paired_native_cases": 141,
+    "donor_total_calls": 284,
+    "host_native_calls": 5665,
+    "per_root_independent_native_qualification": false,
+    "generic_native_package_admission": false,
+    "generic_resource_emission_admission": false,
+    "backend": "captured behavior_adapter recipe with explicit resource codec and original native service implementations",
+    "global_closure": "OPEN"
+  },
+  "runtime_capabilities": {
+    "portable_L1": false,
+    "automatic_source_IR_modules": 4,
+    "native_qualified_cluster": true,
+    "exact_recipe_installed_native_consumer_verified": true,
+    "generic_native_installable": false,
+    "closed_interchangeable_prefab": false,
+    "whole_game_equivalent": null,
+    "source_matching_resource_identity_codec_required": true,
+    "source_lift_generated_C_direct_install_admitted": false,
+    "source_independent_capture_replay_byte_identical": true,
+    "current_or_general_ROM_replacement_eligible": false
+  },
+  "originalhostprerequisites": [
+    "Original canonical sprite allocation, scratch synchronization, graphics/OAM consumers, scheduler and native service implementations remain required/open.",
+    "Typed OAM token1/null0 requires source identity-aware codec; reject unknown identities, never store symbolic token1 as raw native pointer.",
+    "FR original acknowledgement, grant/retire/release and running consumer are exact captured native prerequisites; no natural-route/save/whole-game compatibility claim."
+  ],
+  "gaps": [
+    "Independent per-root original-ROM oracle receipts unavailable; four source modules are not admitted as generic native packages.",
+    "Native services, rendering/resources, scheduling, activation controls and persistence are not portable/closed.",
+    "Only exact backend-specific captured recipe is evidenced; generic emitter must remain fail-closed for resource tokens."
+  ],
+  "counts": {
+    "new_genuinely_recovered_source_roots": 4,
+    "source_root_bytes": 402,
+    "new_FR_behavior_roots": 0,
+    "new_central_native_packages": 0,
+    "new_source_behavior_contracts": 2,
+    "host_generated_code_including_adapters_bytes": 1792,
+    "host_total_appended_bytes": 1806,
+    "new_ready_prefabs": 0,
+    "new_publication_native_calls": 0
+  },
+  "timing": {
+    "publication_preparation_s": 0.004317082999999999,
+    "native_reused": true,
+    "native_stages_may_be_nested": "Use pinned native receipts; no added qualification execution or pooled per-root counts."
+  }
+}

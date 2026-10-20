@@ -1,0 +1,156 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kirby-nightmare.terrain.left_displacement_shape2",
+  "label": "Left terrain displacement, source shape 2",
+  "role": "terrain_displacement",
+  "source_game": "kirby-nightmare-in-dream-land",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kirby-nightmare.terrain.left_displacement_shape2/package.json",
+  "package_sha256": "603852b0f663e1813d40179af13a8eed9af72dd719b96c61659cc3e360bf96cb",
+  "behavior_sha256": "47ab32d094a9d1ca5cdcbd187253ed788388f691c1892f305ba50a517dee465e",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "0013acf7c7468957b69cc76719aa207edbaaddbb158b13a245d16dd7737df40e"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 2,
+        "unsigned_max": 2
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "flattened_16_by_16_shape_sample_index",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tile_local_shape_row",
+        "confidence": 0.99,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/kirby-nightmare-in-dream-land/l0/080219d0.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared terrain sample index and immutable source row",
+    "clock": "explicit_function_invocation",
+    "phase": "after source terrain sample; before next scratch overwrite",
+    "ordering": "selector low16 mask -> source row load -> shared index read -> signed byte read -> return"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kirby-nightmare.terrain.left_displacement_shape2/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Selector fixed to one source shape value and sample index 0..255; dynamic shape dispatch is unqualified.",
+    "Source point sampler, contact root, actor writeback and scheduler are unresolved.",
+    "World unit, physical scale, frame cadence and gameplay reachability are unknown.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "source_system": {
+      "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+      "sha256": "62eaee5f2b5d63e3202a1ee47c138d7f4ba34e02fb0c46b7314d18f909896e3a"
+    },
+    "capsule": {
+      "path": "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json",
+      "sha256": "7b8fdbf35a9043b208b6415e2561900c22be0cb9c22a9093b889476b2ca397ca"
+    },
+    "shape_selector": 2,
+    "sample_index_domain": [
+      0,
+      255
+    ],
+    "source_row": "immutable own-ROM signed8 row; exact bytes in generated L1 asset",
+    "return": {
+      "quantity": "left_terrain_contact_displacement",
+      "storage_type": "u32",
+      "interpretation": "signed8 ROM row byte sign-extended to source u32 bit pattern",
+      "unit": "one source coordinate unit; physical scale unresolved",
+      "frame": "source_contact_coordinate_axis_left",
+      "caller_evidence": "0x0801e178 adds this value to actor X"
+    },
+    "source_services_open": [
+      "point sampler",
+      "actor contact root",
+      "terrain map",
+      "actor load/writeback"
+    ]
+  },
+  "return_meaning": {
+    "quantity": "sign_extended_signed8_surface_displacement_bit_pattern",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "source_contact_coordinate_axis_left",
+    "confidence": 0.99,
+    "evidence": [
+      "local/ir/queue-runs/20261016T091004/kirby-nightmare-in-dream-land/l0/080219d0.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+      "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+      "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+    ],
+    "storage_type": "u32",
+    "signed_encoding": "twos_complement"
+  },
+  "parameter_meanings": {
+    "param_0": {
+      "quantity": "source_shape_selector",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "source_terrain_shape_catalog",
+      "confidence": 0.99,
+      "evidence": [
+        "local/ir/queue-runs/20261016T091004/kirby-nightmare-in-dream-land/l0/080219d0.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/publication-evidence.json",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json"
+      ],
+      "storage_type": "u32"
+    }
+  },
+  "source_root_identity": {
+    "source_game": "kirby-nightmare-in-dream-land",
+    "entry": "080219d0"
+  },
+  "domain_contract_fingerprint": "3883666639477343a466eaced1b1cefbc241b3de097074fbfb1d892f76115659",
+  "specialization_subset": true
+}

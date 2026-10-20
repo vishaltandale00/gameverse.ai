@@ -1,0 +1,633 @@
+{
+  "canonicalstate": {
+    "adapter_fields_by_existing_package": {
+      "mlss.motion.actor_step": [
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_0",
+          "offset": 12,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_1",
+          "offset": 16,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_2",
+          "offset": 20,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_3",
+          "offset": 24,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_4",
+          "offset": 524,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_5",
+          "offset": 525,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_6",
+          "offset": 531,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_7",
+          "offset": 574,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_8",
+          "offset": 576,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_9",
+          "offset": 578,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_10",
+          "offset": 580,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_11",
+          "offset": 584,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_12",
+          "offset": 588,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_13",
+          "offset": 592,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_14",
+          "offset": 600,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_15",
+          "offset": 604,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_16",
+          "offset": 693,
+          "owner": "entity",
+          "width": 8
+        }
+      ],
+      "mlss.motion.reset": [
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_0",
+          "offset": 531,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_1",
+          "offset": 574,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_2",
+          "offset": 576,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_3",
+          "offset": 588,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_4",
+          "offset": 592,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_5",
+          "offset": 604,
+          "owner": "entity",
+          "width": 32
+        }
+      ],
+      "mlss.motion.update": [
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_0",
+          "offset": 20,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_1",
+          "offset": 24,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_2",
+          "offset": 525,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_3",
+          "offset": 531,
+          "owner": "entity",
+          "width": 8
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_4",
+          "offset": 574,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_5",
+          "offset": 576,
+          "owner": "entity",
+          "width": 16
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_6",
+          "offset": 584,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_7",
+          "offset": 588,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_8",
+          "offset": 592,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_9",
+          "offset": 600,
+          "owner": "entity",
+          "width": 32
+        },
+        {
+          "address": null,
+          "argument": "r0",
+          "name": "field_10",
+          "offset": 604,
+          "owner": "entity",
+          "width": 32
+        }
+      ]
+    },
+    "concurrent_intermediate_write_semantics": "Unproven; no IRQ/concurrent observer assumed by finite function proofs",
+    "existing_module_id": "mlss.motion.lifecycle",
+    "owner": "One original canonical caller-owned actor referenced byr0; source root and inlined callees share exact byte/halfword backing",
+    "physical_addresses": "validation/provenance only, not portable allocation",
+    "storage_authority": "Original host RAM; binding snapshots and commits only at explicit synchronous invocation boundary"
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "existing_packages_with_additional_installed_provenance": 3,
+    "new_central_packages_requested": 0,
+    "new_distinct_source_functions": 0,
+    "new_distinct_source_roots": 0,
+    "new_native_runs_for_this_proposal": 0,
+    "prior_qualified_roots_installed": 3,
+    "retained_fresh_rebuilt_comparisons": 3072,
+    "retained_reused_original_comparisons": 3072
+  },
+  "dependency_links": [
+    {
+      "evidence": {
+        "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json",
+        "sha256": "6fea2f823432ffa56c4ab8744446024d41dff7ffac9a737c57b1ce38a7441db7"
+      },
+      "from": "mlss.motion.actor_step",
+      "kind": "actual-source-call-automatically-inlined",
+      "native_call_pc": "0804feb4",
+      "same_actor": "r0 backing",
+      "to": "mlss.motion.update"
+    },
+    {
+      "evidence": {
+        "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/080402c4.source.json",
+        "sha256": "d4a971e6330eedf81fa9fd49027f718d61440b350c0a88fa4ceb5bab748bfeca"
+      },
+      "from": "mlss.motion.update",
+      "kind": "actual-source-call-automatically-inlined",
+      "native_call_pcs": [
+        "0804030a",
+        "0804032c"
+      ],
+      "same_actor": "r0 backing",
+      "to": "mlss.motion.reset"
+    },
+    {
+      "from": "mlss.motion.actor_step",
+      "kind": "transitive-automatically-inlined-through-update",
+      "proof": {
+        "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/original-proof.json",
+        "sha256": "016743c65879227cd2dc61a821a06f2d823550e2b2f7758b0b99f45a5f7769d0"
+      },
+      "same_actor": "r0 backing",
+      "to": "mlss.motion.reset"
+    },
+    {
+      "kind": "independent-retained-native-logo-asset-subsystem",
+      "motion_dependency": false,
+      "proof": {
+        "path": "local/roundtrip/coverage-next-mlss-typed-v1/assets-proof.json",
+        "sha256": "8ccb4ad7067559e9b7c033939da7e2107f85c6d511c940cf474ec6a738d895e1"
+      },
+      "source_asset_ids": [
+        "dword_81DD7F4",
+        "dword_81DD9F4",
+        "dword_81E19F4"
+      ],
+      "typed_source_bytes": 18176
+    }
+  ],
+  "event_order": [
+    "Original actor_step0804fe68 tests active/path flags, integrates X/Y on eligible path and calls vertical update080402c4 on same r0 actor.",
+    "Automatically inlined update performs vertical state integration and conditional reset08047eb8 on same actor storage.",
+    "Standalone update/reset entries also installed; actor_step inlined closure implies neither an independent actor nor separate scheduler calls.",
+    "Initializer080401f0 stays exact native212B, uses live incomingr3 and is excluded from genericr3-clobbering veneer. Full initializer\u2192update transaction unqualified."
+  ],
+  "exactpins": {
+    "existing_source_system_owner": {
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/system.json",
+      "sha256": "4de1d84106c387b046fa2c487a7f25e8846df15da00fe2ce578177925f561484"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/mlss/result.json",
+      "sha256": "76178b98c75a7f699fecf8ff1b9b006f7016820bd512c7cb249c68413ee7c432"
+    },
+    "independent_IR_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/mlss-ir-qc.json",
+      "sha256": "d7059712f818eae10392dd6591c92420c713e98e4f2aff145094f486ab8b8416"
+    },
+    "independent_source_context_QC": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/mlss-context-qc.json",
+      "sha256": "eb9418707a5ff429607b663106541cf3fd6b9bb7bb06749cfa67ccbb49782d67"
+    },
+    "prefab_graph": {
+      "path": "local/roundtrip/coverage-next-mlss-actor-v1/prefab-graph.json",
+      "sha256": "f975739378cdad0da05797c227c7200072110f97df1835fb5b92aca3e2049c51"
+    },
+    "provider_report": {
+      "path": "local/roundtrip/coverage-next-mlss-actor-v1/provider-report.json",
+      "sha256": "4e7383a94f145a6573a8c11611ec33451fec45cd34adbd3c6057d273b8cfe73e"
+    },
+    "raw_diff": {
+      "path": "local/roundtrip/coverage-next-mlss-actor-v1/raw-diff.json",
+      "sha256": "af21b12b13eb0d5cac2e9047a60b2d0915453d66b1e4d0d77f85ecd0dfd9ad1f"
+    },
+    "source_actor_step": {
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json",
+      "sha256": "6fea2f823432ffa56c4ab8744446024d41dff7ffac9a737c57b1ce38a7441db7"
+    },
+    "source_capsule": {
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+      "sha256": "94644a415d6b5d67672579d12876d13405c3513fea6ff37c0f22fe5731a54081"
+    },
+    "source_reset": {
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08047eb8.source.json",
+      "sha256": "ea70d7728c53ca6613274daff0e5635e93ac9cffed4acfd2519f08b0aff6b99a"
+    },
+    "source_update": {
+      "path": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/080402c4.source.json",
+      "sha256": "d4a971e6330eedf81fa9fd49027f718d61440b350c0a88fa4ceb5bab748bfeca"
+    },
+    "typed_assets_proof": {
+      "path": "local/roundtrip/coverage-next-mlss-typed-v1/assets-proof.json",
+      "sha256": "8ccb4ad7067559e9b7c033939da7e2107f85c6d511c940cf474ec6a738d895e1"
+    },
+    "typed_partition": {
+      "path": "local/roundtrip/coverage-next-mlss-typed-v1/bundle.json",
+      "sha256": "ee47fb9c9acfcca778d44a13f1399822c2c9ae6c141e4738223b685e57aa2507"
+    },
+    "typed_replay_receipt": {
+      "path": "local/roundtrip/coverage-next-mlss-typed-v1/replay-receipt.json",
+      "sha256": "6c683e76c543734e3b103643e32a03951e2866c85d8715a4b7402788eb2c4341"
+    }
+  },
+  "existing_package_capabilities": [
+    {
+      "existing_L1": {
+        "path": "local/ir/packages/mlss.motion.actor_step/l1.json",
+        "sha256": "a2b9fcbda10598912826c0e5d001af4a7e1102875823228ac2e40c14d8614286"
+      },
+      "existing_ontology_record": {
+        "path": "ontology/executable-components/mlss.motion.actor_step.json",
+        "sha256": "59df0b2f1e732ba65d15967bead40c4dc861829ff7824635127f69aeeb76e70d"
+      },
+      "existing_package": {
+        "path": "local/ir/packages/mlss.motion.actor_step/package.json",
+        "sha256": "2f144042af3b2fe6870be71816390d26764413f7ebefcbacf438acda60cf69ed"
+      },
+      "existing_receipt": {
+        "path": "local/ir/packages/mlss.motion.actor_step/receipt.json",
+        "sha256": "016743c65879227cd2dc61a821a06f2d823550e2b2f7758b0b99f45a5f7769d0"
+      },
+      "installed_entry": "0804fe68",
+      "package_id": "mlss.motion.actor_step",
+      "private_executable_provenance": {
+        "bound.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/bound.c",
+          "sha256": "1707835085222ad1feaa52e6dd60dd0b4a3eaf93a0e6912532f6c1c97f837479"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/generated.c",
+          "sha256": "9d22d0b5e41bff6de3aceca92e29eae38debe05f430fd2a0c5ea552c60e25df5"
+        },
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/l0.json",
+          "sha256": "63a9b46bdd2879fe1f7e59199351da0e059d9956b59f050c25e7ee9493026b20"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/l1.json",
+          "sha256": "a2b9fcbda10598912826c0e5d001af4a7e1102875823228ac2e40c14d8614286"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/original-proof.json",
+          "sha256": "016743c65879227cd2dc61a821a06f2d823550e2b2f7758b0b99f45a5f7769d0"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/rebuilt-proof.json",
+          "sha256": "a346a4cda38014e77d0b3b93f586726977415034de4dc878b3c144250eee0f17"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/actor_step/validation-adapter.json",
+          "sha256": "55afa34dfe4715ff38ad683acb5bae79952c1400541cca05a02bda4be1e6e3d3"
+        }
+      }
+    },
+    {
+      "existing_L1": {
+        "path": "local/ir/packages/mlss.motion.update/l1.json",
+        "sha256": "9440a8e51db80fd38b455bddd3672e7937f0e80d19c87f662e7d33ddd910074e"
+      },
+      "existing_ontology_record": {
+        "path": "ontology/executable-components/mlss.motion.update.json",
+        "sha256": "ea33367bd0accd360714932d9818a3c5747a5560dd26884a863cdc14d2865c9e"
+      },
+      "existing_package": {
+        "path": "local/ir/packages/mlss.motion.update/package.json",
+        "sha256": "cc1bc38a207036249e72c9a2711fd17861038cfa288346c6153cd35dbc0b8ff4"
+      },
+      "existing_receipt": {
+        "path": "local/ir/packages/mlss.motion.update/receipt.json",
+        "sha256": "25ecc938d140b1a0f481901b214129d4ec1b28a61b3467e8b508329d5e0ecb55"
+      },
+      "installed_entry": "080402c4",
+      "package_id": "mlss.motion.update",
+      "private_executable_provenance": {
+        "bound.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/bound.c",
+          "sha256": "4933edce4ee6233f60ae125eb0afa395c09f742cc01d01af407581205cd5307d"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/generated.c",
+          "sha256": "43364fc8fb2ecf8985389391bcef4baff54e942c6d538f5163b3a02570046ed3"
+        },
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/l0.json",
+          "sha256": "86461c7dd633e104a00c307e487b472a8fbbf7d84b33f9f3e4d659c76b37dccb"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/l1.json",
+          "sha256": "9440a8e51db80fd38b455bddd3672e7937f0e80d19c87f662e7d33ddd910074e"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/original-proof.json",
+          "sha256": "25ecc938d140b1a0f481901b214129d4ec1b28a61b3467e8b508329d5e0ecb55"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/rebuilt-proof.json",
+          "sha256": "35feab8711b785f688b2c26cced8a5c9a1d6a7f5bfac79b52d582fcc0f0d1713"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/update/validation-adapter.json",
+          "sha256": "eff839aeda70f6d85629507ac0443f1da112ef1cefbec2b8208e5652ed72b734"
+        }
+      }
+    },
+    {
+      "existing_L1": {
+        "path": "local/ir/packages/mlss.motion.reset/l1.json",
+        "sha256": "3d7d34a7e7ba8accc3c6324b442b8b6ad0b2e3e5dd94278ffe6db652edf5c3b9"
+      },
+      "existing_ontology_record": {
+        "path": "ontology/executable-components/mlss.motion.reset.json",
+        "sha256": "a456292eb4c7955c2e6eaf1f9bbad57a1a6ea64508f1f7e8a1f761d873b2ccbd"
+      },
+      "existing_package": {
+        "path": "local/ir/packages/mlss.motion.reset/package.json",
+        "sha256": "b7fdd6e54d82a99cbb93715827df0b495380faedcb5da2d1e63295c18d767703"
+      },
+      "existing_receipt": {
+        "path": "local/ir/packages/mlss.motion.reset/receipt.json",
+        "sha256": "088a719eaa4841b51e5ec64ee07a68b37dc72a0347a8137a7082398648e35e06"
+      },
+      "installed_entry": "08047eb8",
+      "package_id": "mlss.motion.reset",
+      "private_executable_provenance": {
+        "bound.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/bound.c",
+          "sha256": "ae5dd0becfa0c45e7de66fff2384299d6415a40e4f897bfafd2c9493f7582c84"
+        },
+        "generated.c": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/generated.c",
+          "sha256": "24cabe975ae688336355d09532be7ebe313fb1fc99d71a078907313d5fcbc48d"
+        },
+        "l0.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/l0.json",
+          "sha256": "377735f6f7653c566b982ba7852e2e41567f7f2097ca064efc7d4d29eb896fa7"
+        },
+        "l1.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/l1.json",
+          "sha256": "3d7d34a7e7ba8accc3c6324b442b8b6ad0b2e3e5dd94278ffe6db652edf5c3b9"
+        },
+        "original-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/original-proof.json",
+          "sha256": "088a719eaa4841b51e5ec64ee07a68b37dc72a0347a8137a7082398648e35e06"
+        },
+        "rebuilt-proof.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/rebuilt-proof.json",
+          "sha256": "b87629d7b052bd9a0c5425b1b747bd093c1c988ceca77065d75e673ddeb8818c"
+        },
+        "validation-adapter.json": {
+          "path": "local/roundtrip/coverage-next-mlss-actor-v1/reset/validation-adapter.json",
+          "sha256": "3cb5c26259390d5f7dabc135296e669ad7b50dd87c4671ca8cb613e52c47c01a"
+        }
+      }
+    }
+  ],
+  "game_id": "mario-and-luigi-superstar-saga",
+  "gaps": [
+    "16,759,016 output bytes remain mixed native/unknown; source asset suffixes/raw/object data receive no semantic credit",
+    "No full matching source build/ELF/map baseline; no complete function or asset denominator",
+    "Live-r3 initializer stays native, full init\u2192update lifecycle not claimed",
+    "Source parent paired-controller context actor references and scheduler jump table remain unresolved",
+    "Controller input, terrain/contact, party/action identity, save/lifetime and scene scheduler behavior remain unqualified",
+    "Logo asset subsystem is native/open; source palette DMA/VRAM consumer evidence establishes asset identity but does not regenerate that code"
+  ],
+  "id": "mlss.actor-motion-phase.installed-provenance.v1",
+  "module_id": "mlss.motion.lifecycle",
+  "module_owner_policy": "Reuse existing canonical source owner; no new player/actor module or separate state instance requested",
+  "native_eligibility": {
+    "ABI": "Void roots; no scalar parameters; global-only state Fusion,borrowed entitybase r0 MLSS.8Bentry veneer clobbersr3; installed roots do not require incomingr3.",
+    "fresh_runs_for_this_metadata": 0,
+    "kind": "finite-original-and-reconstructed-entry-native-parity",
+    "original_rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+    "rebuilt_rom_sha256": "759f4ffbdb5a5003bec0fd3902e6027b4c2b8514fd317d80b3047efb2ed62a63",
+    "scope": "Exact pinned synthetic function states/fields; not all callers,gameplay,scheduler,lifecycle or whole-game proof",
+    "vectors_per_root": 1024
+  },
+  "originalhostprerequisites": [
+    "Caller owns one aligned mutable canonical r0 actor disjoint from ROM,globals and native return frame.",
+    "Nested update/reset field accesses refer to same actor bytes; no independent actor copies.",
+    "Original initialization, paired-actor controller refs,scheduler,input/terrain,save,allocation/lifetime remain native/open.",
+    "Logo palette/tiles/map separately identified native-subsystem resources; no motion-to-logo edge or composed gameplay claim."
+  ],
+  "package_ids": [
+    "mlss.motion.actor_step",
+    "mlss.motion.update",
+    "mlss.motion.reset"
+  ],
+  "proposal_status": "existing-packages-additional-private-source-native-QC-provenance-only-sole-publisher-review",
+  "requested_semantic_metadata_correction": null,
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "embedded_captured_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 316,
+    "independently_identified_unique_source_data_bytes": 18176,
+    "installed_entries": [
+      "0804fe68",
+      "080402c4",
+      "08047eb8"
+    ],
+    "mechanical_binding_bytes": 444,
+    "output_mixed_unknown_bytes": 16759016,
+    "portable_L1": true,
+    "raw_difference_bytes": 783,
+    "replacement_entry_veneer_bytes": 24,
+    "whole_game_editable_or_ready": false,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "0804fe68",
+    "080402c4",
+    "08047eb8"
+  ],
+  "timing": {
+    "metadata_seconds": 0.009913291,
+    "provider_total_seconds": 1.45803375,
+    "queue_seconds": null,
+    "scope": "Metadata evidence linking only; no native compilation,build,oracle,model,export or replay. Fusion semantic overlay includes pure in-memory lower old/new metadata C-identity comparison."
+  }
+}

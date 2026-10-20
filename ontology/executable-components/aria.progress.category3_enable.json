@@ -1,0 +1,106 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.progress.category3_enable",
+  "label": "Set source category3 ability activation flag",
+  "role": "progression.ability_activation_bit",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.progress.category3_enable/package.json",
+  "package_sha256": "b7ba974c146c99dabf9153410e8b0919f1d8eda6401979e5bf1c6d00573aa43b",
+  "behavior_sha256": "0931a10b72208d54eabbb0f4d3eb1616c126458ac274e872cb97b9ebfe9967bf",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "98187d6dcec9d0361627dc3c91b7bc854295faf3d60042c6c5e16f017bfc0e6b"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 7
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 1
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "category3_ability_enable_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign.soul_ability.category3",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/08032adc.json",
+          "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json"
+        ],
+        "naming_status": "source_backed_8bit_enable_flags"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "same caller-owned campaign backing across source transactions",
+    "clock": "explicit source caller invocation",
+    "ordering": "before ability grant branch count query; newcategory3enable before acquire; postcount only host observation"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.progress.category3_enable/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite native function subset, not full pickup/equip/cast/root080441f8 closure",
+    "No original root count inflation; each distinct original entry counted once",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+    "sha256": "c2ef50c9dbf97271c5f178e0036fad5236e6c9ede8ce2d9e7adc68719e2b2fa5"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "castlevania-aria-of-sorrow",
+    "entry": "08032adc"
+  },
+  "domain_contract_fingerprint": "0e174e123659f689760e360a0a6969004c06fc2cc65b1f18ad2465a6aab096e5",
+  "specialization_subset": true
+}

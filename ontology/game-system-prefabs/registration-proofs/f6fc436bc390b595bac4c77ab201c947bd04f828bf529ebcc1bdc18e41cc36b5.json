@@ -1,0 +1,693 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "driver_steering: unbound source state remains private with zero/default configuration: field_4, field_6, field_7, field_8, field_9",
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "driver_steering": {
+      "package_id": "kart.driver_steering_accumulation_lane0",
+      "package_sha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700",
+      "behavior_sha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "entity_r0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.motion_flags",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.motion_flags",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.action_state",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.action_state",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.accumulated_turn",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.accumulated_turn",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": true
+        },
+        {
+          "name": "field_3",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.input_mask",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.input_mask",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_4",
+          "owner": "entity_r0",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.handling_lane",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 0
+          },
+          "meaning": {
+            "quantity": "enum",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.handling_lane",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.flags",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering_recovery.flags",
+            "confidence": 0.95,
+            "evidence": [
+              "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+              "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_6",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.limit",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.limit",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_7",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.reversal_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.reversal_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_8",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.increase_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.increase_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ],
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_9",
+          "owner": "entity_r0",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.recenter_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "angle_step",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "kart.racer.steering.recenter_step",
+            "confidence": 0.97,
+            "evidence": [
+              "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5",
+          "field_6",
+          "field_7",
+          "field_8",
+          "field_9"
+        ],
+        "writes": [
+          "field_2"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [
+        {
+          "id": "source-character-0-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2453,
+            "field_7": 155,
+            "field_8": 115,
+            "field_9": 124
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 0 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "bf24c49ffe4d7b1cfc863115fe8f1c447817143b156ee14421e0aa3af623560c"
+        },
+        {
+          "id": "source-character-1-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2527,
+            "field_7": 155,
+            "field_8": 117,
+            "field_9": 116
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 1 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "130e56aaaccb05715d31441d0d3740f834de05241c2fb19c9b7ff2ad33b68652"
+        },
+        {
+          "id": "source-character-2-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2304,
+            "field_7": 140,
+            "field_8": 96,
+            "field_9": 149
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 2 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "ec8256199434d21539d4409c0a37f9e24a691fd47a08c57e92e08804902a4dd0"
+        },
+        {
+          "id": "source-character-3-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2478,
+            "field_7": 159,
+            "field_8": 108,
+            "field_9": 148
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 3 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "4a7220860086ff80edebc7daf5f972e304bf24e4f3d31fd55485fe5158d72354"
+        },
+        {
+          "id": "source-character-4-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2373,
+            "field_7": 140,
+            "field_8": 98,
+            "field_9": 164
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 4 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "fc767817e437d452eabdb4ad1df71c7563d5502628bd48cbb929dd71ed52b904"
+        },
+        {
+          "id": "source-character-5-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2281,
+            "field_7": 147,
+            "field_8": 107,
+            "field_9": 133
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 5 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "68fb270a1abab92453f449d270f36c2dca2163c39292a12105f901171e9221b4"
+        },
+        {
+          "id": "source-character-6-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2453,
+            "field_7": 158,
+            "field_8": 100,
+            "field_9": 138
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 6 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "6bc048cff855697a33472ec1c432279149088dd5e829fb81183debc40558bb40"
+        },
+        {
+          "id": "source-character-7-handling-lane0",
+          "fields": {
+            "field_4": 0,
+            "field_6": 2502,
+            "field_7": 140,
+            "field_8": 110,
+            "field_9": 111
+          },
+          "collections": {},
+          "source_evidence": "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json",
+          "label": "Original character 7 steering coefficients, handling lane 0",
+          "source_rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+          "provenance": [
+            "Original ROM coefficient row copied by the profile producer; selected lane 0 is an explicit qualified precondition"
+          ],
+          "source_data_sha256": "84f09358acf3749a480f4626fbb61c3d3612de28793d91ff163b6506322cea69"
+        }
+      ],
+      "lifecycle": {
+        "storage": "onepersistentcanonical racersteeringview",
+        "clock": "oneoriginal functioninvocation",
+        "phase": "originaldriver steeringaccumulation; callerentrylegality remainsrequired",
+        "ordering": "sourcecaller08037fd8 schedulesafterinput/steeringstate andbeforeacceleration"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Privatefinite sourcecomponent; notpublished portablecomponent yet",
+        "768chained scenarioentries individuallyoriginal/native compared, notnaturalrace inputtrace",
+        "Selector0 precondition is explicit; otherlanes and fullcontroller/fullvehicle/trackcontact remainopen",
+        "Failed expectedfixture generatoraliased dictionaries once; fixedcopying, retainedfailedreceipt; no behavior/compilerchange",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "4bc56cf651ea3477f0ef12b93e4afdf6cf1bcc8b654215c9f47faebb7501a779",
+  "adapter_interfaces": {},
+  "schedule": {
+    "validator_sha256": "cd7fb440b2293b82cc57a095f09246f79ac56d8a0b84861acbca8ba408541c9c",
+    "phases": [],
+    "freshness_requirements": [],
+    "conditional_invocations": 0,
+    "scope": "Explicit authored phase order and declared producer freshness only; source lifecycle completeness, callback validity and runtime domain closure remain unproven."
+  },
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "driver_steering": {
+        "package_id": "kart.driver_steering_accumulation_lane0",
+        "behavior_sha256": "a2de89259d004d1fc125c3c1968aca40a7b1c7d39dca775fab06e580800b4cce",
+        "configuration_id": "source-character-0-handling-lane0",
+        "bindings": {
+          "field_0": {
+            "slot": "racer_motion_flags"
+          },
+          "field_1": {
+            "slot": "racer_action"
+          },
+          "field_2": {
+            "slot": "steering_turn"
+          },
+          "field_3": {
+            "slot": "steering_demand"
+          },
+          "field_5": {
+            "slot": "recovery_flags"
+          }
+        },
+        "package_sha256": "20c8babdd82e67950ff94464e3ab16e893633ecfdd73b7a1f7fedef70e94c700"
+      }
+    },
+    "state": {
+      "racer_motion_flags": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.motion_flags",
+          "confidence": 0.97,
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+          ]
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "racer_action": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "enum",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.action_state",
+          "confidence": 0.97,
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+          ]
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "steering_turn": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "angle_step",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering.accumulated_turn",
+          "confidence": 0.97,
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+          ],
+          "signed_encoding": "twos_complement"
+        },
+        "owner": "driver_steering",
+        "shared": false
+      },
+      "steering_demand": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering.input_mask",
+          "confidence": 0.97,
+          "evidence": [
+            "research/deep-extraction/mario/parallel-kart/prefab-reconstruction/resume-20261016-v2/driver-steering-source-contract.json"
+          ]
+        },
+        "owner": "external",
+        "shared": false
+      },
+      "recovery_flags": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "kart.racer.steering_recovery.flags",
+          "confidence": 0.95,
+          "evidence": [
+            "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+            "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+          ]
+        },
+        "owner": "external",
+        "shared": false
+      }
+    },
+    "invocations": [
+      {
+        "component": "driver_steering",
+        "arguments": {}
+      }
+    ],
+    "initialize": {
+      "racer_motion_flags": 0,
+      "racer_action": 0,
+      "steering_turn": 0,
+      "steering_demand": 0,
+      "recovery_flags": 0
+    },
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "driver_steering"
+  ],
+  "ordered_nodes": [
+    {
+      "kind": "qualified_component",
+      "id": "driver_steering"
+    }
+  ],
+  "adapter_invocation_count": 0,
+  "materialized_statements": [
+    {
+      "op": "invoke",
+      "component": "driver_steering",
+      "arguments": {}
+    }
+  ],
+  "statement_sha256": "4f32c6272c9b34bd0df7d3ecbbf5fdcffca05d993d6127a5fe85b06148b83c1a",
+  "catalog_sha256": "5505c30159b2718634ea4104dce5628479acc241ff5443f0816486f0e394316e",
+  "wall_s": 0.011311374999999999
+}

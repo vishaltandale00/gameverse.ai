@@ -3,6 +3,7 @@ Composition sees only symbolic packages. Machine validation adapters are unused.
 """
 from pathlib import Path
 import argparse,hashlib,json,subprocess,time,platform
+from domain import accepts
 from lower import HELPERS,T,expr as l1_expr,lower
 
 def bits(t):return int(t[1:])
@@ -65,7 +66,8 @@ class Composer:
             reads=set(m['effects']['reads']);writes=set(m['effects']['writes'])
             for f,b in c.get('bindings',{}).items():
                 if m['field_meanings'][f]['quantity']=='unknown':raise ValueError('unannotated state cannot be promoted to a semantic port')
-                if f in reads:
+                # Untaken source stores preserve the incoming canonical value.
+                if f in reads or f in writes:
                     var=self.p['state'][b['slot']];src=dict(var['semantic_type'],storage_type=var['storage_type']);dst=dict(m['field_meanings'][f],storage_type=next(z['storage_type']for z in x['state']if z['name']==f));e={'op':'slot','name':b['slot'],'type':var['storage_type']}
                     if 'index'in b:e['index']=b['index']
                     converted=adapter(e,src,dst,b.get('domain'),b.get('quantization'))
@@ -78,7 +80,7 @@ class Composer:
                 out+=indent+'for(unsigned ir_copy=0;ir_copy<'+str(definition['count'])+';ir_copy++) '+path+'.'+collection+'[ir_copy]=g->'+slot_name+'[ir_copy];\n'
             for parameter in x.get('parameters',[]):
                 domain=parameter.get('domain',{});argument=s['arguments'][parameter['name']]
-                if domain and(argument['op']!='const'or not domain.get('unsigned_min',0)<=argument['value']<=domain.get('unsigned_max',(1<<int(parameter['storage_type'][1:]))-1)):raise ValueError('component parameter domain is not statically established')
+                if domain and(argument['op']!='const'or not accepts(domain,argument['value'],int(parameter['storage_type'][1:]))):raise ValueError('component parameter domain is not statically established')
             args=[self.expr(s['arguments'][p['name']])for p in x.get('parameters',[])]
             call=name+'_run(&'+path+(' ,'+','.join(args)if args else'')+')'
             out+=indent+(self.target(s['result'])+' = 'if'result'in s else'')+call+';\n'
@@ -96,6 +98,10 @@ class Composer:
                     if converted!=e:self.conversions.append({'component':name,'field':f,'direction':'out','conversion':converted['derivation']})
                     out+=indent+self.target(b)+' = '+self.expr(converted)+';\n'
             self.invocations+=1
+        elif op=='map_u16_bits':
+            from bit_mapping import expression
+            spec={k:v for k,v in s.items() if k!='op'}
+            out+=indent+'g->'+spec['target_slot']+' = '+self.expr(expression(spec,self.p['state']))+';\n'
         elif op=='effect':
             allowed={'input_keys','floor_query','rect','text','clear','line','number'}
             if s['service']not in allowed:raise ValueError('unknown runtime capability')

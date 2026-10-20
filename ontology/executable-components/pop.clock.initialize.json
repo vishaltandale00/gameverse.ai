@@ -1,0 +1,176 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "pop.clock.initialize",
+  "label": "Initialize shared update pulse and stop byte",
+  "role": "mechanical_clock",
+  "source_game": "prince-of-persia-the-sands-of-time",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/pop.clock.initialize/package.json",
+  "package_sha256": "54318be9b0f02cc868c1b94c3ae8388c9de8ab9fa53f32dfebc2f01e814dd37e",
+  "behavior_sha256": "a90489b21658f51e3a9c8218776d9eee052f6ece48c9f6b537f46f747020b518",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "e27fbac6027ed836898f2c558b91e77a97b05ce57075e3b019c8e5378f9af798"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "eligible_update_invocation_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.shared_clock",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/clock-lift/080914c0/l0.json",
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "clock_stop_control_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.shared_clock",
+        "confidence": 1.0,
+        "evidence": [
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/clock-lift/080914c0/l0.json",
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared_context",
+    "clock": "explicit_invocation",
+    "phase": "initialization",
+    "ordering": "source_contract preserves original clock owner order; host integration must explicitly schedule calls"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/pop.clock.initialize/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic native comparisons only; full hazard, damage, history recovery and game remain unqualified.",
+    "No elapsed-time unit or complete controller is recovered.",
+    "Shared backing and mixed-width stop gate views require alias-preserving integration.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "system": {
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/system.json",
+      "sha256": "9f3ad425fd3905b1c9d92aab0b214ef9987c049d57123ade842eaf7fd0f9b0e2"
+    },
+    "result_manifest": {
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-extraction/result.json",
+      "sha256": "a40def25d39c95c285179696c2a1573f41d340ea8a61564415cae8f9cf4f00cb"
+    },
+    "qualification": {
+      "status": "pass",
+      "vectors": 256,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "native_receipt": {
+        "path": "local/ir/fleet-next/prince-of-persia-the-sands-of-time/clock-lift/080914c0/receipt.json",
+        "sha256": "0ce6d6be80c26526f26b35b1c4b6c964ee44c286da6f83b452173ad718483be3"
+      },
+      "whole_source_system_qualified": false,
+      "whole_game_complete": false
+    },
+    "l0_identity": {
+      "raw_l0": {
+        "path": "local/ir/fleet-next/prince-of-persia-the-sands-of-time/clock-lift/080914c0/l0.json",
+        "sha256": "28cec03c1a35519caa4c64a8bf6f22c0afa7b15d9f32755d53578e7401aedec8"
+      },
+      "canonical_json_sha256": "1847bac4973e5d3938979d82a4d5e86ee18efaffba8198a2da61fbd88d2c88c7",
+      "adapter_l0_sha256": "1847bac4973e5d3938979d82a4d5e86ee18efaffba8198a2da61fbd88d2c88c7",
+      "match": true,
+      "algorithm": "SHA256(json.dumps(parsed_L0, sort_keys=True).encode()); raw file bytes pinned separately"
+    },
+    "domains": {
+      "parameters": [],
+      "state_storage_domains": {
+        "field_0": {
+          "unsigned_min": 0,
+          "unsigned_max": 4294967295
+        },
+        "field_1": {
+          "unsigned_min": 0,
+          "unsigned_max": 255
+        }
+      },
+      "narrower_mechanical_domains": "None required by these standalone functions; native evidence remains finite."
+    },
+    "return_constraints": {
+      "type": "void",
+      "meaning": "void"
+    },
+    "parameter_semantics": {},
+    "state_bindings": [
+      {
+        "name": "field_0",
+        "width": 32,
+        "owner": "global",
+        "argument": null,
+        "address": 0,
+        "offset": 50331736
+      },
+      {
+        "name": "field_1",
+        "width": 8,
+        "owner": "global",
+        "argument": null,
+        "address": 0,
+        "offset": 50331740
+      }
+    ],
+    "aliases": [
+      "All clock field_0 views refer to one shared pulse word. Do not allocate independent clocks when linking initialization, advance and query.",
+      "Clock initialization field_1 is u8; clock advance field_1 is a u32 view of the same backing region. Only its low byte is the stop gate; upper 24 bits are opaque and preserved.",
+      "World gate bitset is separate from clock state. Bit0 blocks hazard predicate/timer; other individual gate-bit meanings are not assigned."
+    ],
+    "ownership": "Host-supplied shared mutable engine context; these extracted functions do not own an independent player/controller lifecycle.",
+    "opaque_fields": [],
+    "services": [],
+    "order": [
+      "Source world owner 0808fd18 invokes clock advance after current-world update callback.",
+      "Initialize before use when reproducing original engine initialization; later reset policy is not inferred.",
+      "Queries observe the supplied shared backing at invocation time."
+    ],
+    "units": "Pulse count is one increment per eligible invocation, wrapping u32. Seconds, hertz, rendered frames and real-time pacing are not established.",
+    "source_width_correction": "Serialized qualified initialization stores u32 pulse and u8 stop flag; earlier decompiler spelling suggested a full stop word. HighFunction/adapter widths govern."
+  }
+}

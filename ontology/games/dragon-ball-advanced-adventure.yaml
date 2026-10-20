@@ -1,0 +1,117 @@
+schema_version: 0
+id: dragon-ball-advanced-adventure
+game:
+  title: 'Dragon Ball: Advanced Adventure'
+  platform: gba
+  game_code: BDVE
+  rom_sha1: 1338584d8cfa57402603197e65d2e2ff0184d24f
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  sources:
+  - kind: rom_binary
+    ref: 1338584d8cfa57402603197e65d2e2ff0184d24f; indexed local ROM; no community source used
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/dragon-ball-advanced-adventure.json
+conventions:
+  scope: Partial self-decompilation and instruction-verified input seam. Not the complete game or controller.
+  units: Repeat values count function invocations. No frame conversion has been inferred.
+components:
+- id: actor_input_edges_and_direction_repeat
+  facet: mechanics
+  label: Input suppression, press/release edges and directional repeat
+  summary: A fixed actor-like record at 0x020205a0 receives input through 0x080149dc. Flag bit 0x400 suppresses
+    the shared held mask; the routine stores held, newly pressed and newly released masks and creates a separate
+    repeat stream with a 16-invocation initial delay and 8-invocation repeat cycle. Downstream handlers consume
+    these fields, but actor identity, named actions and invocation-to-frame timing remain unverified.
+  instantiates:
+  - concept: mechanics.input.actor_edges_and_direction_repeat
+  reads:
+  - ram[0x03003100]:u16 shared held mask
+  - object[0x0c]:u32 suppression flags
+  - object[0xe2]:u16 previous held mask
+  - object[0xe1]:u8 directional repeat countdown
+  writes:
+  - object[0xe2]:u16 held
+  - object[0xe4]:u16 pressed
+  - object[0xe6]:u16 released
+  - object[0xe8]:u16 repeat stream
+  - object[0xe1]:u8 repeat countdown
+  invariants:
+  - held = 0 when object[0x0c] & 0x400; otherwise held = shared held mask.
+  - pressed = held & ~previousHeld; released = previousHeld & ~held. Masks truncate to 16 bits.
+  - Base repeat stream = pressed & 0x030f. Held directions (0x00f0) are ORed in when the old countdown is 0 or 16.
+  - When no direction is held countdown becomes 16. Otherwise old zero resets to 8 before decrement, so stored value
+    becomes 7; ordinary nonzero values decrement by one.
+  - For a reset countdown of 16 and continuously held direction, first repeat is immediate; the next occurs 16 invocations
+    later, subsequent repeats every 8 invocations. Native frame cadence is not established.
+  - The apparent indirect call at 0x08014a68 in generated C is a saved-LR return (pop {r0}; bx r0), verified in
+    instructions, and is not a gameplay dispatch.
+  - One countdown is shared across all direction bits; a direction change does not itself reset it while some direction
+    remains held.
+  evidence:
+  - &id001
+    kind: static_signature
+    ref: 1338584d8cfa57402603197e65d2e2ff0184d24f:Thumb0x080149dc..0x08014a6a exclusive; ROM-byte SHA256 c6852986f5f39ae235a3edc8427c89d62272d35e962c847f3c5cd2bcd623059a;
+      research/requests/remaining-rom-semantics/disassembly/dragon-ball-advanced-adventure--0x080149dc-prefix.asm.txt
+    confidence: 0.98
+    note: Complete local operator including final saved-LR return checked against instructions; no execution-based
+      actor or timing assignment.
+  - kind: ghidra_function
+    ref: research/corpus-mining/20261016-binary-corpus-round2/dragon-ball-advanced-adventure.json; entry 0x080149dc;
+      caller 0x08014a6c passes 0x020205a0
+    confidence: 0.85
+    note: Binary-derived C and caller show field linkage. Function boundary/ABI problems elsewhere in the export
+      remain.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/dragon-ball-input-native-receipt.json
+    confidence: 0.98
+    note: 98,496 isolated native Thumb calls matched own recovered C over all 1,024 GBA held masks plus high-bit
+      probes, six prior masks, eight repeat countdowns and suppression on/off. Entire 256-byte state compared including
+      canaries. Finite operator check only; no full-game/player/tick claim.
+  params:
+    suppression_mask:
+      value: 1024
+      unit: object flag bits
+      native_value: 1024
+      native_unit: object flag bits
+      evidence: &id002
+      - *id001
+    direction_mask:
+      value: 240
+      unit: button bits
+      native_value: 240
+      native_unit: button bits
+      evidence: *id002
+    edge_repeat_base_mask:
+      value: 783
+      unit: button bits
+      native_value: 783
+      native_unit: button bits
+      evidence: *id002
+    initial_repeat_delay:
+      value: 16
+      unit: function invocations
+      native_value: 16
+      native_unit: function invocations
+      evidence: *id002
+    subsequent_repeat_period:
+      value: 8
+      unit: function invocations
+      native_value: 8
+      native_unit: function invocations
+      evidence: *id002
+proposed_concepts:
+- id: mechanics.input.actor_edges_and_direction_repeat
+  label: Actor input edges and directional repetition
+  definition: An actor-local held/press/release representation with a suppression gate and separate repeat stream
+    for directions.
+open_questions:
+- Identify the fixed actor record in an isolated gameplay session, then correlate actions with the 0xe2/0xe4/0xe6/0xe8
+  fields.
+- Recover function-pointer calls to 0x08017244/0x08016c84 and map the capability mask, action handlers and world-coordinate
+  units.
+- Trace the shared mask through the global sampler at 0x0810d2f8, whose alternate input/replay modes can replace
+  hardware input.
+- Complete collision, combat, progression, story and asset extraction remain outstanding.

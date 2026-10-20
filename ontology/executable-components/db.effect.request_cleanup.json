@@ -1,0 +1,120 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "db.effect.request_cleanup",
+  "label": "Mark active actor effect slot for cleanup",
+  "role": "effect_lifecycle",
+  "source_game": "dragon-ball-advanced-adventure",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/db.effect.request_cleanup/package.json",
+  "package_sha256": "e4955a7dfce9f4366aaff964290360ff1761f233f8128303fee54b5cfae89ceb",
+  "behavior_sha256": "1859301922185b4b985d2b649ae64fb13c27e2db34cffb6ba29caaedbe18512c",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "e13d7cad0de07b442eef2a87ddff7b0109943bfe1a5fe3148a6bac216cf05bc4"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "effect_slot_selector_low_nibble",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.effects",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/0800cfdc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "active_slot_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "shared_effect_slots",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/0800cfdc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "cleanup_request_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "shared_effect_slots",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/publication-source-citations.json",
+          "local/ir/queue-runs/20261016T091004/dragon-ball-advanced-adventure/l0/0800cfdc.json",
+          "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "source_actor_and_shared_context_backing",
+    "clock": "explicit_invocation",
+    "phase": "effect_lifecycle",
+    "ordering": "Preserve serialized L1 body order; caller order source-backed in L2 only",
+    "source_subsystem_qualified": false
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/db.effect.request_cleanup/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite isolated operator receipt; no connected subsystem, gameplay reachability or complete game claim.",
+    "Canonical actor aliases and shared context state remain shared; no independent field copies.",
+    "No manual/recovered C input; generated.c is compiler output from serialized own-ROM HighFunction.",
+    "Unannotated fields/collections retain unknown quantity/unit meaning; all original state must survive. Parameter and return domains/meanings live in pinned source contract/citations, never new L1 parameter fields.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/dragon-ball-advanced-adventure/next-extraction/system.json",
+    "sha256": "d60a8d42c1271d77fa4a64a958b9c5456efe622151ef2ee02ae2a8efeea15368"
+  }
+}

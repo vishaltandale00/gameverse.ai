@@ -1,0 +1,1321 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "metroid-zero-mission",
+  "sourceContractRef": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+  "blueprintIds": [
+    "character-traversal",
+    "combat-encounter",
+    "hazard-recovery",
+    "exploration-progression"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Explore connected rooms with pose-based Samus movement,earn equipment,fire limited projectiles,resolve enemy contacts and survive through energy/resource recovery.",
+    "phases": [
+      {
+        "id": "player-control",
+        "label": "Move Samus through pose-controlled acceleration",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.directional-acceleration"
+        ],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c"
+        ],
+        "requiredServices": [
+          "source controller/input eligibility"
+        ],
+        "gaps": [
+          "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+          "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+          "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+        ]
+      },
+      {
+        "id": "world-traversal",
+        "label": "Resolve terrain,jump,landing,doors and camera",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800c4b4.c"
+        ],
+        "requiredServices": [
+          "terrain adapter",
+          "position integration",
+          "room loading",
+          "source camera/render"
+        ],
+        "gaps": [
+          "No closed source player locomotion or room/terrain controller package;acceleration is not traversal."
+        ]
+      },
+      {
+        "id": "weapon-request",
+        "label": "Choose equipped weapon,capacity,cooldown and allocate projectile",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0804ee88.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804ed94.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804ede4.c"
+        ],
+        "requiredServices": [
+          "input shot request",
+          "shared projectile allocator",
+          "source audio"
+        ],
+        "gaps": [
+          "Source scheduler recovered;capacity counts,allocation,equipment and cooldown must close without independent pools."
+        ]
+      },
+      {
+        "id": "projectile-contact",
+        "label": "Update projectile motion,hit acceptance and retirement",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0804fd9c.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0804f954.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08050b64.c"
+        ],
+        "requiredServices": [
+          "source terrain/projectile physics",
+          "bounded pool traversal",
+          "effect allocator"
+        ],
+        "gaps": [
+          "Contact loops/descriptor bank unresolved;finite impact alone does not establish projectilehit."
+        ]
+      },
+      {
+        "id": "accepted-enemy-damage",
+        "label": "Apply already accepted damage to same enemy",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.encounter-phase.accepted-hit"
+        ],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/closure/system.json",
+          "research/ir-workshop/game-system-assembly-20261016/closure/damage-reaction.assembly.json",
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json"
+        ],
+        "requiredServices": [
+          "accepted source contact",
+          "eligible enemy scheduler"
+        ],
+        "gaps": [
+          "Existing recovered damage\u2192reaction core referenced,not duplicated in this pass;full guard/AI/death remains open.",
+          "Only fixed synthetic damage=3 after externally accepted contact; arbitrary damage and contact admission remain open."
+        ],
+        "relatedPrefabIds": [
+          "mzm.enemy.accepted-damage-and-reaction"
+        ],
+        "availabilityNote": "Existing separately delivered accepted-damage core retained as external context;not a newly accepted local prefab entry in this delivery."
+      },
+      {
+        "id": "protected-enemy-response",
+        "label": "Handle protected contacts without HP loss",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.protected-hit-response",
+          "mzm.prefab.encounter-phase.deflect-response",
+          "mzm.prefab.encounter-phase.blocked-response"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json"
+        ],
+        "requiredServices": [
+          "source guard outcome",
+          "next eligible enemy prepass"
+        ],
+        "gaps": [
+          "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+          "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+          "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state."
+        ]
+      },
+      {
+        "id": "eligible-enemy-prepass",
+        "label": "Advance reaction on a later eligible enemy update",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.encounter-phase.eligible-prepass"
+        ],
+        "sourceRefs": [
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json"
+        ],
+        "requiredServices": [
+          "source enemy scheduler eligibility",
+          "same canonical enemy record"
+        ],
+        "gaps": [
+          "This is a separate later invocation; source frame cadence and full AI continuation remain unqualified."
+        ]
+      },
+      {
+        "id": "enemy-ai-defeat",
+        "label": "Patrol,turn,death,drop or retirement",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0801befc.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08011084.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010eec.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+          "research/ir-workshop/cohesive-extraction-20261016/encounter/ripper-gate.assembly.json"
+        ],
+        "requiredServices": [
+          "source type dispatch",
+          "DMA staging",
+          "audio/effect/drop services"
+        ],
+        "gaps": [
+          "Lethal pose0x62\u2192Ripper common death path known;drop bank pointer/native services unresolved.",
+          "Offscreen viewport retirement is separate from lethal completion;do not substitute.",
+          "Qualified Ripper gate result is internal support only; native species switch, death/drop and retirement are missing."
+        ]
+      },
+      {
+        "id": "player-health-resources",
+        "label": "Resolve player contact damage,suit reduction and resource pickup",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/0800e634.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08012e98.c"
+        ],
+        "requiredServices": [
+          "accepted enemy contact",
+          "suit flags",
+          "resource caps",
+          "hurt/death continuation"
+        ],
+        "gaps": [
+          "OwnROM source formulas retained;no automatic qualified playerhealth or resource pickup lifecycle."
+        ]
+      },
+      {
+        "id": "equipment-progression",
+        "label": "Acquire source equipment and commit/query event flags",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "mzm.prefab.equipment-event-readback"
+        ],
+        "sourceRefs": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/progression-verification.json"
+        ],
+        "requiredServices": [
+          "source-pickup-admission",
+          "persistent-session-owner"
+        ],
+        "gaps": [
+          "This source transaction grants acquisition bits and campaign event8;it does not equip weapon0300153d or demonstrate its firing benefit.",
+          "Pickup contact,room/story consumers,save persistence and presentation remain external.",
+          "Readback explicitlyusesoperation3;otheroperations have operation-dependent Boolean semantics and are not interchangeable queries.",
+          "Fixed source pickup23/event8 default pair;no invented item names or unrelated eventbinding."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "player-control",
+        "to": "world-traversal",
+        "kind": "host-required",
+        "scope": "acceleration output must enter actual position/terrain controller;not recovered here"
+      },
+      {
+        "from": "equipment-progression",
+        "to": "weapon-request",
+        "kind": "shared-state",
+        "scope": "source acquisition0300153c ownedweaponbits differ from equippedbeam0300153d;equip producer is missing"
+      },
+      {
+        "from": "weapon-request",
+        "to": "projectile-contact",
+        "kind": "source-call",
+        "scope": "0804ee88 allocates and invokes0804fd9c before per-projectile type update"
+      },
+      {
+        "from": "projectile-contact",
+        "to": "accepted-enemy-damage",
+        "kind": "source-call",
+        "scope": "0804fd9c\u2192080505ac\u219208050424 only accepted source damage branch"
+      },
+      {
+        "from": "projectile-contact",
+        "to": "protected-enemy-response",
+        "kind": "source-call",
+        "scope": "080505ac guard paths choose minimum2or3 independently of damage"
+      },
+      {
+        "from": "accepted-enemy-damage",
+        "to": "enemy-ai-defeat",
+        "kind": "event",
+        "scope": "lethal pose request reaches species dispatch on later eligible enemy tick;not immediate retirement"
+      },
+      {
+        "from": "enemy-ai-defeat",
+        "to": "equipment-progression",
+        "kind": "event",
+        "scope": "drop transforms same source record;pickup contact and reward acceptance still missing"
+      },
+      {
+        "from": "accepted-enemy-damage",
+        "to": "eligible-enemy-prepass",
+        "kind": "host-required",
+        "scope": "Host must wait for the next source-eligible enemy scheduler prepass on the same enemy; not immediate callback continuation."
+      },
+      {
+        "from": "protected-enemy-response",
+        "to": "eligible-enemy-prepass",
+        "kind": "host-required",
+        "scope": "Host must wait for the next source-eligible enemy scheduler prepass on the same enemy; not immediate callback continuation."
+      }
+    ],
+    "missingForCoreGame": [
+      "Raw held/pressed input\u2192source pose controller and terrain/position/room/camera closure.",
+      "Acquired-versus-equipped state transition and actual shot request/capacity/allocation cooldown services.",
+      "Source projectile pool traversal,vulnerability tables,collision and effect side effects.",
+      "Species AI and lethal\u2192drop/retirement service closure;no assumed death fromHP0.",
+      "Player suit-scaled damage,hurt/death continuation,pickup cap grants and persistent save integration.",
+      "Contact admission, descriptor guard, effect allocation and Ripper species/death/retirement remain unqualified."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "mzm.bundle.player-directional-acceleration",
+      "label": "Player directional acceleration",
+      "moduleId": "mzm.module.player-source-motion",
+      "sourceGame": "metroid-zero-mission",
+      "sourceContractRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "mzm.motion.accelerate"
+      ],
+      "availability": "published-subset",
+      "scope": "One eligible source directional acceleration phase;not full movement",
+      "gaps": [
+        "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+        "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+        "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+      ],
+      "evidence": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008cf8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json"
+      ],
+      "canonicalState": {
+        "identity": "one source player record",
+        "fields": [
+          "player_source_direction",
+          "player_signed_velocity"
+        ],
+        "aliasRule": "Direction and prior velocity bind same source player record;do not initialize a new velocity per call."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "apply directional acceleration to retained player velocity",
+          "status": "published-subset",
+          "scope": "eligible branch only;no raw keyboard\u2192pose dispatch",
+          "evidence": [
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mzm.prefab.directional-acceleration",
+        "label": "Directional acceleration and signed speed cap",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.directional-acceleration.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.directional-acceleration.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+        "packageIds": [
+          "mzm.motion.accelerate"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    },
+    {
+      "id": "mzm.bundle.protected-hit-response",
+      "label": "Protected enemy hit response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "sourceGame": "metroid-zero-mission",
+      "sourceContractRef": "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+      "planIds": [
+        "combat-encounter",
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "mzm.combat.minimum_reaction2",
+        "mzm.combat.minimum_reaction3",
+        "mzm.combat.reaction_tick",
+        "mzm.combat.impact",
+        "mzm.lifecycle.enemy_update_gate",
+        "mzm.lifecycle.viewport_retirement"
+      ],
+      "availability": "published-subset",
+      "scope": "One source enemy record with separate selected-hit response, later eligible prepass and unresolved native species continuation.",
+      "gaps": [
+        "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+        "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+        "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state.",
+        "Dynamic damage argument is unavailable through current Composer; accepted-hit variant uses explicit synthetic damage=3 only.",
+        "Source contact admission, guard/descriptor bank, effect allocation, species AI, death/drop and viewport settlement remain external."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/encounter.core.c"
+      ],
+      "canonicalState": {
+        "identity": "one source enemy record with retained same physical offsets",
+        "fields": [
+          "enemy_reaction",
+          "enemy_hp",
+          "enemy_palette_count",
+          "enemy_palette_selector",
+          "enemy_freeze",
+          "enemy_palette_row",
+          "enemy_normal_palette_selector"
+        ],
+        "aliasRule": "Source record identity persists across callbacks;source scratch is staged view of same enemy,never separate persistent state."
+      },
+      "roleFacets": [
+        {
+          "roleId": "reaction",
+          "capability": "protected-contact response and deferred visual recovery",
+          "status": "published-subset",
+          "scope": "source min2or3state response;no hit acceptance/full enemy lifecycle",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/phase-verification.json"
+          ]
+        },
+        {
+          "roleId": "protection",
+          "capability": "source guard branch preserves HP and marks minimum reaction",
+          "status": "published-subset",
+          "scope": "host-selected protected outcome only;does not decide player immunity or suit damage",
+          "evidence": [
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+            "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c"
+          ]
+        },
+        {
+          "roleId": "defeat",
+          "capability": "qualified Ripper gate result before source species continuation",
+          "status": "source-only",
+          "scope": "Gate is a qualified isolated predicate; native species dispatch and terminal settlement are missing.",
+          "evidence": [
+            "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+            "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mzm.prefab.protected-hit-response",
+        "label": "Protected hit response and deferred recovery",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+        "packageIds": [
+          "mzm.combat.minimum_reaction2",
+          "mzm.combat.minimum_reaction3",
+          "mzm.combat.reaction_tick"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      },
+      "sourcePhaseGraph": {
+        "bundleRef": "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "phaseIntakeRef": "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "canonicalModuleId": "mzm.module.enemy-source-record",
+        "orderedBoundaries": [
+          "source contact admission selects exactly one response",
+          "later eligible enemy prepass",
+          "gate after scratch staging",
+          "native species AI and eventual viewport retirement"
+        ],
+        "wholeEncounterReady": false,
+        "flatWitnesses": "Earlier four-call graphs are binding witnesses, not original same-callback schedules."
+      },
+      "assemblyVariants": [
+        {
+          "id": "mzm.prefab.encounter-phase.accepted-hit",
+          "label": "Accepted admitted hit",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.accepted-hit.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.accepted-hit.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+          "packageIds": [
+            "mzm.combat.impact"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "phaseTrigger": "After source contact admission selects ordinary damaging branch",
+          "phaseBoundary": "one source-qualified leaf invocation; caller supplies actual admission and schedule"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.deflect-response",
+          "label": "Deflected admitted hit",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.deflect-response.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.deflect-response.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+          "packageIds": [
+            "mzm.combat.minimum_reaction2"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "phaseTrigger": "After source guard flag 0x40 selects deflection",
+          "phaseBoundary": "one source-qualified leaf invocation; caller supplies actual admission and schedule"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.blocked-response",
+          "label": "Blocked admitted hit",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.blocked-response.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.blocked-response.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+          "packageIds": [
+            "mzm.combat.minimum_reaction3"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "phaseTrigger": "After source guard flag 8 or descriptor rejection",
+          "phaseBoundary": "one source-qualified leaf invocation; caller supplies actual admission and schedule"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.eligible-prepass",
+          "label": "Later enemy reaction prepass",
+          "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.eligible-prepass.assembly.json",
+          "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.eligible-prepass.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+          "packageIds": [
+            "mzm.combat.reaction_tick"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "phaseTrigger": "On next eligible enemy scheduler update after any selected hit",
+          "phaseBoundary": "one source-qualified leaf invocation; caller supplies actual admission and schedule"
+        },
+        {
+          "id": "mzm.prefab.encounter-phase.ripper-gate",
+          "label": "Ripper switch gate",
+          "assemblyRef": "research/ir-workshop/cohesive-extraction-20261016/publication/mzm.prefab.encounter-phase.ripper-gate.assembly.json",
+          "validationRef": "research/ir-workshop/cohesive-extraction-20261016/publication/mzm.prefab.encounter-phase.ripper-gate.validation.json",
+          "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+          "packageIds": [
+            "mzm.lifecycle.enemy_update_gate"
+          ],
+          "readyToAdd": false,
+          "runtimeQualified": false,
+          "phaseTrigger": "After eligible prepass and scratch staging, before native Ripper type switch",
+          "phaseBoundary": "one source-qualified leaf invocation; caller supplies actual admission and schedule"
+        }
+      ],
+      "internalSupportPhases": [
+        {
+          "id": "ripper-gate",
+          "graphRef": "research/ir-workshop/cohesive-extraction-20261016/publication/mzm.prefab.encounter-phase.ripper-gate.assembly.json",
+          "validationRef": "research/ir-workshop/cohesive-extraction-20261016/publication/mzm.prefab.encounter-phase.ripper-gate.validation.json",
+          "status": "binding_valid_source_predicate_consumer_unproven",
+          "requires": [
+            "source scratch staging",
+            "native Ripper species continuation"
+          ],
+          "notReadyReason": "Unconnected predicate is not a complete defeat phase."
+        }
+      ]
+    },
+    {
+      "id": "mzm.bundle.equipment-event-readback",
+      "label": "Equipment acquisition and event commit",
+      "moduleId": "mzm.module.progression-session",
+      "sourceGame": "metroid-zero-mission",
+      "sourceContractRef": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+      "planIds": [
+        "exploration-progression"
+      ],
+      "packageIds": [
+        "mzm.progress.acquire",
+        "mzm.progress.events"
+      ],
+      "availability": "published-subset",
+      "scope": "Source pickup23 grantsownedbit+event8;subsequentquery observes samepersistentbank",
+      "gaps": [
+        "This source transaction grants acquisition bits and campaign event8;it does not equip weapon0300153d or demonstrate its firing benefit.",
+        "Pickup contact,room/story consumers,save persistence and presentation remain external.",
+        "Readback explicitlyusesoperation3;otheroperations have operation-dependent Boolean semantics and are not interchangeable queries.",
+        "Fixed source pickup23/event8 default pair;no invented item names or unrelated eventbinding."
+      ],
+      "evidence": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/progression-verification.json"
+      ],
+      "canonicalState": {
+        "identity": "One original source progression session shared across acquisition/query and eventualsaveowner",
+        "fields": [
+          "owned_weapon_bits",
+          "owned_ability_bits",
+          "persistent_event_bank",
+          "event_read_result"
+        ],
+        "aliasRule": "acquire dependency_0_collection_0 and events collection_0 are SAMEphysical02037e00 eightu32words;Composer commits acquisitioncollection back then eventsreloads samecanonicalbank. Equipmentbits0300153c/0300153e remain distinct from equippedbits0300153d/0300153f."
+      },
+      "roleFacets": [
+        {
+          "roleId": "ownership",
+          "capability": "Source equipmentpickup transaction setsacquisitionbit",
+          "status": "published-subset",
+          "scope": "Originaltype23 only;equipping/benefitconsumer missing",
+          "evidence": [
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c"
+          ]
+        },
+        {
+          "roleId": "commit",
+          "capability": "Commit sourceeventflag and exposecapturedreadback against samepersistentbank",
+          "status": "published-subset",
+          "scope": "Sessionmemory commit/query;disknormal-save service notimplemented",
+          "evidence": [
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+            "research/ir-workshop/source-game-prefabs/metroid-zero-mission/progression-verification.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "mzm.prefab.equipment-event-readback",
+        "label": "Equipment acquisition and persistent event readback",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.equipment-event-readback.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.equipment-event-readback.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/delivery.json",
+        "packageIds": [
+          "mzm.progress.acquire",
+          "mzm.progress.events"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "mzm.prefab.directional-acceleration",
+      "moduleId": "mzm.module.player-source-motion",
+      "label": "Directional acceleration and signed speed cap",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.directional-acceleration.assembly.json",
+      "sha256": "7644a1032098fea24c7660bf7abd2917ee8aaae9419f0687bafaade79ae55d06",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.directional-acceleration.validation.json",
+      "validationSha256": "eb09007db0719e8eef265ec8914590f6adc8fdad0abf90af73b8605ac9897f8c",
+      "inputs": [
+        {
+          "id": "sourceDirection",
+          "label": "Source facing/direction bits",
+          "storageType": "u16",
+          "default": 16,
+          "domain": "fullu16;source bit0x10 selects positive direction,clear selects negative",
+          "binding": "player_source_direction"
+        },
+        {
+          "id": "acceleration",
+          "label": "Acceleration per eligible call",
+          "storageType": "u16",
+          "default": 4,
+          "domain": "source s16 argument representation;positive tunable example4",
+          "binding": "steer.param_0",
+          "defaultOrigin": "synthetic-explicit-example"
+        },
+        {
+          "id": "speedCap",
+          "label": "Signed speed cap magnitude",
+          "storageType": "u16",
+          "default": 128,
+          "domain": "source s16 argument;positive tunable example128",
+          "binding": "steer.param_1",
+          "defaultOrigin": "synthetic-explicit-example"
+        },
+        {
+          "id": "previousVelocity",
+          "label": "Previous signed horizontal velocity",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "two-complement s16 storage",
+          "binding": "player_signed_velocity"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "velocity",
+          "binding": "player_signed_velocity",
+          "meaning": "Source acceleration with signed saturation updates same player velocity;not position displacement."
+        }
+      ],
+      "phases": [
+        {
+          "id": "source-eligible-acceleration",
+          "trigger": "Host already selected eligible player pose branch and matching held direction as source080084dc does",
+          "invocations": [
+            "steer"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "player-input-pose-eligibility",
+          "provided": false,
+          "obligation": "source controller dispatch/input resolution determines whether call occurs"
+        }
+      ],
+      "gaps": [
+        "Not a complete player controller: source pose dispatch, held/pressed input\u2192source direction producer, jump/gravity/braking,position integration,terrain collision and animation remain missing.",
+        "Default acceleration4/cap128 are explicit synthetic configuration examples,not recovered game tuning; source caller080084dc reads030015e6/030015e8 and may override cap.",
+        "Native velocity scaling inherited from published package; cross-game binding requires published exact unit contract and source caller eligibility."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008278.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080084dc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08008cf8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+      ],
+      "qualificationScope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "emittedCore": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/directional-acceleration.core.c"
+    },
+    {
+      "id": "mzm.prefab.protected-hit-response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Protected hit response and deferred recovery",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.assembly.json",
+      "sha256": "c2b2fa54842a51adb4d8f77303a097f2d7a471fa60e8cfc9e9bc563e85a1c47c",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.validation.json",
+      "validationSha256": "855c9ba3ebb36c5d2a6be723ba6096daaadccc34db23737838bf814a1bffdd1d",
+      "inputs": [
+        {
+          "id": "guardOutcome",
+          "label": "Source protected-hit branch",
+          "storageType": "enum",
+          "default": "reaction2",
+          "domain": [
+            "reaction2",
+            "reaction3"
+          ],
+          "binding": "select variant assembly,not arbitrary source numeric rewrite"
+        },
+        {
+          "id": "enemyHp",
+          "label": "Existing enemy HP",
+          "storageType": "u16",
+          "default": 10,
+          "domain": "sourceu16;syntheticinitial10",
+          "binding": "enemy_hp"
+        },
+        {
+          "id": "packedReaction",
+          "label": "Current packed reaction marker/countdown",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "low7countdown/highbitmarker;fullbytepreserved",
+          "binding": "enemy_reaction"
+        },
+        {
+          "id": "sourceDisplayContext",
+          "label": "Source freeze and palette selectors",
+          "storageType": "record",
+          "default": "zero synthetic setup only",
+          "domain": "retain source identity/opaque selectors;hostvalid values",
+          "binding": "enemy_freeze,enemy_palette_count,enemy_palette_row,enemy_normal_palette_selector,enemy_palette_selector"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "reaction",
+          "binding": "enemy_reaction",
+          "meaning": "At least source2or3countdown with highmarker preserved,then decremented only on separately invoked eligible reaction phase."
+        },
+        {
+          "id": "displaySelector",
+          "binding": "enemy_palette_selector",
+          "meaning": "Source HP/freeze/counter-dependent display selector;does not render assets."
+        },
+        {
+          "id": "hpPreserved",
+          "binding": "enemy_hp",
+          "meaning": "Protected-hit helpers do not reduce HP."
+        }
+      ],
+      "phases": [
+        {
+          "id": "protected-contact-response",
+          "trigger": "Source080505ac guard resolves deflectflag0x40 to minimum2 OR blockedflag8/descriptor rejection to minimum3",
+          "invocations": [
+            "low (reaction2 variant) OR high (reaction3 variant)"
+          ],
+          "scheduleStatus": "source-proven"
+        },
+        {
+          "id": "later-eligible-enemy-reaction",
+          "trigger": "Next eligible source enemy scheduler prepass;not automatically in contact callback",
+          "invocations": [
+            "reaction"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "contact-vulnerability-dispatch",
+          "provided": false,
+          "obligation": "host supplies actual source-resolved protected outcome;no guessed eligibility"
+        },
+        {
+          "id": "eligible-enemy-scheduler",
+          "provided": false,
+          "obligation": "host preserves original enemy-before-projectile frame schedule and staged state identity"
+        },
+        {
+          "id": "source-effect-rendering",
+          "provided": false,
+          "obligation": "source guard effect allocator remains separate;core mutates response state only"
+        }
+      ],
+      "gaps": [
+        "Host selects a source guard outcome and schedules reaction on next eligible enemy prepass; flat assembly call list shows phase dependency,not same-contact immediate reaction.",
+        "No HP damage or raw contact acceptance;vulnerability descriptor08050370,contact0804fd9c,effect allocation080540ec and species dispatch remain open.",
+        "Use one canonical enemy record with accepted-damage core if both present. Standalone cores are not proof of combined duplicate-struct backing;host must bind canonical fields to same module state."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080505ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504ac.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/080504cc.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/0800cf00.c",
+        "research/deep-extraction/resume/metroid-zero-mission/next-extraction/system.json"
+      ],
+      "qualificationScope": "Actual symbolic package binding and Composer lowering plus narrow compiled host wiring assertions; retained finite original/native leaf receipts reused. No composed original-native schedule or gameplay witness.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "emittedCore": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit.core.c",
+      "variants": [
+        {
+          "id": "reaction2",
+          "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.assembly.json",
+          "sha256": "c2b2fa54842a51adb4d8f77303a097f2d7a471fa60e8cfc9e9bc563e85a1c47c",
+          "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.protected-hit-response.validation.json"
+        },
+        {
+          "id": "reaction3",
+          "path": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-high.assembly.json",
+          "sha256": "4788347a8bf554e3c3acd370b6d488a4c186417f57406502fc08c89baf627a89",
+          "validation": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/protected-hit-high.validation.json"
+        }
+      ],
+      "countingPolicy": "one prefab,module and card with two source guard variants;not two independent mechanics"
+    },
+    {
+      "id": "mzm.prefab.encounter-phase.accepted-hit",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Accepted admitted hit",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.accepted-hit.assembly.json",
+      "sha256": "4e9a5a6e8c28deff26650f2d8ed67b076920e253a98df16f864d37ea6cf36ec0",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.accepted-hit.validation.json",
+      "validationSha256": "1da3fc0b506491ef47dce57bf2f886bc296bcca4f9ddfca079631a0e050dc1fb",
+      "inputs": [
+        {
+          "id": "enemy_palette_selector",
+          "label": "enemy palette selector",
+          "storageType": "u8",
+          "domain": "mzm.enemy.palette_selector",
+          "binding": "enemy_palette_selector",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_transition_marker",
+          "label": "enemy transition marker",
+          "storageType": "u8",
+          "domain": "mzm.enemy.lethal_transition_marker",
+          "binding": "enemy_transition_marker",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_freeze",
+          "label": "enemy freeze",
+          "storageType": "u8",
+          "domain": "mzm.enemy.freeze_invocation",
+          "binding": "enemy_freeze",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_contact_link",
+          "label": "enemy contact link",
+          "storageType": "u8",
+          "domain": "mzm.enemy.player_contact_link",
+          "binding": "enemy_contact_link",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_flags",
+          "label": "enemy flags",
+          "storageType": "u8",
+          "domain": "enemy",
+          "binding": "enemy_flags",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "world_player_contact_state",
+          "label": "world player contact state",
+          "storageType": "u8",
+          "domain": "world",
+          "binding": "world_player_contact_state",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "damage",
+          "label": "Fixed admitted damage example",
+          "storageType": "u16",
+          "default": 3,
+          "domain": "exactly 3 in registered graph",
+          "binding": "damage.param_0 const",
+          "defaultOrigin": "synthetic-explicit-example"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "enemy_hp",
+          "binding": "enemy_hp",
+          "meaning": "enemy HP, pose, reaction and lethal-request result"
+        },
+        {
+          "id": "enemy_reaction",
+          "binding": "enemy_reaction",
+          "meaning": "enemy HP, pose, reaction and lethal-request result"
+        },
+        {
+          "id": "enemy_pose",
+          "binding": "enemy_pose",
+          "meaning": "enemy HP, pose, reaction and lethal-request result"
+        },
+        {
+          "id": "hit_lethal",
+          "binding": "hit_lethal",
+          "meaning": "enemy HP, pose, reaction and lethal-request result"
+        }
+      ],
+      "phases": [
+        {
+          "id": "accepted-hit",
+          "trigger": "After source contact admission selects ordinary damaging branch",
+          "invocations": [
+            "damage"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "source contact/pool overlap",
+          "provided": false,
+          "obligation": "source contact/pool overlap"
+        },
+        {
+          "id": "vulnerability descriptor",
+          "provided": false,
+          "obligation": "vulnerability descriptor"
+        },
+        {
+          "id": "effect allocation",
+          "provided": false,
+          "obligation": "effect allocation"
+        }
+      ],
+      "gaps": [
+        "Does not admit contact or exclude terminal recontact.",
+        "Graph damage argument is fixed to synthetic example 3; current Composer accepts finite constants only. This does not qualify arbitrary caller-supplied damage."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/accepted-hit.assembly.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/accepted-hit.validation.json"
+      ],
+      "qualificationScope": "single automatically lifted source function, 16,384 finite original/native pairs reused; binding validator passed; no connected ROM encounter; one shared module; not a complete encounter",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "variantFamily": "mzm.encounter-source-phases",
+      "countingPolicy": "one canonical enemy module; phase alternatives and later prepass do not create additional enemy instances"
+    },
+    {
+      "id": "mzm.prefab.encounter-phase.deflect-response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Deflected admitted hit",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.deflect-response.assembly.json",
+      "sha256": "fda815a5b26b49934fd86c108a0ebfc68ca372e53a5eeb42307451262d639b56",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.deflect-response.validation.json",
+      "validationSha256": "363ca3daa4b1dd54476248b5ac1aa30a00db0674c115157d8069cf0f7ebe828d",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "enemy_reaction",
+          "binding": "enemy_reaction",
+          "meaning": "minimum reaction counter 2"
+        }
+      ],
+      "phases": [
+        {
+          "id": "deflect-response",
+          "trigger": "After source guard flag 0x40 selects deflection",
+          "invocations": [
+            "low"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "source contact guard",
+          "provided": false,
+          "obligation": "source contact guard"
+        },
+        {
+          "id": "effect allocation",
+          "provided": false,
+          "obligation": "effect allocation"
+        }
+      ],
+      "gaps": [
+        "No HP damage or contact admission."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/deflect-response.assembly.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/deflect-response.validation.json"
+      ],
+      "qualificationScope": "single automatically lifted source function, 16,384 finite original/native pairs reused; binding validator passed; no connected ROM encounter; one shared module; not a complete encounter",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "variantFamily": "mzm.encounter-source-phases",
+      "countingPolicy": "one canonical enemy module; phase alternatives and later prepass do not create additional enemy instances"
+    },
+    {
+      "id": "mzm.prefab.encounter-phase.blocked-response",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Blocked admitted hit",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.blocked-response.assembly.json",
+      "sha256": "59eb6193de33fe59e86c2b64f5a499af569821e78efb2359e51c5ccce7685305",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.blocked-response.validation.json",
+      "validationSha256": "82ab01445ff6cb58cd9bd39d0889c9d311497d7f4919c2d3a766d70d997bb6c4",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "enemy_reaction",
+          "binding": "enemy_reaction",
+          "meaning": "minimum reaction counter 3"
+        }
+      ],
+      "phases": [
+        {
+          "id": "blocked-response",
+          "trigger": "After source guard flag 8 or descriptor rejection",
+          "invocations": [
+            "high"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "source contact guard",
+          "provided": false,
+          "obligation": "source contact guard"
+        },
+        {
+          "id": "descriptor bank",
+          "provided": false,
+          "obligation": "descriptor bank"
+        },
+        {
+          "id": "effect allocation",
+          "provided": false,
+          "obligation": "effect allocation"
+        }
+      ],
+      "gaps": [
+        "No HP damage or contact admission."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/blocked-response.assembly.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/blocked-response.validation.json"
+      ],
+      "qualificationScope": "single automatically lifted source function, 16,384 finite original/native pairs reused; binding validator passed; no connected ROM encounter; one shared module; not a complete encounter",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "variantFamily": "mzm.encounter-source-phases",
+      "countingPolicy": "one canonical enemy module; phase alternatives and later prepass do not create additional enemy instances"
+    },
+    {
+      "id": "mzm.prefab.encounter-phase.eligible-prepass",
+      "moduleId": "mzm.module.enemy-source-record",
+      "label": "Later enemy reaction prepass",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.eligible-prepass.assembly.json",
+      "sha256": "38ac1c556f21241837c5164eaf6018bbf4f3b8c2d615b5d407866407d93faa5e",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.encounter-phase.eligible-prepass.validation.json",
+      "validationSha256": "855218d988efda30702653d7fec430bc00f5a449cd29096b62fe5f64c7c65e9c",
+      "inputs": [
+        {
+          "id": "enemy_hp",
+          "label": "enemy hp",
+          "storageType": "u16",
+          "domain": "mzm.enemy.hp",
+          "binding": "enemy_hp",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_palette_count",
+          "label": "enemy palette count",
+          "storageType": "u8",
+          "domain": "mzm.enemy.palette_count",
+          "binding": "enemy_palette_count",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_freeze",
+          "label": "enemy freeze",
+          "storageType": "u8",
+          "domain": "mzm.enemy.freeze_invocation",
+          "binding": "enemy_freeze",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_palette_row",
+          "label": "enemy palette row",
+          "storageType": "u8",
+          "domain": "mzm.enemy.palette_row",
+          "binding": "enemy_palette_row",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        },
+        {
+          "id": "enemy_normal_palette_selector",
+          "label": "enemy normal palette selector",
+          "storageType": "u8",
+          "domain": "mzm.enemy.normal_palette_selector",
+          "binding": "enemy_normal_palette_selector",
+          "default": 0,
+          "defaultOrigin": "synthetic-host-initializer-not_source_game_value"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "enemy_reaction",
+          "binding": "enemy_reaction",
+          "meaning": "decremented packed reaction and source palette selector"
+        },
+        {
+          "id": "enemy_palette_selector",
+          "binding": "enemy_palette_selector",
+          "meaning": "decremented packed reaction and source palette selector"
+        }
+      ],
+      "phases": [
+        {
+          "id": "eligible-prepass",
+          "trigger": "On next eligible enemy scheduler update after any selected hit",
+          "invocations": [
+            "reaction"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "canonical enemy scheduler",
+          "provided": false,
+          "obligation": "canonical enemy scheduler"
+        },
+        {
+          "id": "palette state provider",
+          "provided": false,
+          "obligation": "palette state provider"
+        }
+      ],
+      "gaps": [
+        "Not an immediate continuation of the hit; elapsed frame mapping unproven."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/phase-intake.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/bundle.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/eligible-prepass.assembly.json",
+        "research/ir-workshop/cohesive-extraction-20261016/encounter/eligible-prepass.validation.json"
+      ],
+      "qualificationScope": "single automatically lifted source function, 16,384 finite original/native pairs reused; binding validator passed; no connected ROM encounter; one shared module; not a complete encounter",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "variantFamily": "mzm.encounter-source-phases",
+      "countingPolicy": "one canonical enemy module; phase alternatives and later prepass do not create additional enemy instances"
+    },
+    {
+      "id": "mzm.prefab.equipment-event-readback",
+      "moduleId": "mzm.module.progression-session",
+      "label": "Equipment acquisition and persistent event readback",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.equipment-event-readback.assembly.json",
+      "sha256": "ab282140335e5400a2603b07c99bccca9a409e42a84600b77fa1f6ff7f9638b8",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/mzm-progression-01/mzm.prefab.equipment-event-readback.validation.json",
+      "validationSha256": "45c394ff0bea0df39e9837381400628f07ea41a9f959d4039f40d775f5a9e26c",
+      "inputs": [
+        {
+          "id": "sourcePickup",
+          "label": "Source equipment pickup kind",
+          "storageType": "u8",
+          "default": 35,
+          "domain": "fixed original source case0x23;setsownedweaponbit0 andevent8",
+          "binding": "acquire.param_0"
+        },
+        {
+          "id": "priorOwnedEquipment",
+          "label": "Existing acquired equipment bits",
+          "storageType": "u8 fields",
+          "default": 0,
+          "domain": "source byte enums/bitsets;syntheticzeroexample",
+          "binding": "owned_weapon_bits,owned_ability_bits"
+        },
+        {
+          "id": "priorEventBank",
+          "label": "Existing session event bank",
+          "storageType": "u32[8]",
+          "default": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "domain": "exact source8words;syntheticzeroexample",
+          "binding": "persistent_event_bank"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "ownedEquipment",
+          "binding": "owned_weapon_bits,owned_ability_bits",
+          "meaning": "Source acquired-equipment bits persist;type23 ORsownedweaponbit0."
+        },
+        {
+          "id": "eventBank",
+          "binding": "persistent_event_bank",
+          "meaning": "Same shared source bank after acquisition;event8 bit set without losing unrelated words."
+        },
+        {
+          "id": "eventObserved",
+          "binding": "event_read_result",
+          "meaning": "Capturedsourcequeryop3result0or1 for event8;not discarded predicate."
+        }
+      ],
+      "phases": [
+        {
+          "id": "source-equipment-transaction",
+          "trigger": "Already accepted source equipmentpickup23",
+          "invocations": [
+            "acquire"
+          ],
+          "scheduleStatus": "source-proven"
+        },
+        {
+          "id": "later-explicit-event-observation",
+          "trigger": "Host asks event8 query after source transaction",
+          "invocations": [
+            "events"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "source-pickup-admission",
+          "obligation": "host admits a source pickup action/type23;no arbitrary keyboard\u2192grant trigger supplied"
+        },
+        {
+          "id": "persistent-session-owner",
+          "obligation": "retain same8word source eventbank and source weapon/ability bits acrosscalls;saveadapter external"
+        }
+      ],
+      "gaps": [
+        "This source transaction grants acquisition bits and campaign event8;it does not equip weapon0300153d or demonstrate its firing benefit.",
+        "Pickup contact,room/story consumers,save persistence and presentation remain external.",
+        "Readback explicitlyusesoperation3;otheroperations have operation-dependent Boolean semantics and are not interchangeable queries.",
+        "Fixed source pickup23/event8 default pair;no invented item names or unrelated eventbinding."
+      ],
+      "sourceRefs": [
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080138d8.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/08016594.c",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json",
+        "research/ir-workshop/source-game-prefabs/metroid-zero-mission/progression-verification.json"
+      ],
+      "qualificationScope": "Actual currentpublished package pins,sharedbank Composer lowering and narrowcompiledhost assertions. Retained originalnative acquisition/events receipts unchanged;no composedoriginalROM/native witness.",
+      "emittedCore": "research/ir-workshop/source-game-prefabs/metroid-zero-mission/equipment-event-readback.core.c",
+      "readyToAdd": true,
+      "runtimeQualified": false
+    }
+  ],
+  "timing": {
+    "runId": "mzm-progression-additive-source-fleet-restart",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.019444625,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.145061083,
+    "beforeAfter": null,
+    "accounting": "Narrow graph+Composer lowering+hostcompile/assertions total;hoststage nested. Native/game builds notrun;queue/interactiveelapsed/comparablebeforeafter unavailable. Central additive merge preserves prior6 acceptedphasevariants and2physicalmodules; registration validation timedseparately."
+  }
+}

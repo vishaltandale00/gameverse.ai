@@ -1,0 +1,15 @@
+# Fusion movement/contact source closure
+
+A new automatic source phase is qualified: `0800c174` publishes the canonical player's four collision bounds and motion/contact mode. Original-ROM comparison passed 256 synthetic vectors, then 32 vectors including 20 source-table expected cases. This geometry producer has actual source consumers: player/actor rectangle contact at `08082888`, terrain footprint scanning at `0806c008`, and motion-mode selection at `08009d78`. It is not a complete terrain/controller prefab.
+
+The original normal-engine pointer table and owners now establish more order than the prior packet: `08004e68` invokes control, conditionally consumes its transition request, publishes the profile, and invokes position integration. `08004fec` performs collision then republishes the profile. `0800e420` invokes those owners in that order under its explicit source conditions. Other engine/frame paths remain unproved; no authored total schedule replaces them.
+
+Two reviewed bounded exports repaired missing internal computed-branch CFG for integration and jump initialization. They preserve the original ROM and saved project. Source table index-to-target mapping matches the emitted absolute-pointer branch cases; actual lifts then advance to signed-division and audio dependencies. Integration remains blocked in `08004dc8 → 080a3468` by bounded-CFG expansion. No manual C or native service stub replaced it.
+
+A second exact export identifies the real terrain callback: installer `08068af0` provisions the original `08068cc8` classifier at RAM and assigns its callback cell. The source classifier returns solidity/class and sometimes mutates the same query record. Its recovered normalized switch omits class12 as an implicit default; strict mapping retained that gap. Class11 also requires shared world/property domains. Neither a predicate-only card nor a complete terrain service is claimed.
+
+[closure-result.json](closure-result.json) pins source contracts, publication candidate, exports, setup/mapping reports, automatic L1, fixtures, successes and failures. Source descriptors and extents are immutable ROM assets. One packed player backing remains canonical across profile, movement and contact; private transition history is separate historical storage.
+
+Export invocations took 6.853628125 seconds total. Native semantic qualification took 0.22165175 seconds; its stages are nested in that number. Synthetic qualification is nested in the contact-profile automatic attempt. Queue and full interactive duration are unavailable. No registered delivery, compiler, catalog, UI, game ROM or broad native campaign changed.
+
+Next is the real position consumer: safely specialize the source direct-air mode through the compiler, or close its original division dependency, then execute the prepared X/Y acceptance cases. Contact follows with explicit source default metadata and canonical world/property bounds. The corresponding exact requests are with the shared owners; no unchanged blocked batch is rerun.

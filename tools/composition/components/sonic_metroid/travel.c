@@ -24,7 +24,8 @@ void gv_travel_step(GvState *s,GvPlayer *p,uint16_t keys,uint16_t edges)
     s->relay_trips++;s->relay_from=s->stage;s->relay_to=(uint8_t)destination;
     gv_restore_palette(s);
     if(s->tiles)((void (*)(void *))0x08006c35)((void *)(uintptr_t)s->tiles);
-    s->tiles=0;s->stage_active=0;s->morph=s->ledge=0;s->last_dead=0;
+    if(s->mzm_tiles)((void (*)(void *))0x08006c35)((void *)(uintptr_t)s->mzm_tiles);
+    s->tiles=s->mzm_tiles=0;s->stage_active=0;s->morph=s->ledge=0;s->last_dead=0;
     GV_R16(0x03005004)|=0x20;
     ((void (*)(uint16_t,uint16_t))0x08001955)(0,0xffff);
     GV_R8(0x03002384)=GV_R8(0x0300211c);

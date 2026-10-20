@@ -1,0 +1,1003 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "grand-theft-auto",
+  "sourceSystemIds": [
+    "gta-advance.actor-active-list-lifecycle"
+  ],
+  "blueprintIds": [
+    "actors-world-lifecycle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "A top-down city session with actor availability, movement, encounters and scripted world changes; only actor render-component membership is currently a ready prefab.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Live buttons and recorded-input handling",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "KEYINPUT polling and input/replay mode",
+          "Special button-combination reset/services"
+        ],
+        "gaps": [
+          "Read held bits and new-press state are source-visible; replay branch and actual player/vehicle command consumers remain unbound."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08065344"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08065428"
+          }
+        ]
+      },
+      {
+        "id": "motion",
+        "label": "On-foot / vehicle control and motion",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Identify exact actor coordinate/velocity producers and player/vehicle mode owner"
+        ],
+        "gaps": [
+          "08045910 reads alternative coordinate subviews for selection, not an executable motion producer. Units, terrain response, acceleration and mode transition are not qualified."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08050fac"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08045910"
+          }
+        ]
+      },
+      {
+        "id": "actor-lifecycle",
+        "label": "Keep actor render-components registered across events",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "gta.actor-membership.activate"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Caller-owned live component identity arena",
+          "Original actor active-bit and component-presence gate or explicit host event"
+        ],
+        "gaps": [
+          "Four live node identities is the existing finite qualification domain, not the source allocator capacity.",
+          "Host supplies a persistent canonical head/older/newer arena and rejects duplicate activation/nonmember deactivation, invalid handle or inconsistent reciprocal live list.",
+          "No allocator, free, renderer, actor update, source active-flag gate or sibling component services are supplied.",
+          "Phase timing is caller-declared; no complete recovered GTA loop or composed original-ROM runtime qualification."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+            "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08038180"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "080380bc"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0800d2b0"
+          }
+        ]
+      },
+      {
+        "id": "actor-update",
+        "label": "Actor lists and source callback update scheduling",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Finite list traversal with callback specialization",
+          "Exact callback ABI and borrowed actor ownership"
+        ],
+        "gaps": [
+          "51030 dispatches38180/2590c/37b38/35498 before0d2b0, but callback list services and actor update leaf closure are not portable."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08051030"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08038180"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08037b38"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08012558"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08038070"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "080380bc"
+          }
+        ]
+      },
+      {
+        "id": "world-contact",
+        "label": "World contact, eligibility and object interactions",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Recover544c0/53d68 eligibility helpers and spatial identity/units",
+          "Terrain/collision producer and response consumer"
+        ],
+        "gaps": [
+          "Source candidate state/target transitions do not prove collision rules, damage ownership, police logic or mission success."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08051e78"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08045910"
+          }
+        ]
+      },
+      {
+        "id": "world-view",
+        "label": "Sorted component visibility/rendering and camera framing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Priority/distance computation0d0a0",
+          "Bounded in-place sort and list iteration",
+          "Bounds/camera rectangle state, rendering/DMA services"
+        ],
+        "gaps": [
+          "Qualified membership head feeds this source traversal; sort/cull/render consumer and exact camera world-to-screen transform remain unqualified."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0800c758"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0800d180"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0800d2b0"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08051030"
+          }
+        ]
+      },
+      {
+        "id": "combat",
+        "label": "Attack, contact, damage and defeat",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Identify actual attack emission/contact resolution/health writes",
+          "Animation/resource callback closure"
+        ],
+        "gaps": [
+          "Target selection and resource-state changes are visible; no qualified weapon, damage/health, invulnerability or defeat transaction is connected."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08045910"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "08051e78"
+          }
+        ]
+      },
+      {
+        "id": "progression",
+        "label": "Scene/mission script effects and durable progress",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+        ],
+        "requiredServices": [
+          "Bytecode/program owner, opcode services and continuation",
+          "Mission/event meanings and persistent save commit"
+        ],
+        "gaps": [
+          "5dedc dispatches opcodes from a global script pointer/index and timer under guards; specific mission semantics, player outcomes and persistence are not established."
+        ],
+        "sourcePins": [
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0805dedc"
+          },
+          {
+            "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+            "entry": "0805ddb8"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor-update",
+        "to": "actor-lifecycle",
+        "kind": "host-required",
+        "scope": "38180 passes the Thumb candidate380bd to12558 and380bc source-calls actor activation36330, but callback traversal/argument ABI is unqualified; do not treat this candidate linkage as executable source scheduling."
+      },
+      {
+        "from": "actor-lifecycle",
+        "to": "world-view",
+        "kind": "shared-state",
+        "scope": "Original list head02016280 and node+14/+18 are shared with0d180/0d2b0 sorting and visibility/render traversal."
+      },
+      {
+        "from": "motion",
+        "to": "world-view",
+        "kind": "host-required",
+        "scope": "Actual coordinate/camera producer binding remains missing; coordinate reads alone do not prove motion."
+      }
+    ],
+    "missingForCoreGame": [
+      "Source-correct live input/replay adapter and player/vehicle command consumers",
+      "On-foot/vehicle motion producers, spatial units and mode transition",
+      "Terrain/collision producer and response",
+      "Original actor callback scheduling, active gates and full component lifecycle",
+      "Sorted render traversal, camera transform and graphics services",
+      "Weapon/contact/health/defeat transaction",
+      "Mission/script opcode semantics and durable save/commit"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "gta.actor-membership-lifecycle",
+      "label": "Actor render-component lifecycle",
+      "moduleId": "gta.actor-render-component-lifecycle",
+      "sourceGame": "grand-theft-auto",
+      "sourceSystemId": "gta-advance.actor-active-list-lifecycle",
+      "sourceContractRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+      "planIds": [
+        "actors-world-lifecycle"
+      ],
+      "packageIds": [
+        "gta.component_list.insert_head",
+        "gta.component_list.unlink"
+      ],
+      "availability": "published-subset",
+      "scope": "Two separate source membership event phases over one persistent arena; activate leaves observable membership until a later caller deactivation event.",
+      "gaps": [
+        "Four live node identities is the existing finite qualification domain, not the source allocator capacity.",
+        "Host supplies a persistent canonical head/older/newer arena and rejects duplicate activation/nonmember deactivation, invalid handle or inconsistent reciprocal live list.",
+        "No allocator, free, renderer, actor update, source active-flag gate or sibling component services are supplied.",
+        "Phase timing is caller-declared; no complete recovered GTA loop or composed original-ROM runtime qualification."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+        "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+        "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+        "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json"
+      ],
+      "canonicalState": {
+        "identity": "gta.actor-render-component-lifecycle",
+        "fields": [
+          "head",
+          "older[4]",
+          "newer[4]"
+        ],
+        "aliasRule": "Both phases and consumers reuse exactly the same canonical head/older/newer backing. Each node handle denotes one identity across all lanes; no copied actor/world owner."
+      },
+      "instanceDefaults": {
+        "head": 0,
+        "older": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "newer": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "initializationPolicy": "Initialize arena exactly once on instance creation. Preserve same backing across every phase; graph.initialize is a standalone proof fixture, not a phase reset.",
+      "roleFacets": [
+        {
+          "roleId": "actor-lifecycle",
+          "capability": "Persistent registration and later removal of actor render-components",
+          "status": "published-subset",
+          "scope": "Original insert/unlink membership only, finite four-node arena; other actor services remain host obligations.",
+          "evidence": [
+            "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+            "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+            "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+            "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json"
+          ],
+          "sourcePins": [
+            {
+              "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+              "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+            },
+            {
+              "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+              "sha256": "170ba5e01b9d799b5f4649e455e86137e98a05e7620fc754af9e251e7deda68a"
+            },
+            {
+              "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+              "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5"
+            },
+            {
+              "path": "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json",
+              "sha256": "6fa141217e135cef50582a0f1e72461f802b84cc529b3a56a10a138d0fe6182e"
+            }
+          ]
+        },
+        {
+          "roleId": "world-view",
+          "capability": "Feed original sorted/culling component traversal",
+          "status": "source-only",
+          "scope": "Source proves membership head is consumed by0d2b0, but no portable render/sort service is supplied.",
+          "evidence": [
+            "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json"
+          ],
+          "sourcePins": [
+            {
+              "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+              "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+              "entry": "0800d180"
+            },
+            {
+              "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+              "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5",
+              "entry": "0800d2b0"
+            }
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "gta.actor-membership.activate",
+        "label": "Activate actor render-component",
+        "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+        "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/delivery.json",
+        "packageIds": [
+          "gta.component_list.insert_head"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "phaseTemplates": [
+          {
+            "id": "activate",
+            "trigger": "Explicit caller component-activate event; source parent gates documented separately",
+            "invocations": [
+              "insert_head"
+            ],
+            "scheduleStatus": "caller-declared",
+            "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+            "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+            "validationSha256": "15a57e23f83327fbecfdf58627509042db1316b371ed59fa94fd210d4e01e77a",
+            "label": "Activate actor render-component",
+            "assemblySha256": "19dfe5f3abaef65c9dfb4a0a955b47f6c6b60384ff7b93ebae58c5ea5d747f52",
+            "importScope": "module-entry",
+            "readyToAdd": true,
+            "inputs": [
+              {
+                "id": "node",
+                "label": "Live component handle",
+                "storageType": "u32",
+                "default": 1,
+                "domain": "Integer1..4; must be absent before activate and present before deactivate",
+                "binding": "invocations[0].arguments.param_0",
+                "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+              }
+            ],
+            "outputs": [
+              {
+                "id": "head",
+                "binding": "head",
+                "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+              },
+              {
+                "id": "older",
+                "binding": "older",
+                "meaning": "Canonical links toward older components; array capacity4."
+              },
+              {
+                "id": "newer",
+                "binding": "newer",
+                "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+              }
+            ],
+            "requiredServices": [
+              {
+                "id": "canonical-component-arena",
+                "status": "host-required",
+                "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+              },
+              {
+                "id": "actor-gate-and-other-components",
+                "status": "host-required",
+                "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+              }
+            ],
+            "proofFixtureInitialize": {
+              "values": {
+                "head": 0,
+                "older": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "newer": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+            },
+            "phaseExecution": {
+              "status": "inspectable_source_phase_template",
+              "liveEndpointAvailable": false,
+              "contract": "This metadata exposes source-derived phase graphs. Do not reimport to reset a module; live persistent phase dispatch requires a host endpoint bound to the same canonical backing."
+            }
+          },
+          {
+            "id": "deactivate",
+            "trigger": "Explicit caller component-deactivate event; source parent gates documented separately",
+            "invocations": [
+              "unlink"
+            ],
+            "scheduleStatus": "caller-declared",
+            "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.assembly.json",
+            "assemblySha256": "0455529087ffa0d4156c3800c0191e43310696c83c720c233e85598ff8c67828",
+            "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.validation.json",
+            "validationSha256": "ed91a516a017df09673de931973faa2e1bada6190cb52cb906433c497ddfe02b",
+            "proofFixtureInitialize": {
+              "values": {
+                "head": 1,
+                "older": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "newer": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+            },
+            "reuseOnly": true,
+            "moduleId": "gta.actor-render-component-lifecycle",
+            "label": "Deactivate actor render-component",
+            "importScope": "same-instance-only",
+            "readyToAdd": false,
+            "inputs": [
+              {
+                "id": "node",
+                "label": "Live component handle",
+                "storageType": "u32",
+                "default": 1,
+                "domain": "Integer1..4; must be absent before activate and present before deactivate",
+                "binding": "invocations[0].arguments.param_0",
+                "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+              }
+            ],
+            "outputs": [
+              {
+                "id": "head",
+                "binding": "head",
+                "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+              },
+              {
+                "id": "older",
+                "binding": "older",
+                "meaning": "Canonical links toward older components; array capacity4."
+              },
+              {
+                "id": "newer",
+                "binding": "newer",
+                "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+              }
+            ],
+            "requiredServices": [
+              {
+                "id": "canonical-component-arena",
+                "status": "host-required",
+                "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+              },
+              {
+                "id": "actor-gate-and-other-components",
+                "status": "host-required",
+                "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+              }
+            ],
+            "phaseExecution": {
+              "status": "inspectable_source_phase_template",
+              "liveEndpointAvailable": false,
+              "contract": "This metadata exposes source-derived phase graphs. Do not reimport to reset a module; live persistent phase dispatch requires a host endpoint bound to the same canonical backing."
+            }
+          }
+        ],
+        "instanceDefaults": {
+          "head": 0,
+          "older": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "newer": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "initializationPolicy": "Initialize arena exactly once on instance creation. Preserve same backing across every phase; graph.initialize is a standalone proof fixture, not a phase reset.",
+        "inputs": [
+          {
+            "id": "node",
+            "label": "Live component handle",
+            "storageType": "u32",
+            "default": 1,
+            "domain": "Integer1..4; must be absent before activate and present before deactivate",
+            "binding": "invocations[0].arguments.param_0",
+            "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+          }
+        ],
+        "outputs": [
+          {
+            "id": "head",
+            "binding": "head",
+            "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+          },
+          {
+            "id": "older",
+            "binding": "older",
+            "meaning": "Canonical links toward older components; array capacity4."
+          },
+          {
+            "id": "newer",
+            "binding": "newer",
+            "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+          }
+        ],
+        "requiredServices": [
+          {
+            "id": "canonical-component-arena",
+            "status": "host-required",
+            "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+          },
+          {
+            "id": "actor-gate-and-other-components",
+            "status": "host-required",
+            "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+          }
+        ],
+        "phaseExecution": {
+          "liveEndpointAvailable": false,
+          "status": "phase_graphs_inspectable_persistent_host_proof_available",
+          "gaps": [
+            "Current application can inspect phase templates; live same-instance phase execution is not claimed."
+          ]
+        }
+      },
+      "sourcePins": [
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+          "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+        },
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+          "sha256": "170ba5e01b9d799b5f4649e455e86137e98a05e7620fc754af9e251e7deda68a"
+        },
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+          "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5"
+        },
+        {
+          "path": "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json",
+          "sha256": "6fa141217e135cef50582a0f1e72461f802b84cc529b3a56a10a138d0fe6182e"
+        }
+      ]
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "gta.actor-membership.activate",
+      "moduleId": "gta.actor-render-component-lifecycle",
+      "label": "Activate actor render-component",
+      "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+      "sha256": "19dfe5f3abaef65c9dfb4a0a955b47f6c6b60384ff7b93ebae58c5ea5d747f52",
+      "validation": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+      "validationSha256": "15a57e23f83327fbecfdf58627509042db1316b371ed59fa94fd210d4e01e77a",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "reuseOnly": false,
+      "proofFixtureInitialize": {
+        "values": {
+          "head": 0,
+          "older": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "newer": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+      },
+      "inputs": [
+        {
+          "id": "node",
+          "label": "Live component handle",
+          "storageType": "u32",
+          "default": 1,
+          "domain": "Integer1..4; must be absent before activate and present before deactivate",
+          "binding": "invocations[0].arguments.param_0",
+          "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+        }
+      ],
+      "outputs": [
+        {
+          "id": "head",
+          "binding": "head",
+          "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+        },
+        {
+          "id": "older",
+          "binding": "older",
+          "meaning": "Canonical links toward older components; array capacity4."
+        },
+        {
+          "id": "newer",
+          "binding": "newer",
+          "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+        }
+      ],
+      "phases": [
+        {
+          "id": "activate",
+          "trigger": "Explicit caller component-activate event; source parent gates documented separately",
+          "invocations": [
+            "insert_head"
+          ],
+          "scheduleStatus": "caller-declared",
+          "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+          "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+          "validationSha256": "15a57e23f83327fbecfdf58627509042db1316b371ed59fa94fd210d4e01e77a"
+        },
+        {
+          "id": "deactivate",
+          "trigger": "Explicit caller component-deactivate event; source parent gates documented separately",
+          "invocations": [
+            "unlink"
+          ],
+          "scheduleStatus": "caller-declared",
+          "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.assembly.json",
+          "assemblySha256": "0455529087ffa0d4156c3800c0191e43310696c83c720c233e85598ff8c67828",
+          "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.validation.json",
+          "validationSha256": "ed91a516a017df09673de931973faa2e1bada6190cb52cb906433c497ddfe02b",
+          "proofFixtureInitialize": {
+            "values": {
+              "head": 1,
+              "older": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "newer": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+          },
+          "reuseOnly": true,
+          "moduleId": "gta.actor-render-component-lifecycle"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "canonical-component-arena",
+          "status": "host-required",
+          "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+        },
+        {
+          "id": "actor-gate-and-other-components",
+          "status": "host-required",
+          "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+        }
+      ],
+      "gaps": [
+        "Four live node identities is the existing finite qualification domain, not the source allocator capacity.",
+        "Host supplies a persistent canonical head/older/newer arena and rejects duplicate activation/nonmember deactivation, invalid handle or inconsistent reciprocal live list.",
+        "No allocator, free, renderer, actor update, source active-flag gate or sibling component services are supplied.",
+        "Phase timing is caller-declared; no complete recovered GTA loop or composed original-ROM runtime qualification.",
+        "Only activate is an addable prefab. Deactivate is a later phase template reusing that same physical module and backing, never a second actor/arena."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+        "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+        "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+        "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json"
+      ],
+      "qualificationScope": "Actual exact-published-hash graph validation and seven-invocation persistent Composer host check; existing780original/emitted pairs cover588distinct entry states at finite component scope. No new composed original-ROM native qualification.",
+      "sourcePins": [
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/mashup-coverage/l2-contract-v3-finite-qualified.json",
+          "sha256": "7475a3d4d2ddfe6087a85cf7a4914df70b6ac55e0537568c4b52a63a97906e04"
+        },
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/actor-membership-contract.json",
+          "sha256": "170ba5e01b9d799b5f4649e455e86137e98a05e7620fc754af9e251e7deda68a"
+        },
+        {
+          "path": "research/deep-extraction/resume/grand-theft-auto/system-prefab/source-witnesses.json",
+          "sha256": "1b43ef9319721ab095b32c384db8773900e6ed741a44106137b92d9d0f647ae5"
+        },
+        {
+          "path": "local/ir/game-system-prefabs/grand-theft-auto/phase-verification.json",
+          "sha256": "6fa141217e135cef50582a0f1e72461f802b84cc529b3a56a10a138d0fe6182e"
+        }
+      ],
+      "phaseTemplates": [
+        {
+          "id": "activate",
+          "trigger": "Explicit caller component-activate event; source parent gates documented separately",
+          "invocations": [
+            "insert_head"
+          ],
+          "scheduleStatus": "caller-declared",
+          "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.assembly.json",
+          "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/activate.validation.json",
+          "validationSha256": "15a57e23f83327fbecfdf58627509042db1316b371ed59fa94fd210d4e01e77a",
+          "label": "Activate actor render-component",
+          "assemblySha256": "19dfe5f3abaef65c9dfb4a0a955b47f6c6b60384ff7b93ebae58c5ea5d747f52",
+          "importScope": "module-entry",
+          "readyToAdd": true,
+          "inputs": [
+            {
+              "id": "node",
+              "label": "Live component handle",
+              "storageType": "u32",
+              "default": 1,
+              "domain": "Integer1..4; must be absent before activate and present before deactivate",
+              "binding": "invocations[0].arguments.param_0",
+              "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+            }
+          ],
+          "outputs": [
+            {
+              "id": "head",
+              "binding": "head",
+              "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+            },
+            {
+              "id": "older",
+              "binding": "older",
+              "meaning": "Canonical links toward older components; array capacity4."
+            },
+            {
+              "id": "newer",
+              "binding": "newer",
+              "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+            }
+          ],
+          "requiredServices": [
+            {
+              "id": "canonical-component-arena",
+              "status": "host-required",
+              "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+            },
+            {
+              "id": "actor-gate-and-other-components",
+              "status": "host-required",
+              "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+            }
+          ],
+          "proofFixtureInitialize": {
+            "values": {
+              "head": 0,
+              "older": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "newer": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+          },
+          "phaseExecution": {
+            "status": "inspectable_source_phase_template",
+            "liveEndpointAvailable": false,
+            "contract": "This metadata exposes source-derived phase graphs. Do not reimport to reset a module; live persistent phase dispatch requires a host endpoint bound to the same canonical backing."
+          }
+        },
+        {
+          "id": "deactivate",
+          "trigger": "Explicit caller component-deactivate event; source parent gates documented separately",
+          "invocations": [
+            "unlink"
+          ],
+          "scheduleStatus": "caller-declared",
+          "assemblyRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.assembly.json",
+          "assemblySha256": "0455529087ffa0d4156c3800c0191e43310696c83c720c233e85598ff8c67828",
+          "validationRef": "research/deep-extraction/resume/grand-theft-auto/system-prefab/deactivate.validation.json",
+          "validationSha256": "ed91a516a017df09673de931973faa2e1bada6190cb52cb906433c497ddfe02b",
+          "proofFixtureInitialize": {
+            "values": {
+              "head": 1,
+              "older": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "newer": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "scope": "Standalone phase proof fixture only; NEVER reinitialize a live module instance on phase entry."
+          },
+          "reuseOnly": true,
+          "moduleId": "gta.actor-render-component-lifecycle",
+          "label": "Deactivate actor render-component",
+          "importScope": "same-instance-only",
+          "readyToAdd": false,
+          "inputs": [
+            {
+              "id": "node",
+              "label": "Live component handle",
+              "storageType": "u32",
+              "default": 1,
+              "domain": "Integer1..4; must be absent before activate and present before deactivate",
+              "binding": "invocations[0].arguments.param_0",
+              "configuration": "Changing explicit constant requires graph revalidation; all four handle variants already have retained phase receipts."
+            }
+          ],
+          "outputs": [
+            {
+              "id": "head",
+              "binding": "head",
+              "meaning": "Current live component list head (0 empty), observable after this phase until a later caller event."
+            },
+            {
+              "id": "older",
+              "binding": "older",
+              "meaning": "Canonical links toward older components; array capacity4."
+            },
+            {
+              "id": "newer",
+              "binding": "newer",
+              "meaning": "Canonical links toward newer components; removed-node entries remain stale."
+            }
+          ],
+          "requiredServices": [
+            {
+              "id": "canonical-component-arena",
+              "status": "host-required",
+              "contract": "One persistent four-identity owner/backing; validate handles, live reciprocal acyclic list and operation membership before invocation."
+            },
+            {
+              "id": "actor-gate-and-other-components",
+              "status": "host-required",
+              "contract": "Source actor active-bit, component-present gating and sibling services are outside this prefab."
+            }
+          ],
+          "phaseExecution": {
+            "status": "inspectable_source_phase_template",
+            "liveEndpointAvailable": false,
+            "contract": "This metadata exposes source-derived phase graphs. Do not reimport to reset a module; live persistent phase dispatch requires a host endpoint bound to the same canonical backing."
+          }
+        }
+      ]
+    }
+  ],
+  "nextClosure": {
+    "qualifiedLeafProposal": "research/deep-extraction/resume/grand-theft-auto/system-prefab/publication-candidates-reset-v1.json",
+    "status": "512native-qualified descriptor reset awaiting intake; not a free service or ready prefab yet",
+    "parent": "08042550 traversal/resource-return closure remains open"
+  },
+  "timing": {
+    "runId": "gta-system-prefab-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.009573792999999997,
+    "buildSeconds": 0.048992584000000006,
+    "hostCheckSeconds": 0.0845215,
+    "nativeSeconds": null,
+    "totalSeconds": 0.16522779199999998,
+    "beforeAfter": null,
+    "accounting": "Eight graph validations and host compilation/check are nested in phase total. Existing780native-pair proof reused, not recounted. New reset helper512native pairs are separate proposal,0.227384s inclusive; no comparable prior prefab benchmark."
+  }
+}

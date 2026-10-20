@@ -303,6 +303,22 @@ def run_one(rom, args, run_id, shash, out_root):
         tail = (out / "headless.log").read_text(errors="replace").splitlines()[-15:]
         errs = [l for l in tail if "ERROR" in l or "Exception" in l]
         rec.update(status="failed", error=err, log_tail=errs or tail[-5:])
+        # A hard cap can interrupt final export after many useful functions were
+        # generated. Retain the separate journal as partial evidence, without
+        # converting a failed ROM run into a successful final export.
+        progress_path = out / "partial-progress.json"
+        journal_path = out / "partial-functions.jsonl"
+        try:
+            progress = json.loads(progress_path.read_text())
+            if progress.get("run_id") == run_id and journal_path.is_file():
+                rec["partial_journal"] = {
+                    "path": str(journal_path),
+                    "sha256": hashlib.sha256(journal_path.read_bytes()).hexdigest(),
+                    "progress": progress,
+                    "note": "Incomplete process-cap checkpoint, not final function/whole-game coverage",
+                }
+        except (OSError, ValueError):
+            pass
     return rec
 
 

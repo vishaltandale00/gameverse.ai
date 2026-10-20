@@ -1,0 +1,767 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "crash.actor-motion.phase-payload.source-entry-replacement.v1",
+  "game_id": "crash-bandicoot-the-huge-adventure",
+  "module_id": "crash.actor-controller.normal_mode",
+  "proposal_status": "additive-existing-package-capability-not-new-qualification",
+  "recorded_at_utc": "2026-10-16T21:03:29.292803+00:00",
+  "revision_reason": "Link3 existing automatic packages to actual finite native entry installation and source-backed shared actor/caller evidence; no new physical actor module or forced phasegraph.",
+  "package_ids": [
+    "crash.actor.motion_target_approach_integrate",
+    "crash.actor.apply_phase_payload_preserve_scalar",
+    "crash.actor.apply_phase_payload_reset_scalar"
+  ],
+  "package_identities": [
+    {
+      "id": "crash.actor.motion_target_approach_integrate",
+      "version": "0.1.0",
+      "behavior_sha256": "ef278b1c0e72d97b4f50f57486c3f9f8a38510fa5f62228a3e8d2283c0f38bb2",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/crash.actor.motion_target_approach_integrate/package.json",
+        "sha256": "8757213d24f428869f942d530c69a992daf4ec4932efefabff5606f5293ea83b"
+      }
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_preserve_scalar",
+      "version": "0.1.0",
+      "behavior_sha256": "f732a92bdadb2c638c4277eae1ea5a7a194dac5281a1ece0767bebf36bcc7130",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/package.json",
+        "sha256": "8363787fe3974a7c7d025cbca4df36294f1ae51b8e43a2ed2a3a91bf5b3ecf85"
+      }
+    },
+    {
+      "id": "crash.actor.apply_phase_payload_reset_scalar",
+      "version": "0.1.0",
+      "behavior_sha256": "8e3c5577ae01bed19cf2876271ef5e8ab40042a0b31bc2a2a4afa724016bf213",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/package.json",
+        "sha256": "67a3ec5e91d7ad21fa17e3a1128e07f0c42d14a55a25df10389729f34520136f"
+      }
+    }
+  ],
+  "source_roots": [
+    "0800b270",
+    "0800b6a0",
+    "0800b6d0"
+  ],
+  "exactpins": {
+    "motion_central_package": {
+      "path": "local/ir/packages/crash.actor.motion_target_approach_integrate/package.json",
+      "sha256": "8757213d24f428869f942d530c69a992daf4ec4932efefabff5606f5293ea83b"
+    },
+    "motion_central_behavior": {
+      "path": "local/ir/packages/crash.actor.motion_target_approach_integrate/l1.json",
+      "sha256": "ef278b1c0e72d97b4f50f57486c3f9f8a38510fa5f62228a3e8d2283c0f38bb2"
+    },
+    "motion_central_receipt": {
+      "path": "local/ir/packages/crash.actor.motion_target_approach_integrate/receipt.json",
+      "sha256": "ab21ee7c66da43d5c4903347e6ab45ebdf04a64a0260770d487aea4d68dc30b5"
+    },
+    "motion_central_adapter": {
+      "path": "local/ir/packages/crash.actor.motion_target_approach_integrate/validation-adapter.json",
+      "sha256": "ff68b11b4dcf043d7bfaa088743db8a0470d165a41aa7023e1fc4be1a4373798"
+    },
+    "motion_l0_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/l0.json",
+      "sha256": "1436b0a4fe09771151f31205e9a5949fcd9ae2e4ab8e5eb3e9fe32ff6c5f3647"
+    },
+    "motion_l1_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/l1.json",
+      "sha256": "ef278b1c0e72d97b4f50f57486c3f9f8a38510fa5f62228a3e8d2283c0f38bb2"
+    },
+    "motion_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/validation-adapter.json",
+      "sha256": "ff68b11b4dcf043d7bfaa088743db8a0470d165a41aa7023e1fc4be1a4373798"
+    },
+    "motion_generated_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/generated.c",
+      "sha256": "62ec007e37be2fbd3163dd5ee0cacf3727c3356b3c0cb613963ab959c91378fa"
+    },
+    "motion_bound_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/bound.c",
+      "sha256": "f4e588010571d7708c9a3be4fd4a41658a79fc0e71684d914735426b952494d5"
+    },
+    "motion_fixtures_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/fixtures.json",
+      "sha256": "02899bc0f9ecf9b864f5c39ca4fed2fed4410ee1134a0883553ae2647c41ed41"
+    },
+    "motion_original-proof-reused_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/original-proof-reused.json",
+      "sha256": "ab21ee7c66da43d5c4903347e6ab45ebdf04a64a0260770d487aea4d68dc30b5"
+    },
+    "motion_rebuilt-original-entry-proof_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/motion/rebuilt-original-entry-proof.json",
+      "sha256": "ba96a725520f873d4ca29f323c7e4990ad04673a2fd32257510bd604c2b2e373"
+    },
+    "preserve_central_package": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/package.json",
+      "sha256": "8363787fe3974a7c7d025cbca4df36294f1ae51b8e43a2ed2a3a91bf5b3ecf85"
+    },
+    "preserve_central_behavior": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/l1.json",
+      "sha256": "f732a92bdadb2c638c4277eae1ea5a7a194dac5281a1ece0767bebf36bcc7130"
+    },
+    "preserve_central_receipt": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/receipt.json",
+      "sha256": "f68e132756dc67ed82a811dde79a778b281d42cb928a44f250e3f8ea274ce9a3"
+    },
+    "preserve_central_adapter": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_preserve_scalar/validation-adapter.json",
+      "sha256": "e831fcf063e5a34effc1f8c9b48909f9f8deadda3a8926b7772096a804c43606"
+    },
+    "preserve_l0_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/l0.json",
+      "sha256": "c821d923b49b4f4f7070ea2e8b207d702c2e8752e10a56816f7805e18caaac90"
+    },
+    "preserve_l1_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/l1.json",
+      "sha256": "f732a92bdadb2c638c4277eae1ea5a7a194dac5281a1ece0767bebf36bcc7130"
+    },
+    "preserve_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/validation-adapter.json",
+      "sha256": "e831fcf063e5a34effc1f8c9b48909f9f8deadda3a8926b7772096a804c43606"
+    },
+    "preserve_generated_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/generated.c",
+      "sha256": "f72b9d624a94997ab97def17391f74d8e00c68dbafb8597499db41ce30c50fea"
+    },
+    "preserve_bound_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/bound.c",
+      "sha256": "889f020c20cbce381245dd64b9474ca3dc76e433a6b082f1245fb87e75c39170"
+    },
+    "preserve_fixtures_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/fixtures.json",
+      "sha256": "9a299dbb185e1b47c3f1e29450a2ac2496915a42c4ff69d302a288c7b91c76e5"
+    },
+    "preserve_original-proof-reused_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/original-proof-reused.json",
+      "sha256": "f68e132756dc67ed82a811dde79a778b281d42cb928a44f250e3f8ea274ce9a3"
+    },
+    "preserve_rebuilt-original-entry-proof_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/preserve/rebuilt-original-entry-proof.json",
+      "sha256": "d4d0e7b1997311abbc71584edd2bd3f377c2e1a4688f3cf22b944c33240af385"
+    },
+    "reset_central_package": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/package.json",
+      "sha256": "67a3ec5e91d7ad21fa17e3a1128e07f0c42d14a55a25df10389729f34520136f"
+    },
+    "reset_central_behavior": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/l1.json",
+      "sha256": "8e3c5577ae01bed19cf2876271ef5e8ab40042a0b31bc2a2a4afa724016bf213"
+    },
+    "reset_central_receipt": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/receipt.json",
+      "sha256": "921f91a010f6ac49e3d33beb1d5dadf2099bbc6855b853d8abe9c63ea93c469a"
+    },
+    "reset_central_adapter": {
+      "path": "local/ir/packages/crash.actor.apply_phase_payload_reset_scalar/validation-adapter.json",
+      "sha256": "6cdddda67295d8a52a0ca52d7bb1ee0f9cfb948967ae08e2b83f3030608c7666"
+    },
+    "reset_l0_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/l0.json",
+      "sha256": "cee3ebae4b8410185d6b1234044d989c8fb9fa0d44303425dcb62563672dd190"
+    },
+    "reset_l1_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/l1.json",
+      "sha256": "8e3c5577ae01bed19cf2876271ef5e8ab40042a0b31bc2a2a4afa724016bf213"
+    },
+    "reset_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/validation-adapter.json",
+      "sha256": "6cdddda67295d8a52a0ca52d7bb1ee0f9cfb948967ae08e2b83f3030608c7666"
+    },
+    "reset_generated_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/generated.c",
+      "sha256": "06114b20281bdc1e679a62cc1b187dfa11714d82d7f97edb55866adc9cec5936"
+    },
+    "reset_bound_c": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/bound.c",
+      "sha256": "a9b3ca6ef273fe494a03f61b84ac49c84b9460e88fb11aa8a261989b72b867ea"
+    },
+    "reset_fixtures_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/fixtures.json",
+      "sha256": "d5f07eb4aa3fbf8d5ce7996d415f47a205f121703d42e0f20e2d0d78a95629a8"
+    },
+    "reset_original-proof-reused_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/original-proof-reused.json",
+      "sha256": "921f91a010f6ac49e3d33beb1d5dadf2099bbc6855b853d8abe9c63ea93c469a"
+    },
+    "reset_rebuilt-original-entry-proof_json": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/reset/rebuilt-original-entry-proof.json",
+      "sha256": "cb2c294b7b07d0f5a05326067a5330d5cdcd1d87f4cbfbbe28aba8e373a9b788"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/crash/result.json",
+      "sha256": "5cddf1587333a44814a743df7cc795c45209e92a3f0b0edfdc0f0ba5e238a487"
+    },
+    "provider": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/provider-report.json",
+      "sha256": "0f0179d39621f66a88f6e9298babf89bb3277e0c6684e30ab70b62918ce86205"
+    },
+    "classified_layout": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/layout-classified.json",
+      "sha256": "c06f3308f75f1a3423d8cb0b2f1e33b19339c3168136090dadf4a8a72d746298"
+    },
+    "native_symbols": {
+      "path": "local/roundtrip/coverage-next-crash-ir-001/symbols.json",
+      "sha256": "a180853f5d1cf1d2eb1680992438581bd1f05625fa5a6b3ff6cd2c03543df106"
+    },
+    "compiler_snapshot": {
+      "path": "local/roundtrip/coverage-next-crash-snapshot-001/snapshot.json",
+      "sha256": "a88f26b8a810a7a2b577f3295953df65f693a5a7139bed314877c836f8bc1169"
+    },
+    "typed_source_dependency_evidence": {
+      "path": "local/roundtrip/coverage-next-crash-evidence-002/typed-dependency-evidence.json",
+      "sha256": "5eb97fa39802b9b990e1591b9f6df5454724d61fe64eed3f92940ec8ecb18bfe"
+    },
+    "source_dispatch_contract": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/dispatch-evidence.json",
+      "sha256": "6693dd2a31657055440d17676d5724bc7574ab2c0d86af0d98a537f47761d65e"
+    },
+    "source_motion_contract": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-01/review-v2/motion-source-evidence.json",
+      "sha256": "117bffc8b087dd7ca6d6bbc90c6388625eafbf5dd0ebe0e99a02daaee740ef4a"
+    },
+    "existing_module_delivery": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/prefab-pass/delivery.json",
+      "sha256": "2202a856de0d7c1c9218bf211e852a9918e9e3c42ecc337a122a75e139e7ade6"
+    },
+    "source_phase_chain_evidence": {
+      "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-round/source-closure-20261016/attempt-03-phase-chain/README.md",
+      "sha256": "b195f54298d0cdd9f397621a827632c804112868e1d78980bf637bcede08cacc"
+    },
+    "seed_boundary_correction": {
+      "path": "local/roundtrip/coverage-next-crash-evidence-002/boundary-correction.json",
+      "sha256": "d6df8bb3c3ad8b22dcb0b3bc1f12233600185821105ef017cea1a017fb058353"
+    },
+    "independent_byte_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/crash-ir-qc.json",
+      "sha256": "038f84ac4690badc2eefcc0c6567e4885a3199eb80126224f6d665a975cd0257"
+    },
+    "independent_context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/crash-context-qc.json",
+      "sha256": "8af7f1675d20085320d66916dc37e6874c8cadb6ada2c756560e9e48ee2ffb14"
+    }
+  },
+  "independent_qc": {
+    "status": "pass_scoped",
+    "refs": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/crash-ir-qc.json",
+        "sha256": "038f84ac4690badc2eefcc0c6567e4885a3199eb80126224f6d665a975cd0257"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/crash-context-qc.json",
+        "sha256": "8af7f1675d20085320d66916dc37e6874c8cadb6ada2c756560e9e48ee2ffb14"
+      }
+    ],
+    "owner": "/root/reconstruction_qc",
+    "scope": "Independent static byte/provenance/context review passes frozen finite-entry scope. No new native/compiler run or wholecontroller/allocator qualification."
+  },
+  "canonicalstate": {
+    "owner": "One original actor backing and its source controller reference; not detached per-package actor copies. Source constructor/dispatcher context only, full runtime caller closure remains open.",
+    "existing_canonical_module_id": "crash.actor-controller.normal_mode",
+    "adapter_fields_by_package": {
+      "crash.actor.motion_target_approach_integrate": [
+        {
+          "name": "field_0",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 0
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 4
+        },
+        {
+          "name": "field_2",
+          "width": 8,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 36
+        },
+        {
+          "name": "field_3",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 76
+        },
+        {
+          "name": "field_4",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 80
+        },
+        {
+          "name": "field_5",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 88
+        },
+        {
+          "name": "field_6",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 92
+        },
+        {
+          "name": "field_7",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 96
+        },
+        {
+          "name": "field_8",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 100
+        },
+        {
+          "name": "field_9",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 108
+        },
+        {
+          "name": "field_10",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r0",
+          "address": null,
+          "offset": 112
+        },
+        {
+          "name": "field_11",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 50336380
+        }
+      ],
+      "crash.actor.apply_phase_payload_preserve_scalar": [
+        {
+          "name": "field_0",
+          "width": 8,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 40
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 84
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 88
+        },
+        {
+          "name": "field_3",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 92
+        },
+        {
+          "name": "field_4",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 0
+        },
+        {
+          "name": "field_5",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 4
+        },
+        {
+          "name": "field_6",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 8
+        }
+      ],
+      "crash.actor.apply_phase_payload_reset_scalar": [
+        {
+          "name": "field_0",
+          "width": 8,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 40
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 84
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 88
+        },
+        {
+          "name": "field_3",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 92
+        },
+        {
+          "name": "field_4",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r1",
+          "address": null,
+          "offset": 100
+        },
+        {
+          "name": "field_5",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 0
+        },
+        {
+          "name": "field_6",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 4
+        },
+        {
+          "name": "field_7",
+          "width": 32,
+          "owner": "entity",
+          "argument": "r2",
+          "address": null,
+          "offset": 8
+        }
+      ]
+    },
+    "actor_reference_alias": {
+      "motion_argument": "r0",
+      "apply_arguments": "r1",
+      "proof": "Source actor descriptor motion slot0x60 selects0800b270 on actor; controller08012af4 reads actor atcontroller+0x10 and calls apply method throughdescriptor0x30/0x40. Source core-loop actor/controller construction retains bidirectional owner relationship. Canonical alias means actor+88/+92 in apply are same stepY/targetY later read by motion; no scalar-copy workaround.",
+      "status": "source_and_adapter_backed_same_actor_view_only",
+      "shared_offsets": [
+        88,
+        92
+      ],
+      "reset_only_shared_velocity_offset": 100,
+      "opaque_actor_seedcopy_offset": 84,
+      "opaque_seedcopy_role": "Preserve/reset both store first payload word here; original later consumer meaning remains unknown. Only reset also updates currentvelocityY+100."
+    },
+    "payload_reference": {
+      "source": "r2\u2192original12-byte stacklocal triple in08012af4",
+      "type": "3 little-endian signed32 lanes; seed/currentvelocityY(resetonly),stepY,targetY",
+      "alias_contract": "distinct_accessed_views from existing qualified adapter/source dispatch evidence; valid actor object disjoint active stack. Original allocator/lifetime not proven by finite fixtures."
+    },
+    "global_velocity_mirror": {
+      "address": "0300127c",
+      "type": "signed32",
+      "owner": "original source global; motion writes currentverticalvelocity; alias with actor storage not asserted"
+    },
+    "physical_asset_binding": null,
+    "native_logic_data": {
+      "bytes": 60,
+      "status": "typed captured dependency evidence only",
+      "category": "native_logic_data",
+      "regenerated_bytes": 0,
+      "physical_asset_credit": 0,
+      "proof": {
+        "path": "local/roundtrip/coverage-next-crash-evidence-002/typed-dependency-evidence.json",
+        "sha256": "5eb97fa39802b9b990e1591b9f6df5454724d61fe64eed3f92940ec8ecb18bfe"
+      }
+    }
+  },
+  "capability_phases": [
+    {
+      "id": "motion-approach-integrate",
+      "package_id": "crash.actor.motion_target_approach_integrate",
+      "phase_kind": "original_eligible_actor_motion_invocation",
+      "scheduled_sequence": null
+    },
+    {
+      "id": "apply-preserve",
+      "package_id": "crash.actor.apply_phase_payload_preserve_scalar",
+      "phase_kind": "alternative_original_descriptor_selected_payload_application",
+      "scheduled_sequence": null
+    },
+    {
+      "id": "apply-reset",
+      "package_id": "crash.actor.apply_phase_payload_reset_scalar",
+      "phase_kind": "alternative_original_descriptor_selected_payload_application",
+      "scheduled_sequence": null
+    }
+  ],
+  "dependencylinks": [
+    {
+      "from": "crash.actor.apply_phase_payload_preserve_scalar",
+      "to": "crash.actor.motion_target_approach_integrate",
+      "kind": "source_ordered_shared_actor_fields",
+      "fields": [
+        "actor.stepY+88",
+        "actor.targetVelocityY+92"
+      ],
+      "source_order_only": true,
+      "execution_sequence_authored": false,
+      "scope": "Externally admitted source payload updates same actor; later eligible motion reads fields. No package-to-package nativeCALL or forced immediate phase assumed."
+    },
+    {
+      "from": "crash.actor.apply_phase_payload_reset_scalar",
+      "to": "crash.actor.motion_target_approach_integrate",
+      "kind": "source_ordered_shared_actor_fields",
+      "fields": [
+        "actor.stepY+88",
+        "actor.targetVelocityY+92",
+        "actor.currentVelocityY+100"
+      ],
+      "source_order_only": true,
+      "execution_sequence_authored": false
+    },
+    {
+      "from": "native.controller08012af4",
+      "to": [
+        "crash.actor.apply_phase_payload_preserve_scalar",
+        "crash.actor.apply_phase_payload_reset_scalar"
+      ],
+      "kind": "source_descriptor_dispatch_alternatives",
+      "status": "source_proved_dispatch_mapping_parent_execution_open",
+      "proof": {
+        "path": "research/deep-extraction/resume/crash-bandicoot-the-huge-adventure/next-extraction/dispatch-evidence.json",
+        "sha256": "6693dd2a31657055440d17676d5724bc7574ab2c0d86af0d98a537f47761d65e"
+      }
+    }
+  ],
+  "event_order": [
+    "Source08008364 prepares actor then invokes actor-descriptor0x60 motion; source08009fb0 performs actor advance before controller dispatch.",
+    "Source controller08012420 selects original state-specific method;08012af4 admits alreadylatched payload and selects preserve/reset descriptor method.",
+    "Reset applies seed to currentverticalvelocity and opaque84; preserve only updates opaque84, leavingcurrentvelocity unchanged. Both apply stepY/targetY with original sign handling.",
+    "Later eligible motion0800b270 approaches targets with steps and integrates same actor prior/currentcoordinates and globalverticalvelocitymirror. This proposal does not schedule an unconditional apply\u2192immediate motion phase."
+  ],
+  "callergraph": {
+    "kind": "source_evidence_graph_not_authored_runtime_graph",
+    "functions": [
+      {
+        "entry": "08008364",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/08008364.json",
+          "sha256": "d9ad11b9d970089dd7074ec662e57ba222cc24c8f2d71f79f6da28d8056697c6"
+        },
+        "pseudo_c_line": 218,
+        "pseudo_c_sha256": "ca6c4b1010033e840dcbe6df11290897e7716f5769ee611679d85d39554aaabe",
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "08009fb0",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/08009fb0.json",
+          "sha256": "de674944ab16a742b8fa4374cde12dc8adcbc8904e0bdfbbb0346e200a01e3f0"
+        },
+        "pseudo_c_line": 269,
+        "pseudo_c_sha256": "5c005e6dba50150d1e52eb3d3c24eddd1959cae1d1f36844b045215e7465940d",
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "08012420",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/08012420.json",
+          "sha256": "7a0502e03c662e47107f3a34e685765bc96c889ae171a277d6b3ee65227119aa"
+        },
+        "pseudo_c_line": 402,
+        "pseudo_c_sha256": "1e46d89d4284c960df474d741e65e475f4b66053a4b482fb67d97843f0a6df00",
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "08012af4",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/08012af4.json",
+          "sha256": "55a2d6e47a5aa307d8b5a2dba28140e95c5805394ee0a55574cfa423e50157c8"
+        },
+        "pseudo_c_line": 406,
+        "pseudo_c_sha256": "08e910493d48712527c8db980de40b28d89e871ce9a4d3f5109e70befddaf65d",
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "0800b270",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/0800b270.json",
+          "sha256": "1436b0a4fe09771151f31205e9a5949fcd9ae2e4ab8e5eb3e9fe32ff6c5f3647"
+        },
+        "pseudo_c_line": 289,
+        "pseudo_c_sha256": "4c8cdbd640bd33aec7a64baf852a1ed7f6f7e8932532e923d7ba019e4909f1d0",
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "0800b6a0",
+        "l0": null,
+        "pseudo_c_line": null,
+        "pseudo_c_sha256": null,
+        "pseudo_c_compiler_input": false
+      },
+      {
+        "entry": "0800b6d0",
+        "l0": {
+          "path": "local/ir/queue-runs/20261016T091004/crash-bandicoot-the-huge-adventure/l0/0800b6d0.json",
+          "sha256": "cee3ebae4b8410185d6b1234044d989c8fb9fa0d44303425dcb62563672dd190"
+        },
+        "pseudo_c_line": 297,
+        "pseudo_c_sha256": "6a95720a91d801fcde67e3e97db6e613a93f2b51a6763c3b3f9171137ff4d029",
+        "pseudo_c_compiler_input": false
+      }
+    ],
+    "descriptor_consumers": [
+      {
+        "actor_descriptor_slot": "0x60",
+        "displacement": 0,
+        "thumb_pointer": "0x800b271",
+        "root": "08008364",
+        "role": "eligible actor motion method"
+      },
+      {
+        "controller_descriptor_slot": "0x30",
+        "displacement": 0,
+        "thumb_pointer": "0x800b6d1",
+        "root": "08012af4",
+        "call_pc": "08012cf4",
+        "role": "reset apply"
+      },
+      {
+        "controller_descriptor_slot": "0x40",
+        "displacement": 0,
+        "thumb_pointer": "0x800b6a1",
+        "root": "08012af4",
+        "call_pc": "08012d0e",
+        "role": "preserve apply"
+      }
+    ],
+    "runtime_parent_closed": false,
+    "r3_veneer_contract": "Entry veneer clobbersr3. None of the3 adapters declaresr3 parameter/entity/register state. Native unchanged ABI guards and finite fullstate fixtures pass."
+  },
+  "originalhostprerequisites": [
+    "Original actor/controller allocation, lifetime and phase mapping; actor and payload conform to existing distinct accessed-view domain.",
+    "Original valid prepared actor inputs; no hardware inputproducer, terraincontact, scene/animation, latch admission or rearm substitution.",
+    "Exact pinned original/rebuilt ROM and existing adapter/fixture identities; eligible source entry invocations only.",
+    "Preserve/reset are alternatives selected by source descriptor dispatch. No invocation of both or forced ordering graph authorized by this metadata."
+  ],
+  "native_eligibility": {
+    "kind": "finite_original_and_reconstructed_original_entry_parity",
+    "original_rom_sha256": "6be639d1db218ca2bf2b1ff0ee0867334404cead5fb6684af4870d4644a15635",
+    "rebuilt_rom_sha256": "a03ad135b0d2f83c44caf175aa3efa958941d8ba91a71cac25c6ed35046dad7f",
+    "vectors": {
+      "retained_original": 3454,
+      "fresh_rebuilt": 3454,
+      "fresh_for_this_metadata_pass": 0
+    },
+    "limits": {
+      "subprocess_timeout_s": 30,
+      "instructions_per_call": 2048
+    },
+    "abi_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "fixture_scope": "126 source motion cases +1792 preserve +1536 reset; exact retained input/expected state fixture sets; finite source domains only.",
+    "certificate_boundary": "Existing exact prior original-native proofs plus fresh installed-entry proofs establish finite directentry state/ABI parity. Independent static byte/context QC passes bounded scope; neither supplies wholecontroller/campaign/globalallocator proof."
+  },
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "portable_L1": true,
+    "original_entries": [
+      "0800b270",
+      "0800b6a0",
+      "0800b6d0"
+    ],
+    "generated_behavior_bytes": 250,
+    "mechanical_binding_bytes": 292,
+    "replacement_entry_veneer_bytes": 24,
+    "alignment_bytes": 0,
+    "raw_difference_bytes": 564,
+    "embedded_readonly_physical_asset_bytes": 0,
+    "native_logic_capture_bytes": 60,
+    "data_regenerated_bytes": 0,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "whole_game_equivalent": null,
+    "general_rom_replacement_eligible": false
+  },
+  "counts": {
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "prior_qualified_roots_reinstalled": 3,
+    "source_entry_installations_in_frozen_packet": 3,
+    "retained_original_native_comparisons": 3454,
+    "fresh_rebuilt_native_comparisons_in_frozen_packet": 3454,
+    "new_native_runs_for_capability": 0,
+    "new_builds_for_capability": 0,
+    "do_not_pool_historical_and_fresh": true
+  },
+  "gaps": [
+    "Scoped independent byte/context QC passes; proposal still requires admission by sole publisher and grants no broader readiness.",
+    "Controller mapping/dispatch admission, dirtylatch clearing, rearm and mutable nested actorreference remain native/open.",
+    "Source ordering evidence does not establish a complete executable cross-entry callergraph or sameframe phase policy.",
+    "Whole allocator/lifetime/alias domains, concurrent/intermediate observations and originalROM expansion/mirroring remain unqualified.",
+    "Physical graphics/audio assets unqualified;60Bphase/mapping data remains typed captured logic, not regenerated or physicalasset credit.",
+    "8388584 original output bytes remain native/unknown; fullgame lifecycle/save/terrain/campaign equivalence absent.",
+    "Seed008fc is14B, not discovery8B; not installed/qualified here; its2smallcaller pointer blockers remain open."
+  ],
+  "timing": {
+    "provider_total_seconds": 1.124369166,
+    "queue_seconds": null,
+    "scope": "Reuse frozen actual3-module reconstruction; metadata-only capabilitypass adds no native/build/extraction work; metadata serialization duration not separately measured."
+  }
+}

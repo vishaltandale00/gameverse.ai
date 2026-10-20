@@ -1,0 +1,294 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma1.death_update_lives",
+  "label": "Death update lives",
+  "role": "combat",
+  "source_game": "super-mario-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma1.death_update_lives/package.json",
+  "package_sha256": "282ad5c6e2c7163d0d5276e2bc50a821d7ed6f8f573246845b98c4585a301a58",
+  "behavior_sha256": "9278f43cc5d84acddfc774741615c4f8c52decb6c9cc4f021cc6a3be8b26d062",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "ff1060512becc21dbbad972daec661224b95e3fe4d948e3876204df8a248de2b"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "observed_context_2",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.remaining_lives",
+        "label": "remaining_life_counter",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 65536
+        },
+        "frame": "world.y.down",
+        "label": "position_y",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1048576
+        },
+        "frame": "world.y.down",
+        "label": "velocity_y",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.y.down",
+        "label": "position_y_integer_mirror",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.action",
+        "label": "action_id",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.death_inhibit",
+        "label": "death_update_inhibit",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1048576
+        },
+        "frame": "world.y.down",
+        "label": "carrier_velocity_y",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.death_animation_phase",
+        "label": "death_animation_phase",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.death_completion",
+        "label": "death_completion_signal",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1048576
+        },
+        "frame": "world.y.down",
+        "label": "previous_carrier_velocity_y",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "death.invocations",
+        "label": "death_wait_timer",
+        "signed_encoding": "unsigned",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+        ],
+        "naming_status": "source_order_and_native_expected_state_qualification_required"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 11,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "0b23f4a5db32a7ad6395f5222ac0745ffb58554f2c926231f14f9f9570492b51",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma1.death_update_lives/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "Expired death phase is not idempotent: the external scheduler must consume completion before another invocation",
+    "Completion signals1/2 are recovered; downstream scene retry/gameover and persistence are not closed",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

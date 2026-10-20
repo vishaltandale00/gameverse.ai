@@ -1,0 +1,66 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "super-mario-advance-2-super-mario-world",
+  "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+  "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+  "rom_bytes": 4194304,
+  "append_address": "0x8400000",
+  "output_bytes": 8388608,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Full native contact queries and enemy dispatcher retained; accepted spin-stomp response replaced by own recovered closure",
+    "argument_constants": [],
+    "argument_reads": [
+      {
+        "address": "0x3003f98",
+        "width": 32
+      },
+      {
+        "address": "0x3002360",
+        "width": 32
+      },
+      {
+        "address": "0x3007a48",
+        "width": 32
+      },
+      {
+        "address": "0x3002b94",
+        "width": 16
+      },
+      {
+        "address": "0x3002c04",
+        "width": 16
+      },
+      {
+        "address": "0x3002c08",
+        "width": 16
+      },
+      {
+        "address": "0x3002b68",
+        "width": 16
+      }
+    ],
+    "global_context_writes": [
+      "Player+0c:i16 bounce and+ec:i16 chain",
+      "Scene native effect/particle/reward records and ring cursor",
+      "Engine score/life fields and profile score; camera-relative sound context03002b68"
+    ],
+    "phase_obligation": "Only original accepted spin-stomp dispatcher may call response; no component overlap/contact eligibility invented"
+  },
+  "hooks": [
+    {
+      "id": "spin",
+      "address": "0x802fd38",
+      "preimage": "10b5041cfff766ff",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "accepted_spin_contact",
+      "writes": [
+        "enemy_terminal",
+        "player_bounce_chain",
+        "particles_rewards"
+      ]
+    }
+  ],
+  "services": []
+}

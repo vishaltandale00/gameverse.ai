@@ -1,0 +1,366 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "derive": {
+      "package_id": "tmc.progress.derive_skills",
+      "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+      "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "abilities.derived",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "dependency_0_collection_0",
+          "storage_type": "u8",
+          "count": 64,
+          "provenance": [
+            "op3"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "campaign",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0"
+        ],
+        "writes": [
+          "field_0"
+        ],
+        "collection_reads": [
+          "dependency_0_collection_0"
+        ],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+      ]
+    },
+    "learn": {
+      "package_id": "tmc.progress.inventory_write",
+      "package_sha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7",
+      "behavior_sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568",
+      "fields": [],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255
+          }
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 3
+          }
+        }
+      ],
+      "return_type": "u32",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "collection_0",
+          "storage_type": "u8",
+          "count": 64,
+          "provenance": [
+            "op6",
+            "op15"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "campaign",
+            "confidence": 0.85,
+            "evidence": [
+              "own_rom_usage_and_native_component_oracle"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          }
+        }
+      ],
+      "effects": {
+        "reads": [],
+        "writes": [],
+        "collection_reads": [
+          "collection_0"
+        ],
+        "collection_writes": [
+          "collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "80ec56593e7344b63ab6bbedb5ece6b61d5fe8074195ec2cb7f4ae956879df41",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "derive": {
+        "package_id": "tmc.progress.derive_skills",
+        "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
+        "bindings": {
+          "field_0": {
+            "slot": "learnedSkills"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_collection_0": "inventoryBank"
+        },
+        "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f"
+      },
+      "learn": {
+        "package_id": "tmc.progress.inventory_write",
+        "behavior_sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568",
+        "bindings": {},
+        "collection_bindings": {
+          "collection_0": "inventoryBank"
+        },
+        "package_sha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7"
+      }
+    },
+    "state": {
+      "inventoryBank": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "packed_two_bit_inventory",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "campaign",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_usage_and_native_component_oracle"
+          ],
+          "naming_status": "analysis_annotation_not_behavior_input"
+        },
+        "owner": "external",
+        "shared": true,
+        "count": 64
+      },
+      "learnedSkills": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "abilities.derived",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_usage_and_native_component_oracle"
+          ],
+          "naming_status": "analysis_annotation_not_behavior_input"
+        },
+        "owner": "derive",
+        "shared": false
+      }
+    },
+    "initialize": {
+      "inventoryBank": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "learnedSkills": 0
+    },
+    "invocations": [
+      {
+        "component": "learn",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 72
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 1
+          }
+        }
+      },
+      {
+        "component": "derive",
+        "arguments": {}
+      },
+      {
+        "component": "learn",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 115
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 1
+          }
+        }
+      },
+      {
+        "component": "derive",
+        "arguments": {}
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 4,
+  "ordered_components": [
+    "learn",
+    "derive",
+    "learn",
+    "derive"
+  ],
+  "statement_sha256": "e748c9ad84f7dae1fffcdfc27845770c7776d078c94c084df58e961b2cf5b81f",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.017578333999999998
+}

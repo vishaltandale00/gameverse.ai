@@ -1,0 +1,97 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "super-mario-advance-4-super-mario-bros-3",
+  "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+  "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+  "rom_bytes": 4194304,
+  "append_address": "0x8400000",
+  "output_bytes": 8388608,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Entire4MiB indexed USA game unchanged except exact eight-byte stomp-entry hook; original inputs,player movement,enemies,levels,audio,score and saves retained",
+    "argument_constants": [],
+    "argument_reads": [
+      {
+        "address": "0x3007818",
+        "width": 32
+      },
+      {
+        "address": "0x3007848",
+        "width": 32
+      },
+      {
+        "address": "0x3002d53",
+        "width": 8
+      },
+      {
+        "address": "0x3003a2f",
+        "width": 8
+      },
+      {
+        "address": "0x3002d77",
+        "width": 8
+      },
+      {
+        "address": "0x3002d52",
+        "width": 8
+      },
+      {
+        "address": "0x3003aea",
+        "width": 16
+      },
+      {
+        "address": "0x3003750",
+        "width": 16
+      },
+      {
+        "address": "0x3002d7c",
+        "width": 16
+      },
+      {
+        "address": "0x3003cb3",
+        "width": 8
+      }
+    ],
+    "global_context_writes": [
+      "player through0x03007818: bounce velocity,airborne and chain counter",
+      "world through0x03007848: exact reviewed0xbd2/0xbd4/0xbd5 and0xc03..0xc0d effect fields",
+      "global0x03002d7c:u16 sound context"
+    ],
+    "phase_obligation": "Original caller owns stomp eligibility; replacement occurs only after original contact dispatcher selects the stomp handler"
+  },
+  "hooks": [
+    {
+      "id": "stomp",
+      "address": "0x08046744",
+      "preimage": "f0b54f464646c0b4",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "stomp",
+      "writes": [
+        "enemy_state",
+        "player_state",
+        "world_effect_state"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "play_sound",
+      "address": "0x80e4040",
+      "isa": "thumb",
+      "abi": "void(u16,constvoidptr)",
+      "preimage": "f0b54f464646c0b4",
+      "range_size": 336,
+      "range_sha256": "f0d75ccf1a1819ab4eeacc8a3d4fb95e6f971dc748846f222588574c892cf142"
+    },
+    {
+      "id": "score_chain",
+      "address": "0x8091144",
+      "isa": "thumb",
+      "abi": "void(constvoidptr,i32)",
+      "preimage": "00b5031c0904a020",
+      "range_size": 112,
+      "range_sha256": "ee9257a1b7897d5e4b2d91453d9d3602d0b156763486b7a4250402f1b9481b13"
+    }
+  ]
+}

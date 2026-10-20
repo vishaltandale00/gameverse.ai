@@ -1,0 +1,16 @@
+# Independent presentation probe review
+
+Scope: read-only review of `presentation/probe.py` and the saved receipts. No rerun, build, capture, or extraction was performed.
+
+## Findings
+
+- **The verified result is `local/re/experiments/20261016-presentation-probes-verified/result.json`.** Its five mirror-equivalence checks are true; the corrected code compares full RGBA byte strings. All three output PNGs exist and match their recorded SHA-256 values. The earlier `local/re/experiments/20261016-presentation-probes/result.json` is a preserved initial attempt, made before the assertion fix, and should not be used as the final pass receipt. The initial ImageChops `getbbox()` assertion could miss RGB differences when difference alpha was zero.
+- **Input-source provenance checks pass.** The final receipt's root commit (`85e213…`) and source revisions (`pokeemerald` `731ad5…`, `pokefirered` `037335…`) match the checked-out repositories. Both source repositories are clean. Its 30 recorded input hashes match the files. The MZM extraction receipt's ROM SHA-256 matches the indexed Metroid Zero Mission ROM. Confidence is high for the named input bytes and revisions.
+- **The delivered evidence set pins the driver.** The private run receipt does not contain a probe hash, but repository `presentation/results.json` records `code_sha256` as `db89aefa23619f65d5f7092a2a097fd56be752f064d62b00e6530600ee5512be`, which matches the current `probe.py`. Together, the summary and private receipt bind the successful run to the exact driver. No code-hash gap remains for the delivered artifact set.
+- **The bounded proof descriptions are appropriate with one wording caveat.** The MZM stage reconstructs five frames from receipt OAM pieces, extracted tile bytes and palette, without running the original renderer/controller. The Emerald/FireRed stage reads source PNG cells and confirms matching `sAnim_GoSouth` commands, while using an authored position/timing sequence. The metatile stage renders the first 64 primary metatiles and shows that substituting FireRed tile slots changes pixels. These checks do not establish whole-game appearance, gameplay, collision, native resource limits or runtime parity; those are listed as unproven.
+- **“Foot pivot” is an authored crop-bottom alignment, not a recovered shared pivot.** The pose probe places each 16×32 crop with its bottom edge at `foot_y=76` but does not measure the opaque-foot positions or read a source-defined pivot. Call this a shared crop-bottom anchor unless a source-backed foot/pivot check is added. The receipt correctly calls the trajectory authored.
+- **South-walk source mapping is supported.** Both graphics-info definitions point to their named animation tables; those tables map `ANIM_STD_GO_SOUTH` to `sAnim_GoSouth`, and the pinned source images correspond to the selected graphics. This supports the source timing/index claim, not runtime event parity.
+
+## Verdict
+
+The verified rerun resolves the initial assertion issue. Its output hashes and source pins check out, and the repository summary pins the exact driver used. The three images support bounded offline rendering examples. Describe the pose marker as an authored crop-bottom anchor.

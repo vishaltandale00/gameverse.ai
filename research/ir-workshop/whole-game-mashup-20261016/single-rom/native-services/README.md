@@ -1,0 +1,11 @@
+# FireRed native service source port
+
+`tools/whole_game/single_rom/native_services.py` emits an actual compiled-source unit at `src/firered_native/campaign_services.c`: 23 donor services plus exact donor helpers for starter lookup, EV counting, Pokerus checking and RNG. It preserves Kanto starter ordering, typed shared host party/trainer access, donor banked vars/flags, Vermilion can selection, Sevii request expiration, massage cooldown, map visit state and Dotted Hole Cut source behavior. It never uses an empty implementation to replace an unresolved service.
+
+The importer also retains the complete translation units for the reachable native source graph, with renamed functions, outside the build tree at `firered-native-source/src/`. This archive preserves local tables, macros and preprocessor branches. Its donor private globals, struct assumptions, resource includes and ABI requirements still need explicit ports. The 1,411 same-body shared-source candidates are investigation candidates, not approved aliases.
+
+The generated donor special slots append after the original Emerald slots. Duplicate donor slots remain present. `data/firered/native_special_ids.inc` exposes the actual appended IDs consumed by the FireRed macro compiler. Missing native providers remain undefined and the whole campaign remains ineligible for a build; the ledger makes no playable campaign claim.
+
+Verification: five focused Python source parser/closure tests pass. The 23-service unit passes ARM7TDMI target syntax against actual Emerald headers and a compiled host behavior harness. The harness supplies typed fake host storage/API responses and synthetic map/audio IDs; it verifies service behavior but does not qualify the GBA runtime, campaign, physical map/audio mapping, object linkage or save compatibility. Commands, source commits and measured durations are in `source-check.json`; the harness source is `native-harness.c`.
+
+`native-services-ledger.json` records actual import timing, source hashes, every special/direct-native status and the reachable source graph. Queue/build/baseline timings unavailable in this source-only work are null. There is no representative earlier baseline or full ROM build measurement for this new stage.

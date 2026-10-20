@@ -53,9 +53,9 @@
   "pieces": [
     {
       "id": "super-mario-advance:movement_view",
-      "label": "Spatial framing and controller candidate",
+      "label": "Character jumps,charged leaps and finite hover",
       "slot": "movement_view",
-      "effect": "Observed framing: side view. Candidate rules, not verified mechanics: Pick up and throw enemies or objects; selected characters have distinct jump and carrying behavior.",
+      "effect": "Use character-configured jump arcs: Mario gains height from a crouch charge,while Peach can spend a finite held-jump hover window. Ground friction and carrier/wrap motion are recovered alongside those rules.",
       "flavor": "A colorful vertical stage invites carrying, throwing and character choice.",
       "knobs": [
         {
@@ -69,16 +69,27 @@
           "status": "design_parameter_not_extracted_value"
         }
       ],
-      "component_refs": [],
+      "component_refs": [
+        {
+          "game_id": "super-mario-advance",
+          "component_id": "character_configured_jump_and_finite_hover"
+        },
+        {
+          "game_id": "super-mario-advance",
+          "component_id": "ground_friction_and_carrier_wrapped_integration"
+        }
+      ],
       "requires": [
-        "world coordinates",
-        "collision or terrain rules",
-        "input semantics"
+        "Side-view16.16 positions and explicit native velocity scale",
+        "Character parameter record and hover/charge state",
+        "Jump-permission/input/ground/carry context",
+        "Single movement writer and native scheduler"
       ],
       "exposes": [
-        "position",
-        "facing",
-        "grounded or traversal state"
+        "Character jump onset",
+        "Finite hover countdown",
+        "Charged-jump phase",
+        "Friction and carrier-integrated position"
       ],
       "conflicts": [
         {
@@ -93,23 +104,26 @@
       ],
       "evidence": [
         {
-          "kind": "capture_contact_sheet_inspection",
-          "refs": [
-            "local/captures-experiments/20261016-current-scripts/super-mario-advance/gameplay/keyframes/f002164_scene.png",
-            "local/captures-experiments/20261016-current-scripts/super-mario-advance/gameplay/keyframes/f005388_scene.png"
-          ],
-          "confidence": 0.85,
-          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          "kind": "static_signature",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-lift-evidence.json",
+          "confidence": 0.98,
+          "scope": "Six complete local own-ROM SMB2 operators,explicit native context and coefficient hash. Epilogues independently reviewed as saved-LR returns; no downloaded source or bundled Mario Bros semantics."
         },
         {
-          "kind": "model_prior_unverified",
-          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
-          "confidence": 0.35,
-          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-motion-receipt.json",
+          "confidence": 0.98,
+          "scope": "6144 original-ROM/C/emitted ARM7TDMI cases across gravity/hover,jump onset,ground friction,charged state,carrier/wrap integration. Finite local vectors, not complete input/terrain controller."
+        },
+        {
+          "kind": "capture_telemetry",
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-gameplay-receipt.json",
+          "confidence": 0.99,
+          "scope": "Shared IR full-ROM six-entry replacement: Mario ordinary and crouch-charged jump,Peach held and tapped jump; all390 frames per implementation full player hashes and rendered observations equal. Native videos recorded. Character0 Mario uses08368838,character1 Peach08368880."
         }
       ],
-      "status": "candidate_unverified",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "status": "source_supported_partial",
+      "assembly_status": "Native six-entry component ROM qualified against natural Mario ordinary/charged and Peach held/tapped play; complete input/terrain/carry controller and cross-game adapters remain required."
     },
     {
       "id": "super-mario-advance:progression",
@@ -443,16 +457,18 @@
     ]
   },
   "coverage": {
-    "status": "partial",
-    "depth": "scene_and_prior_only",
-    "canonical_component_count": 0,
-    "canonical_facets": [],
-    "source_supported_piece_count": 0,
+    "status": "partial_source_supported",
+    "depth": "Closed native character-jump/hover and friction/integration parts with natural Mario/Peach parity",
+    "canonical_component_count": 2,
+    "canonical_facets": [
+      "movement_physics"
+    ],
+    "source_supported_piece_count": 1,
     "missing": [
-      "Player-facing movement, combat and progression source semantics; helpers do not establish these",
-      "Complete plot/event dependency graph",
-      "Calibrated user skill and strategy evidence",
-      "Full asset-to-source/address reuse catalogue"
+      "Full input/terrain/carry/throw and collision",
+      "Combat/enemy ecology",
+      "Stage/campaign progression and plot",
+      "Natural Luigi/Toad and carrier/wrap witnesses"
     ],
     "granular_records_not_summarized": [],
     "not_claimed": [
@@ -460,15 +476,960 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:51:05.631617+00:00",
+      "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+      "status": "ok",
+      "function_records": 1778,
+      "pseudo_c_generated": 1778,
+      "process_wall_s": 27.2,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+      "export_sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/summary.json",
+      "summary_sha256": "27dce9ddaeac70d1fac8bcc9128ed1f24345eb720ba5d6f4455d7cb2f2114742",
+      "warning_function_count": 1694,
+      "unknown_register_function_count": 12,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080002a0",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080003a8",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080003e8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000500",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08000578",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800089c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000c04",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "MOSAIC",
+            "WIN0H",
+            "WIN0V",
+            "WIN1H",
+            "WIN1V",
+            "WININ",
+            "WINOUT"
+          ]
+        },
+        {
+          "entry": "0x080011c4",
+          "io_ref": [
+            "BG0HOFS",
+            "IF",
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x080012fc",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x08001370",
+          "io_ref": [
+            "BG0VOFS",
+            "DISPSTAT",
+            "IE",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x080013bc",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x080014cc",
+          "io_ref": [
+            "DISPSTAT",
+            "IE",
+            "IF"
+          ]
+        },
+        {
+          "entry": "0x080015e8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001674",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08001bbc",
+          "io_ref": [
+            "DISPCNT",
+            "IE",
+            "KEYCNT"
+          ]
+        },
+        {
+          "entry": "0x08001dcc",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08002250",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080022a4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080022f8",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08002458",
+          "io_ref": [
+            "IE",
+            "IF",
+            "SIOCNT",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08002750",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x08002a44",
+          "io_ref": [
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08002adc",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08002b5c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2"
+          ]
+        },
+        {
+          "entry": "0x08002e70",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800388c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08005014",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08005c80",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08005d20",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x08006454",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0800668c",
+          "io_ref": [
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x08006864",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08006ae8",
+          "io_ref": [
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3HOFS",
+            "BG3VOFS"
+          ]
+        },
+        {
+          "entry": "0x08007598",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08007f90",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800955c",
+          "io_ref": [
+            "BG3CNT",
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x0800d158",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800e058",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x08010180",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "DISPCNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801529c",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x08016e9c",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08017434",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x080177c0",
+          "io_ref": [
+            "SIOMULTI0"
+          ]
+        },
+        {
+          "entry": "0x080178b0",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08017b74",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x080185cc",
+          "io_ref": [
+            "BG0CNT",
+            "BG0HOFS",
+            "BG0VOFS",
+            "BG1CNT",
+            "BG1HOFS",
+            "BG1VOFS",
+            "BG2CNT",
+            "BG2HOFS",
+            "BG2VOFS",
+            "BG3CNT",
+            "BLDCNT",
+            "BLDY",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08018ca8",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08018e4c",
+          "io_ref": [
+            "IE",
+            "RCNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08018f78",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0801900c",
+          "io_ref": [
+            "IE",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08019220",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08019400",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08019880",
+          "io_ref": [
+            "DISPCNT",
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0801995c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08019a88",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08019b00",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x08019cb8",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0801a090",
+          "io_ref": [
+            "BG0CNT",
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0801a34c",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0801a484",
+          "io_ref": [
+            "SIOCNT",
+            "SIOMLT_SEND"
+          ]
+        },
+        {
+          "entry": "0x0801a630",
+          "io_ref": [
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0801a80c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT"
+          ]
+        },
+        {
+          "entry": "0x0801a9bc",
+          "io_ref": [
+            "IF",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0801ac24",
+          "io_ref": [
+            "BLDCNT",
+            "BLDY",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0801ae44",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08020640",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08024c2c",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08024e10",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08024fc0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080284f0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08028a70",
+          "io_ref": [
+            "BG0CNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08028c28",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08028ff8",
+          "io_ref": [
+            "BG0CNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080293b8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08029dd4",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0802a50c",
+          "io_ref": [
+            "BG1CNT"
+          ]
+        },
+        {
+          "entry": "0x0802a748",
+          "io_ref": [
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0802a984",
+          "io_ref": [
+            "BG0CNT"
+          ]
+        },
+        {
+          "entry": "0x0802b078",
+          "io_ref": [
+            "BG1CNT"
+          ]
+        },
+        {
+          "entry": "0x0802b274",
+          "io_ref": [
+            "BG2CNT"
+          ]
+        },
+        {
+          "entry": "0x0802be74",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0802cbf8",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT",
+            "BLDY",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0802d354",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0802d85c",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BG3CNT",
+            "BLDCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0802def0",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0802e674",
+          "io_ref": [
+            "BG0CNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0802fc08",
+          "io_ref": [
+            "DISPSTAT",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x08031938",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08031c40",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08031ccc",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080325c0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803339c",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080335d8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08033d8c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08033e9c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08033fac",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08034324",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08034850",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080348dc",
+          "io_ref": [
+            "BG0CNT",
+            "BG1CNT",
+            "BG2CNT",
+            "BLDCNT",
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08038cf0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/super-mario-advance/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 91,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",
-    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "method": "Own indexed ROM/Ghidra closure review,bounded native probes and natural private checkpoints; no downloaded source",
     "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
-    "canonical": null,
+    "canonical": "ontology/games/super-mario-advance.yaml",
     "source_repositories": [],
-    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "source_to_rom_mapping": "Own-ROM instruction/table/source pins,original/C/emitted native differential and shared-IR full-ROM Mario/Peach parity",
     "capture_run_id": "20261016T004328-0e248f",
     "capture_frame_sha256": {
       "local/captures-experiments/20261016-current-scripts/super-mario-advance/gameplay/keyframes/f002164_scene.png": "7f566d7ac853284832ac093e7ba9043745a6bc909ae32cb8d0591d0656deb8b1",

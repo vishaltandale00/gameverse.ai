@@ -1,0 +1,1065 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tekken.collision.separate_actor_boxes",
+  "label": "Separate two actors using four boxes each",
+  "role": "Full source4\u00d74 active-box separation decision: eligibility, contact marker refresh, strict maximum overlap/tie policy and ordered actor position correction",
+  "source_game": "tekken-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tekken.collision.separate_actor_boxes/package.json",
+  "package_sha256": "2d563bad890882a4ae26004d28351062f397636f7f17e10ed939025f5596559b",
+  "behavior_sha256": "92d84f2e7a86a28bacce5f0d6c01ce84d20f0c0c824c5247794c0d9789bb9cae",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "3d93ce9d1877e821cfccad9c7ea3d562db4e24b6adc714bb1904b364fab820c1"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x",
+        "label": "actor_a position_x",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.depth",
+        "label": "actor_a position_depth",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x",
+        "label": "actor_a previous_x",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.frame_flags",
+        "label": "actor_a contact bit3; other source flags preserved",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.separation_flags",
+        "label": "actor_a bit3 disables separation; other source flags remain opaque",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_a box 0 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 0 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 0 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 0 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 0 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_a box 1 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 1 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 1 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 1 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 1 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_a box 2 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 2 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 2 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 2 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 2 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_a box 3 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 3 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_22",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 3 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_23",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_a box 3 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_24",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_a box 3 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_25",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x",
+        "label": "actor_b position_x",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_26",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.depth",
+        "label": "actor_b position_depth",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_27",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "tekken.world.x",
+        "label": "actor_b previous_x",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_28",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.frame_flags",
+        "label": "actor_b contact bit3; other source flags preserved",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_29",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.actor.separation_flags",
+        "label": "actor_b bit3 disables separation; other source flags remain opaque",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_30",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_b box 0 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_31",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 0 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_32",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 0 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_33",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 0 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_34",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 0 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_35",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_b box 1 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_36",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 1 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_37",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 1 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_38",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 1 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_39",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 1 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_40",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_b box 2 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_41",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 2 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_42",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 2 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_43",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 2 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_44",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 2 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_45",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.roles",
+        "label": "actor_b box 3 role bit0 participates in separation",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_46",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 3 x lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_47",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 3 y lower endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_48",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.x",
+        "label": "actor_b box 3 x upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_49",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "tekken.box.world.y",
+        "label": "actor_b box 3 y upper endpoint",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 50,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "two distinct canonical actors with embedded world-box records; stable references per invocation",
+    "clock": "explicit invocation; source outer integration/rebuild order remains an external obligation",
+    "phase": "separation before active actor snapshot/integration and subsequent world-box rebuild in observed source scheduler path",
+    "ordering": "clearA contact\u2192clearB contact\u2192eligibility\u2192A-major/B-minor4\u00d74 scan\u2192contactA/B\u2192ordered xA/xB writes\u2192return",
+    "services": "no unresolved external service inside root; source input/integration/impact/scheduler closure stays open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tekken.collision.separate_actor_boxes/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic1024 comparisons are not all-state or complete-game proof.",
+    "No true signed-overflow flag coverage claim: its true value may be unreachable after this root correction policy.",
+    "Exact/partial actor aliases and full actor-pool/tag-swap lifetime remain unqualified.",
+    "Downstream contact\u2192attack eligibility\u2192damage/HP/KO/round/scene and external integration remain open.",
+    "Admission-authored materialize\u2192clear graph is separate historical graph evidence, not the recovered source sequence.",
+    "No whole source L2 sequence or new game is claimed.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/coherent-separator-system-v2.json",
+    "sha256": "34064e666bdf16c02ba52667fbb5a5eb6097b80030ac748557b67cc4f473e6c8"
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "tekken.collision.separate_actor_boxes",
+        "source_game": "tekken-advance",
+        "package": {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/package.json",
+          "sha256": "2d563bad890882a4ae26004d28351062f397636f7f17e10ed939025f5596559b"
+        },
+        "behavior": {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/l1.json",
+          "sha256": "92d84f2e7a86a28bacce5f0d6c01ce84d20f0c0c824c5247794c0d9789bb9cae"
+        },
+        "native_receipt": {
+          "path": "local/ir/packages/tekken.collision.separate_actor_boxes/receipt.json",
+          "sha256": "3d93ce9d1877e821cfccad9c7ea3d562db4e24b6adc714bb1904b364fab820c1"
+        },
+        "graph_request": {
+          "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/full-separator.graph.json",
+          "sha256": "bc9413641de9c362b3b4980aabdda8bc361c038aa5212502a195b6b16cf02732"
+        },
+        "graph_receipt": {
+          "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/full-separator.graph-receipt.json",
+          "sha256": "9f34e4684b6b8f766628864951a3e152c490a8ab6d0efdbbbe090fad4d2720c6"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/tekken-advance/coverage-pass/separator-graph-snapshot/assembly.py",
+          "sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/tekken-advance/coverage-pass/separator-graph-snapshot/catalog.json",
+          "sha256": "5a9fc1d722c80cd5a32c6eeb8a0da6ebe0be7bf30dda111fe645216aff68f5eb"
+        },
+        "status": "binding_valid_obligations_unproven",
+        "component_instance": "separate",
+        "graph_invocation_count": 1,
+        "statement_sha256": "9e17cfdb80d6f467c7df522abb430ec45e116c1fcc2f95fa507070880048e265",
+        "source_admission_pins": {
+          "path": "research/deep-extraction/resume/tekken-advance/coverage-pass/full-separator.graph-result.json",
+          "sha256": "84ee46af1e8edc1783c9cebd14cf9c3ccab23b5774b2a17c7328d721938cda4b"
+        },
+        "review_status": "scoped_clear_integration_review",
+        "limitations": [
+          "Symbolic binding/ownership/domain/order validation only; source lifecycle obligations remain unproven.",
+          "No composed native execution or whole-system qualification claimed."
+        ],
+        "package_sha256": "2d563bad890882a4ae26004d28351062f397636f7f17e10ed939025f5596559b",
+        "behavior_sha256": "92d84f2e7a86a28bacce5f0d6c01ce84d20f0c0c824c5247794c0d9789bb9cae",
+        "native_receipt_sha256": "3d93ce9d1877e821cfccad9c7ea3d562db4e24b6adc714bb1904b364fab820c1"
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "tekken-advance",
+    "entry": "080130e8"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

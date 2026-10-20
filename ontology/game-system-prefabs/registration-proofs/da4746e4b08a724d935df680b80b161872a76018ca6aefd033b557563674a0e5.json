@@ -1,0 +1,228 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "acceleration": {
+      "package_id": "fusion.motion.directional_acceleration",
+      "package_sha256": "fc3a65be7593b3e9443ce50cc679226cdcf661b179e57df4aed3e58d347ae632",
+      "behavior_sha256": "6f2e1234c04bec9a97d2415d9c0e7c4269549906c3a617bffb4aa60f27b33b3c",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.facing_mask",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+              "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "meaning": {
+            "quantity": "bitset",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "player.facing_mask",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+              "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input"
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u16",
+          "semantic_type": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 8
+            },
+            "frame": "player.native_coordinate.x.increasing_per_invocation",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+              "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input",
+            "signed_encoding": "twos_complement"
+          },
+          "meaning": {
+            "quantity": "velocity",
+            "unit": {
+              "numerator": 1,
+              "denominator": 8
+            },
+            "frame": "player.native_coordinate.x.increasing_per_invocation",
+            "confidence": 0.85,
+            "evidence": [
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+              "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+              "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+            ],
+            "naming_status": "analysis_annotation_not_behavior_input",
+            "signed_encoding": "twos_complement"
+          },
+          "reads": true,
+          "writes": true
+        }
+      ],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u16",
+          "domain": {}
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {}
+        }
+      ],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1"
+        ],
+        "writes": [
+          "field_1"
+        ],
+        "collection_reads": [],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "shared_symbolic_player_context_with_explicit_previous_snapshot",
+        "clock": "explicit_function_invocation",
+        "ordering": "08004d60 snapshot-before-reset internally; driver/interfunction frame order remains unqualified",
+        "phase": "source_entry_invocation"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Native coordinate unit is source coordinate, not pixels; per-invocation velocity does not establish frame-rate or scheduler semantics.",
+        "Packed mixed-purpose fields and previous snapshot words remain private opaque; do not infer independent nonaliasing players.",
+        "Partial L1 members only; complete jump/contact L2 and gameplay reachability remain unqualified.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "5cd16f2d8699538001f634b0769285494c19eca68a3c9f7cac9f2bac56c546be",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "acceleration": {
+        "package_id": "fusion.motion.directional_acceleration",
+        "behavior_sha256": "6f2e1234c04bec9a97d2415d9c0e7c4269549906c3a617bffb4aa60f27b33b3c",
+        "bindings": {
+          "field_0": {
+            "slot": "acceleration_field_0"
+          },
+          "field_1": {
+            "slot": "acceleration_field_1"
+          }
+        },
+        "package_sha256": "fc3a65be7593b3e9443ce50cc679226cdcf661b179e57df4aed3e58d347ae632"
+      }
+    },
+    "state": {
+      "acceleration_field_0": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "player.facing_mask",
+          "confidence": 0.85,
+          "evidence": [
+            "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+            "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+          ],
+          "naming_status": "analysis_annotation_not_behavior_input"
+        },
+        "owner": "acceleration",
+        "shared": false
+      },
+      "acceleration_field_1": {
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "velocity",
+          "unit": {
+            "numerator": 1,
+            "denominator": 8
+          },
+          "frame": "player.native_coordinate.x.increasing_per_invocation",
+          "confidence": 0.85,
+          "evidence": [
+            "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08006240.json",
+            "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+            "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+          ],
+          "naming_status": "analysis_annotation_not_behavior_input",
+          "signed_encoding": "twos_complement"
+        },
+        "owner": "acceleration",
+        "shared": false
+      }
+    },
+    "invocations": [
+      {
+        "component": "acceleration",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u16",
+            "value": 4
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 160
+          }
+        }
+      }
+    ],
+    "initialize": {
+      "acceleration_field_0": 16,
+      "acceleration_field_1": 0
+    },
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "acceleration"
+  ],
+  "statement_sha256": "ec68805bfd3094688b3b51fd3d3007cfd985cb7698f5a92bcaf19b7a4a64c8b7",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.010813833000000002
+}

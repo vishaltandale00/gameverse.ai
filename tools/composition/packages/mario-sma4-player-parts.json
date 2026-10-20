@@ -1,0 +1,521 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "mario.sma4.player_motion_jump_wall",
+  "version": "0.1-native-packet-qualified",
+  "concept": {
+    "role": "movement.platformer_controller_parts",
+    "pattern": "buffered variable-height jumping, oriented signed displacement and sampled wall response",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "super-mario-advance-4-super-mario-bros-3:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "super-mario-advance-4-super-mario-bros-3",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Indexed own USA ROM SHA1 69e81f41394f02d64cad206adb26b3cd43690770",
+    "compiler_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-lowering-receipt.json",
+    "abi": "void jump/horizontal/vertical(Sma4ComponentPacket*); i32 wall(Sma4ComponentPacket*); packet842 bytes, caller-owned, explicitly NOT a drop-in original r0 actor",
+    "recovery": {
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "ranges": [
+        {
+          "address": "0x80a0f68",
+          "size": 216,
+          "isa": "thumb",
+          "instruction_sha256": "54b77c73d56c2829b62dcea997b39179d424d271ddc10122ba2e02cf2730336f",
+          "name": "horizontal_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80a1040",
+          "size": 120,
+          "isa": "thumb",
+          "instruction_sha256": "62ad847a1b2be017d29c9197becd904106e6e7085b96615c39aaf09d6e6a2740",
+          "name": "vertical_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x809a42c",
+          "size": 1008,
+          "isa": "thumb",
+          "instruction_sha256": "db98e7bdc9b1690dc310b12dafe417a223c8d7b8227a174bd8bfbbf9ead0974c",
+          "name": "jump_gravity_policy",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x809b0f4",
+          "size": 156,
+          "isa": "thumb",
+          "instruction_sha256": "de7f894ebd365007f1fcf7da9fa1c2e277300830a98833a74d6ab2e08b1f972b",
+          "name": "run_boost_helper",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x809c02c",
+          "size": 564,
+          "isa": "thumb",
+          "instruction_sha256": "ce6e1c14ea36dd6caedd48793e530ee0743b5d5ea471b377bc3ecfd9999acca1",
+          "name": "sampled_wall_response",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-component.c",
+      "lift_sha256": "19eee7b6527c61c1a5dc6b1acfede72ea38558faa98776217d8252fb60a2787c",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "Exact extracted onset9/run-threshold2/special-cap134 bytes and two16xi16 basis tables",
+          "Wall edge-offset4/probe-axis256 bytes provided in packet"
+        ],
+        "ram": [
+          "Caller-owned842-byte packet; no hidden mutable BSS or global original RAM addresses"
+        ],
+        "hardware": [],
+        "relocations": [
+          "All former native globals and service sound call replaced by explicit environment/state/table inputs and sound-event outputs"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-lowering-receipt.json",
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-native-receipt.json"
+      ],
+      "unknowns": [
+        "Closure applies to these local behaviors only, not the entire controller or game",
+        "Original audio service is replaced with an explicit event port; hardware audio itself is not recovered",
+        "Horizontal acceleration, floor/ceiling query, contact producer, enemy/powerup/progression and actual host packet adapter remain unresolved",
+        "Finite scenario equivalence is not exhaustive proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "buttons_held",
+      "direction": "in",
+      "type": {
+        "scalar": "u16",
+        "quantity": "input",
+        "unit": "GBA_button_bits",
+        "frame": "native_input"
+      }
+    },
+    {
+      "id": "buttons_pressed",
+      "direction": "in",
+      "type": {
+        "scalar": "u16",
+        "quantity": "input_edge",
+        "unit": "GBA_button_bits",
+        "frame": "native_input"
+      }
+    },
+    {
+      "id": "sampled_contacts",
+      "direction": "in",
+      "type": {
+        "scalar": "u8_array",
+        "quantity": "terrain_contact",
+        "unit": "native_type_codes_and_selector",
+        "frame": "SMA4_probe_frame"
+      }
+    },
+    {
+      "id": "motion",
+      "direction": "out",
+      "type": {
+        "scalar": "i32x2_i8x2",
+        "quantity": "position_velocity",
+        "unit": "position1/256px_velocity1/16px/invocation",
+        "frame": "world_xy_y_down"
+      }
+    },
+    {
+      "id": "sound_events",
+      "direction": "out",
+      "type": {
+        "scalar": "u8_u16",
+        "quantity": "sound_event",
+        "unit": "native_event_id_and_context",
+        "frame": "effect_port"
+      }
+    },
+    {
+      "id": "wall_merge_mask",
+      "direction": "out",
+      "type": {
+        "scalar": "i32",
+        "quantity": "field_authority_mask",
+        "unit": "native_corrected_field_bits",
+        "frame": "tentative_state_merge"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "packet",
+      "type": {
+        "scalar": "Sma4ComponentPacket_842bytes",
+        "quantity": "player_motion_contact_and_environment",
+        "unit": "mixed_explicit_native_units",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity",
+      "persistence": {
+        "required": false,
+        "owner": "calling_engine",
+        "mechanisms": [
+          "caller checkpoint must include player plus auxiliary state; constants may reload from pinned package"
+        ]
+      },
+      "invariants": [
+        "Caller provides exactly matching842-byte packet ABI; no reuse of unrelated host actor pointers",
+        "Character selector0..1 and selected contact0..3 are caller preconditions",
+        "Only reviewed operator phases own their declared packet fields"
+      ]
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "jump_gravity",
+      "clock": "explicit_native_invocation",
+      "phases": [
+        "jump_permission_and_buffer",
+        "speed_sensitive_takeoff",
+        "boost_state",
+        "held_release_gravity",
+        "sound_event"
+      ],
+      "reads": [
+        "packet",
+        "buttons_held",
+        "buttons_pressed"
+      ],
+      "writes": [
+        "packet",
+        "sound_events"
+      ],
+      "invariants": [
+        "One local policy invocation per reviewed host schedule; do not infer full pipeline ordering from this package",
+        "Sound is a typed event, not a hidden MMIO call"
+      ],
+      "authority": "This operator owns jump velocity and listed state only during its invocation; contact buffer/grounding/acceleration are upstream producers"
+    },
+    {
+      "id": "position_integration",
+      "clock": "explicit_native_invocation",
+      "phases": [
+        "horizontal_velocity_cap",
+        "horizontal_projection",
+        "conditional_edge_clamp",
+        "vertical_velocity_cap",
+        "vertical_projection"
+      ],
+      "reads": [
+        "packet"
+      ],
+      "writes": [
+        "packet"
+      ],
+      "invariants": [
+        "Signed fixed-point units and wrapping must match",
+        "Caller chooses reviewed order around jump and contact phases"
+      ],
+      "authority": "Exclusive position writer during the chosen integration phase; other engines require explicit adaptation"
+    },
+    {
+      "id": "wall_response",
+      "clock": "explicit_native_invocation",
+      "phases": [
+        "contact_gate",
+        "correct_position",
+        "cancel_inward_velocity",
+        "emit_merge_mask"
+      ],
+      "reads": [
+        "packet",
+        "sampled_contacts"
+      ],
+      "writes": [
+        "packet",
+        "wall_merge_mask"
+      ],
+      "invariants": [
+        "Result mask controls tentative-state merge",
+        "No implicit world sampler is supplied"
+      ],
+      "authority": "Only corrected fields indicated by result mask survive the caller merge"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-component.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-recovered.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-recovered.c",
+      "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-wall-contact-recovered.c"
+    ],
+    "data": [
+      "Pinned own-ROM constant tables extracted into packet"
+    ],
+    "globals": [],
+    "macros": [
+      "SMA4_NATIVE_BUILD maps fixed-size copy operations to freestanding compiler builtins"
+    ],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "No complete original controller/world pipeline; requires external typed sampler and scheduler",
+      "No engine host adapter or hook recipe provided; ROM build must fail until one exists",
+      "No enemy, ability/powerup, progression, visual asset or complete game assembly claimed"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4_extract_packet.py",
+    "preconditions": [
+      "Exact USA ROM SHA1 and SHA256 match",
+      "Source closure hashes and packet ABI match",
+      "Caller owns packet lifetime and input/contact/audio effect authority"
+    ],
+    "outputs": [
+      "842-byte initialized packet template with exact native tables",
+      "Source and table span hashes with extraction timing receipt"
+    ],
+    "semantic_changes": [
+      "Native audio service call becomes explicit sound event; all motion and jump arithmetic preserved",
+      "Original global pointers become caller-owned packet state and explicit environment ports"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side-view",
+    "coordinates": "signed32 Q24.8 positions, signed8 velocity in1/16px per integration invocation; Y down",
+    "authority_obligation": "Caller-owned typed packet; full host update order and sampler adapter required"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Variable-height Mario jumps, native displacement, and sampled wall correction as executable composable parts",
+    "status": "Qualified local native components; host adapter and full gameplay prefab still incomplete"
+  },
+  "lowering": {
+    "status": "qualified",
+    "backend": "sma4_packet_freestanding_thumb/1; standalone native component backend, no ROM host adapter",
+    "recipe_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4_lower_component.py",
+    "hooks": [],
+    "generated_outputs": [
+      "local/re/experiments/20261016-binary-corpus-round2/sma4-lowering-04/component.elf",
+      "local/re/experiments/20261016-binary-corpus-round2/sma4-lowering-04/component.bin"
+    ],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-component.c",
+          "sha256": "19eee7b6527c61c1a5dc6b1acfede72ea38558faa98776217d8252fb60a2787c"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-recovered.c",
+          "sha256": "0a22378ecafb9733ca8ee66e0d067e725e7a5a52fe010ae7fd47b505d4c33f85"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-recovered.c",
+          "sha256": "1ad73ab5d8916323982b616679ebe1ad86be3660e87ce6873d539c2bf5f639bf"
+        },
+        {
+          "ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-wall-contact-recovered.c",
+          "sha256": "d8057dd658cd1468b6d6d8af77b6b52c36086be7b2fd6c7a69d3c76cd2fd6211"
+        }
+      ],
+      "translation_units": [
+        "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-component.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sma4_component_jump",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma4_component_horizontal",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma4_component_vertical",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sma4_component_wall",
+          "return": "i32",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "packet",
+          "storage": "host-r0-actor",
+          "bytes": 842,
+          "lifetime": "native-entity",
+          "writes": [
+            {
+              "offset": 0,
+              "width": 32,
+              "quantity": "world_x_Q24.8"
+            },
+            {
+              "offset": 4,
+              "width": 32,
+              "quantity": "world_y_Q24.8"
+            },
+            {
+              "offset": 28,
+              "width": 8,
+              "quantity": "horizontal_speed_Q4"
+            },
+            {
+              "offset": 29,
+              "width": 8,
+              "quantity": "vertical_speed_Q4"
+            },
+            {
+              "offset": 30,
+              "width": 8,
+              "quantity": "takeoff_state"
+            },
+            {
+              "offset": 31,
+              "width": 8,
+              "quantity": "boost_pending"
+            },
+            {
+              "offset": 32,
+              "width": 16,
+              "quantity": "boost_state"
+            },
+            {
+              "offset": 40,
+              "width": 8,
+              "quantity": "secondary_speed"
+            },
+            {
+              "offset": 53,
+              "width": 8,
+              "quantity": "airborne"
+            },
+            {
+              "offset": 57,
+              "width": 8,
+              "quantity": "takeoff_counter"
+            },
+            {
+              "offset": 75,
+              "width": 8,
+              "quantity": "contact_counter"
+            },
+            {
+              "offset": 81,
+              "width": 8,
+              "quantity": "jump_gate"
+            },
+            {
+              "offset": 97,
+              "width": 8,
+              "quantity": "takeoff_facing"
+            },
+            {
+              "offset": 108,
+              "width": 8,
+              "quantity": "boost_bookkeeping"
+            },
+            {
+              "offset": 112,
+              "width": 8,
+              "quantity": "wall_snap"
+            },
+            {
+              "offset": 115,
+              "width": 8,
+              "quantity": "alternate_rule_counter"
+            },
+            {
+              "offset": 123,
+              "width": 8,
+              "quantity": "jump_boost_state"
+            },
+            {
+              "offset": 259,
+              "width": 8,
+              "quantity": "contact_flags"
+            },
+            {
+              "offset": 320,
+              "width": 8,
+              "quantity": "contact_jump_buffer"
+            },
+            {
+              "offset": 364,
+              "width": 16,
+              "quantity": "sound_context"
+            },
+            {
+              "offset": 366,
+              "width": 8,
+              "quantity": "sound_event_count"
+            },
+            {
+              "offset": 367,
+              "width": 8,
+              "quantity": "sound_event_id"
+            }
+          ],
+          "allocation": "Caller-owned842-byte packet ABI only; no claim this matches original host r0 actor. No host hook supplied."
+        }
+      ],
+      "host_calls": [],
+      "host_reads": []
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "All signed velocity byte values and16 transform selectors across mixed cap/carrier/boundary cases",
+      "Buffered jump/held-release/alternate-rule/boost cases",
+      "Selected wall contact, tile response, return merge masks",
+      "Actual stock stage RIGHT acceleration and same-checkpoint held-versus-tapped A"
+    ],
+    "required_witnesses": [
+      "Original Thumb versus recovered C and emitted Thumb passed for147456 finite local scenarios",
+      "Actual game witnesses retained in sma4-jump-native-receipt.json",
+      "Before ROM integration: explicit packet construction, write merge, input/audio effects and native scheduling adapter",
+      "Before declaring complete prefab: terrain sampler, horizontal acceleration, floor/ceiling, enemies, powerups and progression closure"
+    ],
+    "known_limits": [
+      "Current C backend emits1720 bytes of qualified local ARM7TDMI code, not a playable game",
+      "Audio hardware output and whole-frame scheduling are external policies",
+      "Synthetic transform/special-state coverage does not establish all branches occur in natural play"
+    ]
+  }
+}

@@ -6,7 +6,7 @@
   "source_game": "metroid-zero-mission",
   "origin": "automatic_highfunction_lift",
   "package_ref": "local/ir/packages/mzm.progress.events/package.json",
-  "package_sha256": "7be90d6894f804ae80d8c243790a319f85b1c6bdadcba37718b14022c17eae09",
+  "package_sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
   "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
   "qualification": {
     "status": "pass",
@@ -29,8 +29,28 @@
     }
   ],
   "ports": [],
-  "collection_ports": [],
-  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "count": 8,
+      "semantic_type": {
+        "quantity": "packed_event_bank",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.progress.source_event_bank",
+        "confidence": 0.95,
+        "evidence": [
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c",
+          "research/ir-workshop/source-game-prefabs/metroid-zero-mission/source-evidence.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
   "owned_state": {
     "fields": 0,
     "collections": [
@@ -61,5 +81,18 @@
   "limitations": [
     "Acyclic structured CFG only",
     "Semantic units and human names remain unknown unless separately evidenced"
-  ]
+  ],
+  "return_meaning": {
+    "quantity": "boolean",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "mzm.progress.event_operation_result",
+    "confidence": 0.95,
+    "evidence": [
+      "research/ir-workshop/source-game-prefabs/metroid-zero-mission/080608bc.c"
+    ],
+    "description": "read op>=3 returns prior bit;set1/toggle2 returns inverse prior bit;clear0 returns prior bit;invalid event ID returns0"
+  }
 }

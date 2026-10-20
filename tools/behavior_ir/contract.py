@@ -24,16 +24,24 @@ def validate(document):
   required={'id','implementation','binding_scope','arguments','return_type','dependency_closure','synchronization','memory_effects'}
   if set(service)!=required or not isinstance(service['id'],str)or not LABEL.fullmatch(service['id'])or service['id']in services:raise ValueError('invalid retained service signature identity')
   if service['implementation']!='preserved_native_opaque'or service['binding_scope']!='source_pinned_native_only'or service['dependency_closure']!='OPEN'or service['synchronization']!='flush_reload_all_bound_state':raise ValueError('retained service must remain native-only OPEN with full sync')
-  if not isinstance(service['arguments'],list)or len(service['arguments'])>4 or any(t not in('u8','u16','u32')for t in service['arguments'])or service['return_type']not in('void','u32'):raise ValueError('unsupported retained service scalar ABI')
+  if not isinstance(service['arguments'],list)or len(service['arguments'])>7 or any(t not in('u8','u16','u32')for t in service['arguments'])or service['return_type']not in('void','u32'):raise ValueError('unsupported retained service scalar ABI')
   if service['memory_effects']!={'reads':'unknown','writes':'unknown','optimization_barrier':'all_host_memory','reference_stability':'unknown'}:raise ValueError('retained service unknown host barrier required')
   services[service['id']]=service
  if services and(document.get('execution_scope')!='source_pinned_native_only'or document.get('semantic_closure')!='OPEN'):raise ValueError('retained service containing module must remain native-only OPEN')
+ resources={};tokens=set();resource_fields=document.get('resource_fields',{})
+ for r in document.get('resource_references',[]):
+  if set(r)!={'id','token'}or not isinstance(r['id'],str)or not LABEL.fullmatch(r['id'])or type(r['token'])is not int or not 0<r['token']<=0xffffffff or r['id']in resources or r['token']in tokens:raise ValueError('invalid resource reference inventory')
+  resources[r['id']]=r['token'];tokens.add(r['token'])
+ if not isinstance(resource_fields,dict)or any(fields.get(k)!='u32'or v not in resources for k,v in resource_fields.items()):raise ValueError('invalid resource reference field binding')
+ if {f['name']:f['resource_reference']for f in document['state']if 'resource_reference'in f}!=resource_fields:raise ValueError('resource field declaration disagreement')
+ if set(resource_fields.values())!=set(resources):raise ValueError('unused resource reference inventory')
  def expression(e):
   op=e['op'];t=e['type']
   if t not in TYPES:raise ValueError('invalid exact storage type')
   if op=='const':
    if not isinstance(e['value'],int)or not 0<=e['value']<1<<int(t[1:]):raise ValueError('constant outside exact bit width')
   elif op in('field','local','parameter'):
+   if op=='field'and e['name']in resource_fields:raise ValueError('resource reference field used as scalar')
    namespace={'field':fields,'local':locals,'parameter':params}[op]
    if namespace.get(e['name'])!=t:raise ValueError('unresolved or incorrectly typed symbolic value')
   elif op in UNARY|BINARY:
@@ -72,7 +80,12 @@ def validate(document):
    if op in('assign_local','assign_field'):
     namespace=locals if op=='assign_local'else fields;key='local'if op=='assign_local'else'field'
     if s[key]not in namespace:raise ValueError('unresolved assignment target')
-    expression(s['value'])
+    if op=='assign_field'and s[key]in resource_fields:
+     value=s['value'];rid=resource_fields[s[key]]
+     if value.get('op')=='resource_reference':
+      if set(value)!={'op','type','resource','token'}or value['type']!='u32'or value['resource']!=rid or value['token']!=resources[rid]:raise ValueError('resource reference identity mismatch')
+     elif value!={'op':'const','type':'u32','value':0}:raise ValueError('resource field requires exact resource identity or null')
+    else:expression(s['value'])
     if namespace[s[key]]!=s['value']['type']:raise ValueError('implicit narrowing not permitted')
    elif op=='retained_native_service':
     if set(s)-{'op','service','arguments','provenance','result'}or not {'op','service','arguments','provenance'}<=set(s)or not isinstance(s['provenance'],str)or not s['provenance']:raise ValueError('invalid retained service statement')

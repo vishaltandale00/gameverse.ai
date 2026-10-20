@@ -1,0 +1,708 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "super-mario-advance",
+  "sourceSystemIds": [
+    "sma1.controller.grounded_motion_subsystem"
+  ],
+  "blueprintIds": [
+    "character-traversal",
+    "hazard-recovery"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Run/jump across terrain, pluck/carry/interact, take accepted damage, continue from a source checkpoint or zero-lives scene, and preserve world progress.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Read held and newly pressed controls",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "One sampled KEYINPUT read and edge derivation boundary"
+        ],
+        "gaps": [
+          "Input080012fc MMIO binding is unresolved; held input does not prove grounded admission."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.player_update_order",
+            "entry": "080a7570",
+            "instructionSpan": {
+              "address": "0x080a7570",
+              "size": 152,
+              "sha256": "f3a5b600de355762516f9fa559cc1cd416aa56132e6d9c26cb390baefa08f35f",
+              "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+            }
+          }
+        ]
+      },
+      {
+        "id": "player_control",
+        "label": "Run, jump, charge, hover and carry on one player",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Canonical player, parameters/profile and original frame scheduler"
+        ],
+        "gaps": [
+          "Existing traversal bundle already describes partial roots; full080a7774 controller, animation index proof, effects and speedcap/carry closure remain incomplete."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.player_update_order",
+            "entry": "080a7570",
+            "instructionSpan": {
+              "address": "0x080a7570",
+              "size": 152,
+              "sha256": "f3a5b600de355762516f9fa559cc1cd416aa56132e6d9c26cb390baefa08f35f",
+              "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.player_state_dispatch",
+            "entry": "080a7440",
+            "instructionSpan": {
+              "address": "0x080a7440",
+              "size": 272,
+              "sha256": "0ee450772b6ada9533a50d0e86c5da019ca9d55844bc88ef5a8f21ec8f028f21",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          }
+        ]
+      },
+      {
+        "id": "terrain",
+        "label": "Produce floor, ceiling, slope, edge and hurt contacts",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Original world tile query and terrain state"
+        ],
+        "gaps": [
+          "080a821c supplies real contact permissions; it is not replaced by a boolean grounded port."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.movement_contact_legality",
+            "entry": "080a821c",
+            "instructionSpan": {
+              "address": "0x080a821c",
+              "size": 1236,
+              "sha256": "42e0d34e41727b8ba4d9fe176eb1e46f135f304548622650bbc4ee124d6fabb9",
+              "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.terrain_response",
+            "entry": "080a8950",
+            "instructionSpan": {
+              "address": "0x080a8950",
+              "size": 128,
+              "sha256": "2d3284f99a38f66dbda56825f5ea8bcbd584aa1760adbadfeb66139e8e924184",
+              "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+            }
+          }
+        ]
+      },
+      {
+        "id": "interactions",
+        "label": "Pluck, carry, release and enter rooms",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Aliased entity pool, tile mutation, clearance and room transition services"
+        ],
+        "gaps": [
+          "12 normal pluck candidates differ from13 cleanup/lifecycle records; throw-hit and room-load commit remain open."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.ground_interaction_dispatch",
+            "entry": "080aa5bc",
+            "instructionSpan": {
+              "address": "0x080aa5bc",
+              "size": 112,
+              "sha256": "d08739968eebcaf96f52d01f4f42c599110a9054afed33c57d646c1331a29831",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.plucked_actor_create",
+            "entry": "080aa83c",
+            "instructionSpan": {
+              "address": "0x080aa83c",
+              "size": 1206,
+              "sha256": "61d1dd6d93cda1b9ac7950ac1878ad7f8af7d35cd7f7a78ddf37f432d1f1ba27",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.carried_actor_release",
+            "entry": "080ab60c",
+            "instructionSpan": {
+              "address": "0x080ab60c",
+              "size": 1040,
+              "sha256": "b9092a144bb7141828c6ec925408f0444c862f4765f0a897b946e8d8b36cdf8e",
+              "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.room_transition_begin",
+            "entry": "080ab05c",
+            "instructionSpan": {
+              "address": "0x080ab05c",
+              "size": 776,
+              "sha256": "565b9f472977283608ddeb7787f46ef3d06ed0008160e23e6bc4f5db87aff24b",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          }
+        ]
+      },
+      {
+        "id": "hurt",
+        "label": "Resolve accepted actor/terrain damage and death entry",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Collision eligibility, source health/invulnerability and carried actor release"
+        ],
+        "gaps": [
+          "No new published hurt/death-entry transaction; timers alone do not establish contact eligibility or death admission."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.actor_hurt_transaction",
+            "entry": "080afc64",
+            "instructionSpan": {
+              "address": "0x080afc64",
+              "size": 432,
+              "sha256": "f89b3b68367a2ff420352fc570ac7206c3e325d57d608301a974636b069622da",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.terrain_hurt_transaction",
+            "entry": "080afe44",
+            "instructionSpan": {
+              "address": "0x080afe44",
+              "size": 246,
+              "sha256": "2d1f0d5af16714e32ebeadd3e6b1082dffe15c4ccba740a3c97464068efab88c",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.player_death_release",
+            "entry": "080ad8dc",
+            "instructionSpan": {
+              "address": "0x080ad8dc",
+              "size": 444,
+              "sha256": "16c3db18a6e2df5519df19fd9142fbb4345f26d36ba8aa2748bddb6633db2a34",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          }
+        ]
+      },
+      {
+        "id": "death_recovery",
+        "label": "Animate/fall, consume one life and request checkpoint continuation",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Source state7 scheduler and animation-phase producer",
+          "Scene wrapper08048fb0 disposal/reloaded roots/completion clearing",
+          "Scene phase0 rehydration08046a0c→080a7334→080ac9c4"
+        ],
+        "gaps": [
+          "Death update is published; retry restore is newly finite-qualified locally, publication pending.",
+          "No once-only latch in expired death update: source scheduler must consume completion before another call.",
+          "Integer checkpoint restore is not full playable respawn; fixed-point positions, terrain, camera and world rehydration remain downstream."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.death_update_lives",
+            "entry": "080a9334",
+            "instructionSpan": {
+              "address": "0x080a9334",
+              "size": 316,
+              "sha256": "50f1fc3bfee1d2f6bed579845d46dba71859d8ceb81a6ac08939a8d2b578eff2",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.scene_tick_death_completion",
+            "entry": "08046d20",
+            "instructionSpan": {
+              "address": "0x08046d20",
+              "size": 684,
+              "sha256": "933efef9042d968af3998a414b0293e2c10bd6f61448790d6e6a7eb955659aa3",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.completion_selector_dispatch",
+            "entry": "08048fb0",
+            "instructionSpan": {
+              "address": "0x08048fb0",
+              "size": 234,
+              "sha256": "4f3e576dc628e4135f49910bfa9f3e5e334dedbcd9b6e872900a7d78bcc1539b",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.retry_checkpoint_consumer",
+            "entry": "080490b8",
+            "instructionSpan": {
+              "address": "0x080490b8",
+              "size": 104,
+              "sha256": "3b0b65fe402e90a5d856417bd8e64e8db2c969c09473f88937c5149d42437f6c",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.retry_checkpoint_restore",
+            "entry": "080adf7c",
+            "instructionSpan": {
+              "address": "0x080adf7c",
+              "size": 434,
+              "sha256": "71b2ab714344f66c3d3d0de1116f60455490ab28efdcdaba01c0cf3807316052",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          }
+        ]
+      },
+      {
+        "id": "zero_lives",
+        "label": "Consume zero-lives result and continue the reset scene",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Original phase4 scene0804ce28 and scene/lifecycle services"
+        ],
+        "gaps": [
+          "Signal2 is distinct from checkpoint retry; game-over presentation, saving and continuation remain unqualified."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.zero_lives_consumer",
+            "entry": "08049134",
+            "instructionSpan": {
+              "address": "0x08049134",
+              "size": 86,
+              "sha256": "bc44c7d2eab396eefbf332fab553b495f0ebc991cc207a75c0a00f9687b04085",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.reset_health_and_stage_fields",
+            "entry": "0804958c",
+            "instructionSpan": {
+              "address": "0x0804958c",
+              "size": 352,
+              "sha256": "4b895526b10829a373acc85f0b41ada4858be4f0981813f201460f93a92a7a6f",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.scene_phase_dispatch",
+            "entry": "08047024",
+            "instructionSpan": {
+              "address": "0x08047024",
+              "size": 150,
+              "sha256": "a664275cca1a1c957250e785e693c5b6028af292e4fd10f20a6da6145e40e4a8",
+              "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+            }
+          }
+        ]
+      },
+      {
+        "id": "room_progress",
+        "label": "Commit room/script transitions and persistent progress",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "Original room/script loader and checkpoint writer"
+        ],
+        "gaps": [
+          "Transition begin and descriptor selection are source evidence; full room commit and checkpoint ancestry remain unresolved."
+        ],
+        "sourceRefsPins": [
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.ground_object_interaction",
+            "entry": "080aad60",
+            "instructionSpan": {
+              "address": "0x080aad60",
+              "size": 564,
+              "sha256": "5809e18d778b27f62d9a3e1b762dc2bacfe6ec6c9112d034f7412c42344e9bd5",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          },
+          {
+            "registry": "research/deep-extraction/mario/mechanics-targets.json",
+            "targetId": "sma1.room_transition_begin",
+            "entry": "080ab05c",
+            "instructionSpan": {
+              "address": "0x080ab05c",
+              "size": 776,
+              "sha256": "565b9f472977283608ddeb7787f46ef3d06ed0008160e23e6bc4f5db87aff24b",
+              "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+            }
+          }
+        ]
+      },
+      {
+        "id": "enemy_boss",
+        "label": "Enemy and boss ecology",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "SMA1 species/AI/contact/defeat lifecycle coverage is not a qualified coherent system in current packet."
+        ]
+      },
+      {
+        "id": "persistence",
+        "label": "Save, resume and retry persistence",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "Actual save/load commit and migration semantics remain missing from this recovery closure."
+        ]
+      },
+      {
+        "id": "presentation",
+        "label": "Render the canonical player/world and camera",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [],
+        "requiredServices": [],
+        "gaps": [
+          "Native host assets/presentation remain separately retained evidence; no portable full source renderer/camera phase was reconstructed here."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "player_control",
+        "kind": "shared-state",
+        "scope": "Held/pressed source globals feed original controller; actual hardware sample binding remains open."
+      },
+      {
+        "from": "player_control",
+        "to": "terrain",
+        "kind": "source-call",
+        "scope": "080a7570 calls gravity/control before terrain; conditional return gates integration."
+      },
+      {
+        "from": "terrain",
+        "to": "hurt",
+        "kind": "source-call",
+        "scope": "Terrain202 can invoke080afe44; eligibility and accepted transaction require actual source context."
+      },
+      {
+        "from": "terrain",
+        "to": "interactions",
+        "kind": "source-call",
+        "scope": "Grounded terrain response invokes080aa5bc→descriptor/pluck/transition chain."
+      },
+      {
+        "from": "hurt",
+        "to": "death_recovery",
+        "kind": "source-call",
+        "scope": "080ad8dc writes state7/action11/timer180; source player-state table dispatches080a9334."
+      },
+      {
+        "from": "death_recovery",
+        "to": "zero_lives",
+        "kind": "event",
+        "scope": "Completion2 selects distinct zero-lives callback08049134, not retry callback."
+      },
+      {
+        "from": "death_recovery",
+        "to": "room_progress",
+        "kind": "host-required",
+        "scope": "Completion1 selects original retry callback; phase0 world/player reconstruction and source wrapper effects still required."
+      },
+      {
+        "from": "room_progress",
+        "to": "player_control",
+        "kind": "host-required",
+        "scope": "Scene rehydration and original source admission are required before player control resumes."
+      },
+      {
+        "from": "room_progress",
+        "to": "persistence",
+        "kind": "host-required",
+        "scope": "No complete save/commit transaction qualified by these roots."
+      }
+    ],
+    "missingForCoreGame": [
+      "Full input/controller/terrain and contact eligibility closure",
+      "Mechanical animation-phase producer for death+45 and original frame admission",
+      "Scene wrapper disposal, stable/reloaded roots and completion clearing",
+      "Retry root publication and typed port review",
+      "Original scene0 world/actor/camera rehydration and fixed-point position reconciliation",
+      "Checkpoint writer lineage, save/load persistence, zero-lives and room commit",
+      "Enemy/species/boss and complete source presentation systems"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "sma1-player-death-checkpoint-recovery",
+      "label": "Death-to-checkpoint recovery · Super Mario Advance",
+      "moduleId": "sma1.controller.grounded_motion_subsystem",
+      "sourceGame": "super-mario-advance",
+      "sourceSystemId": "sma1.controller.grounded_motion_subsystem",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/delivery.json",
+      "planIds": [
+        "character-traversal",
+        "hazard-recovery"
+      ],
+      "packageIds": [
+        "sma1.death_update_lives"
+      ],
+      "availability": "source-only",
+      "scope": "One canonical player lifecycle relates hurt/death admission, original fall/countdown/life completion and source checkpoint-return request. Published/local-qualified supporting phases do not yet supply a complete ready recovery capability.",
+      "gaps": [
+        "Full input/controller/terrain and contact eligibility closure",
+        "Mechanical animation-phase producer for death+45 and original frame admission",
+        "Scene wrapper disposal, stable/reloaded roots and completion clearing",
+        "Retry root publication and typed port review",
+        "Original scene0 world/actor/camera rehydration and fixed-point position reconciliation",
+        "Checkpoint writer lineage, save/load persistence, zero-lives and room commit",
+        "Enemy/species/boss and complete source presentation systems"
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma1/next-extraction/l2-contract.json",
+        "research/deep-extraction/mario/parallel-sma1/dispatch-contracts.json",
+        "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/retry-semantic-proposal.json",
+        "research/deep-extraction/mario/sma1-death-entry-fixtures.json"
+      ],
+      "canonicalState": {
+        "identity": "Same original player/profile/world backing as the existing SMA1 traversal source module",
+        "fields": [
+          "position and integer mirrors",
+          "velocity/carrier state",
+          "state/action/animation phase",
+          "death timer, life counter, completion selector",
+          "saved checkpoint player/profile/world fields"
+        ],
+        "aliasRule": "One player across traversal, hurt/death and checkpoint phases. Source player/profile remain distinct objects; saved and current fields retain separate slots. Never import another independent player copy to fill a role."
+      },
+      "roleFacets": [
+        {
+          "roleId": "recovery",
+          "capability": "death_checkpoint_continuation",
+          "status": "source-only",
+          "scope": "Original countdown and new checkpoint-return root are supporting phases; source scene/scheduler/world rehydration gaps prevent a complete recovery prefab.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma1/next-extraction/l2-contract.json",
+            "research/deep-extraction/mario/parallel-sma1/dispatch-contracts.json",
+            "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/retry-semantic-proposal.json"
+          ]
+        },
+        {
+          "roleId": "checkpoint",
+          "capability": "source_checkpoint_return_request",
+          "status": "source-only",
+          "scope": "Retry callback restores saved integer coordinates/velocity/lifecycle fields and selects scene0. It does not close checkpoint recording, full world respawn or persistence.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/retry-semantic-proposal.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "sma1.lifecycle.death-checkpoint-recovery",
+        "label": "SMA1 source recovery (incomplete)",
+        "assemblyRef": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/death-countdown.assembly.json",
+        "validationRef": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/death-countdown.validation.json",
+        "descriptorRef": "research/ir-workshop/accepted-game-reconstruction-maps-20261016/super-mario-advance/delivery.json",
+        "packageIds": [
+          "sma1.death_update_lives"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "scope": "This graph is an internally wired supporting phase only, not the complete recovery prefab."
+      },
+      "supportingPhases": [
+        {
+          "id": "death_update",
+          "origin": "published_automatic_L1",
+          "assembly": {
+            "path": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/death-countdown.assembly.json",
+            "sha256": "1ee7cfddc1a75fdeb3c65fd99795f5c7a3f1fdd6a285b9542b85ad4913342f35"
+          },
+          "validation": {
+            "path": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/death-countdown.validation.json",
+            "sha256": "81915199497cfe344b316a7840d3d8e6b79ae3eebb43b4cbb2e2babca637ebbc"
+          },
+          "callableCore": {
+            "path": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/death-countdown.core.c",
+            "sha256": "7ef8b5ee555ee23ad16d80002b52b96ae7f68c087507d30f0bdb26f8bfb51226"
+          },
+          "hostScaffold": "Generated state handoffs and callable function only; explicit host invocation, no authored recovery behavior or guard.",
+          "observableOutputs": [
+            "remaining_lives",
+            "completion_signal",
+            "position_y",
+            "velocity_y",
+            "position_y_integer",
+            "carrier_velocity_y",
+            "previous_carrier_velocity_y",
+            "death_wait_timer",
+            "action"
+          ],
+          "defaultOrigin": {
+            "origin": "source-derived qualification fixture",
+            "case": "wait-2-to-1",
+            "nativeNaturalEntryClaim": false,
+            "completionDefault": {
+              "value": 0,
+              "source": "Original scene consumer08048fb0 clears player+55; the fixture sentinel77 is not shipped as a useful default"
+            },
+            "canonicalAttachment": "Replace fixture player values with the live canonical player view; initialization is for standalone use only"
+          },
+          "status": "binding_valid_obligations_unproven",
+          "productPrefab": false
+        },
+        {
+          "id": "retry_checkpoint_return",
+          "origin": "new_automatic_HighFunction_L1",
+          "semanticProposal": {
+            "path": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/retry-semantic-proposal.json",
+            "sha256": "401848d6d14f1b653f983efb2f26f61658de036555694d28b4ab76820f00f0fc"
+          },
+          "nativeProof": {
+            "path": "local/ir/prefab-reconstruction/sma1/retry-expected/receipt.json",
+            "sha256": "a33bbd97c223674f77c55b6fe756176769e2cfda052e783dc2dc37026d0934ab"
+          },
+          "expectedCases": {
+            "path": "local/ir/prefab-reconstruction/sma1/retry-expected/fixtures.json",
+            "sha256": "e692dc52743c3f5ee60879a220fb8dab085b07cfc43bbfff6b302ffe4ac86708"
+          },
+          "observableOutputs": [
+            "saved integerX/Y restored to current integerX/Y",
+            "saved vertical velocity and lifecycle state restored",
+            "profile/world checkpoint fields copied",
+            "scene phase0 request"
+          ],
+          "status": "finite_native_qualified_publication_pending",
+          "productPrefab": false
+        }
+      ],
+      "primaryPrefabFilter": {
+        "accepted": false,
+        "reason": "A life counter/update helper is not a useful standalone game-building capability. Grouped recovery still lacks exact source consumer/scene closure; no helper card emitted."
+      }
+    }
+  ],
+  "prefabs": [],
+  "timing": {
+    "runId": "20261016-sma1-prefab-reconstruction",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.0027841249999999984,
+    "buildSeconds": null,
+    "nativeSeconds": 0.271644,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "exportSeconds": 3.852505709,
+    "accounting": "Export3.852505709s includes private copy/process/structural check. New source-native root proof0.271644s includes compile/link/oracle/native stages (nested, not additive). Initial same-root proof is retained separately in retry-consumer/receipt.json. Supporting phase syntax time is in source-pins.json; not a game build. Overall elapsed/queue and comparable before-after unavailable. No broad native or game/ROM run.",
+    "rootProofAttempt": {
+      "path": "local/ir/prefab-reconstruction/sma1/retry-consumer/attempt.json",
+      "sha256": "07eb1740a509f92307b8ea70b92ce468d03ffc285358cfb2efa725ac097c00ab"
+    },
+    "strengthenedProof": {
+      "path": "local/ir/prefab-reconstruction/sma1/retry-expected/receipt.json",
+      "sha256": "a33bbd97c223674f77c55b6fe756176769e2cfda052e783dc2dc37026d0934ab"
+    },
+    "exportReport": {
+      "path": "local/ir/prefab-reconstruction/sma1/retry-export/ex049/report.json",
+      "sha256": "f9b90eee1218a8095f5b181e8756e7f97a858028f76008a31b497fdd4c043336"
+    }
+  },
+  "counts": {
+    "readyPrimaryPrefabs": 0,
+    "sourceOnlyCoherentBundles": 1,
+    "publishedSupportingRoot": 1,
+    "newFiniteNativeQualifiedRoot": 1,
+    "newNativeRootBehaviors": 1,
+    "sourceOnlyCorePhases": 8,
+    "missingCorePhases": 3
+  },
+  "productFilter": "No duplicate jump/gravity bundle; no friction or life-counter helper promoted as whole control/recovery.",
+  "schemaContract": {
+    "path": "contracts/recovered-prefab-delivery.json",
+    "sha256": "ec57b3fe7eb0211491bfc63bab926d2c9530687c604b41e3d89b9d156f467ab5"
+  },
+  "metadataPreparationSeconds": 0.011012,
+  "sourceDeliveryRef": "research/deep-extraction/mario/parallel-sma1/prefab-reconstruction/delivery.json",
+  "sourceDeliverySha256": "f72956c2432ccc42fb3d16a2a342e676b18258e1064a5b5da2addbc6f88849af",
+  "metadataNormalization": {
+    "sourceRefs": "Structured reference objects retain original pins alongside repository-relative path strings.",
+    "productScope": "No source semantics or source proofs changed; zero primary prefab map."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "outcome": "pass",
+  "patterns": 6,
+  "validatedBindingExamples": 5,
+  "sourceOnlyPatterns": 1,
+  "runtimeQualifiedPatterns": 0,
+  "wallSeconds": 0.022168667,
+  "patternsSha256": "3fe81c03fc8dd06e9cb7470032f063845051e294ef0d7cc1dcd4688cdf7fe1ae",
+  "builderSha256": "f85235116c329cf7b88826d7853e61d3a86050cb97edc79eb73fa96293a4c835",
+  "scope": "Read existing source/graph/receipt pins and exact interface mappings; no native run, model call or ROM generation."
+}

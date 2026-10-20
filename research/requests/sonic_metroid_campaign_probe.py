@@ -18,7 +18,7 @@ def run(rom,state,out,limit,stop_x=None):
   return 0
  def sample():
   p=s.read_memory(0x3005a20,144);v=lambda a,n=2,sg=False:int.from_bytes(p[a:a+n],'little',signed=sg);a=find()
-  r={'frame':s.frame,'x':v(0,4,True)/256,'y':v(4,4,True)/256,'vx':v(8,2,True),'vy':v(10,2,True),'speed':v(12,2,True),'angle':v(20,1),'flags':v(16,4),'pose':v(64,1),'level':read(0x300514c,1),'state':hex(a)}
+  r={'frame':s.frame,'x':v(0,4,True)/256,'y':v(4,4,True)/256,'vx':v(8,2,True),'vy':v(10,2,True),'speed':v(12,2,True),'angle':v(20,1),'plane':v(39,1),'flags':v(16,4),'pose':v(64,1),'level':read(0x300514c,1),'state':hex(a)}
   if a:r.update(upgrades=read(a+8),energy=read(a+24,2),kills=read(a+48,2),deaths=read(a+58,2),visited=read(a+12),active=read(a+185,1))
   events.append(r);return r
  report={'rom_sha256':hashlib.sha256(rom.read_bytes()).hexdigest(),'initial_state':{'path':str(state),'sha256':hashlib.sha256(state.read_bytes()).hexdigest()},'probe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'limit_frames':limit,'events':events,'observations':obs,'outcome':'running'}

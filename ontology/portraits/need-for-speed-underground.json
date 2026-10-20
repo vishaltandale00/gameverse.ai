@@ -460,7 +460,399 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:50:22.449368+00:00",
+      "rom_sha1": "ddd304481617a748aa9f37535908a37452dd2f03",
+      "status": "ok",
+      "function_records": 668,
+      "pseudo_c_generated": 668,
+      "process_wall_s": 10.1,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "separate review required",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/need-for-speed-underground/need-for-speed-underground/functions.jsonl",
+      "export_sha256": "f5fc6355b340112323c907861f82c74655a8f0f2391f2af2b75582c31f3b6fef",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/need-for-speed-underground/need-for-speed-underground/summary.json",
+      "summary_sha256": "a1468d7f9e6a2cf9727e2828192be969c16569c390b89511f3f028bd3d723e79",
+      "warning_function_count": 560,
+      "unknown_register_function_count": 40,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x0800039c",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08000648",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA0CNT_H",
+            "DMA0SAD",
+            "DMA1CNT_H",
+            "DMA2CNT_H",
+            "DMA3CNT_H",
+            "DMA3SAD",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x0800105c",
+          "io_ref": [
+            "IE"
+          ]
+        },
+        {
+          "entry": "0x080039d0",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08003f44",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x080041f8",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08004670",
+          "io_ref": [
+            "BLDALPHA",
+            "BLDCNT"
+          ]
+        },
+        {
+          "entry": "0x08004d68",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08004d7c",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08010e5c",
+          "io_ref": [
+            "BLDALPHA"
+          ]
+        },
+        {
+          "entry": "0x08014430",
+          "io_ref": [
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080145e4",
+          "io_ref": [
+            "IE",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080253b8",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08025bf4",
+          "io_ref": [
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08025dec",
+          "io_ref": [
+            "RCNT",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08025e50",
+          "io_ref": [
+            "IE",
+            "IME",
+            "RCNT",
+            "SIOCNT"
+          ]
+        },
+        {
+          "entry": "0x08025f14",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "SIOCNT+1",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08026080",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08026114",
+          "io_ref": [
+            "DISPSTAT",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08026274",
+          "io_ref": [
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08026310",
+          "io_ref": [
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x0802642c",
+          "io_ref": [
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "SIOMULTI0",
+            "SIOMULTI2",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08026590",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME",
+            "RCNT",
+            "SIOCNT",
+            "SIOCNT+1",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08026664",
+          "io_ref": [
+            "IE",
+            "IF",
+            "IME",
+            "SIOCNT",
+            "TM3CNT_L"
+          ]
+        },
+        {
+          "entry": "0x080266e4",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x080267a4",
+          "io_ref": [
+            "IE",
+            "IME",
+            "SIOCNT",
+            "SIOMLT_SEND",
+            "TM3CNT_H"
+          ]
+        },
+        {
+          "entry": "0x08026850",
+          "io_ref": [
+            "DMA3CNT_H",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IME",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x08026994",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x08026b90",
+          "io_ref": [
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08026bd4",
+          "io_ref": [
+            "DMA1CNT_L",
+            "TM0CNT_L",
+            "TM1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08026cb0",
+          "io_ref": [
+            "DMA1CNT_L",
+            "DMA1DAD",
+            "DMA1SAD",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "FIFO_A",
+            "SOUNDCNT_H",
+            "SOUNDCNT_X",
+            "TM0CNT_L",
+            "TM1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08026de4",
+          "io_ref": [
+            "DMA1CNT_L",
+            "DMA2CNT_L",
+            "IME",
+            "TM1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08026e8c",
+          "io_ref": [
+            "IME",
+            "TM1CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0806ae28",
+          "io_ref": [
+            "DISPCNT+1"
+          ]
+        },
+        {
+          "entry": "0x0806ae58",
+          "io_ref": [
+            "DISPCNT+1"
+          ]
+        },
+        {
+          "entry": "0x0806b3c8",
+          "io_ref": [
+            "BG2PA",
+            "BG2PB",
+            "BG2PC",
+            "BG2PD",
+            "BG2X",
+            "BG2Y"
+          ]
+        },
+        {
+          "entry": "0x0806b4f4",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0806c210",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0806c284",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x0806e74c",
+          "io_ref": [
+            "DISPCNT+1"
+          ]
+        },
+        {
+          "entry": "0x0806e7d8",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0806f178",
+          "io_ref": [
+            "DISPCNT"
+          ]
+        },
+        {
+          "entry": "0x0806f758",
+          "io_ref": [
+            "DISPCNT",
+            "DISPSTAT",
+            "IE",
+            "IME",
+            "VCOUNT",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x0806f8bc",
+          "io_ref": [
+            "TM0CNT_H",
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x0806f8f4",
+          "io_ref": [
+            "TM0CNT_H"
+          ]
+        },
+        {
+          "entry": "0x0806f908",
+          "io_ref": [
+            "TM0CNT_L"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/need-for-speed-underground/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 49,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

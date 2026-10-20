@@ -1,0 +1,198 @@
+{
+  "schema": "gameverse.mechanic-assembly/0.1",
+  "components": {
+    "minimum": {
+      "package_id": "mzm.combat.minimum_reaction2",
+      "behavior_sha256": "8ed56cb0d706d01b5b74ffdd566886707186c826a423e4c9184a9f0b2c4b3a61",
+      "bindings": {
+        "field_0": {
+          "slot": "reaction"
+        }
+      },
+      "package_sha256": "10e7c5a233297b3d89e55c8f5fec1bc200740341bf0dfad25b4aee919135b292"
+    },
+    "tick": {
+      "package_id": "mzm.combat.reaction_tick",
+      "behavior_sha256": "78c20e3d49ec450e2d94e216e0db671ad37914c767751d1d38c14936e617d88e",
+      "bindings": {
+        "field_0": {
+          "slot": "tick_field_0"
+        },
+        "field_1": {
+          "slot": "tick_field_1"
+        },
+        "field_2": {
+          "slot": "tick_field_2"
+        },
+        "field_3": {
+          "slot": "reaction"
+        },
+        "field_4": {
+          "slot": "tick_field_4"
+        },
+        "field_5": {
+          "slot": "tick_field_5"
+        },
+        "field_6": {
+          "slot": "tick_field_6"
+        }
+      },
+      "package_sha256": "f859519a4d0ad7f9b49a6f8d4a26b8a5908dc785824fb9cf91fbfb6c90195053"
+    }
+  },
+  "state": {
+    "tick_field_0": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.hp",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": false
+    },
+    "tick_field_1": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.palette_count",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": false
+    },
+    "tick_field_2": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.palette_selector",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "tick",
+      "shared": false
+    },
+    "reaction": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "packed_countdown",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.reaction_invocation_and_contact_marker",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": true
+    },
+    "tick_field_4": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.freeze_invocation",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": false
+    },
+    "tick_field_5": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.palette_row",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": false
+    },
+    "tick_field_6": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mzm.enemy.normal_palette_selector",
+        "confidence": 0.8,
+        "evidence": [
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/08010cf0.c",
+          "research/deep-extraction/resume/metroid-zero-mission/next-extraction/source-index.json"
+        ],
+        "naming_status": "source_derived_annotation_not_behavior_input"
+      },
+      "owner": "external",
+      "shared": false
+    }
+  },
+  "invocations": [
+    {
+      "component": "minimum",
+      "arguments": {}
+    },
+    {
+      "component": "tick",
+      "arguments": {}
+    }
+  ],
+  "initialize": {
+    "tick_field_0": 10,
+    "tick_field_1": 0,
+    "tick_field_2": 0,
+    "reaction": 0,
+    "tick_field_4": 0,
+    "tick_field_5": 0,
+    "tick_field_6": 0
+  },
+  "services": []
+}

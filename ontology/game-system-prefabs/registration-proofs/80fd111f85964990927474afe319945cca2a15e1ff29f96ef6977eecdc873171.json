@@ -1,0 +1,316 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "acquire": {
+      "package_id": "aria.progress.category3_acquire",
+      "package_sha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+      "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7",
+      "fields": [],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 3,
+            "unsigned_max": 3
+          }
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 7
+          }
+        },
+        {
+          "name": "param_2",
+          "storage_type": "u32",
+          "domain": {}
+        }
+      ],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "collection_0",
+          "storage_type": "u8",
+          "count": 4,
+          "provenance": [
+            "op25"
+          ],
+          "meaning": {
+            "quantity": "packed_four_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "inventory.soul.category3",
+            "confidence": 0.95,
+            "evidence": [
+              "research/automatic-ir/aria-soul-next-round/acceptance-plan.json"
+            ],
+            "naming_status": "source_derived_inventory_layout_not_behavior_input"
+          }
+        }
+      ],
+      "effects": {
+        "reads": [],
+        "writes": [],
+        "collection_reads": [
+          "collection_0"
+        ],
+        "collection_writes": [
+          "collection_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "selected_by_composition",
+        "ordering": "declared_graph_edges"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Exact category3 invocation precondition; other categories remain unqualified by this package",
+        "dependency_0_Index0..7 only; low-level source functions do not enforce capacity",
+        "dependency_0_One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+        "dependency_0_No cast, enemy, pickup, equip or complete progression lifecycle claim",
+        "dependency_1_Acyclic structured CFG only",
+        "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_1_Exact category3 invocation precondition; other categories remain unqualified by this package",
+        "dependency_1_Index0..7 only; low-level source functions do not enforce capacity",
+        "dependency_1_One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+        "dependency_1_No cast, enemy, pickup, equip or complete progression lifecycle claim",
+        "Exact category3 invocation precondition; other categories remain unqualified by this package",
+        "Index0..7 only; low-level source functions do not enforce capacity",
+        "One four-byte packed collection backs both source banks; acquisition rereads after rollback",
+        "No cast, enemy, pickup, equip or complete progression lifecycle claim",
+        "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+      ]
+    },
+    "query": {
+      "package_id": "aria.progress.category3_count",
+      "package_sha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+      "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317",
+      "fields": [],
+      "parameters": [
+        {
+          "name": "param_0",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 3,
+            "unsigned_max": 3
+          }
+        },
+        {
+          "name": "param_1",
+          "storage_type": "u32",
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 7
+          }
+        }
+      ],
+      "return_type": "u8",
+      "return_meaning": {
+        "quantity": "soul_owned_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "inventory.soul.category3",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json",
+          "local/ir/aria-category3-closure-20261016/count-return-abi.json"
+        ],
+        "naming_status": "source_backed_alias_sum"
+      },
+      "collections": [
+        {
+          "name": "collection_0",
+          "storage_type": "u8",
+          "count": 4,
+          "provenance": [
+            "op25",
+            "op58"
+          ],
+          "meaning": {
+            "quantity": "packed_four_bit_inventory",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "inventory.soul.category3",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+              "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json"
+            ],
+            "naming_status": "source_backed_inventory_bit_semantics"
+          }
+        }
+      ],
+      "effects": {
+        "reads": [],
+        "writes": [],
+        "collection_reads": [
+          "collection_0"
+        ],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "same caller-owned campaign backing across source transactions",
+        "clock": "explicit source caller invocation",
+        "ordering": "before ability grant branch count query; newcategory3enable before acquire; postcount only host observation"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Finite native function subset, not full pickup/equip/cast/root080441f8 closure",
+        "No original root count inflation; each distinct original entry counted once",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "94b4396ba29f37f7c0dc15ee571b8afb45ed0f2c6da3693e781bb8559fcbd7d0",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "acquire": {
+        "package_id": "aria.progress.category3_acquire",
+        "package_sha256": "24f876190399d02b2ee0b3698ba90c1d455eb4951fedc2ee21576a73244ed2d3",
+        "behavior_sha256": "b0ce05605d896f5975aeca169d2e960f2cc27f355cd062562543e19a683aedd7",
+        "bindings": {},
+        "collection_bindings": {
+          "collection_0": "soul_bank"
+        }
+      },
+      "query": {
+        "package_id": "aria.progress.category3_count",
+        "package_sha256": "43a90da6259e2f18661708205ce686dc2edf5fab8f7b6b16d7c8ecd5ced7cce5",
+        "behavior_sha256": "df432cd7351cc21374f78bbb5134b063e0aafd03facfc83a28d722af5bd0f317",
+        "bindings": {},
+        "collection_bindings": {
+          "collection_0": "soul_bank"
+        }
+      }
+    },
+    "state": {
+      "soul_bank": {
+        "storage_type": "u8",
+        "count": 4,
+        "semantic_type": {
+          "quantity": "packed_four_bit_inventory",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "inventory.soul.category3",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/resume/castlevania-aria-of-sorrow/prefab-pass/source-contract.json",
+            "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json"
+          ],
+          "naming_status": "source_backed_inventory_bit_semantics"
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "owned_after": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "soul_owned_count",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "inventory.soul.category3",
+          "confidence": 0.95,
+          "evidence": [
+            "local/ir/queue-runs/20261016T090315/castlevania-aria-of-sorrow/l0/080326b8.json",
+            "local/ir/aria-category3-closure-20261016/count-return-abi.json"
+          ],
+          "naming_status": "source_backed_alias_sum"
+        },
+        "owner": "query",
+        "shared": false
+      }
+    },
+    "initialize": {
+      "soul_bank": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "owned_after": 0
+    },
+    "invocations": [
+      {
+        "component": "acquire",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 3
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          },
+          "param_2": {
+            "op": "const",
+            "type": "u32",
+            "value": 1
+          }
+        }
+      },
+      {
+        "component": "query",
+        "arguments": {
+          "param_0": {
+            "op": "const",
+            "type": "u32",
+            "value": 3
+          },
+          "param_1": {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        },
+        "result": {
+          "slot": "owned_after"
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 2,
+  "ordered_components": [
+    "acquire",
+    "query"
+  ],
+  "statement_sha256": "84464caeaf5265366e73c6fc805bd3859a6f7ed0d1c734f8a4f1ada625f9e459",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.005858458
+}

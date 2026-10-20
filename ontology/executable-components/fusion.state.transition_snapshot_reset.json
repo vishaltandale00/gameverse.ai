@@ -1,0 +1,139 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "fusion.state.transition_snapshot_reset",
+  "label": "Preserve transition snapshot and reset current transient state",
+  "role": "lifecycle",
+  "source_game": "metroid-fusion",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/fusion.state.transition_snapshot_reset/package.json",
+  "package_sha256": "bb8b8b954882de7cfff441dfa64a4813135287b690ed147d1ecd4ce21ff79f9a",
+  "behavior_sha256": "d9fa8eb4802096fcb26eaa935158989e6fbfa9522675ba7b0f6b215d368c707b",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "5e62331e0854da2110dc6783358c91b6aeaff504d24d4659da290b67294aff05"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_12",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.current.facing_mask",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08004d60.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.native_coordinate.y.increasing",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08004d60.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 8
+        },
+        "frame": "player.native_coordinate.x.increasing_per_invocation",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08004d60.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input",
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 8
+        },
+        "frame": "player.native_coordinate.y.decreasing_per_invocation",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08004d60.json",
+          "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json",
+          "local/ir/queue-runs/20261016T091004/metroid-fusion/l0/08009d78.json"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input",
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 39,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared_symbolic_player_context_with_explicit_previous_snapshot",
+    "clock": "explicit_function_invocation",
+    "ordering": "08004d60 snapshot-before-reset internally; driver/interfunction frame order remains unqualified",
+    "phase": "source_entry_invocation"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/fusion.state.transition_snapshot_reset/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Native coordinate unit is source coordinate, not pixels; per-invocation velocity does not establish frame-rate or scheduler semantics.",
+    "Packed mixed-purpose fields and previous snapshot words remain private opaque; do not infer independent nonaliasing players.",
+    "Partial L1 members only; complete jump/contact L2 and gameplay reachability remain unqualified.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": "research/deep-extraction/resume/metroid-fusion/next-extraction/system.json"
+}

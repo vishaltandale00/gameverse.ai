@@ -1,0 +1,300 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ff12.choice.entry_transition",
+  "label": "Advance choice-entry transition and expose cursor",
+  "role": "scene_transition",
+  "source_game": "final-fantasy-i-and-ii-dawn-of-souls",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/ff12.choice.entry_transition/package.json",
+  "package_sha256": "dcdc427b1b140c05538f3e266a32e8151f4d997876de3e0e83c3956eddadd663",
+  "behavior_sha256": "5b0c8982de588044f90c38823530dcc65bec5e9393ac4806d105cc0dca9e2296",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "021db5bd0d4897bc0f8921a9d4ce43a4d9e292bf1d618bf30c90226daf946c3a"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "display_control_shadow_bits",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "background2_vertical_scroll_shadow",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.8,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "background3_vertical_scroll_shadow",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.8,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "window_input_shadow_bits",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "window_output_shadow_bits",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "blend_control_shadow_bits",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.85,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "register_update_pending_flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.display",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "cursor_horizontal_position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.cursor.x_right",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "out",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "cursor_vertical_position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.cursor.y_down",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "cursor_visible_flag",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.cursor",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "scene_phase_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.control",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "transition_invocation_counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.transition",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "selected_choice_index_or_cancel_sentinel",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "scene.choice",
+        "confidence": 0.95,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/final-fantasy-i-and-ii-dawn-of-souls/l0/0801d074.json",
+          "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 13,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "shared choice-scene object",
+    "clock": "explicit_function_invocation",
+    "phase": "scene_phase6_choice_entry_transition",
+    "sourceObservedOrdering": [
+      "0801ca98 polls input before phase dispatch;phase6 invokes this member;wrapped tick increment then signed>15 guard;guarded display/cursor writes then phase7 and tick reset"
+    ],
+    "callerOrderBeyondLeaf": "source-backed L2 only; full-loop executable qualification remains open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/ff12.choice.entry_transition/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Two finite-qualified leaves do not close input->navigation->result lifecycle.",
+    "Mode/gameplay-screen reachability remains unresolved.",
+    "Unknown wider semantics of display context retained as opaque lanes; no manual C supplied to compiler.",
+    "Transition counter unit is one invocation; no fixed FPS or real-time rate established.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/final-fantasy-i-and-ii-dawn-of-souls/next-extraction/source-l2-contract.json",
+    "sha256": "dde668ddf95915e287530144b3902df866651ce4fdb61ed7360e8efda269af7c"
+  }
+}

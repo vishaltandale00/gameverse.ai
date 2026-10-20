@@ -10,12 +10,14 @@ import { createVoiceApi } from './voice-api.mjs';
 import { createAgentApi, qualificationCaps } from './agent-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
 import { createIrApi } from './ir-api.mjs';
+import { createImprovementApi } from './improvement-api.mjs';
+import { playableAssets } from './playable-mashup-assets.mjs';
 
 const appRoot = fileURLToPath(root);
 for (const name of ['.env.local', '.env']) {
   try { loadEnvFile(fileURLToPath(new URL(name, root))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 }
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream', '.png': 'image/png' };
 const runtime = await runtimeIdentity();
 // One shared ledger: realtime transcription sessions count toward the same
 // global qualification caps as decisions, reflections, planner and speech calls.
@@ -37,6 +39,7 @@ const countedLiveProviders = !effectiveCaps ? realtimeTranscriptionProviders
 const handleVoice = createVoiceApi({ liveProviders: countedLiveProviders });
 const handleAgent = createAgentApi({ ledger: qualificationLedger, caps: effectiveCaps });
 const ir = createIrApi({ timeoutMs: Number(process.env.IR_BUILD_TIMEOUT_MS || 60000) });
+const improvement = createImprovementApi({ timeoutMs: Number(process.env.IMPROVEMENT_TIMEOUT_MS || 90000) });
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -49,6 +52,7 @@ const server = http.createServer(async (req, res) => {
     if (await handleVoice(req, res, path)) return;
     if (await handleAgent(req, res, path)) return;
     if (await ir.handle(req, res, path)) return;
+    if (await improvement.handle(req, res, path)) return;
     if (path.startsWith('/api/')) {
       res.writeHead(404, { 'Content-Type': mime['.json'] }).end(JSON.stringify({ error: `No API route '${path}'. Start the dev server with node scripts/serve.mjs.` }));
       return;
@@ -74,7 +78,10 @@ const server = http.createServer(async (req, res) => {
       res.end(req.method === 'HEAD' ? undefined : bytes); return;
     }
     let file;
-    if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);
+    if (playableAssets.has(path)) file = playableAssets.get(path);
+    else if (path === '/playable-mashups' || path === '/playable-mashups.html') file = new URL('playable-mashups.html', root);
+    else if (path === '/playable-mashups.css') file = new URL('playable-mashups.css', root);
+    else if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);
     else if (/^\/runtime\/mgba\.(js|wasm)$/.test(path)) file = new URL(path.split('/').pop(), runtimeDirectory);
     else if (/^\/runtime\/three\/three\.(module|core)\.js$/.test(path)) file = new URL(`node_modules/three/build/${path.split('/').pop()}`, root);
     else if (path === '/runtime/three/LICENSE') file = new URL('node_modules/three/LICENSE', root);

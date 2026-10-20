@@ -1,0 +1,206 @@
+{
+  "canonicalstate": {
+    "current_record": {
+      "alias_rule": "Same source actor record as existing current-sprite module; a statue role facet, not a new physical actor",
+      "base": 50333496,
+      "bytes": 56,
+      "fields": {
+        "pose": {
+          "address": 50333532,
+          "width": 8
+        },
+        "sprite_id": {
+          "address": 50333525,
+          "width": 8
+        },
+        "work0": {
+          "address": 50333540,
+          "width": 8
+        }
+      }
+    },
+    "owner": "Original scheduler owns persistent 24x56B sprite records; selected current-record view borrowed for AI dispatch",
+    "persistent_records": {
+      "base": 50332076,
+      "count": 24,
+      "owner": "Original SpriteUpdate scheduler",
+      "stride": 56
+    },
+    "shared_progression": {
+      "access": "Read by consumers; original grant owns mutations in this candidate",
+      "alias_rule": "No detached event or equipment copies; source global views map exact same existing progression-session cells",
+      "canonical_module_id": "mzm.module.progression-session",
+      "equipment_owned_bytes": [
+        50337084,
+        50337086
+      ],
+      "event_bank": {
+        "address": 33783296,
+        "storage": "u32",
+        "words": 8
+      }
+    }
+  },
+  "counts": {
+    "inlined_event_seed_standalone_installed": 0,
+    "installed_source_entries": 3,
+    "new_central_packages_proposed": 3,
+    "new_distinct_source_roots": 3,
+    "new_native_runs": 0,
+    "retained_cross_entry_pairs": 1120,
+    "retained_original_comparisons": 12288,
+    "retained_rebuilt_comparisons": 12288,
+    "whole_game_equivalent": null
+  },
+  "dependencylinks": [
+    {
+      "canonical_addresses": [
+        50337084,
+        50337086,
+        33783296
+      ],
+      "existing_entries_installed_here": false,
+      "existing_package_ids": [
+        "mzm.progress.acquire",
+        "mzm.progress.events"
+      ],
+      "kind": "canonical-shared-progression-read",
+      "scope": "Original native acquisition/events remain host;fresh event L1 source dependency inlined in consumers",
+      "target_module_id": "mzm.module.progression-session"
+    },
+    {
+      "from": "mzm.statue.wait-collected",
+      "kind": "source-call",
+      "lowering": "automatic-inline",
+      "native_call_sites": 1,
+      "to": "mzm.statue.behavior"
+    },
+    {
+      "from": "mzm.statue.behavior",
+      "kind": "source-call",
+      "lowering": "fresh-inlined-dependency-seed",
+      "native_call_sites": 1,
+      "standalone_entry_installed": false,
+      "to": "mzm.progress.events"
+    }
+  ],
+  "event_order": [
+    "Original source grant080138d8 updates source owned equipment and event bank (entry remains originalnative in this artifact).",
+    "Fresh event L1 is inlined into behavior and waiter; standalone event entry080608bc is not installed by this candidate.",
+    "GetBehavior08013de0 observes canonical equipment/event state and returns source ITEM0/REFILL1/HINT2/HINT_TAKEN3.",
+    "Wait08014468 consumes selected current-record spriteId; REFILL1 sets pose43/work040. Hint2/3 does not start item countdown.",
+    "Timer08014494 decrements work0 per explicit eligible invocation; zero result selects IDLE9; input0 wraps255.",
+    "Original scheduler borrows record into scratch then copies back; fixture performs these moves explicitly rather than executing whole SpriteUpdate."
+  ],
+  "exactpins": {
+    "byte_qc": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/mzm-statue-consumption-qc.json",
+      "sha256": "50e1d754d7b2de7c83b4f1b954f7044390cbc49be226b386187633968b7ea483"
+    },
+    "context_qc": {
+      "path": "local/roundtrip/qc-review-wave2-20261016/mzm-statue-context-qc.json",
+      "sha256": "9c7721b886822732881de28bd038e048d40b8d36fe0512164beaa80887250217"
+    },
+    "cross_entry_native": {
+      "path": "local/roundtrip/mzm-statue-native-fixture-20261016/receipt.json",
+      "sha256": "22472ac25eb7436537ceda68647d33658905ebc6e07f49615431997bab792509"
+    },
+    "dependency_frontier": {
+      "path": "research/ir-workshop/roundtrip-20261016/wave2/frontier/mzm-statue-consumption-v2.json",
+      "sha256": "5bd9b2bb32f946aa53bf75f933952d712b3ae1520ff538e20d95a7387bd12fd1"
+    },
+    "prefab_graph": {
+      "path": "local/roundtrip/mzm-ir-statue-consumption-20261016/prefab-graph.json",
+      "sha256": "61ecf8bd90950a780bdf29d7a4053fc268e9b5cad22798b6bc1de7bf93170291"
+    },
+    "provider": {
+      "path": "local/roundtrip/mzm-ir-statue-consumption-20261016/provider-report.json",
+      "sha256": "e5de6f44378eaa4e14888c72baee28750a4849ce46bc4a53bf1cceb9fa83a419"
+    },
+    "publication_candidates": {
+      "path": "research/ir-workshop/roundtrip-20261016/mzm-ir/publication-candidates.json",
+      "sha256": "88e907e3f673186a7678517d356f72d0cf5a0d021f57ae56de3030ae7c2c99ca"
+    },
+    "source_contract": {
+      "path": "research/ir-workshop/roundtrip-20261016/mzm-ir/statue-consumption-contract/contract.json",
+      "sha256": "50f64ee5971fed5fca63945b6f2151b4b6b775a08ae278a243586ec117a36726"
+    }
+  },
+  "game_id": "metroid-zero-mission",
+  "gaps": [
+    "Synthetic bounded native entry calls; no full campaign or whole-game equivalence.",
+    "SpriteUpdate itself is not executed by cross-entry fixture; fixture explicitly borrows/copies back selected source record.",
+    "Arm admission08014794, morph/spatial prerequisites, original scene/animation/save lifetime and interrupt/concurrent intermediate observation remain open.",
+    "Selectors88/89/148 normally route to UnknownItemChozoStatue; direct consumer fixtures do not establish normal ChozoStatue scheduler reachability.",
+    "Canonical equipment ownership bits are not equipped/active weapon or ability bits."
+  ],
+  "id": "mzm.statue-consumption.source-entry-replacement.v1",
+  "module_id": "mzm.module.enemy-source-record",
+  "native_eligibility": {
+    "abi": "r4-r11/SP preservation;behavior full32 r0 return equality;wait/timer void",
+    "fixture_scope": "Synthetic branch/boundary/random entry state;68source cases over slots0/23 with whole canonical buffers/canaries;no whole scheduler/native campaign claim",
+    "fresh_runs_for_this_publication": 0,
+    "kind": "finite-original-and-reconstructed-entry-plus-source-driven-cross-entry-fixtures",
+    "limits": {
+      "cross_entry_cases": 68,
+      "instruction_cap_per_call": 2048,
+      "vectors_per_root_per_rom": 4096
+    },
+    "original_rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+    "rebuilt_rom_sha256": "a12cdeb6ea4d536c05519ee18b0b382a6822712eaec9bb4678de3b79c75cff36",
+    "retained_comparisons": {
+      "cross_entry_call_pairs": 1120,
+      "cross_entry_native_calls": 2240,
+      "original": 12288,
+      "rebuilt": 12288
+    }
+  },
+  "originalhostprerequisites": [
+    "Selected same-record source scratch during original AI phase; SpriteUpdate normal branch borrow932,secondary942/primary944,copyback955",
+    "Canonical progression session bank/equipment authority shared with prior acquisition/events packages",
+    "Source phase and selector gate;ordinary/hint34..49 route ChozoStatue,88/89/148 route UnknownItemChozoStatue",
+    "Admission/grant, animation, scene, save and concurrency services remain retained originalhost"
+  ],
+  "package_ids": [
+    "mzm.statue.behavior",
+    "mzm.statue.wait-collected",
+    "mzm.statue.after-item-timer"
+  ],
+  "proposal_status": "three-new-qualified-source-consumer-packages-with-retained-native-host",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": 6,
+    "closed_interchangeable_prefab": false,
+    "embedded_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 322,
+    "inlined_dependency_entries": [
+      "080608bc"
+    ],
+    "installed_entries": [
+      "08013de0",
+      "08014468",
+      "08014494"
+    ],
+    "mechanical_binding_bytes": 240,
+    "portable_L1": true,
+    "prior_library_entries_not_installed_in_this_artifact": [
+      "080138d8",
+      "080608bc"
+    ],
+    "raw_difference_bytes": 590,
+    "replacement_entry_veneer_bytes": 24,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "08013de0",
+    "08014468",
+    "08014494"
+  ],
+  "timing": {
+    "cross_entry_total_seconds": 0.23024016700000002,
+    "provider_total_seconds": 2.257550459,
+    "publication_scope": "Metadata only, no reruns",
+    "queue_seconds": null
+  }
+}

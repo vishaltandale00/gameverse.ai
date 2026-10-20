@@ -1,0 +1,948 @@
+{
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "id": "pmd.input-event-context.outside-rom-qualified.v1",
+  "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+  "module_id": "pmd.module.input_event_context",
+  "proposal_status": "additive-existing-package-capability-not-new-qualification",
+  "recorded_at_utc": "2026-10-16T21:05:09.903025+00:00",
+  "revision_reason": "Link existing qualified portable input modules and fresh118B executable-input/binary equality evidence; zero installedROM IR. Keep source-derived992B data reconstruction separate from executable/library qualification.",
+  "package_ids": [
+    "pmd.input.initialize",
+    "pmd.input.publish",
+    "pmd.input.suppress_repeat"
+  ],
+  "package_identities": [
+    {
+      "id": "pmd.input.initialize",
+      "version": "0.1.0",
+      "behavior_sha256": "2090e91812a0574f3322a8065d8eb2f31dd6f7c8f58e4800d1c31de7c1a110eb",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/pmd.input.initialize/package.json",
+        "sha256": "3e021b24750cb2b362ca95555d0639f99c9728770250eb13f6c7d1fa54db6212"
+      }
+    },
+    {
+      "id": "pmd.input.publish",
+      "version": "0.1.0",
+      "behavior_sha256": "e78284f48aa118cab56dd5d43c89e0490197e1638aa6508ce2254b0ed89caa08",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/pmd.input.publish/package.json",
+        "sha256": "7b9d17f7da2357bff297447f15f74aa0b30a29ab5e6248f0d2a4a1a3fdd08648"
+      }
+    },
+    {
+      "id": "pmd.input.suppress_repeat",
+      "version": "0.1.0",
+      "behavior_sha256": "2810964a99d0a6e2c44233b4b078f64ecd482705abc2744355610dcd76485606",
+      "central_package_unchanged": true,
+      "origin": "automatic_highfunction_lift",
+      "package": {
+        "path": "local/ir/packages/pmd.input.suppress_repeat/package.json",
+        "sha256": "53fb83665b956537d25872aae8148caf05245c0ec0184b8dd560ad82c6af50dd"
+      }
+    }
+  ],
+  "source_roots": [
+    "080047e8",
+    "0800485c",
+    "080048d0"
+  ],
+  "exactpins": {
+    "initialize_central_package_json": {
+      "path": "local/ir/packages/pmd.input.initialize/package.json",
+      "sha256": "3e021b24750cb2b362ca95555d0639f99c9728770250eb13f6c7d1fa54db6212"
+    },
+    "initialize_central_l0_json": {
+      "path": "local/ir/packages/pmd.input.initialize/l0.json",
+      "sha256": "d76bfab6eed71a697f619d2337f09637b6b4d99ac99436e8a42dc67c683d9e77"
+    },
+    "initialize_central_l1_json": {
+      "path": "local/ir/packages/pmd.input.initialize/l1.json",
+      "sha256": "2090e91812a0574f3322a8065d8eb2f31dd6f7c8f58e4800d1c31de7c1a110eb"
+    },
+    "initialize_central_validation-adapter_json": {
+      "path": "local/ir/packages/pmd.input.initialize/validation-adapter.json",
+      "sha256": "0c0d40ed2e3648ba6fe0a486870caf92983cd50b56709cd3e8fb22d3aa1aaa11"
+    },
+    "initialize_central_generated_c": {
+      "path": "local/ir/packages/pmd.input.initialize/generated.c",
+      "sha256": "0a5965748f298395c0a2c852bc6c70ea29776d132b278fcc248c431901d9e51c"
+    },
+    "initialize_central_receipt_json": {
+      "path": "local/ir/packages/pmd.input.initialize/receipt.json",
+      "sha256": "a8cfcb0007ef5bd11cd2278ab10442fac480b7b11cf94ce33a623a40c8529688"
+    },
+    "initialize_fresh_l0_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/l0.json",
+      "sha256": "e126d257d2cdc2f9d6235626f1f4621c875f3726a88f06f70160aca0808ab798"
+    },
+    "initialize_fresh_l1_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/l1.json",
+      "sha256": "83a959b776430518ec6cc493150b0951ba3c1b5b3663a3907b260ee2f48bfddb"
+    },
+    "initialize_fresh_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/validation-adapter.json",
+      "sha256": "0c0d40ed2e3648ba6fe0a486870caf92983cd50b56709cd3e8fb22d3aa1aaa11"
+    },
+    "initialize_fresh_generated_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/generated.c",
+      "sha256": "0a5965748f298395c0a2c852bc6c70ea29776d132b278fcc248c431901d9e51c"
+    },
+    "initialize_fresh_bound_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/bound.c",
+      "sha256": "a97af89a4c3773465fd0734904cb7ac71bacbf195347b49cb5b32f346fc84c7c"
+    },
+    "initialize_fresh_module_bin": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/module.bin",
+      "sha256": "fdbaa384f463ccbe0f09c28730123973827b267fb6371b8f2c72ba081e0eae99"
+    },
+    "initialize_fresh_module_elf": {
+      "path": "local/roundtrip/coverage-next-pmd-001/initialize/module.elf",
+      "sha256": "4de1452a678a22fc400572e52296d3c130ade6bed3ee43db26a337bdb0089706"
+    },
+    "initialize_prior_native_behavior_binary": {
+      "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/080047e8/generated.bin",
+      "sha256": "e46096fb191506cbfe07bd3b50a285fe194cbe03c1325ba4017ed93aa54c64ea"
+    },
+    "publish_central_package_json": {
+      "path": "local/ir/packages/pmd.input.publish/package.json",
+      "sha256": "7b9d17f7da2357bff297447f15f74aa0b30a29ab5e6248f0d2a4a1a3fdd08648"
+    },
+    "publish_central_l0_json": {
+      "path": "local/ir/packages/pmd.input.publish/l0.json",
+      "sha256": "d4c34aafdbf88fca2f4c777576efc862ce430100d0fd3c7b549e480811dd4a33"
+    },
+    "publish_central_l1_json": {
+      "path": "local/ir/packages/pmd.input.publish/l1.json",
+      "sha256": "e78284f48aa118cab56dd5d43c89e0490197e1638aa6508ce2254b0ed89caa08"
+    },
+    "publish_central_validation-adapter_json": {
+      "path": "local/ir/packages/pmd.input.publish/validation-adapter.json",
+      "sha256": "a2ff0f48f245e978aabbf2b34ffefb22298fdf725cfb648668e205bf55c0225a"
+    },
+    "publish_central_generated_c": {
+      "path": "local/ir/packages/pmd.input.publish/generated.c",
+      "sha256": "f2ec250405067b4e7a48881dc9a579937ed21506f8eec2f20eb13ddcdde574da"
+    },
+    "publish_central_receipt_json": {
+      "path": "local/ir/packages/pmd.input.publish/receipt.json",
+      "sha256": "7e2089e960b422c7d128b1c2562aea3ac4e2fd356fe90c60fab3f573ad207a0e"
+    },
+    "publish_fresh_l0_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/l0.json",
+      "sha256": "f0c69b2b8671439641ee9eea55e9c6b5fbfbb666e4c696d2f0e43c4133891208"
+    },
+    "publish_fresh_l1_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/l1.json",
+      "sha256": "f3235cbcd3f7a7af84d3c74221fd9b4dfde06fb37422f5d980bc3333053f12dd"
+    },
+    "publish_fresh_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/validation-adapter.json",
+      "sha256": "a2ff0f48f245e978aabbf2b34ffefb22298fdf725cfb648668e205bf55c0225a"
+    },
+    "publish_fresh_generated_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/generated.c",
+      "sha256": "f2ec250405067b4e7a48881dc9a579937ed21506f8eec2f20eb13ddcdde574da"
+    },
+    "publish_fresh_bound_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/bound.c",
+      "sha256": "a5944689b0737b8e1a5e48da66f1da557908eb26a7a64bbb8a0b07fa38ed26fc"
+    },
+    "publish_fresh_module_bin": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/module.bin",
+      "sha256": "b86a61ec0495d13f1b8fe8b5e39d5d7e6fe6bcaf6fbeb54fe0e2d37633e55509"
+    },
+    "publish_fresh_module_elf": {
+      "path": "local/roundtrip/coverage-next-pmd-001/publish/module.elf",
+      "sha256": "4b8bf1d6aca6c59f0db614bce249bab8ee871038cc6c5c037a4d018d930691eb"
+    },
+    "publish_prior_native_behavior_binary": {
+      "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/0800485c/generated.bin",
+      "sha256": "03b02a0058b23c66430c02515d92655760bbd9691078fcf2f610474f4bc1d4f0"
+    },
+    "suppress_repeat_central_package_json": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/package.json",
+      "sha256": "53fb83665b956537d25872aae8148caf05245c0ec0184b8dd560ad82c6af50dd"
+    },
+    "suppress_repeat_central_l0_json": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/l0.json",
+      "sha256": "2b4ecd98d1fc1735cbcf93b67c519df7941ff60e0a0b172f544531cb44c607bf"
+    },
+    "suppress_repeat_central_l1_json": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/l1.json",
+      "sha256": "2810964a99d0a6e2c44233b4b078f64ecd482705abc2744355610dcd76485606"
+    },
+    "suppress_repeat_central_validation-adapter_json": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/validation-adapter.json",
+      "sha256": "12ef45e0871f18621bdff6a8bd8f3b1d463c8baf061eedac8e986cf111c625c1"
+    },
+    "suppress_repeat_central_generated_c": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/generated.c",
+      "sha256": "8211b4c50a75fc7e323448f8384c35b5af07f6585b1f4d69aa38ee8569d2b74c"
+    },
+    "suppress_repeat_central_receipt_json": {
+      "path": "local/ir/packages/pmd.input.suppress_repeat/receipt.json",
+      "sha256": "efd4e4fee1261b26525aa6f1a847c3be46bd14d45de6d948a9cfba965736f16e"
+    },
+    "suppress_repeat_fresh_l0_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/l0.json",
+      "sha256": "16c1fbf540a0753dfcddd601788c59fb725eb622dab689d431d01c62bbe7c9b8"
+    },
+    "suppress_repeat_fresh_l1_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/l1.json",
+      "sha256": "80fcd3c7e7cd8a5621b29a6145c15f31b0a80685746d2a769a8697cb315a5251"
+    },
+    "suppress_repeat_fresh_validation-adapter_json": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/validation-adapter.json",
+      "sha256": "12ef45e0871f18621bdff6a8bd8f3b1d463c8baf061eedac8e986cf111c625c1"
+    },
+    "suppress_repeat_fresh_generated_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/generated.c",
+      "sha256": "8211b4c50a75fc7e323448f8384c35b5af07f6585b1f4d69aa38ee8569d2b74c"
+    },
+    "suppress_repeat_fresh_bound_c": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/bound.c",
+      "sha256": "87e76544d1d9aa3d07783bbd173181e8f89411c0f0c589a0da82f7e7252fc3cc"
+    },
+    "suppress_repeat_fresh_module_bin": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/module.bin",
+      "sha256": "5cce08f10b62a7a411d9a5ebca1a5380f21dfab62879e2d4d404845fbe43b357"
+    },
+    "suppress_repeat_fresh_module_elf": {
+      "path": "local/roundtrip/coverage-next-pmd-001/suppress_repeat/module.elf",
+      "sha256": "47dd234645615bc0bb47ad24b9c8c1583f23e0af81800dac38164557a0a22227"
+    },
+    "suppress_repeat_prior_native_behavior_binary": {
+      "path": "local/ir/fleet-next/pokemon-mystery-dungeon-red-rescue-team/080048d0/generated.bin",
+      "sha256": "36d4448c1d22c9e373f44afc54101e3f91e9724da8efa01123a8ad215f93eac2"
+    },
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/pmd-red/result.json",
+      "sha256": "57f1eab647dfdadabf0bdfd6f0f2a3c79ab46fa7b4151ed090f5ee871cb293b2"
+    },
+    "fresh_ir_result": {
+      "path": "local/roundtrip/coverage-next-pmd-001/ir-result.json",
+      "sha256": "e12b99b3b95525f50df4374ffb235bea75271a5a1d1907fe8c58e63ec5961028"
+    },
+    "executable_input_equivalence": {
+      "path": "local/roundtrip/coverage-next-pmd-001/prior-proof-executable-equivalence.json",
+      "sha256": "e9ae25273f11ad1c3cf35f0086c76c18315476251a626c8245d0805e942146b3"
+    },
+    "typed_dependencies": {
+      "path": "research/ir-workshop/coverage-wave-next/pmd-red/typed-dependencies.json",
+      "sha256": "a798ca78cda8c2d853eba176409d893c0f9a003c0c3d66e26763442a9e6c6677"
+    },
+    "typed_source_asset_producer": {
+      "path": "local/roundtrip/coverage-next-pmd-assets-001/typed-data-proof-v2.json",
+      "sha256": "5894030a92c9a0c49d568bb42583e9cd4a7d258aba9de7bdf0c97d66e2d90749"
+    },
+    "data_manifest": {
+      "path": "local/roundtrip/coverage-next-pmd-assets-001/exact-reconstruction/manifest.json",
+      "sha256": "f2c2cd5990056dfc3119c346f1862652de773e256b58740c3bb342778d5c5cc0"
+    },
+    "data_comparison": {
+      "path": "local/roundtrip/coverage-next-pmd-assets-001/exact-reconstruction/comparison.json",
+      "sha256": "4183dd76bd946950e31cc856c2ac49248ccc4ff1733e9e12b42af2194466eb01"
+    },
+    "byte_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/pmd-data-qc.json",
+      "sha256": "4068cc69ef9d355a9fb7b6f9032c398c8cc1a56fdc692c891a5a5204224ee7a0"
+    },
+    "context_qc": {
+      "path": "local/roundtrip/qc-review-coverage-wave-next/pmd-context-qc.json",
+      "sha256": "4871046a94e97ddd769ee75ee99901c444ab362631e902cc0fe74e68e4059d7c"
+    },
+    "source_input_definition": {
+      "path": "local/decomps/pmd-red/src/input.c",
+      "sha256": "07f855bae46ee8d302cd6b86b9e0bc62754e1cf8a81089414da5415a620e3f29"
+    },
+    "source_input_types": {
+      "path": "local/decomps/pmd-red/include/input.h",
+      "sha256": "678188d2f0908950c3fd6aafa9fcdd45b3b233f0e64c24345c08678e3ab15919"
+    },
+    "source_rom_identity": {
+      "path": "local/decomps/pmd-red/red.sha1",
+      "sha256": "b3e9576237f1434e0ef47657b555865988fed0f0e45828de8d536acd8395d444"
+    },
+    "source_call_consumer": {
+      "path": "local/decomps/pmd-red/src/dungeon_main.c",
+      "sha256": "7daf903b44586acefe989f7a5804f541ff5d9decff48891faede157f62fe87fb"
+    },
+    "source_symbol_mapping": {
+      "path": "local/decomps/pmd-red/symbols/pmd_red.sym",
+      "sha256": "0ebe43ce17ada2ea9aa7d2ab5685f1fabb9eb40f320940e7676f827a31a51e02"
+    }
+  },
+  "canonicalstate": {
+    "owner": "Original global input-event context, existing modulepmd.module.input_event_context; published/buffered/current/timer records share original canonical backing across packages. No detached input contexts or independent timer copies.",
+    "adapter_global_views_by_package": {
+      "pmd.input.initialize": [
+        {
+          "name": "field_0",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707504
+        },
+        {
+          "name": "field_1",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707506
+        },
+        {
+          "name": "field_2",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707508
+        },
+        {
+          "name": "field_3",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707510
+        },
+        {
+          "name": "field_4",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707520
+        },
+        {
+          "name": "field_5",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707522
+        },
+        {
+          "name": "field_6",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707524
+        },
+        {
+          "name": "field_7",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707526
+        },
+        {
+          "name": "field_8",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707528
+        },
+        {
+          "name": "field_9",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707530
+        },
+        {
+          "name": "field_10",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707532
+        },
+        {
+          "name": "field_11",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707534
+        },
+        {
+          "name": "field_12",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707536
+        },
+        {
+          "name": "field_13",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707538
+        },
+        {
+          "name": "field_14",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707540
+        },
+        {
+          "name": "field_15",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707542
+        },
+        {
+          "name": "field_16",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707548
+        },
+        {
+          "name": "field_17",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707550
+        },
+        {
+          "name": "field_18",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707552
+        },
+        {
+          "name": "field_19",
+          "width": 8,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707560
+        },
+        {
+          "name": "field_20",
+          "width": 8,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707561
+        },
+        {
+          "name": "field_21",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707564
+        },
+        {
+          "name": "field_22",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707576
+        },
+        {
+          "name": "field_23",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707578
+        },
+        {
+          "name": "field_24",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707580
+        },
+        {
+          "name": "field_25",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707582
+        },
+        {
+          "name": "field_26",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707624
+        },
+        {
+          "name": "field_27",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707626
+        }
+      ],
+      "pmd.input.publish": [
+        {
+          "name": "field_0",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707504
+        },
+        {
+          "name": "field_1",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707508
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707512
+        },
+        {
+          "name": "field_3",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707516
+        },
+        {
+          "name": "field_4",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707520
+        },
+        {
+          "name": "field_5",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707522
+        },
+        {
+          "name": "field_6",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707524
+        },
+        {
+          "name": "field_7",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707526
+        },
+        {
+          "name": "field_8",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707528
+        },
+        {
+          "name": "field_9",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707530
+        },
+        {
+          "name": "field_10",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707532
+        },
+        {
+          "name": "field_11",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707534
+        },
+        {
+          "name": "field_12",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707536
+        },
+        {
+          "name": "field_13",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707538
+        },
+        {
+          "name": "field_14",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707540
+        },
+        {
+          "name": "field_15",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707542
+        },
+        {
+          "name": "field_16",
+          "width": 8,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707560
+        },
+        {
+          "name": "field_17",
+          "width": 8,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707561
+        },
+        {
+          "name": "field_18",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707576
+        },
+        {
+          "name": "field_19",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707578
+        },
+        {
+          "name": "field_20",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707580
+        },
+        {
+          "name": "field_21",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707582
+        },
+        {
+          "name": "field_22",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707584
+        },
+        {
+          "name": "field_23",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707588
+        }
+      ],
+      "pmd.input.suppress_repeat": [
+        {
+          "name": "field_0",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707508
+        },
+        {
+          "name": "field_1",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707600
+        },
+        {
+          "name": "field_2",
+          "width": 32,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707604
+        },
+        {
+          "name": "field_3",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707624
+        },
+        {
+          "name": "field_4",
+          "width": 16,
+          "owner": "global",
+          "argument": null,
+          "address": 0,
+          "offset": 33707626
+        }
+      ]
+    },
+    "source_structs": "Inputs16B:held+0,pressed+2,repeated+4,shortPress+6,heldDpad+8,repeatTimerDpad+12;InputTimers8B;UnusedInputStruct44B.",
+    "alias_rules": [
+      "Publishfield0u32 at020255f0 aliases initheldu16at020255f0 and pressedu16at020255f2, low/upperhalves. Publishfield1u32at020255f4 aliases repeated/shortPressu16 lanes.",
+      "Suppressrepeatfield0u16at020255f4 is the same publishedrepeat halfword; not a copied bitset.",
+      "Initializer and suppressrepeat shareInputTimers02025668/6a u16cells.",
+      "BufferedInputs02025638 and publishedRealInputs020255f0 remain distinct source records; publication copies sourcepackedstate then clearsbufferedlanes; do not aliasbuffer to published.",
+      "Unknown ancillary/input-coupled scrambledJUNK fields remain opaque sourceeffects, not invented controls or gameplay semantics."
+    ],
+    "source_consumer": "sub_805EC4C reads samegRealInputs.held Bbit; dungeonactor/turnconsumer remains native/pointerblocked.",
+    "data_producer_scope": "Separate992Bsource-derived consumed reconstruction:960BunknownmonpalRGB8+0x80 physicalpalettebank +32Bdirection native-logic table. No executablebody credit or wholeassetconsumer closure."
+  },
+  "capability_phases": [
+    {
+      "id": "initialize-input-context",
+      "package_id": "pmd.input.initialize",
+      "phase_kind": "source_initialization_leaf",
+      "scheduled_sequence": null
+    },
+    {
+      "id": "publish-buffered-input",
+      "package_id": "pmd.input.publish",
+      "phase_kind": "source_publication_leaf",
+      "scheduled_sequence": null
+    },
+    {
+      "id": "suppress-repeat",
+      "package_id": "pmd.input.suppress_repeat",
+      "phase_kind": "source_repeat_reset_leaf",
+      "scheduled_sequence": null
+    }
+  ],
+  "dependencylinks": [
+    {
+      "from": "pmd.input.initialize",
+      "to": "pmd.input.publish",
+      "kind": "canonical_shared_global_context",
+      "proof": {
+        "path": "local/decomps/pmd-red/src/input.c",
+        "sha256": "07f855bae46ee8d302cd6b86b9e0bc62754e1cf8a81089414da5415a620e3f29"
+      },
+      "automatic_schedule": false
+    },
+    {
+      "from": "pmd.input.publish",
+      "to": "pmd.input.suppress_repeat",
+      "kind": "shared_published_repeat_halfword",
+      "address": "020255f4",
+      "automatic_schedule": false
+    },
+    {
+      "from": "pmd.input.initialize",
+      "to": "pmd.input.suppress_repeat",
+      "kind": "shared_input_timer_storage",
+      "addresses": [
+        "02025668",
+        "0202566a"
+      ],
+      "automatic_schedule": false
+    },
+    {
+      "from": "pmd.input.publish",
+      "to": "native.sub_805EC4C",
+      "kind": "source_published_held_consumer",
+      "address": "020255f0",
+      "proof": {
+        "path": "local/decomps/pmd-red/src/dungeon_main.c",
+        "sha256": "7daf903b44586acefe989f7a5804f541ff5d9decff48891faede157f62fe87fb"
+      },
+      "status": "consumerautomaticIRblockednestedactorreference"
+    }
+  ],
+  "event_order": [
+    "Source initialization clears canonicalpublished/bufferedlanes and sets ancillary/timerstate. This is a separate initialization capability, not an automatic action on use/config selection.",
+    "Original hardwareinputproducer accumulatesbufferedinput; hardwarecapture/pause policy remains native.",
+    "SourceLoadBufferedInputs publishes samecontext packedstate then clearsoriginal bufferedlanes; no independent stagedcopy invented.",
+    "ResetRepeatTimers suppresses sharedrepeat/timers at sourceinvocation boundary. No unconditional sequence with initialization/publication asserted."
+  ],
+  "native_eligibility": {
+    "kind": "retained_published_portable_source_body_qualification_plus_fresh_executable_input_binary_identity",
+    "outside_cartridge_qualified": true,
+    "actual_source_entry_install": false,
+    "current_or_general_ROM_replacement_eligible": false,
+    "closed_portable_prefab": false,
+    "original_rom_sha256": "ad316814c77ed083734d816ebcde2ece390efae8d15bcb6c66d7c2862d82eb68",
+    "fresh_bound_or_installed_entry_native_qualified": false,
+    "exact_full_fresh_L1_proof_reused": false,
+    "vectors": {
+      "retained_original": 3072,
+      "fresh_rebuilt": 0,
+      "fresh_this_metadata_pass": 0
+    },
+    "lineage": [
+      {
+        "package_id": "pmd.input.initialize",
+        "source_entry": "080047e8",
+        "retained_native_vectors": 1024,
+        "original_rom_sha256": "ad316814c77ed083734d816ebcde2ece390efae8d15bcb6c66d7c2862d82eb68",
+        "fresh_C_exact_prior_receipt_input": true,
+        "fresh_adapter_exact_prior_receipt_input": true,
+        "fresh_full_L1_exact_prior_receipt_input": false,
+        "L1_difference": "semantic_type annotation metadata only; executable tree equal after excluding semantic_type",
+        "fresh_linked_behavior_bytes_exact_prior_native_binary": true,
+        "linked_behavior_offset": 0,
+        "linked_behavior_bytes": 44,
+        "linked_behavior_sha256": "e46096fb191506cbfe07bd3b50a285fe194cbe03c1325ba4017ed93aa54c64ea",
+        "claim_scope": "Existing central published fullL1 qualification remains its own lineage. Fresh annotationdifferentL1 has executable-input/binary equality evidence only, no new or exactfullL1 native receipt. Mechanicalbinding/installedROM unqualified."
+      },
+      {
+        "package_id": "pmd.input.publish",
+        "source_entry": "0800485c",
+        "retained_native_vectors": 1024,
+        "original_rom_sha256": "ad316814c77ed083734d816ebcde2ece390efae8d15bcb6c66d7c2862d82eb68",
+        "fresh_C_exact_prior_receipt_input": true,
+        "fresh_adapter_exact_prior_receipt_input": true,
+        "fresh_full_L1_exact_prior_receipt_input": false,
+        "L1_difference": "semantic_type annotation metadata only; executable tree equal after excluding semantic_type",
+        "fresh_linked_behavior_bytes_exact_prior_native_binary": true,
+        "linked_behavior_offset": 0,
+        "linked_behavior_bytes": 58,
+        "linked_behavior_sha256": "03b02a0058b23c66430c02515d92655760bbd9691078fcf2f610474f4bc1d4f0",
+        "claim_scope": "Existing central published fullL1 qualification remains its own lineage. Fresh annotationdifferentL1 has executable-input/binary equality evidence only, no new or exactfullL1 native receipt. Mechanicalbinding/installedROM unqualified."
+      },
+      {
+        "package_id": "pmd.input.suppress_repeat",
+        "source_entry": "080048d0",
+        "retained_native_vectors": 1024,
+        "original_rom_sha256": "ad316814c77ed083734d816ebcde2ece390efae8d15bcb6c66d7c2862d82eb68",
+        "fresh_C_exact_prior_receipt_input": true,
+        "fresh_adapter_exact_prior_receipt_input": true,
+        "fresh_full_L1_exact_prior_receipt_input": false,
+        "L1_difference": "semantic_type annotation metadata only; executable tree equal after excluding semantic_type",
+        "fresh_linked_behavior_bytes_exact_prior_native_binary": true,
+        "linked_behavior_offset": 0,
+        "linked_behavior_bytes": 16,
+        "linked_behavior_sha256": "36d4448c1d22c9e373f44afc54101e3f91e9724da8efa01123a8ad215f93eac2",
+        "claim_scope": "Existing central published fullL1 qualification remains its own lineage. Fresh annotationdifferentL1 has executable-input/binary equality evidence only, no new or exactfullL1 native receipt. Mechanicalbinding/installedROM unqualified."
+      }
+    ],
+    "certificate_boundary": "Prior1024-vector proof perexisting centralpackage remains exact ownlineage. FreshC+adapter and emittedbehaviorbytes are identical; annotation-differentL1 not granted a replacement fullL1receipt. QC verifies source-data consumption/executableinputidentity only; no installedentry/binding/runtime qualification."
+  },
+  "independent_qc": {
+    "status": "data_pass_executable_installation_blocked",
+    "refs": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/pmd-data-qc.json",
+        "sha256": "4068cc69ef9d355a9fb7b6f9032c398c8cc1a56fdc692c891a5a5204224ee7a0"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/pmd-context-qc.json",
+        "sha256": "4871046a94e97ddd769ee75ee99901c444ab362631e902cc0fe74e68e4059d7c"
+      }
+    ],
+    "scope": "992Bsource/data reconstruction exact;118Bintermediatebody/320Bbinding/2Balignment byteevidence. No installedIR/nativecandidatequalification."
+  },
+  "runtime_capabilities": {
+    "portable_L1": true,
+    "outside_cartridge_qualified": true,
+    "actual_source_entry_replacement": false,
+    "installed_ir_bytes": 0,
+    "intermediate_behavior_bytes": 118,
+    "intermediate_mechanical_binding_bytes": 320,
+    "intermediate_alignment_bytes": 2,
+    "source_data_regenerated_consumed_bytes": 992,
+    "source_physical_palette_bytes": 960,
+    "source_native_logic_data_bytes": 32,
+    "physical_palette_runtime_consumer_closed": false,
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "current_or_general_ROM_replacement_eligible": false,
+    "whole_game_equivalent": null
+  },
+  "counts": {
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 0,
+    "prior_qualified_roots_linked": 3,
+    "new_source_entry_installations": 0,
+    "new_native_runs_for_capability": 0,
+    "new_builds_for_capability": 0,
+    "historical_original_native_comparisons": 3072,
+    "fresh_rebuilt_native_comparisons": 0,
+    "do_not_pool_data_and_executable_ir": true
+  },
+  "originalhostprerequisites": [
+    "Original sharedinputcontext lifetime/canonicalstorage and original producer/consumer invocation policy.",
+    "No initialization on libraryselection/configuration and no authoredinputphase lifecycle.",
+    "32MiBcartridgewith explicit sourceincbin tailtoEOF; no availableinstallationarena proved.",
+    "Exact sourceRevision013475aa04f5be3191e5527c186d9bfceae7cae0 and ROMSHA1 9f4cfc5b5f4859d17169a485462e977c7aac2b89; no fullsourcebaselinebuild claimed."
+  ],
+  "gaps": [
+    "InstalledIR0. Boundmodule sizes192>116,188>92,60>40 originalenvelopes; cannot installwithout supported storage/relocation proof.",
+    "FreshfullL1 differssemanticannotations; qualification reuse scopedtoexactC/adapter/binary executableidentity only.",
+    "Mechanicalbinding/module runtime not newlyqualified; no generalROMreplacement or wholeinputlifecycle readiness.",
+    "Hardwareinputproducer,pause/controller/dungeonactorconsumer,lifetime/interrupt/concurrentobservation remain native/unqualified.",
+    "992Bsource-derived data consumed is independent typedassetproducer evidence;palette runtimeconsumer/image/monsterbinding unknown beyond source resource-name directory.",
+    "33553440Bremain opaque in exactdatareconstruction; unknown wholephysicalasset and executableclosure remain."
+  ],
+  "timing": {
+    "fresh_ir_generation_seconds": 0.168377958,
+    "source_data_compile_converter_seconds": 0.564246166,
+    "queue_seconds": null,
+    "scope": "Reuse frozen PMDevidence; metadata-onlyproposal and staticinput/binaryidentity checks; no newcompilation/native/extraction."
+  }
+}

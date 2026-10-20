@@ -62,3 +62,25 @@ test('research discovery searches display titles and keeps the evidence filter s
   const withRecords=filterGames(catalog.games,'',true);assert.ok(withRecords.length>1);assert.ok(withRecords.every(g=>g.components.length));
   assert.equal(filterGames(catalog.games,'no such title').length,0);
 });
+
+test('public progress preserves source counts and distinguishes static evidence from qualification',async()=>{
+  const read=async path=>JSON.parse(await readFile(new URL(`../${path}`,import.meta.url)));
+  const status=await read('research/automatic-ir/status.json');
+  const coverage=await read('research/automatic-ir/mario-mechanic-coverage.json');
+  const targets=await read('research/deep-extraction/mario/mechanics-targets.json');
+  const fleet=await read('research/deep-extraction/resume/dispatch-summary.json');
+  const p=catalog.progress;
+  assert.equal(p.pipeline.objective_status,status.objective_status);
+  assert.equal(p.pipeline.retained_native_qualified_packages,status.retained_native_qualified_packages);
+  assert.equal(p.pipeline.typed_port_subset_packages,status.typed_port_subset_packages);
+  for(const field of ['original_function_package_subsets','declared_linked_sequence_package_subsets'])assert.equal(p.pipeline[field],status[field]);
+  if(Number.isFinite(status.original_function_package_subsets))assert.equal(p.pipeline.original_function_package_subsets+p.pipeline.declared_linked_sequence_package_subsets,p.pipeline.retained_native_qualified_packages);
+  assert.equal(p.mario.targets,targets.targets.length);
+  assert.equal(p.mario.openFamilies,coverage.games.flatMap(g=>g.families).filter(f=>!f.coverage_complete).length);
+  assert.equal(p.fleet.readyPackets,fleet.games.filter(g=>g.state==='packet_ready').length);
+  assert.match(p.fleet.scope,/no compilation or native qualification/);
+  assert.equal(p.sources.length,4);
+  for(const source of p.sources)assert.equal(catalog.inputs[source.path],source.sha256);
+  assert.ok(p.fleet.games.every(g=>g.packet&&!('packet_sha256' in g)));
+  assert.deepEqual(p.fleet.games.map(g=>g.next_action),fleet.games.map(g=>g.next_action));
+});

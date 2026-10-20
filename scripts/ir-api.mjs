@@ -1,6 +1,9 @@
-import { spawn } from 'node:child_process';
+import { readRegisteredPrefab } from './prefab-manifest.mjs';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile, rename, realpath, copyFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, realpath, copyFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +18,71 @@ const writeJson = async (path, value) => {
   await rename(temp, path);
 };
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
+
+const exec = promisify(execFile);
+const assemblyRoute = '/api/ir/assembly/validate';
+function checkAssemblyEnvelope(graph) {
+  if (!graph || typeof graph !== 'object' || Array.isArray(graph)) throw failure(400, 'Send a mechanic graph object.');
+  const pending = [[graph, 0]]; let nodes = 0;
+  while (pending.length) {
+    const [value, depth] = pending.pop();
+    if (++nodes > 20000 || depth > 24) throw failure(413, 'The mechanic graph exceeds the structural limit.');
+    if (typeof value === 'string' && value.length > 4096) throw failure(413, 'Keep graph literals within 4,096 characters.');
+    if (typeof value === 'number' && (!Number.isFinite(value) || (Number.isInteger(value) && !Number.isSafeInteger(value)))) throw failure(400, 'Use finite, safely represented numeric graph literals.');
+    if (value && typeof value === 'object') for (const child of Object.values(value)) pending.push([child, depth + 1]);
+  }
+  if (Object.keys(graph.components || {}).length > 32 || Object.keys(graph.state || {}).length > 128 || (Array.isArray(graph.invocations) && graph.invocations.length > 128)) throw failure(413, 'Use at most 32 components, 128 state slots and 128 invocations.');
+}
+async function validateAssemblyGraph(root, graph) {
+  const directory = await mkdtemp(resolve(tmpdir(), 'gameverse-assembly-'));
+  try {
+    const request = resolve(directory, 'request.json'), output = resolve(directory, 'result.json');
+    await writeFile(request, JSON.stringify(graph), { mode: 0o600 });
+    await exec('python3', [resolve(root, 'tools/behavior_ir/assembly.py'), '--request', request, '--out', output], {
+      cwd: root, timeout: 10000, killSignal: 'SIGKILL', maxBuffer: 128 * 1024,
+    });
+    if ((await stat(output)).size > 4 * 1024 * 1024) throw failure(502, 'The mechanic graph validation response exceeds its limit.');
+    const result = await readJson(output);
+    if (result.schema !== 'gameverse.mechanic-assembly-validation/0.1' || typeof result.valid !== 'boolean' || !Array.isArray(result.errors)) throw failure(502, 'The mechanic graph validator returned an invalid result.');
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw failure(503, error.killed || error.signal === 'SIGKILL' ? 'Mechanic graph validation exceeded its 10-second limit.' : 'Mechanic graph validation could not complete. Existing graphs and games are unchanged.');
+  } finally { await rm(directory, { recursive: true, force: true }); }
+}
+
+const prefabSources = new Map([
+  ['mzm.enemy.accepted-damage-and-reaction', 'closure/damage-reaction-compat-20261016.assembly.json'],
+  ['tmc.learned_sword_charge_release', 'progression/learning.assembly.json'],
+  ['sonic.usa.character_traversal.air_phase', 'traversal/air-advance.assembly.json'],
+  ['aria.soul.acquire.category0', 'combat-progression-bundles/aria-category0.assembly.json'],
+  ['aria.soul.acquire.category1', 'combat-progression-bundles/aria-category1.assembly.json'],
+  ['aria.soul.acquire.category2', 'combat-progression-bundles/aria-category2.assembly.json'],
+  ['aria.soul.acquire.category3', 'combat-progression-bundles/aria-category3.assembly.json'],
+  ['wl4.protection.query_subset', 'combat-progression-bundles/wario-protection.assembly.json'],
+  ['tekken.actor.geometry_publication_reset', 'combat-progression-bundles/tekken-geometry.assembly.json'],
+]);
+const recoveredSystemRoute = '/api/ir/systems/mzm-damage-reaction';
+function checkRecoveredSystemInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => !['damage', 'hp', 'ticks'].includes(key))) throw failure(400, 'Use only damage, hp and ticks.');
+  for (const key of Object.keys(input)) if (!Number.isInteger(input[key]) || input[key] < 0 || input[key] > (key === 'ticks' ? 64 : 65535)) throw failure(400, `${key} must be an integer from 0 to ${key === 'ticks' ? 64 : 65535}.`);
+}
+async function runRecoveredSystem(root, input, readiness = false) {
+  return new Promise((accept, reject) => {
+    const child = execFile('python3', ['-B', resolve(root, 'research/ir-workshop/game-system-assembly-20261016/closure/run.py'), ...(readiness ? ['--readiness'] : [])], {
+      cwd: root, timeout: 15000, killSignal: 'SIGKILL', maxBuffer: 256 * 1024,
+    }, (error, stdout) => {
+      if (error) return reject(failure(503, error.killed ? 'System inspection exceeded its 15-second limit.' : 'System inspection could not complete. Existing games are unchanged.'));
+      try {
+        const result = JSON.parse(stdout);
+        if (readiness ? result.ready !== true : (result.schema !== 'gameverse.recovered-system-trace/1' || !Array.isArray(result.trace) || result.trace.length > 66)) throw Error('Invalid system response.');
+        accept(result);
+      } catch { reject(failure(502, 'The recovered system returned an invalid trace.')); }
+    });
+    child.stdin.on('error', () => {});
+    child.stdin.end(readiness ? undefined : JSON.stringify(input));
+  });
+}
 
 async function compilerOptions(root) {
   return new Promise((accept, reject) => {
@@ -72,9 +140,9 @@ export function validateSubmission(body, catalog) {
 }
 
 export function createIrApi({ root = workspace, directory = resolve(root, 'local-data/ir-runs'), timeoutMs = 60000,
-  catalogProvider = () => executableCatalog(root), spawnImpl = spawn } = {}) {
+  catalogProvider = () => executableCatalog(root), spawnImpl = spawn, assemblyValidator = graph => validateAssemblyGraph(root, graph), systemRunner = input => runRecoveredSystem(root, input), systemReadiness = () => runRecoveredSystem(root, null, true) } = {}) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 300000) throw Error('IR_BUILD_TIMEOUT_MS must be 1000..300000.');
-  let active = null;
+  let active = null, assemblyActive = false, systemActive = false;
   const jobDir = id => resolve(directory, id);
   const metaPath = id => resolve(jobDir(id), 'job.json');
   async function readStatus(id) {
@@ -148,7 +216,8 @@ export function createIrApi({ root = workspace, directory = resolve(root, 'local
     await copyFile(await artifactPath(id, 'rom'), resolve(games, `${sha(bytes)}.gba`));
     const receipt = { schema: 'gameverse.ir.play-registration/0.1', gameId: 'ir-workshop', runId: id, sha256: sha(bytes),
       title: status.title, requestSha256: status.compiler.request_sha256, submissionSha256: status.submission_sha256,
-      qualification: status.compiler.qualification, selectedAt: new Date().toISOString() };
+      qualification: status.compiler.qualification, selectedAt: new Date().toISOString(),
+      ...(typeof status.playNotes === 'string' && status.playNotes.trim() && status.playNotes.length <= 1000 ? { playNotes: status.playNotes.trim() } : {}) };
     await writeJson(resolve(games, 'ir-workshop.json'), receipt);
     return { outcome: 'registered', game_id: 'ir-workshop', artifact_sha256: receipt.sha256, play_url: '/v0?view=play&game=ir-workshop' };
   }
@@ -170,7 +239,38 @@ export function createIrApi({ root = workspace, directory = resolve(root, 'local
     try {
       const method = req.method, match = /^\/api\/ir\/runs\/([^/]+)(?:\/(activate|artifacts\/([^/]+)))?$/.exec(path);
       if (method === 'GET' || method === 'HEAD') {
-        if (path === '/api/ir/catalog') json(res, 200, await catalogProvider(), method === 'HEAD');
+        if (path.startsWith('/api/ir/system-prefabs/')) {
+          const id = path.slice('/api/ir/system-prefabs/'.length), relative = prefabSources.get(id);
+          let registered;
+          if (!relative) {
+            try { registered = await readRegisteredPrefab(root, id); }
+            catch { json(res, 200, { ready: false, id, error: 'The registered source assembly is unavailable or its artifact pins changed.' }, method === 'HEAD'); return true; }
+            if (!registered) throw failure(404, 'Recovered system prefab not found.');
+          }
+          if (assemblyActive) { json(res, 409, { ready: false, error: 'Another mechanic graph validation is running.' }, method === 'HEAD'); return true; }
+          assemblyActive = true;
+          try {
+            let graph, source, registration;
+            if (registered) { ({ graph, source, registration } = registered); }
+            else {
+              const sourceRef = 'research/ir-workshop/game-system-assembly-20261016/' + relative, file = resolve(root, sourceRef);
+              if ((await stat(file)).size > 256 * 1024) throw Error('Prefab graph exceeds limit.');
+              const bytes = await readFile(file); graph = JSON.parse(bytes); source = { ref: sourceRef, sha256: sha(bytes) };
+            }
+            checkAssemblyEnvelope(graph);
+            const validation = await assemblyValidator(graph);
+            json(res, 200, validation.valid ? { ready: true, id, graph: validation.normalized_graph, validation, source, ...(registration ? { registration } : {}), scope: 'Current structural binding admission only; runtime and source-system obligations remain unproven.' } : { ready: false, id, error: 'Current published components do not admit this source assembly.', validation }, method === 'HEAD');
+          } catch { json(res, 200, { ready: false, id, error: 'The source assembly is not currently available for binding.' }, method === 'HEAD'); }
+          finally { assemblyActive = false; }
+        } else if (path === recoveredSystemRoute) {
+          if (systemActive) json(res, 200, { ready: false, error: 'A recovered system inspection is running.' }, method === 'HEAD');
+          else {
+            systemActive = true;
+            try { json(res, 200, await systemReadiness(), method === 'HEAD'); }
+            catch { json(res, 200, { ready: false, error: 'Current source packages and core bindings are not ready for inspection.' }, method === 'HEAD'); }
+            finally { systemActive = false; }
+          }
+        } else if (path === '/api/ir/catalog') json(res, 200, await catalogProvider(), method === 'HEAD');
         else if (match && !match[2]) json(res, 200, await readStatus(match[1]), method === 'HEAD');
         else if (match?.[3]) {
           const file = await artifactPath(match[1], match[3]), bytes = await readFile(file);
@@ -181,6 +281,30 @@ export function createIrApi({ root = workspace, directory = resolve(root, 'local
         const host = req.headers.host;
         let hostname; try { hostname = new URL(`http://${host}`).hostname; } catch { throw failure(403, 'Local origin required.'); }
         if (!['127.0.0.1', 'localhost', '[::1]'].includes(hostname) || req.headers.origin !== `http://${host}`) throw failure(403, 'Use the local Gameverse page to submit IR requests.');
+        if (path === recoveredSystemRoute) {
+          if (!req.headers['content-type']?.startsWith('application/json')) throw failure(415, 'Send JSON damage, hp and ticks.');
+          let bytes = 0; const chunks = [];
+          for await (const chunk of req) { bytes += chunk.length; if (bytes > 8192) throw failure(413, 'Keep system inputs within 8 KiB.'); chunks.push(chunk); }
+          let input; try { input = JSON.parse(Buffer.concat(chunks).toString()); } catch { throw failure(400, 'System input JSON is invalid.'); }
+          checkRecoveredSystemInput(input);
+          if (systemActive) throw failure(409, 'Another recovered system inspection is running.');
+          systemActive = true;
+          try { json(res, 200, await systemRunner(input)); }
+          finally { systemActive = false; }
+          return true;
+        }
+        if (path === assemblyRoute) {
+          if (!req.headers['content-type']?.startsWith('application/json')) throw failure(415, 'Send a JSON mechanic graph.');
+          let bytes = 0; const chunks = [];
+          for await (const chunk of req) { bytes += chunk.length; if (bytes > 256 * 1024) throw failure(413, 'Keep the mechanic graph within 256 KiB.'); chunks.push(chunk); }
+          let graph; try { graph = JSON.parse(Buffer.concat(chunks).toString()); } catch { throw failure(400, 'The mechanic graph JSON is invalid.'); }
+          checkAssemblyEnvelope(graph);
+          if (assemblyActive) throw failure(409, 'Another mechanic graph validation is running. Try again when it finishes.');
+          assemblyActive = true;
+          try { json(res, 200, await assemblyValidator(graph)); }
+          finally { assemblyActive = false; }
+          return true;
+        }
         if (match?.[2] === 'activate') json(res, 200, await activate(match[1]));
         else if (path === '/api/ir/runs') {
           if (!req.headers['content-type']?.startsWith('application/json')) throw failure(415, 'Send a JSON IR request.');

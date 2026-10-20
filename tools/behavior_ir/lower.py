@@ -4,6 +4,7 @@ import argparse,json
 T={'u8':'uint8_t','u16':'uint16_t','u32':'uint32_t','u64':'uint64_t'}
 def expr(e):
  op=e['op'];t=T[e['type']];bits=int(e['type'][1:]);a=e.get('args',[])
+ if op=='resource_reference':return f'((uint32_t)UINT32_C({e["token"]}))'
  if op=='const':return f'(({t})UINT64_C({e["value"]}))'
  if op=='field':return 's->'+e['name']
  if op in('parameter','local'):return e['name']
@@ -75,7 +76,7 @@ static uint64_t ir_sext(uint64_t v,unsigned src,unsigned dst){uint64_t m=ir_mask
 def lower(x,*,native_service_emitter=None):
  from contract import validate
  validate(x)
- native=bool(x.get('retained_services'))
+ native=bool(x.get('retained_services')or x.get('resource_references'))
  if native:
   if native_service_emitter is None or not callable(getattr(native_service_emitter,'validate_module',None)):raise ValueError('retained service requires explicit validated native emitter')
   native_service_emitter.validate_module(x)

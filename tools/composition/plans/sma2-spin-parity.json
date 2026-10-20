@@ -1,0 +1,138 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mario-sma2-spin-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "super-mario-advance-2-super-mario-world",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "Own ROM accepted-spin recovery and native adapter"
+  },
+  "execution": {
+    "clock": "native_accepted_spin_contact",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "accepted_spin_contact"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "enemy_terminal",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "enemy_terminal",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_bounce_chain",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "player_bounce_chain",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "particles_rewards",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "particles_rewards",
+        "unit": "native_fields",
+        "frame": "SMA2_side_view"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "components": [
+    {
+      "id": "spin",
+      "provides": [
+        "combat.spin_stomp@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "enemy_terminal",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "player_bounce_chain",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "particles_rewards",
+          "phase": "accepted_spin_contact",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-lift-evidence.json",
+        "evidence_refs": [
+          "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "accepted-contact",
+      "detail": "Original host retains full contact eligibility; this is a source-parity local interaction component, not full game extraction"
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sma2-usa-spin.host.json",
+      "sha256": "f6573b1812b36d969d5bd45ec0d3a46f0de4dd46684676b8400bd6319cfb9c91"
+    },
+    "packages": [
+      {
+        "instance": "spin",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma2-spin-host.json",
+          "sha256": "896038d832dbfdce01a27e4c19bc286d51f451132d678cc3ffa6dedf3d454528"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "spin",
+        "instance": "spin",
+        "symbol": "sma2_host_spin",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 8192,
+    "timeout_s": 15,
+    "max_build_s": 30
+  }
+}

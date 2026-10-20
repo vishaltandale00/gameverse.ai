@@ -1,0 +1,736 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "sonic-advance",
+  "sourceSystemIds": [
+    "sonic-advance.source-system.6ecb0c97fa"
+  ],
+  "blueprintIds": [
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Original Sonic accelerates along slopes, jumps with release control, carries momentum through surface orientation andlands/retries through native world state. This delivery supplies selected phases only.",
+    "phases": [
+      {
+        "id": "input",
+        "label": "Native input and task dispatch",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Hardware input\u2192pressed/held capture and exact source player clock"
+        ]
+      },
+      {
+        "id": "ground",
+        "label": "Ground control, slope and tangent motion",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Input/friction/ground action gates and terrain handoff not closed; existing three geometry leaves lack public typed ports"
+        ]
+      },
+      {
+        "id": "jump",
+        "label": "Jump admission and launch",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Headroom, pose andsound services remainrequired; original jump root is not a published automatic controller"
+        ]
+      },
+      {
+        "id": "release",
+        "label": "Air jump release and character ability",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Ability spawn/audio side-effect closure remainsmandatory"
+        ]
+      },
+      {
+        "id": "steer",
+        "label": "Air steering, overspeed and upward drag",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "sonic-source-air-steering"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          {
+            "id": "canonical_actor",
+            "required": true,
+            "contract": "One persistent source actor backing; identical named actor slots across phases must be mapped to that same source record, not cloned component actors."
+          },
+          {
+            "id": "source_player_tick",
+            "required": true,
+            "contract": "Host calls once per source actor update in source air modes 2 or 6; no assumed render frequency."
+          },
+          {
+            "id": "source_world_boundary",
+            "required": true,
+            "contract": "Original 0x08043E8C world wrap/bounds must execute after steering and before this integration phase; not included or stubbed."
+          },
+          {
+            "id": "source_release_and_landing",
+            "required": true,
+            "contract": "Source 0x0804463C release/ability precedes steering; rotation+directional air contact 0x08042E08 follow advance; all remain host-required."
+          }
+        ],
+        "gaps": []
+      },
+      {
+        "id": "world",
+        "label": "World wrap, bounds and defeat boundary",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Unbounded stage asset index and shared camera/secondary actor aliases remain unclosed"
+        ]
+      },
+      {
+        "id": "advance",
+        "label": "Air position integration andgravity",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "sonic-source-air-advance"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          {
+            "id": "canonical_actor",
+            "required": true,
+            "contract": "One persistent source actor backing; identical named actor slots across phases must be mapped to that same source record, not cloned component actors."
+          },
+          {
+            "id": "source_player_tick",
+            "required": true,
+            "contract": "Host calls once per source actor update in source air modes 2 or 6; no assumed render frequency."
+          },
+          {
+            "id": "source_world_boundary",
+            "required": true,
+            "contract": "Original 0x08043E8C world wrap/bounds must execute after steering and before this integration phase; not included or stubbed."
+          },
+          {
+            "id": "source_release_and_landing",
+            "required": true,
+            "contract": "Source 0x0804463C release/ability precedes steering; rotation+directional air contact 0x08042E08 follow advance; all remain host-required."
+          }
+        ],
+        "gaps": []
+      },
+      {
+        "id": "land",
+        "label": "Rotation anddirectional terraincontact/landing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Mandatory SWI 0x0A angle service, sixth stack callback/angle-output alias and four directional landing controllers remain unclosed"
+        ]
+      },
+      {
+        "id": "scene",
+        "label": "Death/retry, scene transition and persistence",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+          "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Not closed from original source; no source game reconstructed or persistent state claim"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "ground",
+        "kind": "source-call",
+        "scope": "Mode dispatch selects attached or rolling path; not every frame."
+      },
+      {
+        "from": "input",
+        "to": "release",
+        "kind": "source-call",
+        "scope": "Mode dispatch selects air mode2 or6."
+      },
+      {
+        "from": "ground",
+        "to": "jump",
+        "kind": "source-call",
+        "scope": "Conditional original jump admission; successful gate returns before ground tail."
+      },
+      {
+        "from": "jump",
+        "to": "release",
+        "kind": "event",
+        "scope": "Successful launch enters airborne state for a subsequent source update; not an unconditional same-frame call."
+      },
+      {
+        "from": "release",
+        "to": "steer",
+        "kind": "source-call",
+        "scope": "Original air dispatcher orders release/ability before steering."
+      },
+      {
+        "from": "steer",
+        "to": "world",
+        "kind": "host-required",
+        "scope": "Original worldwrap/bounds must execute after steering; omitted from portable transactions, never stubbed."
+      },
+      {
+        "from": "world",
+        "to": "advance",
+        "kind": "host-required",
+        "scope": "Integration follows mandatory world boundary, then gravity."
+      },
+      {
+        "from": "advance",
+        "to": "land",
+        "kind": "source-call",
+        "scope": "Original rotation recovery and directional collision follow integration/gravity."
+      },
+      {
+        "from": "land",
+        "to": "ground",
+        "kind": "event",
+        "scope": "Accepted landing changes source movement state for later dispatch; full handler remains unresolved."
+      },
+      {
+        "from": "world",
+        "to": "scene",
+        "kind": "event",
+        "scope": "Defeat flag can lead to original lifecycle callback on a later update; no reconstructed retry implementation."
+      },
+      {
+        "from": "scene",
+        "to": "input",
+        "kind": "host-required",
+        "scope": "Original scene/task host must initialize or restore actor and world before input resumes."
+      }
+    ],
+    "missingForCoreGame": [
+      "Hardware input\u2192pressed/held capture and exact source player clock",
+      "Input/friction/ground action gates and terrain handoff not closed; existing three geometry leaves lack public typed ports",
+      "Headroom, pose andsound services remainrequired; original jump root is not a published automatic controller",
+      "Ability spawn/audio side-effect closure remainsmandatory",
+      "Unbounded stage asset index and shared camera/secondary actor aliases remain unclosed",
+      "Mandatory SWI 0x0A angle service, sixth stack callback/angle-output alias and four directional landing controllers remain unclosed",
+      "Not closed from original source; no source game reconstructed or persistent state claim",
+      "Actor/task/render/camera/session host integration and full game event reachability remain unproven"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "sonic-source-air-motion-phases",
+      "label": "Original Sonic airborne motion phases",
+      "moduleId": "sonic.usa.character_traversal.air_phase",
+      "sourceGame": "sonic-advance",
+      "sourceSystemId": "sonic-advance.source-system.6ecb0c97fa",
+      "sourceContractRef": "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "sonic.motion.air_steering",
+        "sonic.motion.gravity",
+        "sonic.motion.integrate"
+      ],
+      "availability": "published-subset",
+      "scope": "Original source exact published motion transactions; canonicalactor state crossesexplicit host world boundary service. No manually transcribed whole controller or automatic whole game claim.",
+      "gaps": [
+        "Hardware input\u2192pressed/held capture and exact source player clock",
+        "Input/friction/ground action gates and terrain handoff not closed; existing three geometry leaves lack public typed ports",
+        "Headroom, pose andsound services remainrequired; original jump root is not a published automatic controller",
+        "Ability spawn/audio side-effect closure remainsmandatory",
+        "Unbounded stage asset index and shared camera/secondary actor aliases remain unclosed",
+        "Mandatory SWI 0x0A angle service, sixth stack callback/angle-output alias and four directional landing controllers remain unclosed",
+        "Not closed from original source; no source game reconstructed or persistent state claim",
+        "Actor/task/render/camera/session host integration and full game event reachability remain unproven"
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+        "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+      ],
+      "canonicalState": {
+        "identity": "sonic.usa.character_traversal.air_phase:canonical-actor",
+        "fields": [
+          "actor_x",
+          "actor_y",
+          "actor_vx",
+          "actor_vy",
+          "actor_flags",
+          "actor_max_speed",
+          "actor_acceleration",
+          "actor_held",
+          "actor_pose"
+        ],
+        "aliasRule": "All actor fields inall selected phases belongtoone source actor; same-slot shared bindings are explicit. Stage current/prior history stays in distinct context fields. One module instance across role facets."
+      },
+      "roleFacets": [
+        {
+          "roleId": "control",
+          "capability": "airborne-motion-advance-and-source-steering",
+          "status": "published-subset",
+          "scope": "Actual validated prefab outputs only; does not produce jump admission, input capture or landing events",
+          "evidence": [
+            "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+            "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.validation.json"
+          ]
+        },
+        {
+          "roleId": "terrain",
+          "capability": "required-directional-contact-handoff",
+          "status": "source-only",
+          "scope": "Explicit required native terrain/landing service, not a published terrain producer",
+          "evidence": [
+            "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+            "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+          ]
+        }
+      ],
+      "recoveredAssemblies": [
+        {
+          "id": "sonic-source-air-advance",
+          "label": "Sonic air position advance and gravity",
+          "assemblyRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.assembly.json",
+          "validationRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+          "descriptorRef": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+          "packageIds": [
+            "sonic.motion.gravity",
+            "sonic.motion.integrate"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        },
+        {
+          "id": "sonic-source-air-steering",
+          "label": "Sonic airborne steering and upward drag",
+          "assemblyRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.assembly.json",
+          "validationRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.validation.json",
+          "descriptorRef": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+          "packageIds": [
+            "sonic.motion.air_steering"
+          ],
+          "readyToAdd": true,
+          "runtimeQualified": false
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "sonic-source-air-advance",
+        "label": "Sonic air position advance and gravity",
+        "assemblyRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.assembly.json",
+        "validationRef": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+        "descriptorRef": "research/deep-extraction/source-game-prefabs/sonic-advance/delivery.json",
+        "packageIds": [
+          "sonic.motion.gravity",
+          "sonic.motion.integrate"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "sonic-source-air-advance",
+      "moduleId": "sonic.usa.character_traversal.air_phase",
+      "label": "Sonic air position advance and gravity",
+      "path": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.assembly.json",
+      "sha256": "4a0ef274802682dabb4f08a25848b28a9163759b484c623cd4aa0d768cc87a11",
+      "validation": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+      "validationSha256": "4e066f10131494a77f581dab83bb78930aca81124ae4c64483e0d2b170a0d57e",
+      "inputs": [
+        {
+          "id": "actor_x",
+          "label": "actor x",
+          "storageType": "u32",
+          "default": 25600,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "actor_x"
+        },
+        {
+          "id": "actor_y",
+          "label": "actor y",
+          "storageType": "u32",
+          "default": 51200,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "actor_y"
+        },
+        {
+          "id": "actor_vx",
+          "label": "actor vx",
+          "storageType": "u16",
+          "default": 768,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "actor_vx"
+        },
+        {
+          "id": "actor_vy",
+          "label": "actor vy",
+          "storageType": "u16",
+          "default": 64256,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "actor_vy"
+        },
+        {
+          "id": "stage_flags_current",
+          "label": "stage flags current",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "stage_flags_current"
+        },
+        {
+          "id": "stage_flags_previous",
+          "label": "stage flags previous",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "stage_flags_previous"
+        },
+        {
+          "id": "actor_flags",
+          "label": "actor flags",
+          "storageType": "u32",
+          "default": 258,
+          "domain": "Exact published source storage width; no new gameplayrange or runtime reachability claim",
+          "binding": "actor_flags"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "position",
+          "binding": [
+            "actor_x",
+            "actor_y"
+          ],
+          "meaning": "Updated Q8 source world position after old velocity integration"
+        },
+        {
+          "id": "vertical_velocity",
+          "binding": "actor_vy",
+          "meaning": "Stored Q8 vertical velocity after source gravity and any inversion-transition handling"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "normal",
+          "label": "Ordinary source air context",
+          "graph": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.assembly.json",
+            "sha256": "4a0ef274802682dabb4f08a25848b28a9163759b484c623cd4aa0d768cc87a11"
+          },
+          "validation": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+            "sha256": "4e066f10131494a77f581dab83bb78930aca81124ae4c64483e0d2b170a0d57e"
+          },
+          "initializeOverrides": {},
+          "meaning": "Finite caller context using original branch input fields; not a new behavior variant or a new sourcegame."
+        },
+        {
+          "id": "water",
+          "label": "Source water flag context",
+          "graph": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-water.assembly.json",
+            "sha256": "54288f467d7a8fa73ad7b44c9cd5c2f60f3e69a2c6c18706832b8e32b6dd3325"
+          },
+          "validation": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-water.validation.json",
+            "sha256": "e5ba4c2e2e644c7184c646b6a904e0c45752e8128094d3b98bcbe11da436f7dc"
+          },
+          "initializeOverrides": {
+            "actor_flags": 322
+          },
+          "meaning": "Finite caller context using original branch input fields; not a new behavior variant or a new sourcegame."
+        }
+      ],
+      "preconditions": [
+        "Current and prior stage flags both have 0x80 clear, matching published world.y.down velocity frame.",
+        "Caller must enforce source air phase and canonical actor identity."
+      ],
+      "excludedConfigurations": [
+        {
+          "id": "inversion_transition",
+          "graph": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-inversion_transition.assembly.json",
+            "sha256": "a425fc1632cae8ae155e303fb36ae1e93e5916f5c6bc36ca0f220ef3a14b8d88"
+          },
+          "validation": {
+            "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-inversion_transition.validation.json",
+            "sha256": "87daa1bfba703ea0cc9e026a3e33c16f90456989bd844f4bc545493bcd660fd1"
+          },
+          "status": "source-only conditional frame adapter unresolved",
+          "reason": "Original0470B4 subtracts storedvy when gravity flag0x80 set; published world.y.down frame does not alone establish gravity-relative velocity mapping."
+        }
+      ],
+      "phases": [
+        {
+          "id": "advance-air-motion",
+          "trigger": "Host source air update after world boundary",
+          "invocations": [
+            "integrate",
+            "gravity"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceRelativeOrder": "Original source call order retained; frame entry remains a host obligation"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "canonical_actor",
+          "required": true,
+          "contract": "One persistent source actor backing; identical named actor slots across phases must be mapped to that same source record, not cloned component actors."
+        },
+        {
+          "id": "source_player_tick",
+          "required": true,
+          "contract": "Host calls once per source actor update in source air modes 2 or 6; no assumed render frequency."
+        },
+        {
+          "id": "source_world_boundary",
+          "required": true,
+          "contract": "Original 0x08043E8C world wrap/bounds must execute after steering and before this integration phase; not included or stubbed."
+        },
+        {
+          "id": "source_release_and_landing",
+          "required": true,
+          "contract": "Source 0x0804463C release/ability precedes steering; rotation+directional air contact 0x08042E08 follow advance; all remain host-required."
+        }
+      ],
+      "gaps": [
+        "No release, steering, input, world boundary, angle or landing producer in this phase",
+        "No composed native parity or whole air controller qualification"
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+        "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json"
+      ],
+      "qualificationScope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+      "runtimeQualified": false,
+      "readyToAdd": true
+    },
+    {
+      "id": "sonic-source-air-steering",
+      "moduleId": "sonic.usa.character_traversal.air_phase",
+      "label": "Sonic airborne steering and upward drag",
+      "path": "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.assembly.json",
+      "sha256": "15fb7034000211c690cba781beadcdaa6d4a2a996052eef31157196ea5a6927c",
+      "validation": "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.validation.json",
+      "validationSha256": "3d8421ff3e53792e0595996b856c5946b33a47154b2e0744c1361ea99a763fdd",
+      "inputs": [
+        {
+          "id": "actor_vx",
+          "label": "actor vx",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_vx"
+        },
+        {
+          "id": "actor_vy",
+          "label": "actor vy",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_vy"
+        },
+        {
+          "id": "actor_flags",
+          "label": "actor flags",
+          "storageType": "u32",
+          "default": 258,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_flags"
+        },
+        {
+          "id": "actor_max_speed",
+          "label": "actor max speed",
+          "storageType": "u32",
+          "default": 1536,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_max_speed"
+        },
+        {
+          "id": "actor_acceleration",
+          "label": "actor acceleration",
+          "storageType": "u32",
+          "default": 24,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_acceleration"
+        },
+        {
+          "id": "actor_held",
+          "label": "actor held",
+          "storageType": "u16",
+          "default": 0,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_held"
+        },
+        {
+          "id": "actor_pose",
+          "label": "actor pose",
+          "storageType": "u8",
+          "default": 0,
+          "domain": "Qualifiedsourcebitpatterns; cap/acceldefaults are validatedfixtureexamples, notclaimedSonicnative defaults",
+          "binding": "actor_pose"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "steered_velocity",
+          "binding": "actor_vx",
+          "meaning": "Sourceinput-conditioned lateralvelocity withcapcrossing/inheritedoverspeed/upwarddrag retained"
+        },
+        {
+          "id": "facing",
+          "binding": "actor_flags",
+          "meaning": "Originalfacing bit mutation retainingotherflags"
+        }
+      ],
+      "preconditions": [
+        "Current and prior source stage gravity flags have 0x80 clear, so source vy matches declared world.y.down frame."
+      ],
+      "phases": [
+        {
+          "id": "steer-air-motion",
+          "trigger": "Hostsourceairupdate afterrelease/ability gate",
+          "invocations": [
+            "steering"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceRelativeOrder": "Original source call order retained; frame entry remains a host obligation"
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "canonical_actor",
+          "required": true,
+          "contract": "One persistent source actor backing; identical named actor slots across phases must be mapped to that same source record, not cloned component actors."
+        },
+        {
+          "id": "source_player_tick",
+          "required": true,
+          "contract": "Host calls once per source actor update in source air modes 2 or 6; no assumed render frequency."
+        },
+        {
+          "id": "source_world_boundary",
+          "required": true,
+          "contract": "Original 0x08043E8C world wrap/bounds must execute after steering and before this integration phase; not included or stubbed."
+        },
+        {
+          "id": "source_release_and_landing",
+          "required": true,
+          "contract": "Source 0x0804463C release/ability precedes steering; rotation+directional air contact 0x08042E08 follow advance; all remain host-required."
+        }
+      ],
+      "gaps": [
+        "Release/ability gate and worldboundary remainmandatorypre/post hostcalls",
+        "Notgroundcontrol, jumpinitiation or landing"
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/resume/sonic-advance/next-extraction/source-facts.json",
+        "research/deep-extraction/resume/sonic-advance/next-extraction/l2-contract.json",
+        "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json"
+      ],
+      "qualificationScope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure. Individualsteering leafhasseparate1024nativepairs; thisgraphisnotcomposednativequalified.",
+      "runtimeQualified": false,
+      "readyToAdd": true
+    }
+  ],
+  "sourceAdvance": {
+    "kind": "new_automatic_native_leaf_with_source_expected_cases",
+    "entry": "0804456c",
+    "intake": {
+      "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/steering-intake.json",
+      "sha256": "1a16b53ad40ac324f9c831bed1cc5ff28d205f358b63b85253db0e2a8f8d6e9b"
+    },
+    "outcome": "published",
+    "nativePairs": 1024,
+    "expectedSourceCases": 16,
+    "wholeController": false,
+    "attemptReceipts": [
+      "local/ir/fleet-next/sonic-advance/air-steering-prefab-01/probe.json",
+      "local/ir/fleet-next/sonic-advance/air-steering-prefab-02/probe.json"
+    ],
+    "pairAccounting": "Two1024pair qualifications ofthesame root; secondadds16sourceexpectedcases. Do notcount two newsource mechanics or2048unique cases."
+  },
+  "timing": {
+    "runId": "sonic-source-prefabs-20261016",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.010510708,
+    "newValidationCount": 0,
+    "buildSeconds": null,
+    "nativeSeconds": 0.5555602500000001,
+    "nativeFinalSeconds": 0.298798334,
+    "sourceQualificationAttempts": 2,
+    "sourceLiftFixtureSeconds": 0.013143374999999999,
+    "totalSeconds": null,
+    "beforeAfter": null,
+    "accounting": "Native leaf qualification includes nested compile/link/parity; graph validation is separate. Cached graph receipts reused where actual graph, package pins and validator are unchanged. No ROM/game build or native campaign. Total analysis and queue time unavailable; no speedup claim."
+  },
+  "checks": [
+    {
+      "phase": "air-advance",
+      "configuration": "normal",
+      "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-normal.validation.json",
+      "wall_s": 0.004378832999999999,
+      "reused": true
+    },
+    {
+      "phase": "air-advance",
+      "configuration": "water",
+      "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-advance-water.validation.json",
+      "wall_s": 0.0013478750000000018,
+      "reused": true
+    },
+    {
+      "phase": "air-steering",
+      "ref": "research/deep-extraction/source-game-prefabs/sonic-advance/air-steering.validation.json",
+      "wall_s": 0.004784,
+      "reused": true
+    }
+  ],
+  "retiredGamePolicy": "Old SonicMetroid campaign permanently retired; this delivery creates only original source prefab graphs, no game/ROM."
+}

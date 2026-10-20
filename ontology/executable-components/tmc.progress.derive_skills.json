@@ -6,14 +6,14 @@
   "source_game": "legend-of-zelda-the-the-minish-cap",
   "origin": "automatic_highfunction_lift",
   "package_ref": "local/ir/packages/tmc.progress.derive_skills/package.json",
-  "package_sha256": "f62865697bb4a90634d8a678a20a85a101bae03d46c8ca42b94fdcd9cf1a902f",
-  "behavior_sha256": "3c683d0489f455e5421a875ed3b88970977800b02d1458087816e3dd54ddfef8",
+  "package_sha256": "e3bed4e57a2259b5e7e358bc4b7e758b8ae8ebee069d330e7b726fc808a62b3f",
+  "behavior_sha256": "e873924e09361e8935a843b474aa3eae6cd7eb656ca40a2b20a523a13a055a63",
   "qualification": {
     "status": "pass",
     "receipt": "receipt.json",
     "vectors": 16384,
-    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
-    "receipt_sha256": "8662a1748ba13066cc392f2c6706ddfb502047925b0ebcb34e773ca4b4e8ffd2"
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "410f91c5ec89daf03465b8940184e3cdcf16fb6a306e8165236e1f0377c03d0a"
   },
   "configurations": [],
   "state_owners": [],
@@ -98,6 +98,8 @@
   "limitations": [
     "Acyclic structured CFG only",
     "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
     "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
   ]
 }

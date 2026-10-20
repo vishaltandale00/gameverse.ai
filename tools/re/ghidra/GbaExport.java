@@ -90,6 +90,7 @@ public class GbaExport extends GhidraScript {
 		long td0 = System.currentTimeMillis();
 		int ok = 0, failed = 0, timedOut = 0;
 		List<Map<String, Object>> failures = new ArrayList<>();
+		Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
 		if (decompile) {
 			List<DecompInterface> ifcs = Collections.synchronizedList(new ArrayList<>());
 			ThreadLocal<DecompInterface> tl = ThreadLocal.withInitial(() -> {
@@ -110,6 +111,10 @@ public class GbaExport extends GhidraScript {
 				futs.add(pool.submit(() -> decompileOne(tl.get(), f, timeout)));
 			}
 			int done = 0;
+			// Keep completed work when the process-level ROM cap interrupts a long
+			// batch. This journal is NEVER the final export or whole-ROM coverage.
+			// Flush bounded cohorts rather than fsyncing every generated function.
+			try (Writer partial = Files.newBufferedWriter(outDir.resolve("partial-functions.jsonl"), StandardCharsets.UTF_8)) {
 			for (int i = 0; i < funcs.size(); i++) {
 				Map<String, Object> d;
 				try {
@@ -131,14 +136,32 @@ public class GbaExport extends GhidraScript {
 					fl.put("error", d.get("decomp_error"));
 					failures.add(fl);
 				}
-				if (++done % 2000 == 0) println("decompiled " + done + "/" + funcs.size());
+				Map<String, Object> journalRecord = new LinkedHashMap<>(r);
+				quarantineIoDirections(journalRecord);
+				partial.write(gson.toJson(journalRecord));
+				partial.write('\n');
+				done++;
+				if (done == 1 || done % 64 == 0 || done == funcs.size()) {
+					partial.flush();
+					Map<String, Object> checkpoint = new LinkedHashMap<>();
+					checkpoint.put("run_id", args.get("run_id"));
+					checkpoint.put("script_hash", args.get("script_hash"));
+					checkpoint.put("status", "partial_journal_not_final_export");
+					checkpoint.put("records_flushed", done);
+					checkpoint.put("discovered_function_count", funcs.size());
+					checkpoint.put("decompiled_count", ok);
+					checkpoint.put("decompile_failures", failed);
+					checkpoint.put("elapsed_decompile_ms", System.currentTimeMillis() - td0);
+					Files.writeString(outDir.resolve("partial-progress.json"), gson.toJson(checkpoint), StandardCharsets.UTF_8);
+				}
+				if (done % 2000 == 0) println("decompiled " + done + "/" + funcs.size());
+			}
 			}
 			pool.shutdown();
 			for (DecompInterface ifc : ifcs) ifc.dispose();
 		}
 		long decompMs = System.currentTimeMillis() - td0;
 
-		Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
 		try (Writer w = Files.newBufferedWriter(outDir.resolve("functions.jsonl"), StandardCharsets.UTF_8)) {
 			for (Map<String, Object> r : recs.values()) {
 				quarantineIoDirections(r);

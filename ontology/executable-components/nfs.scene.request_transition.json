@@ -1,0 +1,114 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "nfs.scene.request_transition",
+  "label": "NFS scene transition request",
+  "role": "progression.scene_transition_request",
+  "source_game": "need-for-speed-underground",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/nfs.scene.request_transition/package.json",
+  "package_sha256": "8ccbaeb6cff7eb2a84e97a576029e071889dd5caabb82e11ad93136269bf38f3",
+  "behavior_sha256": "54567b79cfff7ba5f38797be5cd0cc8d97fe4c5bb7ac4955355225bc2c987e80",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d7e9180ab9818190a4226e2b0bc34b5c2231c7d9f8fdb4513078189e9e234540"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u8",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "signed_fade_countdown",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_scene_update",
+        "confidence": 0.9,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/need-for-speed-underground/l0/08001790.json",
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "opaque_requested_scene_identifier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_scene_dispatch",
+        "confidence": 0.8,
+        "evidence": [
+          "local/ir/queue-runs/20261016T091004/need-for-speed-underground/l0/08001790.json",
+          "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 4,
+    "collections": []
+  },
+  "lifecycle": {
+    "invocation": "Synchronous source scene-transition request; caller owns shared state and schedules later consumers.",
+    "ordered_effects": [
+      "Set opaque sentinel byte to255",
+      "Store requested scene identifier low byte",
+      "Set signed fade countdown to-16",
+      "Clear opaque auxiliary word"
+    ],
+    "ownership": "Four fields refer to shared source scene context. The requested-scene byte and opaque sentinel byte are adjacent original storage; preserve any wider shared views at integration.",
+    "external_clock": "Source controller advances signed fade one toward zero per invocation; cadence, output services and complete dispatcher remain unqualified.",
+    "initialization": "Helper overwrites its four fields; broader context initialization/lifetime is external.",
+    "teardown": "No allocation, deallocation or retained callback in this helper."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/nfs.scene.request_transition/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite synthetic native parity qualifies this helper only, not identity entry, full scene transition or persistence.",
+    "Opaque auxiliary word and sentinel byte meanings remain unknown; observed constants do not establish typed units.",
+    "Scene identifier is an opaque byte; legality and dispatch target domains were not qualified.",
+    "Fade unit is one source controller step; wall-clock seconds and display-frame cadence are unknown.",
+    "No shared integration qualification with overlapping wider state views.",
+    "Input hardware, timer services, editor audio/presentation and copy/persistence dependencies remain open in the source contract.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/need-for-speed-underground/next-extraction/system.json",
+    "sha256": "188d651206131d9d19bcac92208a7f0c90e8c0dd2ad73b183c345a644026e09a"
+  }
+}

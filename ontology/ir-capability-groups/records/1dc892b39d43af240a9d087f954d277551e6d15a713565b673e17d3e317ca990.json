@@ -1,0 +1,145 @@
+{
+  "canonicalstate": {
+    "adapter_globals": {
+      "ffta.random.next15": [
+        {
+          "address": 0,
+          "argument": null,
+          "name": "field_0",
+          "offset": 50345136,
+          "owner": "global",
+          "width": 32
+        }
+      ]
+    },
+    "owner": "Independent borrowed canonical u32 PRNG state",
+    "readonly_assets": [],
+    "relation": "Independent module; no content-query dependency"
+  },
+  "capability_phase": {
+    "id": "independent-random-state-step",
+    "ordering_claim": "Only source-internal effects, no sequence across separate entries",
+    "phase_kind": "bounded-internal-support",
+    "requires_query_execution": false,
+    "scheduled_sequence": null
+  },
+  "counts": {
+    "do_not_pool_historical_and_fresh": true,
+    "fresh_original_native_comparisons": 256,
+    "fresh_rebuilt_native_comparisons": 256,
+    "historical_native_comparisons": 0,
+    "new_central_packages": 0,
+    "new_distinct_source_functions": 1,
+    "new_native_runs_for_publication": 0,
+    "prospective_new_central_packages": 1
+  },
+  "event_order": [
+    "Source body advances canonical state and returns masked 15-bit value; no game clock or content query connection asserted"
+  ],
+  "exactpins": {
+    "frozen_result": {
+      "path": "research/ir-workshop/coverage-wave-next/ffta/result.json",
+      "sha256": "257534387e24e38489d209c454b3f56e03ce5ff99e2dc9a4601ae3d73463d6e6"
+    },
+    "independent_qc": [
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-ir-qc.json",
+        "sha256": "f56ecef12935a90264c43086e01972530a1acb5b6bdc386089b6523194e4e4d0"
+      },
+      {
+        "path": "local/roundtrip/qc-review-coverage-wave-next/ffta-context-qc.json",
+        "sha256": "71c0a6a3af7b63a61e08f6abe292e628b2dbeed10d3de552777045dde4f39e6c"
+      }
+    ],
+    "producer_report": {
+      "path": "local/roundtrip/coverage-next-ffta-ir-001/provider-report.json",
+      "sha256": "bdbe601ddd7da37d233c5625d4d0776bdc2f9a45a350a104a3f8b4d63b36e9f5"
+    },
+    "proofs": {
+      "random": {
+        "original": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/random/original-proof.json",
+          "sha256": "aaa1459f0bc99b5ad2b15b7495fea5f741076a550479b4877856c7d716c2a113"
+        },
+        "rebuilt": {
+          "path": "local/roundtrip/coverage-next-ffta-ir-001/random/rebuilt-proof.json",
+          "sha256": "fd686a9ab8169ccb8b8b85cba7ebb29d28dd4e14f306adfea118e6a32b0cf2b4"
+        },
+        "source_oracle": {
+          "path": "local/roundtrip/coverage-next-ffta-inputs-001/random-fixtures.json",
+          "sha256": "97a96f9289e2835f93f1239c720077f4e53030d229fb3a35406e5e091e87657a"
+        }
+      }
+    },
+    "source_contract": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-pins.json",
+      "sha256": "c476c27f7abab21f7ebe569398140c646c37ab3b9e706fc75777eaa092611f2f"
+    },
+    "source_oracle": {
+      "path": "local/roundtrip/coverage-next-ffta-inputs-001/source-oracle.c",
+      "sha256": "4e2ba8710df1c6cf2d51cd66e2066a99e865d8516ba20ee1606677db4f1aa510"
+    }
+  },
+  "game_id": "final-fantasy-tactics-advance",
+  "gaps": [
+    "Original callers, scheduler, saves, initialization and concurrent lifecycle remain open",
+    "No whole-game semantic closure or interchangeable primary prefab",
+    "Palette 512 source-data serialization only; typed consumer OPEN and no closed asset regeneration credit",
+    "Index readers share context without composed execution; PRNG remains independent"
+  ],
+  "id": "ffta.random.next15.source-entry.v1",
+  "module_id": "ffta.random.canonical_state",
+  "native_eligibility": {
+    "ABI_checks": [
+      "callee_saved_r4_r11",
+      "stack_balance",
+      "qualified_return_width"
+    ],
+    "incoming_r3_parameter_or_entity_dependency": false,
+    "kind": "finite_direct_original_and_reconstructed_entry_parity_with_source_oracle",
+    "original_rom_sha256": "43fc8204c6dceee58828aebc7af0c72eb807e99f35ad641c8bb0a4fa8b6edc19",
+    "rebuilt_rom_sha256": "4b3dad50a092360b2d9902e1ffa29fcb6f604c3f77e9c063f68f207fced8f348",
+    "scope": "Synchronous canonical global AAPCS; finite selected u16/u32 boundaries; no concurrent or IRQ observer",
+    "vectors_each_entry": {
+      "original": 256,
+      "rebuilt": 256
+    }
+  },
+  "originalhostprerequisites": [
+    "Exact USA revision 0 source and ROM pin",
+    "Canonical RAM with no stack alias and original AAPCS caller",
+    "Native callers and scheduler preserve storage authority; no fixed FPS or automatic loop assumed"
+  ],
+  "package_ids": [
+    "ffta.random.next15"
+  ],
+  "proposal_status": "candidate-new-central-packages-finite-native-proofs-reused",
+  "runtime_capabilities": {
+    "actual_source_entry_replacement": true,
+    "alignment_bytes": null,
+    "alignment_note": "Two shared payload alignment bytes not allocated by group",
+    "closed_interchangeable_prefab": false,
+    "downstream_joint_lifecycle": false,
+    "embedded_readonly_asset_bytes": 0,
+    "generated_behavior_bytes": 28,
+    "mechanical_binding_bytes": 32,
+    "portable_L1": true,
+    "replacement_entry_veneer_bytes": 8,
+    "whole_game_equivalent": null
+  },
+  "schema": "gameverse.ir-library-capability-proposal/1",
+  "source_roots": [
+    "08002804"
+  ],
+  "timing": {
+    "new_publication_native_seconds": null,
+    "provider_total_seconds": 1.849078208,
+    "queue_seconds": null,
+    "scope": "One shared provider run across all three entries; do not add per proposal"
+  },
+  "proposal_parent": {
+    "path": "research/ir-workshop/coverage-wave-next/ffta/publication-candidates-v2.json",
+    "sha256": "ffbef75ba0e39efbb690dccd9e12d7dc626bf93a3e39e014eca7dafc237fe923",
+    "json_pointer": "/capability_proposals/1"
+  }
+}

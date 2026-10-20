@@ -1,0 +1,753 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "driv3r.contact.initialize_records",
+  "label": "Initialize four contact position records",
+  "role": "contact_record_initialization",
+  "source_game": "driv3r",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/driv3r.contact.initialize_records/package.json",
+  "package_sha256": "2daa39236205ba558a714d8c66177d7b18b71c0f4cfd27be63c23a22db6deedf",
+  "behavior_sha256": "7341817acf2563f56fd45e2028d885dce6aaf0471766700ee0cb954e5118b481",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 64,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b646e6fce340f08fdfa755e4627f79e4ed6f770bf95b55b07eb9b01c8d1874eb"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_00",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_01",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_02",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_03",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_04",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_05",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_06",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_07",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_08",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_09",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_10",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_11",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_12",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_13",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_14",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_15",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_16",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_17",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_18",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_19",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_20",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_21",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_22",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_22",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_23",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_23",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_24",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_24",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_25",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_25",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_26",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_26",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_27",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_27",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_28",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_28",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_29",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_29",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_30",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_30",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_31",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_31",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_32",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_32",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_33",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_33",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_34",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_34",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_35",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_35",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_36",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_36",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_37",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_37",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_38",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_38",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    },
+    {
+      "id": "field_39",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "contact_record_reset_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "driv3r.contact.records.byte_39",
+        "confidence": 1.0,
+        "evidence": [
+          "Original0805fc3c..0805fc58 clears exactly40 successivebytes at0203c144; samebank root0805fb1c consumes. Byte ordinal/layout and canonical ownership pinned in source contract."
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 40,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "canonical_original_host_bank",
+    "clock": "explicit_invocation",
+    "phase": "contact_record_initialization",
+    "ordering": "Writes same four-record40B0203c144bank consumed by source0805fb1c; actual caller scheduling not established."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/driv3r.contact.initialize_records/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Initializer only; source contactroot math/alias/livearg sharedcompilerintegration remains open.",
+    "Original caller timing/persistence/world/vehicle/assets closure unknown; no full drivingprefab/system.",
+    "PureIRnativeproof88BThumboutsideROM is distinct from installed168BARMbehavior plus688Bbinding; no doubleoriginal64count.",
+    "Installedsourceversusrebuilt64proof+negative and independentQC are separate retained supplement, not substitute for originalqualification receipt.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/ir-workshop/roundtrip-20261016/weak-coverage-wave/driv3r/initialization-state-contract.json",
+    "sha256": "3aed39317286cd9f874a428ab05b0237a62ca0aae03c5816571685dc6b4ed209"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "driv3r",
+    "entry": "0805fc3c"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

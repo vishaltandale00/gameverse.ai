@@ -1,0 +1,32 @@
+{
+  "schema": "gameverse.composition-edition-snapshot/1",
+  "packageCount": 112,
+  "indexSha256": "4970305d85556c68f2449f243db7798a11ddae54611236663d64b8f18f20525b",
+  "scope": "Pinned graph-contract edition only; native extraction proofs and historical source ontology remain separate.",
+  "artifacts": {
+    "ontology/composition-contracts/index.json": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/index.json",
+      "sha256": "4970305d85556c68f2449f243db7798a11ddae54611236663d64b8f18f20525b"
+    },
+    "ontology/composition-contracts/validation.json": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/contract-validation.json",
+      "sha256": "114d6f7072d3f846a2e0fb67a4853aae253c54d0a172667e0eafb421e0868eaa"
+    },
+    "ontology/composition-contracts/examples/mzm-reaction-transfer.json": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/mzm-reaction-transfer.json",
+      "sha256": "eaefa850cdd5800c14ba91c75bc53b5bf6ffcd8ae8d67a68101bc9f9bfdcbf92"
+    },
+    "ontology/composition-contracts/examples/mzm-reaction-transfer.validation.json": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/mzm-reaction-transfer.validation.json",
+      "sha256": "9bab93817da8a94580ea81f995df04a6cf264063b3f77ab4cebf5adcc4e59b90"
+    },
+    "ontology/composition-contracts/build.py": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/build.py",
+      "sha256": "ae4e78f3103dc1fc19270061c493f7d9b5bf683d6ca53322d9892e5afd9292e2"
+    },
+    "ontology/composition-contracts/schema.json": {
+      "snapshot": "ontology/composition-contracts/editions/112-packages-4970305d85556c68/schema.json",
+      "sha256": "1d7cae9634ea092009f86a0541ed18f80cde5e2996ab36d3ce2635b156a787e4"
+    }
+  }
+}

@@ -1,0 +1,1328 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "super-mario-advance-2-super-mario-world",
+  "sourceSystemIds": [],
+  "blueprintIds": [
+    "combat-encounter",
+    "character-traversal",
+    "exploration-progression",
+    "hazard-recovery"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move through Super Mario World stages, resolve terrain and enemy contact, acquire/use forms, survive or retry, exit levels and retain progress.",
+    "phases": [
+      {
+        "id": "player_control",
+        "label": "Read input, run, jump, spin and update one player",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma2-traversal-bundle.json"
+        ],
+        "requiredServices": [
+          "original controls/profile/map and input cadence"
+        ],
+        "gaps": [
+          "Existing traversal bundle remains partial/native host boundary; do not duplicate it as a new portable controller."
+        ]
+      },
+      {
+        "id": "terrain_and_landing",
+        "label": "Resolve terrain, grounded state and landing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "source terrain/map/material query and moving terrain"
+        ],
+        "gaps": [
+          "No qualified ground detector, complete slope response or landing solver."
+        ]
+      },
+      {
+        "id": "actor_initialize",
+        "label": "Internal descriptor initialization within selected-actor spawn/contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+          "local/ir/packages/sma2.actor_reinitialize/package.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+          "Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+          "Native qualification covers256types\u00d7selectedstates1/11\u00d712slots; use lifecycle1/11 inputs for this prefab.",
+          "No contact admission, actor controller, hurt, defeat/drop or save/load lifecycle is supplied.",
+          "Product filter: raw descriptor bytes do not supply a meaningful user capability alone; no ready standalone prefab."
+        ]
+      },
+      {
+        "id": "enemy_update",
+        "label": "Schedule and update active enemies",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "original actor scheduler and terrain/callback context"
+        ],
+        "gaps": [
+          "Complete enemy controllers and callback lifecycles remain unclosed; field aliases include special actors7/9."
+        ]
+      },
+      {
+        "id": "contact_prepare",
+        "label": "Query source-guarded player contact with an existing class-c2 actor",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "sma2.item.contact_guarded_c2"
+        ],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-query-capsule-v08.json",
+          "local/ir/fleet-next/sma2/guarded-query-phase-v11/report.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Requires an existing source-consistent selected actor and player/scene context; does not create or schedule actors.",
+          "Fixed source descriptor actor+0x41=194 remains an input precondition, not an arbitrary item/species selector.",
+          "Original350f0 item consumption/effect callback is not connected; accepted contact alone does not grant, own, consume or persist an item.",
+          "Source class c2 excludes hurt/reward branches; complete enemy response/contact lifecycle remains external.",
+          "Twelve synthetic selected-actor views are native tested, not evidence all12 are normally scheduled."
+        ]
+      },
+      {
+        "id": "contact_reaction",
+        "label": "Apply hurt, accepted top-contact, bounce and spin response",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma2-spin-response-bundle.json"
+        ],
+        "requiredServices": [
+          "hurt/audio9b5cc",
+          "accepted top-contact2bd9c and bounce/effect allocation"
+        ],
+        "gaps": [
+          "2fc0c\u21922e978 inherited actor ABI is missing in automatic closure; root dispatch not qualified.",
+          "Existing native spin-response module assumes host-admitted contact; do not claim contact admission."
+        ]
+      },
+      {
+        "id": "item_and_forms",
+        "label": "Consume accepted item and change active/reserve form",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "accepted item contact and later scene/save lifecycle"
+        ],
+        "gaps": [
+          "Acquire\u2192transform commit and reserve drop remain only partial portable subsets."
+        ]
+      },
+      {
+        "id": "fire_projectile_lifecycle",
+        "label": "Allocate, update, collide, expire and reuse fire projectiles",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+          "research/deep-extraction/mario/sma2-fire-pool-contracts.json"
+        ],
+        "requiredServices": [
+          "audio queue behavior",
+          "terrain/map query",
+          "aliased enemy/reward pools"
+        ],
+        "gaps": [
+          "Two slots8/9, scan continuation, impact and cleanup services are required; leaf clear/integrate routines do not close lifecycle."
+        ]
+      },
+      {
+        "id": "ability_clock",
+        "label": "Expire invulnerability and flush pending rewards",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "mechanical portion of mixed presentation0806aa14",
+          "reward consumer08030430"
+        ],
+        "gaps": [
+          "255eligible decrements under original guards, not fixed unconditioned frames; cannot drop presentation owner."
+        ]
+      },
+      {
+        "id": "rewards_and_retry",
+        "label": "Consume score/life rewards and death/retry transition",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          "reward record allocation/consumer",
+          "retry/game-over scene consumers"
+        ],
+        "gaps": [
+          "Reward2fe64 shared pointerphi6be/6c0 unresolved;34864 needs334f8 closure; full retry scene/persistence transaction missing."
+        ]
+      },
+      {
+        "id": "camera_and_present",
+        "label": "Keep player visible and present source state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "source camera/render services and mechanical cleanup"
+        ],
+        "gaps": [
+          "Offscreen projectile retirement and ability expiry are not disposable rendering effects."
+        ]
+      },
+      {
+        "id": "world_and_persistence",
+        "label": "Advance world/room progression and preserve progress",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "scene unload/load",
+          "save/load/versioned progress"
+        ],
+        "gaps": [
+          "World navigation, level completion and durable ownership/save restoration are not reconstructed."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor_initialize",
+        "to": "enemy_update",
+        "kind": "host-required",
+        "scope": "Source actor create/retype precedes caller-specific placement and later update; no global schedule invented."
+      },
+      {
+        "from": "enemy_update",
+        "to": "contact_prepare",
+        "kind": "shared-state",
+        "scope": "Same selected actor view and scene scratch; no independently copied actor/world."
+      },
+      {
+        "from": "contact_prepare",
+        "to": "contact_reaction",
+        "kind": "source-call",
+        "scope": "Full source34264 positive-class paths call2bd9c/hurt/reward after guarded overlap; those branches are excluded from the executable class-c2 query and remain source-only."
+      },
+      {
+        "from": "contact_reaction",
+        "to": "rewards_and_retry",
+        "kind": "source-call",
+        "scope": "Accepted contact paths call reward/hurt/death helpers under source conditions."
+      },
+      {
+        "from": "item_and_forms",
+        "to": "fire_projectile_lifecycle",
+        "kind": "shared-state",
+        "scope": "Fire form legality precedes spawn; active/reserve forms retain original encodings."
+      },
+      {
+        "from": "fire_projectile_lifecycle",
+        "to": "actor_initialize",
+        "kind": "source-call",
+        "scope": "Enemy fire reaction assigns type/state then calls original initializer; whole fire transaction remains source-only."
+      },
+      {
+        "from": "ability_clock",
+        "to": "rewards_and_retry",
+        "kind": "source-call",
+        "scope": "0806aa14 zero-expiry flushes08030430 and clears pending reward state."
+      },
+      {
+        "from": "terrain_and_landing",
+        "to": "player_control",
+        "kind": "host-required",
+        "scope": "Controller consumes ground/material state; source terrain producer remains external."
+      },
+      {
+        "from": "player_control",
+        "to": "camera_and_present",
+        "kind": "host-required",
+        "scope": "Camera service and complete frame order are not portable qualified."
+      },
+      {
+        "from": "rewards_and_retry",
+        "to": "world_and_persistence",
+        "kind": "host-required",
+        "scope": "Retry/transition and persistent progress consumers remain unclosed."
+      }
+    ],
+    "missingForCoreGame": [
+      "Portable player/controller\u2194terrain/landing boundary",
+      "Complete enemy scheduler/controller and aliased pool lifecycle",
+      "Hurt/top-contact/reward source caller ABI/pointer/service closure",
+      "Full fire allocation\u2192terrain/enemy impact\u2192cleanup/reuse",
+      "Invulnerability presentation-owned clock and reward flush",
+      "Camera/scene transitions, retry/game-over consumer, world exit and persistence",
+      "Original350f0 accepted-item consumer and effect/reserve callback dispatch ABI; source guarded query is now published but consumption remains unclosed."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "mario-sma2-selected-actor-descriptor-core",
+      "label": "Selected actor lifecycle \u2014 guarded item contact query subset",
+      "moduleId": "mario.sma2.selected_actor_lifecycle",
+      "sourceGame": "super-mario-advance-2-super-mario-world",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-query-capsule-v08.json",
+      "planIds": [
+        "combat-encounter"
+      ],
+      "packageIds": [
+        "sma2.actor_reinitialize",
+        "sma2.contact.item_class_c2_query"
+      ],
+      "availability": "published-subset",
+      "scope": "One source-selected actor/scene module now supplies the original guarded class-c2 item contact query. Initialization remains a separate internal phase; source spawning/consumption remain unavailable.",
+      "gaps": [
+        "Requires an existing source-consistent selected actor and player/scene context; does not create or schedule actors.",
+        "Fixed source descriptor actor+0x41=194 remains an input precondition, not an arbitrary item/species selector.",
+        "Original350f0 item consumption/effect callback is not connected; accepted contact alone does not grant, own, consume or persist an item.",
+        "Source class c2 excludes hurt/reward branches; complete enemy response/contact lifecycle remains external.",
+        "Twelve synthetic selected-actor views are native tested, not evidence all12 are normally scheduled.",
+        "Internal initializer only: Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+        "Internal initializer only: Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+        "Internal initializer only: Native qualification covers256types\u00d7selectedstates1/11\u00d712slots; use lifecycle1/11 inputs for this prefab.",
+        "Raw initializer descriptor output remains internal support, not a standalone ready prefab. Ready scope is original class-C2 guarded query; actor creation, pool lifetime and final consumption are external."
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+        "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+        "local/ir/packages/sma2.actor_reinitialize/package.json",
+        "local/ir/packages/sma2.actor_reinitialize/receipt.json",
+        "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-02/sma2.item.contact_guarded_c2.assembly.json",
+        "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-02/sma2.item.contact_guarded_c2.validation.json",
+        "local/ir/fleet-next/sma2/guarded-query-phase-v11/item-contact.core.c",
+        "local/ir/fleet-next/sma2/guarded-query-phase-v11/fixture.c",
+        "local/ir/packages/sma2.contact.item_class_c2_query/package.json",
+        "local/ir/packages/sma2.contact.item_class_c2_query/l1.json",
+        "local/ir/packages/sma2.contact.item_class_c2_query/validation-adapter.json",
+        "local/ir/packages/sma2.contact.item_class_c2_query/generated.c",
+        "local/ir/packages/sma2.contact.item_class_c2_query/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "One externally existing selected actor and canonical player/scene backing",
+        "fields": [
+          "actor_x_pixel",
+          "actor_y_pixel",
+          "actor_collision_layer",
+          "actor_descriptor_1",
+          "actor_descriptor_3",
+          "source_contact_mode_flags",
+          "player_action_gate",
+          "player_x_pixel",
+          "player_y_pixel",
+          "player_collision_layer",
+          "source_contact_box_latch",
+          "player_box_x",
+          "player_box_y",
+          "player_box_width",
+          "player_box_height",
+          "actor_box_x",
+          "actor_box_y",
+          "actor_box_width",
+          "actor_box_height",
+          "selected_actor_slot",
+          "suppressed_actor_slot",
+          "player_active_form",
+          "accepted_item_contact"
+        ],
+        "aliasRule": "The original selected actor is scene+0x6cc+100*slot and all rectangle/latch fields share the same scene root. Never copy actor/pool state for another facet. Native preserves special slots7/9 shared aliases; the emitted portable view does not implement a pool manager."
+      },
+      "roleFacets": [
+        {
+          "roleId": "contact",
+          "capability": "source_guarded_item_contact_query",
+          "status": "published-subset",
+          "scope": "Query guarded contact with an existing class-c2 item actor; produces captured admission boolean and original scratch/latch only.",
+          "evidence": [
+            "local/ir/fleet-next/sma2/guarded-query-phase-v11/report.json",
+            "local/ir/packages/sma2.contact.item_class_c2_query/receipt.json"
+          ]
+        },
+        {
+          "roleId": "reaction",
+          "capability": "internal_actor_initialization_and_item_response_dependencies",
+          "status": "source-only",
+          "scope": "Internal initializer evidence supports the intended selected-actor lifecycle; meaningful spawn/contact ownership, source dispatch and captured outcome remain incomplete. Source create/retype callers invoke the same initializer before subsequent caller-specific writes; does not choose a reaction or defeat. Accepted-item consumption/effect path also remains source-only; the ready phase is contact query only.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+            "local/ir/packages/sma2.actor_reinitialize/receipt.json",
+            "local/ir/fleet-next/sma2/item-consumer-v10/report.json"
+          ]
+        },
+        {
+          "roleId": "defeat",
+          "capability": "retype_to_defeat_actor",
+          "status": "source-only",
+          "scope": "Internal initializer evidence supports the intended selected-actor lifecycle; meaningful spawn/contact ownership, source dispatch and captured outcome remain incomplete. Source fire-hit caller retypes actor21/state8 then initializes; complete hit/reward/defeat lifecycle remains unqualified and state8 is outside the selected default fixture domain.",
+          "evidence": [
+            "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "sma2.item.contact_guarded_c2",
+        "label": "Query guarded contact with an existing class-c2 item actor",
+        "assemblyRef": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/sma2.item.contact_guarded_c2.assembly.json",
+        "validationRef": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/sma2.item.contact_guarded_c2.validation.json",
+        "descriptorRef": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/delivery.json",
+        "packageIds": [
+          "sma2.contact.item_class_c2_query"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "sma2.item.contact_guarded_c2",
+      "moduleId": "mario.sma2.selected_actor_lifecycle",
+      "label": "Query guarded contact with an existing class-c2 item actor",
+      "path": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/sma2.item.contact_guarded_c2.assembly.json",
+      "sha256": "73be434db36c8127405818f7837ec11af3847eb0fa34c49f3fb9cf4fc80fd6f7",
+      "validation": "research/ir-workshop/source-fleet-restart-20261016/publication/sma2-query-03/sma2.item.contact_guarded_c2.validation.json",
+      "validationSha256": "7b81019547d944ca0ec6b9470fd224e21c9680238b38624e7d9b5e5103b12e8e",
+      "inputs": [
+        {
+          "id": "actor_x_pixel",
+          "label": "actor x pixel",
+          "storageType": "u16",
+          "default": 100,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_x_pixel",
+          "sourceField": {
+            "name": "field_0",
+            "width": 16,
+            "owner": "entity",
+            "argument": "r0",
+            "address": null,
+            "offset": 16
+          }
+        },
+        {
+          "id": "actor_y_pixel",
+          "label": "actor y pixel",
+          "storageType": "u16",
+          "default": 80,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_y_pixel",
+          "sourceField": {
+            "name": "field_1",
+            "width": 16,
+            "owner": "entity",
+            "argument": "r0",
+            "address": null,
+            "offset": 18
+          }
+        },
+        {
+          "id": "actor_collision_layer",
+          "label": "actor collision layer",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_collision_layer",
+          "sourceField": {
+            "name": "field_2",
+            "width": 8,
+            "owner": "entity",
+            "argument": "r0",
+            "address": null,
+            "offset": 60
+          }
+        },
+        {
+          "id": "actor_descriptor_1",
+          "label": "actor descriptor 1",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_descriptor_1",
+          "sourceField": {
+            "name": "field_3",
+            "width": 8,
+            "owner": "entity",
+            "argument": "r0",
+            "address": null,
+            "offset": 63
+          }
+        },
+        {
+          "id": "actor_descriptor_3",
+          "label": "actor descriptor 3",
+          "storageType": "u8",
+          "default": 194,
+          "domain": {
+            "unsigned_min": 194,
+            "unsigned_max": 194
+          },
+          "binding": "actor_descriptor_3",
+          "sourceField": {
+            "name": "field_4",
+            "width": 8,
+            "owner": "entity",
+            "argument": "r0",
+            "address": null,
+            "offset": 65,
+            "domain": {
+              "unsigned_min": 194,
+              "unsigned_max": 194
+            }
+          }
+        },
+        {
+          "id": "source_contact_mode_flags",
+          "label": "source contact mode flags",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "source_contact_mode_flags",
+          "sourceField": {
+            "name": "field_5",
+            "width": 8,
+            "owner": "global",
+            "argument": null,
+            "address": 0,
+            "offset": 50343976
+          }
+        },
+        {
+          "id": "player_action_gate",
+          "label": "player action gate",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_action_gate",
+          "sourceField": {
+            "name": "field_6",
+            "width": 8,
+            "owner": "global",
+            "argument": null,
+            "address": 0,
+            "offset": 50347936
+          }
+        },
+        {
+          "id": "player_x_pixel",
+          "label": "player x pixel",
+          "storageType": "u16",
+          "default": 100,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_x_pixel",
+          "sourceField": {
+            "name": "field_9",
+            "width": 16,
+            "owner": "global",
+            "argument": null,
+            "address": 0,
+            "offset": 50347984
+          }
+        },
+        {
+          "id": "player_y_pixel",
+          "label": "player y pixel",
+          "storageType": "u16",
+          "default": 80,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_y_pixel",
+          "sourceField": {
+            "name": "field_10",
+            "width": 16,
+            "owner": "global",
+            "argument": null,
+            "address": 0,
+            "offset": 50347988
+          }
+        },
+        {
+          "id": "player_collision_layer",
+          "label": "player collision layer",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_collision_layer",
+          "sourceField": {
+            "name": "field_11",
+            "width": 8,
+            "owner": "global",
+            "argument": null,
+            "address": 0,
+            "offset": 50348032
+          }
+        },
+        {
+          "id": "source_contact_box_latch",
+          "label": "source contact box latch",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "source_contact_box_latch",
+          "sourceField": {
+            "name": "field_12",
+            "width": 8,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 1736,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "player_box_x",
+          "label": "player box x",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_box_x",
+          "sourceField": {
+            "name": "field_13",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3764,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "player_box_y",
+          "label": "player box y",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_box_y",
+          "sourceField": {
+            "name": "field_14",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3766,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "player_box_width",
+          "label": "player box width",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_box_width",
+          "sourceField": {
+            "name": "field_15",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3768,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "player_box_height",
+          "label": "player box height",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_box_height",
+          "sourceField": {
+            "name": "field_16",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3770,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "actor_box_x",
+          "label": "actor box x",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_box_x",
+          "sourceField": {
+            "name": "field_17",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3772,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "actor_box_y",
+          "label": "actor box y",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_box_y",
+          "sourceField": {
+            "name": "field_18",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3774,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "actor_box_width",
+          "label": "actor box width",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_box_width",
+          "sourceField": {
+            "name": "field_19",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3776,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "actor_box_height",
+          "label": "actor box height",
+          "storageType": "u16",
+          "default": 13107,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "actor_box_height",
+          "sourceField": {
+            "name": "field_20",
+            "width": 16,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3778,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "selected_actor_slot",
+          "label": "selected actor slot",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "selected_actor_slot",
+          "sourceField": {
+            "name": "field_21",
+            "width": 8,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3797,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "suppressed_actor_slot",
+          "label": "suppressed actor slot",
+          "storageType": "u8",
+          "default": 255,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "suppressed_actor_slot",
+          "sourceField": {
+            "name": "field_22",
+            "width": 8,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 3879,
+            "reference": "context_object_0"
+          }
+        },
+        {
+          "id": "player_active_form",
+          "label": "player active form",
+          "storageType": "u8",
+          "default": 1,
+          "domain": {
+            "scope": "Source storage and published component preconditions; native proof covers the retained84 fixtures, not exhaustive numeric domain."
+          },
+          "binding": "player_active_form",
+          "sourceField": {
+            "name": "field_24",
+            "width": 8,
+            "owner": "reference",
+            "argument": null,
+            "address": null,
+            "offset": 224,
+            "reference": "context_object_2"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "id": "accepted_item_contact",
+          "binding": "accepted_item_contact",
+          "meaning": "Original34264 returns1 only after source gates and player/actor rectangle overlap under fixed descriptor194; returns0 on action/layer/suppression or geometry rejection."
+        },
+        {
+          "id": "contact_scratch",
+          "binding": {
+            "source_contact_box_latch": "source_contact_box_latch",
+            "player_box_x": "player_box_x",
+            "player_box_y": "player_box_y",
+            "player_box_width": "player_box_width",
+            "player_box_height": "player_box_height",
+            "actor_box_x": "actor_box_x",
+            "actor_box_y": "actor_box_y",
+            "actor_box_width": "actor_box_width",
+            "actor_box_height": "actor_box_height"
+          },
+          "meaning": "Original shared geometry scratch after admitted preparation; early guards preserve prior scratch."
+        },
+        {
+          "id": "source_contact_box_latch",
+          "binding": "source_contact_box_latch",
+          "meaning": "Original player-box preparation consumes scene latch when reached; early rejected guards preserve it."
+        }
+      ],
+      "phases": [
+        {
+          "id": "source_contact_query",
+          "trigger": "Caller requests contact query for one existing selected actor and current player/scene snapshot",
+          "invocations": [
+            "query_selected_item"
+          ],
+          "scheduleStatus": "caller-declared",
+          "internalSourceOrder": [
+            "source action/layer/suppression guards",
+            "0803407c player rectangle and latch",
+            "0802f290 selected actor rectangle",
+            "08034198 overlap",
+            "080342cc exact descriptor load194 and source return"
+          ]
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Requires an existing source-consistent selected actor and player/scene context; does not create or schedule actors.",
+        "Fixed source descriptor actor+0x41=194 remains an input precondition, not an arbitrary item/species selector.",
+        "Original350f0 item consumption/effect callback is not connected; accepted contact alone does not grant, own, consume or persist an item.",
+        "Source class c2 excludes hurt/reward branches; complete enemy response/contact lifecycle remains external.",
+        "Twelve synthetic selected-actor views are native tested, not evidence all12 are normally scheduled."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-sma2/source-contact-v02/source-query-capsule-v08.json",
+        "local/ir/packages/sma2.contact.item_class_c2_query/package.json",
+        "local/ir/packages/sma2.contact.item_class_c2_query/receipt.json"
+      ],
+      "qualificationScope": "Actual Composer binding_valid_obligations_unproven;7 new host guard scenarios capture return and scratch/latch. Underlying original/emitted native84 fixtures retained; no whole-L2 or full-game qualification.",
+      "readyToAdd": true,
+      "runtimeQualified": false,
+      "primaryUserCapability": true,
+      "productReview": "Candidate scoped query responsibility for central acceptance; no new actor/ability/spawn prefab claim.",
+      "packagePins": {
+        "package.json": {
+          "path": "local/ir/packages/sma2.contact.item_class_c2_query/package.json",
+          "sha256": "33030d851ed2bcb0873ee0cd9a90e6fdaf37fc92295438a708de4e952717a766"
+        },
+        "l1.json": {
+          "path": "local/ir/packages/sma2.contact.item_class_c2_query/l1.json",
+          "sha256": "4899dcc60c119065778db4fca661163dd549d07f6906b3bdc707fe1042ac6062"
+        },
+        "validation-adapter.json": {
+          "path": "local/ir/packages/sma2.contact.item_class_c2_query/validation-adapter.json",
+          "sha256": "20d8cee9ab586109a49aa05c64d9efa16b0f0045c274a79cd2a1a5b9ee859c94"
+        },
+        "generated.c": {
+          "path": "local/ir/packages/sma2.contact.item_class_c2_query/generated.c",
+          "sha256": "cbbdbe01e2d2bb07cbc7e2aaf83b77cd951740fd12588eb935867f247c29a0de"
+        },
+        "receipt.json": {
+          "path": "local/ir/packages/sma2.contact.item_class_c2_query/receipt.json",
+          "sha256": "e1645ce9e3cecbc2c0e81c5dee14e80c4da0f81d4240f2087e2444a12c26a87f"
+        }
+      },
+      "hostEvidence": {
+        "path": "local/ir/fleet-next/sma2/guarded-query-phase-v11/report.json",
+        "sha256": "3d454bdff6ece8fcac3c45d61029f385bca3a34046b031386c15aa09ec7cba4a"
+      },
+      "privateDefaults": {
+        "field_7": 0,
+        "field_8": 0,
+        "field_23": 0
+      },
+      "defaultContext": "Exact retained native accepted fixture0/slot0: positions100,80; same layer; class194; shape0; activeform1; selected0/suppressed255. Scratch13107 is a preservation sentinel, not a gameplay shape."
+    }
+  ],
+  "provenanceKinds": {
+    "automaticPortable": "Original34264 HighFunction\u2192shared Lifter\u2192L1, exact c2 entry-byte proof with retained materialized precondition; actual native84 comparisons.",
+    "nativeHostReferences": "Existing traversal/spin bundles are referenced for reconstruction context only, not recounted as new portable prefabs.",
+    "sourceOnly": "Core-map causal facts/dependencies from retained own-ROM evidence; no authored behavior substitutes.",
+    "hostScaffold": "Caller supplies existing actor/player/scene snapshot and explicit query trigger;7 host assertions contain no authored contact logic."
+  },
+  "counts": {
+    "bindingReadyPrefabs": 1,
+    "primaryReadyPrefabs": 1,
+    "usablePhases": 1,
+    "sourceOnlyPhases": 10,
+    "missingPhases": 1,
+    "internalAdmittedAssemblies": 1,
+    "newNativeRuns": 0,
+    "newExports": 0,
+    "newGames": 0,
+    "retainedNativeQueryPairs": 84,
+    "hostScenarios": 7
+  },
+  "timing": {
+    "runId": "sma2-source-guarded-query-additive-source-fleet",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.014115459,
+    "buildSeconds": 0.04391825,
+    "hostExecutionSeconds": 0.05452758299999999,
+    "nativeSeconds": null,
+    "totalSeconds": 0.11866595800000002,
+    "beforeAfter": null,
+    "accounting": "Validation, host build and execution nested in phase total. Reuses84 native comparisons; no new native run. Queue/cache and comparative baseline unavailable. This companion metadata generation was not separately timed."
+  },
+  "internalPhases": [
+    {
+      "id": "sma2.actor.initialize_descriptors",
+      "moduleId": "mario.sma2.selected_actor_lifecycle",
+      "label": "Initialize one selected actor\u2019s original descriptors",
+      "path": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+      "sha256": "0d3d79543f295229cd0b68f93085c73a0f09e5a7197e0aa4ee5cd7a4d2eb419c",
+      "validation": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+      "validationSha256": "d1ad936b879f008b9d64bea7bbd3a52df2acf77bbfab2e6b5412d75c76f2bf04",
+      "inputs": [
+        {
+          "id": "actor_type",
+          "label": "Original source actor type",
+          "storageType": "u8",
+          "default": 33,
+          "domain": {
+            "values": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59,
+              60,
+              61,
+              62,
+              63,
+              64,
+              65,
+              66,
+              67,
+              68,
+              69,
+              70,
+              71,
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83,
+              84,
+              85,
+              86,
+              87,
+              88,
+              89,
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110,
+              111,
+              112,
+              113,
+              114,
+              115,
+              116,
+              117,
+              118,
+              119,
+              120,
+              121,
+              122,
+              123,
+              124,
+              125,
+              126,
+              127,
+              128,
+              129,
+              130,
+              131,
+              132,
+              133,
+              134,
+              135,
+              136,
+              137,
+              138,
+              139,
+              140,
+              141,
+              142,
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              149,
+              150,
+              151,
+              152,
+              153,
+              154,
+              155,
+              156,
+              157,
+              158,
+              159,
+              160,
+              161,
+              162,
+              163,
+              164,
+              165,
+              166,
+              167,
+              168,
+              169,
+              170,
+              171,
+              172,
+              173,
+              174,
+              175,
+              176,
+              177,
+              178,
+              179,
+              180,
+              181,
+              182,
+              183,
+              184,
+              185,
+              186,
+              187,
+              188,
+              189,
+              190,
+              191,
+              192,
+              193,
+              194,
+              195,
+              196,
+              197,
+              198,
+              199,
+              200,
+              201,
+              202,
+              203,
+              204,
+              205,
+              206,
+              207,
+              208,
+              209,
+              210,
+              211,
+              212,
+              213,
+              214,
+              215,
+              216,
+              217,
+              218,
+              219,
+              220,
+              221,
+              222,
+              223,
+              224,
+              225,
+              226,
+              227,
+              228,
+              229,
+              230,
+              231,
+              232,
+              233,
+              234,
+              235,
+              236,
+              237,
+              238,
+              239,
+              240,
+              241,
+              242,
+              243,
+              244,
+              245,
+              246,
+              247,
+              248,
+              249,
+              250,
+              251,
+              252,
+              253,
+              254,
+              255
+            ]
+          },
+          "binding": "actor_type"
+        },
+        {
+          "id": "actor_lifecycle",
+          "label": "Preserved lifecycle state",
+          "storageType": "u8",
+          "default": 1,
+          "domain": {
+            "values": [
+              1,
+              11
+            ]
+          },
+          "binding": "actor_lifecycle"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "source_descriptor_53",
+          "binding": "source_descriptor_53",
+          "meaning": "Exact original descriptor byte at actor+0x35; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_62",
+          "binding": "source_descriptor_62",
+          "meaning": "Exact original descriptor byte at actor+0x3e; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_63",
+          "binding": "source_descriptor_63",
+          "meaning": "Exact original descriptor byte at actor+0x3f; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_64",
+          "binding": "source_descriptor_64",
+          "meaning": "Exact original descriptor byte at actor+0x40; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_65",
+          "binding": "source_descriptor_65",
+          "meaning": "Exact original descriptor byte at actor+0x41; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_66",
+          "binding": "source_descriptor_66",
+          "meaning": "Exact original descriptor byte at actor+0x42; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_67",
+          "binding": "source_descriptor_67",
+          "meaning": "Exact original descriptor byte at actor+0x43; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_68",
+          "binding": "source_descriptor_68",
+          "meaning": "Exact original descriptor byte at actor+0x44; source semantic channel identity, not arbitrary enemy compatibility."
+        }
+      ],
+      "phases": [
+        {
+          "id": "initialize_selected_actor",
+          "trigger": "Explicit host create/retype event after caller assigned original type and lifecycle; not every frame",
+          "invocations": [
+            "actor_initialize"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+        "Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+        "Native qualification covers256types\u00d7selectedstates1/11\u00d712slots; use lifecycle1/11 inputs for this prefab.",
+        "No contact admission, actor controller, hurt, defeat/drop or save/load lifecycle is supplied.",
+        "Product filter: raw descriptor bytes do not supply a meaningful user capability alone; no ready standalone prefab."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+        "local/ir/sma2-reinitialize-20261016/source-manifest.json",
+        "local/ir/packages/sma2.actor_reinitialize/package.json",
+        "local/ir/packages/sma2.actor_reinitialize/receipt.json"
+      ],
+      "qualificationScope": "Actual Composer binding/lowering passed. Underlying automatic reinitializer retains6144 native comparisons; this new assembly graph has no new native execution.",
+      "readyToAdd": false,
+      "runtimeQualified": false,
+      "primaryUserCapability": false,
+      "productFilter": "Raw actor type/lifecycle and eight descriptor bytes lack named species/spawn context or captured contact outcome. Internal support only."
+    }
+  ],
+  "productFilter": {
+    "outcome": "scoped_query_candidate",
+    "reason": "Meaningful contact admission now includes original source guards, actual captured return, positions/layers and shared rectangle/latch effects; initializer-only descriptors remain internal. Central product acceptance is separate from Composer/native proof.",
+    "wholeLifecycle": false
+  },
+  "version": "sma2-guarded-contact-query-v11",
+  "supersedesForIntake": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/delivery.json"
+}

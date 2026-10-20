@@ -1,0 +1,139 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mario-sma4-recovered-stomp-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "super-mario-advance-4-super-mario-bros-3",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "Exact indexed ROM with own recovered component and reviewed context adapter"
+  },
+  "execution": {
+    "clock": "native-contact-event",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "stomp"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "enemy_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "enemy_health_type_state",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "player_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "bounce_airborne_chain",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "world_effect_state",
+      "type": {
+        "scalar": "native_context",
+        "quantity": "scoring_and_contact_effects",
+        "unit": "native_fields",
+        "frame": "SMA4_world"
+      },
+      "lifetime": "room"
+    }
+  ],
+  "components": [
+    {
+      "id": "stomp",
+      "provides": [
+        "combat.stomp@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "enemy_state",
+          "phase": "stomp",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "player_state",
+          "phase": "stomp",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "world_effect_state",
+          "phase": "stomp",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-recovered.c",
+        "evidence_refs": [
+          "local/re/experiments/20261016-binary-corpus-round2/sma4-stomp-host-02/receipt.json",
+          "local/re/experiments/20261016-binary-corpus-round2/sma4-stomp-live-02/probe.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "campaign-qualification",
+      "detail": "Parity candidate only; full campaign and other enemy/ability/progression packages remain incomplete."
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sma4-usa-stomp.host.json",
+      "sha256": "da0583b1499eb6db60b444b18dc0c415a97627c1a7c276ce243183e90448db62"
+    },
+    "packages": [
+      {
+        "instance": "stomp",
+        "package": {
+          "ref": "tools/composition/packages/mario-sma4-stomp-host.json",
+          "sha256": "d1dad507de28ddea2c70bac65642b76a6b58a2b18519963bb6647806f51a537d"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "stomp",
+        "instance": "stomp",
+        "symbol": "sma4_host_stomp",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 8192,
+    "timeout_s": 15,
+    "max_build_s": 30
+  }
+}

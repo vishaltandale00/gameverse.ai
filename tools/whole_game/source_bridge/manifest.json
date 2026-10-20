@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "sourceBridgeSha256": "d85d0450564e05a3f4175083aa780585820a493666e4d51777f39888a41086d4",
+  "mailboxSymbol": "gWholeGameBridge",
+  "mailboxBytes": 648,
+  "sharedStateSchema": 1,
+  "transitionSchema": 1,
+  "regions": {
+    "pokefirered": 1,
+    "pokeemerald": 2
+  },
+  "commands": {
+    "export": 1,
+    "import": 2,
+    "bootstrap": 3,
+    "merge": 4
+  },
+  "statuses": {
+    "idle": 0,
+    "pending": 1,
+    "ready": 2,
+    "done": 3,
+    "error": 4,
+    "mergeReady": 5
+  },
+  "offsets": {
+    "magic": 0,
+    "schema": 4,
+    "region": 8,
+    "sequence": 12,
+    "command": 16,
+    "status": 20,
+    "error": 24,
+    "payloadCrc": 28,
+    "trainerId": 32,
+    "playerName": 36,
+    "playerGender": 44,
+    "partyCount": 45,
+    "sourceRegion": 46,
+    "reserved": 47,
+    "party": 48
+  },
+  "partySlotBytes": 100,
+  "partySlots": 6,
+  "payloadChecksum": "fnv1a32:bytes[32:648]",
+  "regionalPokedexPolicy": "unchanged_by_import_or_merge",
+  "regionalStatePolicy": "save_map_story_badges_bag_pc_boxes_are_source_owned",
+  "blockedTransfer": ["mail", "enigma_berry", "deoxys", "unsupported_item_id", "bad_checksum"]
+}

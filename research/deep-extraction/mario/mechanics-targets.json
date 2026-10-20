@@ -1,6 +1,6 @@
 {
   "schema": "gameverse.mario.mechanics-discovery-targets/0.1",
-  "updated_utc": "2026-10-16T09:38:33.135381+00:00",
+  "updated_utc": "2026-10-16T10:33:41.272605+00:00",
   "whole_game_complete": false,
   "scope": "Causal mechanic/dependency target discovery from independently exported own ROM, not compilation input or universal closure claim.",
   "targets": [
@@ -3389,6 +3389,2709 @@
       "l0": null,
       "next_step": "Automatic connected acquisition/effect/clock/expiration closure; mixed rendering must not erase mechanical state/timing.",
       "mechanics_role": "progression"
+    },
+    {
+      "id": "sma4.actor_contact_shape_a",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "actor_contact",
+      "entry": "080460fc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_instruction_and_HighFunction_evidence; not new native qualification",
+      "mechanic": "Select 4-byte body record by actor+0x64 low six bits; write A center X/Y modulo256 from actor pixel mirrors +0x0c/+0x0e plus shape offsets, width plus16 if actor+0x69 nonzero, and height into shared collision scratch. This helper has no contact eligibility or overlap decision.",
+      "context_roles": [
+        "world_actor_pool_view",
+        "shared_collision_scratch"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x08041504",
+        "0x08046398",
+        "0x08046568",
+        "0x080472c0",
+        "0x0804fe68",
+        "0x08051144",
+        "0x08054630",
+        "0x08057938",
+        "0x0805d540",
+        "0x0805ed34",
+        "0x0805f348",
+        "0x0805f4c8",
+        "0x0806292c",
+        "0x08062e20",
+        "0x08069d14",
+        "0x080731ec",
+        "0x0807369c",
+        "0x0807536c",
+        "0x080755b0",
+        "0x0808bd18"
+      ],
+      "focus_dependencies": [
+        "08046320"
+      ],
+      "instruction_span": {
+        "address": "0x080460fc",
+        "size": 88,
+        "sha256": "cbb8a8e051f9e0ec2952ddd8138b5ca4d6ddb37530c35813e9f19b263ff70e2b",
+        "boundary_status": "Full contiguous entry through BX return inclusive, ending at next function 08046154. Includes 10 bytes of unreachable alignment/literal pool at 08046132..0804613b; Ghidra body size 78 is not this contiguous range."
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": {
+        "ref": "research/deep-extraction/mario/parallel-sma4/080460fc.l0.json",
+        "sha256": "fc50d301603f4f5514bf78b53cd14119e714ae470f0751b8208d5be8d5f992d5"
+      },
+      "next_step": "Use exact original return epilogue proof to resolve artificial CALLIND LR; automatically lift and original/emitted native qualify, preserving shared scratch bindings and caller proximity guards.",
+      "mechanics_role": "collision_shape"
+    },
+    {
+      "id": "mlss.input_edges_repeat",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "input_service",
+      "entry": "08018920",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Input service masks to ten keys, writes press/release edges and eight repeat counters per stride-0x14 input slot. Fixed eight-counter loop; slot range and boundary remain unverified.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x08017a00",
+        "0x08017e34",
+        "0x08018818"
+      ],
+      "focus_dependencies": [
+        "08017e34"
+      ],
+      "instruction_span": {
+        "address": "0x08018920",
+        "size": 156,
+        "sha256": "443a315cea4df1336918d7c098c092ce07381982cda0dfdeeb2055302303cd94",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/08018920.json",
+        "sha256": "57dc28beeb2aafe5b068968ea0dd824c01ab73c418a7c56c533e141aa8e4d5e3"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Input slot count and bounds",
+        "Eight ROM masks at 0839ec6c",
+        "Packed state aliases and signed byte timer wrap",
+        "Native return/indirect-tail boundary"
+      ],
+      "mechanics_role": "dependency",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "08018920.json",
+        "l0_sha256": "57dc28beeb2aafe5b068968ea0dd824c01ab73c418a7c56c533e141aa8e4d5e3",
+        "outcome": "unsupported",
+        "reason": "unbounded or unaligned state collection",
+        "wall_s": 0.0002711669999939659
+      }
+    },
+    {
+      "id": "mlss.input_sensitive_rate",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "paired_overworld_controller",
+      "entry": "0802c390",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Actor+244 signed short changes by -8 toward lower threshold -56 or +8 while negative, gated by actor+20a mask180 or global030003c4 mask33. Exact physical meaning and units unknown.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802476c"
+      ],
+      "focus_dependencies": [
+        "0802476c"
+      ],
+      "instruction_span": {
+        "address": "0x0802c390",
+        "size": 134,
+        "sha256": "33d588d3efa8925959d8224a13a585e065b3e1b7909ded2e23383450065223b3",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/0802c390.json",
+        "sha256": "ae145465a82b5be188eaca4a3e6fc53ab3912eb0a0e2b8a44336ff573eb5c839"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Global030003c4 producer and ownership",
+        "Actor context ABI from scheduler",
+        "Signed wrap and near-threshold domains",
+        "Native tail verification"
+      ],
+      "mechanics_role": "dependency",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "0802c390.json",
+        "l0_sha256": "ae145465a82b5be188eaca4a3e6fc53ab3912eb0a0e2b8a44336ff573eb5c839",
+        "outcome": "static_lift_only",
+        "candidate": "candidate_194",
+        "operations": 71,
+        "blocks": 11,
+        "verification": "unqualified",
+        "wall_s": 0.0010539590000178123
+      }
+    },
+    {
+      "id": "mlss.actor_vertical_init",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "movement_lifecycle",
+      "entry": "080401f0",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Initializes actor+248/+254 from arguments or signed-short defaults266/264; copies254 to258, sets25c=0, snapshots14+18 to24c and18 to250, saves23e to240, selects23e and updates213 bit20. Candidate vertical-motion lifecycle initializer.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802d544",
+        "0x08045764",
+        "0x08047b08",
+        "0x08049224",
+        "0x0804c600"
+      ],
+      "focus_dependencies": [
+        "080402c4",
+        "08047eb8"
+      ],
+      "instruction_span": {
+        "address": "0x080401f0",
+        "size": 192,
+        "sha256": "72584fa7966f3c48eefb5a2b3f753a5e5bcdcd20532b6027911666858de03349",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/080401f0.json",
+        "sha256": "724410246fbef8ca98c08eb9525acac83f2dfe9fee9304e7f76b4ec4c5f2bd7c"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Meaning/units of actor14/18/248/254/258",
+        "Argument -1 sentinels",
+        "Aliased halfword and byte ownership",
+        "Native tail boundary"
+      ],
+      "mechanics_role": "movement",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "080401f0.json",
+        "l0_sha256": "724410246fbef8ca98c08eb9525acac83f2dfe9fee9304e7f76b4ec4c5f2bd7c",
+        "outcome": "static_lift_only",
+        "candidate": "candidate_249",
+        "operations": 143,
+        "blocks": 10,
+        "verification": "unqualified",
+        "wall_s": 0.0011829169999941769
+      }
+    },
+    {
+      "id": "mlss.actor_vertical_update",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "movement_lifecycle",
+      "entry": "080402c4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "If signed actor+25c>=0: adds258 to18, subtracts248 from258; tests18<=0 or14+18<=24c depending20d bit20; invokes47eb8 on termination, otherwise increments25c. Candidate update consumer for401f0.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [
+        "0x08047eb8"
+      ],
+      "callers": [
+        "0x0802476c",
+        "0x0803d6d8",
+        "0x080461b4",
+        "0x0804fe68"
+      ],
+      "focus_dependencies": [
+        "080401f0",
+        "08047eb8"
+      ],
+      "instruction_span": {
+        "address": "0x080402c4",
+        "size": 130,
+        "sha256": "7d151e67d8b591a3bd4a134d3fe8033b48f78a7725e4ae65a79d98d8cf7603e0",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/080402c4.json",
+        "sha256": "77263c0b54b7ab3a97d2a81a7800228e0e4cb9412cd758f705f112e490d9e0c6"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Return-valued/side-effect callee closure47eb8",
+        "Ordering in2476c and other callers",
+        "Overflow and signed arithmetic domain",
+        "Native tail boundary"
+      ],
+      "mechanics_role": "movement",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "080402c4.json",
+        "l0_sha256": "77263c0b54b7ab3a97d2a81a7800228e0e4cb9412cd758f705f112e490d9e0c6",
+        "outcome": "unsupported",
+        "reason": "unresolved callee closure 08047eb8",
+        "wall_s": 0.00016245799997705035
+      }
+    },
+    {
+      "id": "mlss.actor_vertical_reset",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "movement_lifecycle",
+      "entry": "08047eb8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Sets actor+25c/+250/+24c to -1, clears213 bit20, restores23e from240. Shared terminating side effect of402c4 and4a71c; isolated reset is not a complete controller.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x080402c4",
+        "0x0804a71c"
+      ],
+      "focus_dependencies": [
+        "080401f0",
+        "080402c4",
+        "0804a71c"
+      ],
+      "instruction_span": {
+        "address": "0x08047eb8",
+        "size": 60,
+        "sha256": "b428ccff581157a8512a5931af5c85e284ad2454941b2acfc970571f6344ca12",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/08047eb8.json",
+        "sha256": "4727263514950811e5507e04ce128e1d17e239a81715b2ea5f09427cfe742df9"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Symbolic actor owner and preserved untouched bytes",
+        "Initializer/update transaction ordering",
+        "Native parity fixtures"
+      ],
+      "mechanics_role": "movement",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "08047eb8.json",
+        "l0_sha256": "4727263514950811e5507e04ce128e1d17e239a81715b2ea5f09427cfe742df9",
+        "outcome": "static_lift_only",
+        "candidate": "candidate_316",
+        "operations": 33,
+        "blocks": 1,
+        "verification": "unqualified",
+        "wall_s": 0.0004545419999999467
+      }
+    },
+    {
+      "id": "mlss.actor_contact_quantize",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "terrain_contact",
+      "entry": "08046980",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "If actor+2b5 low3 bits set, rounds c/10 and conditionally14/18 to 0x100 boundaries using bit80; zeros2e0/242/244 and clears low3 bits. Contact interpretation remains candidate.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0803cb5c",
+        "0x08041a2c",
+        "0x080445cc",
+        "0x0804afd4",
+        "0x080edeb4",
+        "0x08138c8c"
+      ],
+      "focus_dependencies": [
+        "08046a10",
+        "0802476c"
+      ],
+      "instruction_span": {
+        "address": "0x08046980",
+        "size": 130,
+        "sha256": "8da096101a0772f63abb02261df9da5c46fb3c3756e4f0c1dd40a998f21f9e0c",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/08046980.json",
+        "sha256": "7dc712fe902dda544fd9e28c7f54b3fd042ab9794b2895ee93c048c91f0c673f"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Contact flag producers and floor/terrain semantics",
+        "Fixed-point unit calibration",
+        "Actor+20d bit40 meaning",
+        "Native tail boundary"
+      ],
+      "mechanics_role": "movement",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "08046980.json",
+        "l0_sha256": "7dc712fe902dda544fd9e28c7f54b3fd042ab9794b2895ee93c048c91f0c673f",
+        "outcome": "static_lift_only",
+        "candidate": "candidate_283",
+        "operations": 103,
+        "blocks": 5,
+        "verification": "unqualified",
+        "wall_s": 0.0009578330000010737
+      }
+    },
+    {
+      "id": "mlss.actor_contact_vertical_cleanup",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "terrain_contact",
+      "entry": "08046a10",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "If actor+2b5 bit8, performs same vertical reset as47eb8, restores266 from268 unless -1 then invalidates268, clears bit8. Links contact state to motion lifecycle.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802a740",
+        "0x0803cb5c",
+        "0x08041a2c",
+        "0x080465d8",
+        "0x0804a71c",
+        "0x0804afd4",
+        "0x080edeb4",
+        "0x080f112c"
+      ],
+      "focus_dependencies": [
+        "080401f0",
+        "08047eb8"
+      ],
+      "instruction_span": {
+        "address": "0x08046a10",
+        "size": 112,
+        "sha256": "23d784322c89d59c85cd077defdb0b58eefd41dcbe957f6a15863db07edbbff8",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/08046a10.json",
+        "sha256": "40ce7b5f602952974446ff339b75eb1472cc6b337ed3fddaf20d5762d6d90e13"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Contact flag producer",
+        "Packed-byte aliases",
+        "Temporary parameter lifecycle266/268",
+        "Native tail boundary"
+      ],
+      "mechanics_role": "movement",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "08046a10.json",
+        "l0_sha256": "40ce7b5f602952974446ff339b75eb1472cc6b337ed3fddaf20d5762d6d90e13",
+        "outcome": "static_lift_only",
+        "candidate": "candidate_284",
+        "operations": 93,
+        "blocks": 5,
+        "verification": "unqualified",
+        "wall_s": 0.0006995419999782371
+      }
+    },
+    {
+      "id": "mlss.actor_scheduler",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "paired_overworld_controller",
+      "entry": "0802476c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Scheduler calls2a608 then2c390 and later402c4 among many actor/terrain/scene services; uses unrecovered live r10 and actor references at+200/+204. Retain full shared-world alias and scheduling dependencies.",
+      "context_roles": [
+        "shared_actor_world"
+      ],
+      "direct_callees": [
+        "0x080195b4",
+        "0x08021f7c",
+        "0x08025d24",
+        "0x08027030",
+        "0x080286ac",
+        "0x08029624",
+        "0x08029878",
+        "0x0802a608",
+        "0x0802a740",
+        "0x0802c390",
+        "0x0802e854",
+        "0x0802ec64",
+        "0x0802f938",
+        "0x0802fd70",
+        "0x0803c5a4",
+        "0x0803cf64",
+        "0x080402c4",
+        "0x08047c18",
+        "0x08048174",
+        "0x08049c38",
+        "0x0804e33c",
+        "0x0804e450",
+        "0x0804fa94",
+        "0x08050078",
+        "0x08051208",
+        "0x08057c9c",
+        "0x080e98c0",
+        "0x080ef618",
+        "0x081daa6c",
+        "0x081daa70",
+        "0x081daa78"
+      ],
+      "callers": [
+        "0x08023dd4"
+      ],
+      "focus_dependencies": [
+        "0802c390",
+        "080402c4"
+      ],
+      "instruction_span": {
+        "address": "0x0802476c",
+        "size": 3264,
+        "sha256": "d3d5169aec4d22617af89c7d9bf9f8a536d7e983a62df9f5c9fecbd9cf3baf25",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": {
+        "ref": "local/ir/queue-runs/20261016T091004/mario-and-luigi-superstar-saga/l0/0802476c.json",
+        "sha256": "e4037ea78c31198fd84bdef7db56a89dfb21dc4c8b01729e6ea565cea6ec618d"
+      },
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Live r10 ABI and nested object references",
+        "Indirect callbacks081daa6c",
+        "Actor pool extents and allocation",
+        "Terrain and scene-service closure"
+      ],
+      "mechanics_role": "dependency",
+      "qualification": "unqualified",
+      "retained_census": {
+        "l0": "0802476c.json",
+        "l0_sha256": "e4037ea78c31198fd84bdef7db56a89dfb21dc4c8b01729e6ea565cea6ec618d",
+        "outcome": "unsupported",
+        "reason": "unresolved callee closure 0802a608",
+        "wall_s": 0.009011416999982202
+      }
+    },
+    {
+      "id": "mlss.mb.input_edges",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "bundled_mario_bros_engine",
+      "entry": "08f50bc0",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "High-ROM island polls KEYINPUT, writes pressed=(~KEYINPUT)&~oldHeld to03001776 and held=~KEYINPUT to03001774; independent from main input03000374. Embedded header at08f500a0 is SUPER MARIOD/AX4E.",
+      "context_roles": [
+        "independent_embedded_engine_world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x08f505e8",
+        "0x08f5b9e8",
+        "0x08f5c2dc"
+      ],
+      "focus_dependencies": [
+        "08f5b9e8",
+        "08f5c2dc"
+      ],
+      "instruction_span": {
+        "address": "0x08f50bc0",
+        "size": 38,
+        "sha256": "a2db8f82865fb21f98911dba443a098052168ff6c74d6a261f21297a7e81af0e",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": null,
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Export HighFunction beyond first800 address-biased census",
+        "KEYINPUT service binding",
+        "Native tail boundary at08f50be4",
+        "Reachability from title selection"
+      ],
+      "mechanics_role": "dependency",
+      "qualification": "unqualified",
+      "retained_census": null
+    },
+    {
+      "id": "mlss.mb.frame_dispatch",
+      "game": "mario-and-luigi-superstar-saga",
+      "family": "bundled_mario_bros_engine",
+      "entry": "08f5b9e8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not native qualification",
+      "mechanic": "Separate loop polls50bc0, fills four-slot input pool030054cc/ce, combines per-player pressed keys, gates pause predicate5b8f4, dispatches ROM callback table08f9f984, then presentation/audio/link work. Candidate engine scheduling root; no player physics closure recovered.",
+      "context_roles": [
+        "independent_embedded_engine_world"
+      ],
+      "direct_callees": [
+        "0x08f50bc0",
+        "0x08f50bf8",
+        "0x08f512a0",
+        "0x08f521b0",
+        "0x08f5519c",
+        "0x08f55d00",
+        "0x08f58b64",
+        "0x08f58be8",
+        "0x08f5b8f4",
+        "0x08f5c1fc",
+        "0x08f6de98",
+        "0x08f6dea4",
+        "0x08f6ee4c",
+        "0x08f6f318",
+        "0x08f6f340",
+        "0x08f6f35c"
+      ],
+      "callers": [
+        "0x08f5b8b4"
+      ],
+      "focus_dependencies": [
+        "08f50bc0",
+        "08f5b8f4",
+        "08f5c170",
+        "08f5c2dc"
+      ],
+      "instruction_span": {
+        "address": "0x08f5b9e8",
+        "size": 1360,
+        "sha256": "e44180605be31893ee33eda5a0fd057f979059ac2cd3f5d23d8d8f1a29ce6380",
+        "boundary_status": "contiguous exported candidate size; not proof of true function extent; native tail/ABI verification required"
+      },
+      "rom_sha256": "af9066e7eacdab919e92987db8856d038e4b75d4ed011259c893702085a886be",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "5845b9fdb9268b05c36533b9b07ed2d751b2163bac05256f2d0da15096f89507"
+      },
+      "l0": null,
+      "next_step": "Reuse L0 where present; verify native boundary/ABI and symbolic ownership; lift automatically from actual HighFunction with explicit closure then compare original/emitted native behavior.",
+      "remaining_unknowns": [
+        "Dispatch table targets and actual selected mode",
+        "Four-player pointer pool030053d4 and state030053cc",
+        "Link synchronization policy and fallback",
+        "Distinguish presentation clocks from mechanically necessary timers",
+        "HighFunction exports and actor lifecycle/terrain/score/waves"
+      ],
+      "mechanics_role": "dependency",
+      "qualification": "unqualified",
+      "retained_census": null
+    },
+    {
+      "id": "sma4.actor_contact_overlap",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "actor_contact",
+      "entry": "08046320",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_instruction_and_HighFunction_evidence; not new native qualification",
+      "mechanic": "Directional modulo256 A/B rectangle contact test using shared scratch. Inclusive comparisons accept touching boundary. Returns r0=0/1 and conditionally writes penetration, magnitude, direction, and success-only replacement of A centerX by selected Y extent. Failed X and failed Y paths preserve different prior fields.",
+      "context_roles": [
+        "shared_collision_scratch"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x08041504",
+        "0x0804170c",
+        "0x08046398",
+        "0x08046568",
+        "0x080472c0",
+        "0x0804fe68",
+        "0x08051144",
+        "0x08054630",
+        "0x08057938",
+        "0x080584f0",
+        "0x080587b4",
+        "0x0805d540",
+        "0x0805ed34",
+        "0x0805f348",
+        "0x0805f4c8",
+        "0x0805fa10",
+        "0x08062304",
+        "0x08062430",
+        "0x080626ac",
+        "0x08069d14",
+        "0x0806f22c",
+        "0x08072e74",
+        "0x080731ec",
+        "0x0807369c",
+        "0x0807536c",
+        "0x080755b0",
+        "0x08075e1c",
+        "0x08079ccc",
+        "0x0808bd18"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x08046320",
+        "size": 118,
+        "sha256": "331abdb2415d6cc77345345f94aa042dcc3767efd36084f7e8681e291df98ac8",
+        "boundary_status": "Full contiguous span through BX return at08046394 inclusive; includes6-byte alignment/literal pool08046346..0804634b. Ghidra112-byte body differs from contiguous span."
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": {
+        "ref": "research/deep-extraction/mario/parallel-sma4/overlap-export/l0/08046320.json",
+        "sha256": "bfebe0dfd2204cab2fa5d81dce83b6af65eb1e5d354c7cca15d098b0f3c54523"
+      },
+      "next_step": "Automatically lift and original/emitted native qualify all scratch effects, including failed branches and saved-LR return; bind same scratch owner as shape producers and contact caller.",
+      "mechanics_role": "collision_predicate"
+    },
+    {
+      "id": "sma1.player_state_dispatch",
+      "game": "super-mario-advance",
+      "family": "movement_lifecycle",
+      "entry": "080a7440",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "If global030019ae==0 and player+46==0, optional health-form transition writes inhibit+32=30 and state+27=8; then reads state+27 and dispatches ROM08367cec[state] through r4/080b6cc4. State0\u2192080a7570, state7\u2192080a9334, state8\u2192080a948c. State is not action+2d.",
+      "context_roles": [
+        "player",
+        "profile",
+        "globals"
+      ],
+      "direct_callees": [
+        "0x080b1358",
+        "0x080b551c",
+        "0x080b6cc4"
+      ],
+      "callers": [
+        "0x08046d20",
+        "0x08049a3c"
+      ],
+      "focus_dependencies": [
+        "080a7570",
+        "080a9334",
+        "080a948c",
+        "080b6cc4"
+      ],
+      "instruction_span": {
+        "address": "0x080a7440",
+        "size": 272,
+        "sha256": "0ee450772b6ada9533a50d0e86c5da019ca9d55844bc88ef5a8f21ec8f028f21",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Automatic HighFunction export must preserve live r4 indirect target and bind shared player; qualify admitted state domain0..11 and gate/order cases; no replacement authored scheduler.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.scene_tick_death_completion",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "08046d20",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Within admitted scene tick, runs player state dispatcher080a7440 before08047ab0 and080ad520. At late player+55 nonzero branch clears player+40/+64 and profile+3b/+3a then sets global03001992=3. Zero signal follows separate stage-exit branch. Alternate08049a3c has analogous nonzero branch.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities",
+        "globals"
+      ],
+      "direct_callees": [
+        "0x0802b470",
+        "0x080396e8",
+        "0x08039df4",
+        "0x08041838",
+        "0x08046510",
+        "0x08047ab0",
+        "0x08047be0",
+        "0x08047f20",
+        "0x0804a434",
+        "0x0804a724",
+        "0x0804ae6c",
+        "0x0804ae94",
+        "0x0804aff4",
+        "0x0804c3b8",
+        "0x0804c508",
+        "0x0804fd40",
+        "0x080a45ec",
+        "0x080a7440",
+        "0x080ac170",
+        "0x080ad520"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080a7440",
+        "08047ab0",
+        "080ad520",
+        "08048fb0"
+      ],
+      "instruction_span": {
+        "address": "0x08046d20",
+        "size": 684,
+        "sha256": "933efef9042d968af3998a414b0293e2c10bd6f61448790d6e6a7eb955659aa3",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Preserve original phase ordering and complete gates; capture native death\u2192completion\u2192phase3 trace. Do not rerun death updater after scheduler has moved phases.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.scene_phase_dispatch",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "08047024",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Clears entities+5e8/+5e9, writes effects+390=127, reads byte08346bf8[global03001992] into profile+79; loads r4=word08346bb4[global03001992], invokes080b6cc4 then0804b8ec. Phase3\u219208048fb0, phase4\u21920804ce28.",
+      "context_roles": [
+        "profile",
+        "entities",
+        "effects",
+        "globals"
+      ],
+      "direct_callees": [
+        "0x0804b8ec",
+        "0x080b6cc4"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080b6cc4",
+        "08048fb0",
+        "0804ce28",
+        "0804b8ec"
+      ],
+      "instruction_span": {
+        "address": "0x08047024",
+        "size": 150,
+        "sha256": "a664275cca1a1c957250e785e693c5b6028af292e4fd10f20a6da6145e40e4a8",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Resolve bounded phase table as true indirect dependency; broad17-entry static table is not reachability proof. Retain mutable roots across callee allocation/disposal.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.completion_selector_dispatch",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "08048fb0",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Calls0804a138 then if player+55==5 clears status/type across13slots; else disposes through080405cc/080a1870/080a4d0c/080b4720. Reloads player root, dispatches08346c1c[player+55-1] through live r4; after callback reloads player root, clears+55 and profile+58/+5a then080b5650. Selector1\u2192080490b8,2\u219208049134. Signal must stay live until callback; caller can dispose/rebind roots.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities",
+        "globals",
+        "allocator"
+      ],
+      "direct_callees": [
+        "0x080405cc",
+        "0x0804a138",
+        "0x080a1870",
+        "0x080a4d0c",
+        "0x080b4720",
+        "0x080b5650",
+        "0x080b6cc4"
+      ],
+      "callers": [
+        "0x080509d8"
+      ],
+      "focus_dependencies": [
+        "0804a138",
+        "080405cc",
+        "080a1870",
+        "080a4d0c",
+        "080b4720",
+        "080b6cc4",
+        "080490b8",
+        "08049134",
+        "080b5650"
+      ],
+      "instruction_span": {
+        "address": "0x08048fb0",
+        "size": 234,
+        "sha256": "4f3e576dc628e4135f49910bfa9f3e5e334dedbcd9b6e872900a7d78bcc1539b",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Export closure from HighFunction with real r4 and mutable pointer roots. Qualify selectors1/2 first, preserve pool aliases and13slot cleanup distinct from12slot pluck allocator. Other selectors3..5 remain explicit.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.retry_checkpoint_consumer",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "080490b8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Completion selector1 sets player+56=1, calls080adf7c to restore checkpoint-owned fields, sets global030019dc=1,03001991=0,03001992=0. Lives decrement belongs to080a9334 and is absent here.",
+      "context_roles": [
+        "player",
+        "profile",
+        "globals"
+      ],
+      "direct_callees": [
+        "0x080adf7c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080adf7c"
+      ],
+      "instruction_span": {
+        "address": "0x080490b8",
+        "size": 104,
+        "sha256": "3b0b65fe402e90a5d856417bd8e64e8db2c969c09473f88937c5149d42437f6c",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Preferred narrow automatic closure: this entry plus080adf7c, bind shared player/profile and globals; original/emitted parity then connected expiry\u2192consumer expected-state fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.zero_lives_consumer",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "08049134",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Completion selector2 calls0804958c, sets player+56=0,global030019dc=1 and03001992=4. Scene-phase table maps4\u21920804ce28 which resets lives03001161=5 among extensive scene/video/persistence operations. This branch is a game-over/reset candidate; presentation identity and persistence behavior not natively witnessed here.",
+      "context_roles": [
+        "player",
+        "profile",
+        "globals"
+      ],
+      "direct_callees": [
+        "0x0804958c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "0804958c",
+        "0804ce28"
+      ],
+      "instruction_span": {
+        "address": "0x08049134",
+        "size": 86,
+        "sha256": "bc44c7d2eab396eefbf332fab553b495f0ebc991cc207a75c0a00f9687b04085",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Automatically lift narrow selector2+0804958c with expected field effects, then separately trace phase4 in native emulator; do not claim full game-over/persistence.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.retry_checkpoint_restore",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "080adf7c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "Copies profile+42(low8)\u2192global03001160,+44\u2192profile+12,+46\u2192+1c,+47\u2192+67; player+48/+4a\u2192integerX/Y+18/+1a,+4c/+4d\u2192+43/+44,+50\u2192velocityY+10,+54\u2192state+27. Clears profile+3e/+3d,player+29/+35; sets health+2e=15. Full fixed-point X/Y reconciliation is outside this helper.",
+      "context_roles": [
+        "player",
+        "profile",
+        "globals"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x080490b8"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x080adf7c",
+        "size": 434,
+        "sha256": "71b2ab714344f66c3d3d0de1116f60455490ab28efdcdaba01c0cf3807316052",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Strong leaf component target: automatic export/lift and finite native parity with exact byte/halfword/word widths, signed checkpoint Y and shared references; caller/later setup must reconcile integer/fixed-point mirrors.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma1.reset_health_and_stage_fields",
+      "game": "super-mario-advance",
+      "family": "death_retry_lifecycle",
+      "entry": "0804958c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_and_instruction_static_causal_analysis; no new native qualification",
+      "mechanic": "If playerhealth+2e<16 writeshealth15 and+56=1;elsehealth31/+56=0. Clears player+2f and low3bits+93; clears profile+4a,+52,+53,+54,+55,+50,+56,+12,+1b. Profile+55 here is distinct from player completion+55.",
+      "context_roles": [
+        "player",
+        "profile"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802f2e0",
+        "0x08037a00",
+        "0x08038994",
+        "0x08049134",
+        "0x0804919c",
+        "0x080491bc",
+        "0x0804f798"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0804958c",
+        "size": 352,
+        "sha256": "4b895526b10829a373acc85f0b41ada4858be4f0981813f201460f93a92a7a6f",
+        "boundary_status": "retained export size; actual return tail retained separately in source-windows.json"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Automatic leaf candidate with low/high-health and masked-bit parity; preserve context owner distinction, no invented shared field name for both +55 offsets.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "sma2.actor_transient_reset",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802ea54",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Resets transient fields, resistance/shape/reward descriptors and velocities while preserving type+1a and state+1c. Sets +2e=1; copies engine+1194 to actor+60 except state11.",
+      "context_roles": [
+        "scene",
+        "engine",
+        "actor_shared_pool_view"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802ebec",
+        "0x0805f8f8"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0802ea54",
+        "size": 226,
+        "sha256": "ef0d6f81c5a0a7a885e81c8d2ad851ff987b67c62e54685550a6e5c1ea49fe2a",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802ea54.json",
+        "sha256": "b2806eb2c17b871b3db65c4dc0ae16aca8dd4528875f2b2b77f311773d15d3f1"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "sma2.actor_descriptor_begin",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802eb44",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Writes actor+35 low nibble from table080ffdec indexed by original type, then calls0802eb64.",
+      "context_roles": [
+        "scene",
+        "engine",
+        "actor_shared_pool_view"
+      ],
+      "direct_callees": [
+        "0x0802eb64"
+      ],
+      "callers": [
+        "0x0802a5d8",
+        "0x0802ebec",
+        "0x08034264",
+        "0x08038980",
+        "0x0803c504",
+        "0x0804056c",
+        "0x08045954",
+        "0x0804bb30",
+        "0x0804bed4",
+        "0x0805cb18"
+      ],
+      "focus_dependencies": [
+        "0x0802eb64"
+      ],
+      "instruction_span": {
+        "address": "0x0802eb44",
+        "size": 28,
+        "sha256": "4c730eb53ba1a6f28619b918915676347e0aa50e1d3db79fcbd5f222c7c74c02",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802eb44.json",
+        "sha256": "63d66ae07fca06649f4ce195fd0360399268aaf210b2975f16115b3b0574eb02"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "sma2.actor_descriptor_fields",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802eb64",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Loads actor+44 from08100134 indexed by ORIGINAL type; six other descriptor fields use type for0..248 or(type-45)&255 for249..255.",
+      "context_roles": [
+        "scene",
+        "engine",
+        "actor_shared_pool_view"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802eb44",
+        "0x08064bd0"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0802eb64",
+        "size": 106,
+        "sha256": "514a2a5b0a959b8fe714e976e2d2f08c934cbebc6a7155598b5c93cc8fe35ffd",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802eb64.json",
+        "sha256": "a8c494f3793b128b2578c5a45b808474ad570d8a5ff102d3f6f6dc8e8447eb0e"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "sma2.actor_reinitialize",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802ebec",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Ordered reset0802ea54 then descriptor0802eb44; native pop/bx return, not dynamic callback.",
+      "context_roles": [
+        "scene",
+        "engine",
+        "actor_shared_pool_view"
+      ],
+      "direct_callees": [
+        "0x0802ea54",
+        "0x0802eb44"
+      ],
+      "callers": [
+        "0x08012c44",
+        "0x0802a5d8",
+        "0x0802a8ac",
+        "0x0802e930",
+        "0x0802ff54",
+        "0x080353b4",
+        "0x08036ac0",
+        "0x08036d34",
+        "0x08036f80",
+        "0x080372f8",
+        "0x08037b70",
+        "0x08037c60",
+        "0x08038170",
+        "0x080381f8",
+        "0x0803b540",
+        "0x0803b624",
+        "0x0803b7b4",
+        "0x0803b870",
+        "0x0803b95c",
+        "0x0803ba48",
+        "0x0803bb34",
+        "0x0803bc64",
+        "0x0803bd94",
+        "0x0803be40",
+        "0x0803c00c",
+        "0x0803c0c4",
+        "0x0803c208",
+        "0x0803c34c",
+        "0x0803dd3c",
+        "0x08041964",
+        "0x08042420",
+        "0x0804259c",
+        "0x08042878",
+        "0x080451a4",
+        "0x08045238",
+        "0x0804699c",
+        "0x0804a254",
+        "0x0804acfc",
+        "0x0804bfc8",
+        "0x0804c410",
+        "0x0804d114",
+        "0x0804d870",
+        "0x0804e1b0",
+        "0x0804e220",
+        "0x0804ecf8",
+        "0x0804f8cc",
+        "0x0804fc8c",
+        "0x08051ed4",
+        "0x08052484",
+        "0x08055c9c",
+        "0x08056dc8",
+        "0x08058c50",
+        "0x080593d4",
+        "0x08059748",
+        "0x0805a074",
+        "0x0805a144",
+        "0x0805ad28",
+        "0x0805b94c",
+        "0x0805e55c",
+        "0x0805ea7c",
+        "0x08065144",
+        "0x08065214",
+        "0x080652d4",
+        "0x08066e68",
+        "0x080672e4",
+        "0x080716a4",
+        "0x08074738",
+        "0x0807761c",
+        "0x08077e7c",
+        "0x08078048",
+        "0x08078370"
+      ],
+      "focus_dependencies": [
+        "0x0802ea54",
+        "0x0802eb44"
+      ],
+      "instruction_span": {
+        "address": "0x0802ebec",
+        "size": 20,
+        "sha256": "f6021af1fb413aa81ed2ee20f965e97d230b9607d5fba7b56dcff6a8cb94a89f",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802ebec.json",
+        "sha256": "c6f787f523e8fd4cf3f44be9b4a62b5a01234b7e067d53969fc83aa9019b167f"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "sma2.scene_random_pair_update",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802f120",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Updates scene.ee5/ee6 modulo256 and writes two consecutive random results toee7/ee8; exactly two source loop iterations.",
+      "context_roles": [
+        "scene"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x08027c70",
+        "0x08029658",
+        "0x08029904",
+        "0x0802f9f0",
+        "0x0803030c",
+        "0x080308c8",
+        "0x08030f50",
+        "0x08037850",
+        "0x08038314",
+        "0x080384bc",
+        "0x0803b100",
+        "0x0803b3d8",
+        "0x0803b7b4",
+        "0x0803b870",
+        "0x0803b95c",
+        "0x0803ba48",
+        "0x0803bb34",
+        "0x0803bc64",
+        "0x0803bd94",
+        "0x0803be40",
+        "0x0803c00c",
+        "0x0803c34c",
+        "0x0803f860",
+        "0x0803ff04",
+        "0x0803ff50",
+        "0x0803ffdc",
+        "0x08040098",
+        "0x0804117c",
+        "0x0804125c",
+        "0x080419e4",
+        "0x08042150",
+        "0x0804389c",
+        "0x080441d4",
+        "0x0804423c",
+        "0x0804426c",
+        "0x080454f0",
+        "0x0804615c",
+        "0x080462a0",
+        "0x080462d0",
+        "0x08046414",
+        "0x08046858",
+        "0x08046b14",
+        "0x080489ac",
+        "0x08049b80",
+        "0x0804a254",
+        "0x0804b68c",
+        "0x0804b778",
+        "0x0804dcb4",
+        "0x0804f4f4",
+        "0x0804fc8c",
+        "0x08052e80",
+        "0x08052eb0",
+        "0x08052f64",
+        "0x0805387c",
+        "0x08053c34",
+        "0x08054cb4",
+        "0x08058590",
+        "0x080588f8",
+        "0x08059560",
+        "0x0805a578",
+        "0x0805a83c",
+        "0x0805fc20",
+        "0x08060458",
+        "0x08064c80",
+        "0x080665a8",
+        "0x08078048"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0802f120",
+        "size": 140,
+        "sha256": "862b899e924573aa6335f0a486d3edf85f79231fc11d4d0505acf2638ec17400",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802f120.json",
+        "sha256": "37429b77b572ff9882616628e9c9b5e1679dd8a862625c575d19f6e31a0a2ea8"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "sma2.actor_player_relative_side",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "ability_projectile_dependency",
+      "entry": "0802f1b8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_rom_disassembly_and_export_static_analysis_not_native_emitted_qualification",
+      "mechanic": "Writes signed16 playerX-actor.integerX to shared scene.ece, returns whether truncated signed16 difference is negative.",
+      "context_roles": [
+        "scene",
+        "engine",
+        "actor_shared_pool_view"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0802bd9c",
+        "0x0802c0cc",
+        "0x0802e930",
+        "0x08031730",
+        "0x08034264",
+        "0x080347a4",
+        "0x08034864",
+        "0x08037c60",
+        "0x0803b624",
+        "0x0803c504",
+        "0x0803dd3c",
+        "0x0803ffdc",
+        "0x08040494",
+        "0x08040a0c",
+        "0x080413e8",
+        "0x0804177c",
+        "0x08041ca8",
+        "0x08041df4",
+        "0x08042150",
+        "0x08042614",
+        "0x08042ab8",
+        "0x08044c88",
+        "0x080456dc",
+        "0x08046a28",
+        "0x08047024",
+        "0x080470f8",
+        "0x08049c0c",
+        "0x0804b3e8",
+        "0x0804b68c",
+        "0x0804bfc8",
+        "0x0804c3f4",
+        "0x0804c89c",
+        "0x0804c94c",
+        "0x0804d5e8",
+        "0x0804d62c",
+        "0x0804d870",
+        "0x0804fb1c",
+        "0x080502dc",
+        "0x08050350",
+        "0x08050df8",
+        "0x08050ea0",
+        "0x08051c28",
+        "0x08052a64",
+        "0x080534c8",
+        "0x08055444",
+        "0x080555a4",
+        "0x0805771c",
+        "0x08057780",
+        "0x08058124",
+        "0x0805907c",
+        "0x08059148",
+        "0x0805982c",
+        "0x0805a91c",
+        "0x0805a97c",
+        "0x08066624",
+        "0x08066c18"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0802f1b8",
+        "size": 56,
+        "sha256": "58c0d18a3cce4a8a30c2af6006f7d5669fccb3a6061c17cfa6c9a98c3e7142e0",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802f1b8.json",
+        "sha256": "3f4c7157284082bcc9219a7bf91bb31a2d8b06ca3f2fdaae0200e52dffadac44"
+      },
+      "next_step": "Lift pinned own-ROM HighFunction automatically; establish alias-preserving actor/scene context and qualify original/emitted transitions. No manual-C behavior input.",
+      "mechanics_role": "combat"
+    },
+    {
+      "id": "kart.racer_update",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "0803c4c0",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Racer update integrates signed +4e/+50 velocities into 32-bit X/Y using *0x100, snapshots prior X/Y, classifies terrain, expires timers, then branches on +48 bit 0x2000 into player-input versus CPU update. Exact order is mechanical; rendering/services are mixed.",
+      "context_roles": [
+        "racer",
+        "track",
+        "shared_race"
+      ],
+      "direct_callees": [
+        "080378fc",
+        "08037a2c",
+        "08037b30",
+        "08037fd8",
+        "08038200",
+        "08038a08",
+        "08039b38",
+        "0803ae70",
+        "0803af10",
+        "0803b550",
+        "0803b98c",
+        "0803bc00",
+        "0803bd24",
+        "0803c444",
+        "0803d00c",
+        "0803d214",
+        "0803d4e4",
+        "08040fec",
+        "08042ae4",
+        "080523dc"
+      ],
+      "callers": [
+        "0x08049850"
+      ],
+      "focus_dependencies": [
+        "080378fc",
+        "08037a2c",
+        "08037b30",
+        "08037fd8",
+        "08038200",
+        "08038a08",
+        "08039b38",
+        "0803ae70",
+        "0803af10",
+        "0803b550",
+        "0803b98c",
+        "0803bc00",
+        "0803bd24",
+        "0803c444",
+        "0803d00c",
+        "0803d214",
+        "0803d4e4",
+        "08040fec",
+        "08042ae4",
+        "080523dc"
+      ],
+      "instruction_span": {
+        "address": "0x0803c4c0",
+        "size": 856,
+        "sha256": "19c980a079977e2ec85be17d23a3cb67efeaf37aca855670153abe7d0c4095e5",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803c4c0.json",
+        "sha256": "5015208cb4051a09689581ea5fbf328d195c36d734623539e7251acc16bae962",
+        "observed_pc_min": "0x803c4d8",
+        "observed_pc_max": "0x803c848",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803c848"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803c4c0",
+          "size": 906,
+          "sha256": "5974560139953e751c41837ae965d595bde9060db205351324b4145b9ba6397e",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803c4c0.txt",
+        "sha256": "c15bc1619f13d44e1e476ec3e2faddf8e8a81dbfe3c2943894bf220e8a045611",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.input_speed_policy",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "08037fd8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Input mask stored at +96; +178 resource count (identity coin candidate) modifies target speed +a8 in piecewise bands. Calls steering, acceleration and state policies only when flags allow. Full button meanings remain unresolved.",
+      "context_roles": [
+        "racer",
+        "shared_race"
+      ],
+      "direct_callees": [
+        "08037cdc",
+        "08037d6c",
+        "08038298",
+        "08038afc",
+        "08038e34",
+        "0804c234",
+        "0804cd28",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08060ee8"
+      ],
+      "callers": [
+        "0x0803c4c0"
+      ],
+      "focus_dependencies": [
+        "08037cdc",
+        "08037d6c",
+        "08038298",
+        "08038afc",
+        "08038e34",
+        "0804c234",
+        "0804cd28",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08060ee8"
+      ],
+      "instruction_span": {
+        "address": "0x08037fd8",
+        "size": 510,
+        "sha256": "a1a6386bc12ca43dbc65be25fdb9bed04a726ac8aa556a42508ac0ebbd93f1d7",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/08037fd8.json",
+        "sha256": "ab7bbb77ced2dbabb31b1e0ba13c0482031cc786850270a7e595ed573feb0f20",
+        "observed_pc_min": "0x8037fea",
+        "observed_pc_max": "0x80381fc",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "080381fc"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x08037fd8",
+          "size": 550,
+          "sha256": "c2acedb079a2d6981509e0ad3879c6a79c861f689cabd2dc63187285656493df",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/08037fd8.txt",
+        "sha256": "09552974900901766bde25ba996ace03c25ead572665236267b9a4ced8ff2233",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.acceleration_state",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "08038298",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "State +84 dispatch controls packed acceleration +c0 and speed +bc. State 8 decrements +cc and caps +bc at 0x7e00000; state 12 expires to ordinary state and uses target +a8. Do not infer full boost names without native witness.",
+      "context_roles": [
+        "racer"
+      ],
+      "direct_callees": [
+        "08038710",
+        "0803daec"
+      ],
+      "callers": [
+        "0x08037fd8",
+        "0x0803bd24"
+      ],
+      "focus_dependencies": [
+        "08038710",
+        "0803daec"
+      ],
+      "instruction_span": {
+        "address": "0x08038298",
+        "size": 156,
+        "sha256": "dce5faa816fa65fba75faabd3a7dea41adc0179af2a72dec82e03deb5f747bf7",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/08038298.json",
+        "sha256": "f2d33e2d695fe012358e3a26855fd26ff74c6056adfec7646cfdaf7d28440670",
+        "observed_pc_min": "0x803829c",
+        "observed_pc_max": "0x803863c",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803863c"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x08038298",
+          "size": 934,
+          "sha256": "7b9117e7979cda3ed63c9cfffc6c84859b7b4fe4eb5aa13817b07fc86c7eb8d0",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/08038298.txt",
+        "sha256": "345016c28a967f6dabfa0213dfb21f11ed6e899cc0b051b6ac717d4260ae26a3",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.surface_contact",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "0803b2b4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Track query at X/Y/Z writes surface byte +85; encoded surface 0x84 has world mutation and timer-dependent response. Adjacent cell delta chooses contact response; return value currently misrepresented as indirect tail call.",
+      "context_roles": [
+        "racer",
+        "track",
+        "audio"
+      ],
+      "direct_callees": [
+        "08032974",
+        "08032990",
+        "08032c2c",
+        "08032c50",
+        "0803b018",
+        "0803b110",
+        "08040d68",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08060ee8"
+      ],
+      "callers": [
+        "0x0803b550"
+      ],
+      "focus_dependencies": [
+        "08032974",
+        "08032990",
+        "08032c2c",
+        "08032c50",
+        "0803b018",
+        "0803b110",
+        "08040d68",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08060ee8"
+      ],
+      "instruction_span": {
+        "address": "0x0803b2b4",
+        "size": 632,
+        "sha256": "2e6111b9866862e637e64a7c41f0d971a99675c2d13d0d3dfa54683d025cf1d2",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803b2b4.json",
+        "sha256": "185d626e8092e4c1395f9228898a094a153ed37b35b954290983f51c4f2c1e59",
+        "observed_pc_min": "0x803b2c2",
+        "observed_pc_max": "0x803b54c",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803b54c"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803b2b4",
+          "size": 666,
+          "sha256": "62369108bc1fcbf711b90e1bacf97ac670587e43f70ec13dd6bfd7ac586f3b39",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0847",
+        "tail_interpretation": "Thumb BX r1 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803b2b4.txt",
+        "sha256": "2cd0c4b47a5efeb623e0ce372199efb4d09b41c9f0614ca0aa009ad2dfb3331b",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.contact_recovery",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "0803b550",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Consumes surface response, increments packed contact count +60, changes flags at 8 contacts, dampens signed velocity using character/resource-indexed tables or quarters high speed; recovery timers gate +48 bit 0x4000.",
+      "context_roles": [
+        "racer",
+        "track"
+      ],
+      "direct_callees": [
+        "08032974",
+        "08032c50",
+        "0803b2b4",
+        "08040810"
+      ],
+      "callers": [
+        "0x0803c4c0"
+      ],
+      "focus_dependencies": [
+        "08032974",
+        "08032c50",
+        "0803b2b4",
+        "08040810"
+      ],
+      "instruction_span": {
+        "address": "0x0803b550",
+        "size": 576,
+        "sha256": "73f99660aa742e52dd426df6d10279ea8279e313909cc4861ce7df7bf05d613d",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803b550.json",
+        "sha256": "c0f12c74ee04879ef203e7aa4ecb5f49771028fcea7a288bdc479c70a0d100a7",
+        "observed_pc_min": "0x803b558",
+        "observed_pc_max": "0x803b7b6",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803b7b6"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803b550",
+          "size": 616,
+          "sha256": "2773bd5dfd1b1d0c68c4d7ed92daca813a06a0287fcf2c861e0af80ec8f3b109",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803b550.txt",
+        "sha256": "cbf4b93efc40c75f31c6ac49b78bec4f683e62cc26dd36e8378005a8defb0570",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.character_class_profiles",
+      "game": "mario-kart-super-circuit",
+      "family": "vehicle_controller_surface_dynamics",
+      "entry": "0803c1bc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Character bits +4c & 7 and race class +7dc load speed and handling arrays at +f4/+114/+134 and acceleration table pointer +174. Tables are required ROM dependencies, not independent constants.",
+      "context_roles": [
+        "racer",
+        "race_config"
+      ],
+      "direct_callees": [
+        "08032bc8"
+      ],
+      "callers": [
+        "0x0803c344"
+      ],
+      "focus_dependencies": [
+        "08032bc8"
+      ],
+      "instruction_span": {
+        "address": "0x0803c1bc",
+        "size": 348,
+        "sha256": "696e524aa48713775ce57348716900a0bb84b2042490d1af7e5d662d59fdb18f",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803c1bc.json",
+        "sha256": "b04cfe7b759350f401cd45a2217b66b1d79cc144993852901852e9c267c00b9e",
+        "observed_pc_min": "0x803c1ce",
+        "observed_pc_max": "0x803c33c",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803c33c"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803c1bc",
+          "size": 386,
+          "sha256": "8ddef7f287ab31f8e657cdde7d2f9cd0b8da744d386ea974ee64fb9426ec732e",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803c1bc.txt",
+        "sha256": "8f51a062a39201b18918b321e1637d3c2934260b71c4720319beebd9870924df",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.pair_contact",
+      "game": "mario-kart-super-circuit",
+      "family": "items_combat_hazards",
+      "entry": "0803e92c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Two racer pointers undergo flag/timer-dependent impact, weighted velocity exchange and clamp to +/-0x400. Several branches set +5a=0x8007,+38=8,+48|0x1000; effects store direct participant pointers. Preserve alias identity across racer pair and active-player reference.",
+      "context_roles": [
+        "racer_a",
+        "racer_b",
+        "shared_race",
+        "effect_pool",
+        "audio"
+      ],
+      "direct_callees": [
+        "0802ec38",
+        "08030224",
+        "0803d4e4",
+        "0803e424",
+        "0803e490",
+        "0803e5a4",
+        "0803e68c",
+        "0803e7f0",
+        "0803f42c",
+        "0804cd28",
+        "0805bfe8",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08061eb0"
+      ],
+      "callers": [
+        "0x0803f450"
+      ],
+      "focus_dependencies": [
+        "0802ec38",
+        "08030224",
+        "0803d4e4",
+        "0803e424",
+        "0803e490",
+        "0803e5a4",
+        "0803e68c",
+        "0803e7f0",
+        "0803f42c",
+        "0804cd28",
+        "0805bfe8",
+        "0805ff20",
+        "08060110",
+        "08060e80",
+        "08061eb0"
+      ],
+      "instruction_span": {
+        "address": "0x0803e92c",
+        "size": 2606,
+        "sha256": "9219944fd2ea63968f3bd8dc7dc250005a128c32c80a87f63463bfa2eb773bec",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803e92c.json",
+        "sha256": "2fc8556dc7f1262f2bcf501c19617b411889d5654245f74cbca2554a44344a15",
+        "observed_pc_min": "0x803e940",
+        "observed_pc_max": "0x803f43a",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803f43a"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803e92c",
+          "size": 2832,
+          "sha256": "04fd80951c001df44fbed3236e15e6546c4a9640471deddd43f61a593dadcb93",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803e92c.txt",
+        "sha256": "dd57ade789217942d6b16f492ad1aea5faecdaee26b07b7695d8b1f6ba944f00",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.impact_resource_loss",
+      "game": "mario-kart-super-circuit",
+      "family": "items_combat_hazards",
+      "entry": "0803d4e4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Mode/player-eligibility gate maps cause IDs to losses 4/2/1/8/1 and saturates against +178 before subtraction; selected-player paths spawn visual objects. Resource identity remains static coin hypothesis, not qualified.",
+      "context_roles": [
+        "racer",
+        "shared_race",
+        "effect_pool"
+      ],
+      "direct_callees": [
+        "0805b8d0",
+        "0805b8f4",
+        "0805b940"
+      ],
+      "callers": [
+        "0x0803c4c0",
+        "0x0803e490",
+        "0x0803e92c",
+        "0x08050d4c"
+      ],
+      "focus_dependencies": [
+        "0805b8d0",
+        "0805b8f4",
+        "0805b940"
+      ],
+      "instruction_span": {
+        "address": "0x0803d4e4",
+        "size": 226,
+        "sha256": "985930bdbc94ba3ea50c43006fd71853dde5ea1e72f1a8ada363a003294df2c8",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803d4e4.json",
+        "sha256": "02b279b2a6998f4e958934f682cf07cd520420307dcdf6309bf626c0d825784b",
+        "observed_pc_min": "0x803d4e4",
+        "observed_pc_max": "0x803d6aa",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803d6aa"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803d4e4",
+          "size": 456,
+          "sha256": "c8dafc78d0200a875056523594076b06106ad57538ba01d05bf38e784524467b",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803d4e4.txt",
+        "sha256": "b350564292eaa5d54c189b40ce9dc3780c1934b1703494da0001dddb06147270",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.homing_projectile",
+      "game": "mario-kart-super-circuit",
+      "family": "items_combat_hazards",
+      "entry": "08044d4c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; HighFunction_export_pending",
+      "mechanic": "Item-like object follows direct target pointer +7c, checks track segment adjacency, turns toward target with 08044d00 and integrates X/Y. Track-segment changes decrement lifetime counter +78; zero schedules cleanup callback 08047849. Projectile color/name not established.",
+      "context_roles": [
+        "projectile",
+        "owner_racer",
+        "target_racer",
+        "track",
+        "object_pool"
+      ],
+      "direct_callees": [
+        "0802ec38",
+        "0803285c",
+        "080328d4",
+        "08044aac",
+        "08044d00",
+        "0804f808"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "0802ec38",
+        "0803285c",
+        "080328d4",
+        "08044aac",
+        "08044d00",
+        "0804f808"
+      ],
+      "instruction_span": {
+        "address": "0x08044d4c",
+        "size": 1434,
+        "sha256": "3d522e8e15956cb0f1468b145f4e4d6171b36408ece3f9657d3d26894f49fbc9",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": null,
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/08044d4c.txt",
+        "sha256": "2f39b32e1962730830465de9b907027276ba0bda8166263904f0a233ab7677eb",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.cpu_route_heading",
+      "game": "mario-kart-super-circuit",
+      "family": "opponent_ai_racing_world",
+      "entry": "0803bc84",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Returns track route heading from current X/Y and route selector +191; off-route flags choose checkpoint coordinates and atan-like 0802ec38. Return ABI is currently obscured by unrecovered indirect tail.",
+      "context_roles": [
+        "racer",
+        "track"
+      ],
+      "direct_callees": [
+        "0802ec38",
+        "0803285c",
+        "08032ad0",
+        "08032b10"
+      ],
+      "callers": [
+        "0x08037cdc",
+        "0x0803af10",
+        "0x0803bd24"
+      ],
+      "focus_dependencies": [
+        "0802ec38",
+        "0803285c",
+        "08032ad0",
+        "08032b10"
+      ],
+      "instruction_span": {
+        "address": "0x0803bc84",
+        "size": 144,
+        "sha256": "0575409cfbd8d7704eed97f05f0a5f8a3c735b8f708fdefa25d879926685ce87",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803bc84.json",
+        "sha256": "e7fa3728e85229f7412d28aeddbf50f737d7ebcfcc738b32b1ba7f51834e54dd",
+        "observed_pc_min": "0x803bc8a",
+        "observed_pc_max": "0x803bd18",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803bd18"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803bc84",
+          "size": 150,
+          "sha256": "b8f0921371cb69f68bdd6fb4c2138dbbe32b2107686071586544b799ed102a83",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0847",
+        "tail_interpretation": "Thumb BX r1 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803bc84.txt",
+        "sha256": "d869e72cebca1269c2ca43c93486611d1e0e3164d2fa4fcf77c6d12d76e31f45",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.cpu_heading_slew",
+      "game": "mario-kart-super-circuit",
+      "family": "opponent_ai_racing_world",
+      "entry": "0803bc00",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Steers current heading +7a toward desired +56 with signed wrap arithmetic; deltas outside +/-0x7ff clamp to +/-0x600, with special flag-dependent drift branch.",
+      "context_roles": [
+        "racer"
+      ],
+      "direct_callees": [
+        "0803ba98",
+        "0803bb48"
+      ],
+      "callers": [
+        "0x0803c4c0"
+      ],
+      "focus_dependencies": [
+        "0803ba98",
+        "0803bb48"
+      ],
+      "instruction_span": {
+        "address": "0x0803bc00",
+        "size": 118,
+        "sha256": "c77567048989230aa2625bdbc5482d221debcf9b5bc1cd4bdea185aac9991632",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803bc00.json",
+        "sha256": "f13670777f2c5b1ad3293424b61748aacfbb57e7473ee7938128c2af09fa9de7",
+        "observed_pc_min": "0x803bc04",
+        "observed_pc_max": "0x803bc82",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803bc82"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803bc00",
+          "size": 132,
+          "sha256": "a15ff5ecb36f08d597370d6e46720606d2e22b1d650c6f1c2ae54d0f4e400e16",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803bc00.txt",
+        "sha256": "8a0ef87f93a77c792c66d8069548a58c5dd070c4d91c4291b8fecbb9a9b77590",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.cpu_speed_policy",
+      "game": "mario-kart-super-circuit",
+      "family": "opponent_ai_racing_world",
+      "entry": "0803bd24",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "CPU uses route heading, character/class acceleration profile +174, speed +bc, target offsets and capped +178 contribution. State 8 timed high-speed path and state 11 turn recovery share player fallback acceleration. Rubber-band behavior not proven.",
+      "context_roles": [
+        "racer",
+        "track",
+        "race_config"
+      ],
+      "direct_callees": [
+        "08038298",
+        "0803bc84"
+      ],
+      "callers": [
+        "0x0803c4c0"
+      ],
+      "focus_dependencies": [
+        "08038298",
+        "0803bc84"
+      ],
+      "instruction_span": {
+        "address": "0x0803bd24",
+        "size": 472,
+        "sha256": "e5cce26ae626518809d542dfaac31db769a27e51311bbb26bacafd8081073b16",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803bd24.json",
+        "sha256": "7cce52061b93b67b3a1e0df98d18be022ff6f4ae8fd6cbaf4f45f6b953f91228",
+        "observed_pc_min": "0x803bd28",
+        "observed_pc_max": "0x803bf32",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803bf32"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803bd24",
+          "size": 528,
+          "sha256": "127edf1782c8a25b206fd8f5e32ac903be7eed6d93237307293010b531949382",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803bd24.txt",
+        "sha256": "f301cdce0de39dee3d61a8f10e27fd9092520b48f5b1b0a1dfec16e4997fbed4",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "behavior"
+    },
+    {
+      "id": "kart.checkpoint_lap_crossing",
+      "game": "mario-kart-super-circuit",
+      "family": "race_progression_rules",
+      "entry": "0803b7b8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Checks previous/current Y against track crossing line, increments +91, clears checkpoint bytes +90/+36 and updates monotone +c6. Compares to race target 0300362a for last-lap/finish flags and switches +48 to 0x2038 on finish. Crossing legality must include producer 0803b98c, not an isolated Y threshold.",
+      "context_roles": [
+        "racer",
+        "track",
+        "shared_race",
+        "effect_pool",
+        "audio"
+      ],
+      "direct_callees": [
+        "08030224",
+        "080329b8",
+        "0803dca4",
+        "0803dcf0",
+        "080430ec",
+        "0804f098",
+        "0805ff20"
+      ],
+      "callers": [
+        "0x0803b98c"
+      ],
+      "focus_dependencies": [
+        "08030224",
+        "080329b8",
+        "0803dca4",
+        "0803dcf0",
+        "080430ec",
+        "0804f098",
+        "0805ff20"
+      ],
+      "instruction_span": {
+        "address": "0x0803b7b8",
+        "size": 424,
+        "sha256": "e3b9fc35772a41d2f1e6d77ed137c473ded9aedfef2b713c5e606e9a09dff3ea",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803b7b8.json",
+        "sha256": "e165a9d1ef4fc84922d1858fc25ca68213b90cf030e428370a00c5cbd377558b",
+        "observed_pc_min": "0x803b7c6",
+        "observed_pc_max": "0x803b980",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803b980"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803b7b8",
+          "size": 458,
+          "sha256": "4a66750ac61aec371c6561a1818b2267367378486ab2cd6e8d8b06a951cdab88",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803b7b8.txt",
+        "sha256": "2e511b040aa025f29076b57127a1cf524a17fa39f8fc25e89434d6987847bb3d",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.track_checkpoint_producer",
+      "game": "mario-kart-super-circuit",
+      "family": "race_progression_rules",
+      "entry": "0803b98c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Track lookup supplies route/checkpoint byte +90 and attributes +19b; only flagged branches call crossing 0803b7b8, then ranking/update 0804af3c. Height and invalid/off-track cases set flags instead.",
+      "context_roles": [
+        "racer",
+        "track",
+        "shared_race"
+      ],
+      "direct_callees": [
+        "080328d4",
+        "08032b50",
+        "08032c50",
+        "0803b7b8",
+        "0804af3c"
+      ],
+      "callers": [
+        "0x0803c4c0"
+      ],
+      "focus_dependencies": [
+        "080328d4",
+        "08032b50",
+        "08032c50",
+        "0803b7b8",
+        "0804af3c"
+      ],
+      "instruction_span": {
+        "address": "0x0803b98c",
+        "size": 258,
+        "sha256": "6033d3be21f2644719f40209b256d9d82dbc1218bede3aa13e91d114921146b3",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803b98c.json",
+        "sha256": "2627f513dc1a90af7f25996fbfbeb877ccbc58a1539d27a9c7bbb734fd79a482",
+        "observed_pc_min": "0x803b996",
+        "observed_pc_max": "0x803ba94",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803ba94"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803b98c",
+          "size": 266,
+          "sha256": "af6da08c92513a7aa3c8a2122474f92417aacc35e913a2288c0c3b884657979e",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803b98c.txt",
+        "sha256": "11b7f6880010a1707c834296c7bc82b0abf713fd0399f6c4c562a60d2560d879",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.race_phase_finish",
+      "game": "mario-kart-super-circuit",
+      "family": "race_progression_rules",
+      "entry": "0804a878",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; HighFunction_export_pending",
+      "mechanic": "Mode-specific phase 3 completion moves race phase to 4 with 0/0x1e0/0xb4 delays, phase 4 countdown advances to 5. Uses racer pointer arrays at race+7f4/+c38 and finish flag +48&0x20; complete cups/unlocks not established.",
+      "context_roles": [
+        "race",
+        "racer_pool",
+        "task_pool"
+      ],
+      "direct_callees": [
+        "08032d80",
+        "0804a774",
+        "0804a808",
+        "0804f098",
+        "0804f0ac",
+        "0805b4d8"
+      ],
+      "callers": [
+        "0x0805167c",
+        "0x08052a4c"
+      ],
+      "focus_dependencies": [
+        "08032d80",
+        "0804a774",
+        "0804a808",
+        "0804f098",
+        "0804f0ac",
+        "0805b4d8"
+      ],
+      "instruction_span": {
+        "address": "0x0804a878",
+        "size": 996,
+        "sha256": "a8c4df6c16c4f68e1f320472e792d617afbe6cdfd83b3dd70eb75aad90081162",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": null,
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0804a878.txt",
+        "sha256": "b1dc0b294fcd56d14827038fe530a5f562702f530798555aff79f51aaedc2570",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.racer_reset",
+      "game": "mario-kart-super-circuit",
+      "family": "persistence_lifecycle",
+      "entry": "0803bf34",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Resets movement/action/timer/resource-related fields; restores checkpoint sentinel +91=0x7f and clears packed item slots via 0803d480. Shares racer/track state with active race; not persistent-save reset.",
+      "context_roles": [
+        "racer",
+        "track"
+      ],
+      "direct_callees": [
+        "080328d4",
+        "0803d480",
+        "0803dca4"
+      ],
+      "callers": [
+        "0x080285f4",
+        "0x0802b208",
+        "0x08048d44"
+      ],
+      "focus_dependencies": [
+        "080328d4",
+        "0803d480",
+        "0803dca4"
+      ],
+      "instruction_span": {
+        "address": "0x0803bf34",
+        "size": 618,
+        "sha256": "23784a8ded31151c34b5a57ad1dabfe681198d6739d88255b743c02a0e2d11c4",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803bf34.json",
+        "sha256": "cdc535553dad8c59c2b3d1d5e73e8ceec31b41f9bc87960885bd5fcdc58772d9",
+        "observed_pc_min": "0x803bf44",
+        "observed_pc_max": "0x803c1ae",
+        "observed_pc_outside_declared_span": true,
+        "indirect_call_pcs": [
+          "0803c1ae"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803bf34",
+          "size": 636,
+          "sha256": "4ffc34da253278cd0ed5ea888c4d2ba886275ddd58910c471fa6d5cfdc218f41",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803bf34.txt",
+        "sha256": "ac1c5a71d2c0c90b6889bcaaeb74fb973cb69c41dff583b9da3058a3dd606ab4",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.packed_item_cleanup",
+      "game": "mario-kart-super-circuit",
+      "family": "persistence_lifecycle",
+      "entry": "0803d480",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; retained_HighFunction_present",
+      "mechanic": "Masks three packed halfwords at +6e/+70/+72 through byte and halfword overlapping writes. Preserve overlap; item-ID meanings require producers/use consumers.",
+      "context_roles": [
+        "racer"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0803bf34"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0803d480",
+        "size": 96,
+        "sha256": "2a137178b8496e22e32035e44015aa71db2605bca897228a163386ef1a1e0ee9",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": {
+        "path": "local/ir/queue-runs/20261016T091004/mario-kart-super-circuit/l0/0803d480.json",
+        "sha256": "835e7f0666092b77cf28a8a2c791c13773c8b0ef28cacbaa5a73ba9352f39256",
+        "observed_pc_min": "0x803d486",
+        "observed_pc_max": "0x803d4de",
+        "observed_pc_outside_declared_span": false,
+        "indirect_call_pcs": [
+          "0803d4de"
+        ],
+        "observed_pc_envelope": {
+          "address": "0x0803d480",
+          "size": 96,
+          "sha256": "2a137178b8496e22e32035e44015aa71db2605bca897228a163386ef1a1e0ee9",
+          "status": "PC envelope only; may include literal pools and gaps; not validated function body"
+        },
+        "tail_bytes_at_max_pc": "0047",
+        "tail_interpretation": "Thumb BX r0 return candidate"
+      },
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0803d480.txt",
+        "sha256": "36f57ab1ce6c7d932ece12b702bde73402a2d1998bf64f377182e6efbe4a85ac",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.record_defaults_merge",
+      "game": "mario-kart-super-circuit",
+      "family": "persistence_lifecycle",
+      "entry": "0805d30c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; HighFunction_export_pending",
+      "mechanic": "Initializes save-image RAM 02032b80, merges track ROM defaults with record getter 0805c680 and initializes arrays/sentinels. Export contains suspicious merge expressions; no trustworthy record schema or atomic persistence yet.",
+      "context_roles": [
+        "save_image",
+        "track_defaults",
+        "record_service"
+      ],
+      "direct_callees": [
+        "08033bac",
+        "08033bbc",
+        "0805c680",
+        "0805ce3c",
+        "0805df40",
+        "0805df70",
+        "0805e474",
+        "08061350"
+      ],
+      "callers": [
+        "0x0805c8a4"
+      ],
+      "focus_dependencies": [
+        "08033bac",
+        "08033bbc",
+        "0805c680",
+        "0805ce3c",
+        "0805df40",
+        "0805df70",
+        "0805e474",
+        "08061350"
+      ],
+      "instruction_span": {
+        "address": "0x0805d30c",
+        "size": 988,
+        "sha256": "ee64c75005c6bd637741f7dbce41839dc322c15895bd1e52af8a5de8483d2c78",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": null,
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/0805d30c.txt",
+        "sha256": "856246432145e52d46e5c9963f365da1c3e476efe8ca7ee18107a3ca80578305",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
+    },
+    {
+      "id": "kart.flash_sector_program",
+      "game": "mario-kart-super-circuit",
+      "family": "persistence_lifecycle",
+      "entry": "08061980",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_ROM_static_causal_analysis; no native qualification; HighFunction_export_pending",
+      "mechanic": "Sector ID <16, descriptor-defined shift/count and 0x0e000000 base drive byte programming via 08061948 with retry/erase helpers and WAITCNT changes. Low-level shared support candidate, not cup/unlock semantics.",
+      "context_roles": [
+        "flash_descriptor",
+        "hardware_waitcnt",
+        "source_buffer"
+      ],
+      "direct_callees": [
+        "080615d8",
+        "080618ac",
+        "08061948",
+        "08061ac8"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080615d8",
+        "080618ac",
+        "08061948",
+        "08061ac8"
+      ],
+      "instruction_span": {
+        "address": "0x08061980",
+        "size": 250,
+        "sha256": "a11f6297e9e37e63dd697336b963816f24f2eb8b9579cdba18aa7da48d82c8c8",
+        "boundary_status": "Declared exporter span only; return/ABI repair and full mechanical/service/data closure required. Does not certify all pseudo-C/HF instructions are contained."
+      },
+      "rom_sha256": "aadc8b9f3c947ff6f610b6c8d7fddaaa9bea98b4bd43576df84f26c457ae1f90",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "4fc23a78d7708653e36a4ae3f300fa824503925cbf56d06e7b6e48e9b86363ed"
+      },
+      "l0": null,
+      "analysis_excerpt": {
+        "path": "local/re/resume-kart/08061980.txt",
+        "sha256": "2ccd42b30f0fa904cf14398b040f8ec8a49c1df96c5ab0227bb61ef5e5e4b9a9",
+        "status": "exported_pseudo_C_analysis_only_never_compiler_input"
+      },
+      "next_step": "Repair return/ABI and reconcile full instruction extent; automatic L0 lift with alias-preserving state and required table/clock/service closure, then bounded original/native differential fixtures.",
+      "mechanics_role": "progression"
     }
   ],
   "priority_closures": [
@@ -3523,6 +6226,63 @@
         "Impact lifetime ends and capacityreopens",
         "Offscreen deletion and frozenmode state/timing preserved"
       ]
+    },
+    {
+      "id": "kart.vehicle_surface_race_update",
+      "sequence": [
+        "kart.racer_reset",
+        "kart.character_class_profiles",
+        "kart.racer_update",
+        "kart.track_checkpoint_producer",
+        "kart.surface_contact",
+        "kart.contact_recovery",
+        "kart.input_speed_policy",
+        "kart.acceleration_state"
+      ],
+      "acceptance": [
+        "Retain frame order and previous/current positions",
+        "Shared racer/track pool identities remain aliased",
+        "Profile tables, surface metadata and input masks bound before native comparison"
+      ]
+    },
+    {
+      "id": "kart.cpu_route_progression",
+      "sequence": [
+        "kart.cpu_route_heading",
+        "kart.cpu_heading_slew",
+        "kart.cpu_speed_policy",
+        "kart.track_checkpoint_producer",
+        "kart.checkpoint_lap_crossing",
+        "kart.race_phase_finish"
+      ],
+      "acceptance": [
+        "Preserve wrapped headings and checkpoint legality",
+        "Finish/phase and ranking dependency 0804af3c remain pending until full closure"
+      ]
+    },
+    {
+      "id": "kart.item_contact_lifecycle",
+      "sequence": [
+        "kart.homing_projectile",
+        "kart.pair_contact",
+        "kart.impact_resource_loss",
+        "kart.packed_item_cleanup"
+      ],
+      "acceptance": [
+        "Resolve allocation/use/roulette producers, callback cleanup and pool reuse",
+        "Object owner/target/active-player pointers reference canonical racer storage"
+      ]
+    },
+    {
+      "id": "kart.persistence_records",
+      "sequence": [
+        "kart.record_defaults_merge",
+        "kart.flash_sector_program"
+      ],
+      "acceptance": [
+        "Resolve save-image checksum/version/commit and record setters",
+        "Do not equate hardware sector write with record/unlock semantics"
+      ]
     }
   ],
   "bounded_dispatches": [
@@ -3606,5 +6366,45 @@
         "0c938 persistence/progressionservice unresolved"
       ]
     }
+  ],
+  "supplemental_target_updates": [
+    {
+      "id": "sma4.actor_pair_contact_phase",
+      "supplement_only": true,
+      "focus_dependencies_append": [
+        "080460fc",
+        "08046154",
+        "08046320"
+      ],
+      "evidence_append": [
+        "research/deep-extraction/mario/parallel-sma4/findings.json"
+      ],
+      "packet_ref": "research/deep-extraction/mario/parallel-sma4/targets.json"
+    },
+    {
+      "id": "sma1.death_update_lives",
+      "additional_dependencies": [
+        "08046d20",
+        "08049a3c",
+        "08047024",
+        "08048fb0",
+        "080490b8",
+        "08049134"
+      ],
+      "evidence_ref": "research/deep-extraction/mario/parallel-sma1/dispatch-contracts.json",
+      "finding": "Downstream completion selector static consumers now identified; automatic/native transaction qualification remains pending.",
+      "packet_ref": "research/deep-extraction/mario/parallel-sma1/targets.json"
+    },
+    {
+      "id": "sma1.player_update_order",
+      "additional_dependencies": [
+        "080a7440"
+      ],
+      "finding": "Parent dispatch table08367cec selected by player+27; state0 movement and state7 death mutually dispatched under shared scheduler gates. Existing isolated entry qualification does not prove scheduler closure.",
+      "packet_ref": "research/deep-extraction/mario/parallel-sma1/targets.json"
+    }
+  ],
+  "bounded_dispatch_evidence_refs": [
+    "research/deep-extraction/mario/parallel-sma1/dispatch-contracts.json"
   ]
 }

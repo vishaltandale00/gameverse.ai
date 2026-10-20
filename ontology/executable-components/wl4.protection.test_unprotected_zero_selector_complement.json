@@ -1,0 +1,208 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "wl4.protection.test_unprotected_zero_selector_complement",
+  "label": "Test unprotected zero selector complement",
+  "role": "combat",
+  "source_game": "wario-land-4",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/wl4.protection.test_unprotected_zero_selector_complement/package.json",
+  "package_sha256": "ef3d6b4cc86eddb9955386f9534906201000ef2ccf3170f7768723a5994cf7fb",
+  "behavior_sha256": "18ad365003360d8be1f9c40cff0352fb837ce9111b4c8190f67e2dac5304a7f1",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "37afadea1d60a0d7f0801b38df33a278a59f774c336977ce6032690f5dbbb442"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "query_predicate_result",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "query_record",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/publication-source-evidence.json",
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "player_protection_update_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.protection",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/wario-land-4/next-extraction/publication-source-evidence.json",
+          "research/deep-extraction/resume/wario-land-4/next-extraction/system.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "invocation": "Synchronous query; no allocation, retention, initialization or cleanup",
+    "updateOrdering": "Selector read precedes protection read; result write precedes tagged/plain result read",
+    "externalOrdering": "Full age/hazard ordering not qualified; callers must retain source order"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "c4434406a1c60af8ca1e02979d4250d78a2fad37d945b1439b647575c545e5ff",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "327398e0da38753cdf5429572a7dc58e7b7ca5a919ee1f69c704f9f74a886d7c",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/wl4.protection.test_unprotected_zero_selector_complement/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "Complete hurt/recovery aging and hazard transaction not executable-qualified",
+    "General query-record or engine-tag meaning remains unknown; only observed predicate/bit operations typed",
+    "Full native ABI qualifications are finite synthetic field tests; arbitrary query-record/player-state overlap is not qualified.",
+    "Selector field_1 remains semantically unannotated because only its zero/nonzero use is known.",
+    "Protection counter unit is source-update count, not seconds or a specified frame count.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "return": {
+      "quantity": "tagged_query_predicate_result",
+      "type": "u32",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1,
+        "dimension": "dimensionless"
+      },
+      "frame": "query_record",
+      "semantics": "0x01000001 when NOT(selector==0 AND protection_count==0); zero otherwise",
+      "tagInterpretation": "bit24 observed tag; broader engine tag meaning unknown",
+      "evidence": [
+        {
+          "path": "local/ir/fleet-next/wario-land-4/EX033-protection-hazard/l0/0806d854.json",
+          "pc": "0x0806d87e",
+          "op": "op12",
+          "linkedEntry": "0806d734"
+        },
+        {
+          "path": "local/ir/fleet-next/wario-land-4/EX033-protection-hazard/l0/0806d854.json",
+          "pc": "0x0806d86c",
+          "op": "op16",
+          "linkedEntry": "0806d730"
+        }
+      ]
+    },
+    "stateOwnership": {
+      "ownedState": [],
+      "referenceState": [
+        {
+          "id": "query_record",
+          "argument": "r0",
+          "owner": "caller",
+          "lifetime": "valid/aligned for invocation",
+          "accessedBytes": [
+            {
+              "offset": 0,
+              "size": 4,
+              "access": "write"
+            },
+            {
+              "offset": 20,
+              "size": 4,
+              "access": "read"
+            }
+          ]
+        },
+        {
+          "id": "player.protection",
+          "owner": "shared canonical player state",
+          "storage": "u8 validation location0x0300189c",
+          "lifetime": "shared player lifetime, not copied into a renderer-owned timer"
+        }
+      ]
+    },
+    "aliases": [
+      "query_record is caller-owned; arbitrary aliases with player protection byte were not qualified",
+      "field_2 references the same canonical player byte read by terrain hazards and updated by presentation; no independent duplicate allowed"
+    ],
+    "preconditions": [
+      "Valid aligned caller query record backing",
+      "Caller record does not overlap saved return stack or separately bound player-global storage",
+      "Source protection state remains stable across this single invocation; no concurrent update injected"
+    ],
+    "services": [],
+    "qualification": {
+      "vectors": {
+        "outcome": "pass",
+        "vectors": 1024,
+        "instructions_total": 31486
+      },
+      "expectedStateCases": 768,
+      "expectedReturnCases": 768,
+      "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+      "aliasScope": "independent query record allocation and original global timer backing",
+      "wholeSystem": false
+    },
+    "lifecycle": {
+      "invocation": "Synchronous query; no allocation, retention, initialization or cleanup",
+      "updateOrdering": "Selector read precedes protection read; result write precedes tagged/plain result read",
+      "externalOrdering": "Full age/hazard ordering not qualified; callers must retain source order"
+    },
+    "originalL0Identity": {
+      "adapter_l0_sha256": "d24621e65543ad0a0c996b118cc02fdff6ffa26dccb1e3069e1ed9526958c6e8",
+      "hashConvention": "SHA256(json.dumps(originalL0,sort_keys=True).encode()); canonical file supplied byte-for-byte under adapterCanonicalL0; raw source file separately pinned",
+      "canonicalMatchesAdapter": true,
+      "semanticsUnchanged": true
+    },
+    "sourceL2": {
+      "path": "research/deep-extraction/resume/wario-land-4/next-extraction/system.json",
+      "sha256": "dc1877b31df910ca1659f8ead3581fe30c087df83054ce63cfd4d6948f031a86"
+    },
+    "unannotatedFields": {
+      "field_1": "Opaque record selector tested for zero/nonzero; no broader game semantic claimed"
+    }
+  }
+}

@@ -1,0 +1,1320 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "primary": {
+      "package_id": "driv3r.proximity.allocate_record",
+      "package_sha256": "c55f2996aad6919045c6972a1db4ee61a59b08ec3f2b108adc0eb3745d68d146",
+      "behavior_sha256": "d32cb0f2fa7918080abb5c66e1751c002c71ff48d1a1b6c4a90c769d9f73162a",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_active_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_selection",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_active_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_selection",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_lane",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_lane",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_activation_guard",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_activation_guard",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_3",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_15",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_15",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_4",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_4",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_4",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_0",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_0",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_6",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_7",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_2",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_2",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_8",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_3",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_payload_3",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "byte_region_0",
+          "storage_type": "u8",
+          "count": 192,
+          "provenance": [
+            "op551",
+            "op1098",
+            "op543",
+            "op1090",
+            "op534",
+            "op1081",
+            "op521",
+            "op1068",
+            "op507",
+            "op1054",
+            "op493",
+            "op1040",
+            "op476",
+            "op1023",
+            "op465",
+            "op1012"
+          ],
+          "meaning": {
+            "quantity": "proximity_record_pool_bytes",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_pool_v1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5",
+          "field_6",
+          "field_7",
+          "field_8"
+        ],
+        "writes": [],
+        "collection_reads": [
+          "byte_region_0"
+        ],
+        "collection_writes": [
+          "byte_region_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "allocation_before_activation_in_original_caller",
+        "ordering": "Original caller invokes this allocator, sibling allocator, record updater, then activation scanner. Only this allocator state effect is qualified."
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Caller-scoped state-effect projection at original callsite: inferred r0 result is discarded by the actual next callee; no allocator pointer return is exposed.",
+        "Finite native qualification is 128 exact source-derived allocation/guard cases across two selector lanes and all16 record positions, with full192-byte pool and32 surrounding canary bytes; no gameplay qualification.",
+        "Four profile inputs are raw32-bit source words; low16 bits are copied into the pool. Coordinate units and descriptor interpretation remain unproven.",
+        "Pool format:16records stride12; active byte, selector byte, four little-endian halfwords, two cleared bytes. Full pool reuses first record; duplicate active selector suppresses allocation.",
+        "Explicit experimental mixed-width proof applies to this reviewed component only. Global default remains fail-closed.",
+        "ARM original ABI clobbers r0-r3/r7/r9/r11/r12; source-pinned saved-LR return proof and bounded reference-window oracle were used.",
+        "No sibling allocator, activation scanner or resource initializer executable closure is claimed.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    },
+    "secondary": {
+      "package_id": "driv3r.proximity.allocate_secondary_record",
+      "package_sha256": "773fd9069dfa153e735a33ec56fcfe2030473f780b0bf8afb34a37260534356c",
+      "behavior_sha256": "5c84a5164858cc8a8fb0fb9e023bd34c2124ef9ef5823c20c48170b944b11f50",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_active_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_selection",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_active_selector",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_selection",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_1",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_lane",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_lane",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_2",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_activation_guard",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_activation_guard",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_pool",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_3",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_5",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_5",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_4",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_6",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_allocation_permission",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_lane_6",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_5",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_0",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_0",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_6",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_7",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_2",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_2",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        },
+        {
+          "name": "field_8",
+          "owner": "context_object_0",
+          "storage_type": "u32",
+          "semantic_type": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_3",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "meaning": {
+            "quantity": "proximity_profile_word",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_secondary_record_payload_3",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "void",
+      "return_meaning": null,
+      "collections": [
+        {
+          "name": "byte_region_0",
+          "storage_type": "u8",
+          "count": 192,
+          "provenance": [
+            "op551",
+            "op1098",
+            "op543",
+            "op1090",
+            "op534",
+            "op1081",
+            "op521",
+            "op1068",
+            "op507",
+            "op1054",
+            "op493",
+            "op1040",
+            "op476",
+            "op1023",
+            "op465",
+            "op1012"
+          ],
+          "meaning": {
+            "quantity": "proximity_record_pool_bytes",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "driv3r.proximity_record_pool_v1",
+            "confidence": 1.0,
+            "evidence": [
+              "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0",
+          "field_1",
+          "field_2",
+          "field_3",
+          "field_4",
+          "field_5",
+          "field_6",
+          "field_7",
+          "field_8"
+        ],
+        "writes": [],
+        "collection_reads": [
+          "byte_region_0"
+        ],
+        "collection_writes": [
+          "byte_region_0"
+        ]
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "component_or_entity_instance",
+        "clock": "explicit_invocation",
+        "phase": "allocation_before_activation_in_original_caller",
+        "ordering": "Original caller invokes primary allocator, this secondary allocator, record updater, then activation scanner. Only this secondary allocator state effect is qualified."
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Caller-scoped state-effect projection at original callsite: inferred r0 result is discarded by the actual next callee; no allocator pointer return is exposed.",
+        "Finite native qualification is 128 exact source-derived allocation/guard cases across two selector lanes and all16 record positions, with full192-byte pool and32 surrounding canary bytes; no gameplay qualification.",
+        "Four profile inputs are raw32-bit source words; low16 bits are copied into the pool. Coordinate units and descriptor interpretation remain unproven.",
+        "Pool format:16records stride12; active byte, selector byte, four little-endian halfwords, two cleared bytes. Full pool reuses first record; duplicate active selector suppresses allocation.",
+        "Explicit experimental mixed-width proof applies to this reviewed component only. Global default remains fail-closed.",
+        "ARM original ABI clobbers r0-r3/r7/r9/r11/r12; source-pinned saved-LR return proof and bounded reference-window oracle were used.",
+        "No sibling allocator, activation scanner or resource initializer executable closure is claimed.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "c3165f858053757469595c7026e7c1838acf0ad33975f1441d285e6a8a37313b",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "primary": {
+        "package_id": "driv3r.proximity.allocate_record",
+        "behavior_sha256": "d32cb0f2fa7918080abb5c66e1751c002c71ff48d1a1b6c4a90c769d9f73162a",
+        "bindings": {
+          "field_0": {
+            "slot": "active_selector"
+          },
+          "field_1": {
+            "slot": "allocation_lane"
+          },
+          "field_2": {
+            "slot": "activation_guard"
+          },
+          "field_3": {
+            "slot": "primary_permission_1"
+          },
+          "field_4": {
+            "slot": "primary_permission_0"
+          },
+          "field_5": {
+            "slot": "primary_profile_word_0"
+          },
+          "field_6": {
+            "slot": "primary_profile_word_1"
+          },
+          "field_7": {
+            "slot": "primary_profile_word_2"
+          },
+          "field_8": {
+            "slot": "primary_profile_word_3"
+          }
+        },
+        "collection_bindings": {
+          "byte_region_0": "proximity_records"
+        },
+        "package_sha256": "c55f2996aad6919045c6972a1db4ee61a59b08ec3f2b108adc0eb3745d68d146"
+      },
+      "secondary": {
+        "package_id": "driv3r.proximity.allocate_secondary_record",
+        "behavior_sha256": "5c84a5164858cc8a8fb0fb9e023bd34c2124ef9ef5823c20c48170b944b11f50",
+        "bindings": {
+          "field_0": {
+            "slot": "active_selector"
+          },
+          "field_1": {
+            "slot": "allocation_lane"
+          },
+          "field_2": {
+            "slot": "activation_guard"
+          },
+          "field_3": {
+            "slot": "secondary_permission_0"
+          },
+          "field_4": {
+            "slot": "secondary_permission_1"
+          },
+          "field_5": {
+            "slot": "secondary_profile_word_0"
+          },
+          "field_6": {
+            "slot": "secondary_profile_word_1"
+          },
+          "field_7": {
+            "slot": "secondary_profile_word_2"
+          },
+          "field_8": {
+            "slot": "secondary_profile_word_3"
+          }
+        },
+        "collection_bindings": {
+          "byte_region_0": "proximity_records"
+        },
+        "package_sha256": "773fd9069dfa153e735a33ec56fcfe2030473f780b0bf8afb34a37260534356c"
+      }
+    },
+    "state": {
+      "active_selector": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_active_selector",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_selection",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "allocation_lane": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_allocation_lane",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_pool",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "activation_guard": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_activation_guard",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_pool",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "primary_permission_1": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_allocation_permission",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_lane_15",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "primary_permission_0": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_allocation_permission",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_lane_4",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "primary_profile_word_0": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_record_payload_0",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "primary_profile_word_1": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_record_payload_1",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "primary_profile_word_2": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_record_payload_2",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "primary_profile_word_3": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_record_payload_3",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "proximity_records": {
+        "storage_type": "u8",
+        "count": 192,
+        "semantic_type": {
+          "quantity": "proximity_record_pool_bytes",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_record_pool_v1",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external",
+        "shared": true
+      },
+      "secondary_permission_0": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_allocation_permission",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_lane_5",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "secondary_permission_1": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "proximity_allocation_permission",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_lane_6",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "secondary_profile_word_0": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_secondary_record_payload_0",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "secondary_profile_word_1": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_secondary_record_payload_1",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "secondary_profile_word_2": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_secondary_record_payload_2",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      },
+      "secondary_profile_word_3": {
+        "storage_type": "u32",
+        "semantic_type": {
+          "quantity": "proximity_profile_word",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "driv3r.proximity_secondary_record_payload_3",
+          "confidence": 1.0,
+          "evidence": [
+            "Original ARM allocator comparisons, loads and ordered record stores; caller-scoped state effect. See pinned source evidence."
+          ]
+        },
+        "owner": "external"
+      }
+    },
+    "invocations": [
+      {
+        "component": "primary",
+        "arguments": {}
+      },
+      {
+        "component": "secondary",
+        "arguments": {}
+      }
+    ],
+    "initialize": {
+      "active_selector": 0,
+      "allocation_lane": 0,
+      "activation_guard": 0,
+      "primary_permission_1": 1,
+      "primary_permission_0": 1,
+      "primary_profile_word_0": 305419896,
+      "primary_profile_word_1": 2271560481,
+      "primary_profile_word_2": 4294934528,
+      "primary_profile_word_3": 65535,
+      "proximity_records": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "secondary_permission_0": 1,
+      "secondary_permission_1": 1,
+      "secondary_profile_word_0": 305419896,
+      "secondary_profile_word_1": 2271560481,
+      "secondary_profile_word_2": 4294934528,
+      "secondary_profile_word_3": 65535
+    },
+    "services": []
+  },
+  "invocation_count": 2,
+  "ordered_components": [
+    "primary",
+    "secondary"
+  ],
+  "statement_sha256": "29c8cdde08bae2ae9f8fa281db5d0bf6a0eb51f9db7fbcbb53cbfa83d5f11cd0",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.029793042
+}

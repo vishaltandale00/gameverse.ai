@@ -1,0 +1,396 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "gta.component.view_priority_metric",
+  "label": "Component rectangle/view priority metric",
+  "role": "actor.render_priority_metric",
+  "source_game": "grand-theft-auto",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/gta.component.view_priority_metric/package.json",
+  "package_sha256": "e22701da8483b42afd0964a507d8d1dc784c5cb21ea28223e1c3820770001000",
+  "behavior_sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "341844fc1e8fc5f4bc02e82fd0f4ea35e5a248cfada6d20ded2282bddc9a9cc5"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "component_bounds",
+      "identity": "component_bounds",
+      "ownership": "caller_owned_readonly_region",
+      "lifetime": "invocation",
+      "separation": "explicit_distinct_accessed_views",
+      "evidence": [
+        "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0.oracle.c",
+        "Original LDR pointer atcomponent+0x10; signed32 rectangle offsets0/4/12/16 and radius offset8 read only, no calls/stores"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "component_integer_x",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "component_integer_z",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "viewpoint_integer_x",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "viewpoint_integer_z",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "rectangle_min_x_offset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "rectangle_min_z_offset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "positive_radius_correction",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "rectangle_max_x_offset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "rectangle_max_z_offset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "gta_component_view_coordinates",
+        "signed_encoding": "twos_complement",
+        "confidence": 0.98,
+        "evidence": [
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+          "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+          "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 9,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "borrowed_live_component_and_readonly_bounds",
+    "clock": "explicitoriginalsortinvocation",
+    "phase": "betweencomponentactivationanddeactivation",
+    "ordering": "Originalsort useslow16resultbeforeprioritytiebreak; thisleafdoesnotrelinkoradvanceanimation"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/gta.component.view_priority_metric/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "1024finiteoriginal/emittednativepairs,306sourceformulaexpectedcases; notwhole-source-sort/cullqualification",
+    "No sanitization of original signed overflow or negative radius; result is full32bit sourceword, notguaranteednonnegative",
+    "No independentallocator,newvehiclephysics,callbackAIorwholegameclaim",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+    "sha256": "5b46f486bb4978b01dc2698c906571f777fdd362fdc7d948d1669afc6283cb40"
+  },
+  "return_meaning": {
+    "quantity": "signed_wrapping_component_sort_metric_word",
+    "unit": {
+      "numerator": 1,
+      "denominator": 1
+    },
+    "frame": "gta_component_sort_priority",
+    "signed_encoding": "twos_complement",
+    "confidence": 0.98,
+    "evidence": [
+      "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/source-contract.json",
+      "research/deep-extraction/resume/grand-theft-auto/next-round/source-closure-20261016/attempt01/distance.thumb.asm.txt",
+      "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/input-contract.json",
+      "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/0800d0a0/fixtures.json"
+    ]
+  },
+  "graph_admission": {
+    "status": "binding_valid_obligations_unproven",
+    "availability": "exact_package_binding_admitted",
+    "registry_ref": "local/ir/graph-admissions.json",
+    "admissions": [
+      {
+        "id": "gta.component.view_priority_metric",
+        "source_game": "grand-theft-auto",
+        "package": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/package.json",
+          "sha256": "e22701da8483b42afd0964a507d8d1dc784c5cb21ea28223e1c3820770001000"
+        },
+        "behavior": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/l1.json",
+          "sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806"
+        },
+        "native_receipt": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/receipt.json",
+          "sha256": "341844fc1e8fc5f4bc02e82fd0f4ea35e5a248cfada6d20ded2282bddc9a9cc5"
+        },
+        "graph_request": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/metric-phase.request.json",
+          "sha256": "6f2d76cea5454932cf7f1245a76487e94ad1e032fad666cc0c8496fb5ece8a3c"
+        },
+        "graph_receipt": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/metric-phase.result.json",
+          "sha256": "a63521ada43b384a6caaf56b9b8e1fef148d1ccd2000697c93a3b670c10a47a2"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/validator-snapshot.py",
+          "sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/catalog-snapshot.json",
+          "sha256": "6e10c91096c96191e0ff82e8056b4f7cdc64a8ff1d0ea29eac9dbb0fa94275ae"
+        },
+        "source_admission_pins": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/graph-admission-evidence.json",
+          "sha256": "da1d814256a7d5176d45002e495f8efd793d527a2510e9bd2a0334cc2359d443"
+        },
+        "component_instance": "metric",
+        "graph_invocation_count": 1,
+        "statement_sha256": "679e55ebe424c2cd5ab038bfc3feceafca6994f6f2dae9eedbb22675ffaeb431",
+        "status": "binding_valid_obligations_unproven",
+        "review_status": "scoped_clear_integration_review",
+        "limitations": [
+          "Fullu32 signed-wrapping metricword binding only; no nonnegative distance assumption or narrowedresult.",
+          "Originalsort low16/tie-key/cull/render remains source-only. No composednative or lifecycle closure claim."
+        ],
+        "package_sha256": "e22701da8483b42afd0964a507d8d1dc784c5cb21ea28223e1c3820770001000",
+        "behavior_sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806",
+        "native_receipt_sha256": "341844fc1e8fc5f4bc02e82fd0f4ea35e5a248cfada6d20ded2282bddc9a9cc5",
+        "review_witness": {
+          "path": "local/ir/source-fleet-restart-20261016/publication/gta-graph-01/review/integration-review.json",
+          "sha256": "7adb02433b047d8feabdd66d00a42ea1644720c96e13d94cbc777319441195ed"
+        }
+      },
+      {
+        "id": "gta.component.view_priority_metric",
+        "source_game": "grand-theft-auto",
+        "package": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/package.json",
+          "sha256": "e22701da8483b42afd0964a507d8d1dc784c5cb21ea28223e1c3820770001000"
+        },
+        "behavior": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/l1.json",
+          "sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806"
+        },
+        "native_receipt": {
+          "path": "local/ir/packages/gta.component.view_priority_metric/receipt.json",
+          "sha256": "341844fc1e8fc5f4bc02e82fd0f4ea35e5a248cfada6d20ded2282bddc9a9cc5"
+        },
+        "graph_request": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/metric-negative-wrap.request.json",
+          "sha256": "8cf79fa7ae566371c11a90deabf24cb782906437d341a5d32ce96e7951e80775"
+        },
+        "graph_receipt": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/metric-negative-wrap.result.json",
+          "sha256": "f4d575933b9b22573f568c7eaef84d4c55a73d43855416814050734f3e3158c7"
+        },
+        "validator": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/validator-snapshot.py",
+          "sha256": "e77e84416c3739b77c9cf7a2b07512b90d112803751c022c589a626ae0a036d2"
+        },
+        "catalog_snapshot": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/catalog-snapshot.json",
+          "sha256": "6e10c91096c96191e0ff82e8056b4f7cdc64a8ff1d0ea29eac9dbb0fa94275ae"
+        },
+        "source_admission_pins": {
+          "path": "local/ir/fleet-next/grand-theft-auto/next-round/source-closure-20261016/attempt01/published-graph/graph-admission-evidence.json",
+          "sha256": "da1d814256a7d5176d45002e495f8efd793d527a2510e9bd2a0334cc2359d443"
+        },
+        "component_instance": "metric",
+        "graph_invocation_count": 1,
+        "statement_sha256": "679e55ebe424c2cd5ab038bfc3feceafca6994f6f2dae9eedbb22675ffaeb431",
+        "status": "binding_valid_obligations_unproven",
+        "review_status": "scoped_clear_integration_review",
+        "limitations": [
+          "Fullu32 signed-wrapping metricword binding only; no nonnegative distance assumption or narrowedresult.",
+          "Originalsort low16/tie-key/cull/render remains source-only. No composednative or lifecycle closure claim."
+        ],
+        "package_sha256": "e22701da8483b42afd0964a507d8d1dc784c5cb21ea28223e1c3820770001000",
+        "behavior_sha256": "7873082500bf858e9367c5e7759164ffcc52e47ada2ea96d1694175553371806",
+        "native_receipt_sha256": "341844fc1e8fc5f4bc02e82fd0f4ea35e5a248cfada6d20ded2282bddc9a9cc5",
+        "review_witness": {
+          "path": "local/ir/source-fleet-restart-20261016/publication/gta-graph-01/review/integration-review.json",
+          "sha256": "7adb02433b047d8feabdd66d00a42ea1644720c96e13d94cbc777319441195ed"
+        }
+      }
+    ],
+    "limitations": "Graph binding validation only; no native composed lifecycle or complete source system qualification"
+  },
+  "source_root_identity": {
+    "source_game": "grand-theft-auto",
+    "entry": "0800d0a0"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

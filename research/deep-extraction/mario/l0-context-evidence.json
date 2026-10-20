@@ -457,6 +457,174 @@
         }
       ],
       "dependencies": []
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802ea54",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802ea54",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802ea54",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802ea54.json",
+        "sha256": "b2806eb2c17b871b3db65c4dc0ae16aca8dd4528875f2b2b77f311773d15d3f1"
+      },
+      "instruction_span": {
+        "address": "0x0802ea54",
+        "size": 226,
+        "sha256": "ef0d6f81c5a0a7a885e81c8d2ad851ff987b67c62e54685550a6e5c1ea49fe2a",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802eb44",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802eb44",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802eb44",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802eb44.json",
+        "sha256": "63d66ae07fca06649f4ce195fd0360399268aaf210b2975f16115b3b0574eb02"
+      },
+      "instruction_span": {
+        "address": "0x0802eb44",
+        "size": 28,
+        "sha256": "4c730eb53ba1a6f28619b918915676347e0aa50e1d3db79fcbd5f222c7c74c02",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802eb64",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802eb64",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802eb64",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802eb64.json",
+        "sha256": "a8c494f3793b128b2578c5a45b808474ad570d8a5ff102d3f6f6dc8e8447eb0e"
+      },
+      "instruction_span": {
+        "address": "0x0802eb64",
+        "size": 106,
+        "sha256": "514a2a5b0a959b8fe714e976e2d2f08c934cbebc6a7155598b5c93cc8fe35ffd",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802ebec",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802ebec",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802ebec",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802ebec.json",
+        "sha256": "c6f787f523e8fd4cf3f44be9b4a62b5a01234b7e067d53969fc83aa9019b167f"
+      },
+      "instruction_span": {
+        "address": "0x0802ebec",
+        "size": 20,
+        "sha256": "f6021af1fb413aa81ed2ee20f965e97d230b9607d5fba7b56dcff6a8cb94a89f",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802f120",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802f120",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802f120",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802f120.json",
+        "sha256": "37429b77b572ff9882616628e9c9b5e1679dd8a862625c575d19f6e31a0a2ea8"
+      },
+      "instruction_span": {
+        "address": "0x0802f120",
+        "size": 140,
+        "sha256": "862b899e924573aa6335f0a486d3edf85f79231fc11d4d0505acf2638ec17400",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0802f1b8",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0802f1b8",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0802f1b8",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "research/deep-extraction/mario/parallel-sma2/l0-export-20261016T1033-retry1/l0/0802f1b8.json",
+        "sha256": "3f4c7157284082bcc9219a7bf91bb31a2d8b06ca3f2fdaae0200e52dffadac44"
+      },
+      "instruction_span": {
+        "address": "0x0802f1b8",
+        "size": 56,
+        "sha256": "58c0d18a3cce4a8a30c2af6006f7d5669fccb3a6061c17cfa6c9a98c3e7142e0",
+        "boundary_status": "native disassembly extent through return; includes interleaved literals, trailing literal pools pinned separately"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {},
+      "context_limit": "Candidate scene/engine/actor fields described in dependency-contracts.json; no new live context fixture or typed-port proof.",
+      "native_context_observation_scope": "Reference to existing retained Mario World context only; no new per-entry live observation or port-domain validation."
     }
   ]
 }

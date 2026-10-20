@@ -1,0 +1,132 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.statue.after-item-timer",
+  "label": "Advance the source statue post-grant countdown to idle",
+  "role": "exploration_progression",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.statue.after-item-timer/package.json",
+  "package_sha256": "e15de818fb00cf6141dc28f964429beeb544228a0e02581bcd67b8feea528443",
+  "behavior_sha256": "4f333c170939491550c6aaecc4f28ee48fb2e1b4f9ac53eb28d56b7002da23ce",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "0c06aeb097e538bd8a6e1e7bd8e3b3e7dc2cbdf35f5fbf078eda110aa871b424"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/mzm-ir/statue-consumption-contract/contract.json"
+        ],
+        "frame": "mzm.source.current_record.pose",
+        "naming_status": "source_evidenced_annotation_not_behavior_input",
+        "quantity": "source_pose_identity_enum",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "confidence": 1.0,
+        "evidence": [
+          "research/ir-workshop/roundtrip-20261016/mzm-ir/statue-consumption-contract/contract.json"
+        ],
+        "frame": "mzm.source.current_record.work0",
+        "naming_status": "source_evidenced_annotation_not_behavior_input",
+        "quantity": "invocation_countdown_u8",
+        "unit": {
+          "denominator": 1,
+          "numerator": 1
+        }
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "allocation": false,
+    "clock": "Explicit source entry invocation, not rendered-frame inference",
+    "ordering": "Original native grant -> shared equipment/events -> behavior -> source waiter -> eligible timer invocations",
+    "phase": "Source TIMER43 phase; u8 decrement, zero result selects IDLE9",
+    "storage": "Borrowed selected gCurrentSprite record plus canonical shared progression session"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "confidence": 0.0,
+    "name": "unknown",
+    "ordering": []
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.statue.after-item-timer/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Synthetic bounded native entry calls; no full campaign or whole-game equivalence.",
+    "SpriteUpdate itself is not executed by cross-entry fixture; fixture explicitly borrows/copies back selected source record.",
+    "Arm admission08014794, morph/spatial prerequisites, original scene/animation/save lifetime and interrupt/concurrent intermediate observation remain open.",
+    "Selectors88/89/148 normally route to UnknownItemChozoStatue; direct consumer fixtures do not establish normal ChozoStatue scheduler reachability.",
+    "Canonical equipment ownership bits are not equipped/active weapon or ability bits.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "alias_rule": "Equipment/event fields alias original session memory; current-record scratch belongs to original scheduler, not a second persistent actor",
+    "installed_entry": true,
+    "preconditions": [
+      "Accessible canonical source globals",
+      "Current-record scratch contains selected source actor during source AI phase",
+      "No concurrent/interrupt observer assumed by finite entry proof"
+    ],
+    "qualification": "4096 original +4096 reconstructed entry native comparisons per new root; separate 68 cross-entry cases/1120 call pairs",
+    "reference": {
+      "path": "research/ir-workshop/roundtrip-20261016/mzm-ir/statue-consumption-contract/contract.json",
+      "sha256": "50f64ee5971fed5fca63945b6f2151b4b6b775a08ae278a243586ec117a36726"
+    },
+    "return_type": "void",
+    "shared_progression_module": "mzm.module.progression-session",
+    "source_case_meanings": {
+      "source_poses": {
+        "idle": 9,
+        "timer": 43,
+        "wait": 41
+      },
+      "work0": "u8 invocation countdown;0 wraps255,1 reaches0/idle"
+    },
+    "state_owner_module": "mzm.module.enemy-source-record"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "metroid-zero-mission",
+    "entry": "08014494"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

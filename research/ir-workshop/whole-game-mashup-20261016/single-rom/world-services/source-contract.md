@@ -1,0 +1,16 @@
+# Single-ROM world services source contract
+
+The isolated staging transform is `tools/whole_game/single_rom/world_services.py`. It reads pinned clean FireRed and Emerald source, writes only the merged output tree, and returns a partial ledger until the active-use UI and final ROM qualify.
+
+| Service | FireRed source | Executable stage behavior |
+| --- | --- | --- |
+| Safari | `src/safari_zone.c` | Kanto uses FireRed's 30 balls, 600 steps, times-up/retire/out-of-balls scripts and callback sequence. Walking and battle-return entry points route by current map region. Hoenn retains native 500-step behavior. Kanto counter/balls persist in the existing unified save extension. |
+| Roamer | `src/roamer.c` | Source route table and movement/encounter/HP/status logic are compiled with `MAP_FR_*` map identifiers. The save extension owns a separate `struct Roamer`, location, and three-map history. Native overworld and battle end dispatch on Kanto map group; the encounter worker calls `WholeGameFR_TryStartRoamerEncounter`. |
+| Bag and field effects | `src/item.c`, `src/item_use.c`, `src/wild_encounter.c` | One physical Emerald bag holds both regions' items. Kanto `AddBagItem` script calls route through FireRed's TM Case/Berry Pouch auto-grant rule with capacity checks and rollback. Berry eligibility checks the pouch and actual contents. FireRed repel and flute identifiers alias the native active-use state, so host item use and donor wild encounter read/write one state. |
+| Trainer Tower ownership | `src/trainer_tower.c`, `src/load_save.c`, `include/global.h` | Four exact 12-byte donor challenge records plus challenge ID are saved in the Kanto extension. New-game reset stops the donor Tower timer, clears records, and initializes each encrypted best time to the donor's 215,999-frame default; save-key changes re-encrypt all four records. `FR_TrainerTowerSpokeToOwner` reads the selected record; accessors expose the same records to the full Tower service owner. The source challenge timer and floor battles remain that owner's separate integration. |
+
+The base state stage's PC extension has an aggregate compile-time size/alignment guard. This stage adds 92 bytes: 40 for roamer/Safari and 52 for Trainer Tower. The current state stage contributes 1,092 bytes, projecting 1,184 total and 784 bytes of remaining headroom under the 1,968-byte ninth-sector extension limit. Actual `sizeof` at build remains authoritative.
+
+Checks run: three narrow staging tests passed in 0.023 seconds after the Trainer Tower encryption change. A syntax-only compile of all four generated C units against staged merged headers and previously generated map constants passed in approximately 0.2 seconds. These checks do not establish a successful linked ROM or in-game behavior. The full merged build is owned by the integration builder; in-game Safari, roamer, and Trainer Tower qualification remain pending.
+
+The item entries now bind TM Case and Berry Pouch to native Emerald TM/Berry pocket selectors. Exact registered-key-item exit behavior and other donor-specific key-item callbacks still need gameplay qualification. Final script-special link and live gameplay verification remain pending. The stage marks these as build blockers rather than claiming full campaign readiness.

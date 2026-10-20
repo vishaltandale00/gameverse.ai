@@ -1,0 +1,227 @@
+{
+  "schema": "gameverse.mechanic-assembly-validation/0.1",
+  "validator_sha256": "915db9bc8cc3a101f8a686ec2510b48d093533fe2da2d8de784ad68625570df9",
+  "python": "3.9.6",
+  "valid": true,
+  "status": "binding_valid_obligations_unproven",
+  "errors": [],
+  "warnings": [
+    "Declared domains and invocation schedule are caller assumptions; this check does not prove runtime reachability, full lifecycle closure, or native parity of the composed graph."
+  ],
+  "interfaces": {
+    "frontier": {
+      "package_id": "metal_slug_advance.selection.visible_frontier",
+      "package_sha256": "f1c351c589ead747e3d4ea19735ff44857f541cb935a87ecff787c028e9c32a3",
+      "behavior_sha256": "920e2cc12e5723cab59f12abc00022bd3f18d8fdd6a122a7137ffd9156392661",
+      "fields": [
+        {
+          "name": "field_0",
+          "owner": "context",
+          "storage_type": "u8",
+          "semantic_type": {
+            "quantity": "selection_frontier",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "source_progress_selection_frontier",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+            ]
+          },
+          "meaning": {
+            "quantity": "selection_frontier",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "source_progress_selection_frontier",
+            "confidence": 0.95,
+            "evidence": [
+              "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+            ]
+          },
+          "reads": true,
+          "writes": false
+        }
+      ],
+      "parameters": [],
+      "return_type": "u8",
+      "return_meaning": {
+        "quantity": "selection_frontier",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "source_six_entry_menu_visible_frontier",
+        "confidence": 0.99,
+        "evidence": [
+          "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+        ]
+      },
+      "collections": [
+        {
+          "name": "dependency_0_dependency_0_collection_0",
+          "storage_type": "u16",
+          "count": 13,
+          "provenance": [
+            "op6"
+          ],
+          "meaning": {
+            "quantity": "packed_two_bit_availability",
+            "unit": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "frame": "source_selection_availability_table",
+            "confidence": 0.98,
+            "evidence": [
+              "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+            ]
+          }
+        }
+      ],
+      "effects": {
+        "reads": [
+          "field_0"
+        ],
+        "writes": [],
+        "collection_reads": [
+          "dependency_0_dependency_0_collection_0"
+        ],
+        "collection_writes": []
+      },
+      "configurations": [],
+      "lifecycle": {
+        "storage": "canonical persistent progressbyte andavailabilitybank",
+        "clock": "explicit menu-refresh event",
+        "phase": "original menu initializes visible frontier before rowallocation",
+        "ordering": "progressread\u2192conditionalavailability54query\u2192frontierreturn\u2192external menuconsumer"
+      },
+      "gaps": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_Acyclic structured CFG only",
+        "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "dependency_0_dependency_0_Acyclic structured CFG only",
+        "dependency_0_dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+        "Full menu cursor/rowalloc/activation callback not emitted.",
+        "No qualified MetalSlug attack/contact/enemydefeat behavior inferred from generic actor pool helpers.",
+        "Scene task\u2192combat producers and success/defeat predicate ownership remain source-only/missing.",
+        "Save/restore and availabilityflag acquisition remain external source dependencies.",
+        "Narrow read-only frontier transaction; sourcecaller/menu actorlifecycle remains required.",
+        "Finite synthetic native qualification is not gameplay or full-game coverage",
+        "Source-derived L2 completeness is not claimed"
+      ]
+    }
+  },
+  "conversions": [],
+  "validation_scope": "Symbolic package identity, state ownership, ordered invocation, semantic binding and code lowering only; no native execution or full source-subsystem closure.",
+  "request_sha256": "cc60c523636e55347c966ded2808fbc02bd762179a21dec1b5759535564c2446",
+  "normalized_graph": {
+    "schema": "gameverse.mechanic-assembly/0.1",
+    "components": {
+      "frontier": {
+        "package_id": "metal_slug_advance.selection.visible_frontier",
+        "package_sha256": "f1c351c589ead747e3d4ea19735ff44857f541cb935a87ecff787c028e9c32a3",
+        "behavior_sha256": "920e2cc12e5723cab59f12abc00022bd3f18d8fdd6a122a7137ffd9156392661",
+        "bindings": {
+          "field_0": {
+            "slot": "progress_frontier"
+          }
+        },
+        "collection_bindings": {
+          "dependency_0_dependency_0_collection_0": "availability_table"
+        }
+      }
+    },
+    "state": {
+      "progress_frontier": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "selection_frontier",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "source_progress_selection_frontier",
+          "confidence": 0.95,
+          "evidence": [
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+          ]
+        },
+        "owner": "external"
+      },
+      "availability_table": {
+        "storage_type": "u16",
+        "count": 13,
+        "semantic_type": {
+          "quantity": "packed_two_bit_availability",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "source_selection_availability_table",
+          "confidence": 0.98,
+          "evidence": [
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+          ]
+        },
+        "owner": "external"
+      },
+      "visible_frontier": {
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "selection_frontier",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "source_six_entry_menu_visible_frontier",
+          "confidence": 0.99,
+          "evidence": [
+            "research/deep-extraction/resume/metal-slug-advance/prefab-pass/frontier-source-contract.json"
+          ]
+        },
+        "owner": "frontier"
+      }
+    },
+    "initialize": {
+      "progress_frontier": 5,
+      "availability_table": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "visible_frontier": 0
+    },
+    "invocations": [
+      {
+        "component": "frontier",
+        "arguments": {},
+        "result": {
+          "slot": "visible_frontier"
+        }
+      }
+    ],
+    "services": []
+  },
+  "invocation_count": 1,
+  "ordered_components": [
+    "frontier"
+  ],
+  "statement_sha256": "56827ee97ba8a23ec5ccdc7e5e252b4f51400907d088ed820f9ec1dd8842383f",
+  "catalog_sha256": "d173c5c9265d329af64a5d49f35ead5caf32de854050f69722ea299525deb5b0",
+  "wall_s": 0.002378333
+}

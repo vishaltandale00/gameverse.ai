@@ -1,0 +1,271 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mlss.motion.actor_step",
+  "label": "Superstar original gated actor motion phase",
+  "role": "movement",
+  "source_game": "mario-and-luigi-superstar-saga",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mlss.motion.actor_step/package.json",
+  "package_sha256": "2f144042af3b2fe6870be71816390d26764413f7ebefcbacf438acda60cf69ed",
+  "behavior_sha256": "a2b9fcbda10598912826c0e5d001af4a7e1102875823228ac2e40c14d8614286",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "016743c65879227cd2dc61a821a06f2d823550e2b2f7758b0b99f45a5f7769d0"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "mlss.world.x.right",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "mlss.world.plane_y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mlss.actor.active_flags",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.motion.termination_mode_flags",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.motion.motion_flags",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "mlss.world.x.right.per_actor_phase_invocation",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "mlss.world.plane_y.down.per_actor_phase_invocation",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "invocation_count_or_inactive_sentinel",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.motion.update_invocations",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "mlss.actor.path_phase_flags",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/08040cf4.source.json",
+          "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/0804fe68.source.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 17,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one_canonical_actor_invocation_and_inlined_callees",
+    "clock": "explicit_actorphase_invocation; gametickcadenceunknown",
+    "phase": "sourceactorXYthenconditionalvertical",
+    "ordering": "sourcebranchorderpreserved"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "4e44b94fc5d06e6c63c18bcb58fe319718f31b3193cf6aba04e63d6572196d63",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mlss.motion.actor_step/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_dependency_0_Acyclic structured CFG only",
+    "dependency_0_dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "No keyboardorAIvelocityproducer; callerprovidesoriginalsourcegatedstate",
+    "Fullpairedcontrollerandterrain/lifecycle consumerremainblocked",
+    "Verticalphysicalfields remainprivateopaque; onlysourceprojection-backed XYposition/deltaportsproposed",
+    "No universalframeorfullRPGmotioncontrollerclaim",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "capsule_ref": "research/deep-extraction/mario/parallel-superstar/prefab-reconstruction/restart-v1/publication-v3/source-capsule.json",
+    "canonical_actor": "One borrowedsourceactor r0; each callee shares thesame actor storage; matching bytelanes/halfwords remainaliased",
+    "unit_scale": "Oneprojectedpixelper256sourcecoordinateunits; planeYoblique, notscreenY; velocityperexplicitactorphaseinvocation",
+    "domain": "No source scalar parameters; exact native u8/u16/u32 storage. Directed512cases coverall256pathflag values\u00d7active0/1, distributed sign/wrap/termination classes, nottheirfullCartesianproduct.",
+    "dependencies": [
+      "qualifiedupdate/reset reused, sameactor"
+    ],
+    "services": [],
+    "private_opaque": [
+      "Verticalstateandmotionparametersunannotated"
+    ],
+    "primary_prefab_ready": false,
+    "historical_reset_lineage": "Exact source serialization and old native proof pinned; current reset annotations not claimed in inlined body"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "mario-and-luigi-superstar-saga",
+    "entry": "0804fe68"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

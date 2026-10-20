@@ -1,0 +1,810 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "final-fantasy-vi-advance",
+  "sourceSystemIds": [
+    "ffvi.hp_ko.coverage_pass"
+  ],
+  "sourceContractRef": "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+  "blueprintIds": [
+    "turn-based-party-battle"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Choose a party battle action, resolve its target effects, settle status/KO and determine the battle outcome while retaining party resources. Only the resolvedHP transaction is currently a portable useful prefab.",
+    "phases": [
+      {
+        "id": "party-context",
+        "label": "Canonical party, actor and resource context",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+          "research/deep-extraction/ffvi/battle-recovery.json",
+          "research/deep-extraction/ffvi/DEEP_RECOVERY.md"
+        ],
+        "requiredServices": [
+          "Original party/battle initialization"
+        ],
+        "gaps": [
+          "Portable qualification fixes actor0; party composition/otheractorhandles/lifetime remain unqualified."
+        ]
+      },
+      {
+        "id": "command-selection",
+        "label": "Select a legal battle command and target",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+          "research/deep-extraction/ffvi/battle-recovery.json",
+          "research/deep-extraction/ffvi/DEEP_RECOVERY.md"
+        ],
+        "requiredServices": [
+          "Original command/menu/input admission"
+        ],
+        "gaps": [
+          "Originalcommand/target UIand eligibility are retainedsource services, not supplied byHPtransaction."
+        ]
+      },
+      {
+        "id": "turn-order",
+        "label": "Schedule an eligible command/ATB action",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+          "research/deep-extraction/ffvi/battle-recovery.json",
+          "research/deep-extraction/ffvi/DEEP_RECOVERY.md"
+        ],
+        "requiredServices": [
+          "Original battle scheduler/ATB"
+        ],
+        "gaps": [
+          "Exact wholeturn order andtiming/interruptpolicy are not recovered; no invented frame order."
+        ]
+      },
+      {
+        "id": "target-effect",
+        "label": "Derive resolved damage/recovery for the chosen target",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+          "research/deep-extraction/ffvi/battle-recovery.json",
+          "research/deep-extraction/ffvi/DEEP_RECOVERY.md"
+        ],
+        "requiredServices": [
+          "Attack power/stat/level selection",
+          "Defense/variance/status/element pipeline"
+        ],
+        "gaps": [
+          "Historicalbase-damage oracle is not an automaticallylifted completeattack resolver; observedbase292\u2192resolved282 transformation remains open."
+        ]
+      },
+      {
+        "id": "hp-resolve",
+        "label": "Apply a resolved HP effect and queue conditional KO",
+        "status": "usable-prefab",
+        "prefabIds": [
+          "ffvi.actor0.resolved-hp-effect"
+        ],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/binding-check.json"
+        ],
+        "requiredServices": [
+          "Caller supplies accepted resolved-effect event",
+          "Private qualified VM entry context"
+        ],
+        "gaps": [
+          "Onefreshactor0event; no standaloneattackcreation,wholeturnlooporrealizeddefeatclaim."
+        ]
+      },
+      {
+        "id": "pending-status-merge",
+        "label": "Realize pending status in the same actor backing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/next-consumer-blocker.json"
+        ],
+        "requiredServices": [
+          "Original pending/current status policy"
+        ],
+        "gaps": [
+          "Actualcandidate0808bcf4/dependencies have no rawIR/native qualification; phase/ABI/aliasproof missing."
+        ]
+      },
+      {
+        "id": "status-cleanup",
+        "label": "Settle current-status HP and retire/clean owned actors",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/next-consumer-blocker.json"
+        ],
+        "requiredServices": [
+          "Original tenactorstatusscheduler",
+          "Death/cleanup callback ownership"
+        ],
+        "gaps": [
+          "08078f74 currentstatusconsumer/cleanup loop remains source-only; pendingbit alone is not enemydefeat."
+        ]
+      },
+      {
+        "id": "battle-outcome",
+        "label": "Admit victory/defeat rewards and persist party outcomes",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+          "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+          "research/deep-extraction/ffvi/battle-recovery.json",
+          "research/deep-extraction/ffvi/DEEP_RECOVERY.md"
+        ],
+        "requiredServices": [
+          "Outcome/reward eligibility",
+          "Notification acknowledgement",
+          "Persistent save/return owner"
+        ],
+        "gaps": [
+          "Historicaloriginalgil/XP/level oracles andnativewitness are not an emitted reward/save loop; actorrole/remainingenemies mustadmitvictory beforegrants."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "party-context",
+        "to": "command-selection",
+        "kind": "host-required",
+        "scope": "Source actor/party context must exist; portable setup/command controller is missing."
+      },
+      {
+        "from": "command-selection",
+        "to": "turn-order",
+        "kind": "host-required",
+        "scope": "Actual scheduler boundary is external; no wholeturn schedule inferred from addresses."
+      },
+      {
+        "from": "turn-order",
+        "to": "target-effect",
+        "kind": "host-required",
+        "scope": "Original commandexecution supplies attack parameters; policy/timing remains source-only."
+      },
+      {
+        "from": "target-effect",
+        "to": "hp-resolve",
+        "kind": "shared-state",
+        "scope": "Resolveddamage/recovery and eligibility data refer to the same canonical target that originalHPprep consumes."
+      },
+      {
+        "from": "hp-resolve",
+        "to": "pending-status-merge",
+        "kind": "shared-state",
+        "scope": "Publishedpendingstatusbits feed a separateoriginalconsumer; no consumer call/implementation is supplied."
+      },
+      {
+        "from": "pending-status-merge",
+        "to": "status-cleanup",
+        "kind": "host-required",
+        "scope": "Currentstatussettlement must precede dependentcleanup/HP rules; exact sourcephase closure is pending, not executableedge."
+      },
+      {
+        "from": "status-cleanup",
+        "to": "battle-outcome",
+        "kind": "host-required",
+        "scope": "Actor role, remaining battle actors and original outcomeeligibility decidevictory/defeat; KOrequest does notgrantreward."
+      }
+    ],
+    "missingForCoreGame": [
+      "Command/target admission and battle scheduler/ATB with actual action lifetime.",
+      "Complete attack\u2192target damage/defense/variance/status/element pipeline.",
+      "Otheractorhandles and canonical party/enemy pool lifetime beyond actor0.",
+      "Peractor pending\u2192current statusconsumer0808bcf4/0808b9c0 plusactualVMhelpers/aliases/rawABI.",
+      "Currentstatus/tenactorcleanup loop08078f74, enemydeath/retirement/outcome eligibility.",
+      "Reward aggregation/acknowledgement and persistentparty/save ownership.",
+      "A host that satisfies VMprivateentrycontext at each repeated event; the prefab doesnot silentlyresetlogical HP/status."
+    ],
+    "wholeGameReady": false,
+    "qualificationSplit": {
+      "sourceReconstruction": "Originalown-ROMfunctionrecords/nativewitness plusrawHPsource; source-onlyotherphasesdo notbecomeimplemented requirements.",
+      "executable": "Onecoherentfixedactor0HPtransaction, publishedwithqualifiedcomponentproof andactualgraph.",
+      "hostDependencies": "Command/turn/effectproducer, repeatedVMcontextentry, realstatusconsumer, cleanup/outcome/UI/persistence external."
+    }
+  },
+  "bundles": [
+    {
+      "id": "ffvi-resolved-hp-transaction-bundle",
+      "label": "FFVI HP transaction and conditional KO request",
+      "moduleId": "ffvi.source.resolved-hp-effect.actor0",
+      "sourceGame": "final-fantasy-vi-advance",
+      "sourceSystemId": "ffvi.hp_ko.coverage_pass",
+      "sourceContractRef": "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+      "planIds": [
+        "turn-based-party-battle"
+      ],
+      "packageIds": [
+        "ffvi.combat.hp_effect_actor0"
+      ],
+      "availability": "published-subset",
+      "scope": "OriginalresolvedHPtransaction withsourceeligibility/neteffect/heal/damage/clamp andconditionalpendingKOrequest; fixedactor0, explicitfreshVMentrycontext.",
+      "gaps": [
+        "Command/target admission and battle scheduler/ATB with actual action lifetime.",
+        "Complete attack\u2192target damage/defense/variance/status/element pipeline.",
+        "Otheractorhandles and canonical party/enemy pool lifetime beyond actor0.",
+        "Peractor pending\u2192current statusconsumer0808bcf4/0808b9c0 plusactualVMhelpers/aliases/rawABI.",
+        "Currentstatus/tenactorcleanup loop08078f74, enemydeath/retirement/outcome eligibility.",
+        "Reward aggregation/acknowledgement and persistentparty/save ownership.",
+        "A host that satisfies VMprivateentrycontext at each repeated event; the prefab doesnot silentlyresetlogical HP/status."
+      ],
+      "evidence": [
+        "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+        "research/deep-extraction/ffvi/battle-recovery.json",
+        "research/deep-extraction/ffvi/DEEP_RECOVERY.md",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/binding-check.json"
+      ],
+      "canonicalState": {
+        "identity": "One canonical actor0 resource/status view and sharedbattleworldinput/latch state, one privateVM invocationcontext.",
+        "fields": [
+          "current_health_low",
+          "current_health_high",
+          "maximum_health_low",
+          "maximum_health_high",
+          "resolved_damage_low",
+          "resolved_damage_high",
+          "recovery_low",
+          "recovery_high",
+          "actor_effect_mask_low",
+          "actor_effect_mask_high",
+          "exclusion_mask_low",
+          "exclusion_mask_high",
+          "current_status_low",
+          "current_status_high",
+          "pending_status_low",
+          "pending_status_high",
+          "effect_gate_byte_0",
+          "effect_gate_byte_1",
+          "effect_gate_byte_2",
+          "lethal_resource_latch"
+        ],
+        "aliasRule": "Bindall20publicpackedlanestothe sameactor0/worldsourceidentity; pairedHP/statusbytes are onewordview andthreegatebytes reconstructoverlappingwords. No copied actor/world perrolefacet.",
+        "privateState": "Continuationtoken/targetconfigandVMscratch remain private, opaque, domaincheckedcontext."
+      },
+      "roleFacets": [
+        {
+          "roleId": "resolve",
+          "capability": "resolved-health-transaction",
+          "status": "published-subset",
+          "scope": "Applyalreadyresolvedtargeteffect; preservesexactoriginalcanonicalstate and queuesconditionalKOrequest.",
+          "evidence": [
+            "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+            "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json"
+          ]
+        },
+        {
+          "roleId": "continuation",
+          "capability": "pending-ko-handoff",
+          "status": "source-only",
+          "scope": "Modulepublishes pendingKOrequest; actualstatusrealization/turncontinuation notsupplied. Reuses same moduleinstance, not secondcopy.",
+          "evidence": [
+            "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/next-consumer-blocker.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "ffvi.actor0.resolved-hp-effect",
+        "label": "Resolve target HP effect \u2192 pending KO",
+        "assemblyRef": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.assembly.json",
+        "validationRef": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+        "descriptorRef": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/delivery.json",
+        "packageIds": [
+          "ffvi.combat.hp_effect_actor0"
+        ],
+        "readyToAdd": true,
+        "runtimeQualified": false,
+        "scope": "Exactpublishedcomponent4096nativepairsINCLUDING50semanticfixtures reused. Actualassembly.py+Composer+lowering passes; five narrow hostbindingchecks pass. No composednativegame,ROMorwholeturn qualification."
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "id": "ffvi.actor0.resolved-hp-effect",
+      "moduleId": "ffvi.source.resolved-hp-effect.actor0",
+      "label": "Resolve target HP effect \u2192 pending KO",
+      "path": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.assembly.json",
+      "sha256": "ee7c92664816cc2e3401c6c4a03def28f77120b7e4a84daf4eafa8c0e879d5f5",
+      "validation": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/resolved-hp-effect.validation.json",
+      "validationSha256": "6d4be89ddc330c4a6d084f993278b25e0d979c7136e41723fd231568523d5e1c",
+      "inputs": [
+        {
+          "id": "current_health_low",
+          "label": "Current health low",
+          "storageType": "u8",
+          "default": 27,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "current_health_low"
+        },
+        {
+          "id": "current_health_high",
+          "label": "Current health high",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "current_health_high"
+        },
+        {
+          "id": "maximum_health_low",
+          "label": "Maximum health low",
+          "storageType": "u8",
+          "default": 15,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "maximum_health_low"
+        },
+        {
+          "id": "maximum_health_high",
+          "label": "Maximum health high",
+          "storageType": "u8",
+          "default": 39,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "maximum_health_high"
+        },
+        {
+          "id": "resolved_damage_low",
+          "label": "Resolved damage low",
+          "storageType": "u8",
+          "default": 26,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "resolved_damage_low"
+        },
+        {
+          "id": "resolved_damage_high",
+          "label": "Resolved damage high",
+          "storageType": "u8",
+          "default": 1,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "resolved_damage_high"
+        },
+        {
+          "id": "recovery_low",
+          "label": "Recovery low",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "recovery_low"
+        },
+        {
+          "id": "recovery_high",
+          "label": "Recovery high",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "recovery_high"
+        },
+        {
+          "id": "actor_effect_mask_low",
+          "label": "Actor effect mask low",
+          "storageType": "u8",
+          "default": 1,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "actor_effect_mask_low"
+        },
+        {
+          "id": "actor_effect_mask_high",
+          "label": "Actor effect mask high",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "actor_effect_mask_high"
+        },
+        {
+          "id": "exclusion_mask_low",
+          "label": "Exclusion mask low",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "exclusion_mask_low"
+        },
+        {
+          "id": "exclusion_mask_high",
+          "label": "Exclusion mask high",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "exclusion_mask_high"
+        },
+        {
+          "id": "current_status_low",
+          "label": "Current status low",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "current_status_low"
+        },
+        {
+          "id": "current_status_high",
+          "label": "Current status high",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "current_status_high"
+        },
+        {
+          "id": "pending_status_low",
+          "label": "Pending status low",
+          "storageType": "u8",
+          "default": 0,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "pending_status_low"
+        },
+        {
+          "id": "pending_status_high",
+          "label": "Pending status high",
+          "storageType": "u8",
+          "default": 18,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "pending_status_high"
+        },
+        {
+          "id": "effect_gate_byte_0",
+          "label": "Effect gate byte 0",
+          "storageType": "u8",
+          "default": 128,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "effect_gate_byte_0"
+        },
+        {
+          "id": "effect_gate_byte_1",
+          "label": "Effect gate byte 1",
+          "storageType": "u8",
+          "default": 128,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "effect_gate_byte_1"
+        },
+        {
+          "id": "effect_gate_byte_2",
+          "label": "Effect gate byte 2",
+          "storageType": "u8",
+          "default": 128,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "effect_gate_byte_2"
+        },
+        {
+          "id": "lethal_resource_latch",
+          "label": "Lethal resource latch",
+          "storageType": "u8",
+          "default": 119,
+          "domain": {
+            "unsigned_min": 0,
+            "unsigned_max": 255,
+            "meaning": "Packed source byte lane; finite componentqualification ratherthan full-domain/gameplay proof."
+          },
+          "binding": "lethal_resource_latch"
+        }
+      ],
+      "logicalInputViews": [
+        {
+          "name": "current_health",
+          "logicalStorage": "u16",
+          "logicalQuantity": "health_resource",
+          "logicalUnit": "HP",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_14",
+            "field_15"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.current_health",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        },
+        {
+          "name": "maximum_health",
+          "logicalStorage": "u16",
+          "logicalQuantity": "health_resource_limit",
+          "logicalUnit": "HP",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_16",
+            "field_17"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.maximum_health",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        },
+        {
+          "name": "resolved_damage",
+          "logicalStorage": "u16",
+          "logicalQuantity": "resolved_health_damage",
+          "logicalUnit": "HP",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_4",
+            "field_5"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.resolved_damage",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": 65535
+        },
+        {
+          "name": "recovery",
+          "logicalStorage": "u16",
+          "logicalQuantity": "resolved_health_recovery",
+          "logicalUnit": "HP",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_6",
+            "field_7"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.recovery",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": 65535
+        },
+        {
+          "name": "actor_effect_mask",
+          "logicalStorage": "u16",
+          "logicalQuantity": "actor_effect_membership_bitset",
+          "logicalUnit": "bitset",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_2",
+            "field_3"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.effect_mask",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        },
+        {
+          "name": "exclusion_mask",
+          "logicalStorage": "u16",
+          "logicalQuantity": "resource_effect_exclusion_bitset",
+          "logicalUnit": "bitset",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_8",
+            "field_9"
+          ],
+          "canonicalIdentity": "ffvi.battle.world.exclusion_mask",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        },
+        {
+          "name": "current_status",
+          "logicalStorage": "u16",
+          "logicalQuantity": "current_actor_status_bitset",
+          "logicalUnit": "bitset",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_20",
+            "field_21"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.current_status",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        },
+        {
+          "name": "pending_status",
+          "logicalStorage": "u16",
+          "logicalQuantity": "pending_actor_status_bitset",
+          "logicalUnit": "bitset",
+          "encoding": "little_endian",
+          "byteFields": [
+            "field_18",
+            "field_19"
+          ],
+          "canonicalIdentity": "ffvi.battle.actor0.pending_status",
+          "publicGraphRepresentation": "two explicit sourced packed-byte ports; decoded scalar binding not claimed",
+          "sentinel": null
+        }
+      ],
+      "outputs": [
+        {
+          "id": "current_health_low",
+          "binding": "current_health_low",
+          "meaning": "Low byte of final current HP."
+        },
+        {
+          "id": "current_health_high",
+          "binding": "current_health_high",
+          "meaning": "High byte of final current HP."
+        },
+        {
+          "id": "resolved_damage_low",
+          "binding": "resolved_damage_low",
+          "meaning": "Low byte after source exclusion writeback."
+        },
+        {
+          "id": "resolved_damage_high",
+          "binding": "resolved_damage_high",
+          "meaning": "High byte after source exclusion writeback."
+        },
+        {
+          "id": "pending_status_low",
+          "binding": "pending_status_low",
+          "meaning": "Low pendingstatus flags including conditionalKOrequest0x80."
+        },
+        {
+          "id": "pending_status_high",
+          "binding": "pending_status_high",
+          "meaning": "Higher pendingstatus flags preserved/updated by original transaction."
+        },
+        {
+          "id": "lethal_resource_latch",
+          "binding": "lethal_resource_latch",
+          "meaning": "Originalsource latch cleared on lethal HP; downstream meaning outsideboundary."
+        }
+      ],
+      "phases": [
+        {
+          "id": "accepted-resolved-effect",
+          "trigger": "Caller-declared accepted source HP effect event, fixed actor0 with qualified VM context",
+          "invocations": [
+            "hp"
+          ],
+          "scheduleStatus": "caller-declared",
+          "sourceInternalOrder": [
+            "Original effectpreparation and sourceVM call",
+            "Sentinel/exclusion/overlappinggate/neteffect",
+            "HPheal/damage/clamp",
+            "ConditionalpendingKOrequest",
+            "Sourcecontinuationexit"
+          ]
+        }
+      ],
+      "requiredServices": [
+        {
+          "id": "resolved-effect-producer",
+          "status": "host-required",
+          "scope": "Commands/turn scheduling and full damage transformation remain external. The graph provides one explicit input state, not a fake producer."
+        },
+        {
+          "id": "vm-entry-context",
+          "status": "host-required",
+          "scope": "Freshnullportablecontinuationspill+target0 before eachaccepted event; current graph initializes once."
+        },
+        {
+          "id": "pending-status-consumer",
+          "status": "source-only",
+          "scope": "Nextactualconsumer blockedasrecordedin next-consumer-blocker.json; no stub called."
+        }
+      ],
+      "gaps": [
+        "Singleacceptedsourceevent, not repeatedcombat orfullFFVI.",
+        "Logicalu16 valuesuseexplicit sourcedpackedbyteports; no imaginarydecodedscalarbinding.",
+        "PendingKO is not realizeddefeat; nextconsumer+reward/savephase remain outside."
+      ],
+      "sourceRefs": [
+        "local/ir/packages/ffvi.combat.hp_effect_actor0/source-system.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/raw-inputs.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/coverage-pass/full-hp-publication-packet.json",
+        "research/deep-extraction/ffvi/battle-recovery.json",
+        "research/deep-extraction/ffvi/DEEP_RECOVERY.md",
+        "local/ir/packages/ffvi.combat.hp_effect_actor0/receipt.json",
+        "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/binding-check.json"
+      ],
+      "qualificationScope": "Exactpublishedcomponent4096nativepairsINCLUDING50semanticfixtures reused. Actualassembly.py+Composer+lowering passes; five narrow hostbindingchecks pass. No composednativegame,ROMorwholeturn qualification.",
+      "runtimeQualified": false,
+      "readyToAdd": true,
+      "packagePins": [
+        {
+          "id": "ffvi.combat.hp_effect_actor0",
+          "package_sha256": "24e55698ca4aaec89d0b21b29d25f1a0f05f0add06b195afd61415a94e950524",
+          "behavior_sha256": "29b009f747a0918f52f91015449110f97b33382edc9accf501c7a0fa2b10c76e"
+        }
+      ],
+      "hostBindingCheck": {
+        "path": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/binding-check.json",
+        "sha256": "7b606cd9ce307d41e3d97357dd1f2ea2947d57501237d7fbd1d935fbe1416505"
+      }
+    }
+  ],
+  "nextConsumerBlocker": {
+    "path": "research/deep-extraction/resume/final-fantasy-vi-advance/prefab-pass/next-consumer-blocker.json",
+    "sha256": "3fb69be5bab54f24fffe44e17a07855db3ef93a5acbb6a6f39ceb8656c3a3dd3"
+  },
+  "timing": {
+    "runId": "20261016-ffvi-prefab-hp-effect-01",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.011157665999999997,
+    "buildSeconds": 0.053571625,
+    "buildScope": "Cleanhost-onlybindingharness, noROM/gamebuild; cache:none",
+    "nativeSeconds": null,
+    "hostExecutionSeconds": 0.00011070899999998662,
+    "hostCases": 5,
+    "newNativeRuns": 0,
+    "retainedComponentNativePairs": 4096,
+    "retainedIncludedSemanticFixtures": 50,
+    "totalSeconds": 0.169560167,
+    "deliveryMetadataSeconds": 0.038322999999999996,
+    "beforeAfter": null,
+    "accounting": "Validation/hostbuild/hostexecution nested in graph-build total0.169560167s. Componentnative4096proof reused, notrerun or addedto thisround. Queue/CI/comparablebaseline unavailable."
+  }
+}

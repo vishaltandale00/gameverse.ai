@@ -1,0 +1,298 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma2.actor_reinitialize",
+  "label": "Actor reinitialize",
+  "role": "combat",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma2.actor_reinitialize/package.json",
+  "package_sha256": "614928b701269847e8854e3eb596884b55f625263ae330696f636a3f8ad5a991",
+  "behavior_sha256": "b8d2d3e7c723f332c018536148c5f3d36ddaf72d1fbb2b4818f3b246118ab2e0",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 6144,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "receipt_sha256": "00bc9f37656b06892c7a120d2f039c92a0fff3b6295ed31562f94d365f25a923"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    },
+    {
+      "id": "entity_r0",
+      "identity": "current_record_view",
+      "ownership": "shared_record_view",
+      "lifetime": "invocation",
+      "separation": "only_proven_disjoint_accessed_slices_scalarized",
+      "container": "context_object_0",
+      "capacity": 12,
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.type",
+        "label": "Original actor type",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.lifecycle",
+        "label": "Original actor lifecycle state",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_27",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_7",
+        "label": "Original descriptor channel 7",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_34",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_0",
+        "label": "Original descriptor channel 0",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_35",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_1",
+        "label": "Original descriptor channel 1",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_36",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_2",
+        "label": "Original descriptor channel 2",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_37",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_3",
+        "label": "Original descriptor channel 3",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_38",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_4",
+        "label": "Original descriptor channel 4",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_39",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_5",
+        "label": "Original descriptor channel 5",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_40",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "sma2.actor.descriptor.channel_6",
+        "label": "Original descriptor channel 6",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json"
+        ],
+        "naming_status": "source_derived_field_identity_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 54,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "92ade620088d674f7c6fb57beae367828cfb6ebaedf526c7c8df0b2eeb17e4c9",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    },
+    {
+      "id": "dependency_1",
+      "behavior_sha256": "21086ef9f03cfeb15251add52e6f954467c408f076dbcf72062651bacf3e9551",
+      "provenance_namespace": "dependency_1",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma2.actor_reinitialize/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Acyclic structured CFG only",
+    "dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_0_Normal12-slot actor pool only; one shared scene backing, no independent actor copies",
+    "dependency_0_Native cases cover all256 types times two selected lifecycle states1/11 times12 slots, not every possible state value",
+    "dependency_0_Descriptor channels retain exact original byte identities; individual flag meanings remain unknown",
+    "dependency_0_Other pools, actor controller/fire/pickup/terrain/save/scene lifecycle remain open",
+    "dependency_1_Acyclic structured CFG only",
+    "dependency_1_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_dependency_0_Acyclic structured CFG only",
+    "dependency_1_dependency_0_Semantic units and human names remain unknown unless separately evidenced",
+    "dependency_1_dependency_0_Normal12-slot actor pool only; one shared scene backing, no independent actor copies",
+    "dependency_1_dependency_0_Native cases cover all256 types times two selected lifecycle states1/11 times12 slots, not every possible state value",
+    "dependency_1_dependency_0_Descriptor channels retain exact original byte identities; individual flag meanings remain unknown",
+    "dependency_1_dependency_0_Other pools, actor controller/fire/pickup/terrain/save/scene lifecycle remain open",
+    "dependency_1_Normal12-slot actor pool only; one shared scene backing, no independent actor copies",
+    "dependency_1_Native cases cover all256 types times two selected lifecycle states1/11 times12 slots, not every possible state value",
+    "dependency_1_Descriptor channels retain exact original byte identities; individual flag meanings remain unknown",
+    "dependency_1_Other pools, actor controller/fire/pickup/terrain/save/scene lifecycle remain open",
+    "Normal12-slot actor pool only; one shared scene backing, no independent actor copies",
+    "Native cases cover all256 types times two selected lifecycle states1/11 times12 slots, not every possible state value",
+    "Descriptor channels retain exact original byte identities; individual flag meanings remain unknown",
+    "Other pools, actor controller/fire/pickup/terrain/save/scene lifecycle remain open",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

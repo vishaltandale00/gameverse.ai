@@ -1,0 +1,19 @@
+# Tekken Advance: bounded separation closure
+
+All games remain partial; Mario retains depth priority. This packet closes a static causal core, not an executable or whole-game mechanic. Only this directory was written. No Ghidra, compiler invocation, build, native run, queue/catalog/UI mutation or dependency installation was performed.
+
+Own-ROM `0x080130e8` refreshes contact bit 3, rejects disabled/depth-separated actors, checks four embedded active boxes against four opponent boxes, chooses the strongest signed overlap and adjusts both actor x positions. Its real caller `0x0800d1f4` updates A then B with `0x0800fdac`, calls separation, then performs further combat-state work. `0x08011ee4` materializes four world boxes from local geometry with facing mirroring and Q8 position conversion; `0x08011ea4` clears them. Exact script dispatch and producer/reset frame order are still unresolved. These producer relationships follow shared field access; they are not a claimed direct call edge.
+
+[packet.json](packet.json) includes exact source/export hashes, addresses, static rejection reasons, symbolic state, aliasing/order rules, eight ranked dependency targets and next action. ROM SHA256 was recomputed as `09fc5ec1649ec162da49044d6ecc84d5c74938ee315b902642bfda0728a95333`.
+
+The entire cached L0 filename set was checked, including files beyond a superficial count. There are 424 JSON files: 423 function exports and `export-summary.json`. Every function appears in the census; there are no extra cached functions outside it. The root and world-box producer exist as HighFunction exports, with historical recursion-depth rejection. This count is not complete-ROM coverage.
+
+A concrete compiler issue is retained: HighFunction marks `0x0801326e` as CALLIND through an input LR then RETURN, while cached original disassembly shows restoration, `pop {r0}`, `bx r0`. This is a saved-return epilogue, not an optional gameplay service. Normalization needs this original-machine proof. Nested four-by-four loops, signed comparisons/overflow, ordered contact resets, tie retention and shared embedded-box aliases must survive lifting. Actor views cannot become independent copied state.
+
+The historical receipt passed 4,096 original-Thumb/manual-C comparisons in a bounded isolated operator domain (0.061604 s oracle compile, 0.147767 s execute, 0.20944 s total). Manual C is an oracle only and must never enter automatic compilation. This receipt does not qualify emitted L1, arbitrary overflow, actor aliases, frame reachability or whole combat. No native verification was run for this packet.
+
+Actual cached-L0/ROM-hash inspection took 0.007310208 s. Packet construction plus source hashing took 0.023884083 s. These are different sequential checks, not build/improvement-loop measurements. No total analysis timer was started; queue/build/simulation/evaluation/native durations and adapter/harness versions are unavailable. Historical discovery stages are retained separately in the packet and nested in that historical run's total. No turnaround-sensitive implementation was added, so there is no before/after performance comparison.
+
+Next: compiler owner should normalize the proven return and lift the box materializer and pair separator with bounded record loops and shared actor references. Original/host/emitted qualification should target inactive/disabled boxes, inclusive touching, equal overlap ties, depth threshold boundaries, mirrored negative positions and correction-gap guards. Resolve callback-table script scheduling before promotion to mechanic-ready. Damage/KO/round/move progression and persistence remain open.
+
+Final artifact check passed: parsed JSON, recomputed all 14 referenced artifact SHA256 values and checked target/count consistency in 0.005154834 s. Check timing is distinct from packet-construction timing. No new tests were added.

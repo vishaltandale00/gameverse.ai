@@ -1,0 +1,190 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "khcom.effect.consume_on_action_kind50",
+  "label": "Consume active effect charge on accepted source action",
+  "role": "accepted_action_effect_charge_consumer",
+  "source_game": "kingdom-hearts-chain-of-memories",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/khcom.effect.consume_on_action_kind50/package.json",
+  "package_sha256": "b72200c830f2a5243e382a45b8096de1358e112622185f23c98ce0644a3332af",
+  "behavior_sha256": "e47cd955293fb1785f2138a036cbd99b670d71b1c8e263704b28e3a08822a7ab",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 128,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "d02f57f146c52222961efab3ea1a35bb1bb94cda6593f995b573a3fba87cf4a1"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "effect_kind_discriminant",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "khcom.canonical_world_side.effect_kind",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/system.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/attempt-003/allocation-proof.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/export-ex056/l0/0807bc08.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "effect_remaining_consumption_count",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "khcom.canonical_world_side.effect_charge",
+        "confidence": 0.85,
+        "evidence": [
+          "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/system.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/attempt-003/allocation-proof.json",
+          "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/export-ex056/l0/0807bc08.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "event": "later source accepted action; no invented clock",
+    "canonicalIdentity": "sameprimaryWorldSide; selecteddescriptor belongs todistinctActionContext",
+    "phaseBoundary": "not fullsourceparent or effectlifetime",
+    "teardown": "none in suppliedroutine"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/khcom.effect.consume_on_action_kind50/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Action admission, selectedrecord lifecycle andworldallocation failure paths outsidephase.",
+    "Charge initialization, periodicresource recovery andpresentationownedexpiration remain unavailable; no full effect lifecycle supplied.",
+    "Composed native sourceparent/scheduler parity unrun; isolatedroutines and hostbinding proven only.",
+    "Central publication/admission pending; privatepackages are not selectedsiteprefabs.",
+    "Review as connected producer/consumer dependency of sourcephase, not standalonecoreloop.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/system.json",
+    "sha256": "a2b12392682e831f64265d90cc2dce634cd7267bbe10c953dba1d42d54a27949",
+    "parameters": [],
+    "return": {
+      "type": "void"
+    },
+    "canonicalState": {
+      "WorldSide": {
+        "identity": "same primaryWorldSide for commit and consumption",
+        "fields": [
+          "effectKind:u32",
+          "effectRemaining:u16"
+        ],
+        "authority": "caller-owned source worldside allocation; source functions mutate exactaccessedlanes"
+      },
+      "ActionContext": {
+        "identity": "distinct source actioncontextallocation, live across commit",
+        "fields": [
+          "selectedEffectKind:u16"
+        ],
+        "authority": "producer borrows source descriptor, does not alter it"
+      },
+      "separationEvidence": {
+        "path": "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/attempt-003/allocation-proof.json",
+        "sha256": "ec18b1a9efe5ebe5e20ea8a23c6123e1fb90639c250aacd039d9d80a8ef3c98e"
+      },
+      "ownershipEvidence": {
+        "path": "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/attempt-002/source-ownership.json",
+        "sha256": "54d422ef59968b4d42545226a1fb29dc3d3fdd12fd131dbed652d78e3cfcb67c"
+      },
+      "oraclePlacementWarning": "Finite private oracle placements exercise source methods on isolated allocations. Not observed live-game heap roots or full reachability."
+    },
+    "preconditions": [
+      "WorldSide0x1d0 andActionContext0x10c source allocations succeeded, remain live and keepdistinctaccessedviews.",
+      "Global context pointercells stable during eachsourcecall.",
+      "selectedEffectKind is read asu16,WorldSidekind storedzeroextendedu32.",
+      "remaining sourcehalfword initializedexternally; no clamp/deadguard added.",
+      "Sourceevent order respects futurealreadyacceptedaction boundary."
+    ],
+    "services": {
+      "phaseFunctions": [],
+      "sourceParentRequiredOutsidePhase": [
+        "actual action admission and selectedrecord/list lifetime",
+        "effectremaining initialization through originaldescriptor transition",
+        "taskcallbacks, presentation expiration and encountercontinuation"
+      ],
+      "notStubbed": true
+    },
+    "nativeScope": "128 finite original/emitted routine cases; phasehostbinding verified separately",
+    "qualificationReceipt": {
+      "path": "local/ir/fleet-next/kingdom-hearts-chain-of-memories/next-round/source-closure-20261016/attempt-002/consume/receipt.json",
+      "sha256": "7adfdf5e5d4cc4a59fef090e606b9bd923476f0fad55ad2cb5f6fe83c4867c63"
+    },
+    "fieldRoles": {
+      "field_0": {
+        "quantity": "effect_kind_discriminant",
+        "frame": "khcom.canonical_world_side.effect_kind",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        }
+      },
+      "field_1": {
+        "quantity": "effect_remaining_consumption_count",
+        "frame": "khcom.canonical_world_side.effect_charge",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        }
+      }
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "kingdom-hearts-chain-of-memories",
+    "entry": "0807bc08"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

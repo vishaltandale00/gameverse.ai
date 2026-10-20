@@ -1,0 +1,252 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kirby-amazing-mirror.actor.callback_phase_reset",
+  "label": "Install actor callback and reset phase state with preserve-phase sentinel",
+  "role": "caller-owned actor callback and phase transition reset dependency leaf; full pool/proximity/hop subsystem remains pending",
+  "source_game": "kirby-and-the-amazing-mirror",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kirby-amazing-mirror.actor.callback_phase_reset/package.json",
+  "package_sha256": "77097863ed72163f9f672d54f65d504c1be11cf6d19533771647345c5a983ca3",
+  "behavior_sha256": "5be27fb62885f676b74ecc61e8a8dd0705612fb13ce510101864159bce4da63f",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 512,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "cbe1317d4346d87b476fe585721014a5fdf4a2872f69e5ff47fea03e92e67133"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {}
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "actor_packed_flag_bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.packed_flags",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/l0/0809f7d8.json"
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "opaque_callback_reference_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.callback_reference",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/l0/0809f7d8.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "actor_phase_selector",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.phase_selector",
+        "confidence": 0.95,
+        "evidence": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/l0/0809f7d8.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "borrowed_view_of_existing_actor",
+    "clock": "explicit_function_invocation; global tick/FPS unknown",
+    "phase": "caller_selected_callback_and_phase_transition",
+    "sourceObservedOrdering": [
+      {
+        "op": "op4",
+        "effect": "field_0=0"
+      },
+      {
+        "op": "op8",
+        "effect": "field_4=0"
+      },
+      {
+        "ops": [
+          "op10",
+          "op11",
+          "op12",
+          "op16"
+        ],
+        "effect": "if low16(param_0)!=0xffff then field_3=low8(param_0)"
+      },
+      {
+        "op": "op21",
+        "effect": "field_2=param_1"
+      },
+      {
+        "op": "op25",
+        "effect": "field_5=255"
+      },
+      {
+        "ops": [
+          "op28",
+          "op29",
+          "op33"
+        ],
+        "effect": "field_1|=4"
+      }
+    ],
+    "allocation": "none",
+    "destruction": "none",
+    "dispatch": "not executed by this leaf; future callback timing/lifetime remains open"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kirby-amazing-mirror.actor.callback_phase_reset/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Exact timer/cursor units and cursor consumer meanings unknown.",
+    "Nested config reference, canonical actor pool/EntityRef result, stack-argument proximity ABI and lifecycle services still block full L2 extraction.",
+    "L1 semantic_type fields remain unknown in original artifact; these publication annotations are source-backed metadata only and do not mutate qualified artifact bytes.",
+    "Finite synthetic setter state parity only; full callback execution, pool, physics and scheduler lifecycle unqualified.",
+    "Fields field_0,field_4,field_5 remain unannotated: storage reset behavior is known, precise source quantities/units remain unknown.",
+    "Opaque callback selector and phase selector occupy distinct semantic frames; unit1/1 is dimensionless representation, not time or spatial scale.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+    "sha256": "d215411ae4ec89eb6944b99eb847ee27566052fc4a305dd582e11077edb33025",
+    "id": "kirby-amazing-mirror.pool-eligibility-proximity-hop",
+    "ownership": {
+      "owner": "actor",
+      "kind": "borrowed_mutable_actor_view",
+      "lifetime": "caller-owned_actor_lifetime; this leaf neither allocates nor destroys",
+      "access": "mutable",
+      "identity": "same backing actor supplied in r0, shared with original caller and later callback consumers"
+    },
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views",
+      "r0 addresses a live mutable actor with all six accessed lanes valid; aligned u16/u32 lanes match original adapter.",
+      "Preserve caller-owned actor identity and all packed aliases; this leaf does not clone or allocate an actor.",
+      "Callback parameter is copied only. Bind source code references to symbolic targets before integration; no callback invocation or dispatch-validity guarantee.",
+      "Preserve low16 short(-1) sentinel and low8 truncation; do not constrain phase to unsigned8 before testing sentinel.",
+      "Original return-proof assumptions require external state not to overwrite saved return stack."
+    ],
+    "parameters": {
+      "param_0": {
+        "storage_type": "u32",
+        "original_abi_role": "phase_or_preserve",
+        "domain": {
+          "unsigned_min": 0,
+          "unsigned_max": 4294967295
+        },
+        "behavior": "If low16 equals65535 (short minus one), preserve field_3; otherwise write low8. Includes65535,131071,4294967295 preserve cases; do not narrow to u8 before sentinel test. Other reset effects always occur.",
+        "signed_encoding": "twos_complement",
+        "evidence": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/l0/0809f7d8.json"
+        ]
+      },
+      "param_1": {
+        "storage_type": "u32",
+        "original_abi_role": "opaque_callback_reference_representation",
+        "domain": {
+          "unsigned_min": 0,
+          "unsigned_max": 4294967295
+        },
+        "behavior": "Exact bit-copy to field_2; no invocation or validation. Semantic callback target domain/lifetime remain caller obligations.",
+        "evidence": [
+          "research/deep-extraction/resume/kirby-and-the-amazing-mirror/next-extraction/system.json",
+          "local/ir/fleet-next/kirby-and-the-amazing-mirror/export-EX017/l0/0809f7d8.json"
+        ]
+      }
+    },
+    "return": {
+      "storage_type": "void",
+      "behavior": "No result; mutates existing actor state."
+    },
+    "unannotated_fields": {
+      "field_0": "reset0; exact timer unit/clock unknown",
+      "field_4": "reset0; exact cursor role/unit unknown",
+      "field_5": "reset255; exact cursor/sentinel role/unit unknown"
+    },
+    "aliases": "All six accessed lanes share the same caller actor backing; packed flag views must alias. No allocation, cloning or destruction occurs.",
+    "services": {
+      "externalCalls": [],
+      "hardwareReads": [],
+      "effect": "RAM-only state mutation plus callback reference storage; no audio/render/physics/scheduler invocation. Terminal apparent CALLIND is proven return, not service dispatch."
+    },
+    "order": "reset field_0, reset field_4, optionally assign field_3, copy callback into field_2, reset field_5, OR4 into field_1; original source operations are pinned in rawL0.",
+    "qualification": {
+      "status": "pass",
+      "scope": "finite original-ROM versus automatically generated state-setter comparisons only",
+      "vectors": 512,
+      "receipt": {
+        "path": "local/ir/fleet-next/kirby-and-the-amazing-mirror/lift-0809f7d8/receipt.json",
+        "sha256": "aa48e6c4f3356b4bae35a66909cb87bdcc652690209d7dd460dc2bb5dcef170e"
+      },
+      "boundaryReceipt": {
+        "path": "local/ir/fleet-next/kirby-and-the-amazing-mirror/setter-boundaries/receipt.json",
+        "sha256": "ce89df4873ec60ac63f366bd18fe73cffab429f2ad0e37fe9b34e05af9e6c47f"
+      },
+      "boundaryVectors": 512,
+      "explicitExpectedStateCases": 72,
+      "boundaryCoverage": "phase0,1,0xff,0xfffe,0xffff,0x1ffff,0xffffffff,0x8000; three callback values; three flag words; independent expected-state checks",
+      "notClaimed": [
+        "exhaustive32-bit domains",
+        "callback validity or invocation",
+        "pool eligibility/proximity/hop full lifecycle",
+        "recovered executableL2",
+        "whole game completeness"
+      ]
+    },
+    "l2_status": "source-backed larger subsystem contract; setter finite-qualified only, not executable-qualified full L2"
+  }
+}

@@ -1,0 +1,796 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "super-mario-advance-2-super-mario-world",
+  "sourceSystemIds": [],
+  "blueprintIds": [
+    "combat-encounter",
+    "character-traversal",
+    "exploration-progression",
+    "hazard-recovery"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move through Super Mario World stages, resolve terrain and enemy contact, acquire/use forms, survive or retry, exit levels and retain progress.",
+    "phases": [
+      {
+        "id": "player_control",
+        "label": "Read input, run, jump, spin and update one player",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma2-traversal-bundle.json"
+        ],
+        "requiredServices": [
+          "original controls/profile/map and input cadence"
+        ],
+        "gaps": [
+          "Existing traversal bundle remains partial/native host boundary; do not duplicate it as a new portable controller."
+        ]
+      },
+      {
+        "id": "terrain_and_landing",
+        "label": "Resolve terrain, grounded state and landing",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "source terrain/map/material query and moving terrain"
+        ],
+        "gaps": [
+          "No qualified ground detector, complete slope response or landing solver."
+        ]
+      },
+      {
+        "id": "actor_initialize",
+        "label": "Internal descriptor initialization within selected-actor spawn/contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+          "local/ir/packages/sma2.actor_reinitialize/package.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+          "Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+          "Native qualification covers256types×selectedstates1/11×12slots; use lifecycle1/11 inputs for this prefab.",
+          "No contact admission, actor controller, hurt, defeat/drop or save/load lifecycle is supplied.",
+          "Product filter: raw descriptor bytes do not supply a meaningful user capability alone; no ready standalone prefab."
+        ]
+      },
+      {
+        "id": "enemy_update",
+        "label": "Schedule and update active enemies",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "original actor scheduler and terrain/callback context"
+        ],
+        "gaps": [
+          "Complete enemy controllers and callback lifecycles remain unclosed; field aliases include special actors7/9."
+        ]
+      },
+      {
+        "id": "contact_prepare",
+        "label": "Prepare actor/player geometry and admit contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [],
+        "gaps": [
+          "Existing four support L1 packages and admission graph lack published predicate return semantic; no captured contact output yet.",
+          "Source guard, shared scratch, selected slot and debounce ordering must remain before accepted-response calls."
+        ]
+      },
+      {
+        "id": "contact_reaction",
+        "label": "Apply hurt, accepted top-contact, bounce and spin response",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json",
+          "research/ir-workshop/game-system-assembly-20261016/mario-capability-bundles/mario-sma2-spin-response-bundle.json"
+        ],
+        "requiredServices": [
+          "hurt/audio9b5cc",
+          "accepted top-contact2bd9c and bounce/effect allocation"
+        ],
+        "gaps": [
+          "2fc0c→2e978 inherited actor ABI is missing in automatic closure; root dispatch not qualified.",
+          "Existing native spin-response module assumes host-admitted contact; do not claim contact admission."
+        ]
+      },
+      {
+        "id": "item_and_forms",
+        "label": "Consume accepted item and change active/reserve form",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "accepted item contact and later scene/save lifecycle"
+        ],
+        "gaps": [
+          "Acquire→transform commit and reserve drop remain only partial portable subsets."
+        ]
+      },
+      {
+        "id": "fire_projectile_lifecycle",
+        "label": "Allocate, update, collide, expire and reuse fire projectiles",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+          "research/deep-extraction/mario/sma2-fire-pool-contracts.json"
+        ],
+        "requiredServices": [
+          "audio queue behavior",
+          "terrain/map query",
+          "aliased enemy/reward pools"
+        ],
+        "gaps": [
+          "Two slots8/9, scan continuation, impact and cleanup services are required; leaf clear/integrate routines do not close lifecycle."
+        ]
+      },
+      {
+        "id": "ability_clock",
+        "label": "Expire invulnerability and flush pending rewards",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "mechanical portion of mixed presentation0806aa14",
+          "reward consumer08030430"
+        ],
+        "gaps": [
+          "255eligible decrements under original guards, not fixed unconditioned frames; cannot drop presentation owner."
+        ]
+      },
+      {
+        "id": "rewards_and_retry",
+        "label": "Consume score/life rewards and death/retry transition",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/mechanics-targets.json",
+          "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json"
+        ],
+        "requiredServices": [
+          "reward record allocation/consumer",
+          "retry/game-over scene consumers"
+        ],
+        "gaps": [
+          "Reward2fe64 shared pointerphi6be/6c0 unresolved;34864 needs334f8 closure; full retry scene/persistence transaction missing."
+        ]
+      },
+      {
+        "id": "camera_and_present",
+        "label": "Keep player visible and present source state",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json",
+          "research/deep-extraction/mario/mechanics-targets.json"
+        ],
+        "requiredServices": [
+          "source camera/render services and mechanical cleanup"
+        ],
+        "gaps": [
+          "Offscreen projectile retirement and ability expiry are not disposable rendering effects."
+        ]
+      },
+      {
+        "id": "world_and_persistence",
+        "label": "Advance world/room progression and preserve progress",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+        ],
+        "requiredServices": [
+          "scene unload/load",
+          "save/load/versioned progress"
+        ],
+        "gaps": [
+          "World navigation, level completion and durable ownership/save restoration are not reconstructed."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor_initialize",
+        "to": "enemy_update",
+        "kind": "host-required",
+        "scope": "Source actor create/retype precedes caller-specific placement and later update; no global schedule invented."
+      },
+      {
+        "from": "enemy_update",
+        "to": "contact_prepare",
+        "kind": "shared-state",
+        "scope": "Same selected actor view and scene scratch; no independently copied actor/world."
+      },
+      {
+        "from": "contact_prepare",
+        "to": "contact_reaction",
+        "kind": "source-call",
+        "scope": "34264 calls2bd9c/hurt/reward paths after guarded overlap/debounce; caller is source-only."
+      },
+      {
+        "from": "contact_reaction",
+        "to": "rewards_and_retry",
+        "kind": "source-call",
+        "scope": "Accepted contact paths call reward/hurt/death helpers under source conditions."
+      },
+      {
+        "from": "item_and_forms",
+        "to": "fire_projectile_lifecycle",
+        "kind": "shared-state",
+        "scope": "Fire form legality precedes spawn; active/reserve forms retain original encodings."
+      },
+      {
+        "from": "fire_projectile_lifecycle",
+        "to": "actor_initialize",
+        "kind": "source-call",
+        "scope": "Enemy fire reaction assigns type/state then calls original initializer; whole fire transaction remains source-only."
+      },
+      {
+        "from": "ability_clock",
+        "to": "rewards_and_retry",
+        "kind": "source-call",
+        "scope": "0806aa14 zero-expiry flushes08030430 and clears pending reward state."
+      },
+      {
+        "from": "terrain_and_landing",
+        "to": "player_control",
+        "kind": "host-required",
+        "scope": "Controller consumes ground/material state; source terrain producer remains external."
+      },
+      {
+        "from": "player_control",
+        "to": "camera_and_present",
+        "kind": "host-required",
+        "scope": "Camera service and complete frame order are not portable qualified."
+      },
+      {
+        "from": "rewards_and_retry",
+        "to": "world_and_persistence",
+        "kind": "host-required",
+        "scope": "Retry/transition and persistent progress consumers remain unclosed."
+      }
+    ],
+    "missingForCoreGame": [
+      "Portable player/controller↔terrain/landing boundary",
+      "Complete enemy scheduler/controller and aliased pool lifecycle",
+      "Captured overlap output and exact descriptor handoff as public contracts",
+      "Hurt/top-contact/reward source caller ABI/pointer/service closure",
+      "Full fire allocation→terrain/enemy impact→cleanup/reuse",
+      "Invulnerability presentation-owned clock and reward flush",
+      "Camera/scene transitions, retry/game-over consumer, world exit and persistence"
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "mario-sma2-selected-actor-descriptor-core",
+      "label": "Selected actor spawn/contact lifecycle — source-only reconstruction",
+      "moduleId": "mario.sma2.selected_actor_lifecycle",
+      "sourceGame": "super-mario-advance-2-super-mario-world",
+      "sourceContractRef": "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+      "planIds": [
+        "combat-encounter"
+      ],
+      "packageIds": [
+        "sma2.actor_reinitialize"
+      ],
+      "availability": "source-only",
+      "scope": "One shared selected-actor lifecycle module is the intended capability. Existing descriptor initialization is an internal automatically recovered phase, not an actionable enemy/spawn/ability prefab.",
+      "gaps": [
+        "Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+        "Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+        "Native qualification covers256types×selectedstates1/11×12slots; use lifecycle1/11 inputs for this prefab.",
+        "No contact admission, actor controller, hurt, defeat/drop or save/load lifecycle is supplied.",
+        "Product filter: raw descriptor bytes do not supply a meaningful user capability alone; no ready standalone prefab."
+      ],
+      "evidence": [
+        "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+        "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+        "local/ir/packages/sma2.actor_reinitialize/package.json",
+        "local/ir/packages/sma2.actor_reinitialize/receipt.json"
+      ],
+      "canonicalState": {
+        "identity": "One selected original actor view in the canonical scene; one type/lifecycle and descriptor set across all future facets",
+        "fields": [
+          "actor_type",
+          "actor_lifecycle",
+          "source_descriptor_53",
+          "source_descriptor_62",
+          "source_descriptor_63",
+          "source_descriptor_64",
+          "source_descriptor_65",
+          "source_descriptor_66",
+          "source_descriptor_67",
+          "source_descriptor_68"
+        ],
+        "aliasRule": "Never create a second actor/controller to supply another role. Public slots are selected-actor views; private reset state does not prove arbitrary shared full-pool substitution. Scene+6cc/stride100 is L0/native validation provenance only."
+      },
+      "roleFacets": [
+        {
+          "roleId": "reaction",
+          "capability": "original_actor_descriptor_initialization",
+          "status": "source-only",
+          "scope": "Internal initializer evidence supports the intended selected-actor lifecycle; meaningful spawn/contact ownership, source dispatch and captured outcome remain incomplete. Source create/retype callers invoke the same initializer before subsequent caller-specific writes; does not choose a reaction or defeat.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+            "local/ir/packages/sma2.actor_reinitialize/receipt.json"
+          ]
+        },
+        {
+          "roleId": "contact",
+          "capability": "descriptor_shape_handoff",
+          "status": "source-only",
+          "scope": "Internal initializer evidence supports the intended selected-actor lifecycle; meaningful spawn/contact ownership, source dispatch and captured outcome remain incomplete. Actor+3f feeds contact rectangle selection; published actor-box field remains opaque, so exact public handoff and predicate output are pending.",
+          "evidence": [
+            "research/deep-extraction/mario/parallel-sma2/next-extraction/l2-contract.json"
+          ]
+        },
+        {
+          "roleId": "defeat",
+          "capability": "retype_to_defeat_actor",
+          "status": "source-only",
+          "scope": "Internal initializer evidence supports the intended selected-actor lifecycle; meaningful spawn/contact ownership, source dispatch and captured outcome remain incomplete. Source fire-hit caller retypes actor21/state8 then initializes; complete hit/reward/defeat lifecycle remains unqualified and state8 is outside the selected default fixture domain.",
+          "evidence": [
+            "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "sma2.actor.initialize_descriptors",
+        "label": "Initialize one selected actor’s original descriptors",
+        "assemblyRef": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+        "validationRef": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+        "descriptorRef": "research/ir-workshop/accepted-game-reconstruction-maps-20261016/super-mario-advance-2-super-mario-world/delivery.json",
+        "packageIds": [
+          "sma2.actor_reinitialize"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false,
+        "primaryUserCapability": false
+      },
+      "evidencePins": [
+        {
+          "path": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+          "sha256": "0d3d79543f295229cd0b68f93085c73a0f09e5a7197e0aa4ee5cd7a4d2eb419c"
+        },
+        {
+          "path": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+          "sha256": "d1ad936b879f008b9d64bea7bbd3a52df2acf77bbfab2e6b5412d75c76f2bf04"
+        },
+        {
+          "path": "local/ir/packages/sma2.actor_reinitialize/package.json",
+          "sha256": "614928b701269847e8854e3eb596884b55f625263ae330696f636a3f8ad5a991"
+        },
+        {
+          "path": "local/ir/packages/sma2.actor_reinitialize/receipt.json",
+          "sha256": "00bc9f37656b06892c7a120d2f039c92a0fff3b6295ed31562f94d365f25a923"
+        }
+      ]
+    }
+  ],
+  "prefabs": [],
+  "provenanceKinds": {
+    "automaticPortable": "actor_reinitialize source HighFunction→L1 with retained6144 native pairs",
+    "nativeHostReferences": "Existing traversal/spin bundles are referenced for reconstruction context only, not recounted as new portable prefabs.",
+    "sourceOnly": "Core-map causal facts/dependencies from retained own-ROM evidence; no authored behavior substitutes.",
+    "hostScaffold": "Caller supplies selected actor identity, type/state assignment and create/retype trigger; not recovered spawning logic."
+  },
+  "counts": {
+    "bindingReadyPrefabs": 0,
+    "sourceOnlyPhases": 11,
+    "missingPhases": 1,
+    "usablePhases": 0,
+    "newNativeRuns": 0,
+    "newExports": 0,
+    "newGames": 0,
+    "primaryReadyPrefabs": 0,
+    "internalAdmittedAssemblies": 1
+  },
+  "timing": {
+    "runId": "sma2-prefab-reconstruction01",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": 0.005652666000000001,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.043520249999999996,
+    "beforeAfter": null,
+    "accounting": "Graph construction/process/validation only. Validation is nested in total; no new native/build/JVM run. Prior native qualification is retained, not added to this run."
+  },
+  "internalPhases": [
+    {
+      "id": "sma2.actor.initialize_descriptors",
+      "moduleId": "mario.sma2.selected_actor_lifecycle",
+      "label": "Initialize one selected actor’s original descriptors",
+      "path": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.assembly.json",
+      "sha256": "0d3d79543f295229cd0b68f93085c73a0f09e5a7197e0aa4ee5cd7a4d2eb419c",
+      "validation": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/actor-initialize.validation.json",
+      "validationSha256": "d1ad936b879f008b9d64bea7bbd3a52df2acf77bbfab2e6b5412d75c76f2bf04",
+      "inputs": [
+        {
+          "id": "actor_type",
+          "label": "Original source actor type",
+          "storageType": "u8",
+          "default": 33,
+          "domain": {
+            "values": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54,
+              55,
+              56,
+              57,
+              58,
+              59,
+              60,
+              61,
+              62,
+              63,
+              64,
+              65,
+              66,
+              67,
+              68,
+              69,
+              70,
+              71,
+              72,
+              73,
+              74,
+              75,
+              76,
+              77,
+              78,
+              79,
+              80,
+              81,
+              82,
+              83,
+              84,
+              85,
+              86,
+              87,
+              88,
+              89,
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110,
+              111,
+              112,
+              113,
+              114,
+              115,
+              116,
+              117,
+              118,
+              119,
+              120,
+              121,
+              122,
+              123,
+              124,
+              125,
+              126,
+              127,
+              128,
+              129,
+              130,
+              131,
+              132,
+              133,
+              134,
+              135,
+              136,
+              137,
+              138,
+              139,
+              140,
+              141,
+              142,
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              149,
+              150,
+              151,
+              152,
+              153,
+              154,
+              155,
+              156,
+              157,
+              158,
+              159,
+              160,
+              161,
+              162,
+              163,
+              164,
+              165,
+              166,
+              167,
+              168,
+              169,
+              170,
+              171,
+              172,
+              173,
+              174,
+              175,
+              176,
+              177,
+              178,
+              179,
+              180,
+              181,
+              182,
+              183,
+              184,
+              185,
+              186,
+              187,
+              188,
+              189,
+              190,
+              191,
+              192,
+              193,
+              194,
+              195,
+              196,
+              197,
+              198,
+              199,
+              200,
+              201,
+              202,
+              203,
+              204,
+              205,
+              206,
+              207,
+              208,
+              209,
+              210,
+              211,
+              212,
+              213,
+              214,
+              215,
+              216,
+              217,
+              218,
+              219,
+              220,
+              221,
+              222,
+              223,
+              224,
+              225,
+              226,
+              227,
+              228,
+              229,
+              230,
+              231,
+              232,
+              233,
+              234,
+              235,
+              236,
+              237,
+              238,
+              239,
+              240,
+              241,
+              242,
+              243,
+              244,
+              245,
+              246,
+              247,
+              248,
+              249,
+              250,
+              251,
+              252,
+              253,
+              254,
+              255
+            ]
+          },
+          "binding": "actor_type"
+        },
+        {
+          "id": "actor_lifecycle",
+          "label": "Preserved lifecycle state",
+          "storageType": "u8",
+          "default": 1,
+          "domain": {
+            "values": [
+              1,
+              11
+            ]
+          },
+          "binding": "actor_lifecycle"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "source_descriptor_53",
+          "binding": "source_descriptor_53",
+          "meaning": "Exact original descriptor byte at actor+0x35; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_62",
+          "binding": "source_descriptor_62",
+          "meaning": "Exact original descriptor byte at actor+0x3e; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_63",
+          "binding": "source_descriptor_63",
+          "meaning": "Exact original descriptor byte at actor+0x3f; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_64",
+          "binding": "source_descriptor_64",
+          "meaning": "Exact original descriptor byte at actor+0x40; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_65",
+          "binding": "source_descriptor_65",
+          "meaning": "Exact original descriptor byte at actor+0x41; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_66",
+          "binding": "source_descriptor_66",
+          "meaning": "Exact original descriptor byte at actor+0x42; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_67",
+          "binding": "source_descriptor_67",
+          "meaning": "Exact original descriptor byte at actor+0x43; source semantic channel identity, not arbitrary enemy compatibility."
+        },
+        {
+          "id": "source_descriptor_68",
+          "binding": "source_descriptor_68",
+          "meaning": "Exact original descriptor byte at actor+0x44; source semantic channel identity, not arbitrary enemy compatibility."
+        }
+      ],
+      "phases": [
+        {
+          "id": "initialize_selected_actor",
+          "trigger": "Explicit host create/retype event after caller assigned original type and lifecycle; not every frame",
+          "invocations": [
+            "actor_initialize"
+          ],
+          "scheduleStatus": "caller-declared"
+        }
+      ],
+      "requiredServices": [],
+      "gaps": [
+        "Host owns selected actor identity, pool lifetime, position placement and actual create/retype decision.",
+        "Portable binding uses only original type/lifecycle and eight exact descriptor byte outputs. Opaque reset fields remain private; this does not reconstruct a complete actor object or shared pool manager.",
+        "Native qualification covers256types×selectedstates1/11×12slots; use lifecycle1/11 inputs for this prefab.",
+        "No contact admission, actor controller, hurt, defeat/drop or save/load lifecycle is supplied.",
+        "Product filter: raw descriptor bytes do not supply a meaningful user capability alone; no ready standalone prefab."
+      ],
+      "sourceRefs": [
+        "research/deep-extraction/mario/parallel-sma2/dependency-contracts.json",
+        "local/ir/sma2-reinitialize-20261016/source-manifest.json",
+        "local/ir/packages/sma2.actor_reinitialize/package.json",
+        "local/ir/packages/sma2.actor_reinitialize/receipt.json"
+      ],
+      "qualificationScope": "Actual Composer binding/lowering passed. Underlying automatic reinitializer retains6144 native comparisons; this new assembly graph has no new native execution.",
+      "readyToAdd": false,
+      "runtimeQualified": false,
+      "primaryUserCapability": false,
+      "productFilter": "Raw actor type/lifecycle and eight descriptor bytes lack named species/spawn context or captured contact outcome. Internal support only."
+    }
+  ],
+  "productFilter": {
+    "outcome": "internal_phase_only",
+    "reason": "No named actor species/spawn context or captured contact outcome; raw descriptors are insufficient user capability.",
+    "returnSemantics": "Still absent in published shared_contact_overlap and actor_player_relative_side packages at final inspection.",
+    "shapeHandoff": "actor_contact_box.field_2 remains unknown; exact source descriptor.channel_1 annotation requested compiler owner.",
+    "smallestUsefulClosure": "Publish retained-proof return and exact same-byte descriptor semantics, then wire selected-actor initializer→geometry→captured overlap with meaningful species/shape/default context. Actual caller dispatch and spawn lifecycle still source-only."
+  },
+  "sourceDeliveryRef": "research/deep-extraction/mario/parallel-sma2/prefab-reconstruction/delivery.json",
+  "sourceDeliverySha256": "82f25de70d8fb284799548e47c69766eb770ab82ba92d0b37fdf3f5e1d43a875",
+  "metadataNormalization": {
+    "sourceRefs": "Structured reference objects retain original pins alongside repository-relative path strings.",
+    "productScope": "No source semantics or source proofs changed; zero primary prefab map."
+  }
+}

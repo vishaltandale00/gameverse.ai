@@ -1,0 +1,113 @@
+schema_version: 0
+id: shaman-king-master-of-spirits
+game:
+  title: 'Shaman King: Master of Spirits'
+  platform: gba
+  game_code: BSOE
+  rom_sha1: 4a0fecdf90055fe1934b54d10e47b46ac399aecd
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  sources:
+  - kind: rom_binary
+    ref: 4a0fecdf90055fe1934b54d10e47b46ac399aecd; SHA256 a5b7419577ac8ad3d7657f95010bfb6a7a312805ae635c7e1650c7d2b3bc64f9;
+      no community source input
+  - kind: ghidra_export
+    ref: research/corpus-mining/20261016-binary-corpus-round2/shaman-king-master-of-spirits.json
+conventions:
+  scope: 'Partial ROM self-decompilation: one locally qualified display component plus unverified gameplay candidates.'
+  units: Scroll buffer and native BG register offsets, modulo512. Upstream world/fixed-point representation and
+    tick schedule require separate qualification.
+components:
+- id: buffered_modular_bg_scroll
+  facet: camera
+  label: Four background scroll buffers with modulo-512 offsets
+  summary: "The native setter at 0x08000e20 stores horizontal and vertical offsets for a selected background in\
+    \ one of four 0x810-byte contexts, masks each offset to nine bits and marks its scroll state dirty. A recovered\
+    \ renderer prefix sends those buffers to BG0\u2013BG3 scroll registers, optionally adding signed layer-specific\
+    \ shake offsets. This is a reusable display/camera seam, not a recovered complete player camera or world coordinate\
+    \ model."
+  instantiates:
+  - concept: camera.scroll.buffered_modular_layer_offsets
+  reads:
+  - input.layer:u32 with caller precondition 0..3
+  - input.x:u32 low nine bits used
+  - input.y:u32 low nine bits used
+  - ram[0x030011d1]:u8 shake enable (flush prefix)
+  - ram[0x030011d0]:u8 per-layer shake mask (flush prefix)
+  - ram[0x030011d3/0x030011d4]:i8 additive shake offsets (flush prefix)
+  writes:
+  - ram[0x02004000 + layer*0x810 +0x16]:u16 horizontal offset
+  - ram[0x02004000 + layer*0x810 +0x18]:u16 vertical offset
+  - ram[0x02004000 + layer*0x810 +0x11]:u8 scroll dirty
+  - MMIO[0x04000010 + layer*4]:u16 BGxHOFS (flush prefix)
+  - MMIO[0x04000012 + layer*4]:u16 BGxVOFS (flush prefix)
+  invariants:
+  - Setter stores x & 0x1ff and y & 0x1ff and dirty=1 for exactly the selected layer; it does not clamp at world
+    edges.
+  - 'Layer range is a caller precondition: native setter contains no bounds check. Independently enforce 0..3 when
+    adapting it.'
+  - Flusher iterates four layers and advances the hardware destination by four bytes per layer.
+  - When shake is disabled or the layer mask bit is clear, flusher writes stored offsets and clears its dirty byte.
+    With shake active for the layer, it writes (stored + signed shake) & 0x1ff and does not clear that dirty byte
+    in this prefix.
+  - Setter qualification compared the full 0x2040-byte context region including canaries; the test did not run or
+    qualify the full renderer, DMA transfers or gameplay camera.
+  - The caller at 0x08021dd4 converts its interpolated values with arithmetic >>8 before calling this setter. Its
+    complete movement/collision linkage and invocation cadence remain outside this component.
+  evidence:
+  - &id001
+    kind: static_signature
+    ref: 4a0fecdf90055fe1934b54d10e47b46ac399aecd:Thumb0x08000e20..0x08000e42; code SHA256 1a1cfe511f12e0a61c99da45cb900a3e17ce3d3e2fd691ecb175adf1ef86f10b;
+      data literals0x08000e44..0x08000e4c; research/corpus-mining/20261016-binary-corpus-round2/reviewed/shaman-scroll-setter.asm.txt
+    confidence: 0.98
+    note: Whole local setter instruction-reviewed, including fixed base, stride arithmetic, masks, writes and saved-LR
+      return.
+  - kind: static_signature
+    ref: 4a0fecdf90055fe1934b54d10e47b46ac399aecd:Thumb0x080009c8..0x08000a8c exclusive; region SHA256 2b655fa56bb00e36174f0bdbbc3415410b42fce311567a8631d4a26e98565763;
+      research/corpus-mining/20261016-binary-corpus-round2/reviewed/shaman-scroll-flush-prefix.asm.txt
+    confidence: 0.92
+    note: Scoped renderer prefix checked directly; includes literal pool and optional DMA call beyond the scroll
+      stores. No full-renderer claim.
+  - kind: capture_telemetry
+    ref: research/corpus-mining/20261016-binary-corpus-round2/reviewed/shaman-scroll-native-receipt.json
+    confidence: 0.98
+    note: 256 finite native Thumb versus own recovered C vectors, four layers and eight x/y boundary/high-bit values;
+      full 0x2040-byte context compared. Only setter equivalence checked.
+  params:
+    layer_count:
+      value: 4
+      unit: background layers
+      native_value: 4
+      native_unit: background layers
+      evidence: &id002
+      - *id001
+    context_stride:
+      value: 2064
+      unit: bytes
+      native_value: 2064
+      native_unit: bytes
+      evidence: *id002
+    scroll_mask:
+      value: 511
+      unit: native scroll bits
+      native_value: 511
+      native_unit: native scroll bits
+      evidence: *id002
+    scroll_modulus:
+      value: 512
+      unit: BG scroll register offset units
+      native_value: 512
+      native_unit: BG scroll register offset units
+      evidence: *id002
+proposed_concepts:
+- id: camera.scroll.buffered_modular_layer_offsets
+  label: Buffered modular layer scrolling
+  definition: Per-layer camera/display offsets staged in memory and committed to hardware scroll registers, with
+    explicit wrapping and optional additive perturbation.
+open_questions:
+- Trace 0x0802245c/0x080220b4 input-driven pan/selection modes to a rendered scene before assigning map or player-camera
+  identity.
+- Recover actor locomotion/collision, spirits/abilities, combat and progression independently of this display seam.
+- Qualify VBlank scheduling, tilemap/palette dependencies, DMA budgets and layer ownership for composition.

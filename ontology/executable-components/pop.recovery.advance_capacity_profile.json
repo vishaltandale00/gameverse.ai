@@ -1,0 +1,140 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "pop.recovery.advance_capacity_profile",
+  "label": "Advance source capacity selector and clear its progress bits",
+  "role": "recovery",
+  "source_game": "prince-of-persia-the-sands-of-time",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/pop.recovery.advance_capacity_profile/package.json",
+  "package_sha256": "d441ad7ed098caf873b99583021ac85cd7a52ce39f420e7a6027fe0606e47783",
+  "behavior_sha256": "31012788fa6791f42bdc17fb7483b2f955a51e57e262c3ea60ae9c22f24367a9",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "b20b1aceef5013f4ad285eb3e7266278f55d054251eb682a8120eadf985ee37f"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "context_object_0",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": []
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_encoded_capacity_profile_part_a",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "pop.world.capacity_profile.part_a",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/encoded-profile-contract-v1.json",
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/recovery-export-ex066/l0/0806b560.json",
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/profile-export-ex084/l0/0806acc0.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_encoded_capacity_profile_part_b",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "pop.world.capacity_profile.part_b",
+        "confidence": 1.0,
+        "evidence": [
+          "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/encoded-profile-contract-v1.json",
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/recovery-export-ex066/l0/0806b560.json",
+          "local/ir/fleet-next/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/profile-export-ex084/l0/0806acc0.json"
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "same_canonical_world_profile_context",
+    "clock": "explicit_source_capacity_change_commit",
+    "phase": "0800f484_animation_completion_and_timer_gate",
+    "ordering": "Original caller gates producer before returning actor state; no assumed per-frame schedule."
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/pop.recovery.advance_capacity_profile/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Finite1024case source encoded-state proof, not complete collection/upgrade/animation controller.",
+    "Encoded selector advances modulo32; no claim that capacity increases at every representable value or that all32 profiles are legal gameplay tiers.",
+    "Whole bytes preserve opaque fields and must bind the same live state used by original resource recovery.",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/encoded-profile-contract-v1.json",
+    "sha256": "181afa23a87e147d784c63b8b8cf4b919aa008b8bab2ce6a9c061430a4257a4a",
+    "source_system_id": "pop.recovery.capacity_profile_producer",
+    "status": "finite_native_original_function_subset",
+    "canonical_l0_sha256": "b1c556bbee1296e1a374d112ce0e9b871ae7d8f69cc076111e6afa0da2a84f8f",
+    "adapter_l0_sha256": "b1c556bbee1296e1a374d112ce0e9b871ae7d8f69cc076111e6afa0da2a84f8f",
+    "raw_l0_sha256": "82423b18cb8dcd741f4ff5d3ba78bd2a3b74b166f04fff4851733a6b7f9c86ef",
+    "owned_state": "Canonical world context shares both byte ports with recovery consumer.",
+    "domain": "u8 raw storage; selected5bit profile increments modulo32; source legal gameplay domain unresolved.",
+    "sourceEvent": "Original0800f484 animation-complete/timer>120 invokes0806acc0; full actor callbacks/audio remain outside.",
+    "encoded_profile_contract": {
+      "path": "research/deep-extraction/resume/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/encoded-profile-contract-v1.json",
+      "sha256": "181afa23a87e147d784c63b8b8cf4b919aa008b8bab2ce6a9c061430a4257a4a"
+    },
+    "qualification": {
+      "vectors": 1024,
+      "expectedStateCases": 1024,
+      "receipt": {
+        "path": "local/ir/fleet-next/prince-of-persia-the-sands-of-time/next-round/source-closure-20261016/capacity-advance-attempt01/receipt.json",
+        "sha256": "a1db781712dd9a1ac0023c9813ad0fe64aea2bed2591abe209b5cadae352c5f1"
+      },
+      "wholeSystem": false
+    }
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "prince-of-persia-the-sands-of-time",
+    "entry": "0806acc0"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}

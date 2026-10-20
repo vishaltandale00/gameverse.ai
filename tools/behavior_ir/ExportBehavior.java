@@ -7,10 +7,13 @@ import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
 import ghidra.program.model.pcode.*;
 import ghidra.program.model.listing.*;
+import ghidra.program.model.data.*;
+import ghidra.program.model.symbol.SourceType;
 
 public class ExportBehavior extends GhidraScript {
     IdentityHashMap<Varnode,String> ids = new IdentityHashMap<>();
     JsonArray vars = new JsonArray();
+    JsonObject abiAnnotations = new JsonObject();
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     String var(Varnode v) {
@@ -88,8 +91,26 @@ public class ExportBehavior extends GhidraScript {
             }
             table.add("prior_conditional_guards",guards); tables.add(table);
         }
-        root.add("jump_tables",tables); root.add("blocks",blocks); root.add("varnodes",vars);
+        root.add("abi_annotations",abiAnnotations); root.add("jump_tables",tables); root.add("blocks",blocks); root.add("varnodes",vars);
         root.addProperty("wall_s",(System.nanoTime()-started)/1e9); return root;
+    }
+
+    DataType exactType(String name) throws Exception {
+        return switch(name) {case "void" -> VoidDataType.dataType; case "u8" -> ByteDataType.dataType; case "u16" -> UnsignedShortDataType.dataType; case "u32" -> UnsignedIntegerDataType.dataType; default -> throw new Exception("unsupported evidenced ABI type "+name);};
+    }
+    void applyABI(JsonObject overrides) throws Exception {
+        for (var row : overrides.entrySet()) {
+            JsonObject spec=row.getValue().getAsJsonObject();
+            if(!spec.has("evidence") || spec.getAsJsonArray("evidence").isEmpty())throw new Exception("ABI override lacks instruction evidence");
+            var address=toAddr(Long.parseLong(row.getKey(),16));Function f=currentProgram.getFunctionManager().getFunctionAt(address);
+            if(f==null){currentProgram.getProgramContext().setValue(currentProgram.getRegister("TMode"),address,address,java.math.BigInteger.ONE);disassemble(address);f=createFunction(address,null);}
+            if(f==null)throw new Exception("ABI target function missing "+row.getKey());
+            List<Variable> parameters=new ArrayList<>();int index=0;
+            for(JsonElement argument:spec.getAsJsonArray("arguments"))parameters.add(new ParameterImpl("evidenced_arg_"+(index++),exactType(argument.getAsString()),currentProgram));
+            if(parameters.size()>4)throw new Exception("evidenced register ABI exceeds four arguments");
+            f.updateFunction(currentProgram.getCompilerSpec().getDefaultCallingConvention().getName(),new ReturnParameterImpl(exactType(spec.get("return").getAsString()),currentProgram),parameters,Function.FunctionUpdateType.DYNAMIC_STORAGE_ALL_PARAMS,true,SourceType.USER_DEFINED);
+            abiAnnotations.add(row.getKey(),spec);
+        }
     }
 
     public void run() throws Exception {
@@ -97,7 +118,7 @@ public class ExportBehavior extends GhidraScript {
         List<Function> functions = new ArrayList<>(); boolean queued = args.length>1 && args[1].equals("QUEUE"); boolean batch = args.length>1 && args[1].equals("ALL");
         double budget = batch ? Double.parseDouble(args[2]) : 45;
         long maxBytes=128L*1024*1024, writtenBytes=0; boolean outputCap=false; int limit = batch ? Integer.parseInt(args[3]) : args.length-1;
-        if(queued){JsonObject selection=JsonParser.parseString(Files.readString(Paths.get(args[2]))).getAsJsonObject();budget=selection.get("budget_s").getAsDouble();limit=selection.get("limit").getAsInt();for(JsonElement e:selection.getAsJsonArray("priority_entries")){var address=toAddr(Long.parseLong(e.getAsString(),16));Function f=currentProgram.getFunctionManager().getFunctionAt(address);if(f==null){currentProgram.getProgramContext().setValue(currentProgram.getRegister("TMode"),address,address,java.math.BigInteger.ONE);disassemble(address);f=createFunction(address,null);}if(f!=null)functions.add(f);}}
+        if(queued){JsonObject selection=JsonParser.parseString(Files.readString(Paths.get(args[2]))).getAsJsonObject();budget=selection.get("budget_s").getAsDouble();limit=selection.get("limit").getAsInt();if(selection.has("signature_overrides"))applyABI(selection.getAsJsonObject("signature_overrides"));for(JsonElement e:selection.getAsJsonArray("priority_entries")){var address=toAddr(Long.parseLong(e.getAsString(),16));Function f=currentProgram.getFunctionManager().getFunctionAt(address);if(f==null){currentProgram.getProgramContext().setValue(currentProgram.getRegister("TMode"),address,address,java.math.BigInteger.ONE);disassemble(address);f=createFunction(address,null);}if(f!=null)functions.add(f);}}
 
         if (batch || queued) {
             var iterator = currentProgram.getFunctionManager().getFunctions(true);
@@ -123,7 +144,7 @@ public class ExportBehavior extends GhidraScript {
         summary.addProperty("exported",passed); summary.add("failures",failures);
         summary.addProperty("budget_s",budget); summary.addProperty("wall_s",(System.nanoTime()-started)/1e9);
         summary.addProperty("budget_exhausted",passed+failures.size()<functions.size());summary.addProperty("output_byte_cap",maxBytes);summary.addProperty("written_bytes",writtenBytes);summary.addProperty("output_cap_reached",outputCap);summary.addProperty("available_program_functions",currentProgram.getFunctionManager().getFunctionCount());
-        summary.addProperty("per_function_timeout_s",2); summary.addProperty("read_only",true);
+        summary.addProperty("per_function_timeout_s",2); summary.addProperty("read_only",true);summary.addProperty("ephemeral_program_metadata_only",true);summary.add("abi_annotations",abiAnnotations);
         Files.writeString(output.resolve("export-summary.json"),gson.toJson(summary));
     }
 }

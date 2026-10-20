@@ -1,0 +1,370 @@
+{
+  "schema": "gameverse.game-prefab-delivery/1",
+  "gameId": "kirby-nightmare-in-dream-land",
+  "sourceSystemIds": [
+    "kirby-nightmare-in-dream-land.terrain-contact-resolution"
+  ],
+  "blueprintIds": [
+    "character-traversal"
+  ],
+  "coreLoop": {
+    "playerOutcome": "Move through source terrain with corrected actor position and contact state; this delivery reconstructs the collision transaction only.",
+    "phases": [
+      {
+        "id": "actor-prepare",
+        "label": "Prepare same-actor collision scratch",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "canonical_actor_reference"
+        ],
+        "gaps": [
+          "Source load0801c51c and actor ownership/shape input are not executable-qualified."
+        ]
+      },
+      {
+        "id": "terrain-contact",
+        "label": "Sample terrain and correct contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+          "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json",
+          "local/ir/cohesive-extraction-20261016/terrain/run-report.json",
+          "research/ir-workshop/cohesive-extraction-20261016/terrain/bounded-provider.json",
+          "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/qualification.json",
+          "local/ir/packages/kirby-nightmare.terrain.point_occupancy_one_cell/package.json"
+        ],
+        "requiredServices": [
+          "bounded_terrain_map",
+          "immutable_shape_metadata"
+        ],
+        "gaps": [
+          "No qualified helper closure/shared alias adaptation for parent/contact/commit.",
+          "Published package has no return_meaning; actual output-binding prefab request rejected. Encoding-only proposed destination does not invent physical displacement scale.",
+          "Qualified 08021ab4 point occupancy covers one positive 1\u00d71 map cell, all shape bytes and local coordinates; source current/below scratch publication, general map extents, actor correction and writeback remain open."
+        ]
+      },
+      {
+        "id": "actor-commit",
+        "label": "Commit corrected pose and contact",
+        "status": "source-only",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "same_canonical_actor_reference"
+        ],
+        "gaps": [
+          "Source0801c5c8 mixed-width writeback and parent policies are not qualified."
+        ]
+      },
+      {
+        "id": "input-and-abilities",
+        "label": "Admit movement and copy actions",
+        "status": "missing",
+        "prefabIds": [],
+        "sourceRefs": [
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+          "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+        ],
+        "requiredServices": [
+          "source_input_scheduler",
+          "ability_lifecycle"
+        ],
+        "gaps": [
+          "These terrain roots do not establish source controller, inhale/copy/attack admission or resource/effect lifecycles."
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "actor-prepare",
+        "to": "terrain-contact",
+        "kind": "source-call",
+        "scope": "Original parents0801bde0/0801baa4 prepare same global scratch before branch-specific queries/contact."
+      },
+      {
+        "from": "terrain-contact",
+        "to": "actor-commit",
+        "kind": "shared-state",
+        "scope": "Original scratch and same current actor survive queries through0801c5c8 commit; no total input/frame scheduler inferred."
+      },
+      {
+        "from": "input-and-abilities",
+        "to": "actor-prepare",
+        "kind": "host-required",
+        "scope": "Missing source controller/scheduler context; not a fabricated executable edge."
+      }
+    ],
+    "missingForCoreGame": [
+      "No qualified helper closure/shared alias adaptation for parent/contact/commit.",
+      "Published package has no return_meaning; actual output-binding prefab request rejected. Encoding-only proposed destination does not invent physical displacement scale.",
+      "Source movement/input admission, ability lifecycle, actor spawn/recovery and world/scene services remain missing.",
+      "One-cell occupancy is native-qualified, but general map/below-cell query, shared probe scratch, actor contact correction and writeback are not closed."
+    ],
+    "wholeGameReady": false
+  },
+  "bundles": [
+    {
+      "id": "kirby-nightmare.source-terrain-contact",
+      "label": "Original terrain and actor-contact transaction",
+      "moduleId": "kirby-nightmare.source-terrain-motion-commit",
+      "sourceGame": "kirby-nightmare-in-dream-land",
+      "sourceSystemId": "kirby-nightmare-in-dream-land.terrain-contact-resolution",
+      "sourceContractRef": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+      "planIds": [
+        "character-traversal"
+      ],
+      "packageIds": [
+        "kirby-nightmare.terrain.vertical_displacement_shape1",
+        "kirby-nightmare.terrain.vertical_displacement_shape2",
+        "kirby-nightmare.terrain.vertical_displacement_shape3",
+        "kirby-nightmare.terrain.left_displacement_shape2",
+        "kirby-nightmare.terrain.left_displacement_shape3",
+        "kirby-nightmare.terrain.right_displacement_shape2",
+        "kirby-nightmare.terrain.right_displacement_shape3",
+        "kirby-nightmare.terrain.point_occupancy_one_cell"
+      ],
+      "availability": "published-subset",
+      "scope": "Source actor load\u2192terrain occupancy/displacement\u2192contact correction\u2192same-actor commit is linked. One-cell point occupancy and shape1..3 displacement leaves are native-qualified; contact correction and shared writeback remain source-only.",
+      "gaps": [
+        "No qualified helper closure/shared alias adaptation for parent/contact/commit.",
+        "Published package has no return_meaning; actual output-binding prefab request rejected. Encoding-only proposed destination does not invent physical displacement scale.",
+        "Bounded one-cell point occupancy and fixed-shape displacement are qualified support; publishing current/below scratch, actor contact correction and actor writeback remain missing."
+      ],
+      "evidence": [
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json",
+        "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/manifest.json",
+        "local/ir/fleet-next/kirby-nightmare-in-dream-land/prefab-pass/current-general-shape-blocker.json",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json",
+        "local/ir/cohesive-extraction-20261016/terrain/run-report.json",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/README.md",
+        "research/ir-workshop/cohesive-extraction-20261016/terrain/bounded-provider.json",
+        "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/qualification.json",
+        "local/ir/packages/kirby-nightmare.terrain.point_occupancy_one_cell/package.json"
+      ],
+      "canonicalState": {
+        "identity": "one original actor reference plus shared source collision/probe scratch",
+        "fields": [
+          "packed actor position",
+          "contact and surface flags",
+          "signed shape offsets",
+          "shared sample index/current/below shape"
+        ],
+        "aliasRule": "All source mixed-width scratch lanes share backing through load/query/commit; no independent component copies or invented world/frame unit."
+      },
+      "roleFacets": [
+        {
+          "roleId": "terrain",
+          "capability": "Source terrain sampling and actor contact transaction",
+          "status": "source-only",
+          "scope": "One-cell point occupancy and shape1..3 displacement support are native-qualified; corrected pose/contact consumer is source-only.",
+          "evidence": [
+            "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+            "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+          ]
+        },
+        {
+          "roleId": "control",
+          "capability": "Actor preparation and corrected-pose commit boundaries",
+          "status": "source-only",
+          "scope": "Same actor load/writeback only; does not supply movement action admission or ability controls.",
+          "evidence": [
+            "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+            "research/deep-extraction/resume/kirby-nightmare-in-dream-land/next-extraction/system.json"
+          ]
+        }
+      ],
+      "recoveredAssembly": {
+        "id": "kirby-nightmare.prefab.source-terrain-contact",
+        "label": "Terrain displacement output boundary \u2014 blocked",
+        "assemblyRef": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/terrain-contact.assembly.json",
+        "validationRef": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/terrain-contact.validation.json",
+        "descriptorRef": "research/ir-workshop/cohesive-extraction-20261016/publication/delivery-kirby-nightmare-v4.json",
+        "packageIds": [
+          "kirby-nightmare.terrain.vertical_displacement_shape1"
+        ],
+        "readyToAdd": false,
+        "runtimeQualified": false
+      },
+      "sourcePhaseGraph": {
+        "ref": "research/ir-workshop/cohesive-extraction-20261016/terrain/capsule.json",
+        "provider": {
+          "path": "research/ir-workshop/cohesive-extraction-20261016/terrain/bounded-provider.json",
+          "sha256": "b1ac875d505079a24a90e3b98ae98cec00f5f075b44b691d6cc920708c1d843e"
+        },
+        "pointSampler": {
+          "packageId": "kirby-nightmare.terrain.point_occupancy_one_cell",
+          "package": {
+            "path": "local/ir/packages/kirby-nightmare.terrain.point_occupancy_one_cell/package.json",
+            "sha256": "47169e561c9c7063d8fddca6a7d58f8499114ac58b3a5ae8ef1ef208093dac2b"
+          },
+          "nativeReceipt": {
+            "path": "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/qualification.json",
+            "sha256": "f8a7a812fbf8995190586edeb304be97d530532d69b114012139977b2896eca6"
+          },
+          "status": "native_qualified_one_cell_map_nonpublishing_query",
+          "api": "behavior_0(state, param_0:y:u32[0..15], param_1:x:u32[0..15]) -> signed8 occupancy sign-extended to u32",
+          "requires": [
+            "caller-owned one four-byte cell",
+            "width:s16 == 1",
+            "height:s16 == 1",
+            "cell byte+3 shape:u8[0..255]",
+            "own-ROM occupancy rows"
+          ],
+          "provides": [
+            "read-only point occupancy return"
+          ],
+          "doesNotProvide": [
+            "current/below terrain probe scratch",
+            "general map sampler",
+            "actor contact correction",
+            "actor writeback"
+          ]
+        },
+        "newQualifiedLeaves": [
+          "kirby-nightmare.terrain.point_occupancy_one_cell",
+          "kirby-nightmare.terrain.vertical_displacement_shape2",
+          "kirby-nightmare.terrain.vertical_displacement_shape3",
+          "kirby-nightmare.terrain.left_displacement_shape2",
+          "kirby-nightmare.terrain.left_displacement_shape3",
+          "kirby-nightmare.terrain.right_displacement_shape2",
+          "kirby-nightmare.terrain.right_displacement_shape3"
+        ],
+        "requires": [
+          "same source actor identity",
+          "source terrain map",
+          "source probe scratch",
+          "actor contact caller"
+        ],
+        "provides": [
+          "one-cell source point occupancy",
+          "fixed-shape signed8 displacement results"
+        ],
+        "status": "native_qualified_support_subgraph_actor_contact_open"
+      }
+    }
+  ],
+  "prefabs": [],
+  "blockedPrefabAttempts": [
+    {
+      "id": "kirby-nightmare.prefab.source-terrain-contact",
+      "moduleId": "kirby-nightmare.source-terrain-motion-commit",
+      "assembly": {
+        "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/terrain-contact.assembly.json",
+        "sha256": "16fd0aae2b6a07f6d620d4ec601b47d4e16c08c55d0bedfee7075c9af3020506"
+      },
+      "validation": {
+        "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/terrain-contact.validation.json",
+        "sha256": "add2a9cb03be0a9fcb86223873c98157a3cf623661fb79f6292ee947e1be1f51"
+      },
+      "status": "invalid",
+      "errors": [
+        {
+          "code": "assembly_contract",
+          "message": "source result semantic contract unavailable: vertical_lookup"
+        }
+      ],
+      "inputDefaults": [
+        {
+          "id": "sample_index",
+          "storage_type": "u16",
+          "default": 0,
+          "domain": [
+            0,
+            255
+          ],
+          "sourceMeaning": "Flattened16x16 row index; must come from same source terrain probe."
+        },
+        {
+          "id": "shape_selector",
+          "storage_type": "u32",
+          "default": 1,
+          "domain": [
+            1,
+            1
+          ],
+          "sourceMeaning": "Only source shape1 is qualified."
+        }
+      ],
+      "intendedOutputs": [
+        {
+          "id": "encoded_displacement",
+          "storage_type": "u32",
+          "meaning": "Source sign-extended signed8 displacement encoding; physical scale unknown.",
+          "bindingStatus": "blocked_source_result_semantic_contract_unavailable"
+        },
+        {
+          "id": "corrected_actor_pose",
+          "bindingStatus": "not_supplied_missing_contact_consumer_and_commit"
+        }
+      ],
+      "sourceOrderRef": {
+        "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-core-loop.json",
+        "pointer": "/systems/0/sourceOrder"
+      },
+      "qualificationScope": "Actual existing output-binding graph rejected after source-package lower; no final valid prefab or runtime L2 claimed. This preserves the original pre-sampler rejection; it is not a current graph validation result.",
+      "packagePins": [
+        {
+          "id": "kirby-nightmare.terrain.vertical_displacement_shape1",
+          "package": {
+            "path": "local/ir/packages/kirby-nightmare.terrain.vertical_displacement_shape1/package.json",
+            "sha256": "8ed25b716df533b09018f440a84eb45faab8e804e7a738865ff8c6cbe823eef5"
+          },
+          "behavior": {
+            "path": "local/ir/packages/kirby-nightmare.terrain.vertical_displacement_shape1/l1.json",
+            "sha256": "7a08bfff78dc7f36701d0d0096f5a805dad7624f4268e3da42618018a2be4387"
+          },
+          "behaviorSha256": "7a08bfff78dc7f36701d0d0096f5a805dad7624f4268e3da42618018a2be4387",
+          "priorNativeReceipt": {
+            "path": "local/ir/packages/kirby-nightmare.terrain.vertical_displacement_shape1/receipt.json",
+            "sha256": "b3999bcac720a9c3b27f92f1905ac7d6ee27626f210803ebe80684b93995d43e"
+          }
+        }
+      ],
+      "historicalWitness": true
+    }
+  ],
+  "sourceQueryAdmission": {
+    "request": {
+      "path": "research/deep-extraction/resume/kirby-nightmare-in-dream-land/prefab-pass/source-query-admission.request.json",
+      "sha256": "2427861f8684eca01ef7b65690ef6e011b9a448fb9355ef679d908650d0dfbe3"
+    },
+    "validation": {
+      "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/prefab-pass/source-query-admission.receipt.json",
+      "sha256": "f91c561ac35457b4ed84a6e0c22a174f40d4424dfe7e64603ce3d7c7800e46db"
+    },
+    "status": "binding_valid_obligations_unproven",
+    "scope": "Leaf admission only; discarded result is not represented as a useful ready system."
+  },
+  "exactCompilerBlocker": {
+    "path": "local/ir/fleet-next/kirby-nightmare-in-dream-land/prefab-pass/current-general-shape-blocker.json",
+    "sha256": "f3d2448cf54c11c52e9fbbcc6318f603fc353065fafa4ce7cea6122592f5e839",
+    "historicalWitness": true,
+    "supersededForBoundedOneCellQueryBy": {
+      "path": "local/ir/cohesive-extraction-20261016/terrain/08021ab4-point/qualification.json",
+      "sha256": "f8a7a812fbf8995190586edeb304be97d530532d69b114012139977b2896eca6"
+    }
+  },
+  "timing": {
+    "runId": "cohesive-source-map-20261016-delivery-kirby-nightmare-v4",
+    "sourceCommit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "queueSeconds": null,
+    "validationSeconds": null,
+    "buildSeconds": null,
+    "nativeSeconds": null,
+    "totalSeconds": 0.017334666999999998,
+    "beforeAfter": null,
+    "accounting": "Measured metadata merge only; prior 7,456-pair native receipt and intake/catalog publication are separate stages, not rerun here."
+  }
+}

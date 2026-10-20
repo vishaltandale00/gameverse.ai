@@ -46,3 +46,42 @@ saves/
 verification/prereq-*/
 verification/qualification-*/
 verification/journey-*/
+
+# ROM-derived research outputs: extracted media/data, decomp source copies,
+# Ghidra user state and emulator/linker dumps. Keep these local; the repo is public.
+**/ghidra-user/
+research/**/source/
+research/ir-workshop/roundtrip-*/
+research/**/*.png
+research/**/*.jpg
+research/**/*.pal
+research/**/*.gbapal
+research/**/*.bin
+research/**/*.lz
+research/**/*.4bpp
+research/**/*.8bpp
+research/**/*.wav
+research/**/*.mid
+research/**/*.pcm
+research/**/*.inc
+research/**/*.s
+research/**/*.o
+research/**/*.elf
+research/**/*.map
+research/**/*.sym
+research/**/*.class
+research/**/*.tar
+research/**/*.stdout
+research/**/*.stderr
+research/**/*.save
+ontology/**/*.png
+research/**/native-proof/**/native
+research/**/native-proof/donor
+research/**/native-proof/baseline
+research/**/oracle
+research/**/host-check
+research/**/temporal-fault
+research/**/*.host
+research/**/shove-protected-*
+# Lifted ROM functions are ROM derivatives; keep new ones local.
+tools/composition/components/**/generated/

@@ -1,0 +1,21 @@
+# Mario capability bundles
+
+The eight records in `src/game-system-mario-bundles.js` provide actionable, source-grounded candidate cards. Every role facet belongs to its parent `moduleId` and canonical backing. A ground-contact view must select that same partial controller, never instantiate another gravity/controller copy. Native host recovery packages remain identified by their real manifest IDs and sourceContractRef; they are not invented recovered-system index entries.
+
+## Ground and contact findings
+
+- **SMA1:** `parallel-sma1/next-extraction/l2-contract.json` identifies terrain/contact producer **0x080a821c** outside the closed motion/controller pieces. Grounded jump admission and crouch-charge consume its result on the same player rooted at **0x03005cf0**. The later controller package closes running/skidding, speed limits and clearance-tested throws, but explicitly leaves terrain response external. Ground contact therefore appears as a source-only responsibility on the same traversal card. The older L2 contract's controller/animation blockers are historical; the card also cites later native controller and motion manifests/receipts instead of repeating them as current local-controller blockers.
+- **SMA2:** `mario-sma2-motion-host.json` explicitly excludes terrain collision. Its recovered controller includes normal/spin jump and ground/surface-context branches. The presence of `sma2_ground_effect` does not establish a ground detector or landing solver. Existing controller, controls, map and scene references must preserve the original host state and cadence.
+- **SMA4:** `sma4-jump-recovered.c` explicitly gives the caller contact-derived airborne/buffer/material state. The qualified **0x0809c02c** wall response consumes selector **0..3**, sampled tiles and probe tables, then returns correction merge bits. Its upstream sampler and downstream merge remain required. It does not independently establish ground detection or landing.
+- **Kart:** the source **0x0803c4c0** update integrates the same racer, classifies checkpoint/surface at **0x0803b98c**, expires clocks and calls contact/recovery **0x0803b550**. Three qualified leaves do not close this transaction. Race progress is an unassigned facet, not a character respawn provider.
+- **Superstar:** qualified initialize/update/reset roots use the same actor, and reset is already inlined in update's termination path. They do not establish jump admission, ground detection, landing or calibrated physical units. Ground contact is explicitly missing rather than inferred from vertical motion.
+
+Accepted SMA2 spin and SMA4 stomp are reaction candidates: their native host admits contact first. SMA4 pickup is a pending-form benefit candidate: collision, later form application and ability activation remain host responsibilities. None is silently treated as an inventory or contact-admission implementation.
+
+## Reuse boundary
+
+The retained native composition plans are concrete multi-part assemblies with original source state and native receipts. They can be inspected and adapted as host modules, but they are not `gameverse.mechanic-assembly/0.1` importable portable prefabs. Existing SMA1 `gravity-jump` and `jump-next-gravity` graphs are binding admissions; the latter crosses scheduler phases. Superstar's public graph leaves cross-root state closure unresolved. None justifies a new executable grounded traversal prefab, so these cards truthfully set `portableExecutable` and `prefabReady` false.
+
+No ROM/export/native runs or compiler changes were added. Source pins, existing automatic package IDs, JSON structures and conservative ground-contact status were checked in **0.0144 s** on macOS arm64/Python 3.9.6, recorded in `verification.json`; Node import found eight unique modules and sixteen facets. Build/queue/native measurements and a comparable before/after baseline are unavailable because those systems were not run. Native qualification measurements belong to the retained receipts and must not be counted as new runs.
+
+`build.py` deterministically regenerates the scoped descriptors and JavaScript export from retained source manifests. It performs no recovery, compilation, native execution or package publication.

@@ -1,0 +1,1222 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "ffvi.combat.pending_status_filter_actor0",
+  "label": "Actor 0 source pending-status filter",
+  "role": "Originalsourcepending-statusfilter:permissions/currentstatus/HPthreshold\u2192stagedrequests andoptionalalternate-resultbanks; precedes realstatuscallbacks.",
+  "source_game": "final-fantasy-vi-advance",
+  "origin": "automatic_own_ROM_raw_pcode_control_lift",
+  "package_ref": "local/ir/packages/ffvi.combat.pending_status_filter_actor0/package.json",
+  "package_sha256": "ce21705ff39f48cc78f3053f565471726d1a9dbc59c96f4a7237b65b0c6bb90f",
+  "behavior_sha256": "9ac3424511665b721338093ebc84c3a0806d4f1b77a1c7275b7edd2dc9e655a4",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 256,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_raw_control_subset",
+    "receipt_sha256": "6c16f9a8a9a08e64f07c70911a6099226470e4e7a8e00d4ee728e124723fd001"
+  },
+  "configurations": [
+    {
+      "id": "actor0_null_continuation_context",
+      "label": "Actor 0 with fresh source continuation",
+      "source_data_sha256": "3cc25b4739882712508a8cd62ddf2e27c0f39c9d2c3384d23441f977a6bda1f9",
+      "source_rom_sha256": "1310f2ad3c13f5446cf6c43d01d48aad640d6b8a4fbba2b92c776f4f6d90e6ff",
+      "provenance": {
+        "kind": "qualified_source_VM_entry_boundary_specialization",
+        "control": {
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/control-contract.json",
+          "sha256": "c15343d6e8f57aabe546c82412f456e892f96e1615a800bc61305d753538c1de"
+        },
+        "codec": {
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/validation-adapter.json",
+          "sha256": "85ccbeab4abb6dfdee96843bc7b312a85ef1bd91a48c9b594fcb81394f4e26cf"
+        },
+        "codeProof": {
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/independent-mechanism-review.json",
+          "sha256": "a97497a6a7da802e06820995e7722fb331ee11945e7d9b0297b4fc0feee200e3"
+        },
+        "machine_layout": "validation_adapter_only"
+      }
+    }
+  ],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_remove_first_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.remove_first.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_remove_first_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.remove_first.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_remove_second_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.remove_second.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_remove_second_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.remove_second.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_current_status_first_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.current_first.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_current_status_first_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.current_first.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_current_status_second_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.current_second.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_current_status_second_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.current_second.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_add_first_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.add_first.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_add_first_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.add_first.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_add_second_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.add_second.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_11",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "staged_actor_status_add_second_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.vm.actor0_status_staging.add_second.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "research/deep-extraction/resume/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/tail-raw-inputs.json",
+            "symbol": "Original ordered VM helper/source byte accesses",
+            "meaning": "Source byte lane of a packed16bit status bitset; no decoded scalar or invented HP/control unit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_12",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_actor_status_mode_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.source_status_mode_020032df.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_13",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_actor_status_mode_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.source_status_mode_020032df.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_14",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_status_permission_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status_permission.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_15",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_status_permission_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status_permission.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_16",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_secondary_status_permission_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status_permission.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_17",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_secondary_status_permission_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status_permission.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_18",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_health.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_19",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_health.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_20",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_limit_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.maximum_health.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_21",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "health_resource_limit_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.maximum_health.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_22",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_23",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_24",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_secondary_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_25",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_secondary_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_26",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_remove_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status_remove.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_27",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_status_remove_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_status_remove.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_28",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_secondary_status_remove_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status_remove.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_29",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pending_actor_secondary_status_remove_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.pending_secondary_status_remove.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_30",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_actor_status_gate_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.source_status_gate_02003e4d.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_31",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_actor_status_gate_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.source_status_gate_02003e4d.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_32",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_alternate_actor_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.alternate_status_bank_02003e60.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_33",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_alternate_actor_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.alternate_status_bank_02003e60.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_34",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_alternate_actor_secondary_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.alternate_status_bank_02003e74.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_35",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "source_alternate_actor_secondary_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.alternate_status_bank_02003e74.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_36",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_37",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_38",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_secondary_status_bitset_packed_low_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_secondary_status.low_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    },
+    {
+      "id": "field_39",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "current_actor_secondary_status_bitset_packed_high_byte",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "ffvi.battle.actor0.current_secondary_status.high_byte",
+        "confidence": 0.95,
+        "evidence": [
+          {
+            "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/l0.json",
+            "symbol": "Original0808bcf4orderedbyteaccesses",
+            "meaning": "Source packed byte identity; mode/gate/alternate-bank names describe exact operand use, not guessed status names or UI behavior"
+          }
+        ]
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 49,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": [
+      "Sameactor0HP/max/current/pendingbanks as existingHPpackage; no separate instances",
+      "Staging020000f4..ff shared with lateroriginalcallbacks and qualifiedpostcallbacktail",
+      "Alternatebanks02003e60/74 are distinct from canonicalcurrent02003ee4/ef8",
+      "Mode/gatepackedwordbytes include odd-address views; originaloverlaps preserved",
+      "OneVMr5/r6/r7frame, optionalfourbytepush/pop balanced; privatecarry/liveoutsretained"
+    ],
+    "phase": "Sourcefilter beforecallbackdispatch; after actor0selected byoriginalstatusscheduler",
+    "ordering": [
+      "Readsourcepending/current/permissionbanks",
+      "DeriveHPthresholdrequests",
+      "Applyexactsourcegatebitoperations",
+      "Optionalsourceb9c0alternate-result branch withoriginalcontinuationprepare",
+      "Restorestage/operandstack andpop callercontinuation"
+    ],
+    "repeatAcceptance": "ActualsourceVMowner mustrefreshnullspill andprovideactor0frame; no implicit gamebank reset"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_own_ROM_raw_instruction_pcode_control",
+    "machine_evidence_ref": "local/ir/packages/ffvi.combat.pending_status_filter_actor0/l0.json",
+    "resolution": "Exact own-ROM instruction p-code and declared source-pinned control/VM boundary; not HighFunction recovery"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Originalstatuscallbacks between filter and tail remain unclosed",
+    "Originalcallereligibility/tenactorloop are not portableorqualified here",
+    "Source mode/gate/alternatebank semanticnames stay sourceidentity descriptions; no guessed statuses",
+    "Next08078f74HPcleanup/turn/save/fullbattle absent",
+    "Freshspilldomain0 andtarget0 required eachentry; repeatedcombatnotqualified",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "raw_pcode_provenance": {
+    "normalized_l0": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/normalized-l0.json",
+      "sha256": "6101e3930c1c17451f39bc62442f07da07c4f4eb40394613e7024aa1c93bd9f8"
+    },
+    "runtime": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/runtime-vm_ir.py",
+      "sha256": "872b4b46286c70096765222edafd42a7cbe3455c6c5178c5f504fa9e6e2d2c7a"
+    },
+    "control_contract": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/control-contract.json",
+      "sha256": "c15343d6e8f57aabe546c82412f456e892f96e1615a800bc61305d753538c1de"
+    },
+    "regeneration_identity": {
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/regeneration-identity-v2.json",
+      "sha256": "6265265335a81d1864f1c77d34c4c4a0a97a7fba76142a9f71131edf15072f21"
+    }
+  },
+  "source_contract": {
+    "system": "ffvi.actor0.pending-status-filter.source-closure-20261016",
+    "source_owner": "0808b4e4",
+    "logical_port_views": [
+      {
+        "role": "remove_first",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000f4",
+        "low_field": "field_0",
+        "high_field": "field_1"
+      },
+      {
+        "role": "remove_second",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000f6",
+        "low_field": "field_2",
+        "high_field": "field_3"
+      },
+      {
+        "role": "current_first",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000f8",
+        "low_field": "field_4",
+        "high_field": "field_5"
+      },
+      {
+        "role": "current_second",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000fa",
+        "low_field": "field_6",
+        "high_field": "field_7"
+      },
+      {
+        "role": "add_first",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000fc",
+        "low_field": "field_8",
+        "high_field": "field_9"
+      },
+      {
+        "role": "add_second",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020000fe",
+        "low_field": "field_10",
+        "high_field": "field_11"
+      },
+      {
+        "role": "source_status_mode",
+        "encoding": "little_endian_u16",
+        "canonical_address": "020032df",
+        "low_field": "field_12",
+        "high_field": "field_13"
+      },
+      {
+        "role": "first_pending_permission",
+        "encoding": "little_endian_u16",
+        "canonical_address": "0200331c",
+        "low_field": "field_14",
+        "high_field": "field_15"
+      },
+      {
+        "role": "second_pending_permission",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003330",
+        "low_field": "field_16",
+        "high_field": "field_17"
+      },
+      {
+        "role": "current_health",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003bf4",
+        "low_field": "field_18",
+        "high_field": "field_19"
+      },
+      {
+        "role": "maximum_health",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003c1c",
+        "low_field": "field_20",
+        "high_field": "field_21"
+      },
+      {
+        "role": "pending_status",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003dd4",
+        "low_field": "field_22",
+        "high_field": "field_23"
+      },
+      {
+        "role": "pending_secondary",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003de8",
+        "low_field": "field_24",
+        "high_field": "field_25"
+      },
+      {
+        "role": "remove_status",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003dfc",
+        "low_field": "field_26",
+        "high_field": "field_27"
+      },
+      {
+        "role": "remove_secondary",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003e10",
+        "low_field": "field_28",
+        "high_field": "field_29"
+      },
+      {
+        "role": "source_status_gate",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003e4d",
+        "low_field": "field_30",
+        "high_field": "field_31"
+      },
+      {
+        "role": "alternate_first",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003e60",
+        "low_field": "field_32",
+        "high_field": "field_33"
+      },
+      {
+        "role": "alternate_second",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003e74",
+        "low_field": "field_34",
+        "high_field": "field_35"
+      },
+      {
+        "role": "current_status",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003ee4",
+        "low_field": "field_36",
+        "high_field": "field_37"
+      },
+      {
+        "role": "current_secondary",
+        "encoding": "little_endian_u16",
+        "canonical_address": "02003ef8",
+        "low_field": "field_38",
+        "high_field": "field_39"
+      }
+    ],
+    "canonical_public_fields": [
+      "field_0",
+      "field_1",
+      "field_2",
+      "field_3",
+      "field_4",
+      "field_5",
+      "field_6",
+      "field_7",
+      "field_8",
+      "field_9",
+      "field_10",
+      "field_11",
+      "field_12",
+      "field_13",
+      "field_14",
+      "field_15",
+      "field_16",
+      "field_17",
+      "field_18",
+      "field_19",
+      "field_20",
+      "field_21",
+      "field_22",
+      "field_23",
+      "field_24",
+      "field_25",
+      "field_26",
+      "field_27",
+      "field_28",
+      "field_29",
+      "field_30",
+      "field_31",
+      "field_32",
+      "field_33",
+      "field_34",
+      "field_35",
+      "field_36",
+      "field_37",
+      "field_38",
+      "field_39"
+    ],
+    "private_context_fields": [
+      "field_40",
+      "field_42",
+      "field_43",
+      "field_44",
+      "field_45",
+      "field_46",
+      "field_47",
+      "vm_r8",
+      "vm_r9"
+    ],
+    "inputs": [
+      "Canonicalactor0 pendingadd/remove/currentstatusbanks",
+      "SamecanonicalHP/maxHP as immutablepublishedHPtransaction",
+      "Sourcepermissionmasks0200331c/3330",
+      "Sourcegateword02003e4d and modeword020032df, with original unknownflag meanings retained",
+      "Fixedactor0VMframe withfreshnullcontinuationspill"
+    ],
+    "outputs": [
+      "Snapshotcurrentstatus into canonicalstagef8/fa",
+      "Filterpendingaddmasks into stagefc/fe, copyremovals intof4/f6",
+      "Exactfloor(maxHP/8)>=HP predicateadds/removes source0x0200 request depending on currentstatusmask0x0200",
+      "Currentstatus0x0040 isforced into stagefc",
+      "If stagefc contains0x0080 and sourcegateword02003e4d has0x0002, sourceclears stagefc0x0080/sets0x0002 and addsremove0x0100; no guessed generalconversionlabel",
+      "If modeword020032df has0x8000, originalhelperb9c0 computes alternate resultbanks3e60/3e74 then restores stagedfc/fe from fourVMstackbytes",
+      "PublicHP/current/pendingbanks remainunchanged bythisphase; canonical staging/alternatebanks/VMflags areobservables"
+    ],
+    "events": [
+      {
+        "name": "derive_source_actor0_status_requests",
+        "preconditions": "Original0808b4e4selectedeligibleactor0; actorbyte0, realcanonicalstate and sourceVMframe supplied. Exactcallereligibility/scheduling is outside thissubset."
+      }
+    ],
+    "services": {
+      "internal": "ExactVMhelpersAND,OR,mutate,compare,callprepare plusoriginalb9c0; no stubbedservices/assets",
+      "next_required": "Originalstatusbitcallbackdispatch in0808b4e4 overfourcallbacktables; not replaced by thisfilter or tail"
+    },
+    "preconditions": [
+      "Originaleligibleactor0selection andgenuinecanonicalVMstate",
+      "Target0/freshspill0fixedcontext; no newgamebankdefaults"
+    ],
+    "gaps": [
+      "Originalstatuscallbacks between filter and tail remain unclosed",
+      "Originalcallereligibility/tenactorloop are not portableorqualified here",
+      "Source mode/gate/alternatebank semanticnames stay sourceidentity descriptions; no guessed statuses",
+      "Next08078f74HPcleanup/turn/save/fullbattle absent",
+      "Freshspilldomain0 andtarget0 required eachentry; repeatedcombatnotqualified"
+    ],
+    "qualification": {
+      "status": "finite_original_native_qualified",
+      "vectors": 256,
+      "included_independent_semantic_cases": 16,
+      "expected_fields": 49,
+      "receipt": {
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/receipt.json",
+        "sha256": "a71d7506a8e8f9a4b06641d8b1f6cafcdec1df09810bd583b44f7f258d5a8eac"
+      },
+      "mechanism_review": {
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/independent-mechanism-review.json",
+        "sha256": "a97497a6a7da802e06820995e7722fb331ee11945e7d9b0297b4fc0feee200e3"
+      },
+      "ABI_source_review": {
+        "path": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/fleet-next/final-fantasy-vi-advance/next-round/source-closure-20261016/attempt-01/filter-candidate-v3/abi-source-review-message.json",
+        "sha256": "b30379beb4a7cf6b690069d344aa611d1a965b077235d5eb96c68dd5e62c004a"
+      },
+      "runtime_unchanged": true,
+      "whole_game": false
+    },
+    "control_flow": "acyclic_basic_blocks/0.1",
+    "next_actual_consumer": "Originalstatuscallbacks; then separatelyqualifiedpostcallbacktail0808b6ca, thenHPcleanup08078f74",
+    "graph_admission": "No directfilter\u2192tailcomposition across missing actualcallbackservices"
+  },
+  "graph_admission": {
+    "required": true,
+    "status": "pending_exact_hash_graph_validation_after_publication",
+    "availability": "not_yet_graph_admitted"
+  },
+  "source_root_identity": {
+    "source_game": "final-fantasy-vi-advance",
+    "entry": "0808bcf4"
+  },
+  "domain_contract_fingerprint": "7350b77898717771b1cbf3dd852c8df45b56d57aafb03bd64bdbb57be646d858",
+  "specialization_subset": true
+}

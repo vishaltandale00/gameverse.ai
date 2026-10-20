@@ -1,0 +1,11 @@
+# Scoped independent metadata review
+
+Reviewer: blueprint completion lead. Prepared overlay author: publication intake. Scope: the source pose frame refinement and the enemy-update-gate return annotation only. This review does not qualify the assembled graph or whole gameplay.
+
+**Clear within this scope.** Compared current and prepared `mzm.combat.impact/l1.json`: only `state[2].semantic_type` frame/confidence/naming/evidence change. `generated.c`, `generated.bin` and `validation-adapter.json` are byte-identical between current and prepared pose package. Compared current and prepared gate package: the only changed key is `return_meaning`.
+
+The impact validation adapter maps `field_2` to an 8-bit field at actor `r0+36` (`+0x24`). The original source `08050424.c` writes `*(u8 *)(actor+0x24)=0x62` on the lethal path. The gate adapter maps its `field_2` to 8-bit address `0x0300075c`. The original scheduler `0800cf00.c` DMA-stages 56-byte records from the selected enemy pool into scratch at `0x03000738`, then writes them back. Scratch base plus `0x24` is exactly `0x0300075c`. Consequently the proposed common frame `mzm.enemy.native_pose_enum` is valid **when the graph explicitly binds the selected same canonical enemy**, rather than binding unrelated scratch and actor instances.
+
+The original gate `08011280.c` returns 1 when `(reaction &0x7f)` exceeds the mode-dependent threshold (9 for mode < 2, otherwise 14) and pose is below `0x62`; it conditionally decrements the animation byte on that path. The actual Ripper caller `0801befc.c` executes its pose switch only when this return is 0. Thus the proposed return meaning `mzm.enemy.ripper_switch_suppression` correctly names true as suppression. It is not a general “enemy alive” result, a death-complete event or a species-independent scheduler permission.
+
+Reviewed input manifests: `local/ir/mashup-coverage/publication-intake/mzm-pose-refinement-01/prepared-refinement.json` and `local/ir/mashup-coverage/publication-intake/mzm-gate-return-overlay-01/prepared-overlay.json`, with their exact pinned source/adapter paths. No native call, ROM hash, compiler edit or central publication occurred during review. Publication owner must preserve prior proof lineage, re-pin current packages, then require actual Composer validation and the connected host scenarios.

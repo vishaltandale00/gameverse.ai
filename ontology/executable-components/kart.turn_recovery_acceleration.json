@@ -1,0 +1,181 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "kart.turn_recovery_acceleration",
+  "label": "Turn recovery acceleration or phase completion",
+  "role": "movement",
+  "source_game": "mario-kart-super-circuit",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/kart.turn_recovery_acceleration/package.json",
+  "package_sha256": "69dda2685551eadfa6a0d381a8bccb4d9d5161ef064e5961d81508a0d97b62a0",
+  "behavior_sha256": "679d349e067bd349ae138f20e58cdb054183ac675e5b5c83f7db3ded62b9712f",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces; first256cases stratify direct branch comparison constants and neighbors where symbolic field origin is unambiguous",
+    "kind": "finite_original_function_subset",
+    "receipt_sha256": "0cea344e0707d238169b8b7aa3a4e9f8fa14c4c0b88ef9f822b61cb0c7c91679"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.action_state",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "angle",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.turn_recovery.signed_angle",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.motion_phase",
+        "confidence": 0.95,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "kart.racer.longitudinal_acceleration.storage",
+        "confidence": 0.9,
+        "evidence": [
+          "local/re/experiments/20261016-binary-corpus-round2/mario-kart-super-circuit/mario-kart-super-circuit/functions.jsonl",
+          "research/deep-extraction/mario/parallel-kart/next-extraction/l2-contract.json"
+        ],
+        "signed_encoding": "twos_complement"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 4,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "one canonical externally owned racer record",
+    "clock": "explicit original-function invocation; elapsed real time unavailable",
+    "phase": "caller-selected; entry legality not qualified",
+    "cleanup": "no allocation or retirement in qualified root"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/kart.turn_recovery_acceleration/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "No new native proof; reuse exact pinned receipt",
+    "Full steering/contact/race subsystem remains incomplete and nonexecutable as L2",
+    "Canonical aliases with active-player and racer-pool references are caller obligations; no independent object copies",
+    "Rational units denote storage counts; physical angle, distance and per-second calibration unavailable",
+    "Acceleration storage interpretation follows source speed-update use; physical units and full integration phase not qualified",
+    "Zero-magnitude completion and table selection qualified locally; transition caller legality unresolved",
+    "Finite synthetic native qualification is not gameplay or full-game coverage",
+    "Source-derived L2 completeness is not claimed"
+  ],
+  "source_contract": {
+    "lifecycle": {
+      "storage": "one canonical externally owned racer record",
+      "clock": "explicit original-function invocation; elapsed real time unavailable",
+      "phase": "caller-selected; entry legality not qualified",
+      "cleanup": "no allocation or retirement in qualified root"
+    },
+    "parameters": [],
+    "return": {
+      "kind": "void"
+    },
+    "services": [
+      {
+        "kind": "readonly_ROM_asset",
+        "role": "Original turn-magnitude to longitudinal-acceleration table, embedded by automatic lift",
+        "identity_evidence": [
+          "local/ir/fleet-next/kart/closure-parts/0803daec/validation-adapter.json",
+          "local/ir/fleet-next/kart/closure-parts/0803daec/l0.json"
+        ]
+      }
+    ],
+    "order": [
+      "Test action state",
+      "For active turn recovery, derive capped absolute signed turn magnitude and select original ROM acceleration table",
+      "If signed turn is zero advance action state",
+      "Clear motion phase when not continuing active turn recovery"
+    ],
+    "domain": [
+      "Finite native synthetic boundary/random fixture states; no claim of all gameplay states",
+      "Original ABI and externally owned state excluding saved return-frame storage"
+    ],
+    "private_opaque": [],
+    "limitations": [
+      "No new native proof; reuse exact pinned receipt",
+      "Full steering/contact/race subsystem remains incomplete and nonexecutable as L2",
+      "Canonical aliases with active-player and racer-pool references are caller obligations; no independent object copies",
+      "Rational units denote storage counts; physical angle, distance and per-second calibration unavailable",
+      "Acceleration storage interpretation follows source speed-update use; physical units and full integration phase not qualified",
+      "Zero-magnitude completion and table selection qualified locally; transition caller legality unresolved"
+    ]
+  },
+  "source_root_identity": {
+    "source_game": "mario-kart-super-circuit",
+    "entry": "0803daec"
+  },
+  "domain_contract_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "specialization_subset": false
+}
