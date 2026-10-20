@@ -1,5 +1,5 @@
 import * as THREE from '/runtime/three/three.module.js';
-import { FIRE_RED_ENTRANCE, ARCADE_FRONTAGE, SPORT_ENTRANCES } from './neighborhood-math.js';
+import { FIRE_RED_ENTRANCE, ARCADE_FRONTAGE, SPORT_ENTRANCES, CREATOR_LOT, CREATOR_KIOSK } from './neighborhood-math.js';
 
 // Everything in this scene is authored here: geometry, lettering and seeded textures.
 // No remote assets, captured game content, or downloaded city models are used.
@@ -8,6 +8,7 @@ export const BLOCKS = [
   { x: 44, z: -33, width: 68, depth: 46, name: 'Juniper Court' },
   { x: 44, z: 33, width: 68, depth: 46, name: 'Market Quarter' },
   { x: -44, z: 33, width: 68, depth: 46, name: 'Alder Garden', park: true },
+  { x: CREATOR_LOT.x, z: CREATOR_LOT.z, width: CREATOR_LOT.width, depth: CREATOR_LOT.depth, name: CREATOR_LOT.name, creator: true },
 ];
 
 function seeded(seed) {
@@ -423,14 +424,47 @@ export function createNeighborhoodWorld(renderer, { hasFireRed = true } = {}) {
   for (let i = 0; i < 45; i++) {
     const side = i % 4, along = (random() - 0.5) * 360, offset = 115 + random() * 90;
     const x = side < 2 ? along : (side === 2 ? -offset : offset), z = side < 2 ? (side === 0 ? -offset : offset) : along;
-    const h = 9 + random() * 36; box(distant[i % 3], x, h / 2, z, 12 + random() * 20, h, 12 + random() * 20);
+    const h = 9 + random() * 36, w = 12 + random() * 20, d = 12 + random() * 20;
+    // Same random sequence as before; skip only towers standing in the Creator's Lot.
+    if (x + w / 2 > CREATOR_LOT.minX - 4 && x - w / 2 < CREATOR_LOT.maxX + 18 && Math.abs(z) - d / 2 < CREATOR_LOT.maxZ + 18) continue;
+    box(distant[i % 3], x, h / 2, z, w, h, d);
+  }
+  for (let i = 0; i < 9; i++) {
+    const z = -100 + i * 25 + (i % 3) * 4, h = 14 + (i * 7) % 26;
+    box(distant[i % 3], 205 + (i % 2) * 22, h / 2, z, 16 + (i % 4) * 4, h, 18);
   }
   // Low perimeter planting gives the finite walking area a visible edge.
+  box(materials.hedge, -82.7, 1, 0, 1, 2, 119); obstacle(-82.7, 0, 1, 119, 2);
   for (const side of [-1, 1]) {
-    box(materials.hedge, side * 82.7, 1, 0, 1, 2, 119);
-    box(materials.hedge, 0, 1, side * 58.7, 166, 2, 1);
-    obstacle(side * 82.7, 0, 1, 119, 2); obstacle(0, side * 58.7, 166, 1, 2);
+    box(materials.hedge, 0, 1, side * 58.7, 166, 2, 1); obstacle(0, side * 58.7, 166, 1, 2);
+    // The east hedge opens where Alder Street continues into the Creator's Lot.
+    box(materials.hedge, 82.7, 1, side * 33.75, 1, 2, 51.5); obstacle(82.7, side * 33.75, 1, 51.5, 2);
+    box(materials.hedge, CREATOR_LOT.x - 0.25, 1, side * CREATOR_LOT.maxZ, CREATOR_LOT.width + 0.5, 2, 1);
+    obstacle(CREATOR_LOT.x - 0.25, side * CREATOR_LOT.maxZ, CREATOR_LOT.width + 0.5, 1, 2);
   }
+  box(materials.hedge, CREATOR_LOT.maxX - 0.8, 1, 0, 1, 2, CREATOR_LOT.depth + 1); obstacle(CREATOR_LOT.maxX - 0.8, 0, 1, CREATOR_LOT.depth + 1, 2);
+  // Creator's Lot fixtures: the street continues as a paved aisle under a
+  // gateway sign, and a kiosk makes new games. Venues are added at runtime.
+  function creatorLot() {
+    box(materials.road, CREATOR_LOT.x - 1, 0.222, 0, CREATOR_LOT.width - 2, 0.02, 15.6);
+    for (let x = CREATOR_LOT.minX + 6; x < CREATOR_LOT.maxX - 6; x += 9) box(materials.stripe, x, 0.236, 0, 4.6, 0.012, 0.12);
+    const gate = material(0x2b2440, { roughness: 0.4, metalness: 0.3 });
+    for (const side of [-1, 1]) { box(gate, 84.5, 3, side * 8.4, 0.36, 6, 0.36); obstacle(84.5, side * 8.4, 0.36, 0.36, 6); }
+    box(gate, 84.5, 6.1, 0, 0.4, 0.5, 17.2); overhead(84.5, 0, 0.4, 17.2, 4.4, 2.2);
+    sign('CREATOR’S LOT', 84.27, 5.15, 0, 12, 1.6, -Math.PI / 2, '#2b2440', '#f5c96b', 'MAKE A GAME · PLAY WHAT YOU MAKE');
+    sign('CREATOR’S LOT', 84.73, 5.15, 0, 12, 1.6, Math.PI / 2, '#2b2440', '#f5c96b', 'BACK TO ALDER STREET');
+    const { booth } = CREATOR_KIOSK, kiosk = material(0xf5c96b, { roughness: 0.5 });
+    const kioskLight = material(0xfff1c8, { emissive: 0xf5c96b, emissiveIntensity: 0.9 });
+    box(gate, booth.x, booth.h / 2 + 0.22, booth.z, booth.w, booth.h, booth.d); obstacle(booth.x, booth.z, booth.w + 0.1, booth.d + 0.1, booth.h + 0.6);
+    box(kiosk, booth.x, booth.h + 0.32, booth.z, booth.w + 0.5, 0.2, booth.d + 0.5);
+    box(kioskLight, booth.x, 1.55, booth.z + booth.d / 2 + 0.04, booth.w - 0.7, 1.1, 0.04);
+    box(kiosk, booth.x, 1.0, booth.z + booth.d / 2 + 0.25, booth.w - 0.3, 0.12, 0.5);
+    sign('MAKE A GAME', booth.x, booth.h + 0.95, booth.z + booth.d / 2 + 0.06, 3.6, 0.9, 0, '#2b2440', '#f5c96b', 'DESCRIBE IT · PLAY IT');
+    const ring = new THREE.RingGeometry(1.05, 1.18, 48); resources.add(ring);
+    const marker = new THREE.Mesh(ring, kiosk); marker.rotation.x = -Math.PI / 2;
+    marker.position.set(CREATOR_KIOSK.x, 0.245, CREATOR_KIOSK.z); scene.add(marker);
+  }
+  creatorLot();
   for (const batch of batches.values()) {
     const mesh = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);
     batch.matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
@@ -444,14 +478,63 @@ export function createNeighborhoodWorld(renderer, { hasFireRed = true } = {}) {
   colliders.forEach(Object.freeze); cameraOnly.forEach(Object.freeze);
   Object.freeze(colliders);
   const cameraColliders = Object.freeze([...colliders, ...cameraOnly]);
-  return { scene, avatar, colliders, cameraColliders, blocks: BLOCKS, heightAt,
+  // Generated-game venues are rebuilt whenever the catalog changes. Colliders
+  // are replaced with new frozen arrays (never mutated), so the exact safety
+  // guard re-encodes them and its proxy cache cannot go stale.
+  const creatorGroup = new THREE.Group(); scene.add(creatorGroup);
+  let creatorResources = new Set();
+  const world = { scene, avatar, colliders, cameraColliders, blocks: BLOCKS, heightAt,
+    setCreatorVenues(venues = []) {
+      creatorGroup.clear(); for (const resource of creatorResources) resource.dispose(); creatorResources = new Set();
+      const solid = [], overheadOnly = [];
+      const own = resource => { creatorResources.add(resource); return resource; };
+      const geometry = own(new THREE.BoxGeometry(1, 1, 1)), ring = own(new THREE.RingGeometry(1.15, 1.3, 48));
+      const dark = own(new THREE.MeshStandardMaterial({ color: 0x23202c, roughness: 0.5, metalness: 0.3 }));
+      const trim = own(new THREE.MeshStandardMaterial({ color: 0xe9e4d4, roughness: 0.7 }));
+      const part = (mat, x, y, z, w, h, d) => { const mesh = new THREE.Mesh(geometry, mat); mesh.position.set(x, y, z); mesh.scale.set(w, h, d); mesh.castShadow = mesh.receiveShadow = true; creatorGroup.add(mesh); };
+      for (const venue of venues) {
+        const { x, z, w, d, h, facing } = venue.building, front = z + facing * d / 2;
+        const body = own(new THREE.MeshStandardMaterial({ color: new THREE.Color(venue.color).lerp(new THREE.Color(0xf2efe6), 0.45), roughness: 0.8 }));
+        const accent = own(new THREE.MeshStandardMaterial({ color: venue.color, emissive: venue.color, emissiveIntensity: 0.35, roughness: 0.5 }));
+        part(body, x, h / 2 + 0.22, z, w, h, d); solid.push({ minX: x - w / 2 - 0.08, maxX: x + w / 2 + 0.08, minZ: z - d / 2 - 0.08, maxZ: z + d / 2 + 0.08, minY: 0, maxY: h + 1 });
+        part(trim, x, h + 0.3, z, w + 0.3, 0.2, d + 0.3);
+        part(accent, x, h - 0.4, front + facing * 0.06, w + 0.02, 0.5, 0.06);
+        part(dark, x, 1.5, front + facing * 0.05, 2.4, 2.6, 0.1);
+        part(accent, x, 3.05, front + facing * 0.7, 4.2, 0.12, 1.4); overheadOnly.push({ minX: x - 2.1, maxX: x + 2.1, minZ: Math.min(front, front + facing * 1.4), maxZ: Math.max(front, front + facing * 1.4), minY: 2.95, maxY: 3.15 });
+        for (const side of [-1, 1]) part(trim, x + side * 3.2, 1.5, front + facing * 0.06, 1.8, 1.6, 0.06);
+        const label = own(fittedLabelTexture(venue.title.toUpperCase(), '#1f1b2b', venue.color, `v${venue.version} · MADE IN GAMEVERSE · PLAY HERE`));
+        const signMaterial = own(new THREE.MeshStandardMaterial({ map: label, roughness: 0.7 }));
+        const plane = own(new THREE.PlaneGeometry(Math.min(w - 0.6, 8.6), 1.25));
+        const signMesh = new THREE.Mesh(plane, signMaterial); signMesh.position.set(x, 3.95, front + facing * 0.08); signMesh.rotation.y = facing === 1 ? 0 : Math.PI; creatorGroup.add(signMesh);
+        const marker = new THREE.Mesh(ring, accent); marker.rotation.x = -Math.PI / 2; marker.position.set(venue.x, 0.245, venue.z); creatorGroup.add(marker);
+      }
+      solid.forEach(Object.freeze); overheadOnly.forEach(Object.freeze);
+      world.colliders = Object.freeze([...colliders, ...solid]);
+      world.cameraColliders = Object.freeze([...world.colliders, ...cameraOnly, ...overheadOnly]);
+      return { venues: venues.length, colliders: solid.length };
+    },
     dispose() {
       sun.shadow.map?.dispose();
       scene.traverse(object => { if (object.isInstancedMesh) object.dispose(); });
       for (const resource of resources) resource.dispose();
+      for (const resource of creatorResources) resource.dispose();
       scene.clear();
     },
   };
+  return world;
+}
+
+// Sign lettering for runtime titles: shrinks long names to fit the panel.
+function fittedLabelTexture(text, background, foreground, subtitle) {
+  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 150;
+  const c = canvas.getContext('2d'); c.fillStyle = background; c.fillRect(0, 0, 1024, 150);
+  c.strokeStyle = foreground; c.lineWidth = 3; c.strokeRect(10, 10, 1004, 130);
+  c.fillStyle = foreground; c.textAlign = 'center';
+  let size = 64; c.font = `700 ${size}px Georgia`;
+  while (size > 26 && (c.measureText?.(text)?.width ?? 0) > 960) { size -= 4; c.font = `700 ${size}px Georgia`; }
+  c.fillText(text, 512, 82);
+  c.font = '22px sans-serif'; c.fillText(subtitle, 512, 122);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4; return texture;
 }
 
 function createAvatar(material, resources) {
