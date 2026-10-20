@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { verify, solve, verifySpatial, playtest, runArc } from '../v2/verify/index.js';
 import { travel, jumpVerb } from '../v2/verify/macros.js';
 import { maker } from '../v2/verify/drive.js';
+import { navOptions } from '../v2/verify/movement.js';
 import { fixtureCatalogue, normalized } from './v2-p-verify-fixtures.js';
 
 const cat = fixtureCatalogue();
@@ -121,4 +122,17 @@ test('ARC harness on the real engine.space.grid (default allow-list)', () => {
   assert.deepEqual(r.levels.map(l => l.actions), [10, 12]);
   assert.deepEqual(r.levels.map(l => l.score), [100, 25]);
   assert.equal(r.score, 50);
+});
+
+test('navigation options expand unlocked abilities into their movement grants', () => {
+  const d = platformDoc();
+  d.systems[0].with.abilities = [{ id: 'double_jump' }, { id: 'moth_wings', grants: ['doubleJump', 'glide'] }];
+  const { doc } = normalized(d);
+  const rt = maker(doc, cat.registry, cat.logic)(1);
+  assert.equal(navOptions(rt, cat.registry).opts.abilities.doubleJump, undefined);
+  rt.run([{ do: 'unlock_ability', ability: 'moth_wings' }]);
+  const nav = navOptions(rt, cat.registry);
+  assert.ok(nav.abilities.has('moth_wings') && nav.abilities.has('glide'));
+  assert.equal(nav.opts.abilities.doubleJump, true, 'tilemap nav reads the grant name');
+  assert.equal(nav.opts.who, 'player');
 });
