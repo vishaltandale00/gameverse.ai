@@ -10,7 +10,7 @@
 // sub-seed is retried and the complete lattice (density 1) is the fallback.
 // Sizes, styles and house layouts are data. Maze rows run top-down; `yUp`
 // flips them into a y-up space.
-import { withDefaults, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
+import { withDefaults, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, placeOn, problem } from './generate2d-lib.js';
 import { seedFrom } from '../../kernel/rng.js';
 
 const ID = 'engine.generate.grid.maze';
@@ -265,7 +265,7 @@ export default {
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
     validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],
   },
-  validate(raw, doc) {
+  validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [], sizes = { ...SIZES, ...config.sizes }, styles = { ...STYLES, ...config.styles }, spec = sizes[config.size];
     if (!spec) errors.push(problem('maze_size_unknown', 'size', `unknown maze size '${config.size}'`, { hint: Object.keys(sizes).join(', ') }));
@@ -274,7 +274,7 @@ export default {
       errors.push(problem('maze_size_invalid', `sizes.${name}`, 'a size needs an even integer w ≥ 20, integer h ≥ 21 and at least one house {axis, cy}'));
     for (const [name, s] of Object.entries(config.styles || {})) if (!(Array.isArray(s?.gaps) && s.gaps.length && s.gaps.every(g => Number.isInteger(g) && g >= 3)))
       errors.push(problem('maze_size_invalid', `styles.${name}`, 'a style needs gaps: integers ≥ 3 (walls stay ≥ 2 thick)'));
-    const sp = doc.spaces.find(s => (s.generators || []).some(g => g.use === ID)), size = sp?.with?.size;
+    const sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID)), size = sp?.with?.size;
     if (spec && size && (config.origin[0] + spec.w > size[0] || config.origin[1] + spec.h > size[1])) errors.push(problem('maze_outside_space', 'origin', `a ${spec.w}×${spec.h} maze at ${config.origin} does not fit the ${size[0]}×${size[1]} space`));
     return errors;
   },
@@ -295,7 +295,7 @@ export default {
       const a = toAt(q.x0, q.y0), b = toAt(q.x1, q.y1);
       return { id: `maze_house_${i + 1}`, name: `House ${i + 1}`, rect: [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]) + 1, Math.max(a[1], b[1]) + 1], tags: ['maze_house'] };
     }));
-    if (config.placePlayer) rt.on('spawn', d => { if (d.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) space.api.setPos(p, pt(maze.start), rt); });
+    if (config.placePlayer) rt.on('spawn', d => { if (d.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) placeOn(rt, space, p, pt(maze.start).map(Math.floor)); });
     const st = () => rt.store(instance.key);
     const api = {
       size: () => [MW, MH], start: () => pt(st().start), tunnels: () => st().tunnels.map(y => toAt(0, y)[1]),

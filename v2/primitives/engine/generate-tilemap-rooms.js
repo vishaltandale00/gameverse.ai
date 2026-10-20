@@ -77,9 +77,9 @@ export default {
     problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
-  validate(raw, doc, ctx) {
+  validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, sp = doc.spaces.find(s => (s.zones || []).some(z => z.id === config.rooms[0]?.zone)) || null;
+    const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.zones || []).some(z => z.id === config.rooms[0]?.zone)) || null;
     const size = sp?.with?.size, zones = new Map((sp?.zones || []).map(z => [z.id, z])), ids = new Set();
     const known = a => a in (config.abilities || {}) || a in ABILITY_EFFECTS;
     config.requiresAbilities.forEach((a, i) => { if (!known(a)) errors.push(problem('ability_unknown', `requiresAbilities[${i}]`, `ability '${a}' has no movement effect`, { hint: 'map it in params.abilities' })); });

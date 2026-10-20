@@ -52,9 +52,9 @@ export default {
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
     validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open'],
   },
-  validate(raw, doc) {
+  validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], sp = doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
+    const errors = [], sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
     if (!config.size && !Array.isArray(sp?.with?.size)) errors.push(problem('board_size_missing', 'size', 'give size or bind to a space with a size'));
     if (config.kind === 'match' && config.fillNoMatch && config.fill.filter(p => p.weight > 0).length < 3) errors.push(problem('board_pieces_few', 'fill', 'a no-match fill needs at least 3 pieces'));
     if (config.kind === 'tactics' && !config.terrain.length) errors.push(problem('board_terrain_open', 'terrain', 'tactics boards need terrain'));

@@ -11,7 +11,7 @@
 // key). Failing sub-seeds retry; the fallback is a straight chain.
 // Works on any space with `position`: cells are carved when the space has
 // editCells; positions map onto the 'xy' or 'xz' plane.
-import { withDefaults, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, problem, inRect } from './generate2d-lib.js';
+import { withDefaults, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, problem, inRect } from './generate2d-lib.js';
 
 const ID = 'engine.generate.dungeon.rooms';
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -49,9 +49,9 @@ export default {
   logic(logic) {
     logic.effect('open_lock', { run: (e, rt) => rt.caches.dungeonLocks?.get(e.lock)?.(rt) });
   },
-  validate(raw, doc) {
+  validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], sp = doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
+    const errors = [], sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
     const area = config.area || zoneRect((sp?.zones || []).find(z => z.id === config.zone), config.plane) || (sp?.with?.size ? [0, 0, sp.with.size[0], sp.with.size[config.plane === 'xz' ? 2 : 1] ?? sp.with.size[1]] : null);
     if (!area) errors.push(problem('dungeon_area_missing', 'zone', 'give area, a zone with a rect/bounds, or a space with a size'));
     else { const slot = config.roomSize[1] + 3, cap = Math.floor((area[2] - area[0]) / slot) * Math.floor((area[3] - area[1]) / slot); if (cap < config.rooms && !config.zone) errors.push(problem('dungeon_area_small', 'rooms', `the area fits ${cap} room slots; ${config.rooms} rooms requested`, { hint: 'enlarge the area or shrink roomSize' })); }
@@ -83,7 +83,7 @@ export default {
     };
     (rt.caches.dungeonLocks ??= new Map());
     for (const l of d.locks) rt.caches.dungeonLocks.set(l.id, open(l.id));
-    const near = (e, p, r = 1.5) => { const a = space.api.pos(e); return Math.hypot(...[0, 1, 2].map(i => (a[i] ?? 0) - (p[i] ?? 0))) <= r; };
+    const near = (e, p, r = 1.5) => { const a = cellOfEntity(space, e); return Math.hypot(...[0, 1, 2].map(i => (a[i] ?? 0) - (p[i] ?? 0))) <= r; };
     rt.system('interaction', rt => {
       const p = rt.player(), s = st(); if (!p || p.space !== space.sid) return;
       if (config.autoPickup) for (const k of s.keys) if (!s.found.includes(k.item) && near(p, at(...k.at), 1)) {
@@ -94,7 +94,7 @@ export default {
       }
       if (config.autoUnlock) for (const l of s.locks) if (!s.opened.includes(l.id) && near(p, at(...l.at), 1.6) && hasItem(l.key)) open(l.id)(rt);
     }, ID);
-    if (config.placePlayer) rt.on('spawn', ev => { if (ev.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) space.api.setPos(p, center(d.rooms[d.start]), rt); });
+    if (config.placePlayer) rt.on('spawn', ev => { if (ev.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) placeOn(rt, space, p, center(d.rooms[d.start])); });
     const { cells, ...data } = d;
     publish(rt, instance, space, ID, { ...data, opened: [], found: [], carved: carve, plane: config.plane }, { dungeon: {
       rooms: () => st().rooms, start: () => st().start, boss: () => st().boss, locks: () => st().locks, keys: () => st().keys,

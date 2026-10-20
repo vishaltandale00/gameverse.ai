@@ -15,7 +15,7 @@
 // tile-for-tile and doors with mats, and the whole warp graph is proven
 // connected from the start. Tiles are roles mapped to blocks by `tiles`
 // (walkable roles default to empty), so the look is data.
-import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
+import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, addZones, publish, spawnAt, placeOn, cellOfEntity, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.tilemap.overworld';
 const ROOM = new Set(['gym', 'interior', 'league']);
@@ -63,6 +63,7 @@ export default {
     },
     provides: { events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
+    defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
     problems: ['exit_unreachable', 'door_unreachable', 'switch_unreachable', 'trainer_unreachable', 'item_unreachable', 'npc_unreachable', 'leader_unreachable', 'champion_unreachable', 'map_unreachable', 'warp_unpaired', 'area_too_big'],
     validates: ['area_duplicate', 'connect_unknown', 'start_unknown', 'gym_leader_missing'],
   },
@@ -115,15 +116,15 @@ export default {
       const s = st(); s.last ??= {};
       for (const e of Object.values(rt.state.entities)) {
         if (e.space !== space.sid || !Array.isArray(e.at) || !(e.id === 'player' || e.components.overworld?.walker)) continue;
-        const k = key(e.at); if (s.last[e.id] === k) continue;
+        const k = key(cellOfEntity(space, e)); if (s.last[e.id] === k) continue;
         s.last[e.id] = k;
         const w = warpAt.get(k); if (!w) continue;
-        space.api.setPos(e, [...w.to, ...(e.at.length > 2 ? [e.at[2]] : [])], rt); s.last[e.id] = key(w.to);
+        placeOn(rt, space, e, [...w.to, ...(e.at.length > 2 ? [cellOfEntity(space, e)[2]] : [])]); s.last[e.id] = key(w.to);
         rt.emitTyped('warp', w.to_map ?? w.toMap, { who: e.id, from: w.map, to: w.toMap, kind: w.kind });
       }
     }, ID);
     const spawn = world.spawn;
-    if (config.placePlayer) rt.on('spawn', d => { if (d.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) space.api.setPos(p, at(spawn.map, spawn.x, spawn.y), rt); });
+    if (config.placePlayer) rt.on('spawn', d => { if (d.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) placeOn(rt, space, p, at(spawn.map, spawn.x, spawn.y)); });
     const grass = Object.values(world.maps).flatMap(m => m.encounter === 'grass' ? m.tiles.flatMap((row, y) => row.flatMap((t, x) => (t === 'grass' ? [key(at(m.id, x, y))] : []))) : []);
     const cave = Object.values(world.maps).filter(m => m.encounter === 'floor').map(m => m.id);
     let gs = null; const grassSet = () => (gs ??= new Set(grass));

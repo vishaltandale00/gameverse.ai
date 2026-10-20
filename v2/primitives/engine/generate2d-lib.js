@@ -132,10 +132,28 @@ export function publish(rt, instance, space, id, result, services = {}) {
   for (const p of result.problems || []) rt.emit('generate_problem', { generator: id, ...p });
 }
 
-/** Spawn helper that never collides with an existing id. */
-export function spawnAt(rt, space, archetype, at, components = {}, id) {
+/**
+ * Generators plan in cells; entities are anchored as the space says (KERNEL_API §3):
+ * 'center' spaces take the body-box centre, 'min'/'cell' the cell itself, 'slot' a zone id.
+ */
+export function entityAt(space, cell, size) {
+  if (!Array.isArray(cell) || space.api.anchor !== 'center') return cell;
+  return cell.map((v, i) => v + (size?.[i] ?? 1) / 2);
+}
+/** The cell an entity's body-box minimum sits in (inverse of entityAt). */
+export function cellOfEntity(space, e) {
+  if (!Array.isArray(e?.at)) return e?.at;
+  const size = e.components?.body?.size;
+  return e.at.map((v, i) => Math.floor((space.api.anchor === 'center' ? v - (size?.[i] ?? 1) / 2 : v) + 1e-6));
+}
+/** Move an entity so its body sits on `cell`. */
+export const placeOn = (rt, space, e, cell) => space.api.setPos(e, entityAt(space, cell, e.components?.body?.size), rt);
+
+/** Spawn at a cell (converted to the space's anchor); never collides with an existing id. */
+export function spawnAt(rt, space, archetype, cell, components = {}, id) {
   const free = id && !rt.state.entities[id] ? id : undefined;
-  return rt.spawn(archetype, { space: space.sid, at, components, id: free });
+  const size = components.body?.size ?? rt.archetype(archetype)?.components?.body?.size;
+  return rt.spawn(archetype, { space: space.sid, at: entityAt(space, cell, size), components, id: free });
 }
 
 export const problem = (code, path, message, extra = {}) => ({ code, path, message, ...extra });

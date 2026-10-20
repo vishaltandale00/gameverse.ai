@@ -122,7 +122,7 @@ export default {
     const result = layout(config, r);
     const [ox, oy] = config.origin, s = config.scale;
     const toAt = (x, y) => { const at = [ox + x * s, oy + (config.yDown ? -y : y) * s]; return space.size?.length === 3 ? [...at, 0] : at; };
-    for (const p of result.pieces) {
+    for (const p of result.pieces) { // spawned at the body-box min corner; spawnAt re-anchors for the space
       const cy = p.anchor === 'bottom' ? p.y + p.h / 2 : p.y;
       p.entity = spawnAt(rt, space, p.archetype, toAt(p.x - (p.w / 2), cy + (config.yDown ? p.h / 2 : -p.h / 2)), { body: { size: [p.w * s, p.h * s] }, piece: { group: p.group, kind: p.kind, shape: p.shape, material: p.material, hp: p.hp, ang: p.ang, role: p.role, motion: p.motion, center: toAt(p.x, cy), static: p.static, tags: p.tags } }, p.id).id;
     }

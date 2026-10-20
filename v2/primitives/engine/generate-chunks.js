@@ -11,7 +11,7 @@
 // `maxShift` cells per step, never through a `blocks` char); impassable chunks
 // are dropped from the pool with a problem, and an empty pool falls back to a
 // plain gap. Runtime choice uses rt.random(), so courses replay exactly.
-import { withDefaults, spaceOf, cellWriter, publish, problem } from './generate2d-lib.js';
+import { withDefaults, spaceOf, cellWriter, publish, spawnAt, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.chunks';
 const AX = { x: 0, y: 1, z: 2 };
@@ -117,7 +117,7 @@ export default {
         const at = [0, 0, 0].map((_, k) => config.origin[k] ?? 0); at[ax] += start + i * chunk.spacing; at[cx] += j;
         const pos = space.size && space.size.length === 2 ? at.slice(0, 2) : at;
         if (def.block) { writer.set(pos, def.block); s.cells.push({ at: pos, p: start + i * chunk.spacing }); }
-        if (def.archetype) { const e = rt.spawn(def.archetype, { space: space.sid, at: pos, components: { ...(structuredClone(def.components || {})), chunk: { id: chunk.id, char: ch, n: s.chunkN } } }); ids.push(e.id); s.placed.push({ id: e.id, p: start + i * chunk.spacing }); }
+        if (def.archetype) { const e = spawnAt(rt, space, def.archetype, pos, { ...(structuredClone(def.components || {})), chunk: { id: chunk.id, char: ch, n: s.chunkN } }); ids.push(e.id); s.placed.push({ id: e.id, p: start + i * chunk.spacing }); }
       }
       writer.flush();
       return g.P * chunk.spacing;
