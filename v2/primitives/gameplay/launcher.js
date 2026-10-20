@@ -93,7 +93,7 @@ export default {
     rt.action('aim_right', () => { const s = st(); s.aim = clampAim(s.aim - config.aimSpeed * rt.dt); vars(s); });
     rt.action('power', v => { const s = st(); if (Number.isFinite(v)) { s.power = Math.max(0.2, Math.min(1, v)); vars(s); } });
     rt.action('pull', v => {
-      const s = st(); if (!Array.isArray(v)) return;
+      const s = st(); if (!Array.isArray(v) || !Number.isFinite(v[0]) || !Number.isFinite(v[1])) return; // malformed pulls are ignored
       const l = Math.hypot(v[0], v[1]); if (l < 1e-6) return;
       const dir = [-v[0] / l, -v[1] / l]; // launch opposite to the pull
       const ang = Math.atan2(config.forward[0] * dir[1] - config.forward[1] * dir[0], config.forward[0] * dir[0] + config.forward[1] * dir[1]);
