@@ -117,11 +117,12 @@ export function preflight(doc, registry, logic) {
     for (const req of p.card.requires.primitives || []) if (![...used].some(id => id === req || id.startsWith(req + '.'))) errors.push({ code: 'requires_unmet', path: n._path, message: `'${p.id}' requires a '${req}' primitive` });
     for (const sv of p.card.requires.services || []) if (!ctx.provides.services.has(sv)) errors.push({ code: 'service_missing', path: n._path, message: `'${p.id}' needs service '${sv}'`, hint: 'add a primitive whose card provides it' });
     for (const c of p.card.conflicts || []) if (used.has(c)) errors.push({ code: 'primitive_conflict', path: n._path, message: `'${p.id}' conflicts with '${c}'` });
-    // Validators may assume a well-formed config: skip them when params already failed, and never let one throw.
-    if (p.validate && !n._paramErrors) {
+    // Validators always run so their stable codes surface alongside param errors, and never throw: a crash on
+    // a config whose params already failed is explained by those errors and is not reported again.
+    if (p.validate) {
       let found = [];
       try { found = p.validate(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []; }
-      catch (error) { found = [{ code: 'validator_crashed', path: n._path, message: `'${p.id}' could not check this instance: ${String(error?.message || error).slice(0, 160)}`, hint: 'a field has the wrong shape; compare it with the card params' }]; }
+      catch (error) { found = n._paramErrors ? [] : [{ code: 'validator_crashed', path: n._path, message: `'${p.id}' could not check this instance: ${String(error?.message || error).slice(0, 160)}`, hint: 'a field has the wrong shape; compare it with the card params' }]; }
       // Paths are document-absolute: a validator may report relative to its own config ('rooms[0].rect').
       for (const err of found) errors.push({ ...err, path: absolutePath(err.path, n._path) });
     }

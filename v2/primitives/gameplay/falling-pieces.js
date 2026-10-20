@@ -424,13 +424,18 @@ export default {
       }
     }
     /** Macro verb: rotate then shift through the real kick/collision code, then hard drop. */
+    /** Values without an integer target (e.g. a generic `place: true`) are ignored; shifting is bounded by the board width. */
     function place(s, v) {
+      if (!v || typeof v !== 'object') return false;
       const b = B();
-      if (v?.hold) { if (!doHold(s)) return false; if (!s.piece) return false; }
+      if (v.hold) { if (!doHold(s)) return false; if (!s.piece) return false; }
       const p = s.piece; if (!p) return false;
-      const dir = v?.ccw ? -1 : 1;
-      for (let i = 0; i < 4 && p.r !== ((v?.r ?? p.r) + 4) % 4; i++) if (!rotate(b, s, dir)) return false;
-      while (p.x !== v?.x) if (!shift(b, s, Math.sign((v?.x ?? p.x) - p.x))) return false;
+      const tx = v.x ?? p.x, tr = v.r ?? p.r;
+      if (!Number.isInteger(tx) || !Number.isInteger(tr)) return false;
+      const dir = v.ccw ? -1 : 1;
+      for (let i = 0; i < 4 && p.r !== ((tr % 4) + 4) % 4; i++) if (!rotate(b, s, dir)) return false;
+      for (let i = 0; i <= b.W && p.x !== tx; i++) if (!shift(b, s, Math.sign(tx - p.x))) return false;
+      if (p.x !== tx) return false;
       hardDrop(b, s);
       return true;
     }

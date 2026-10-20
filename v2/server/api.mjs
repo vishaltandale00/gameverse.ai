@@ -39,6 +39,7 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   const ready = (async () => {
     const base = await loadCatalogue();
     const writers = injectedWriters || await createWriters(env, { openaiKey });
+    if (!injectedWriters) console.log(JSON.stringify({ operation: 'v2_writers', spec: writers.spec ? `${writers.spec.provider}:${writers.spec.model}` : null, code: writers.code ? `${writers.code.provider}:${writers.code.model}` : null, decisions: decisions?.provider || null }));
     const experiments = injectedExperiments !== undefined ? injectedExperiments : writers.code && env.V2_EXPERIMENTS !== 'off' ? createPrimitiveExperimentService({ writer: writers.code }) : null;
     const catalogue = async doc => (doc?.experiments?.length ? catalogueForDoc(doc) : base);
     const pipeline = createKernelPipeline({ catalogue, writers, decisions, gapService: experiments, config: { gaps: env.V2_GAPS || 'offer', ...config } });

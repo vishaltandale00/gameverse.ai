@@ -66,7 +66,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const gaps = [...selection.gaps.map(gapNote), ...[...(outline.removed || []), ...fp.removed].map(r => ({ capability: r.use, why: r.why, kind: r.kind === 'capability' ? 'capability' : 'removed' }))];
     await ctx.store.updateMeta(job.gameId, { title: current.title, kind: 'kernel' });
     const common = { kind: 'kernel', decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps, summary: current.logline || decomposition.premise };
-    const provenance = extra => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
+    const provenance = extra => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
     // Publish before full verification: preflight passed and the world booted; the verifier's report follows.
     timings.requestToFirstPlayableMs = ms(t0);
     await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: null, verification: { ok: true, source: 'preflight', pending: true, preflightMs: null }, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
@@ -180,7 +180,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     return ctx.publish({
       doc: v.doc, stage: `revision: ${job.change}`,
       report: { kind: 'kernel', change: job.change, path, ops: opsApplied.slice(0, 20), changes: guard.changes, diffLines: guard.lines, revisionCheck: guard.revisionCheck, gaps, verified: true, verification: summarizeVerify(v), hot: path === 'tweak' ? 'params' : 'reload', timings },
-      provenance: { ...previous.provenance, pipeline: KERNEL_PIPELINE_VERSION, base: job.base, change: job.change, revisePath: path, models: { spec: path === 'model' ? spec?.model : null, decisions: decisions?.provider || null } },
+      provenance: { ...previous.provenance, pipeline: KERNEL_PIPELINE_VERSION, base: job.base, change: job.change, revisePath: path, models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } },
     });
   }
 
