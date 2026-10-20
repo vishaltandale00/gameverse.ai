@@ -56,8 +56,10 @@ export default {
         stage.viewYaw = yaw; stage.viewPitch = -config.angle * Math.PI / 180;
         stage.focus.set(pose.at[0], pose.at[1], pose.at[2]);
         stage.shadowExtent = Math.max(20, span * 2);
+        // The camera sits 120 m out: fog starts at the followed point, not at the lens.
+        stage.fogOffset = 120; stage.fogScale = 0.18;
       },
-      deactivate() { stage.camera = persp; },
+      deactivate() { stage.camera = persp; stage.fogOffset = 0; stage.fogScale = 1; },
     };
     registerCamera(stage, cam);
   },

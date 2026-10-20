@@ -171,7 +171,8 @@ export default {
         if (!linearFog) { linearFog = new THREE.Fog('#a8b8c8', lin.near, lin.far); }
         const base = hexRgb(lin.color || '#a8b8c8');
         srgb(linearFog.color, mixRgb(base, fogRgb, 0.55).map(v => v * (0.35 + 0.65 * Math.max(s.day, 0.2))));
-        linearFog.near = lin.near / weatherBlend.fog; linearFog.far = lin.far / Math.sqrt(weatherBlend.fog);
+        const off = stage.fogOffset ?? 0;
+        linearFog.near = off + lin.near / weatherBlend.fog; linearFog.far = off + lin.far / Math.sqrt(weatherBlend.fog);
         stage.scene.fog = linearFog;
       } else {
         srgb(fog.color, fogRgb); fog.density = config.fogDensity * weatherBlend.fog * (stage.fogScale ?? 1); stage.scene.fog = fog;
