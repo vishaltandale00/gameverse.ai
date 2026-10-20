@@ -66,10 +66,10 @@ test('snapshots restore exactly and replay deterministically', () => {
 });
 
 test('preflight catches unknown primitives, references, capabilities and vocabulary', () => {
-  const needsCells = { id: 'gameplay.blocks.mine', card: { intent: 'mine cells', requires: { capabilities: ['editCells'] } } };
+  const needsCells = { id: 'gameplay.test.needs-cells', card: { intent: 'needs editCells', requires: { capabilities: ['editCells'] } } };
   const c = catalogue([needsCells]);
   const bad = mystery();
-  bad.systems.push({ use: 'gameplay.blocks.mine' }, { use: 'gameplay.teleporter' });
+  bad.systems.push({ use: 'gameplay.test.needs-cells' }, { use: 'gameplay.teleporter' });
   bad.plot.storyboard.acts[1].beats[0].do.push({ do: 'give_item', item: 'crowbar' }, { do: 'explode' });
   bad.plot.storyboard.acts[1].beats[1].after = ['nonexistent'];
   bad.spaces[0].zones[0].exits.push({ to: 'attic' });
