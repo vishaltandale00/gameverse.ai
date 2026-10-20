@@ -10,6 +10,8 @@
 // Entities stand at their feet: `at` is the bottom-centre of the body box. An
 // `at` with two numbers [x, z] is placed on the ground. Bodies collide with
 // objects as upright cylinders (radius = half the larger of width/depth).
+// Object `rot` is a yaw in radians with the three.js rotation.y convention:
+// an object's local +z axis faces world (sin rot, cos rot).
 import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3 } from './worlds3d-lib-world.js';
 
 const TILE = 64; // height samples per tile edge
@@ -27,7 +29,7 @@ function circlePush(o, x, z, r) {
     if (d >= R) return null;
     return d > 1e-9 ? [dx / d, dz / d, R - d] : [1, 0, R];
   }
-  const c = Math.cos(-(o.rot || 0)), s = Math.sin(-(o.rot || 0)), dx = x - o.at[0], dz = z - o.at[2];
+  const c = Math.cos(o.rot || 0), s = Math.sin(o.rot || 0), dx = x - o.at[0], dz = z - o.at[2];
   const lx = dx * c - dz * s, lz = dx * s + dz * c, hw = o.size[0] / 2, hd = o.size[2] / 2;
   const qx = Math.max(-hw, Math.min(hw, lx)), qz = Math.max(-hd, Math.min(hd, lz));
   let nx, nz, depth;
@@ -38,7 +40,7 @@ function circlePush(o, x, z, r) {
     const ex = lx - qx, ez = lz - qz, d = Math.hypot(ex, ez); if (d >= r) return null;
     nx = ex / d; nz = ez / d; depth = r - d;
   }
-  const ci = Math.cos(o.rot || 0), si = Math.sin(o.rot || 0);
+  const ci = Math.cos(-(o.rot || 0)), si = Math.sin(-(o.rot || 0));
   return [nx * ci - nz * si, nx * si + nz * ci, depth];
 }
 /** Ray vs object; returns {t, normal} or null. o = origin, u = unit direction. */
@@ -58,7 +60,7 @@ function rayObject(obj, o, u, maxT) {
     }
     return best;
   }
-  const c = Math.cos(-(obj.rot || 0)), s = Math.sin(-(obj.rot || 0));
+  const c = Math.cos(obj.rot || 0), s = Math.sin(obj.rot || 0);
   const lo = [(o[0] - obj.at[0]) * c - (o[2] - obj.at[2]) * s, o[1] - y0, (o[0] - obj.at[0]) * s + (o[2] - obj.at[2]) * c];
   const lu = [u[0] * c - u[2] * s, u[1], u[0] * s + u[2] * c];
   const min = [-obj.size[0] / 2, 0, -obj.size[2] / 2], max = [obj.size[0] / 2, obj.size[1], obj.size[2] / 2];
@@ -69,7 +71,7 @@ function rayObject(obj, o, u, maxT) {
     if (ta > t0) { t0 = ta; axis = i; } t1 = Math.min(t1, tb); if (t0 > t1) return null;
   }
   const ln = [0, 0, 0]; if (axis >= 0) ln[axis] = -Math.sign(lu[axis]);
-  const ci = Math.cos(obj.rot || 0), si = Math.sin(obj.rot || 0);
+  const ci = Math.cos(-(obj.rot || 0)), si = Math.sin(-(obj.rot || 0));
   return { t: t0, normal: [ln[0] * ci - ln[2] * si, ln[1], ln[0] * si + ln[2] * ci] };
 }
 
@@ -153,7 +155,7 @@ export default {
     const waterLevelAt = (x, z) => model.at('water', x, z, null);
     const groundAt = (x, z) => {
       const biome = model.ensure().at('biome', x, z, null);
-      const material = model.at('material', x, z, null) ?? (biome && model.info.biomes?.[biome]?.surface) ?? null;
+      const material = model.at('material', x, z, null) ?? (biome && model.info.biomeDefs?.[biome]?.surface) ?? null;
       return { y: terrainY(x, z), normal: normalAt(x, z), material, biome };
     };
     const slopeAt = (x, z) => +(Math.acos(Math.min(1, normalAt(x, z)[1])) * 180 / Math.PI).toFixed(3);

@@ -190,7 +190,7 @@ export class WorldModel {
     this.built = false; this.building = false; this.seedUsed = null;
     this.fields = new Map(); this.mods = new Map();
     this.layers = []; this.objects = []; this.objectLayers = []; this.objectIndex = null;
-    this.problems = []; this.info = {}; this.cache = {}; this.version = (this.version || 0) + 1;
+    this.problems = []; this.info = {}; this.data = {}; this.cache = {}; this.version = (this.version || 0) + 1;
   }
   get state() { return this.rt.state.spaces[this.sid]; }
   get seed() { return this.state.seed; }
@@ -260,7 +260,11 @@ export function worldModel(rt, sid, kind, opts) {
 export function generatorModel(rt, instance) {
   const sid = instance.space ?? rt.doc.spaces?.[0]?.id;
   const m = rt.caches[`worlds3d:model:${sid}`];
-  return m ? m : null;
+  if (!m) { // not a worlds3d space (e.g. a tilemap): record why nothing was generated
+    const s = rt.store(instance.key); s.problems = [{ code: 'space_unsupported', message: `${instance.use} needs engine.space.voxel or engine.space.mesh3d; space '${sid}' is not one`, space: sid }];
+    return null;
+  }
+  return m;
 }
 
 /** Block definitions from content.blocks: unknown ids are solid and opaque. */
