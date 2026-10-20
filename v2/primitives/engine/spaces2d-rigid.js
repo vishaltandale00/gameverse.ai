@@ -339,7 +339,16 @@ function queryStatic(g, box, size) {
   }
   return out.sort((a, b) => a - b);
 }
-const canCollide = (a, b) => (a.cat & b.mask) !== 0 && (b.cat & a.mask) !== 0;
+// Ghost bodies (an opened door) collide with nothing; one-way bodies are filtered per contact (oneWayOk).
+const canCollide = (a, b) => !a.ghost && !b.ghost && (a.cat & b.mask) !== 0 && (b.cat & a.mask) !== 0;
+const ONE_WAY_DEPTH = 0.25; // deepest penetration a one-way contact may have and still hold (m)
+/** One-way platforms push only along `up` (against gravity), and only bodies arriving from above. */
+function oneWayOk(world, a, b, m) {
+  const P = a.oneWay ? a : b, O = P === a ? b : a, s = P === a ? 1 : -1, g = Math.hypot(world.gx, world.gy) || 1, ux = world.gx ? -world.gx / g : 0, uy = world.gy ? -world.gy / g : 1;
+  if ((m.nx * s) * ux + (m.ny * s) * uy < 0.7) return false;
+  if (Math.min(...m.pts.map(p => p.sep)) < -ONE_WAY_DEPTH) return false;
+  return (O.vx - P.vx) * ux + (O.vy - P.vy) * uy <= 0.5;
+}
 
 // ---------- step ----------
 /**
@@ -390,6 +399,7 @@ function substep(world, h, report) {
     if (!overlaps(A.box, B.box, MARGIN)) return;
     const m = collide(A, B);
     if (!m) return;
+    if ((a.oneWay || b.oneWay) && !oneWayOk(world, a, b, m)) return;
     if (a.sensor || b.sensor) { if (m.pts.some(p => p.sep < 0)) record(report, a, b, m, 0, 0, true); return; }
     // Sleeping partners stay asleep (and act as static) unless hit by something moving.
     if (a.sleeping && bMoves && (b.vx * b.vx + b.vy * b.vy > 0.04 || b.av * b.av > 0.04)) wake(a);
@@ -500,7 +510,7 @@ function substep(world, h, report) {
     if (b.bullet && b.shape === 'circle' && dx * dx + dy * dy > b.r * b.r * 0.25) {
       const C = proxies.get(b.id), box = [Math.min(C.box[0], C.box[0] + dx), Math.min(C.box[1], C.box[1] + dy), Math.max(C.box[2], C.box[2] + dx), Math.max(C.box[3], C.box[3] + dy)];
       let t = 1;
-      const test = P => { if (P.b === b || P.b.sensor || !canCollide(b, P.b) || !overlaps(box, P.box, 0)) return; const s = sweep(C, dx, dy, P); if (s < t) t = s; };
+      const test = P => { if (P.b === b || P.b.sensor || P.b.oneWay || !canCollide(b, P.b) || !overlaps(box, P.box, 0)) return; const s = sweep(C, dx, dy, P); if (s < t) t = s; };
       for (const k of queryStatic(grid, box, size)) test(sproxy(k));
       for (const P of movers) if (!P.b.bullet) test(P);
       if (t < 1) { const len = Math.hypot(dx, dy), back = Math.max(0, t - 0.002 / len); dx *= back; dy *= back; }
@@ -607,7 +617,7 @@ export function raycastWorld(world, ox, oy, ux, uy, maxDist, filter = () => true
   const box = [Math.min(ox, ox + dx), Math.min(oy, oy + dy), Math.max(ox, ox + dx), Math.max(oy, oy + dy)];
   let best = null, bt = 1;
   for (const b of world.bodies) {
-    if (b.dead || !filter(b)) continue;
+    if (b.dead || b.ghost || !filter(b)) continue;
     const P = proxyOf(b);
     if (!overlaps(box, P.box, 0)) continue;
     // Starting inside a shape counts as a hit at distance 0.
@@ -653,6 +663,7 @@ export function depenetrate(world, b, filter = () => true, iterations = 4) {
     const A = proxyOf(b);
     for (const o of world.bodies) {
       if (o === b || o.dead || o.sensor || !filter(o) || !canCollide(b, o)) continue;
+      if (o.oneWay && !oneWayDepen(world, b, o)) continue;
       const B = proxyOf(o);
       if (!overlaps(A.box, B.box, 0)) continue;
       const m = collide(A, B); if (!m) continue;
@@ -665,4 +676,10 @@ export function depenetrate(world, b, filter = () => true, iterations = 4) {
     if (!moved) break;
   }
   return normals;
+}
+
+/** Depenetration against a one-way body: only a mover whose bottom is near or above the platform top. */
+function oneWayDepen(world, b, o) {
+  const g = Math.hypot(world.gx, world.gy) || 1, uy = world.gy ? -world.gy / g : 1, A = aabbOf(b), B = aabbOf(o);
+  return uy >= 0 ? A[1] >= B[3] - ONE_WAY_DEPTH : A[3] <= B[1] + ONE_WAY_DEPTH;
 }

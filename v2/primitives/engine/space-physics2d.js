@@ -7,7 +7,7 @@
 // components.body; the space keeps the solver world in state, syncs entity
 // edits in before each step and results out after, and reports contacts.
 import { createWorld, addBody, addArc, addChain, removeBody, wake, bodyIndex, applyImpulse, addDistanceJoint, addRevoluteJoint, stepWorld, raycastWorld, queryShape, depenetrate, containsPoint, aabbOf } from './spaces2d-rigid.js';
-import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, rectHas, rectArea, rectCenter, rectDist, edgesParam, checkEdges, wrapDelta, mod, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, zoneEditor, obstacleOf, inSpace, bodyOf, rectHas, rectArea, rectCenter, rectDist, edgesParam, checkEdges, wrapDelta, mod, BOUNDS_CAPS } from './spaces2d-lib.js';
 
 const SHAPES = ['circle', 'box', 'poly', 'seg'];
 const WALL_KINDS = ['box', 'circle', 'poly', 'seg', 'arc', 'chain'];
@@ -56,7 +56,7 @@ export default {
     at: 'At = [x, y] metres, y up: the body centre of mass. components.body = {size, vel, angle, angVel, shape:{kind:circle,r}|{kind:box,w,h}|{kind:poly,points}|{kind:seg,a,b,r}, type:dynamic|static|kinematic (static:true alias), density=1, restitution=0.2, friction=0.5, sensor, bullet, gravityScale=1, damping, angularDamping=0.05, fixedRotation, category=1, mask=0xffff}; the space fills mass and sleeping.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1) metres, spawn?, tags?, rules?}; membership by body centre',
     state: 'rt.state.spaces[id] = {world: solver JSON (bodies with ref = entity or wall id, joints with jid, warm-start cache, touching pairs), inside, out, zones?}',
-    notes: "Events: contact {a, b, impulse, normal (a→b), at, speed, begin, sensor}; impact (same, begin contacts with impulse ≥ impactMin); contact_end {a, b}. a/b are entity ids or wall ids. raycast hits are 'entity' (with id) or 'cell' for static walls (with wall). slide() moves a body kinematically with depenetration. Joint angles in radians.",
+    notes: "Entity obstacles: components.body.solid (default type kinematic) collides; solid:false turns the body into a ghost (an opened door); oneWay bodies hold others only from above (arriving against gravity) and never stop bullets. Events: contact {a, b, impulse, normal (a→b), at, speed, begin, sensor}; impact (same, begin contacts with impulse ≥ impactMin); contact_end {a, b}. a/b are entity ids or wall ids. raycast hits are 'entity' (with id) or 'cell' for static walls (with wall). slide() moves a body kinematically with depenetration. Joint angles in radians.",
   },
   capabilities(config) {
     const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'joints', 'dynamics', 'bounds'];
@@ -118,7 +118,8 @@ export default {
     // ---------- entity ↔ body ----------
     function defOf(e) {
       const B = bodyOf(e), s = B.shape || { kind: 'box', w: B.size[0], h: B.size[1] };
-      const type = B.static ? 'static' : B.type || 'dynamic';
+      // Entity obstacles (body.solid set, true or false) are kinematic unless typed: mechanisms move and open them.
+      const type = B.static ? 'static' : B.type || (B.solid !== undefined ? 'kinematic' : 'dynamic');
       const d = { type, x: e.at[0], y: e.at[1], a: B.angle || 0, vx: B.vel[0], vy: B.vel[1], av: B.angVel || 0, density: B.density ?? 1, e: B.restitution ?? 0.2, mu: B.friction ?? 0.5,
         cat: B.category ?? 1, mask: B.mask ?? 0xffff, sensor: !!B.sensor, bullet: !!B.bullet, gs: B.gravityScale ?? 1, damp: B.damping || 0, adamp: B.angularDamping ?? 0.05, fixedRotation: !!B.fixedRotation };
       if (s.kind === 'circle') { d.shape = 'circle'; d.r = s.r; B.size = [2 * s.r, 2 * s.r]; }
@@ -131,10 +132,16 @@ export default {
       const w = world(), b = addBody(w, defOf(e));
       b.ref = e.id; const B = e.components.body;
       B.mass = +b.m.toFixed(9); e.at = [b.x, b.y]; B.sleeping = false;
+      obstacleFlags(e, b);
       if (b.type === 'static') w.rev++;
       return b;
     }
-    // Entity edits made between steps (positions, velocities) flow into the solver.
+    // body.solid false (an opened door) makes a body a ghost; body.oneWay makes it a one-way platform.
+    function obstacleFlags(e, b) {
+      const B = e.components.body, off = B.solid === false, one = obstacleOf(e) === 'oneway';
+      if (Boolean(b.ghost) !== off || Boolean(b.oneWay) !== one) { b.ghost = off; b.oneWay = one; wake(b); if (b.type === 'static') world().rev++; }
+    }
+    // Entity edits made between steps (positions, velocities, obstacle flags) flow into the solver.
     function syncIn() {
       for (const e of inSpace(rt, sid)) {
         let b = bodyFor(e); if (!b) { b = attach(e); continue; }
@@ -143,6 +150,7 @@ export default {
         if (B.vel[0] !== b.vx || B.vel[1] !== b.vy) { b.vx = B.vel[0]; b.vy = B.vel[1]; wake(b); }
         if ((B.angle ?? 0) !== b.a) { b.a = B.angle ?? 0; wake(b); }
         if ((B.angVel ?? 0) !== b.av) { b.av = B.angVel ?? 0; wake(b); }
+        obstacleFlags(e, b);
       }
     }
     function syncOut(rt) {
@@ -172,7 +180,7 @@ export default {
     const setPos = (e, at, rt) => { e.at = [wrapX ? mod(at[0], W) : at[0], wrapY ? mod(at[1], H) : at[1]]; const b = bodyFor(e); if (b) { b.x = e.at[0]; b.y = e.at[1]; wake(b); } tracker.track(e, rt); };
     const delta = (a, b) => [wrapDelta(a[0], b[0], wrapX ? W : 0), wrapDelta(a[1], b[1], wrapY ? H : 0)];
     const entityOf = b => (b && !b.wall ? rt.entity(b.ref) : null);
-    const solid = (b, self) => b !== self && !b.sensor && !b.dead;
+    const solid = (b, self) => b !== self && !b.sensor && !b.dead && !b.ghost;
     const jointByRef = id => world().joints.find(j => j.jid === id) || null; // the solver uses j.ref for the revolute reference angle
 
     const api = {
@@ -211,7 +219,7 @@ export default {
       raycast(from, dir, maxDist, mask = {}) {
         const l = Math.hypot(dir[0], dir[1]) || 1, ux = dir[0] / l, uy = dir[1] / l;
         const ent = mask.entities ?? true, ign = mask.ignore;
-        const h = raycastWorld(world(), from[0], from[1], ux, uy, maxDist, b => (mask.sensors || !b.sensor) && b.ref !== ign && (b.wall ? mask.walls !== false : ent && (typeof ent !== 'function' || ent(rt.entity(b.ref)))) && (mask.category === undefined || (b.cat & mask.category) !== 0));
+        const h = raycastWorld(world(), from[0], from[1], ux, uy, maxDist, b => (mask.sensors || !b.sensor) && !b.ghost && (!b.oneWay || (mask.oneway && uy < 0)) && b.ref !== ign && (b.wall ? mask.walls !== false : ent && (typeof ent !== 'function' || ent(rt.entity(b.ref)))) && (mask.category === undefined || (b.cat & mask.category) !== 0));
         if (!h) return { hit: 'none', at: null, normal: null, dist: maxDist };
         return h.body.wall ? { hit: 'cell', at: [h.x, h.y], normal: [h.nx, h.ny], dist: h.dist, wall: h.body.ref, cell: null } : { hit: 'entity', at: [h.x, h.y], normal: [h.nx, h.ny], dist: h.dist, id: h.body.ref };
       },
@@ -222,7 +230,7 @@ export default {
         const blocked = { x: false, y: false, z: false }; let grounded = false, normal = null;
         for (let i = 0; i < n; i++) {
           b.x += d[0] / n; b.y += d[1] / n;
-          for (const nrm of depenetrate(world(), b, o => solid(o, b) && (opts.filter ? opts.filter(o.wall ? null : rt.entity(o.ref)) : true))) {
+          for (const nrm of depenetrate(world(), b, o => solid(o, b) && (!o.oneWay || (d[1] || 0) * (gy <= 0 ? 1 : -1) < 0) && (opts.filter ? opts.filter(o.wall ? null : rt.entity(o.ref)) : true))) {
             if (Math.abs(nrm[0]) > 0.7) blocked.x = true;
             if (Math.abs(nrm[1]) > 0.7) blocked.y = true;
             if (nrm[1] * Math.sign(-gy || -1) > 0.7) grounded = true;
@@ -267,7 +275,7 @@ export default {
       setMotor(id, { speed, maxTorque, enabled } = {}) { const j = jointByRef(id); if (!j || j.type !== 'revolute') return false; if (speed !== undefined) j.speed = speed; if (maxTorque !== undefined) j.maxTorque = maxTorque; if (enabled !== undefined) j.motor = !!enabled; const B = index().byId.get(j.b); if (B) wake(B); return true; },
       jointAngle(id) { const j = jointByRef(id); if (!j || j.type !== 'revolute') return null; const { byId } = index(), A = j.a ? byId.get(j.a) : null, B = byId.get(j.b); return B.a - (A ? A.a : 0) - j.ref; },
       walls: () => world().bodies.filter(b => b.wall && !b.dead).map(b => ({ id: b.ref, kind: b.shape, at: [b.x, b.y], angle: b.a, r: b.r, points: b.verts ? b.verts.map(([x, y]) => { const c = Math.cos(b.a), s = Math.sin(b.a); return [b.x + c * x - s * y, b.y + s * x + c * y]; }) : null, sensor: b.sensor })),
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]')),
+      ...zoneEditor(rt, sid, zones, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]'), rt => { for (const e of inSpace(rt, sid)) tracker.track(e, rt); }),
     };
     api.applyImpulse = api.impulse;
     rt.defineSpace(sid, api);

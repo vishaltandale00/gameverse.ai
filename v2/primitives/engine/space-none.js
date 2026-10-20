@@ -3,7 +3,7 @@
 // answers the kernel's spatial vocabulary (zone, near, teleport) over named
 // slots: zones are slots such as hand, deck, table or office; e.at is the slot
 // an entity is in (or null). Order within a slot is entity insertion order.
-import { zoneIndex, addZoneTo, inSpace } from './spaces2d-lib.js';
+import { zoneIndex, zoneEditor, inSpace } from './spaces2d-lib.js';
 
 export default {
   id: 'engine.space.none',
@@ -45,7 +45,8 @@ export default {
       teleport(e, { zone, at }, rt) { move(e, zone ?? at ?? null, rt); },
       nearest(e, target, rt) { if (zones().byId.has(target)) return e.at === target ? 0 : null; return inSpace(rt, sid, o => o !== e && (o.id === target || o.archetype === target) && o.at === e.at && e.at !== null).length ? 0 : null; },
       distance: (a, b) => (a === b ? 0 : Infinity),
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone),
+      // Removing a slot empties it (its entities leave to no slot); moving a slot only edits its fields.
+      ...zoneEditor(rt, sid, zones, () => null, rt => { for (const e of inSpace(rt, sid)) if (e.at != null && !zones().byId.has(e.at)) move(e, null, rt); }),
     };
     rt.defineSpace(sid, api);
   },

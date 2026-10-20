@@ -5,9 +5,10 @@
 // the ground and the lane edges. A window around the leader gives `bounds`,
 // culls passed obstacles and reports `passed` (near-miss and combo scoring);
 // looped tracks wrap progress and count laps.
-import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, zoneEditor, ownSpaces, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 
 const EPS = 1e-6;
+const STICK = 0.5; // a rider stays on the body it stands on if that body rose at most this far since its last slide
 const v3 = a => [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
 
 export default {
@@ -33,13 +34,13 @@ export default {
     at: 'At = [progress, lane, height], the centre of the body box; components.body.size = [length, width in lanes, height] (default [1, 0.8, 1]). Resting on the ground means height = size[2] / 2.',
     zones: 'Zone = {id, name?, range:[p0,p1), lanes?:[l0,l1] inclusive, tags?, rules?} — track segments (tunnel, bridge, finish)',
     state: 'rt.state.spaces[id] = {laps:{entity:n}, passed:{obstacle:true}, inside, zones?}',
-    notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on; body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]).',
+    notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on, one-way ones (body.oneWay) only stood on; riders (body.standingOn) move with ballistic movers and with setPos(e, at, rt, {carry:true}); body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]).',
   },
   capabilities(config) { const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds']; if (config.loop) caps.push('wrap'); return caps; },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst) {
     const errors = [];
     if (config.loop && !(config.length > 0)) errors.push({ code: 'track_loop_length', path: 'with.length', message: 'a looped track needs a positive length' });
-    for (const [i, s] of (doc.spaces || []).entries()) if (s.use === 'engine.space.track' && Object.entries(s.with || {}).every(([k, v]) => JSON.stringify(config[k]) === JSON.stringify(v))) (s.zones || []).forEach((z, j) => {
+    for (const [s, i] of ownSpaces(doc, 'engine.space.track', config, inst)) (s.zones || []).forEach((z, j) => {
       const r = z.range, path = `spaces[${i}].zones[${j}]`;
       if (!Array.isArray(r) || r.length !== 2 || !(r[1] > r[0])) errors.push({ code: 'zone_range_invalid', path: `${path}.range`, message: `zone '${z.id}' needs range [p0, p1) with p1 > p0` });
       if (z.lanes && (z.lanes[0] < 0 || z.lanes[1] > config.lanes - 1 || z.lanes[1] < z.lanes[0])) errors.push({ code: 'zone_lanes_invalid', path: `${path}.lanes`, message: `lanes must lie within 0..${config.lanes - 1}` });
@@ -60,18 +61,28 @@ export default {
     const overlap3 = (a, b, m = 0) => { const s = loop ? dp((a[0] + a[3]) / 2, (b[0] + b[3]) / 2) - ((b[0] + b[3]) / 2 - (a[0] + a[3]) / 2) : 0; return a[0] < b[3] + s + m && b[0] + s < a[3] + m && a[1] < b[4] + m && b[1] < a[4] + m && a[2] < b[5] + m && b[2] < a[5] + m; };
     const leader = () => rt.entity(config.leader) || null;
     const clampAt = (at, s) => [at[0], clamp(at[1], 0, maxLane), clamp(at[2], s[2] / 2, Math.max(s[2] / 2, config.ceiling - s[2] / 2))];
-    const setPos = (e, at, rt) => {
-      const s = size(e), p = clampAt(v3(at), s);
+    // setPos(e, at, rt, {carry}): with carry, bodies standing on e (body.standingOn) move with it.
+    const setPos = (e, at, rt, o = {}) => {
+      const s = size(e), p = clampAt(v3(at), s), from = e.at && e.at.slice();
+      if (o.carry && from && obstacleOf(e)) { const d = [dp(from[0], p[0]), p[1] - from[1], p[2] - from[2]]; if (d.some(Boolean)) for (const r of inSpace(rt, sid, x => x !== e && x.components.body?.standingOn === e.id)) { slide(r, d, rt, { ignore: [e.id], keepSupport: true }); r.components.body.grounded = true; r.components.body.standingOn = e.id; } }
       if (loop) { const before = e.at?.[0], next = mod(p[0], L); if (before != null && p[0] >= L && before < L) { const laps = (sst().laps ??= {}); laps[e.id] = (laps[e.id] || 0) + 1; rt.emit('lap', { who: e.id, lap: laps[e.id] }); } p[0] = next; }
       e.at = p; tracker.track(e, rt);
     };
-    const solids = (e) => inSpace(rt, sid, o => o !== e && o.components.body?.solid);
+    // Entity obstacles for one slide: body.solid (block every axis, stand on top) and body.oneWay (stand on
+    // top only). Ones already overlapping the mover are ignored, except its support, which only holds it up.
+    const obstaclesFor = (e, o = {}) => {
+      const start = boxOf(e), on = e.components.body?.standingOn;
+      return obstaclesIn(rt, sid, e, o.ignore).map(x => ({ id: x.id, kind: obstacleOf(x), box: boxOf(x) }))
+        .filter(x => x.id === on || x.kind === 'oneway' || !overlap3(start, x.box, -EPS))
+        .map(x => (x.id === on && overlap3(start, x.box, -EPS) ? { ...x, kind: 'oneway' } : x));
+    };
 
     function slide(e, d, rt, opts = {}) {
       const s = size(e), b = bodyOf(e), at = e.at.slice(), blocked = { x: false, y: false, z: false };
       let grounded = false, normal = null, landedOn = null;
-      const others = opts.ghost ? [] : solids(e);
-      const hits = p => others.find(o => overlap3(box(p, s), boxOf(o), -EPS)) || null;
+      const others = opts.ghost ? [] : obstaclesFor(e, opts), on = b.standingOn ?? null, touched = [];
+      // One-way tops count only when falling onto them from above (their support may have risen up to STICK).
+      const hits = (p, k, bottom) => others.find(o => overlap3(box(p, s), o.box, -EPS) && (o.kind === 'solid' || (k === 2 && d[2] < 0 && bottom >= o.box[5] - (o.id === on ? STICK : EPS)))) || null;
       // Progress, then lanes, then height (axis-separated; small sub-steps so thin obstacles still block).
       for (const k of [0, 1, 2]) {
         const n = Math.max(1, Math.ceil(Math.abs(d[k] || 0) / Math.max(0.05, s[k] / 2)));
@@ -79,9 +90,9 @@ export default {
         for (let i = 0; i < n && d[k]; i++) {
           const next = at.slice(); next[k] = s0 + d[k] * (i + 1) / n; // exact end point, no drift
           const lim = clampAt(next, s); if (k && lim[k] !== next[k]) { next[k] = lim[k]; blocked[k ? (k === 1 ? 'y' : 'z') : 'x'] = true; if (k === 2 && d[k] < 0) grounded = true; }
-          const o = hits(next);
+          const o = hits(next, k, at[2] - s[2] / 2);
           if (o) {
-            const ob = boxOf(o);
+            const ob = o.box; if (!touched.includes(o.id)) touched.push(o.id);
             if (k === 2 && d[2] < 0) { next[2] = ob[5] + s[2] / 2; grounded = true; landedOn = o.id; normal = [0, 0, 1]; at[2] = next[2]; }
             else if (k === 2) { next[2] = ob[2] - s[2] / 2 - EPS; normal = [0, 0, -1]; at[2] = next[2]; }
             else normal = k === 0 ? [-Math.sign(d[0]), 0, 0] : [0, -Math.sign(d[1]), 0];
@@ -91,16 +102,19 @@ export default {
           if (blocked[['x', 'y', 'z'][k]]) break;
         }
       }
-      if (!grounded) grounded = groundedAt(e, at, s);
+      if (!grounded) { const g = groundedAt(e, at, s, others); grounded = Boolean(g); if (g?.id) landedOn = g.id; }
       const moved = at.some((v, i) => v !== e.at[i]);
       b.grounded = grounded;
-      setPos(e, at, rt);
-      return { moved, blocked, grounded, normal, on: landedOn };
+      if (landedOn && grounded) b.standingOn = landedOn; else if (!opts.keepSupport) delete b.standingOn;
+      setPos(e, at, rt, { carry: Boolean(obstacleOf(e)) });
+      return { moved, blocked, grounded, normal, on: b.standingOn ?? null, touched };
     }
-    function groundedAt(e, at, s) {
-      if (at[2] - s[2] / 2 <= EPS) return true;
+    /** Ground (true / {}) or the entity top under the body ({id}), else null. */
+    function groundedAt(e, at, s, list = obstaclesFor(e)) {
+      if (at[2] - s[2] / 2 <= EPS) return {};
       const probe = at.slice(); probe[2] -= 0.02;
-      return solids(e).some(o => { const ob = boxOf(o); return overlap3(box(probe, s), ob, -EPS) && Math.abs(ob[5] - (at[2] - s[2] / 2)) < 0.03; });
+      const o = list.find(o => overlap3(box(probe, s), o.box, -EPS) && Math.abs(o.box[5] - (at[2] - s[2] / 2)) < 0.03);
+      return o ? { id: o.id } : null;
     }
     const window = () => { const l = leader(), p = l ? l.at[0] : 0; return [p - config.window[0], p + config.window[1]]; };
 
@@ -165,12 +179,12 @@ export default {
       },
       gravityAt: () => [0, 0, config.gravity],
       slide,
-      grounded: e => groundedAt(e, e.at, size(e)),
+      grounded: e => Boolean(groundedAt(e, e.at, size(e))),
       impulse(e, v) { const b = bodyOf(e), m = b.mass || 1; size(e); b.vel = v3(b.vel).map((x, i) => x + (v[i] ?? 0) / m); },
       velocity: e => { size(e); return bodyOf(e).vel.slice(); },
       setVelocity(e, v) { bodyOf(e).vel = v3(v); },
       laps: e => sst().laps?.[e.id] ?? 0,
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone, z => (Array.isArray(z.range) && z.range.length === 2 ? null : 'needs range [p0, p1]')),
+      ...zoneEditor(rt, sid, zones, z => (Array.isArray(z.range) && z.range.length === 2 ? null : 'needs range [p0, p1]'), rt => { for (const e of inSpace(rt, sid)) tracker.track(e, rt); }),
     };
     api.applyImpulse = api.impulse;
     rt.defineSpace(sid, api);
@@ -180,7 +194,7 @@ export default {
       for (const e of inSpace(rt, sid, e => e.components.body?.ballistic)) {
         size(e); const b = e.components.body, gs = b.gravityScale ?? 1, was = b.grounded;
         b.vel = [b.vel[0], b.vel[1], b.vel[2] + config.gravity * gs * dt];
-        const vz = b.vel[2], r = b.collide === false ? (setPos(e, e.at.map((v, i) => v + b.vel[i] * dt), rt), { blocked: {}, grounded: false }) : slide(e, b.vel.map(v => v * dt), rt, { ghost: !!b.solid });
+        const vz = b.vel[2], r = b.collide === false ? (setPos(e, e.at.map((v, i) => v + b.vel[i] * dt), rt, { carry: true }), { blocked: {}, grounded: false }) : slide(e, b.vel.map(v => v * dt), rt, { ghost: Boolean(obstacleOf(e)) });
         if (r.blocked.z || (r.grounded && vz < 0)) b.vel[2] = 0;
         if (r.grounded && !was) rt.emit('landed', { who: e.id, speed: -vz });
       }
