@@ -10,7 +10,7 @@ This is for the next session continuing Gameverse v2: game generation from ideas
 - Based on `origin/main`; all v2 work lives under `v2/`. The only touches to v1 are `scripts/serve.mjs`
   (two lines mounting `/v2` and `/api/v2/*`) and `package.json` (pinned `@anthropic-ai/sdk`,
   currently unused at runtime).
-- Tests: `node --test tests/*.test.js` → **353 pass**.
+- Tests: `node --test tests/*.test.js` → **362 pass**.
 
 **Run it:**
 ```bash
@@ -98,17 +98,28 @@ supplies deep systems.
 
 ## Agents still running when this was written
 
-Their worktrees and branches persist; check and merge when they're done (`git log
-claude/v2-game-factory..<branch>`, then `git merge`):
+Worktrees and branches persist; check and merge when done (`git log claude/v2-game-factory..<branch>`, then
+`git merge`):
 
-**v1 overworld integration** (`worktree-agent-a82214f0d773aabd9`, worktree
-`.claude/worktrees/agent-a82214f0d773aabd9`). It covers:
-- a generated-game adapter, `src/generated-adapter.js`;
-- catalog merge of `/api/v2/games`;
-- a "Creator's Lot" district with one venue per generated game and a "Make a game" kiosk;
-- "Change this game…" in the session menu.
+**v1 overworld integration: done and merged** (`89704470`). Verified in the browser:
+- a kiosk in the "Creator's Lot" (east of Alder Street) makes a game in about 12 s;
+- a venue (building, sign and ring) appears without a reload;
+- you enter it and play;
+- "Change this game…" in the session menu hot-loads the change;
+- Save & return, then re-enter at the exact saved frame.
 
-When last checked, it had uncommitted edits in `index.html` and `src/{application,identity,main,neighborhood-math}.js`.
+Key files:
+- `src/generated-adapter.js` and `src/generated-games.js`;
+- `src/creator-studio.js`;
+- the lot in `src/neighborhood-world.js` and `src/neighborhood-math.js` (`WORLD_BOUNDS.maxX` 152);
+- tests `tests/generated-games.test.js` and `tests/creator-lot-reachability.test.js`.
+
+Its open requests:
+- add `kind` and the title to `version` events;
+- keep the level layout stable when a revision only changes tuning (today a jump change rebuilds the
+  level and forces a restart);
+- generated games aren't yet registered as voice/takeover targets;
+- the lot sits outside the sun's shadow area, so it has no shadows.
 
 **Visual polish and screens** (`worktree-agent-a4ea5154d0291f2e0`). It covers:
 - procedural animation, using pose frames when present;
