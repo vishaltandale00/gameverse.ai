@@ -9,7 +9,7 @@ import { mergePatch } from '../kernel/document.js';
 import { cardText, vocabulary } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { repairDocument, describeErrors, idsOf } from './repair.js';
-import { verifyDocument, regressed, newErrors } from './verify-adapter.js';
+import { verifyDocument, regressed, newErrors, staticPlot } from './verify-adapter.js';
 import { shrunkLists } from './revision-check.js';
 import { parseReply } from './writer.js';
 
@@ -118,6 +118,9 @@ export async function acceptPatch({ current, patch, task, registry, logic, baseV
   const dropped = shrunkLists(current, repaired.doc).concat(shrunkLists(current.plot || {}, repaired.doc.plot || {}, 'plot'), shrunkLists(current.content || {}, repaired.doc.content || {}, 'content'));
   if (dropped.length) return { ok: false, reason: 'dropped_base_content', errors: dropped.map(d => ({ code: 'dropped_base_content', path: d.path, message: `${d.before} → ${d.after}` })), patch: clean };
   if (!Object.values(added).some(a => a.length) && !repaired.fixes.length) return { ok: false, reason: 'empty', errors: [{ code: 'empty_patch', path: '$', message: 'the patch added nothing' }], patch: clean };
+  // Static plot analysis first (milliseconds): a patch that creates a gate cycle or an unobtainable item never reaches simulation.
+  const staticErrors = newErrors(await staticPlot(current, logic), await staticPlot(repaired.doc, logic));
+  if (staticErrors.length) return { ok: false, reason: 'plot_static', errors: staticErrors, patch: clean };
   const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs });
   if (!v.ok) return { ok: false, reason: 'verify', errors: v.problems, patch: clean };
   if (regressed(baseVerify, v)) return { ok: false, reason: 'verify_regressed', errors: [...newErrors(baseVerify, v), ...(v.completable === false && baseVerify?.completable ? [{ code: 'plot_regressed', path: '$', message: 'the patch makes the game impossible to finish' }] : [])], patch: clean };

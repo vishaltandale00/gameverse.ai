@@ -18,7 +18,7 @@ import { buildCatalogue, promotedPrimitives, vocabulary } from '../planner/catal
 import { verifyDocument, regressed } from '../planner/verify-adapter.js';
 import { parseReply } from '../planner/writer.js';
 
-export const GATE = { frames: 600, stepAvgMs: 2, wallMs: 10000 };
+export const GATE = { frames: 600, stepAvgMs: 5, wallMs: 15000 }; // same per-step budget as kit experiments (check.js)
 export const vmBox = code => loadPureVm(code);
 
 /** Catalogue for a document: the registered primitives plus the experiment primitives it carries (vm-hosted). */
@@ -87,7 +87,8 @@ export async function checkPrimitiveExperiment(experiment, { doc, base = null, b
     return { rt, stepMs, frames: i, snap, events, varsChanged: JSON.stringify(rt.state.vars) !== before };
   };
   let a;
-  try { a = play(budget.frames, { restoreAt: Math.floor(budget.frames / 2) }); }
+  const restoreAt = 30; // early, so games that end quickly are still round-tripped
+  try { a = play(budget.frames, { restoreAt }); }
   catch (error) { problems.push(problem('throws', `the game threw with the experiment in it: ${String(error?.message || error).slice(0, 200)}`)); return finish(); }
   const stats = Object.entries(a.rt.caches).find(([k]) => k.startsWith('exp:'))?.[1] || {};
   Object.assign(report, { frames: a.frames, applied: stats.applied || 0, dropped: stats.dropped || 0, errors: stats.errors || 0, events: a.events, varsChanged: a.varsChanged, stepAvgMs: +(a.stepMs / Math.max(1, a.frames)).toFixed(3) });
@@ -102,7 +103,7 @@ export async function checkPrimitiveExperiment(experiment, { doc, base = null, b
   if (a.snap) {
     const rt = createWorld(pre.doc, cat.registry, cat.logic, { seed: gameDoc.seed });
     rt.restore(a.snap);
-    for (let i = Math.floor(budget.frames / 2); i < a.frames && rt.state.status === 'playing'; i++) rt.step(scriptInputs(rt, i, actions));
+    for (let i = restoreAt; i < a.frames && rt.state.status === 'playing'; i++) rt.step(scriptInputs(rt, i, actions));
     report.restoreExact = hashOf(rt.snapshot()) === hashOf(a.rt.snapshot());
     if (!report.restoreExact) problems.push(problem('restore_mismatch', 'restoring a snapshot and replaying did not reach the same state'));
   }

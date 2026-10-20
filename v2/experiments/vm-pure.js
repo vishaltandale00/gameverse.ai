@@ -5,7 +5,7 @@
 import vm from 'node:vm';
 import { pureHarnessSource } from './harness.js';
 
-export const PURE_TIME = { loadMs: 50, initMs: 50, callMs: 20 };
+export const PURE_TIME = { loadMs: 100, initMs: 50, callMs: 25 };
 
 /** -> { meta, init(arg), step(arg), draw(arg) } where each call returns { ok, value?, error?, ms, timeout? }; or { error }. */
 export function loadPureVm(code, { time = PURE_TIME } = {}) {

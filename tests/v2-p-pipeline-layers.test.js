@@ -80,6 +80,22 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   assert.ok(f.ok && f.fellBack && f.source === 'procedural');
 });
 
+test('model outline: static plot analysis (plotGraph) and verification problems drive repair rounds', async () => {
+  const { d, sel } = await plan(['find and collect items']);
+  const skeleton = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc;
+  // Preflight-valid, but the first exit needs an item nothing gives: the story can never be finished.
+  const locked = structuredClone(skeleton);
+  locked.content.items = [...(locked.content.items || []), { id: 'silver_key', name: 'Silver key' }];
+  locked.spaces[0].zones[0].exits.forEach(x => { x.gate = { item: 'silver_key' }; });
+  const writer = fakeWriter([locked, skeleton]);
+  const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
+  assert.ok(r.ok && !r.fellBack);
+  assert.equal(writer.calls.length, 2);
+  assert.match(writer.calls[1].user, /failed verification/);
+  assert.match(writer.calls[1].user, /\[item_unobtainable\]/, 'the cause, from plotGraph, reaches the model');
+  assert.ok(r.rounds[1].staticErrors > 0);
+});
+
 test('first playable: no model, well under a second, deterministic; an install that throws is isolated', async () => {
   const { d, sel } = await plan(['find and collect items']);
   const o = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 9 });

@@ -13,7 +13,7 @@ import { vocabIndex, selectPrimitives } from './select.js';
 import { firstPlayable } from './first-playable.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
-import { verifyDocument, newErrors } from './verify-adapter.js';
+import { verifyDocument, newErrors, newProblems, staticPlot } from './verify-adapter.js';
 
 export const OUTLINE_VERSION = 'outline/0.1';
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
@@ -229,7 +229,7 @@ Write the outline document for this idea from the skeleton: an evocative title a
  *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms }], firstPassOk, modelMs, removed }
  */
 export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200 }) {
-  let skeletonVerify = null;
+  let skeletonVerify = null, skeletonStatic = null;
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
@@ -261,6 +261,15 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       // Verification problems (v2/verify: softlocks, unreachable targets, uncompletable plot...) drive the next round too,
       // except those the valid skeleton has as well (limits of the catalogue, not of this draft).
       if (verify && round < maxRounds) {
+        // Static plot analysis first (ms): gate cycles, unobtainable items, unreachable endings, quests that never start...
+        skeletonStatic ??= await staticPlot(skeleton.doc, logic);
+        const draftStatic = await staticPlot(repaired.doc, logic);
+        const errs = newErrors(skeletonStatic, draftStatic);
+        rounds.at(-1).staticErrors = errs.length;
+        // With an error, the warnings beside it usually name the cause (an unobtainable item behind an unreachable ending).
+        problems = errs.length ? [...errs, ...newProblems(skeletonStatic, draftStatic).filter(p => p.severity !== 'error')] : [];
+      }
+      if (verify && round < maxRounds && !problems.length) {
         skeletonVerify ??= await verifyDocument(skeleton.doc, registry, logic, { budgetMs: verifyBudgetMs });
         const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs: verifyBudgetMs });
         problems = newErrors(skeletonVerify, v).filter(p => p.stage !== 'preflight');

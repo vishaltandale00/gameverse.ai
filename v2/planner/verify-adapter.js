@@ -38,7 +38,21 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
   }
 }
 
+let graphMod = null;
+/**
+ * Static plot analysis in milliseconds, before any simulation: plotGraph (v2/primitives/plot/story-graph.js)
+ * when that primitive area provides it. -> { available, problems: [{ code, path, message, hint, severity, stage: 'plotGraph' }], ms }
+ */
+export async function staticPlot(doc, logic) {
+  graphMod ??= await import('../primitives/plot/story-graph.js').catch(() => ({}));
+  if (typeof graphMod.plotGraph !== 'function') return { available: false, problems: [], ms: 0 };
+  try { const g = graphMod.plotGraph(doc, logic); return { available: true, problems: (g.problems || []).map(p => ({ ...p, stage: 'plotGraph' })), ms: Math.round(g.ms ?? 0), unreachable: g.unreachable }; }
+  catch (error) { return { available: true, problems: [{ code: 'plot_graph_error', path: 'plot', message: String(error?.message || error).slice(0, 200), severity: 'warning', stage: 'plotGraph' }], ms: 0 }; }
+}
+
 const errorsOf = v => new Set((v?.problems || []).filter(p => p.severity === 'error').map(p => `${p.code}|${p.path}`));
+/** Problems of any severity a change introduced (context for model repair rounds). */
+export const newProblems = (before, after) => { const b = new Set((before?.problems || []).map(p => `${p.code}|${p.path}`)); return (after?.problems || []).filter(p => !b.has(`${p.code}|${p.path}`)); };
 /** Error problems a change introduced (code|path not present before). */
 export const newErrors = (before, after) => { const b = errorsOf(before); return (after?.problems || []).filter(p => p.severity === 'error' && !b.has(`${p.code}|${p.path}`)); };
 /**
