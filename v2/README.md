@@ -118,8 +118,13 @@ node v2/tools/playtest.mjs v2/examples/coin-cavern.json
 
 ### Rendering
 
-[`engine/render2d.js`](engine/render2d.js) `createRenderer(game)` returns `render(ctx, state)`. It draws on a 2D
-canvas with a follow camera, tiles, emoji or shape entities, a HUD from the vars, and win/lose banners.
+[`engine/render2d.js`](engine/render2d.js) `createRenderer(game)` returns `render(ctx, state, options)`. It draws
+the default polish from [POLISH.md](POLISH.md): pose frames or procedural animation, particles, shake, a look-ahead
+camera, parallax, shaded tiles (or `art.tileset`), and a HUD styled from the background color. Its visual state lives
+in `render.fx`, outside game state, so simulation stays deterministic. The pure helpers are in
+[`engine/juice.js`](engine/juice.js). [`web/arcade-player.js`](web/arcade-player.js) adds the screens (title, intro,
+pause, game over, victory), hit-stop, checkpoints ([`web/checkpoint.js`](web/checkpoint.js)) and optional sound hooks
+from `engine/audio.js`.
 
 ## What carried over from the GBA reverse-engineering work
 
