@@ -1,4 +1,4 @@
-// graphics.lighting.flat (catalog: graphics.lighting.2d; the registry id pattern rejects a digit-led segment, see kernel/requests/flat.md) — dynamic 2D light over any flat renderer: an ambient
+// graphics.lighting.2d — dynamic 2D light over any flat renderer: an ambient
 // darkness level (per zone from darkZones or zone rules.light, crossfading),
 // soft radial lights that follow entities (by id, archetype or tag; entities
 // with a light component or a glowing model light themselves), flicker, and
@@ -30,7 +30,7 @@ export function lightPolygon(p, r, solid, rays = 96) {
 }
 
 export default {
-  id: 'graphics.lighting.flat',
+  id: 'graphics.lighting.2d',
   card: {
     intent: 'Dynamic 2D lighting: zone darkness (darkZones or zone rules.light) with crossfades, flickering radial lights following entities, archetypes or tags, automatic lights for light carriers, and shadow-casting rays against solid cells.',
     views: ['side', 'td', 'board'],

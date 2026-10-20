@@ -16,7 +16,7 @@ import tilesetPixel from './tileset-pixel.js';
 import animSprite from './anim-sprite.js';
 import rigCustom from './rig-custom.js';
 import backgroundParallax from './background-parallax.js';
-import lighting2d from './lighting-flat.js';
+import lighting2d from './lighting-2d.js';
 import particles from './particles.js';
 import post from './post.js';
 import fxFeedback from './fx-feedback.js';
