@@ -15,5 +15,6 @@ import blocksMine from './blocks-mine.js';
 import blocksPlace from './blocks-place.js';
 import farming from './farming.js';
 import buildStructure from './build-structure.js';
+import mechanism from './mechanism.js';
 
-export default [interact, rest, checkpoint, collectible, hazard, itemUse, equipment, crafting, container, loot, economy, blocksMine, blocksPlace, farming, buildStructure];
+export default [interact, rest, checkpoint, collectible, hazard, itemUse, equipment, crafting, container, loot, economy, blocksMine, blocksPlace, farming, buildStructure, mechanism];

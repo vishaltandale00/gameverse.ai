@@ -82,7 +82,19 @@ export const api = (rt, e) => (e?.space && rt.spaces().includes(e.space) ? rt.sp
 export const pos = (rt, e) => { const s = api(rt, e); return s ? s.pos(e) : e?.at; };
 /** Where a space anchors entity positions in components.body.size: 'min' corner (testSpace) or 'center' (api.anchor). */
 export const anchor = (rt, spaceId) => (spaceId && rt.spaces().includes(spaceId) ? rt.space(spaceId).anchor ?? 'min' : 'min');
-export const sizeOf = e => v3(e.components?.body?.size || [0, 0, 0]);
+/** Body extents; like the kernel's bodyBox, an entity without body.size is one unit along each axis of its position (flat on missing axes). */
+export const sizeOf = e => v3(e.components?.body?.size || (isVec(e?.at) ? e.at.map(() => 1) : [0, 0, 0]));
+/** Set an entity's velocity through the space's dynamics capability, else components.body.vel. */
+export function setVelocity(rt, e, v) {
+  const s = api(rt, e), n = isVec(e.at) ? e.at.length : 3, vel = v3(v).slice(0, n).map(x => +x.toFixed(6));
+  if (s && typeof s.setVelocity === 'function') s.setVelocity(e, vel, rt);
+  else (e.components.body ??= {}).vel = vel;
+}
+/** Current velocity (dynamics capability, else components.body.vel, else zero), padded to 3D. */
+export function velocity(rt, e) {
+  const s = api(rt, e), v = s && typeof s.velocity === 'function' ? s.velocity(e, rt) : e.components?.body?.vel;
+  return v3(Array.isArray(v) ? v : [0, 0, 0]);
+}
 /** World box {min, max} of a box of `size` positioned at `at` in a space (anchor-aware). */
 export function boxAt(rt, spaceId, at, size = [0, 0, 0]) {
   const s = v3(size), a = v3(at), min = anchor(rt, spaceId) === 'center' ? a.map((x, i) => x - s[i] / 2) : a;

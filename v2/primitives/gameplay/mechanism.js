@@ -16,7 +16,7 @@
 // units per second).
 import { compare } from '../../kernel/logic.js';
 import { count, take } from './inventory.js';
-import { addScore, runIf, boxAt, boxOf, boxesTouch, center, isVec, v3, add, sub, len, norm, dot, posForMin, whoKey } from './items-lib.js';
+import { addScore, runIf, boxAt, boxOf, boxesTouch, center, isVec, v3, add, sub, len, norm, dot, posForMin, whoKey, velocity, setVelocity } from './items-lib.js';
 
 const KEY = 'gameplay.mechanism';
 export const KINDS = ['door', 'lever', 'plate', 'breakable', 'lift', 'gate', 'trap', 'timer', 'flipper', 'bumper', 'kicker', 'plunger', 'rollover', 'drop_target', 'ramp', 'spring', 'platform'];
@@ -106,26 +106,27 @@ export default {
     logic.effect('hit_mechanism', { refs: e => [['mechanism', e.mechanism]], run: (e, rt, c) => api(rt)?.hit(e.mechanism, e.amount ?? 1, e.at ?? null, whoKey(e.who, c)) });
     logic.effect('signal', { check: (e, path, errors) => { if (!e.signal) errors.push({ code: 'effect_invalid', path, message: 'signal needs a signal name' }); }, run: (e, rt) => api(rt)?.force(e.signal, e.on ?? true) });
   },
-  validate(config, doc, ctx) {
+  validate(config, doc, ctx, inst = {}) {
+    const W = inst.path ? `${inst.path}.with` : undefined, at = (i, f) => (W ? `${W}.mechanisms[${i}]${f ? `.${f}` : ""}` : undefined);
     const errors = [], ids = new Set(), sigs = new Set(config.mechanisms.map(m => m.signal).filter(Boolean)), groups = new Set(config.groups.map(g => g.id));
     for (const m of config.mechanisms) { if (ids.has(m.id)) errors.push({ code: 'id_duplicate', message: `duplicate mechanism '${m.id}'` }); ids.add(m.id); }
     const vec = v => Array.isArray(v) && v.length >= 2 && v.length <= 3 && v.every(Number.isFinite);
-    for (const m of config.mechanisms) {
-      const bad = msg => errors.push({ code: 'mechanism_invalid', message: `mechanism '${m.id}': ${msg}` });
+    config.mechanisms.forEach((m, i) => {
+      const bad = msg => errors.push({ code: 'mechanism_invalid', path: at(i), message: `mechanism '${m.id}': ${msg}` });
       if (!vec(m.at)) bad('at must be [x,y] or [x,y,z]');
       if (!vec(m.size)) bad('size must be [w,h] or [w,h,d]');
       for (const k of ['normal', 'dir', 'exitVel']) if (m[k] !== undefined && !vec(m[k])) bad(`${k} must be a vector`);
-      for (const inp of m.opens) if (!sigs.has(inp) && !ids.has(inp)) errors.push({ code: 'signal_unknown', message: `mechanism '${m.id}' listens to '${inp}', which no mechanism drives`, hint: [...sigs, ...ids].join(', ') });
-      if (m.gate !== undefined) { if (typeof m.gate === 'string') ctx.checkPredicate({ gate: m.gate }, `mechanisms.${m.id}.gate`, errors); else ctx.checkPredicate(m.gate, `mechanisms.${m.id}.gate`, errors); }
-      if (m.group && !groups.has(m.group)) errors.push({ code: 'group_unknown', message: `mechanism '${m.id}' is in unknown group '${m.group}'` });
+      for (const inp of m.opens) if (!sigs.has(inp) && !ids.has(inp)) errors.push({ code: 'signal_unknown', path: at(i, 'opens'), message: `mechanism '${m.id}' listens to '${inp}', which no mechanism drives`, hint: [...sigs, ...ids].join(', ') });
+      if (m.gate !== undefined) ctx.checkPredicate(typeof m.gate === 'string' ? { gate: m.gate } : m.gate, at(i, 'gate') ?? `mechanisms[${i}].gate`, errors);
+      if (m.group && !groups.has(m.group)) errors.push({ code: 'group_unknown', path: at(i, 'group'), message: `mechanism '${m.id}' is in unknown group '${m.group}'` });
       if ((m.kind === 'flipper' || m.kind === 'plunger') && !m.verb) bad(`${m.kind} needs a verb`);
       if (m.kind === 'ramp' && !(Array.isArray(m.path) && m.path.length >= 2 && m.path.every(vec)) ) bad('ramp needs a path of at least two points');
       if (m.kind === 'lift' && m.stops !== undefined && !(Array.isArray(m.stops) && m.stops.length >= 1 && m.stops.every(vec))) bad('stops must be a list of positions');
       if (m.cells === 'pattern' && !m.pattern && !m.preset) bad("cells 'pattern' needs a pattern or preset");
       if (m.cells !== undefined && m.cells !== true && m.cells !== 'pattern' && !(Array.isArray(m.cells) && m.cells.every(vec))) bad("cells must be true, 'pattern' or a list of cells");
       if (m.pattern && !m.pattern.every(r => typeof r === 'string' && r.length === m.pattern[0].length)) bad('pattern rows must be strings of equal length');
-      for (const it of Object.keys(m.hitsWith || {})) if (!(doc.content?.items || []).some(i => i.id === it)) errors.push({ code: 'ref_unknown', message: `mechanism '${m.id}' hitsWith unknown item '${it}'` });
-    }
+      for (const it of Object.keys(m.hitsWith || {})) if (!(doc.content?.items || []).some(x => x.id === it)) errors.push({ code: 'ref_unknown', path: at(i, 'hitsWith'), message: `mechanism '${m.id}' hitsWith unknown item '${it}'` });
+    });
     (doc.content?.archetypes || []).forEach((a, i) => { const id = a.components?.mechanism; if (typeof id === 'string' && !ids.has(id)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.mechanism`, message: `unknown mechanism '${id}'`, hint: [...ids].slice(0, 20).join(', ') }); });
     return errors;
   },
@@ -157,8 +158,8 @@ export default {
       for (const e of Object.values(rt.state.entities)) if (e.space === sid && isVec(e.at) && f(e) && boxesTouch(boxOf(rt, e), b)) out.push(e);
       return out.sort((a, b2) => (a.id < b2.id ? -1 : 1));
     };
-    const velOf = e => { const b = (e.components.body ??= {}); if (!Array.isArray(b.vel)) b.vel = isVec(e.at) ? e.at.map(() => 0) : [0, 0, 0]; return b.vel; };
-    const setVel = (e, v) => { const cur = velOf(e); for (let i = 0; i < cur.length; i++) cur[i] = +(v[i] ?? 0).toFixed(6); };
+    const velOf = e => velocity(rt, e);
+    const setVel = (e, v) => setVelocity(rt, e, v);
     const speedOf = e => len(velOf(e));
 
     // ----- state transitions -----
@@ -350,7 +351,11 @@ export default {
     const carry = (m, delta) => {
       if (!delta.some(Boolean)) return;
       const b = boxM(m);
-      for (const e of touchingLoose(m)) { const eb = boxOf(rt, e); if (Math.abs(eb.min[1] - (b.max[1] - delta[1])) < 0.05) rt.space(e.space).setPos(e, add(rt.space(e.space).pos(e), delta).slice(0, e.at.length), rt); }
+      for (const e of touchingLoose(m)) {
+        const eb = boxOf(rt, e); if (Math.abs(eb.min[1] - (b.max[1] - delta[1])) >= 0.05) continue;
+        rt.space(e.space).setPos(e, add(rt.space(e.space).pos(e), delta).slice(0, e.at.length), rt);
+        standOn(e, b.max[1]); // no drift: riders stay exactly on top
+      }
     };
     const movePos = (m, to) => {
       const s = st().m[m.id], from = s.pos, delta = sub(to, from);
@@ -409,7 +414,7 @@ export default {
             for (const e of landers(m)) {
               if (m.mode === 'breaking') { breakIt(m, e.id); break; }
               standOn(e, boxM(m).max[1]);
-              const v = velOf(e); if (m.bounce > 0) v[1] = m.bounce; else { v[1] = 0; e.components.body.grounded = true; }
+              const v = velOf(e); if (m.bounce > 0) v[1] = m.bounce; else { v[1] = 0; (e.components.body ??= {}).grounded = true; } setVel(e, v);
               rt.emit('landed_on', { mechanism: m.id, who: e.id });
               if (m.points) addScore(rt, m.points);
               if (m.mode === 'vanishing') { ms.state = 'gone'; rt.emitTyped('broken', m.id, { mechanism: m.id, who: e.id }); setActive(m, true, 'gone', e.id); }
@@ -417,7 +422,7 @@ export default {
             break;
           }
           case 'spring':
-            for (const e of landers(m)) { standOn(e, boxM(m).max[1]); velOf(e)[1] = m.launch; rt.emit('sprung', { mechanism: m.id, who: e.id }); if (m.points) addScore(rt, m.points); ms.t = f; }
+            for (const e of landers(m)) { standOn(e, boxM(m).max[1]); { const v = velOf(e); v[1] = m.launch; setVel(e, v); } rt.emit('sprung', { mechanism: m.id, who: e.id }); if (m.points) addScore(rt, m.points); ms.t = f; }
             break;
           case 'flipper': {
             const up = Boolean(rt.input.held?.[m.verb] || rt.input.actions?.[m.verb]) || Boolean(inp);
