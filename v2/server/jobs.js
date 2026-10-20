@@ -19,6 +19,8 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
         broadcast({ type: 'version', gameId: job.gameId, jobId: job.id, version: record.version, stage: payload.stage, ms: Math.round(performance.now() - started), report: record.report });
         return record;
       },
+      /** Live preview of work in progress (e.g. a partially written level). */
+      draft(data) { broadcast({ type: 'draft', gameId: job.gameId, jobId: job.id, ms: Math.round(performance.now() - started), ...data }); },
     };
     try {
       await pipeline(job, ctx);
