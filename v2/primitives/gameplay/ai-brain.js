@@ -8,7 +8,7 @@
 // ai-lib.js); nothing is ever teleported.
 import {
   objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, upAt, planar, distBetween, distTo, facingOf, sees,
-  centerOf, clearLine, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
+  centerOf, clearLine, deltaTo, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
 
 const ID = 'gameplay.ai.brain';
@@ -181,6 +181,7 @@ export default {
     });
     rt.system('ai', rt => {
       if (config.modeSchedule) modeClock(rt, config.modeSchedule);
+      trackHeading(rt);
       const s = st(rt), now = rt.state.time;
       const agents = Object.values(rt.state.entities).filter(e => e.components.ai?.brain && e.id !== 'player' && !dead(e));
       if (!s.lodAt || now >= s.lodAt || !s.active) { s.active = lod(rt, agents, config.maxActive); s.lodAt = round6(now + 0.5); }
@@ -230,6 +231,15 @@ function ensureAgent(rt, e) {
 }
 const perceptionOf = (e, config) => ({ ...config.perception, ...(e.components.ai.perception || {}) });
 const baseSpeed = (e, config) => e.components.ai.speed ?? config.speed;
+
+/** The player's last movement direction (maze ghosts aim ahead of it), wrap-aware. */
+function trackHeading(rt) {
+  const p = rt.player(); if (!p || !continuous(p)) return;
+  const s = st(rt), tr = (s.track ??= {});
+  const api = spaceOf(rt, p);
+  if (tr.at && tr.space === p.space) { const d = deltaTo(api, tr.at, p.at); if (len(d) > 1e-6) tr.dir = r6(norm(d)); }
+  tr.at = r6(v3(p.at)).slice(0, p.at.length); tr.space = p.space;
+}
 
 function lod(rt, agents, max) {
   if (agents.length <= max) return agents.map(e => e.id);
@@ -516,7 +526,7 @@ function targetFor(rt, e, a, b, mode, frightened, homing) {
   if (mode === 'scatter' && !(elroy?.chaseInScatter) && b.scatter) return tileOf(b.scatter);
   if (!t || t.space !== e.space) return tileOf(b.scatter ?? home);
   const p = tileOf(t.at), dirs = GRID[b.grid ?? 'screen'];
-  const heading = facingOf(t, headingOf(rt, t.id));
+  const heading = (t.id === 'player' && st(rt).track?.dir) || facingOf(t, headingOf(rt, t.id));
   // Snap the target's heading to the closest grid direction.
   const pd = dirs.map((d, k) => [dot(d, heading), k]).sort((x, y) => y[0] - x[0] || x[1] - y[1])[0][1];
   const ahead = k => add(p, mul(dirs[pd], k));
@@ -534,8 +544,10 @@ function targetFor(rt, e, a, b, mode, frightened, homing) {
   }
 }
 function targetTile(rt, e, a, b, api, config) {
-  const dirs = GRID[b.grid ?? 'screen'], ctx = { self: e.id }, EPS = 1e-6;
-  const frightened = b.frightWhen ? rt.test(selfRelative(b.frightWhen), ctx) : false;
+  const ctx = { self: e.id }, EPS = 1e-6;
+  const dirs = gridDirs(api, e, b);
+  // Fright: an explicit predicate, else the frozen status component (frightened/vulnerable seconds left).
+  const frightened = b.frightWhen ? rt.test(selfRelative(b.frightWhen), ctx) : FRIGHT.some(k => (e.components.status?.[k] ?? 0) > 0);
   const homing = b.homeWhen ? rt.test(selfRelative(b.homeWhen), ctx) : false;
   const mode = st(rt).mode?.mode ?? 'chase';
   // Reversals: on every mode change (when the schedule asks) and on entering fright.
@@ -548,28 +560,35 @@ function targetTile(rt, e, a, b, api, config) {
   else if (frightened) speed *= b.frightSpeed ?? 0.67;
   else if (elroy) speed *= elroy.speed;
   for (const s of b.slow || []) if (api.inZone?.(e, s.zone, rt)) { speed *= s.speed; break; }
-  // Openness of a cell next to `from`: navigate.neighbors, else editCells.getCell, else canMove from the entity.
+  if (can(api, 'speedAt')) speed *= api.speedAt(tileOf(e.at).slice(0, e.at.length), e) ?? 1; // cell rules (tunnels)
+  const wrap = c => (can(api, 'wrapPos') ? v3(api.wrapPos(c.slice(0, e.at.length))).map(Math.round) : c);
+  // Openness of the cell next to `from` (the entity stands at `from` when asked):
+  // canMove honours the space's rules (class doors, one-way cells), then neighbors, then getCell.
   const open = (cell, from) => {
-    if (can(api, 'neighbors')) { const k = cell.join(','); return api.neighbors(from).some(c => v3(c).map(Math.round).join(',') === k); }
-    if (can(api, 'getCell')) return !api.getCell(cell);
-    return can(api, 'canMove') ? api.canMove(e, cell, rt) : true;
+    const c = cell.slice(0, e.at.length);
+    if (can(api, 'canMove')) return api.canMove(e, can(api, 'wrapPos') ? api.wrapPos(c) : c, rt);
+    if (can(api, 'neighbors')) { const k = wrap(cell).join(','); return api.neighbors(from.slice(0, e.at.length)).some(q => v3(q).map(Math.round).join(',') === k); }
+    if (can(api, 'getCell')) return !api.getCell(c);
+    return true;
   };
   const noUp = new Set((b.noUp || []).map(c => tileOf(c).slice(0, 2).join(',')));
+  const atCentre = () => len(sub(v3(e.at), tileOf(e.at))) < EPS;
   if (moverOwned(e)) { // a move.* primitive executes: steer toward the chosen next cell
-    const cell = tileOf(e.at); decideDir(rt, e, a, b, cell, dirs, open, noUp, frightened, homing, mode);
-    if (a.dir >= 0) e.components.steer = { dir: dirs[a.dir], speed, lane: true }; return;
+    if (atCentre() || a.dir < 0) decideDir(rt, e, a, b, tileOf(e.at), dirs, open, noUp, frightened, homing, mode);
+    if (a.dir >= 0) e.components.steer = { dir: dirs[a.dir], speed, lane: true, by: 'ai' }; return;
   }
   delete e.components.steer; if (e.components.moveTo?.by === 'ai') delete e.components.moveTo;
   // Lane-locked movement: decide at cell centres, then advance to the next centre ahead.
   let rem = speed * rt.dt;
   const pos = v3(e.at);
   for (let guard = 0; rem > EPS && guard < 4; guard++) {
-    const centre = tileOf(pos);
+    let centre = tileOf(pos);
     if (len(sub(pos, centre)) < EPS) {
+      centre = wrap(centre);
       for (let k = 0; k < 3; k++) pos[k] = centre[k];
+      if (len(sub(v3(e.at), pos)) > EPS) api.setPos(e, pos.slice(0, e.at.length), rt); // stand on the centre before asking the space
       decideDir(rt, e, a, b, centre, dirs, open, noUp, frightened, homing, mode);
-      if (a.dir < 0) break;
-      if (!open(add(centre, dirs[a.dir]), centre)) break;
+      if (a.dir < 0 || !open(add(centre, dirs[a.dir]), centre)) break;
     }
     const d = dirs[a.dir]; if (!d) break;
     const axis = d.findIndex(v => v !== 0), sg = d[axis];
@@ -578,7 +597,18 @@ function targetTile(rt, e, a, b, api, config) {
     const step = Math.min(rem, Math.abs(next - cur));
     pos[axis] = round6(cur + sg * step); rem -= step;
   }
-  if (len(sub(pos, e.at)) > 0) { api.setPos(e, r6(pos), rt); a.face = dirs[a.dir] ?? a.face; }
+  if (len(sub(pos, v3(e.at))) > 0) { api.setPos(e, r6(pos).slice(0, e.at.length), rt); a.face = dirs[a.dir] ?? a.face; }
+}
+const FRIGHT = ['frightened', 'vulnerable', 'fright'];
+/** U, L, D, R for this space: an explicit preset, else the space's own direction names, else screen axes. */
+function gridDirs(api, e, b) {
+  if (b.grid) return GRID[b.grid];
+  if (can(api, 'step')) {
+    const c = tileOf(e.at).slice(0, e.at.length);
+    const ds = ['up', 'left', 'down', 'right'].map(n => { const q = api.step(c, n); return q ? v3(deltaTo(api, c, q)).map(Math.round) : null; });
+    if (ds.every(d => d && len(d) === 1)) return ds;
+  }
+  return GRID.screen;
 }
 function decideDir(rt, e, a, b, cell, dirs, open, noUp, frightened, homing, mode) {
   const options = [];

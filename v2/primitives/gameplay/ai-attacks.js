@@ -103,8 +103,10 @@ export default {
         if (!Array.isArray(e.components.attacks) || !e.components.attacks.length || e.id === 'player') continue;
         if (dead(e)) { const a = st(rt).agents?.[e.id]; if (a) a.phase = 'idle'; continue; }
         const a = agentOf(rt, e.id);
-        if (a.phase === 'idle') { if (now >= a.gcd) start(rt, e, a, config, shapes); continue; }
-        advance(rt, e, a, config, shapes);
+        if (a.phase === 'idle') { if (now >= a.gcd) start(rt, e, a, config, shapes); }
+        else advance(rt, e, a, config, shapes);
+        // Readable busy flag for other primitives and verifiers: the attack id while one runs.
+        if (e.components.ai && rt.entity(e.id)) e.components.ai.attacking = a.phase === 'idle' ? null : a.attack;
       }
     }, ID);
   },
