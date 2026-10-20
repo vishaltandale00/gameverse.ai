@@ -122,7 +122,7 @@ export function hubOf(rt) {
     },
     unit: () => H.lastFrame?.unit ?? null,
   });
-  H.frame = alpha => frame(H, alpha);
+  H.frame = (alpha, fixedDt) => frame(H, alpha, fixedDt);
   return H;
 }
 
@@ -202,9 +202,9 @@ function entitiesOf(H, S, alpha) {
   return out;
 }
 
-function frame(H, alpha) {
+function frame(H, alpha, fixedDt) {
   const now = typeof performance !== 'undefined' ? performance.now() / 1000 : H.clock + 1 / 60;
-  const realDt = H.wall == null ? 1 / 60 : clamp(now - H.wall, 0, 0.1);
+  const realDt = fixedDt ?? (H.wall == null ? 1 / 60 : clamp(now - H.wall, 0, 0.1));
   H.wall = now; H.frameNo++;
   const fb = H.feedback;
   const dt = realDt * (fb.slowmo || 1) * (fb.hitStop > 0 ? 0.05 : 1);

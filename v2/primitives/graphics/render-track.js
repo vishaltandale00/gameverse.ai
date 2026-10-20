@@ -209,7 +209,7 @@ export default {
       } else if (base > 0.6) {
         for (const s of [-1, 0.86]) box(g, v, X + s * w, X + s * w + 0.12, 0, base + size[2], front, front + 0.15, { front: '#5c6370', side: '#3a3f4b', top: '#9aa3b0' }, haze);
         box(g, v, X - w, X + w, base, base + size[2], front, front + 0.15, { front: '#f5c542', side: '#b08a20', top: '#ffe08a' }, haze, (a, b, c, d) => stripes(g, a, b, c, d, fog('#1a1a22', haze, dz), 5));
-        const q = v.proj(X, base + size[2] + 0.25, front); if (q && dz < 50) { g.fillStyle = Math.floor(t * 4 + z) % 2 === 0 ? '#ff3a3a' : '#5a2020'; g.beginPath(); g.arc(q[0], q[1], Math.max(1.5, q[2] * 0.12), 0, TAU); g.fill(); }
+        const q = v.proj(X, base + size[2] + 0.25, front); if (q && dz < 50 && dz > 2) { g.fillStyle = Math.floor(t * 4 + z) % 2 === 0 ? "#ff3a3a" : "#5a2020"; g.beginPath(); g.arc(q[0], q[1], Math.min(9, Math.max(1.5, q[2] * 0.1)), 0, TAU); g.fill(); }
       } else {
         const c = '#6a7a8a', colors = { front: c, side: mix(c, '#000', 0.25), top: mix(c, '#fff', 0.2) };
         box(g, v, X - w, X + w, base, base + size[2], front, back, colors, haze, (a, b, cc, d) => stripes(g, a, b, cc, d, fog('#f5c542', haze, dz), 6));

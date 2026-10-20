@@ -7,11 +7,14 @@ export const PROPS = {
   pickup: ['ring', 'coin', 'gem', 'star', 'heart', 'fruit', 'key', 'orb', 'mushroom', 'crystal', 'feather', 'battery', 'flower', 'scroll', 'candy', 'acorn', 'shell', 'note'],
   hazard: ['spikes', 'lava', 'saw', 'fire', 'thorns', 'electric', 'ice-spikes', 'cactus', 'acid', 'mine'],
   goal: ['flag', 'goalpost', 'door', 'portal', 'chest', 'trophy', 'castle', 'beacon', 'exit-sign', 'nest'],
+  // Scenery objects entities can be: furniture, containers, signs and lights.
+  decor: ['bench', 'crate', 'barrel', 'signpost', 'lantern', 'tablet', 'well', 'pot', 'statue', 'campfire', 'bush', 'rock'],
 };
 const PROP_DEFAULT_COLOR = {
   ring: '#f5c542', coin: '#f5c542', gem: '#3ad0e8', star: '#ffd23f', heart: '#ff4d6d', fruit: '#e8402a', key: '#f5c542', orb: '#7a6cff', mushroom: '#e8402a', crystal: '#c06cff',
   feather: '#ff9a3a', battery: '#5fd36a', flower: '#ff7ab8', scroll: '#f1e2b8', candy: '#ff6fb1', acorn: '#b0763a', shell: '#ffb0a0', note: '#7a6cff',
   spikes: '#b9c3cf', lava: '#ff5a1f', saw: '#c9d0da', fire: '#ff7a1a', thorns: '#4f8a3a', electric: '#ffe23a', 'ice-spikes': '#a8e6ff', cactus: '#4fae4a', acid: '#9cff3a', mine: '#3a3f4b',
+  bench: '#9a6a3a', crate: '#b0763a', barrel: '#8a5a2b', signpost: '#9a6a3a', lantern: '#ffb347', tablet: '#8a8a9a', well: '#8f98a6', pot: '#c0603a', statue: '#b9c3cf', campfire: '#ff7a1a', bush: '#3f9a4a', rock: '#8a8478',
   flag: '#e8402a', goalpost: '#3a7bd5', door: '#9a6a3a', portal: '#9b5cff', chest: '#b0763a', trophy: '#f5c542', castle: '#b9c3cf', beacon: '#3ad0e8', 'exit-sign': '#3fbf5a', nest: '#9a6a3a',
 };
 
@@ -67,6 +70,18 @@ const DRAW = {
   castle: (k, c) => k.s('M8 62V24H16V30H22V24H30V30H34V24H42V30H48V24H56V62Z') + k.s('M24 62V46Q32 38 40 46V62Z', '#3a2a20') + k.s('M28 6H36V24H28Z', shade(c, 0.1)) + k.s('M36 6L48 10L36 14Z', '#e8402a'),
   beacon: (k, c) => k.glow(32, 22, 30, c) + k.s('M24 62L28 26H36L40 62Z', '#9aa3b0') + k.s('M32 6A14 14 0 1 1 31.9 6Z') + k.shine(27, 13, 3.5),
   'exit-sign': (k, c) => k.s('M28 40H36V62H28Z', '#6b4325') + k.s('M6 14H50L60 27L50 40H6Z') + `<path d="M16 27H44M36 19L44 27L36 35" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  bench: (k, c) => k.s('M8 34H56V40H8Z') + k.s('M10 22H54V28H10Z', light(c, 0.08)) + k.s('M12 40H17V58H12Z', shade(c, 0.2)) + k.s('M47 40H52V58H47Z', shade(c, 0.2)) + k.s('M14 28H18V34H14Z', shade(c, 0.25)) + k.s('M46 28H50V34H46Z', shade(c, 0.25)),
+  crate: (k, c) => k.s('M8 14H56V58H8Z') + `<path d="M8 14L56 58M8 29H56M8 44H56" stroke="${shade(c, 0.35)}" stroke-width="3"/>` + k.flat('M10 16H54V19H10Z', light(c, 0.25)),
+  barrel: (k, c) => k.s('M14 10Q32 4 50 10Q56 34 50 58Q32 64 14 58Q8 34 14 10Z') + `<path d="M11 22Q32 28 53 22M10 46Q32 52 54 46" stroke="#5c6370" stroke-width="4" fill="none"/>` + k.shine(22, 18, 3),
+  signpost: (k, c) => k.s('M29 30H35V62H29Z', shade(c, 0.15)) + k.s('M8 10H52L58 20L52 30H8Z', light(c, 0.12)) + `<path d="M16 17H44M16 23H38" stroke="${shade(c, 0.45)}" stroke-width="2.5" stroke-linecap="round"/>`,
+  lantern: (k, c) => k.glow(32, 36, 30, c) + k.s('M30 4H34V12H30Z', '#5c6370') + k.s('M20 12H44L40 18H24Z', '#3a3f4b') + k.s('M22 18H42V52H22Z', light(c, 0.35)) + k.flat('M26 22H38V48H26Z', '#fff6c8') + k.s('M18 52H46V58H18Z', '#3a3f4b'),
+  tablet: (k, c) => k.s('M14 58V16Q14 6 32 6Q50 6 50 16V58Z') + `<path d="M22 22H42M22 30H40M22 38H42M22 46H36" stroke="${shade(c, 0.4)}" stroke-width="3" stroke-linecap="round"/>` + k.s('M8 56H56V62H8Z', shade(c, 0.2)),
+  well: (k, c) => k.s('M14 6H50L46 14H18Z', '#9a3a2a') + k.s('M18 14H22V36H18Z', '#6b4325') + k.s('M42 14H46V36H42Z', '#6b4325') + k.s('M10 36H54V58H10Z') + `<path d="M10 44H54M24 36V58M40 36V58" stroke="${shade(c, 0.35)}" stroke-width="2"/>` + k.flat('M14 36H50V40H14Z', '#1a2a3a'),
+  pot: (k, c) => k.s('M20 14H44V20Q56 30 50 50Q46 60 32 60Q18 60 14 50Q8 30 20 20Z') + k.s('M18 10H46V16H18Z', shade(c, 0.15)) + `<path d="M14 36Q32 42 50 36" stroke="${light(c, 0.3)}" stroke-width="3" fill="none"/>` + k.shine(24, 30, 3.5),
+  statue: (k, c) => k.s('M12 52H52V62H12Z', shade(c, 0.2)) + k.s('M24 52V30Q24 24 32 24Q40 24 40 30V52Z') + k.s('M32 6A9 9 0 1 1 31.9 6Z') + k.s('M18 30L24 28V40L16 38Z', shade(c, 0.1)) + k.s('M46 30L40 28V40L48 38Z', shade(c, 0.1)),
+  campfire: (k, c) => k.glow(32, 38, 30, c) + k.s('M10 54L54 46L56 52L12 60Z', '#6b4325') + k.s('M10 46L54 54L52 60L8 52Z', '#7a4a2a') + k.s('M32 50C18 50 18 36 26 26C26 34 30 34 30 30C30 22 36 14 40 10C40 20 48 26 46 38C44 48 40 50 32 50Z') + k.flat('M32 48C26 48 26 40 30 34C31 40 34 38 34 34C38 38 38 46 32 48Z', '#ffe070'),
+  bush: (k, c) => k.s('M6 58Q4 40 16 36Q16 22 30 24Q38 14 48 24Q60 28 58 42Q62 58 50 58Z') + k.flat('M18 34Q20 28 28 30', light(c, 0.3)) + `<circle cx="22" cy="44" r="3" fill="${light(c, 0.25)}"/><circle cx="42" cy="36" r="2.5" fill="${light(c, 0.25)}"/>`,
+  rock: (k, c) => k.s('M6 58L10 36L24 22L42 20L56 34L58 58Z') + k.flat('M24 22L42 20L36 30L22 32Z', light(c, 0.2)) + `<path d="M30 36L36 48" stroke="${shade(c, 0.35)}" stroke-width="2"/>`,
   nest: (k, c) => k.s('M6 40Q32 66 58 40Q50 50 32 50Q14 50 6 40Z') + k.s('M24 26A9 12 0 1 1 23.9 26Z', '#fff4e0') + k.s('M38 28A8 11 0 1 1 37.9 28Z', '#e8f4ff'),
 };
 

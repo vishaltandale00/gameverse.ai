@@ -8,7 +8,7 @@
 // land, dash, attack, hurt, die, wallslide), squash and stretch, trails,
 // hurt flashes, invulnerability blinking, spawn pops, pickup bob and shimmer,
 // goal beacons, shadows and small glows, reading state but never writing it.
-import { TAU, clamp, clamp01, lerp, easeOutBack, rgba, light, col, surface, ctx2d, seedOf, hash } from './flat-util.js';
+import { TAU, clamp, clamp01, lerp, easeOutBack, rgba, light, col, surface, ctx2d, seedOf, hash, hueShift } from './flat-util.js';
 import { pixelFrame, resolveAnim, animInfo, frameIndex } from './flat-pixel.js';
 import { drawVector, glow } from './flat-vector.js';
 import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, drawBones, rigFrom, isFighterSpec, RIG_HEIGHT } from './flat-rig.js';
@@ -217,10 +217,12 @@ function drawLook(F, L, item, tr, S, P, o) {
     case 'vector': {
       const R = Math.max(P.w, P.h) * 0.5;
       g.translate(0, -P.h * 0.5);
-      const dir = P.view === 'side' ? [facing, 0] : tr.dir || [1, 0];
+      // Ships keep their heading in top-down arenas (up for the player, down for foes) unless the body has an angle.
+      const ang = item.e.components?.body?.angle;
+      const dir = P.view === 'side' ? [facing, 0] : Number.isFinite(ang) ? [Math.cos(ang), -Math.sin(ang)] : P.view === 'top' && /ship|fighter/.test(L.preset) ? [0, L.role === 'player' ? -1 : 1] : tr.dir || [1, 0];
       const vcfg = H.cfg.vector || {};
       if (vcfg.glow ?? (P.view === 'top')) glow(g, 0, 0, R * 2.2, col(L.color || L.spec?.color, '#ff5a7a'), 0.3);
-      drawVector(g, L.preset, R, L.color || ROLE_COLOR[L.role], { t, dir, flash: o.flash, seed: seedOf(item.id) % 997, idx: L.spec?.idx ?? seedOf(item.e.archetype), shapes: L.spec?.shapes, mood: item.e.components?.ai?.mood || (S.state === 'hurt' ? 'hurt' : undefined), accent: L.spec?.accent, pixel: F.style === 'pixel', variant: L.spec?.variant });
+      drawVector(g, L.preset, R, L.color || (L.role === 'enemy' ? hueShift(ROLE_COLOR.enemy, Math.round(hash(seedOf(item.e.archetype)) * 8) * 40 - 160) : ROLE_COLOR[L.role]), { t, dir, flash: o.flash, seed: seedOf(item.id) % 997, idx: L.spec?.idx ?? seedOf(item.e.archetype), shapes: L.spec?.shapes, mood: item.e.components?.ai?.mood || (S.state === 'hurt' ? 'hurt' : undefined), accent: L.spec?.accent, pixel: F.style === 'pixel', variant: L.spec?.variant });
       break;
     }
     case 'fighter': {
@@ -240,7 +242,7 @@ function drawLook(F, L, item, tr, S, P, o) {
     }
     case 'character': {
       const img = characterImage(L.look, poseFor(S.state, t, S.speed / 3), F.style === 'pixel');
-      const hh = P.h * (L.boss ? 1.15 : 1.08);
+      const hh = P.h * (L.boss ? 1.15 : 1.08) * (P.view === 'td' || P.view === 'board' || P.view === 'iso' ? 1.35 : 1);
       if (!img) { placeholder(g, P, L.look.colors?.primary || ROLE_COLOR[L.role], t); break; }
       const [bx0, by0, bx1, by1] = img.box || [0, 0, 1, 1];
       const s = hh / Math.max(0.05, by1 - by0);

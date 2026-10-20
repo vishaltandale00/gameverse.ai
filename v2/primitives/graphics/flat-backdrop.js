@@ -182,6 +182,6 @@ export function defaultLayers(doc, kind = 'side') {
   const dark = ['cave', 'haunted', 'space', 'volcano'].includes(theme);
   return normalizeLayers([
     { pattern: 'scenery', depth: 0.08, color: '#000000', theme },
-    ...(dark ? [{ pattern: theme === 'cave' ? 'cave' : 'ruins', depth: 0.35, color: theme === 'cave' ? '#1c1828' : '#1a1420' }] : [{ pattern: theme === 'city' ? 'city' : theme === 'desert' ? 'dunes' : theme === 'ocean' ? 'waves' : theme === 'forest' || theme === 'jungle' ? 'forest' : 'hills', depth: 0.3, color: { desert: '#b08048', snow: '#8aa0b8', city: '#3a4058', ocean: '#2a6a8a', forest: '#24502e', jungle: '#2a6a34', castle: '#4a5a6a', candy: '#d0609a', sky: '#9ab8e0', factory: '#3a3a44' }[theme] || '#3a6a4a', fogColor: '#c8dcf0' }]),
+    ...(dark ? [{ pattern: theme === 'cave' ? 'cave' : 'ruins', depth: 0.35, color: theme === 'cave' ? '#1c1828' : '#1a1420' }] : [{ pattern: theme === 'city' ? 'city' : theme === 'desert' ? 'dunes' : theme === 'ocean' ? 'waves' : theme === 'forest' || theme === 'jungle' ? 'forest' : 'hills', depth: 0.3, color: { desert: '#b08048', snow: '#8aa0b8', city: '#3a4058', ocean: '#2a6a8a', forest: '#24502e', jungle: '#2a6a34', castle: '#4a5a6a', candy: '#d0609a', sky: '#9ab8e0', factory: '#3a3a44' }[theme] || '#5a8a6a', fogColor: '#c8dcf0', depth: 0.3 }].map(l => ({ ...l, color: mix(l.color, '#b8d0e0', 0.3) }))),
   ]);
 }

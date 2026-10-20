@@ -14,9 +14,9 @@ const shade = (c, k) => cached(`s${c}${k}`, () => shade0(c, k));
 const light = (c, k) => cached(`l${c}${k}`, () => light0(c, k));
 const mix = (a, b, t) => cached(`m${a}${b}${t}`, () => mix0(a, b, t));
 
-export const PATTERNS = ['rock', 'brick', 'moss', 'wood', 'ice', 'metal', 'crystal', 'soil', 'ash', 'grass', 'sand', 'snow', 'dirt', 'stone', 'lava', 'water', 'tech', 'candy', 'checker', 'plain'];
+export const PATTERNS = ['canopy', 'rock', 'brick', 'moss', 'wood', 'ice', 'metal', 'crystal', 'soil', 'ash', 'grass', 'sand', 'snow', 'dirt', 'stone', 'lava', 'water', 'tech', 'candy', 'checker', 'plain'];
 export const EDGES = ['soft', 'sharp', 'warm', 'glow', 'none'];
-const PATTERN_WORDS = [['brick', /brick|cistern|masonry|wall/], ['moss', /moss|vine|overgrown/], ['wood', /wood|plank|log|timber|thorn|bramble|ledge|bridge/], ['ice', /ice|frost|glass|frozen/], ['metal', /metal|iron|steel|rust|plate|pipe|machine/], ['crystal', /crystal|gem|quartz/], ['grass', /grass|turf|meadow|lawn/], ['sand', /sand|dune|beach/], ['snow', /snow/], ['lava', /lava|magma|slag/], ['water', /water|sea|lake|river/], ['tech', /tech|circuit|panel|neon/], ['candy', /candy|sweet|frosting/], ['ash', /ash|cinder|soot|bone/], ['soil', /soil|dirt|earth|mud|clay/], ['rock', /rock|stone|cave|cliff|boulder/]];
+const PATTERN_WORDS = [['canopy', /tree|bush|hedge|shrub|foliage|canopy|palm|pine|oak/], ['brick', /brick|cistern|masonry|wall/], ['moss', /moss|vine|overgrown/], ['wood', /wood|plank|log|timber|thorn|bramble|ledge|bridge/], ['ice', /ice|frost|glass|frozen/], ['metal', /metal|iron|steel|rust|plate|pipe|machine/], ['crystal', /crystal|gem|quartz/], ['grass', /grass|turf|meadow|lawn/], ['sand', /sand|dune|beach/], ['snow', /snow/], ['lava', /lava|magma|slag/], ['water', /water|sea|lake|river/], ['tech', /tech|circuit|panel|neon/], ['candy', /candy|sweet|frosting/], ['ash', /ash|cinder|soot|bone/], ['soil', /soil|dirt|earth|mud|clay/], ['rock', /rock|stone|cave|cliff|boulder/]];
 export function patternFor(block = {}) {
   if (PATTERNS.includes(block.tile)) return block.tile;
   const text = [block.id, block.name, block.tile, ...(block.tags || [])].join(' ').toLowerCase();
@@ -32,10 +32,27 @@ export function normalizeTheme(t = {}) {
   return { id: t.id, pattern: PATTERNS.includes(t.pattern) ? t.pattern : 'rock', edge: EDGES.includes(t.edge) ? t.edge : 'soft', palette: { a, b: col(t.palette?.b, light(a, 0.4)), c: col(t.palette?.c, shade(a, 0.55)) } };
 }
 
+// Precomputed color ramps per palette object (patterns run per pixel).
+const ramps = new WeakMap();
+const rampOf = p => { let r = ramps.get(p); if (!r) { r = { dark: shade0(p.a, 0.13), lite: light0(p.a, 0.07), seam: shade0(p.c, 0.05), mossA: shade0(p.a, 0.05) }; for (const k of ['dark', 'lite']) { r[`${k}Rim`] = light0(r[k], 0.12); r[`${k}Low`] = shade0(r[k], 0.12); r[`${k}Pit`] = shade0(r[k], 0.2); } r.aRim = light0(p.a, 0.12); r.aLow = shade0(p.a, 0.12); r.aPit = shade0(p.a, 0.2); r.mossP = { a: r.mossA, b: p.b, c: p.c }; ramps.set(p, r); } return r; };
 // Per-pattern pixel color at world pixel (X, Y) (Y grows down on screen). Returns a hex or null (transparent).
 const P = {
-  rock(X, Y, p, T) { const cx = Math.floor(X / 6), cy = Math.floor(Y / 5), h = hash2(cx, cy, 11); const v = hash2(X, Y, 3); return v < 0.06 ? p.c : v > 0.95 ? p.b : h < 0.33 ? shade(p.a, 0.12) : h > 0.8 ? light(p.a, 0.08) : p.a; },
-  stone(X, Y, p) { return P.rock(X, Y, p); },
+  rock(X, Y, p, T) {
+    // Cobbled stones: nearest of jittered points (Worley); seams where two stones meet, a lit upper rim on each.
+    const S = Math.max(4, T * 0.55), gx = Math.floor(X / S), gy = Math.floor(Y / S);
+    let d1 = 1e9, d2 = 1e9, id = 0, fy = 0;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+      const cx = gx + i, cy = gy + j, fx = (cx + 0.15 + hash2(cx, cy, 5) * 0.7) * S, fyy = (cy + 0.15 + hash2(cx, cy, 9) * 0.7) * S;
+      const d = (X - fx) ** 2 + ((Y - fyy) * 1.25) ** 2;
+      if (d < d1) { d2 = d1; d1 = d; id = hash2(cx, cy, 11); fy = fyy; } else if (d < d2) d2 = d;
+    }
+    const edge = Math.sqrt(d2) - Math.sqrt(d1), R = rampOf(p);
+    if (edge < 1.1) return R.seam;
+    const t = id < 0.3 ? 'dark' : id > 0.75 ? 'lite' : 'a';
+    if (edge < 2.2) return Y < fy ? R[`${t}Rim`] : R[`${t}Low`];
+    return hash2(X, Y, 3) < 0.03 ? R[`${t}Pit`] : t === 'a' ? p.a : R[t];
+  },
+  stone(X, Y, p, T) { return P.rock(X, Y, p, T); },
   brick(X, Y, p, T) {
     const bh = Math.max(3, Math.round(T / 4)), bw = bh * 2, row = Math.floor(Y / bh), off = row % 2 ? bw / 2 : 0, bx = Math.floor((X + off) / bw);
     const ly = Y - row * bh, lx = (X + off) - bx * bw;
@@ -43,7 +60,7 @@ const P = {
     const tone = hash2(bx, row, 5); const base = tone < 0.3 ? shade(p.a, 0.1) : tone > 0.8 ? light(p.a, 0.07) : p.a;
     return ly === 0 ? light(base, 0.12) : hash2(X, Y, 9) < 0.05 ? shade(base, 0.2) : base;
   },
-  moss(X, Y, p, T) { const n = hash2(Math.floor(X / 3), Math.floor(Y / 3), 21); return n > 0.72 ? (hash2(X, Y, 2) > 0.5 ? p.b : mix(p.b, p.a, 0.5)) : P.rock(X, Y, { ...p, a: shade(p.a, 0.05) }, T); },
+  moss(X, Y, p, T) { const n = hash2(Math.floor(X / 3), Math.floor(Y / 3), 21); return n > 0.82 ? (hash2(X, Y, 2) > 0.5 ? mix(p.b, p.a, 0.25) : mix(p.b, p.a, 0.55)) : P.rock(X, Y, rampOf(p).mossP, T); },
   wood(X, Y, p, T) {
     const ph = Math.max(3, Math.round(T / 4)), plank = Math.floor(Y / ph), ly = Y - plank * ph, seam = Math.floor((X + plank * 7) / (T * 1.5));
     if (ly === ph - 1) return p.c;
@@ -60,9 +77,9 @@ const P = {
     return streak ? mix(p.a, p.b, 0.35) : ly === 1 ? light(p.a, 0.1) : p.a;
   },
   crystal(X, Y, p, T) { const cx = Math.floor(X / 5), cy = Math.floor(Y / 7), h = hash2(cx, cy, 31), f = (X - cx * 5) + (Y - cy * 7); return f < 2 ? light(p.b, 0.2) : h > 0.7 ? p.b : h < 0.25 ? shade(p.a, 0.15) : mix(p.a, p.b, 0.25); },
-  soil(X, Y, p) { const v = hash2(X, Y, 13), b = hash2(Math.floor(X / 4), Math.floor(Y / 3), 17); return v < 0.07 ? p.c : v > 0.96 ? p.b : b > 0.75 ? light(p.a, 0.07) : b < 0.2 ? shade(p.a, 0.1) : p.a; },
+  soil(X, Y, p) { const v = hash2(X, Y, 13), b = hash2(Math.floor(X / 4), Math.floor(Y / 3), 17); return v < 0.05 ? shade(p.a, 0.3) : v > 0.97 ? light(p.a, 0.2) : b > 0.75 ? light(p.a, 0.07) : b < 0.2 ? shade(p.a, 0.1) : p.a; },
   dirt(X, Y, p) { return P.soil(X, Y, p); },
-  ash(X, Y, p, T) { const crack = Math.abs(Math.sin(X * 0.31 + Math.floor(Y / T) * 2.1) + Math.cos(Y * 0.43 + X * 0.07)) < 0.08; const v = hash2(X, Y, 23); return crack ? p.c : v > 0.93 ? p.b : v < 0.1 ? shade(p.a, 0.12) : p.a; },
+  ash(X, Y, p, T) { const crack = Math.abs(Math.sin(X * 0.31 + Math.floor(Y / T) * 2.1) + Math.cos(Y * 0.43 + X * 0.07)) < 0.08; const v = hash2(X, Y, 23); return crack ? p.c : v > 0.97 ? mix(p.a, p.b, 0.5) : v < 0.1 ? shade(p.a, 0.12) : p.a; },
   grass(X, Y, p) { return P.soil(X, Y, p); },
   sand(X, Y, p) { const r = Math.sin(X * 0.4 + Math.sin(Y * 0.3) * 2) > 0.85; return r ? light(p.a, 0.12) : hash2(X, Y, 6) < 0.05 ? shade(p.a, 0.18) : p.a; },
   snow(X, Y, p) { return hash2(X, Y, 7) < 0.05 ? mix(p.a, '#a8c8e8', 0.4) : p.a; },
@@ -90,7 +107,8 @@ export function paintTile(buf, bw, bx, by, T, theme, wx, wy, mask, opts = {}) {
   const cap = opts.cap ?? CAP[th.pattern];
   const capColor = cap === 'snow' ? '#f4f8ff' : cap === 'sand' ? light(p.a, 0.2) : cap === 'frosting' ? '#ffd0e8' : p.b;
   const hgt = opts.oneway ? Math.max(2, Math.round(T / 4)) : T;
-  const deep = !opts.oneway && mask === 255;
+  const deep = !opts.oneway && mask === 255, bgK = bg ? (typeof bg === 'number' ? bg : 0.45) : 0;
+  if (th.pattern === 'canopy') return paintCanopy(buf, bw, bx, by, T, p, wx, wy, F, bg);
   for (let y = 0; y < hgt; y++) for (let x = 0; x < T; x++) {
     // Rounded (soft) or chamfered (sharp) outer corners.
     const cr = soft ? 2 : th.edge === 'none' ? 0 : 1;
@@ -98,7 +116,6 @@ export function paintTile(buf, bw, bx, by, T, theme, wx, wy, mask, opts = {}) {
     if ((F.outer.nw && inCorner(0, 0)) || (F.outer.ne && inCorner(1, 0)) || (!opts.oneway && ((F.outer.sw && inCorner(0, 1)) || (F.outer.se && inCorner(1, 1))))) continue;
     let c = fn(wx * T + x, wy * T + y, p, T);
     if (c == null) continue;
-    if (deep) c = shade(c, 0.12);
     // Edges: lit top lip, cap, shaded underside, side light from the upper left.
     if (F.open.n && y < 2) c = y === 0 ? (cap ? capColor : lip) : cap ? mix(capColor, c, 0.35) : mix(lip, c, 0.5);
     else if (F.open.n && cap && y < 4 && hash2(wx * T + x, wy, 41) > 0.45) c = mix(capColor, c, 0.4);
@@ -112,9 +129,9 @@ export function paintTile(buf, bw, bx, by, T, theme, wx, wy, mask, opts = {}) {
     // Top-down walls show a front face on their open south side.
     if (opts.face && F.open.s) { const fh = Math.round(T * 0.38); if (y >= T - fh) c = y === T - fh ? light(p.a, 0.12) : shade(fn(wx * T + x, wy * T + y * 2, p, T) ?? p.a, 0.3); }
     if (glowEdge && (F.open.n && y === 0)) c = light(p.b, 0.35);
-    if (bg) c = mix(c, '#0a0812', typeof bg === 'number' ? Math.round(bg * 20) / 20 : 0.45);
-    const [r, g, b] = rgb(c), i = ((by + y) * bw + bx + x) * 4;
-    buf[i] = r; buf[i + 1] = g; buf[i + 2] = b; buf[i + 3] = 255;
+    // Interior depth and back-layer dimming are numeric (no per-pixel color strings).
+    const [r, g, b] = rgb(c), i = ((by + y) * bw + bx + x) * 4, k = (deep ? 0.86 : 1) * (bg ? 1 - bgK : 1), add = bg ? bgK * 10 : 0;
+    buf[i] = r * k + add; buf[i + 1] = g * k + add * 0.8; buf[i + 2] = b * k + add * 1.8; buf[i + 3] = 255;
   }
   // Silhouette outline along open edges (front layers only).
   if (!bg && th.edge !== 'none') {
@@ -124,6 +141,25 @@ export function paintTile(buf, bw, bx, by, T, theme, wx, wy, mask, opts = {}) {
     if (F.open.e) for (let y = 0; y < hgt; y++) if (buf[((by + y) * bw + bx + T - 1) * 4 + 3]) put(T - 1, y);
   }
   // Grass/moss tufts hanging over the top edge are drawn by the caller above the tile (decorations()).
+  return F;
+}
+
+/** Tree crowns: a lumpy leafy disc that merges toward connected neighbours, lit from the upper left. */
+function paintCanopy(buf, bw, bx, by, T, p, wx, wy, F, bg) {
+  const R = T * 0.5, c = T / 2;
+  const lite = rgb(light(p.a, 0.22)), mid = rgb(p.a), dark = rgb(shade(p.a, 0.25)), edge = rgb(shade(p.c, 0.2)), trunk = rgb('#5a3a22');
+  const put = (x, y, v) => { const i = ((by + y) * bw + bx + x) * 4; const k = bg ? 0.55 : 1; buf[i] = v[0] * k; buf[i + 1] = v[1] * k; buf[i + 2] = v[2] * k; buf[i + 3] = 255; };
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    // Distance to the crown, stretched toward connected sides so neighbouring trees form one canopy.
+    let dx = x + 0.5 - c, dy = y + 0.5 - c;
+    if (!F.open.e && dx > 0) dx = 0; if (!F.open.w && dx < 0) dx = 0; if (!F.open.n && dy < 0) dy = 0; if (!F.open.s && dy > 0) dy = 0;
+    const wob = (hash2(wx * T + x >> 2, wy * T + y >> 2, 77) - 0.5) * 2.2;
+    const d = Math.hypot(dx, dy) + wob;
+    if (d > R) { if (F.open.s && y > T * 0.62 && Math.abs(x + 0.5 - c) < T * 0.09) put(x, y, trunk); continue; }
+    const leaf = hash2(wx * T + x, wy * T + y, 31);
+    const shadeK = (dx + dy) / (R * 2);
+    put(x, y, d > R - 1.2 ? edge : shadeK < -0.18 && leaf > 0.25 ? lite : shadeK > 0.22 || leaf < 0.12 ? dark : mid);
+  }
   return F;
 }
 

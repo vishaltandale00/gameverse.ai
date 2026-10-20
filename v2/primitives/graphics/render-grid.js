@@ -102,7 +102,8 @@ export default {
 
     function draw(F) {
       const api = apiOf(); if (!api) return;
-      const g = F.ctx, [W, Hh] = api.size, topo = api.config.topology || 'square', layer0 = api.layers?.[0];
+      const g = F.ctx; g.imageSmoothingEnabled = false;
+      const [W, Hh] = api.size, topo = api.config.topology || 'square', layer0 = api.layers?.[0];
       const center = c => (api.cellCenter ? api.cellCenter(c) : c);
       const iso = F.proj.kind === 'iso', z = F.unit;
       const style = config.style, neonStyle = style === 'neon';
@@ -163,7 +164,10 @@ export default {
         loops ??= wallLoops(W, Hh, isWall, { inset: 0.5, wrapX: /x|both/.test(api.config.wrap || ''), wrapY: /y|both/.test(api.config.wrap || '') });
         const glowC = neon(wallBase), core = light(wallBase, 0.55);
         const toS = p => F.toScreen([p.x - 0.5, p.y - 0.5]);
-        g.save(); g.beginPath(); for (const L of loops) roundedLoop(g, L, toS, z * 0.42);
+        g.save();
+        // Clip to the board so the out-of-bounds pad's outer contour never shows.
+        { const a = F.toScreen([-0.5, -0.5]), b = F.toScreen([W - 0.5, Hh - 0.5]); g.beginPath(); g.rect(Math.min(a[0], b[0]) - z * 0.05, Math.min(a[1], b[1]) - z * 0.05, Math.abs(b[0] - a[0]) + z * 0.1, Math.abs(b[1] - a[1]) + z * 0.1); g.clip(); }
+        g.beginPath(); for (const L of loops) roundedLoop(g, L, toS, z * 0.42);
         g.fillStyle = rgba(glowC, 0.1); g.fill('evenodd');
         g.lineJoin = 'round'; g.lineCap = 'round';
         g.shadowColor = glowC; g.shadowBlur = z * 0.55; g.strokeStyle = glowC; g.lineWidth = Math.max(1.5, z * 0.3); g.stroke();

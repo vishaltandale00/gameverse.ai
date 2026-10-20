@@ -64,9 +64,9 @@ export default {
           const s = ctx2d(small);
           if (s) {
             s.globalCompositeOperation = 'copy';
-            if (canFilter) s.filter = 'brightness(0.9) contrast(2.6) saturate(1.3) blur(2px)';
+            if (canFilter) s.filter = 'brightness(0.72) contrast(4) saturate(1.4) blur(2px)';
             s.drawImage(copy, 0, 0, bw, bh); s.filter = 'none';
-            g.globalCompositeOperation = 'screen'; g.globalAlpha = clamp(config.bloom * 0.55, 0, 1); g.imageSmoothingEnabled = true;
+            g.globalCompositeOperation = 'screen'; g.globalAlpha = clamp(config.bloom * 0.4, 0, 1); g.imageSmoothingEnabled = true;
             if (canFilter) g.filter = 'blur(4px)';
             g.drawImage(small, 0, 0, W, Hh); g.filter = 'none';
             g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;

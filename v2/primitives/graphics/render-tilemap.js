@@ -58,7 +58,7 @@ export default {
       layerOrder: { type: 'list', default: [], of: { type: 'string' }, effect: 'tile layers back to front; layers after the collision layer draw over entities. Empty = the space\'s own order' },
       minView: { type: 'list', default: [16, 9], of: { type: 'number', min: 4, max: 200 }, min: 2, max: 2, unit: 'tiles', effect: 'fewest tiles kept in view across and down (small screens zoom out)' },
       chunk: { type: 'integer', default: 16, min: 8, max: 64, unit: 'tiles', effect: 'cached chunk size' },
-      chunkBudget: { type: 'integer', default: 3, min: 1, max: 16, effect: 'chunks rasterized per frame (visible nearest first)' },
+      chunkBudget: { type: 'integer', default: 2, min: 1, max: 16, effect: 'chunks rasterized per frame (visible nearest first)' },
       backDim: { type: 'number', default: 0.45, min: 0, max: 1, effect: 'how much back layers darken behind the action' },
       fgFade: { type: 'boolean', default: true, effect: 'foreground layers turn translucent where they cover the player' },
       occlusion: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'soft shadow strength under overhangs and beside walls' },
@@ -72,6 +72,7 @@ export default {
     const H = hubOf(rt), space = bindSpace(rt, instance, ['tilemap']), S = H.stage(space, 'tilemap');
     ensureJuice(rt);
     const cache = chunkCache(160), dirty = new Set();
+    S.chunks = cache; // inspection (tests, lab)
     const fade = new Map();
     H.onReset(() => { cache.clear(); H.terrain = null; });
     rt.on('cell_changed', ev => {
@@ -136,10 +137,10 @@ export default {
         const p0 = F.toScreen([wx0, wy0]), p1 = F.toScreen([wx0 + ch.w / artT, wy0]), p2 = F.toScreen([wx0, wy0 - ch.h / artT]);
         const a = (p1[0] - p0[0]) / ch.w, b = (p1[1] - p0[1]) / ch.w, c = (p2[0] - p0[0]) / ch.h, d = (p2[1] - p0[1]) / ch.h;
         const axis = Math.abs(b) < 1e-6 && Math.abs(c) < 1e-6, dpr = F.dpr;
-        g.globalAlpha = alpha;
+        g.globalAlpha = alpha; g.imageSmoothingEnabled = false;
         g.setTransform(a * dpr, b * dpr, c * dpr, d * dpr, (axis ? Math.round(p0[0]) : p0[0]) * dpr, (axis ? Math.round(p0[1]) : p0[1]) * dpr);
         g.drawImage(ch.canvas, 0, 0);
-        g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = 1;
+        g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = 1; g.imageSmoothingEnabled = F.style !== 'pixel';
       };
       const live = [];
       const drawLayer = (li, after) => {

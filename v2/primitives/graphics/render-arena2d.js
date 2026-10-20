@@ -84,6 +84,12 @@ export default {
         g.fillStyle = '#8a6a3a'; g.fillRect(a[0], a[1], b[0] - a[0], th); g.fillStyle = light('#8a6a3a', 0.3); g.fillRect(a[0], a[1], b[0] - a[0], Math.max(1, th * 0.25)); g.fillStyle = shade('#8a6a3a', 0.4); g.fillRect(a[0], a[1] + th - 1, b[0] - a[0], 1);
         for (let x = a[0] + 6; x < b[0] - 4; x += Math.max(12, z * 1.2)) { g.fillStyle = shade('#8a6a3a', 0.3); g.fillRect(x, a[1] + th, Math.max(2, z * 0.08), th * 1.4); }
       }
+      // Top-down arenas: frame the playfield and dim what lies outside it.
+      if (view === 'top' && !api.config?.scroll) {
+        const b = boundsOf(api), a = F.toScreen([b.min[0], b.max[1]]), c = F.toScreen([b.max[0], b.min[1]]);
+        g.save(); g.fillStyle = 'rgba(2,2,10,.55)'; g.beginPath(); g.rect(0, 0, F.w, F.h); g.rect(a[0], a[1], c[0] - a[0], c[1] - a[1]); g.fill('evenodd');
+        g.strokeStyle = rgba('#7a8aff', 0.35); g.lineWidth = 2; g.shadowColor = '#7a8aff'; g.shadowBlur = 12; g.strokeRect(a[0], a[1], c[0] - a[0], c[1] - a[1]); g.restore();
+      }
       if (api.config?.blast) { const [x0, y0, x1, y1] = api.config.blast, a = F.toScreen([x0, y1]), b = F.toScreen([x1, y0]); g.save(); g.setLineDash?.([10, 8]); g.strokeStyle = rgba('#ff5a5a', 0.25); g.lineWidth = 2; g.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); g.restore(); }
       const wrapX = boundsOf(api)?.wrap?.[0], wrapY = boundsOf(api)?.wrap?.[1];
       const pv = view === 'top' ? 'top' : 'side';

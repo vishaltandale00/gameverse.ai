@@ -104,15 +104,16 @@ export function lookFor(arch = {}, role = roleOf(arch), colors = null) {
 const PROP_WORDS = {
   pickup: { coin: /coin|gold|money|cash|ash|ember|shard/, gem: /gem|jewel|diamond|ruby|emerald|sapphire/, key: /key/, heart: /heart|health|life|heal|potion|flask|sip/, star: /star/, ring: /ring/, fruit: /fruit|apple|cherry|berry|food/, orb: /orb|soul|essence|spirit/, mushroom: /mushroom|shroom/, crystal: /crystal|ore|mana/, feather: /feather/, battery: /battery|energy|power|fuel/, flower: /flower|petal|seed/, scroll: /scroll|map|fragment|page|tablet|note|letter|lore/, candy: /candy|sweet/, acorn: /acorn|nut/, shell: /shell/, note: /music|song/ },
   hazard: { spikes: /spike/, lava: /lava|magma|slag/, saw: /saw|blade/, fire: /fire|flame|burn/, thorns: /thorn|bramble/, electric: /electric|shock|zap|volt/, 'ice-spikes': /ice|frost/, cactus: /cactus/, acid: /acid|poison|toxic/, mine: /mine|bomb/ },
+  decor: { bench: /bench|seat|pew/, crate: /crate|box|cargo/, barrel: /barrel|keg|cask/, signpost: /sign|post|notice/, lantern: /lantern|lamp|torch|light/, tablet: /tablet|tomb|grave|stele|monument|lore/, well: /well|fountain/, pot: /pot|vase|urn|jar/, statue: /statue|idol|bust/, campfire: /campfire|fire|bonfire|hearth/, bush: /bush|shrub|plant|hedge/, rock: /rock|boulder|stone/ },
   goal: { flag: /flag|finish|checkpoint/, door: /door|gate|exit/, portal: /portal|warp|teleport/, chest: /chest|treasure|loot/, trophy: /trophy|cup|prize/, castle: /castle/, beacon: /beacon|lantern|lamp|light|bench|shrine|altar/, 'exit-sign': /sign/, nest: /nest|egg/ },
 };
 /** A prop kind (v2/art/props) for an archetype of a prop-like role. */
 export function propFor(arch = {}, role = roleOf(arch)) {
   const text = [arch.id, arch.name, arch.kind, ...(arch.tags || [])].join(' ').toLowerCase();
-  const table = PROP_WORDS[role] || (role === 'prop' ? { ...PROP_WORDS.goal, ...PROP_WORDS.pickup } : PROP_WORDS.pickup);
+  const table = PROP_WORDS[role] || (role === 'prop' ? { ...PROP_WORDS.decor, ...PROP_WORDS.goal, ...PROP_WORDS.pickup } : PROP_WORDS.pickup);
   const hit = Object.entries(table).find(([, re]) => re.test(text));
   if (hit) return hit[0];
-  const list = PROPS[role] || PROPS.pickup;
+  const list = PROPS[role === 'prop' ? 'decor' : role] || PROPS.pickup;
   return list[Math.floor(hash(seedOf(arch.id || 'x')) * list.length)];
 }
 
