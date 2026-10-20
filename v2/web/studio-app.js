@@ -4,6 +4,7 @@
 // New games are kernel documents (one kernel, primitives only); versions made by
 // the retired arcade/kit engines still play here but are not changed any more.
 import { mountGame, loadPromoted } from '/v2/web/player.js';
+import { blueprintArt } from '/v2/web/studio-art.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -14,11 +15,15 @@ const promotedReady = loadPromoted();
 // (loaded on demand, so the default flow never loads the retired engines).
 const mount = async (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? (await import('/v2/web/arcade-player.js')).mountArcade(el, record)
   : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? (await import('/v2/web/kit-player.js')).mountKit(el, record) : mountGame(el, record);
-const STAGES = { decomposing: 'Reading the idea', decomposed: 'Idea decomposed', selected: 'Primitives chosen', outlining: 'Outlining the game', outlined: 'Outline checked', first_playable: 'First playable', detail: 'Detailing zones', detail_rejected: 'Detail rejected', gap: 'Building a new primitive', revising: 'Working on the change', tweaked: 'Tweaked', revised: 'Revised', experimenting: 'Writing an experiment', experimented: 'Experiment checked', complete: 'Done' };
+const STAGES = { decomposing: 'Reading the idea', decomposed: 'Idea decomposed', selected: 'Primitives chosen', outlining: 'Outlining the game', outlined: 'Outline checked', first_playable: 'First playable', detail: 'Detailing zones', detail_rejected: 'Detail rejected', gap: 'Building a new primitive', revising: 'Working on the change', tweaked: 'Tweaked', revised: 'Revised', experimenting: 'Writing an experiment', experimented: 'Experiment checked', verified: 'Verified', complete: 'Done' };
+// The first build, as the four phases the frame's progress bar shows: stage -> phases finished.
+const PHASES = ['Reading the idea', 'Choosing primitives', 'Outlining', 'First playable'];
+const PHASE_DONE = { decomposing: 0, decomposed: 1, selected: 2, outlining: 2, outlined: 3, first_playable: 4 };
+const IDEAS = ['Pac-Man in a haunted library', 'A cozy farming game on a floating island', 'Mario Kart with shopping carts', 'Zelda-style dungeon inside a giant clock'];
 // Changes any kernel game understands: params are tweaked without a model; the rest is revised or offered as an experiment.
 const QUICK = ['Make it faster', 'Make it harder', 'Make it easier', 'Bigger world', 'More characters', 'Add a time limit'];
 
-let games = [], selected = null, player = null, selecting = 0, shownVersion = null, tickTimer = 0;
+let games = [], selected = null, player = null, selecting = 0, shownVersion = null, tickTimer = 0, tickCount = 0;
 const builds = new Map(); // gameId -> { started, stage, detail, partial, art: [], log: [] }
 const build = id => { if (!builds.has(id)) builds.set(id, { started: performance.now(), stage: 'decomposing', detail: '', partial: null, art: [], log: [], plan: {} }); return builds.get(id); };
 
@@ -28,13 +33,39 @@ async function api(path, body, method) {
   if (!res.ok) throw Error(data.error || res.statusText);
   return data;
 }
-function toast(text) { const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text; document.body.append(t); setTimeout(() => t.remove(), 3200); }
+function toast(text) {
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
+  const host = $('#toasts'); host.append(t);
+  while (host.children.length > 3) host.firstElementChild.remove();
+  setTimeout(() => { t.classList.add('leaving'); t.addEventListener('animationend', () => t.remove(), { once: true }); setTimeout(() => t.remove(), 600); }, 3600);
+}
+const elapsed = b => `${((performance.now() - b.started) / 1000).toFixed(1)} s`;
+// Only touch the DOM when the markup changed, so entrance animations don't replay on every tick.
+const setHTML = (el, html) => { if (el && el._html !== html) { el.innerHTML = html; el._html = html; } };
+
+// ---------- drawer (phones and tablets) ----------
+const narrow = matchMedia('(max-width: 999px)');
+function drawer(open) {
+  document.body.classList.toggle('drawer-open', open);
+  $('#scrim').hidden = !open; $('#menu').setAttribute('aria-expanded', String(open));
+  if (!open && $('#rail').contains(document.activeElement) && narrow.matches) $('#menu').focus();
+}
+function newGame(text) {
+  if (text) $('#prompt').value = text;
+  if (narrow.matches) drawer(true);
+  const p = $('#prompt'); p.focus(); p.setSelectionRange(p.value.length, p.value.length);
+}
+$('#menu').addEventListener('click', () => { const open = !document.body.classList.contains('drawer-open'); drawer(open); if (open) ($('#games a[aria-current]') || $('#prompt')).focus(); });
+$('#new-game').addEventListener('click', () => newGame());
+$('#scrim').addEventListener('click', () => drawer(false));
+addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) drawer(false); });
+narrow.addEventListener('change', () => drawer(false));
 
 // ---------- library ----------
 async function refreshLibrary() {
   ({ games } = await api('/api/v2/games'));
   $('#games').innerHTML = games.map(g => `<li class="${g.id === selected ? 'current' : ''}"><a href="#${g.id}" ${g.id === selected ? 'aria-current="page"' : ''}>
-      <strong><span class="dot ${g.status}"></span>${esc(g.title)}</strong>
+      <strong><span class="dot ${g.status}"></span><span class="t">${esc(g.title)}</span></strong>
       <small>${g.sample ? 'sample, ' : ''}${g.status === 'generating' ? 'building…' : g.status === 'failed' ? 'failed' : `${g.versions} version${g.versions === 1 ? '' : 's'}`}</small></a>
       <button class="quiet remove" data-remove="${g.id}" aria-label="Delete ${esc(g.title)}" title="Delete">✕</button></li>`).join('') || '<li class="muted">Games you make appear here.</li>';
   $('#clear').hidden = !games.length;
@@ -81,26 +112,36 @@ async function startBuild(answers) {
 
 // ---------- stage views ----------
 function welcome() {
-  $('#stage').innerHTML = `<section class="welcome"><h1>What do you want to play?</h1><p>Describe any game, or a mashup of games. It's broken into mechanics, composed from shared primitives, checked, and playable as soon as the outline is; zones fill in while you play. Change it whenever you like.</p></section>`;
+  $('#stage').innerHTML = `<section class="welcome"><div><h1>What do you want to play?</h1><p>Describe any game, or a mashup of games. It's broken into mechanics, composed from shared primitives, checked, and playable as soon as the outline is; zones fill in while you play. Change it whenever you like.</p>
+      <div class="ideas">${IDEAS.map(i => `<button type="button" data-idea="${esc(i)}">${esc(i)}</button>`).join('')}</div>
+      <p class="help">Picking one fills in the description. Nothing is built until you press Make it.</p></div>
+    <section class="cabinet idle" aria-label="Game screen"><span class="marks"></span><div class="board blueprint"><canvas class="art" aria-hidden="true"></canvas></div><div class="cabinet-bar">Your game plays here</div></section></section>`;
+  blueprintArt($('#stage canvas.art'), { idle: true });
+  $('#stage').onclick = e => { const idea = e.target.closest('[data-idea]')?.dataset.idea; if (idea) newGame(idea); };
 }
 
 function constructionView(meta) {
   $('#stage').innerHTML = `<header class="game-head"><h1 id="ct-title">${esc(meta.title)}</h1><p id="ct-pitch">${esc(meta.prompt)}</p></header>
-    <div class="board blueprint"><canvas id="ct-canvas" aria-label="Level being built"></canvas><div class="scan"></div></div>
-    <div class="status" aria-live="polite"><span id="ct-stage"><strong>Designing the game</strong></span><span id="ct-time">0.0 s</span></div>
+    <section class="cabinet building" aria-label="Game being built"><span class="marks"></span>
+      <div class="board blueprint"><canvas class="art" aria-hidden="true"></canvas><canvas id="ct-canvas" aria-label="Level being built"></canvas><div class="scan"></div></div>
+      <div class="steps" id="ct-steps" role="progressbar" aria-label="Build progress" aria-valuemin="0" aria-valuemax="${PHASES.length}"></div>
+      <div class="cabinet-bar"><span class="state"><span class="dot generating"></span><span id="ct-stage" aria-live="polite"><strong>Designing the game</strong></span></span><span class="time" id="ct-time">0.0 s</span></div>
+    </section>
     <div class="cast" id="ct-cast"></div>`;
+  const b = builds.get(selected);
+  blueprintArt($('#stage canvas.art'), { progress: () => ((PHASE_DONE[b?.stage] ?? 0) + 0.5) / PHASES.length });
   renderConstruction();
 }
 
 function renderPlan(b) {
   const p = b.plan || {}, el = $('#ct-cast'); if (!el) return;
   el.classList.add('plan');
-  el.innerHTML = [
+  setHTML(el, [
     p.references?.length ? `<figure><figcaption>References</figcaption>${p.references.map(r => `<span class="chip">${esc(r)}</span>`).join(' ')}</figure>` : '',
     p.mechanics?.length ? `<figure><figcaption>Mechanics</figcaption><ul>${p.mechanics.map(m => `<li>${esc(m)}</li>`).join('')}</ul></figure>` : '',
     p.spaces?.length ? `<figure><figcaption>Primitives</figcaption>${[...p.spaces, ...(p.systems || [])].map(x => `<code>${esc(x)}</code>`).join(' ')}</figure>` : '',
-    p.gaps?.length ? `<figure><figcaption>Not covered by any primitive yet</figcaption><ul>${p.gaps.map(g => `<li>${esc(g)}</li>`).join('')}</ul></figure>` : '',
-  ].join('');
+    p.gaps?.length ? `<figure class="gaps"><figcaption>Not covered by any primitive yet</figcaption><ul>${p.gaps.map(g => `<li>${esc(g)}</li>`).join('')}</ul></figure>` : '',
+  ].join(''));
 }
 
 let revealRows = 0;
@@ -109,10 +150,15 @@ function renderConstruction() {
   const p = b.partial || {};
   if (p.title) $('#ct-title').textContent = p.title;
   if (p.pitch) $('#ct-pitch').textContent = p.pitch;
-  $('#ct-stage').innerHTML = `<strong>${esc(STAGES[b.stage] || b.stage)}</strong>${b.detail ? ` — ${esc(b.detail)}` : ''}`;
+  setHTML($('#ct-stage'), `<strong>${esc(STAGES[b.stage] || b.stage)}</strong>${b.detail ? ` — ${esc(b.detail)}` : ''}`);
+  const done = PHASE_DONE[b.stage] ?? 0, steps = $('#ct-steps');
+  setHTML(steps, PHASES.map((label, i) => `<i class="${i < done ? 'done' : i === done ? 'now' : ''}" title="${label}"></i>`).join(''));
+  steps?.setAttribute('aria-valuenow', String(done)); steps?.setAttribute('aria-valuetext', PHASES[Math.min(done, PHASES.length - 1)]);
   const kinds = Object.entries(p.entities || {}).filter(([, d]) => !d.solid && d.glyph);
-  $('#ct-cast').innerHTML = kinds.map(([k, d]) => { const art = b.art.find(a => a.key === `sprite:${k}`); return `<figure><div class="art">${art ? `<img src="${art.url}" alt="">` : esc(d.glyph)}</div>${esc(k.replace(/-/g, ' '))}</figure>`; }).join('');
   if (!p.rows) { renderPlan(b); return; }
+  $('#ct-cast').classList.remove('plan');
+  setHTML($('#ct-cast'), kinds.map(([k, d]) => { const art = b.art.find(a => a.key === `sprite:${k}`); return `<figure><div class="art">${art ? `<img src="${art.url}" alt="">` : esc(d.glyph)}</div>${esc(k.replace(/-/g, ' '))}</figure>`; }).join(''));
+  $('#stage canvas.art')?.remove(); // the drafted level replaces the placeholder art
   const rows = p.rows || [], ctx = canvas.getContext('2d');
   const rect = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
   canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
@@ -130,21 +176,21 @@ function renderConstruction() {
   }));
 }
 
-async function playView(meta, record) {
+async function playView(meta, record, { powerOn = false } = {}) {
   await promotedReady;
   const legacy = !isKernel(record);
   const gaps = record?.report?.gaps || [];
-  $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p></header>
-    ${legacy ? '<p class="notice">This game was made with the retired genre engine. It still plays, but changes need a new game.</p>' : ''}
-    ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
-    ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
+  // Hierarchy: what it is, the game, how to change it, then what it can't do yet.
+  $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p>
+    ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(', ')}</p>` : ''}
+    ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}</header>
+    <section class="cabinet playing" aria-label="Game"><span class="marks"></span><div class="board${powerOn ? ' power-on' : ''}" id="game"></div><div class="cabinet-bar" id="play-bar"></div></section>
+    ${legacy ? '<p class="notice legacy">This game was made with the retired genre engine. It still plays, but changes need a new game.</p>' : `<form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “faster, and add a lighthouse keeper who knows the way”" aria-label="Change this game"><button class="primary" type="submit">Change it</button><button type="button" id="experiment" title="A new primitive written by a code model, sandboxed and labelled experimental">Try as experiment</button></form>
+    <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}
     ${gaps.filter(g => g.kind === 'partial').map(g => `<p class="notice">${esc(g.why)}${!legacy ? ` <button type="button" class="inline" data-experiment="${esc(g.capability)}">Try the rest as an experiment</button>` : ''}</p>`).join('')}
     ${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').length ? `<div class="notice">Not in this game yet (no primitive covers it):<ul>${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').slice(0, 6).map(g => `<li>${esc(g.capability)}${g.why ? ` <small>${esc(g.why)}</small>` : ''}${!legacy ? ` <button type="button" class="inline" data-experiment="${esc(g.capability)}" title="A code model writes it as a new primitive, checked in a sandbox and labelled experimental">Try it as an experiment</button>` : ''}</li>`).join('')}</ul></div>` : ''}
-    ${experimentsList(record)}
-    <div class="board" id="game"></div>
-    ${legacy ? '' : `<form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “faster, and add a lighthouse keeper who knows the way”" aria-label="Change this game"><button class="primary" type="submit">Change it</button><button type="button" id="experiment" title="A new primitive written by a code model, sandboxed and labelled experimental">Try as experiment</button></form>
-    <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}`;
-  player = await mount($('#game'), record); shownVersion = record.version;
+    ${experimentsList(record)}`;
+  player = await mount($('#game'), record); shownVersion = record.version; renderPlayBar();
   if ($('#change')) $('#change').onsubmit = e => { e.preventDefault(); requestChange($('#change-text').value); };
   if ($('#experiment')) $('#experiment').onclick = () => requestExperiment($('#change-text').value);
   $('#stage').onclick = e => {
@@ -156,6 +202,15 @@ async function playView(meta, record) {
   };
   pollPromotions();
   if ($('.quick')) $('.quick').onclick = e => { const q = e.target.closest('[data-quick]')?.dataset.quick; if (q) requestChange(q); };
+}
+
+// The strip under the screen: what is playing, and what is being worked on while you play.
+function renderPlayBar() {
+  const el = $('#play-bar'); if (!el) return;
+  const b = selected && builds.get(selected), busy = b && !b.done;
+  setHTML(el, busy
+    ? `<span class="state"><span class="dot generating"></span><span><strong>${esc(STAGES[b.stage] || b.stage)}</strong>${b.detail ? ` — ${esc(b.detail)}` : ''}</span></span><span class="time" data-elapsed>${elapsed(b)}</span>`
+    : `<span class="state"><span class="dot ready"></span><span><strong>Playing</strong> version ${esc(shownVersion ?? '')}</span></span><span class="hint">Press <kbd>T</kbd> <span class="off">for theater</span><span class="on">to leave theater</span></span>`);
 }
 
 // ---------- experiments (tier 3) and promotion into real mods (tier 4) ----------
@@ -209,10 +264,24 @@ async function requestChange(text) {
 }
 
 // ---------- build sheet ----------
+let shownLog = { id: null, n: 0 };
+function renderSheetNow() {
+  const b = selected && builds.get(selected), el = $('#sheet-now'); if (!el) return;
+  el.textContent = b && !b.done ? `${STAGES[b.stage] || b.stage}, ${elapsed(b)}` : b?.failed ? 'Failed' : shownVersion ? `Version ${shownVersion}` : '';
+}
+{
+  const d = $('#sheet-details');
+  try { d.open = localStorage.getItem('gv-details') === '1'; } catch {}
+  d.addEventListener('toggle', () => { try { localStorage.setItem('gv-details', d.open ? '1' : '0'); } catch {} });
+}
 async function renderSheet(record) {
   $('#sheet').hidden = !selected; if (!selected) return;
   const b = builds.get(selected);
-  $('#timeline').innerHTML = (b?.log || []).map((s, i, all) => `<li class="${i === all.length - 1 ? 'now' : ''}"><span>${esc(s.label)}</span><span>${s.ms != null ? (s.ms / 1000).toFixed(1) + ' s' : ''}</span></li>`).join('') || '<li>Built earlier.</li>';
+  // Completed steps get a check, the latest one pulses until the job is done; only steps new since the last render animate in.
+  const log = b?.log || [], fresh = shownLog.id === selected ? shownLog.n : log.length;
+  setHTML($('#timeline'), log.map((s, i, all) => `<li class="${[i === all.length - 1 ? (b.done ? (b.failed ? 'failed' : 'finished') : 'now') : '', i >= fresh ? 'new' : ''].join(' ').trim()}"><span></span><span>${esc(s.label)}</span><span>${s.ms != null ? (s.ms / 1000).toFixed(1) + ' s' : ''}</span></li>`).join('') || `<li class="plain"><span></span><span>${b && !b.done && !shownVersion ? 'Started before this page opened. New steps appear here.' : 'Built earlier.'}</span><span></span></li>`);
+  shownLog = { id: selected, n: log.length };
+  renderSheetNow(); renderPlayBar();
   if (record) {
     const r = record.report || {}, pt = r.playtest;
     if (isKernel(record)) { $('#checks').innerHTML = kernelChecks(record); }
@@ -252,19 +321,22 @@ function kernelChecks(record) {
 // ---------- selection ----------
 async function select(id) {
   const token = ++selecting;
-  selected = id || null; player?.dispose(); player = null;
+  selected = id || null; player?.dispose(); player = null; shownVersion = null;
+  drawer(false); $('#checks').innerHTML = ''; $('#stage').onclick = null;
+  document.body.classList.toggle('has-game', Boolean(selected)); dispatchEvent(new Event('resize'));
   await refreshLibrary(); if (token !== selecting) return;
   if (!selected) { welcome(); renderSheet(); return; }
   const { meta, latest } = await api(`/api/v2/games/${selected}`).catch(() => ({}));
   if (token !== selecting) return;
-  if (!meta) { welcome(); return; }
+  if (!meta) { document.body.classList.remove('has-game'); welcome(); return; }
   if (latest) await playView(meta, latest); else { build(selected); revealRows = 0; constructionView(meta); }
   renderSheet(latest);
 }
 clearInterval(tickTimer);
 tickTimer = setInterval(() => {
   const b = selected && builds.get(selected);
-  if (b && $('#ct-time')) { $('#ct-time').textContent = `${((performance.now() - b.started) / 1000).toFixed(1)} s`; renderConstruction(); }
+  if (b && $('#ct-time')) { $('#ct-time').textContent = elapsed(b); renderConstruction(); }
+  if (b && !b.done) { const t = $('#play-bar [data-elapsed]'); if (t) t.textContent = elapsed(b); if (tickCount++ % 5 === 0) renderSheetNow(); }
 }, 100);
 
 // ---------- live events ----------
@@ -289,14 +361,14 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
-  if (!player || !$('#game')) { const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record); toast('Your game is ready. Play!'); }
+  if (!player || !$('#game')) { const fromBuild = Boolean($('#ct-canvas')); const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record, { powerOn: fromBuild }); toast('Your game is ready. Play!'); }
   else if (player.update(record)) { shownVersion = e.version; toast(String(record.stage).startsWith('detail:') ? `New detail in ${record.stage.slice(7)}.` : `Version ${e.version} loaded.`); }
   else { const { meta } = await api(`/api/v2/games/${e.gameId}`); player?.dispose(); await playView(meta, record); toast(`Version ${e.version} loaded (restarted).`); }
   renderSheet(record);
 });
 for (const type of ['job_done', 'job_failed']) events.addEventListener(type, ev => {
   const e = JSON.parse(ev.data), b = build(e.gameId);
-  b.log.push({ label: type === 'job_done' ? 'Done' : `Failed: ${e.error}`, ms: e.ms });
+  b.log.push({ label: type === 'job_done' ? 'Done' : `Failed: ${e.error}`, ms: e.ms }); b.done = true; b.failed = type === 'job_failed';
   if (type === 'job_failed' && e.gameId === selected) toast(`That build failed: ${e.error}`);
   refreshLibrary(); if (e.gameId === selected) renderSheet();
 });
@@ -306,23 +378,23 @@ select(location.hash.slice(1));
 
 // Theater view: collapse the side panels and give the game the window. Remembered per browser.
 {
-  const toggle = document.createElement('button');
-  toggle.type = 'button'; toggle.className = 'theater-toggle';
+  const toggle = $('#theater');
   const set = on => {
     document.body.classList.toggle('theater', on);
     toggle.innerHTML = `${on ? 'Exit theater' : 'Theater'} <kbd>T</kbd>`;
     toggle.setAttribute('aria-pressed', String(on));
     try { localStorage.setItem('gv-theater', on ? '1' : '0'); } catch {}
     dispatchEvent(new Event('resize')); // let the player re-fit its canvas
+    setTimeout(() => dispatchEvent(new Event('resize')), 450); // and again once the rail has folded away
   };
   toggle.addEventListener('click', () => set(!document.body.classList.contains('theater')));
   addEventListener('keydown', e => {
     if (e.key !== 't' && e.key !== 'T') return;
+    const t = e.target;
     // defaultPrevented: the focused game claimed the key for one of its verbs (player.js).
-    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || t?.isContentEditable || t?.closest?.('input, textarea, select, [contenteditable]')) return;
     set(!document.body.classList.contains('theater'));
   });
-  document.body.append(toggle);
   let saved = false; try { saved = localStorage.getItem('gv-theater') === '1'; } catch {}
   set(saved);
 }

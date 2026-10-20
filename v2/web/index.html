@@ -1,28 +1,48 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1729">
   <title>Gameverse Studio</title>
   <link rel="stylesheet" href="/v2/web/studio.css">
   <script type="module" src="/v2/web/studio-app.js"></script>
 </head>
 <body>
-  <aside class="rail" aria-label="Your games">
-    <a class="brand" href="/v2">Gameverse <span>studio</span></a>
+  <a class="skip" href="#stage">Skip to the game</a>
+  <header class="appbar">
+    <button type="button" class="icon-btn menu" id="menu" aria-controls="rail" aria-expanded="false" aria-label="Your games and new game">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    </button>
+    <a class="brand brand-bar" href="/v2"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Gameverse <span class="sub">studio</span></a>
+    <span class="spacer"></span>
+    <button type="button" class="new-btn" id="new-game"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New game</span></button>
+    <button type="button" class="theater-toggle" id="theater" aria-pressed="false">Theater <kbd>T</kbd></button>
+  </header>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="rail" id="rail" aria-label="Your games">
+    <a class="brand brand-rail" href="/v2"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Gameverse <span class="sub">studio</span></a>
     <form id="create" class="create">
       <label for="prompt">Describe a game</label>
-      <textarea id="prompt" rows="3" placeholder="A penguin ninja sliding through an ice fortress, throwing snowballs at walrus guards" required></textarea>
+      <textarea id="prompt" rows="4" placeholder="A penguin ninja sliding through an ice fortress, throwing snowballs at walrus guards" required></textarea>
       <button type="submit" class="primary" id="make">Make it</button>
     </form>
     <section id="questions" class="questions" hidden aria-live="polite"></section>
     <div class="list-head"><h2>Your games</h2><button id="clear" class="quiet" type="button">Clear all</button></div>
     <ul id="games" class="games"></ul>
   </aside>
-  <main id="stage" class="stage"></main>
-  <aside id="sheet" class="sheet" aria-label="Build details" hidden>
-    <h2>Build</h2><ol id="timeline" class="timeline"></ol>
-    <h2>Checks</h2><div id="checks" class="checks"></div>
-    <h2>Versions</h2><ol id="versions" class="versions"></ol>
-  </aside>
+  <main class="main">
+    <div id="stage" class="stage" tabindex="-1"></div>
+    <section id="sheet" class="sheet" aria-label="Build details" hidden>
+      <details id="sheet-details">
+        <summary><span class="sum-title">Build details</span><span class="sum-now" id="sheet-now"></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="sheet-grid">
+          <div class="sheet-col"><h2>Build</h2><ol id="timeline" class="timeline"></ol></div>
+          <div class="sheet-col"><h2>Checks</h2><div id="checks" class="checks"></div></div>
+          <div class="sheet-col"><h2>Versions</h2><ol id="versions" class="versions"></ol></div>
+        </div>
+      </details>
+    </section>
+  </main>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
 </body>
 </html>
