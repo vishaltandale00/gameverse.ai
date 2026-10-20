@@ -39,9 +39,6 @@ Spaces from spaces2d implement `api.addZone(zone, rt)`. The graph space and the 
 - **Workaround:** generators keep walkable roles empty by default (overworld grass, doors, mats; maze house interiors) and record them in their services. Rooms prove one-way rungs with their own movement model.
 - **Request (optional):** let `testSpace` read `content.blocks` `solid`/`tags`, so generator proofs can be cross-checked against it as they already are against `engine.space.tilemap` and `engine.space.grid`.
 
-## 6. Vocabulary ownership lookup
+## 6. Vocabulary ownership lookup (resolved)
 
-`logic.owners` exists, but a primitive that wants to use another primitive's kind (`give_item`, `item`) has to know whether the owner is installed in this document. Having the kind registered in the catalogue isn't enough.
-
-- **Workaround:** `vocabulary(rt, type, kind)` checks `logic.owners` against the document's instance list.
-- **Request:** `rt.has(type, kind)`, true only when the owner is installed.
+Resolved by `rt.canRun`, `rt.canTest` and `rt.has` (cbc7e2d8). `vocabulary()` now delegates to them, and falls back to `logic.owners` on older kernels.

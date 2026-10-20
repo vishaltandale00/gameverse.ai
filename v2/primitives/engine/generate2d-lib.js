@@ -175,6 +175,7 @@ export function spawnAt(rt, space, archetype, cell, components = {}, id) {
 
 /** True when a predicate/effect kind exists and its owning primitive is installed in this document. */
 export function vocabulary(rt, type, kind) {
+  if (typeof rt.canRun === 'function') return type === 'effect' ? rt.canRun(kind) : rt.canTest(kind);
   const owner = rt.logic.owners?.[type]?.get(kind); if (!owner) return false;
   if (owner === 'kernel') return true;
   const used = [...(rt.doc.systems || []), ...(rt.doc.spaces || []), ...(rt.doc.spaces || []).flatMap(s => s.generators || [])].map(x => x.use);
