@@ -380,6 +380,7 @@
        "when": {"all":[{"item":"cinder_green"},{"item":"cinder_red"},{"item":"cinder_blue"},{"item":"cinder_ash"}]},
        "do": [
         {"do":"unlock","gate":"heart_door"},
+        {"do":"set_flag","flag":"all_cinders_returned"},
         {"do":"notify","text":"All four cinders are yours. Return to Marrow.","kind":"quest"},
         {"do":"start_quest","quest":"q_relight"}
        ]
@@ -388,7 +389,7 @@
        "id": "b_marrow_truth",
        "title": "Marrow confesses",
        "when": {"all":[{"zone":"cinderwell"},{"flag":"marrow_confessed"}]},
-       "do": [{"do":"set_flag","flag":"all_cinders_returned"},{"do":"add_entry","entry":"e_marrow"},{"do":"play_cutscene","cutscene":"cs_confession"}],
+       "do": [{"do":"add_entry","entry":"e_marrow"},{"do":"play_cutscene","cutscene":"cs_confession"}],
        "after": ["b_all_cinders"]
       },
       {
@@ -463,7 +464,7 @@
     "objectives": [
      {"id":"o_bench","kind":"use","interactable":"bench_moss_1","text":"Rest at the bench in the roots."},
      {"id":"o_boss","kind":"defeat","archetype":"mother_thistle","count":1,"text":"Defeat Mother Thistle."},
-     {"id":"o_return","kind":"deliver","item":"cinder_green","count":1,"to":"marrow","text":"Bring the cinder to Marrow."}
+     {"id":"o_return","kind":"deliver","item":"cinder_green","count":1,"to":"marrow","consume":false,"text":"Bring the cinder to Marrow."}
     ],
     "prereq": ["q_embers"],
     "rewards": {"items":[{"item":"notch_pin","count":1}]}
