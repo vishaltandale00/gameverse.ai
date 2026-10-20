@@ -92,8 +92,10 @@ world: {
 }
 ```
 
-The renderer sets `render.view = { X(x), Y(y), s, clip?, hud? }` each frame, mapping world units to
-CSS pixels, so mods draw in the same space. Hosts and the pipeline go through
+The renderer sets `render.view = { X(x), Y(y), s, clip?, hud?, camera? }` each frame, mapping world units to
+CSS pixels, so mods draw in the same space. When a world is too big to fit at a readable size the
+renderer scrolls: X/Y then include the camera, `clip` is the visible viewport, and `camera` is
+`{ x, y, w, h }` in world units (null when everything fits). Hosts and the pipeline go through
 `composeGame`/`composeRenderer`, which offer a kit exactly the mods its capabilities and free buttons
 allow. The content model switches mods on in a fixed-shape `mods` object, and anything neither the
 kit nor a mod can express is listed as unsupported, never claimed.

@@ -1,10 +1,11 @@
 // Maze kit content: the strict schema the model fills, its prompt, a hand-written
 // sample, and validate() which normalizes content and reports errors as
 // { code, path, message, hint? } so a generator can repair it.
-import { STYLE_NAMES } from './maze.js';
+import { STYLE_NAMES, SIZE_NAMES, SIZES } from './maze.js';
 
 export const PERSONALITIES = ['chaser', 'ambusher', 'whimsical', 'shy'];
-export const LIMITS = { hunters: [2, 6], levels: [1, 12], bonus: [1, 12], lives: [1, 5], density: [0.3, 1], speed: [0.7, 1.4], tunnels: [1, 2], powerPellets: [2, 6], points: [10, 10000], extraLifeAt: [0, 100000] };
+/** Hunters: up to 6, or 8 when any level is huge or vast. */
+export const LIMITS = { hunters: [2, 6], huntersBig: [2, 8], levels: [1, 12], bonus: [1, 12], lives: [1, 5], density: [0.3, 1], speed: [0.7, 1.4], tunnels: [1, 2], powerPellets: [2, 6], points: [10, 10000], extraLifeAt: [0, 100000] };
 
 const str = description => ({ type: 'string', description });
 const obj = properties => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties });
@@ -13,7 +14,7 @@ export const schema = obj({
   title: str('Game title, original (no existing game or character names), at most 40 characters.'),
   logline: str('One sentence pitch, at most 140 characters.'),
   hero: obj({ name: str('The hero who eats their way through the maze.'), glyph: str('One emoji that suggests the hero, used only to pick an art look.') }),
-  hunters: { type: 'array', description: '2 to 6 hunters. The first one starts outside the house.', items: obj({
+  hunters: { type: 'array', description: '2 to 6 hunters (up to 8 if any level is huge or vast). Bigger mazes add numbered copies automatically, so 4 is right for most games.', items: obj({
     name: str('Short hunter name, unique.'),
     personality: { type: 'string', enum: PERSONALITIES, description: 'chaser: targets the hero; ambusher: aims 4 tiles ahead; whimsical: flanks using the chaser; shy: chases from afar, retreats up close.' },
     color: str('Hex color like #ff4d4d, distinct from the other hunters and from frightened blue.'),
@@ -21,12 +22,13 @@ export const schema = obj({
   pellet: obj({ name: str('What the small pellets are (e.g. "glowberry").') }),
   power: obj({ name: str('What the power pellets are; eating one turns the hunters into prey.') }),
   bonus: { type: 'array', description: '1 to 12 bonus prizes, one per level in order (the last repeats), points rising.', items: obj({ name: str('Bonus prize name.'), points: { type: 'integer', description: '10 to 10000.' } }) },
-  levels: { type: 'array', description: '1 to 12 levels in order; each gets its own generated maze.', items: obj({
+  levels: { type: 'array', description: '1 to 12 levels in order; each gets its own generated maze. A revision returns every level, changed only where the request says.', items: obj({
     maze: obj({
-      style: { type: 'string', enum: STYLE_NAMES, description: 'classic: mixed blocks; compact: many short corridors and junctions; sprawling: big blocks and long runs.' },
+      size: { type: 'string', enum: SIZE_NAMES, description: `The map's dimensions: ${SIZE_NAMES.map(k => `${k} ${SIZES[k].w}×${SIZES[k].h}`).join(', ')} tiles. Bigger sizes scroll with a camera and add hunter houses, hunters and power pellets. "Bigger map" means a bigger size; "open world" means vast.` },
+      style: { type: 'string', enum: STYLE_NAMES, description: 'The corridor shape, at any size: classic mixed blocks; compact many short corridors and junctions; sprawling big blocks and long runs. Style never changes the map size.' },
       density: { type: 'number', description: '0.3 to 1: how many of the possible corridors to keep. Higher means more junctions and escape routes.' },
       tunnels: { type: 'integer', description: '1 or 2 side tunnels that wrap around.' },
-      powerPellets: { type: 'integer', description: '2, 4 or 6 (4 is classic).' },
+      powerPellets: { type: 'integer', description: '2, 4 or 6 for a classic-size map (4 is classic); bigger sizes scale this with area automatically.' },
     }),
     speed: { type: 'number', description: '0.7 to 1.4 multiplier on every speed; ramp it up gently across levels.' },
   }) },
@@ -42,8 +44,10 @@ export const prompt = `You write content for a maze chase game in the style of t
 - hunters: 2 to 6, usually 4 with one of each personality (chaser, ambusher, whimsical, shy). The whimsical hunter needs a chaser to flank with. Colors: bright, distinct, not deep blue (frightened hunters turn blue).
 - pellet and power: themed names for the small dots and the big power dots.
 - bonus: prizes that appear twice per level, points rising level by level (classic: 100, 300, 500, 700, 1000, 2000, 3000, 5000).
-- levels: usually 4 to 8. Each level picks a maze style and parameters; the generator builds a different maze for each. Start with density around 0.6 and speed 1.0, vary styles, and ramp speed up gently (at most +0.05 per level). Fewer power pellets or lower density makes a level harder.
-- lives 3, extraLifeAt 10000, noUpwardTurns true unless the idea asks otherwise; endless only when the idea is score-chasing forever.`;
+- levels: usually 4 to 8. Each level picks a maze size, style and parameters; the generator builds a different maze for each. Start with density around 0.6 and speed 1.0, vary styles, and ramp speed up gently (at most +0.05 per level). Fewer power pellets or lower density makes a level harder.
+- size is the map's dimensions; style is only the corridor shape. Use classic unless the idea asks for more room. "Bigger map", "larger maze" or "more to explore" means a bigger size (large or huge), never just a different style. "Open world" or "one giant map" means size vast with a single long level, or endless true. Bigger sizes scroll with a camera and bring more houses, hunters and power pellets on their own; keep tunnels and powerPellets at their classic values.
+- lives 3, extraLifeAt 10000, noUpwardTurns true unless the idea asks otherwise; endless only when the idea is score-chasing forever.
+- When revising, return every existing level: change only the levels and fields the request is about, and never drop, shorten or reorder levels unless asked. "Make the map bigger" changes size on every level and nothing else.`;
 
 export const sample = {
   title: 'Glowberry Grove',
@@ -62,11 +66,11 @@ export const sample = {
     { name: 'sun melon', points: 700 }, { name: 'golden acorn', points: 1000 }, { name: 'crown truffle', points: 2000 },
   ],
   levels: [
-    { maze: { style: 'classic', density: 0.65, tunnels: 1, powerPellets: 4 }, speed: 1 },
-    { maze: { style: 'compact', density: 0.6, tunnels: 2, powerPellets: 4 }, speed: 1.02 },
-    { maze: { style: 'sprawling', density: 0.7, tunnels: 1, powerPellets: 4 }, speed: 1.05 },
-    { maze: { style: 'classic', density: 0.5, tunnels: 2, powerPellets: 4 }, speed: 1.08 },
-    { maze: { style: 'compact', density: 0.45, tunnels: 1, powerPellets: 2 }, speed: 1.1 },
+    { maze: { size: 'classic', style: 'classic', density: 0.65, tunnels: 1, powerPellets: 4 }, speed: 1 },
+    { maze: { size: 'classic', style: 'compact', density: 0.6, tunnels: 2, powerPellets: 4 }, speed: 1.02 },
+    { maze: { size: 'classic', style: 'sprawling', density: 0.7, tunnels: 1, powerPellets: 4 }, speed: 1.05 },
+    { maze: { size: 'classic', style: 'classic', density: 0.5, tunnels: 2, powerPellets: 4 }, speed: 1.08 },
+    { maze: { size: 'classic', style: 'compact', density: 0.45, tunnels: 1, powerPellets: 2 }, speed: 1.1 },
   ],
   lives: 3,
   extraLifeAt: 10000,
@@ -112,7 +116,8 @@ export function validate(input) {
     else c[k].name = text(c[k].name, `${k}.name`, 24);
   }
 
-  if (list(c.hunters, 'hunters', LIMITS.hunters)) {
+  const big = Array.isArray(c.levels) && c.levels.some(lv => ['huge', 'vast'].includes(lv?.maze?.size));
+  if (list(c.hunters, 'hunters', big ? LIMITS.huntersBig : LIMITS.hunters)) {
     const names = new Set();
     c.hunters.forEach((h, i) => {
       const p = `hunters[${i}]`;
@@ -134,6 +139,8 @@ export function validate(input) {
     const p = `levels[${i}]`;
     if (!lv || typeof lv !== 'object' || !lv.maze || typeof lv.maze !== 'object') return fail('schema', `${p}.maze`, 'level needs a maze object');
     const m = lv.maze;
+    if (m.size === undefined) m.size = 'classic'; // content written before sizes existed
+    else if (!SIZE_NAMES.includes(m.size)) fail('maze_size', `${p}.maze.size`, `unknown maze size '${m.size}'`, SIZE_NAMES.join(', '));
     if (!STYLE_NAMES.includes(m.style)) fail('maze_style', `${p}.maze.style`, `unknown maze style '${m.style}'`, STYLE_NAMES.join(', '));
     m.density = num(m.density, `${p}.maze.density`, LIMITS.density);
     m.tunnels = num(m.tunnels, `${p}.maze.tunnels`, LIMITS.tunnels, { integer: true });

@@ -11,7 +11,10 @@ const $ = id => document.getElementById(id);
 const canvas = $('screen'), ctx = canvas.getContext('2d');
 for (const k of ['bot', 'noart', 'reduced', 'attract']) if (params.get(k) === '1') $(k).checked = true;
 
-const { content, errors } = kit.validate(kit.content.sample);
+// ?size=large|huge|vast plays the sample on bigger maps (the camera scrolls when tiles would be too small).
+const sample = structuredClone(kit.content.sample);
+if (params.get('size')) for (const lv of sample.levels) lv.maze.size = params.get('size');
+const { content, errors } = kit.validate(sample);
 if (errors.length) console.error('sample content errors', errors);
 const { brief, entities } = kit.cast(content);
 const direction = fallbackDirection({ title: content.title, pitch: content.logline, view: 'topdown', artStyle: params.get('style') || '', cast: brief });
@@ -23,7 +26,7 @@ $('title').textContent = `${kit.name} · ${content.title}`;
 let game, render, state, high = 0, memo = {};
 function start() {
   game = kit.createGame(content, { seed });
-  render = kit.createRenderer(game, { art: $('noart').checked ? {} : art });
+  render = kit.createRenderer(game, { art: $('noart').checked ? {} : art, minimap: params.get('minimap') !== '0' });
   state = game.createState({ high });
   memo = {};
 }
