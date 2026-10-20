@@ -13,6 +13,10 @@ import { createProceduralArt } from '../planner/art-procedural.js';
 import { askQuestions } from '../planner/questions.js';
 import { routeIdea } from '../planner/router.js';
 import { createDecisions } from '../planner/decisions.js';
+import { createExperimentService } from '../experiments/service.js';
+import { createImprovementService } from '../improve/promote.js';
+import { createLocalClaudeRunner } from '../improve/runners/local-claude.js';
+import { loadKit } from '../kits/registry.js';
 import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
@@ -35,7 +39,29 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
     : createProceduralArt({ client: openai, model: env.V2_ART_DIRECTOR_MODEL || specModel });
   const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel, art, decisions, names: env.V2_ORIGINAL_NAMES === 'on' ? 'original' : 'any' }) : createPipeline({ registry, logic, planner: active, catalogHash });
   const plannerName = openaiKey ? `openai:${specModel}` : active.version;
-  const jobs = createJobs({ store, pipeline });
+  // Tier 3: experiments (model-written mechanics, sandboxed). Tier 4: promotion into native mods by a coding agent.
+  const experiments = openaiKey && env.V2_EXPERIMENTS !== 'off' ? createExperimentService({ client: createOpenAIClient({ apiKey: openaiKey, timeoutMs: 120000 }) }) : null;
+  const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
+  const improve = env.V2_IMPROVE === 'off' ? null : createImprovementService({ root: repoRoot, runner: createLocalClaudeRunner({ root: repoRoot }) });
+  async function experimentJob(job, ctx) {
+    const latest = await ctx.store.latest(job.gameId);
+    if (!latest) throw Object.assign(Error('That game has no version yet.'), { status: 409 });
+    const doc = latest.doc, current = doc.experiments || [];
+    if (job.kind === 'experiment-remove') {
+      const kept = current.filter(e => e.id !== job.experimentId);
+      return ctx.publish({ doc: { ...doc, experiments: kept }, stage: 'experiment removed', report: { ...latest.report, change: null, changes: [], gaps: [] }, provenance: { ...latest.provenance, base: latest.version } });
+    }
+    ctx.stage('experimenting', { model: experiments.model });
+    const { experiment, check } = await experiments.experiment({ record: latest, kit: await loadKit(doc.kit), request: job.change });
+    if (!check?.ok) throw Object.assign(Error(`The experiment didn't pass its checks: ${(check?.problems || []).slice(0, 2).map(p => p.message || p).join('; ')}`), { status: 422 });
+    return ctx.publish({
+      doc: { ...doc, experiments: [...current.filter(e => e.id !== experiment.id), experiment] },
+      stage: `experiment: ${experiment.label}`,
+      report: { ...latest.report, change: job.change, changes: [`experimental: ${experiment.label}`], gaps: [], experiment: { id: experiment.id, label: experiment.label } },
+      provenance: { ...latest.provenance, base: latest.version, experiment: experiment.id },
+    });
+  }
+  const jobs = createJobs({ store, pipeline: (job, ctx) => job.kind === 'experiment' || job.kind === 'experiment-remove' ? experimentJob(job, ctx) : pipeline(job, ctx) });
 
   const routes = [
     ['GET', /^\/api\/v2\/catalog$/, async () => ({ catalogHash, primitives: registry.cards(), planner: plannerName })],
@@ -61,6 +87,39 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       await store.updateMeta(m[1], { status: 'generating' });
       const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change, base: meta.latest, kind: 'revise' });
       return { gameId: m[1], jobId: job.id };
+    }],
+    // Try a change as an experiment: model-written code, checked and sandboxed (v2/kits/EXTENDING.md).
+    ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/experiments$/, async (body, m) => {
+      if (!experiments) throw Object.assign(Error('Experiments need a model; set OPENAI_API_KEY.'), { status: 503 });
+      const request = String(body?.request || '').trim();
+      if (!request || request.length > 500) throw Object.assign(Error('Describe the experiment in 1-500 characters.'), { status: 400 });
+      const meta = await store.meta(m[1]);
+      if (!meta?.latest) throw Object.assign(Error('That game has no version yet.'), { status: 409 });
+      await store.updateMeta(m[1], { status: 'generating' });
+      const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change: request, kind: 'experiment' });
+      return { gameId: m[1], jobId: job.id };
+    }],
+    ['DELETE', /^\/api\/v2\/games\/([a-z0-9-]+)\/experiments\/([a-z0-9-]+)$/, async (_, m) => {
+      const job = jobs.submit({ gameId: m[1], kind: 'experiment-remove', experimentId: m[2] });
+      return { gameId: m[1], jobId: job.id };
+    }],
+    // Build an experiment properly: a coding agent turns it into a native, tested mod (a branch to review).
+    ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/promote$/, async (body, m) => {
+      if (!improve) throw Object.assign(Error('Promotion is off (V2_IMPROVE=off).'), { status: 503 });
+      const latest = await store.latest(m[1]);
+      const experiment = (latest?.doc?.experiments || []).find(e => e.id === body?.experimentId);
+      if (!experiment) throw Object.assign(Error('That experiment is not part of the latest version.'), { status: 404 });
+      const job = await improve.start({ experiment, kitId: latest.doc.kit, gameId: m[1], gameVersion: latest.version, target: 'mod' });
+      return { job };
+    }],
+    ['GET', /^\/api\/v2\/improve$/, async () => ({ jobs: improve ? improve.list() : [] })],
+    ['GET', /^\/api\/v2\/improve\/([a-z0-9-]+)$/, async (_, m) => { const job = improve?.status(m[1]); if (!job) throw Object.assign(Error('No such job.'), { status: 404 }); return { job }; }],
+    ['POST', /^\/api\/v2\/improve\/([a-z0-9-]+)\/cancel$/, async (_, m) => ({ job: await improve?.cancel(m[1]) })],
+    // Apply a verified mod to this checkout (fast-forward only; never pushes). The server restarts to load it.
+    ['POST', /^\/api\/v2\/improve\/([a-z0-9-]+)\/apply$/, async (_, m) => {
+      const result = await improve.apply(m[1]);
+      if (!result.ok) throw Object.assign(Error(result.reason), { status: 409 });
+      return { ...result, restartNeeded: true };
     }],
     ['POST', /^\/api\/v2\/questions$/, async body => {
       const prompt = String(body?.prompt || '').trim();

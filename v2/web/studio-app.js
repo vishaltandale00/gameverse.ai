@@ -120,13 +120,65 @@ function playView(meta, record) {
     ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
     ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
-    ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}</p>` : ''}
+    ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}${isKit(record) ? ` <button type="button" class="inline" data-experiment="${esc(record.report.gaps.find(g => g.kind === 'unsupported').capability)}">Try it as an experiment</button>` : ''}</p>` : ''}
+    ${experimentsList(record)}
     <div class="board" id="game"></div>
-    <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button></form>
+    <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button>${isKit(record) ? '<button type="button" id="experiment" title="Model-written code for this game, sandboxed and labelled experimental">Try as experiment</button>' : ''}</form>
     <div class="quick">${(record?.doc?.schema === 'gameverse.v2.kit-game/0.1' ? record.report?.quick || KIT_QUICK : QUICK).map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;
   player = mount($('#game'), record); shownVersion = record.version;
   $('#change').onsubmit = e => { e.preventDefault(); requestChange($('#change-text').value); };
+  if ($('#experiment')) $('#experiment').onclick = () => requestExperiment($('#change-text').value);
+  $('#stage').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.experiment) requestExperiment(b.dataset.experiment);
+    else if (b.dataset.promote) promote(b.dataset.promote);
+    else if (b.dataset.removeExperiment) api(`/api/v2/games/${selected}/experiments/${b.dataset.removeExperiment}`, null, 'DELETE').then(() => toast('Removing that experiment.')).catch(error => toast(error.message));
+    else if (b.dataset.apply) applyPromotion(b.dataset.apply);
+  };
+  pollPromotions();
   $('.quick').onclick = e => { const q = e.target.closest('[data-quick]')?.dataset.quick; if (q) requestChange(q); };
+}
+
+const isKit = record => record?.doc?.schema === 'gameverse.v2.kit-game/0.1';
+
+// ---------- experiments (tier 3) and promotion into real mods (tier 4) ----------
+function experimentsList(record) {
+  const list = record?.doc?.experiments || [];
+  if (!list.length) return '';
+  return `<div class="experiments"><h3>Experiments</h3>${list.map(e => `<div class="experiment" data-id="${esc(e.id)}"><span class="badge">Experimental</span> <strong>${esc(e.label)}</strong> <small>${esc(e.request || '')}</small>
+    <span class="promotion" id="promo-${esc(e.id)}"></span>
+    <button type="button" data-promote="${esc(e.id)}" title="A coding agent builds this as a tested mod every compatible game can use (minutes, in the background)">Build it properly</button>
+    <button type="button" class="quiet" data-remove-experiment="${esc(e.id)}">Remove</button></div>`).join('')}</div>`;
+}
+async function requestExperiment(text) {
+  text = String(text || '').trim(); if (!text || !selected) return toast('Say what the experiment should add.');
+  try {
+    await api(`/api/v2/games/${selected}/experiments`, { request: text });
+    builds.set(selected, { started: performance.now(), stage: 'experimenting', detail: text, partial: null, art: [], log: [{ label: `Experiment: ${text}`, ms: 0 }] });
+    $('#change-text').value = ''; toast('Writing that as an experiment (usually under 15 s). Keep playing.'); renderSheet();
+  } catch (error) { toast(error.message); }
+}
+const promotions = new Map(); // experimentId -> improve job id
+async function promote(experimentId) {
+  try { const { job } = await api(`/api/v2/games/${selected}/promote`, { experimentId }); promotions.set(experimentId, job.id); toast('Building it properly in the background: a coding agent writes and tests a real mod.'); pollPromotions(); }
+  catch (error) { toast(error.message); }
+}
+let promoTimer = 0;
+async function pollPromotions() {
+  clearTimeout(promoTimer);
+  try {
+    const { jobs } = await api('/api/v2/improve');
+    for (const j of jobs.filter(j => j.gameId === selected)) {
+      const el = document.getElementById(`promo-${j.experiment?.id}`); if (!el) continue;
+      const label = { queued: 'Queued', preparing: 'Preparing', coding: 'Coding the mod', verifying: 'Verifying', succeeded: 'Built and verified', failed: 'Build failed', cancelled: 'Cancelled' }[j.state] || j.state;
+      el.innerHTML = `<em>${esc(label)}${j.reason && j.state === 'failed' ? `: ${esc(String(j.reason).slice(0, 120))}` : ''}</em>${j.state === 'succeeded' && !j.applied ? ` <button type="button" data-apply="${esc(j.id)}">Apply</button>` : ''}${j.applied ? ' <em>· applied; restart the server to load it</em>' : ''}`;
+    }
+    if (jobs.some(j => j.gameId === selected && !['succeeded', 'failed', 'cancelled'].includes(j.state))) promoTimer = setTimeout(pollPromotions, 3000);
+  } catch {}
+}
+async function applyPromotion(id) {
+  try { await api(`/api/v2/improve/${id}/apply`, {}); toast('Applied to this checkout. Restart the server to load the new mod.'); pollPromotions(); }
+  catch (error) { toast(error.message); }
 }
 
 async function requestChange(text) {

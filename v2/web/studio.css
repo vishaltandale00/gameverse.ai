@@ -88,3 +88,11 @@ body.theater .game-head p { display: none; }
 body.theater .board { max-width: min(100%, calc((100vh - 110px) * 16 / 9)); margin: 0 auto; }
 @media (prefers-reduced-motion: no-preference) { body .rail, body .sheet, body .stage { transition: padding .2s ease; } }
 .changed { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+.change button:not(.primary) { white-space: nowrap; }
+.notice .inline { margin-left: 8px; padding: 2px 10px; font-size: 13px; }
+.experiments { margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; }
+.experiments h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.experiment { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 4px 0; }
+.experiment small { color: var(--muted); }
+.experiment .badge { font-size: 11px; font-weight: 700; color: #1b1503; background: var(--signal); border-radius: 999px; padding: 1px 8px; }
+.experiment .promotion em { color: var(--muted); font-size: 13px; }
