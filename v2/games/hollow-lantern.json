@@ -1231,6 +1231,11 @@
      "use": "engine.generate.tilemap.rooms",
      "with": {
       "requiresAbilities": [],
+      "movement": {"jumpHeight": 3, "jumpDistance": 4},
+      "abilities": {"ember_step": {"dash": 3}, "briar_grip": {"climb": true}, "moth_wings": {"doubleJump": true}},
+      "palette": {"wall": "stone", "ground": "stone", "platform": "one_way", "rung": "one_way", "hazard": "spikes", "water": "water", "door": "breakable_wall"},
+      "oneWayPlatforms": true,
+      "themes": {"moss": {"wall": "moss_stone", "ground": "moss_stone"}, "wet": {"wall": "wet_stone", "ground": "wet_stone"}, "rust": {"wall": "rust_plate", "ground": "rust_plate"}, "thorn": {"wall": "thorn_wood", "ground": "moss_stone"}, "ash": {"wall": "ash_stone", "ground": "bone_ash"}, "dark": {"wall": "glass_brick"}, "void": {"wall": "ash_stone"}},
       "rooms": [
        {
         "id": "cw_square",
@@ -1244,7 +1249,7 @@
          {"kind":"npc","ref":"vell"},
          {"kind":"npc","ref":"dorrin"},
          {"kind":"well","id":"the_well"},
-         {"kind":"great_lantern","id":"great_lantern_site","at":[410,515]}
+         {"kind":"great_lantern","id":"great_lantern_site"}
         ],
         "exits": [
          {"side":"l","to":"mossgrave"},
@@ -1269,7 +1274,7 @@
         "style": "shaft",
         "theme": "ember",
         "features": [{"kind":"lift","id":"lift_well"}],
-        "exits": [{"side":"t"},{"side":"b","to":"glasswater","gate":{"gate":"rust_seal"}}]
+        "exits": [{"side":"b","to":"glasswater","gate":{"gate":"rust_seal"}}]
        },
        {
         "id": "cw_underwell",
@@ -1307,7 +1312,7 @@
        {
         "id": "mg_hollow",
         "zone": "mossgrave",
-        "rect": [190,390,270,450],
+        "rect": [190, 392, 270, 440],
         "style": "cave",
         "theme": "moss",
         "platforms": 4,
@@ -1319,7 +1324,7 @@
        {
         "id": "mg_thicket",
         "zone": "mossgrave",
-        "rect": [270,380,330,460],
+        "rect": [270, 392, 330, 460],
         "style": "shaft",
         "theme": "moss",
         "platforms": 5,
@@ -1338,7 +1343,7 @@
          {"kind":"ability_altar","ability":"briar_grip"},
          {"kind":"bench","id":"bench_thistle"}
         ],
-        "exits": [{"side":"t"}]
+        "exits": [{"side":"t"},{"side":"b","to":"thornwild","gate":{"ability":"briar_grip"}}]
        },
        {
         "id": "gw_gate",
@@ -1348,12 +1353,12 @@
         "theme": "wet",
         "platforms": 3,
         "features": [{"kind":"valve","id":"cistern_valve"},{"kind":"bench","id":"bench_glass_1"}],
-        "exits": [{"side":"t","to":"cinderwell","gate":{"gate":"rust_seal"}},{"side":"l"},{"side":"b"}]
+        "exits": [{"side":"t","to":"cinderwell","gate":{"gate":"rust_seal"}},{"side":"l"}]
        },
        {
         "id": "gw_flooded_nave",
         "zone": "glasswater",
-        "rect": [330,360,420,440],
+        "rect": [330, 360, 400, 440],
         "style": "flooded",
         "theme": "wet",
         "platforms": 4,
@@ -1371,12 +1376,12 @@
         "platforms": 2,
         "features": [{"kind":"climb_walls","abilities":["briar_grip"]},{"kind":"pickup","item":"glass_shard"},{"kind":"lore_tablet","id":"tablet_glass_1"}],
         "requiresAbilities": ["briar_grip"],
-        "exits": [{"side":"l"},{"side":"t"},{"side":"b"}]
+        "exits": [{"side":"l"},{"side":"b"}]
        },
        {
         "id": "gw_pump_hall",
         "zone": "glasswater",
-        "rect": [340,310,480,370],
+        "rect": [340, 310, 440, 360],
         "style": "hall",
         "theme": "wet",
         "platforms": 5,
@@ -1393,7 +1398,7 @@
        {
         "id": "gw_bell_arena",
         "zone": "glasswater",
-        "rect": [440,300,520,335],
+        "rect": [440, 300, 520, 330],
         "style": "arena",
         "theme": "wet",
         "features": [
@@ -1492,7 +1497,7 @@
          {"kind":"lore_tablet","id":"tablet_choir_1"},
          {"kind":"pickup","item":"map_fragment"}
         ],
-        "exits": [{"side":"r"},{"side":"b"}]
+        "exits": [{"side":"t","to":"glasswater","gate":{"all":[{"ability":"ember_step"},{"ability":"briar_grip"}]}},{"side":"r"},{"side":"b"}]
        },
        {
         "id": "sc_cantor_arena",
@@ -1523,7 +1528,7 @@
          {"kind":"lore_tablet","id":"tablet_thorn_1"}
         ],
         "requiresAbilities": ["briar_grip"],
-        "exits": [{"side":"r","to":"glasswater"},{"side":"b"}]
+        "exits": [{"side":"r","to":"glasswater"},{"side":"t"}]
        },
        {
         "id": "tw_roots",
@@ -1535,7 +1540,7 @@
         "hazards": ["thorn_bramble"],
         "features": [{"kind":"climb_walls","abilities":["briar_grip"]},{"kind":"pickup","item":"lost_lamp"},{"kind":"bench","id":"bench_thorn_1"}],
         "requiresAbilities": ["briar_grip"],
-        "exits": [{"side":"t"},{"side":"b"}]
+        "exits": [{"side":"r"},{"side":"b"}]
        },
        {
         "id": "tw_den",
@@ -1576,7 +1581,7 @@
        {
         "id": "ab_crypts",
         "zone": "ashen_barrows",
-        "rect": [520,240,640,320],
+        "rect": [520, 240, 620, 320],
         "style": "cave",
         "theme": "ash",
         "platforms": 6,
@@ -1691,7 +1696,7 @@
         "features": [
          {"kind":"boss_door","id":"door_sovereign","boss":"sovereign"},
          {"kind":"boss_spawn","ref":"gloam_sovereign"},
-         {"kind":"great_lantern","id":"lantern_heart","at":[425,60]}
+         {"kind":"great_lantern","id":"lantern_heart"}
         ],
         "exits": [{"side":"t"}]
        }
