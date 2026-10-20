@@ -101,13 +101,16 @@ export const testSpace = {
       editLog: (since = -1) => st().log.filter(e => e.t > since),
       gravityAt: () => [0, -config.gravity, 0],
       slide(e, delta, rt) {
-        // Axis-separated collide-and-slide against solid cells.
+        // Axis-separated collide-and-slide against solid cells, moving to contact: each axis walks the
+        // cell layers the box enters and stops flush against the first blocked one.
         const blocked = { x: false, y: false, z: false }, p = v3(e.at), s = size(e);
         ['x', 'y', 'z'].forEach((ax, i) => {
-          if (!delta[i]) return; const next = p.slice(); next[i] += delta[i];
-          const lo = next.map(Math.floor), hi = next.map((v, j) => Math.ceil(v + s[j]) - 1);
-          let hit = false; for (let x = lo[0]; x <= hi[0] && !hit; x++) for (let y = lo[1]; y <= hi[1] && !hit; y++) for (let z = lo[2]; z <= hi[2] && !hit; z++) hit = solidAt([x, y, z]);
-          if (hit) blocked[ax] = true; else p[i] = next[i];
+          const d = delta[i] || 0; if (!d) return;
+          const lo = p.map(Math.floor), hi = p.map((v, j) => Math.ceil(v + s[j]) - 1);
+          const layerBlocked = c => { const a = lo.slice(), b = hi.slice(); a[i] = b[i] = c; for (let x = a[0]; x <= b[0]; x++) for (let y = a[1]; y <= b[1]; y++) for (let z = a[2]; z <= b[2]; z++) if (solidAt([x, y, z])) return true; return false; };
+          if (d > 0) { for (let c = Math.ceil(p[i] + s[i] - 1e-9), last = Math.ceil(p[i] + s[i] + d) - 1; c <= last; c++) if (layerBlocked(c)) { p[i] = c - s[i]; blocked[ax] = true; return; } }
+          else { for (let c = Math.floor(p[i] + 1e-9) - 1, last = Math.floor(p[i] + d); c >= last; c--) if (layerBlocked(c)) { p[i] = c + 1; blocked[ax] = true; return; } }
+          p[i] += d;
         });
         const moved = p.some((v, i) => v !== v3(e.at)[i]); api.setPos(e, p, rt);
         return { moved, blocked, grounded: api.grounded(e) };

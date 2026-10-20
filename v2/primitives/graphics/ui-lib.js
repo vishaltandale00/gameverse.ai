@@ -154,8 +154,18 @@ export function uiHost(rt) {
   return host;
 }
 
+// Constructable stylesheets work under a strict CSP (style-src 'self'), which blocks inline <style>.
+// The <style> fallback is for DOM stubs and old browsers.
+let sheet = null;
 function injectStyles(doc) {
-  if (!doc?.head || doc.getElementById?.('gv-ui-theme')) return;
+  if (!doc?.head) return;
+  const Sheet = doc.defaultView?.CSSStyleSheet;
+  if (Sheet && 'adoptedStyleSheets' in doc && typeof Sheet.prototype.replaceSync === 'function') {
+    if (!sheet) { sheet = new Sheet(); sheet.replaceSync(THEME_CSS); }
+    if (!doc.adoptedStyleSheets.includes(sheet)) doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
+    return;
+  }
+  if (doc.getElementById?.('gv-ui-theme')) return;
   const style = doc.createElement('style');
   style.id = 'gv-ui-theme'; style.setAttribute('id', 'gv-ui-theme');
   style.textContent = THEME_CSS;

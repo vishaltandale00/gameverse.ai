@@ -131,7 +131,7 @@ export function normalizeShape(doc, fixes = []) {
 /** preflight that reports a validator crash as an error instead of throwing. */
 function safePreflight(doc, registry, logic) {
   try { return preflight(doc, registry, logic); }
-  catch (error) { return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
+  catch (error) { if (process.env.GV_DEBUG) console.error(error.stack); return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
 }
 
 /**

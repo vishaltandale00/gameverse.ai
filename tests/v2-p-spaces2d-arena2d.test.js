@@ -150,6 +150,47 @@ test('arena2d: preflight rejects bad configs with stable codes', () => {
   assert.ok(codes({ solids: [[1, 2, 3]] }).includes('param_range'));
 });
 
+test('arena2d: solid entities (doors, crates) block slide until opened and show up in raycasts', () => {
+  const rt = make(), api = rt.space('stage'), p = rt.player();
+  const door = rt.spawn('rock', { id: 'door', at: [9, 2.5], components: { mechanism: 'd1', body: { size: [0.5, 3], solid: true } } });
+  let r = api.slide(p, [4, 0], rt);
+  assert.equal(r.blocked.x, true); assert.deepEqual(r.touched, ['door']);
+  assert.ok(Math.abs(p.at[0] - (8.75 - 0.5)) < 1e-5, `stopped at the door: ${p.at}`);
+  const h = api.raycast([5, 2], [1, 0], 10);
+  assert.equal(h.id, 'door'); assert.equal(h.solid, true); assert.ok(Math.abs(h.dist - 3.75) < 1e-9);
+  door.components.body.solid = false;
+  r = api.slide(p, [4, 0], rt);
+  assert.equal(r.blocked.x, false, 'open door lets it through');
+  rt.spawn('rock', { id: 'crate', at: [13, 1.5], components: { body: { size: [1, 1], solid: true } } });
+  api.setPos(p, [13, 6], rt);
+  r = api.slide(p, [0, -6], rt);
+  assert.ok(r.grounded && r.on === 'crate' && r.surface === 'entity:crate' && Math.abs(p.at[1] - 3) < 1e-5, `stands on the crate: ${p.at}`);
+});
+
+test('arena2d: a rider on a one-way moving platform is carried; jump through and drop through', () => {
+  const rt = make(), api = rt.space('stage');
+  const plat = rt.spawn('rock', { id: 'plat', at: [13, 4], components: { body: { size: [3, 0.4], solid: true, oneWay: true, ballistic: true, collide: false, gravityScale: 0, vel: [0, 0] } } });
+  const rider = rt.spawn('rock', { id: 'rider', at: [13, 7], components: { body: { size: [1, 1], ballistic: true } } });
+  run(rt, 60);
+  assert.ok(Math.abs(rider.at[1] - 4.7) < 1e-5 && rider.components.body.standingOn === 'plat', `rides: ${rider.at}`);
+  plat.components.body.vel = [-2, 1]; run(rt, 30);
+  assert.ok(Math.abs(rider.at[0] - 12) < 1e-5 && Math.abs(rider.at[1] - 5.2) < 1e-4, `carried along: ${rider.at}`);
+  plat.components.body.vel = [0, 0];
+  const p = rt.player(); api.setPos(p, [12, 2], rt);
+  let r = api.slide(p, [0, 4], rt); assert.equal(r.blocked.y, false, 'jumps up through it');
+  api.setPos(p, [12, 7], rt); r = api.slide(p, [0, -3], rt); assert.equal(r.on, 'plat');
+  r = api.slide(p, [0, -1], rt, { drop: true }); assert.equal(r.on, null, 'drops through');
+});
+
+test('arena2d: removeZone and moveZone', () => {
+  const rt = make(), api = rt.space('stage');
+  assert.ok(rt.test({ zone: 'left' }));
+  api.moveZone('left', { rect: [10, 1, 14, 5] }, rt);
+  assert.equal(rt.test({ zone: 'left' }), false); assert.ok(rt.state.events.some(e => e.name === 'leave_zone:left'));
+  api.addZone({ id: 'hot', rect: [6, 1, 8, 4] }, rt); assert.ok(rt.test({ zone: 'hot' }));
+  api.removeZone('hot', rt); assert.equal(rt.test({ zone: 'hot' }), false);
+});
+
 test('arena2d: every instance in v2/games preflights its params with zero errors', () => {
   for (const f of readdirSync('v2/games').filter(f => f.endsWith('.json'))) {
     const g = JSON.parse(readFileSync(`v2/games/${f}`, 'utf8'));

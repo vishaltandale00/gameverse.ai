@@ -45,6 +45,13 @@ function buildIndexes(doc, errors, registry, instances) {
   return indexes;
 }
 
+const ROOTS = /^(schema|id|title|logline|seed|views|spaces|systems|graphics|plot|content|player)(\.|\[|$)/;
+function absolutePath(path, instancePath) {
+  if (!path) return instancePath;
+  if (ROOTS.test(path)) return path;
+  return path === 'with' || path.startsWith('with.') ? `${instancePath}.${path}` : `${instancePath}.with${path.startsWith('[') ? '' : '.'}${path}`;
+}
+
 /** True when `name` is provided directly or by a `prefix:*` wildcard. */
 export function provided(set, name) { return set.has(name) || (name.includes(':') && set.has(name.slice(0, name.indexOf(':')) + ':*')); }
 
@@ -90,14 +97,16 @@ export function preflight(doc, registry, logic) {
     if (!p) { errors.push({ code: 'primitive_unknown', path: `${path}.use`, message: `unknown primitive '${inst?.use}'`, hint: `${family || 'systems'}: ${registry.ids().filter(id => !family || id.startsWith(family)).slice(0, 40).join(', ')}` }); normalized.push(inst); continue; }
     if (family && !p.id.startsWith(family)) errors.push({ code: 'primitive_slot', path: `${path}.use`, message: `'${p.id}' cannot be used here; expected ${family}.*` });
     if (!family && (p.id.startsWith('engine.space.') || p.id.startsWith('engine.generate.') || p.family === 'graphics')) errors.push({ code: 'primitive_slot', path: `${path}.use`, message: `'${p.id}' belongs in ${p.family === 'graphics' ? 'graphics' : 'spaces'}` });
+    const before = errors.length;
     const config = checkFields(p.card.params || {}, inst.with || {}, `${path}.with`, errors, ctx);
+    const paramErrors = errors.length - before;
     if (space !== undefined && space !== null && !indexes.space.has(space)) errors.push({ code: 'ref_unknown', path: `${path}.space`, message: `unknown space '${space}'` });
     if (p.id.startsWith('engine.space.')) spaceCaps.set(inst.id, new Set(p.capabilities ? p.capabilities(config) : p.card.provides.capabilities || []));
     for (const e of p.card.provides.events || []) ctx.provides.events.add(e);
     for (const v of p.card.provides.vars || []) ctx.provides.vars.add(v);
     for (const v of p.card.provides.services || []) ctx.provides.services.add(v);
     used.add(p.id);
-    normalized.push({ ...inst, with: config, _p: p, _path: path, _space: space });
+    normalized.push({ ...inst, with: config, _p: p, _path: path, _space: space, _paramErrors: paramErrors });
   }
   for (const n of normalized) {
     const p = n._p; if (!p) continue;
@@ -108,7 +117,14 @@ export function preflight(doc, registry, logic) {
     for (const req of p.card.requires.primitives || []) if (![...used].some(id => id === req || id.startsWith(req + '.'))) errors.push({ code: 'requires_unmet', path: n._path, message: `'${p.id}' requires a '${req}' primitive` });
     for (const sv of p.card.requires.services || []) if (!ctx.provides.services.has(sv)) errors.push({ code: 'service_missing', path: n._path, message: `'${p.id}' needs service '${sv}'`, hint: 'add a primitive whose card provides it' });
     for (const c of p.card.conflicts || []) if (used.has(c)) errors.push({ code: 'primitive_conflict', path: n._path, message: `'${p.id}' conflicts with '${c}'` });
-    for (const err of p.validate?.(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []) errors.push({ ...err, path: err.path || n._path });
+    // Validators may assume a well-formed config: skip them when params already failed, and never let one throw.
+    if (p.validate && !n._paramErrors) {
+      let found = [];
+      try { found = p.validate(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []; }
+      catch (error) { found = [{ code: 'validator_crashed', path: n._path, message: `'${p.id}' could not check this instance: ${String(error?.message || error).slice(0, 160)}`, hint: 'a field has the wrong shape; compare it with the card params' }]; }
+      // Paths are document-absolute: a validator may report relative to its own config ('rooms[0].rect').
+      for (const err of found) errors.push({ ...err, path: absolutePath(err.path, n._path) });
+    }
   }
 
   // Vocabulary in the document must be owned by the kernel or by a primitive the document uses.

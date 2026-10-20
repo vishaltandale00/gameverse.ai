@@ -100,7 +100,7 @@ test('the full plots run headless: characters spawn, every character can be talk
     };
     const a = play(), b = play();
     const spawnable = r.doc.plot.characters.filter(c => a.rt.state.prim['plot.character'].spawned[c.id]).length;
-    assert.ok(spawnable >= r.doc.plot.characters.length - 1, `${g}: characters spawned`);
+    assert.ok(spawnable >= r.doc.plot.characters.length - 1, `${g}: characters spawned (missing: ${r.doc.plot.characters.filter(c => !a.rt.state.prim['plot.character'].spawned[c.id]).map(c => `${c.id}${a.rt.entity(c.id) ? '(exists)' : ''}`).join(', ')})`);
     assert.ok(a.talks >= spawnable - 3 && a.lines > 10, `${g}: talked to ${a.talks}/${spawnable}, ${a.lines} lines; missed ${a.missed.join(' ')}`);
     assert.ok(a.rt.service('quests').list().some(q => q.state === 'active' || q.state === 'complete'), `${g}: quests started`);
     assert.deepEqual(a.rt.snapshot(), b.rt.snapshot(), `${g}: deterministic`);

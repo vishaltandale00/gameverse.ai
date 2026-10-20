@@ -7,9 +7,10 @@
 // runners; blast zones, push-apart and a leash (max separation) cover
 // platform fighters and traditional versus stages. Ballistic bodies
 // (projectiles, debris) are integrated by the space.
-import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, rectHas, rectArea, rectCenter, rectDist, rectsOverlap, boxAround, rayRect, shapeHitsRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, rectHas, rectArea, rectCenter, rectDist, rectsOverlap, boxAround, rayRect, shapeHitsRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 
 const EPS = 1e-6;
+const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far since its last slide
 const rectList = (effect) => ({ type: 'list', default: [], of: { type: 'list', of: { type: 'number' }, min: 4, max: 4 }, effect });
 const strList = (effect, d = []) => ({ type: 'list', of: { type: 'string' }, default: d, effect });
 
@@ -44,7 +45,7 @@ export default {
     at: 'At = [x, y] arena units, y up: the centre of the body box (components.body.size). Box sets are local [x, y, w, h] relative to the centre with x measured forward (mirrored when body.facing < 0): body.poses = {pose: {hurt, hit, push}}, body.pose, or body.boxes overriding the pose; default hurt = push = the body box, no hit boxes.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1), spawn?, tags?, rules?}',
     state: 'rt.state.spaces[id] = {scroll?:{offset:[x,y], speed}, inside, out, blasted, zones?}',
-    notes: 'Classes (scroll.clamp/carry, separate, leash, cull) match entity id, archetype, body.layer and body.tags. Bodies with body.ballistic are integrated (gravity × body.gravityScale, bounce, friction); body.collide=false passes through geometry. raycast hits static geometry as hit:"cell" with solid index (platform:i for one-way when mask.oneway).',
+    notes: 'Classes (scroll.clamp/carry, separate, leash, cull) match entity id, archetype, body.layer and body.tags. Bodies with body.ballistic are integrated (gravity × body.gravityScale, bounce, friction); body.collide=false passes through geometry. raycast hits static geometry as hit:"cell" with solid index (platform:i for one-way when mask.oneway) and solid entities as hit:"entity" with solid:true. Entity obstacles: body.solid entities act as solid rects in slide, body.oneWay ones as one-way platforms; body.standingOn records the support, riders are carried by ballistic movers and setPos(e, at, rt, {carry:true}) and stick to a support that rose up to 0.5; an obstacle already overlapping the mover is ignored. Zones: addZone/removeZone/moveZone.',
   },
   capabilities(config) {
     const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'boxes'];
@@ -77,49 +78,72 @@ export default {
     const wrapPos = at => [wrapX ? mod(at[0], W) : at[0], wrapY ? mod(at[1], H) : at[1]];
     const delta = (a, b) => [wrapDelta(a[0], b[0], wrapX ? W : 0), wrapDelta(a[1], b[1], wrapY ? H : 0)];
     const boxOf = e => boxAround(e.at, bodyOf(e).size);
-    const setPos = (e, at, rt) => { e.at = wrapPos([at[0], at[1]]); tracker.track(e, rt); };
+    // setPos(e, at, rt, {carry}): with carry, entities standing on e (body.standingOn) move with it.
+    const setPos = (e, at, rt, o = {}) => {
+      const from = e.at;
+      e.at = wrapPos([at[0], at[1]]); tracker.track(e, rt);
+      if (o.carry && from && obstacleOf(e)) { const d = [at[0] - from[0], at[1] - from[1]]; if (d[0] || d[1]) for (const r of inSpace(rt, sid, x => x !== e && x.components.body?.standingOn === e.id)) { slide(r, d, rt, { ignore: [e.id], keepSupport: true }); r.components.body.grounded = true; r.components.body.standingOn = e.id; } }
+    };
+    // Entity obstacles (body.solid / body.oneWay) for one slide. Ones already overlapping the mover are
+    // ignored (a closing door must not trap it); the one it stands on only holds it up.
+    const obstaclesFor = (e, o = {}) => {
+      const start = boxOf(e), on = e.components.body?.standingOn;
+      return obstaclesIn(rt, sid, e, o.ignore).map(x => ({ id: x.id, kind: obstacleOf(x), rect: boxOf(x) }))
+        .filter(x => x.id === on || x.kind === 'oneway' || !rectsOverlap(start, x.rect))
+        .map(x => (x.id === on && rectsOverlap(start, x.rect) ? { ...x, kind: 'oneway' } : x));
+    };
 
     // ---------- collision geometry: solids, platforms, solid edges ----------
     const edgeRects = () => { const T = Math.max(W, H); return [E.left === 'solid' && [-T, -T, 0, H + T], E.right === 'solid' && [W, -T, W + T, H + T], E.bottom === 'solid' && [-T, -T, W + T, 0], E.top === 'solid' && [-T, H, W + T, H + T]].filter(Boolean); };
     const blockers = () => [...config.solids, ...edgeRects()];
-    const hitSolid = box => blockers().find(r => rectsOverlap(box, r)) || null;
+    const hitSolid = (box, ents = []) => blockers().find(r => rectsOverlap(box, r)) || ents.filter(o => o.kind === 'solid' && rectsOverlap(box, o.rect)).map(o => Object.assign(o.rect.slice(), { id: o.id }))[0] || null;
 
     function slide(e, d, rt, opts = {}) {
       const b = bodyOf(e), hw = b.size[0] / 2, hh = b.size[1] / 2, was = b.grounded;
       let [x, y] = e.at; const dx = d[0] || 0, dy = d[1] || 0;
-      const blocked = { x: false, y: false, z: false }; let grounded = false, normal = null;
+      const blocked = { x: false, y: false, z: false }; let grounded = false, normal = null, support = null;
       const box = (px, py) => [px - hw, py - hh, px + hw, py + hh];
+      const ents = opts.ghost ? [] : obstaclesFor(e, opts), on = b.standingOn ?? null, touched = [];
+      const touch = r => { if (r?.id && !touched.includes(r.id)) touched.push(r.id); };
+      // One-way surfaces: static platforms plus one-way entity tops.
+      const plats = [...config.platforms, ...ents.filter(o => o.kind === 'oneway').map(o => ({ x0: o.rect[0], x1: o.rect[2], y: o.rect[3], id: o.id }))];
       const maxStep = Math.max(0.05, Math.min(hw, hh));
       const nh = Math.ceil(Math.abs(dx) / maxStep), x0 = x;
       for (let i = 0; i < nh; i++) {
-        const tx = x0 + dx * (i + 1) / nh, r = hitSolid(box(tx, y));
+        const tx = x0 + dx * (i + 1) / nh, r = hitSolid(box(tx, y), ents);
         if (!r) { x = tx; continue; }
         // Step up small lips when supported.
-        if (opts.stepHeight && was) { const top = r[3]; if (top - (y - hh) <= opts.stepHeight + EPS && !hitSolid(box(tx, top + hh + EPS))) { x = tx; y = top + hh + EPS; continue; } }
-        x = dx > 0 ? r[0] - hw - EPS : r[2] + hw + EPS; blocked.x = true; normal = [dx > 0 ? -1 : 1, 0]; break;
+        if (opts.stepHeight && was) { const top = r[3]; if (top - (y - hh) <= opts.stepHeight + EPS && !hitSolid(box(tx, top + hh + EPS), ents)) { x = tx; y = top + hh + EPS; continue; } }
+        x = dx > 0 ? r[0] - hw - EPS : r[2] + hw + EPS; blocked.x = true; normal = [dx > 0 ? -1 : 1, 0]; touch(r); break;
       }
       const nv = Math.ceil(Math.abs(dy) / maxStep), y0 = y;
       for (let i = 0; i < nv; i++) {
-        const ty = y0 + dy * (i + 1) / nv, bottom0 = y - hh, r = hitSolid(box(x, ty));
-        if (r) { y = dy > 0 ? r[1] - hh - EPS : r[3] + hh + EPS; blocked.y = true; if (dy < 0) { grounded = true; normal = [0, 1]; } else normal = [0, -1]; break; }
+        const ty = y0 + dy * (i + 1) / nv, bottom0 = y - hh;
         if (dy < 0 && !opts.drop) {
-          const p = config.platforms.find(p => x + hw > p.x0 && x - hw < p.x1 && bottom0 >= p.y - EPS && ty - hh < p.y);
-          if (p) { y = p.y + hh; blocked.y = true; grounded = true; normal = [0, 1]; break; }
+          const p = plats.filter(p => x + hw > p.x0 && x - hw < p.x1 && bottom0 >= p.y - (p.id && p.id === on ? STICK : EPS) && ty - hh < p.y).sort((a, c) => c.y - a.y)[0];
+          if (p) { y = p.y + hh; blocked.y = true; grounded = true; normal = [0, 1]; support = p.id ?? null; touch(p); break; }
         }
+        const r = hitSolid(box(x, ty), ents);
+        if (r) { y = dy > 0 ? r[1] - hh - EPS : r[3] + hh + EPS; blocked.y = true; if (dy < 0) { grounded = true; normal = [0, 1]; support = r.id ?? null; } else normal = [0, -1]; touch(r); break; }
         y = ty;
       }
-      if (!grounded) grounded = groundedAt(x, y, hw, hh, opts.drop);
+      if (!grounded) { const g = groundedAt(x, y, hw, hh, opts.drop, ents); grounded = Boolean(g); if (g) support = g.id ?? null; }
       b.grounded = grounded;
+      if (support && grounded) b.standingOn = support; else if (!opts.keepSupport) delete b.standingOn;
       const moved = x !== e.at[0] || y !== e.at[1];
-      setPos(e, [x, y], rt);
-      return { moved, blocked, grounded, normal, surface: grounded ? surfaceUnder(x, y - hh, hw) : null };
+      setPos(e, [x, y], rt, { carry: Boolean(obstacleOf(e)) });
+      return { moved, blocked, grounded, normal, touched, on: b.standingOn ?? null, surface: grounded ? (b.standingOn ? `entity:${b.standingOn}` : surfaceUnder(x, y - hh, hw)) : null };
     }
-    function groundedAt(x, y, hw, hh, drop) {
+    /** Supporting surface just under a box: true/{id} or null. */
+    function groundedAt(x, y, hw, hh, drop, ents = []) {
       const probe = [x - hw + EPS, y - hh - 0.02, x + hw - EPS, y - hh];
-      if (hitSolid(probe)) return true;
-      return !drop && config.platforms.some(p => x + hw > p.x0 && x - hw < p.x1 && Math.abs(y - hh - p.y) < 0.02);
+      const r = hitSolid(probe, ents); if (r) return r.id ? { id: r.id } : {};
+      if (drop) return null;
+      const p = config.platforms.find(p => x + hw > p.x0 && x - hw < p.x1 && Math.abs(y - hh - p.y) < 0.02); if (p) return {};
+      const o = ents.find(o => o.kind === 'oneway' && x + hw > o.rect[0] && x - hw < o.rect[2] && Math.abs(y - hh - o.rect[3]) < 0.02);
+      return o ? { id: o.id } : null;
     }
-    // Which surface a grounded body stands on: 'solid', 'platform:<i>' or 'edge'.
+    // Which surface a grounded body stands on: 'solid:<i>', 'platform:<i>', 'entity:<id>' or 'edge'.
     function surfaceUnder(x, bottom, hw) {
       const i = config.solids.findIndex(r => x + hw > r[0] && x - hw < r[2] && Math.abs(r[3] - bottom) < 0.03);
       if (i >= 0) return `solid:${i}`;
@@ -144,7 +168,7 @@ export default {
         const b = e.components.body; if (!b?.ballistic) continue;
         const gs = b.gravityScale ?? 1, was = b.grounded;
         b.vel = [b.vel[0], b.vel[1] + config.gravity * gs * dt];
-        if (b.collide === false) { setPos(e, [e.at[0] + b.vel[0] * dt, e.at[1] + b.vel[1] * dt], rt); continue; }
+        if (b.collide === false) { setPos(e, [e.at[0] + b.vel[0] * dt, e.at[1] + b.vel[1] * dt], rt, { carry: true }); continue; }
         const vy = b.vel[1], r = slide(e, [b.vel[0] * dt, b.vel[1] * dt], rt), bounce = b.bounce ?? 0;
         if (r.blocked.x) b.vel[0] = -b.vel[0] * bounce;
         if (r.blocked.y) b.vel[1] = Math.abs(vy * bounce) > Math.max(0.01, 2 * Math.abs(config.gravity * gs) * dt) ? -vy * bounce : 0; // rest instead of micro-bouncing
@@ -238,9 +262,11 @@ export default {
         edgeRects().forEach(r => consider(rayRect(from, u, r, maxDist), r, { hit: 'cell', solid: 'edge' }));
         if (mask.oneway && u[1] < 0) config.platforms.forEach((p, i) => { const t = (p.y - from[1]) / u[1]; if (t >= 0 && from[1] >= p.y) { const x = from[0] + u[0] * t; if (x >= p.x0 && x <= p.x1) consider(t, [p.x0, p.y - 1, p.x1, p.y], { hit: 'cell', solid: `platform:${i}` }); } });
       }
-      if (mask.entities) for (const o of inSpace(rt, sid)) {
+      // Entities: all with mask.entities; otherwise solid obstacles unless mask.solids === false (one-way only from above with mask.oneway).
+      for (const o of inSpace(rt, sid)) {
         if (o.id === mask.ignore || (typeof mask.entities === 'function' && !mask.entities(o))) continue;
-        for (const r of mask.boxes ? boxesOf(o, mask.boxes) : [boxOf(o)]) consider(rayRect(from, u, r, best.dist), r, { hit: 'entity', id: o.id });
+        if (!mask.entities) { const k = obstacleOf(o); if (mask.solids === false || !k || (k === 'oneway' && !(mask.oneway && u[1] < 0))) continue; }
+        for (const r of mask.boxes ? boxesOf(o, mask.boxes) : [boxOf(o)]) consider(rayRect(from, u, r, best.dist), r, { hit: 'entity', id: o.id, ...(obstacleOf(o) ? { solid: true } : {}) });
       }
       return best;
     }
@@ -281,7 +307,7 @@ export default {
       raycast,
       gravityAt: at => { const z = at && zones().byId.get(tracker.zoneAt(at)); return [0, Number.isFinite(z?.rules?.gravity) ? z.rules.gravity : config.gravity, 0]; },
       slide,
-      grounded: e => { const b = bodyOf(e); return groundedAt(e.at[0], e.at[1], b.size[0] / 2, b.size[1] / 2, false); },
+      grounded: e => { const b = bodyOf(e); return Boolean(groundedAt(e.at[0], e.at[1], b.size[0] / 2, b.size[1] / 2, false, obstaclesFor(e))); },
       impulse(e, v) { const b = bodyOf(e), m = b.mass || 1; b.vel = [b.vel[0] + v[0] / m, b.vel[1] + v[1] / m]; },
       velocity: e => bodyOf(e).vel.slice(),
       setVelocity(e, v) { bodyOf(e).vel = [v[0], v[1]]; },
@@ -303,10 +329,11 @@ export default {
         }));
         return best;
       },
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]')),
+      ...zoneEditor(rt, sid, zones, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]'), rt => { for (const e of inSpace(rt, sid)) tracker.track(e, rt); }),
     };
     api.applyImpulse = api.impulse;
     rt.defineSpace(sid, api);
+    scrollSt(); // persisted layout exists from the start: reads never change state shape
     rt.system('physics', stepWorld, sid);
   },
 };
