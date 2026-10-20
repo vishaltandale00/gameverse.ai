@@ -1,6 +1,7 @@
 // The catalogue as the planner sees it: every registered primitive (the
 // family indexes, promoted primitives, experiment primitives) read through
 // registry.cards(), never a fixed list. Nothing here knows any primitive id.
+import { readFileSync } from 'node:fs';
 import { Registry } from '../kernel/registry.js';
 import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
@@ -103,4 +104,40 @@ export function cardText(card, { full = false } = {}) {
 /** The predicate and effect vocabulary currently registered (kernel built-ins plus primitives'). */
 export function vocabulary(logic) {
   return { predicates: [...logic.predicates.keys()], effects: [...logic.effects.keys()] };
+}
+
+// ---------- data shapes for document sections ----------
+// Cards describe params, not the document sections primitives read (plot.dialogue, plot.quests,
+// content.items...). Until cards carry those schemas (kernel request in v2/kernel/requests/pipeline.md),
+// the shapes come from PRIMITIVE_CATALOG.md §4.1, §4.2 and §8, parsed once.
+let shapes = null;
+function loadShapes() {
+  if (shapes) return shapes;
+  shapes = {};
+  let text = '';
+  try { text = readFileSync(new URL('../PRIMITIVE_CATALOG.md', import.meta.url), 'utf8'); } catch { return shapes; }
+  const block = (heading, prefix) => {
+    const at = text.indexOf(heading); if (at < 0) return;
+    const start = text.indexOf('```', at), end = text.indexOf('```', start + 3); if (start < 0 || end < 0) return;
+    let key = null;
+    for (const line of text.slice(start + 3, end).split('\n')) {
+      const m = /^([a-zA-Z]+)(\[\]|\{\})?\s/.exec(line);
+      if (m) { key = `${prefix}.${m[1]}`; shapes[key] = line.trim(); }
+      else if (key && line.trim()) shapes[key] += ' ' + line.trim();
+    }
+  };
+  block('### 4.1 Plot data shapes', 'plot');
+  block('## 8. Content schemas', 'content');
+  const q = text.indexOf('### 4.2 Quest objective kinds'), qe = text.indexOf('\n## ', q + 5);
+  if (q >= 0 && shapes['plot.quests']) shapes['plot.quests'] += '\n  objective kinds: ' + text.slice(q, qe).split('\n').filter(l => /^\| `/.test(l)).map(l => l.split('|').slice(1, 3).map(x => x.trim()).join(' ')).join('; ');
+  return shapes;
+}
+
+/** Shapes of the document sections the given primitives read (the kernel's own sections included). */
+export function dataShapes(registry, ids) {
+  const all = loadShapes(), out = [];
+  const reads = new Set(['plot.characters', 'plot.storyboard', 'plot.endings', 'content.items', 'content.archetypes']);
+  for (const id of ids) for (const r of registry.get(id)?.card.reads || []) reads.add(r);
+  for (const r of reads) if (all[r]) out.push(all[r]);
+  return out;
 }

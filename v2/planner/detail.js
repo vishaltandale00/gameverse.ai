@@ -6,7 +6,7 @@
 // mergePatch + rt.extend. Without a writer a procedural detailer adds local
 // characters and finds, so the layer exists at zero model cost too.
 import { mergePatch } from '../kernel/document.js';
-import { cardText, vocabulary } from './catalog.js';
+import { cardText, vocabulary, dataShapes } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { repairDocument, describeErrors, idsOf } from './repair.js';
 import { verifyDocument, regressed, newErrors, staticPlot } from './verify-adapter.js';
@@ -84,7 +84,9 @@ Rules:
 - Predicates: ${v.predicates.join(', ')}. Effects ({"do": kind}): ${v.effects.join(', ')}. Use only primitives the game already uses, or ones listed below.
 - Keep it small and playable: 1-3 characters, a few items or interactions, 1-4 beats.
 Primitives in this game:
-${[...used].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}`;
+${[...used].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}
+Shapes of the sections they read (follow them exactly):
+${dataShapes(registry, [...used]).join('\n')}`;
 }
 
 function detailUser(doc, task) {

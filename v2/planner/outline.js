@@ -8,7 +8,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
-import { cardText, vocabulary, isSpace, defaultsOf } from './catalog.js';
+import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives } from './select.js';
 import { firstPlayable } from './first-playable.js';
 import { repairDocument, describeErrors } from './repair.js';
@@ -204,6 +204,9 @@ Rules:
 Chosen primitives (full cards):
 ${[...chosen].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}
 
+Shapes of the document sections these primitives read:
+${dataShapes(registry, [...chosen]).join('\n')}
+
 Other primitives you may add if the idea needs them:
 ${registry.cards().filter(c => !chosen.has(c.id)).map(c => cardText(c)).join('\n') || '(none)'}
 
@@ -254,7 +257,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     const repaired = repairDocument(draft, { registry, logic, fallbackSpace });
     const before = repaired.fixes.length ? repaired.fixes.length : 0;
     if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
-    rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, fixes: before, ms: Math.round(performance.now() - t) });
+    rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ms: Math.round(performance.now() - t) });
     last = repaired;
     let problems = [];
     if (repaired.ok) {

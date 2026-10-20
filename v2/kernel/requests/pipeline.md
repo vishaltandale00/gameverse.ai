@@ -43,3 +43,10 @@ Primitive experiments (`v2/experiments/primitive-host.js`) run model-written cod
 
 - **Workaround:** budgets match the kit experiments' (25 ms per call, 5 ms average step); the gate reports `disabled` with the reason.
 - **Request:** none for the kernel; noted so verification owners know an experiment's verdict can differ under extreme load.
+
+## 7. Data schemas for the sections a primitive reads
+
+Cards describe `params`, not the document data they read (`plot.dialogue`, `plot.quests`, `content.items`...). Models writing outlines and detail patches got those shapes wrong in live runs (`dialogue_node_unknown`, `objective_kind_unknown`, `field_unknown`, validators throwing on shapes).
+
+- **Workaround:** `catalog.js` `dataShapes()` parses PRIMITIVE_CATALOG.md §4.1, §4.2 and §8 and puts the shapes of the sections the chosen primitives read into outline, detail and revision prompts; repair drops dangling `*_unknown` fields.
+- **Request:** `card.data: { "<section path>": <param-schema> }` on primitives that own a section, checked by preflight like `params`, so prompts, repair and validation share one schema.

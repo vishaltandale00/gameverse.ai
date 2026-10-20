@@ -8,7 +8,7 @@
 //   identity-aware paths); nothing else in the document can change.
 // - guardRevision: the revision-check guards (dropped content, art lock,
 //   applied-or-not) shared by both.
-import { cardText, vocabulary } from './catalog.js';
+import { cardText, vocabulary, dataShapes } from './catalog.js';
 import { tokens } from './select.js';
 import { parsePath } from './repair.js';
 import { contentDiff, changeSummary, shrunkLists, asksToRemove, checkRevision } from './revision-check.js';
@@ -168,7 +168,9 @@ Rules:
 Primitives in this game:
 ${[...used].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}
 Other primitives:
-${registry.cards().filter(c => !used.has(c.id)).map(c => cardText(c)).join('\n') || '(none)'}`;
+${registry.cards().filter(c => !used.has(c.id)).map(c => cardText(c)).join('\n') || '(none)'}
+Shapes of the sections the game's primitives read:
+${dataShapes(registry, [...used]).join('\n')}`;
 }
 
 export async function reviseDocument({ writer, doc, change, registry, logic, errors = null, previous = null }) {

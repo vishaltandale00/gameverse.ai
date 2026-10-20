@@ -311,6 +311,9 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         default:
           // A primitive's own validate() code inside an instance's params: fall back to the param's default.
           if (loc?.schema && !loc.schema.required && loc.rest.length > 1) { removals.push(keys); fix(`reset ${e.code} param to default`); }
+          // A primitive's "<something>_unknown" on document data is a dangling field or pointer: drop that field
+          // (an optional `next`, an unknown key). Only fields, never whole entries, so content is not lost.
+          else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof keys.at(-1) === 'string' && getAt(doc, keys) !== undefined && !['id', 'kind'].includes(keys.at(-1))) { removals.push(keys); fix(`dropped field (${e.code})`); }
       }
     }
     // Removals last, deepest and highest index first, so earlier paths stay valid.
