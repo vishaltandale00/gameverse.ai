@@ -64,5 +64,6 @@ export default {
     };
     rt.defineSpace(instance.id, api);
     rt.action('go', (to, rt) => { const p = rt.player(); if (p?.space === instance.id) api.move(p, to, rt); });
+    rt.options(rt => { const p = rt.player(); return p?.space === instance.id ? api.neighbors(p.at).map(to => ({ label: `go ${to}`, actions: { go: to } })) : []; });
   },
 };

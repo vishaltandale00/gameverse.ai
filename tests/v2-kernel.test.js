@@ -108,3 +108,19 @@ test('generated content hot-loads into a running game', () => {
   assert.equal(rt.state.prim['gameplay.inventory'].player.wine, 1);
   assert.equal(rt.state.prim['gameplay.inventory'].player.brass_key, 1, 'existing progress kept');
 });
+
+test('the plot solver finds the ending path and flags unreachable content', async () => {
+  const { solve } = await import('../v2/verify/solve.js');
+  const r = solve(preflight(mystery(), registry, logic).doc, registry, logic);
+  assert.equal(r.completable, true);
+  assert.deepEqual(r.endings.truth, ['go garden', 'go hall', 'go library']);
+  assert.equal(r.exhaustive, true);
+  const broken = mystery();
+  broken.spaces[0].zones[1].exits = []; // garden becomes a trap: no way back
+  broken.plot.endings.push({ id: 'escape' });
+  const b = solve(preflight(broken, registry, logic).doc, registry, logic);
+  assert.equal(b.completable, false);
+  assert.ok(b.beatsNeverFired.includes('solve'));
+  assert.ok(b.unreachedEndings.includes('escape'));
+  assert.ok(b.deadEnds.length > 0);
+});

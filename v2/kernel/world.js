@@ -22,7 +22,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true } = {}
     rng: seedFrom(seed ?? doc.seed ?? doc.id), vars: {}, flags: {}, counts: {}, events: [],
     entities: {}, nextId: 1, spaces: {}, prim: {},
   };
-  const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), restorers = [];
+  const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), restorers = [], optionProviders = [];
   let order = 0;
 
   const rt = {
@@ -43,6 +43,10 @@ export function createWorld(doc, registry, logic, { seed, headless = true } = {}
       systems.sort((a, b) => a.p - b.p || a.order - b.order);
     },
     action(name, fn) { actions.set(name, fn); },
+    /** Register fn(rt) -> [{ label, actions: { name: value }, steps? }] of meaningful player choices now.
+     *  Used by solvers and playtesters; continuous spaces offer macro options (travel to a zone). */
+    options(fn) { optionProviders.push(fn); },
+    availableOptions() { return optionProviders.flatMap(fn => fn(rt) || []); },
     actions: () => [...actions.keys()],
     defineSpace(id, api) { spaces.set(id, api); state.spaces[id] ??= {}; },
     space(id = doc.spaces?.[0]?.id) { const s = spaces.get(id); if (!s) throw Error(`no space '${id}'`); return s; },
