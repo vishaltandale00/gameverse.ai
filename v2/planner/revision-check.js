@@ -75,3 +75,19 @@ export async function asksToRemove(decisions, change, shrunk) {
   }
   return REMOVE_WORDS.test(change);
 }
+
+/**
+ * Does generated text reuse existing franchise names (games, companies, characters)? Generated
+ * games keep genre mechanics but must use original names (KIT_CONTRACT.md). Returns the probability,
+ * or null without a decision model.
+ */
+export async function usesFranchiseNames(decisions, names) {
+  if (!decisions || !names.length) return null;
+  try {
+    const { answers, provider } = await decisions.decide({ state: { names }, questions: { franchise: { type: 'noul', instructions: 'Do any of these names use an existing video game, company or character name (for example Mario, Luigi, Sonic, Pokémon, Pac-Man, Zelda, Mortal Kombat, Tetris, Nintendo, Sega)? Original names that only evoke a style are fine.' } } });
+    const p = answers.franchise?.noul;
+    // On six real titles, franchise names scored ≥ 0.97 on both providers; OpenAI Decisions also put
+    // originals at 0.52 ("Feline Siege") and 0.94 (a fighter named "Shadow"), so its bar is higher.
+    return p == null ? null : { p, flagged: p >= (provider === 'd1' ? 0.8 : 0.97), provider };
+  } catch { return null; }
+}

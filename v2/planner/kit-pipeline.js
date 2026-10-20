@@ -4,7 +4,7 @@
 // against the current content; the art stays locked (see art-procedural.js).
 import { loadKit } from '../kits/registry.js';
 import { modsFor, modsSchema, modsPrompt } from '../kits/mods/compose.js';
-import { checkRevision, changeSummary, NOT_APPLIED, shrunkLists, asksToRemove } from './revision-check.js';
+import { checkRevision, changeSummary, NOT_APPLIED, shrunkLists, asksToRemove, usesFranchiseNames } from './revision-check.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
 
@@ -66,6 +66,16 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
       if (!client) break;
       user = `${user}\n\nYour previous answer failed validation:\n${checked.errors.slice(0, 12).map(e => `- ${e.path}: ${e.message}`).join('\n')}\nReturn corrected content.`;
       continue;
+    }
+    // Original names only: franchise names in the title or cast go back for renaming.
+    if (client && attempts < 3) {
+      const brief = kit.cast(checked.content).brief || {};
+      const names = [checked.content.title, ...Object.values(brief).map(b => b?.name)].filter(n => typeof n === 'string' && n);
+      const franchise = await usesFranchiseNames(decisions, names);
+      if (franchise?.flagged) {
+        user = `${user}\n\nYour previous answer used existing game or character names (${names.slice(0, 6).join(', ')}). Rename the title and every character, creature, place and item to original names that evoke the idea without copying any existing game, company or character.`;
+        continue;
+      }
     }
     const started = performance.now();
     verified = kit.verify(checked.content, { seed, budgetMs: 2000 });

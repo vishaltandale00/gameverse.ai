@@ -17,6 +17,9 @@ import { storyRules, opsFor, test, speakerName, fill, counterStarter } from './w
 import { beginBattle, battleFrame, battleView } from './world/battle-flow.js';
 import { openMenu, menuFrame, menuView, openShop, shopFrame, shopView, openPc, pcFrame, pcView, startEvolution, evolutionFrame, evolutionView } from './world/menus.js';
 
+/** A model-written phrase as a sentence: capitalized, ending in punctuation. */
+const sentence = t => { const x = String(t || '').trim(); return x ? x[0].toUpperCase() + x.slice(1) + (/[.!?]$/.test(x) ? '' : '.') : ''; };
+
 export const GAME_VERSION = '0.1.0';
 export const SAVE_SCHEMA = 'gameverse.v2.creature-save/0.1';
 const FADE = 12, DIALOGUE_REVEAL = 1.25, PAGE = 92;
@@ -63,7 +66,7 @@ export function createGame(content, { seed = 1 } = {}) {
     const m = content.mentor || {}, mentor = m.name || 'Professor';
     return [
       { op: 'say', who: 'mentor', name: mentor, text: `Welcome to ${content.region?.name || 'our region'}! I'm ${mentor}${m.role ? `, a ${m.role}` : ''}.` },
-      { op: 'say', who: 'mentor', name: mentor, text: `${content.region?.description || 'This land is full of wild creatures.'} People and creatures here live, battle and grow together.` },
+      { op: 'say', who: 'mentor', name: mentor, text: `${sentence(content.region?.description) || 'This land is full of wild creatures.'} People and creatures here live, battle and grow together.` },
       { op: 'say', who: 'mentor', name: mentor, text: `${playerName}, your journey starts today. Earn every badge and face the champion!` },
       { op: 'starter_intro' },
     ];
