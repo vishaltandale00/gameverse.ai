@@ -7,79 +7,43 @@
 import { fileURLToPath } from 'node:url';
 import { createStore } from './store.js';
 import { createJobs, streamEvents } from './jobs.js';
-import { loadCatalogue, catalogHash } from '../planner/catalog.js';
-import { createKernelPipeline, KERNEL_PIPELINE_VERSION, summarizeVerify } from '../planner/kernel-pipeline.js';
+import { buildServices, runJob, legacyError } from './job-runner.mjs';
+import { createIsolatedPipeline } from './isolate.js';
+import { catalogHash } from '../planner/catalog.js';
+import { KERNEL_PIPELINE_VERSION } from '../planner/kernel-pipeline.js';
 import { decomposeOffline } from '../planner/decompose.js';
 import { askQuestions } from '../planner/questions.js';
-import { createDecisions } from '../planner/decisions.js';
-import { loadOpenAIKey } from '../planner/openai.js';
-import { createWriters } from '../planner/writer.js';
-import { contentDiff, changeSummary } from '../planner/revision-check.js';
-import { verifyDocument } from '../planner/verify-adapter.js';
-import { catalogueForDoc, withoutExperiment } from '../experiments/primitive.js';
-import { createPrimitiveExperimentService } from '../experiments/primitive-service.js';
 import { createImprovementService } from '../improve/promote.js';
 import { createLocalClaudeRunner } from '../improve/runners/local-claude.js';
-import { DOC_SCHEMA } from '../kernel/document.js';
 
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
 const LEGACY = new Set(['gameverse.v2.game-spec/0.1', 'gameverse.v2.kit-game/0.1']);
-const legacyError = () => Object.assign(Error('This game was made with the retired genre engine, so it can be played but not changed. Make it again to get a kernel game you can change.'), { status: 409 });
 
 /**
- * createGameService({ root, env, writers?, decisions?, improve?, experiments? }) — writers/decisions/services
+ * createGameService({ root, env, writers?, decisions?, improve?, experiments?, isolation? }) — writers/decisions/services
  * are injectable (tests pass fakes; production builds them from the environment).
+ * isolation: every job (create, revise, experiments) runs in its own child process with a heap limit and a timeout
+ * (isolate.js), so a runaway job fails instead of taking the server down. On by default; off when fakes are
+ * injected (they can't cross a process) or V2_JOB_ISOLATION=off. Pass false, true, or { runner, heapMb, timeoutMs, forwardStderr }
+ * (runner: a module URL exporting createJobRunner; tests use one with fake writers). Limits also come from
+ * V2_JOB_HEAP_MB and V2_JOB_TIMEOUT_MS.
  */
-export function createGameService({ root = fileURLToPath(new URL('../../local-data/v2/', import.meta.url)), env = process.env, writers: injectedWriters, decisions: injectedDecisions, improve: injectedImprove, experiments: injectedExperiments, config = {} } = {}) {
+export function createGameService({ root = fileURLToPath(new URL('../../local-data/v2/', import.meta.url)), env = process.env, writers: injectedWriters, decisions: injectedDecisions, improve: injectedImprove, experiments: injectedExperiments, config = {}, isolation } = {}) {
   const store = createStore(root);
   const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
-  const openaiKey = injectedWriters ? null : loadOpenAIKey(env, repoRoot);
-  // A decision model picks primitives and confirms tweaks: d1 locally, OpenAI Decisions when d1 isn't reachable (V2_DECISIONS).
-  const decisions = injectedDecisions !== undefined ? injectedDecisions : createDecisions(env, { openaiKey });
-  const ready = (async () => {
-    const base = await loadCatalogue();
-    const writers = injectedWriters || await createWriters(env, { openaiKey });
-    if (!injectedWriters) console.log(JSON.stringify({ operation: 'v2_writers', spec: writers.spec ? `${writers.spec.provider}:${writers.spec.model}` : null, code: writers.code ? `${writers.code.provider}:${writers.code.model}` : null, decisions: decisions?.provider || null }));
-    const experiments = injectedExperiments !== undefined ? injectedExperiments : writers.code && env.V2_EXPERIMENTS !== 'off' ? createPrimitiveExperimentService({ writer: writers.code }) : null;
-    const catalogue = async doc => (doc?.experiments?.length ? catalogueForDoc(doc) : base);
-    const pipeline = createKernelPipeline({ catalogue, writers, decisions, gapService: experiments, config: { gaps: env.V2_GAPS || 'offer', ...config } });
-    return { base, writers, experiments, catalogue, pipeline };
-  })();
+  // The server keeps its own catalogue and clients for the catalog, questions and promote routes; isolated jobs build theirs in the child process.
+  const { decisions, ready } = buildServices({ env, repoRoot, writers: injectedWriters, decisions: injectedDecisions, experiments: injectedExperiments, config });
   const improve = injectedImprove !== undefined ? injectedImprove : env.V2_IMPROVE === 'off' ? null : createImprovementService({ root: repoRoot, runner: createLocalClaudeRunner({ root: repoRoot }) });
+  const injected = injectedWriters !== undefined || injectedDecisions !== undefined || injectedExperiments !== undefined;
+  const isolate = isolation === undefined ? !injected && env.V2_JOB_ISOLATION !== 'off' : Boolean(isolation);
+  const pipeline = isolate
+    ? createIsolatedPipeline({ env, repoRoot, config, ...(typeof isolation === 'object' ? isolation : {}) })
+    : (job, ctx) => runJob(ready, job, ctx);
 
-  async function experimentJob(job, ctx) {
-    const { experiments, catalogue } = await ready;
-    const latest = await ctx.store.latest(job.gameId);
-    if (!latest) throw Object.assign(Error('That game has no version yet.'), { status: 409 });
-    const doc = latest.doc;
-    if (doc.schema !== DOC_SCHEMA) throw legacyError();
-    if (job.kind === 'experiment-remove') {
-      const next = withoutExperiment(doc, job.experimentId);
-      const { registry, logic } = await catalogue(next);
-      const v = await verifyDocument(next, registry, logic, { budgetMs: 600 });
-      return ctx.publish({ doc: v.doc || next, stage: 'experiment removed', report: { ...latest.report, change: null, changes: changeSummary(contentDiff(doc, next)), gaps: [], verification: summarizeVerify(v), hot: 'reload' }, provenance: { ...latest.provenance, base: latest.version } });
-    }
-    ctx.stage('experimenting', { model: experiments.model });
-    const t = performance.now();
-    const filled = await experiments.fill({ doc, request: job.change });
-    if (!filled.ok) throw Object.assign(Error(`The experiment didn't pass its checks: ${(filled.problems || []).slice(0, 3).join(', ')}`), { status: 422 });
-    const { registry, logic } = await catalogue(filled.doc);
-    const v = await verifyDocument(filled.doc, registry, logic, { budgetMs: 800 });
-    ctx.stage('experimented', { ms: Math.round(performance.now() - t), attempts: filled.report?.attempts?.length ?? null });
-    return ctx.publish({
-      doc: v.doc || filled.doc, stage: `experiment: ${filled.experiment.label}`,
-      report: { ...latest.report, kind: 'kernel', change: job.change, changes: [`experimental primitive: ${filled.experiment.label} (${filled.experiment.card.id})`], gaps: [], experiment: { id: filled.experiment.id, label: filled.experiment.label, primitive: filled.experiment.card.id, check: filled.experiment.check.report }, verification: summarizeVerify(v), hot: 'reload', timings: { experimentMs: Math.round(performance.now() - t), modelAttempts: filled.report?.attempts?.length ?? null } },
-      provenance: { ...latest.provenance, base: latest.version, experiment: filled.experiment.id },
-    });
-  }
-
-  const jobs = createJobs({ store, pipeline: async (job, ctx) => {
-    if (job.kind === 'experiment' || job.kind === 'experiment-remove') return experimentJob(job, ctx);
-    return (await ready).pipeline(job, ctx);
-  } });
+  const jobs = createJobs({ store, pipeline });
 
   const routes = [
-    ['GET', /^\/api\/v2\/catalog$/, async () => { const { base, writers } = await ready; return { catalogHash: catalogHash(base.registry), primitives: base.registry.cards(), planner: KERNEL_PIPELINE_VERSION, writers: { spec: writers.spec?.model || null, code: writers.code?.model || null }, decisions: decisions?.provider || null }; }],
+    ['GET', /^\/api\/v2\/catalog$/, async () => { const { base, writers } = await ready; return { catalogHash: catalogHash(base.registry), primitives: base.registry.cards(), planner: KERNEL_PIPELINE_VERSION, writers: { spec: writers.spec?.model || null, code: writers.code?.model || null }, decisions: decisions?.provider || null, jobs: jobs.limits }; }],
     ['GET', /^\/api\/v2\/games$/, async () => ({ games: await store.list(), running: jobs.running() })],
     ['POST', /^\/api\/v2\/games$/, async body => {
       const prompt = String(body?.prompt || '').trim();
@@ -159,6 +123,13 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       return { meta, latest: await store.latest(m[1]) };
     }],
     ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/versions$/, async (_, m) => ({ versions: await store.versions(m[1]) })],
+    // Every finished job (done or failed) with its timings, and the full record of a failed one for reproducing it.
+    ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/runs$/, async (_, m) => ({ runs: await store.runs(m[1]) })],
+    ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/failures\/(\d+)$/, async (_, m) => {
+      const f = await store.failure(m[1], Number(m[2]));
+      if (!f) throw Object.assign(Error('No such failure record.'), { status: 404 });
+      return f;
+    }],
     ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/v\/(\d+)$/, async (_, m) => {
       const v = await store.version(m[1], Number(m[2]));
       if (!v) throw Object.assign(Error('No such version.'), { status: 404 });
