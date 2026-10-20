@@ -1,6 +1,5 @@
 // Model routing for v2 (user decision): Haiku for exploration and quick
 // tweaks, Sonnet for writing and repairing game specs, Opus for writing code.
-import Anthropic from '@anthropic-ai/sdk';
 
 export function modelRouting(env = process.env) {
   return {
@@ -18,8 +17,10 @@ export const hasClaudeCredentials = (env = process.env) => Boolean(env.ANTHROPIC
 // Server-side refusal fallback is available for Sonnet 5.5 / Opus on the Claude API, not for Haiku.
 const SUPPORTS_FALLBACK = model => /^claude-(sonnet|opus)-/.test(model);
 
-/** Thin client: complete({ model, system, messages, maxTokens, effort }) -> { text, ms, usage, model }. */
-export function createClaudeClient({ client = new Anthropic(), routing = modelRouting() } = {}) {
+/** Thin client: complete({ model, system, messages, maxTokens, effort }) -> { text, ms, usage, model }.
+ *  The SDK is imported lazily so hosts without it (no Anthropic credentials) still load this module. */
+export async function createClaudeClient({ client = null, routing = modelRouting() } = {}) {
+  if (!client) { const { default: Anthropic } = await import('@anthropic-ai/sdk'); client = new Anthropic(); }
   return {
     routing,
     async complete({ model, system, messages, maxTokens = 8000, effort }) {

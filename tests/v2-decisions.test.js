@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createD1Client, createOpenAIDecisionsClient, createAutoDecisions, createDecisions, toOpenAI } from '../v2/planner/decisions.js';
-import { routeIdea } from '../v2/planner/router.js';
 
 const questions = { engine: { type: 'choice', instructions: 'Which?', criteria: { puzzle: 'blocks', arcade: 'jumping' } }, ok: { type: 'noul', instructions: 'Fine?' }, size: { type: 'score', instructions: 'How big?', criteria: ['small', 'big'] } };
 const reply = body => async () => ({ ok: true, status: 200, json: async () => body });
@@ -44,14 +43,5 @@ test('auto switches to OpenAI only when d1 is unreachable, and stays switched', 
   assert.throws(() => createDecisions({ V2_DECISIONS: 'openai' }, { openaiKey: '' }), /OPENAI_API_KEY/);
 });
 
-test('the router uses a confident decision and names unbuilt genres as gaps', async () => {
-  const decide = probabilities => ({ provider: 'fake', decide: async () => ({ provider: 'fake', answers: { engine: { type: 'choice', choice: Object.keys(probabilities)[0], probabilities } } }) });
-  const rhythm = await routeIdea({ decisions: decide({ rhythm: 0.9, arcade: 0.1 }), prompt: 'guitar hero' });
-  assert.deepEqual([rhythm.engine, rhythm.needs, rhythm.source], ['none', 'rhythm', 'fake'], 'an unbuilt genre is named as the gap');
-  const fighting = await routeIdea({ decisions: decide({ fighting: 0.9, arcade: 0.1 }), prompt: 'street fighter' });
-  assert.deepEqual([fighting.engine, fighting.needs], ['fighting', 'none'], 'a built kit is routed to');
-  const arcade = await routeIdea({ decisions: decide({ arcade: 0.8, maze: 0.2 }), prompt: 'a platformer' });
-  assert.deepEqual([arcade.engine, arcade.needs], ['arcade', 'none']);
-  const unsure = await routeIdea({ decisions: decide({ cards: 0.3, arcade: 0.25 }), prompt: 'slay the spire' });
-  assert.equal(unsure.source, 'offline', 'below the threshold the cascade decides (offline here: no model client)');
-});
+// Genre routing (planner/router.js) is retired: decisions now pick primitives per mechanic
+// (tests/v2-p-pipeline-select.test.js).

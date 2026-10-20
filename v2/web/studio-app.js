@@ -1,21 +1,26 @@
 // Gameverse Studio: describe a game, answer a few questions, watch it get
 // built on the drafting table, play it, change it. Everything updates from
 // the /api/v2/events stream; new versions hot-load into the running game.
-import { mountGame } from '/v2/web/player.js';
-import { mountArcade } from '/v2/web/arcade-player.js';
-import { mountKit } from '/v2/web/kit-player.js';
+// New games are kernel documents (one kernel, primitives only); versions made by
+// the retired arcade/kit engines still play here but are not changed any more.
+import { mountGame, loadPromoted } from '/v2/web/player.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? mountKit(el, record) : mountGame(el, record);
-const STAGES = { designing: 'Designing the game', revising: 'Revising the design', building: 'Building the level', playtesting: 'Playtesting', playtested: 'Playtested', painting: 'Painting the art', painted: 'Painting the art', paint_failed: 'Painting the art', animating: 'Animating', animated: 'Animating', animate_failed: 'Animating', outline: 'Outlining', verified: 'Checked', complete: 'Done' };
-const QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Make jumping floatier', 'Make it night time', 'Add a time limit'];
-// Genre kits get changes every genre understands; a kit can list its own as `quick` in the version report.
-const KIT_QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Add more levels', 'Make it night time', 'Make it easier'];
+const KERNEL = 'gameverse.v2.game/0.2';
+const isKernel = record => record?.doc?.schema === KERNEL;
+const promotedReady = loadPromoted();
+// Legacy records keep their own players; every new game mounts on the kernel player.
+// (loaded on demand, so the default flow never loads the retired engines).
+const mount = async (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? (await import('/v2/web/arcade-player.js')).mountArcade(el, record)
+  : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? (await import('/v2/web/kit-player.js')).mountKit(el, record) : mountGame(el, record);
+const STAGES = { decomposing: 'Reading the idea', decomposed: 'Idea decomposed', selected: 'Primitives chosen', outlining: 'Outlining the game', outlined: 'Outline checked', first_playable: 'First playable', detail: 'Detailing zones', detail_rejected: 'Detail rejected', gap: 'Building a new primitive', revising: 'Working on the change', tweaked: 'Tweaked', revised: 'Revised', experimenting: 'Writing an experiment', experimented: 'Experiment checked', complete: 'Done' };
+// Changes any kernel game understands: params are tweaked without a model; the rest is revised or offered as an experiment.
+const QUICK = ['Make it faster', 'Make it harder', 'Make it easier', 'Bigger world', 'More characters', 'Add a time limit'];
 
 let games = [], selected = null, player = null, selecting = 0, shownVersion = null, tickTimer = 0;
 const builds = new Map(); // gameId -> { started, stage, detail, partial, art: [], log: [] }
-const build = id => { if (!builds.has(id)) builds.set(id, { started: performance.now(), stage: 'designing', detail: '', partial: null, art: [], log: [] }); return builds.get(id); };
+const build = id => { if (!builds.has(id)) builds.set(id, { started: performance.now(), stage: 'decomposing', detail: '', partial: null, art: [], log: [], plan: {} }); return builds.get(id); };
 
 async function api(path, body, method) {
   const res = await fetch(path, body || method ? { method: method || 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined } : {});
@@ -47,14 +52,13 @@ $('#clear').addEventListener('click', async () => {
 });
 
 // ---------- create: idea -> questions -> build ----------
-let pendingPrompt = '', pendingRoute = null;
+let pendingPrompt = '';
 $('#create').addEventListener('submit', async e => {
   e.preventDefault();
   pendingPrompt = $('#prompt').value.trim(); if (!pendingPrompt) return;
   $('#make').disabled = true; $('#make').textContent = 'Thinking…';
   try {
-    const { questions, route } = await api('/api/v2/questions', { prompt: pendingPrompt });
-    pendingRoute = route || null;
+    const { questions } = await api('/api/v2/questions', { prompt: pendingPrompt });
     if (!questions.length) return startBuild([]);
     $('#questions').hidden = false;
     $('#questions').innerHTML = `<p>A few choices shape the game. The first options are picked for you.</p>
@@ -69,7 +73,7 @@ $('#create').addEventListener('submit', async e => {
 async function startBuild(answers) {
   $('#questions').hidden = true;
   try {
-    const { gameId } = await api('/api/v2/games', { prompt: pendingPrompt, answers, route: pendingRoute });
+    const { gameId } = await api('/api/v2/games', { prompt: pendingPrompt, answers });
     const b = build(gameId); b.log.unshift({ label: 'Requested', ms: 0 }); // events may already have arrived
     $('#prompt').value = ''; location.hash = gameId;
   } catch (error) { toast(error.message); }
@@ -77,7 +81,7 @@ async function startBuild(answers) {
 
 // ---------- stage views ----------
 function welcome() {
-  $('#stage').innerHTML = `<section class="welcome"><h1>What do you want to play?</h1><p>Describe any 2D action game. It's designed, built and playtested in seconds, then painted while you play. Change it whenever you like.</p></section>`;
+  $('#stage').innerHTML = `<section class="welcome"><h1>What do you want to play?</h1><p>Describe any game, or a mashup of games. It's broken into mechanics, composed from shared primitives, checked, and playable as soon as the outline is; zones fill in while you play. Change it whenever you like.</p></section>`;
 }
 
 function constructionView(meta) {
@@ -86,6 +90,16 @@ function constructionView(meta) {
     <div class="status" aria-live="polite"><span id="ct-stage"><strong>Designing the game</strong></span><span id="ct-time">0.0 s</span></div>
     <div class="cast" id="ct-cast"></div>`;
   renderConstruction();
+}
+
+function renderPlan(b) {
+  const p = b.plan || {}, el = $('#ct-cast'); if (!el) return;
+  el.innerHTML = [
+    p.references?.length ? `<figure><figcaption>References</figcaption>${p.references.map(r => `<span class="chip">${esc(r)}</span>`).join(' ')}</figure>` : '',
+    p.mechanics?.length ? `<figure><figcaption>Mechanics</figcaption><ul>${p.mechanics.map(m => `<li>${esc(m)}</li>`).join('')}</ul></figure>` : '',
+    p.spaces?.length ? `<figure><figcaption>Primitives</figcaption>${[...p.spaces, ...(p.systems || [])].map(x => `<code>${esc(x)}</code>`).join(' ')}</figure>` : '',
+    p.gaps?.length ? `<figure><figcaption>Not covered by any primitive yet</figcaption><ul>${p.gaps.map(g => `<li>${esc(g)}</li>`).join('')}</ul></figure>` : '',
+  ].join('');
 }
 
 let revealRows = 0;
@@ -97,6 +111,7 @@ function renderConstruction() {
   $('#ct-stage').innerHTML = `<strong>${esc(STAGES[b.stage] || b.stage)}</strong>${b.detail ? ` — ${esc(b.detail)}` : ''}`;
   const kinds = Object.entries(p.entities || {}).filter(([, d]) => !d.solid && d.glyph);
   $('#ct-cast').innerHTML = kinds.map(([k, d]) => { const art = b.art.find(a => a.key === `sprite:${k}`); return `<figure><div class="art">${art ? `<img src="${art.url}" alt="">` : esc(d.glyph)}</div>${esc(k.replace(/-/g, ' '))}</figure>`; }).join('');
+  if (!p.rows) { renderPlan(b); return; }
   const rows = p.rows || [], ctx = canvas.getContext('2d');
   const rect = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
   canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
@@ -114,19 +129,21 @@ function renderConstruction() {
   }));
 }
 
-function playView(meta, record) {
+async function playView(meta, record) {
+  await promotedReady;
+  const legacy = !isKernel(record);
+  const gaps = record?.report?.gaps || [];
   $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p></header>
-    ${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}
-    ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
+    ${legacy ? '<p class="notice">This game was made with the retired genre engine. It still plays, but changes need a new game.</p>' : ''}
     ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
-    ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}${isKit(record) ? ` <button type="button" class="inline" data-experiment="${esc(record.report.gaps.find(g => g.kind === 'unsupported').capability)}">Try it as an experiment</button>` : ''}</p>` : ''}
+    ${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').length ? `<div class="notice">Not in this game yet (no primitive covers it):<ul>${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').slice(0, 6).map(g => `<li>${esc(g.capability)}${g.why ? ` <small>${esc(g.why)}</small>` : ''}${!legacy ? ` <button type="button" class="inline" data-experiment="${esc(g.capability)}" title="A code model writes it as a new primitive, checked in a sandbox and labelled experimental">Try it as an experiment</button>` : ''}</li>`).join('')}</ul></div>` : ''}
     ${experimentsList(record)}
     <div class="board" id="game"></div>
-    <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button>${isKit(record) ? '<button type="button" id="experiment" title="Model-written code for this game, sandboxed and labelled experimental">Try as experiment</button>' : ''}</form>
-    <div class="quick">${(record?.doc?.schema === 'gameverse.v2.kit-game/0.1' ? record.report?.quick || KIT_QUICK : QUICK).map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;
-  player = mount($('#game'), record); shownVersion = record.version;
-  $('#change').onsubmit = e => { e.preventDefault(); requestChange($('#change-text').value); };
+    ${legacy ? '' : `<form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “faster, and add a lighthouse keeper who knows the way”" aria-label="Change this game"><button class="primary" type="submit">Change it</button><button type="button" id="experiment" title="A new primitive written by a code model, sandboxed and labelled experimental">Try as experiment</button></form>
+    <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}`;
+  player = await mount($('#game'), record); shownVersion = record.version;
+  if ($('#change')) $('#change').onsubmit = e => { e.preventDefault(); requestChange($('#change-text').value); };
   if ($('#experiment')) $('#experiment').onclick = () => requestExperiment($('#change-text').value);
   $('#stage').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -136,10 +153,8 @@ function playView(meta, record) {
     else if (b.dataset.apply) applyPromotion(b.dataset.apply);
   };
   pollPromotions();
-  $('.quick').onclick = e => { const q = e.target.closest('[data-quick]')?.dataset.quick; if (q) requestChange(q); };
+  if ($('.quick')) $('.quick').onclick = e => { const q = e.target.closest('[data-quick]')?.dataset.quick; if (q) requestChange(q); };
 }
-
-const isKit = record => record?.doc?.schema === 'gameverse.v2.kit-game/0.1';
 
 // ---------- experiments (tier 3) and promotion into real mods (tier 4) ----------
 function experimentsList(record) {
@@ -147,7 +162,8 @@ function experimentsList(record) {
   if (!list.length) return '';
   return `<div class="experiments"><h3>Experiments</h3>${list.map(e => `<div class="experiment" data-id="${esc(e.id)}"><span class="badge">Experimental</span> <strong>${esc(e.label)}</strong> <small>${esc(e.request || '')}</small>
     <span class="promotion" id="promo-${esc(e.id)}"></span>
-    <button type="button" data-promote="${esc(e.id)}" title="A coding agent builds this as a tested mod every compatible game can use (minutes, in the background)">Build it properly</button>
+    ${e.card?.id ? `<code>${esc(e.card.id)}</code>` : ''}
+    <button type="button" data-promote="${esc(e.id)}" title="A coding agent builds this as a native, tested primitive every game can use (minutes, in the background)">Build it properly</button>
     <button type="button" class="quiet" data-remove-experiment="${esc(e.id)}">Remove</button></div>`).join('')}</div>`;
 }
 async function requestExperiment(text) {
@@ -160,7 +176,7 @@ async function requestExperiment(text) {
 }
 const promotions = new Map(); // experimentId -> improve job id
 async function promote(experimentId) {
-  try { const { job } = await api(`/api/v2/games/${selected}/promote`, { experimentId }); promotions.set(experimentId, job.id); toast('Building it properly in the background: a coding agent writes and tests a real mod.'); pollPromotions(); }
+  try { const { job } = await api(`/api/v2/games/${selected}/promote`, { experimentId }); promotions.set(experimentId, job.id); toast('Building it properly in the background: a coding agent writes and tests a native primitive.'); pollPromotions(); }
   catch (error) { toast(error.message); }
 }
 let promoTimer = 0;
@@ -170,14 +186,14 @@ async function pollPromotions() {
     const { jobs } = await api('/api/v2/improve');
     for (const j of jobs.filter(j => j.gameId === selected)) {
       const el = document.getElementById(`promo-${j.experiment?.id}`); if (!el) continue;
-      const label = { queued: 'Queued', preparing: 'Preparing', coding: 'Coding the mod', verifying: 'Verifying', succeeded: 'Built and verified', failed: 'Build failed', cancelled: 'Cancelled' }[j.state] || j.state;
+      const label = { queued: 'Queued', preparing: 'Preparing', coding: j.target === 'primitive' ? 'Coding the primitive' : 'Coding the mod', verifying: 'Verifying', succeeded: 'Built and verified', failed: 'Build failed', cancelled: 'Cancelled' }[j.state] || j.state;
       el.innerHTML = `<em>${esc(label)}${j.reason && j.state === 'failed' ? `: ${esc(String(j.reason).slice(0, 120))}` : ''}</em>${j.state === 'succeeded' && !j.applied ? ` <button type="button" data-apply="${esc(j.id)}">Apply</button>` : ''}${j.applied ? ' <em>· applied; restart the server to load it</em>' : ''}`;
     }
     if (jobs.some(j => j.gameId === selected && !['succeeded', 'failed', 'cancelled'].includes(j.state))) promoTimer = setTimeout(pollPromotions, 3000);
   } catch {}
 }
 async function applyPromotion(id) {
-  try { await api(`/api/v2/improve/${id}/apply`, {}); toast('Applied to this checkout. Restart the server to load the new mod.'); pollPromotions(); }
+  try { await api(`/api/v2/improve/${id}/apply`, {}); toast('Applied to this checkout. Restart the server to load the new primitive.'); pollPromotions(); }
   catch (error) { toast(error.message); }
 }
 
@@ -197,7 +213,8 @@ async function renderSheet(record) {
   $('#timeline').innerHTML = (b?.log || []).map((s, i, all) => `<li class="${i === all.length - 1 ? 'now' : ''}"><span>${esc(s.label)}</span><span>${s.ms != null ? (s.ms / 1000).toFixed(1) + ' s' : ''}</span></li>`).join('') || '<li>Built earlier.</li>';
   if (record) {
     const r = record.report || {}, pt = r.playtest;
-    $('#checks').innerHTML = pt ? [
+    if (isKernel(record)) { $('#checks').innerHTML = kernelChecks(record); }
+    else $('#checks').innerHTML = pt ? [
       `<div class="${r.verified ? 'ok' : 'warn'}">${r.verified ? `Winnable: the test player finished in ${pt.win?.seconds ?? '?'} s` : 'Playable, but the test player did not finish'}</div>`,
       `<div class="muted">It explored ${pt.explored} spots, ${Math.round(pt.simulatedSeconds)} s of play, in ${pt.wallMs} ms</div>`,
       ...(pt.issues || []).filter(i => i.code !== 'mechanic_unused').map(i => `<div class="${i.severity === 'error' ? 'bad' : 'warn'}">${esc(i.message)}</div>`),
@@ -212,8 +229,23 @@ async function renderSheet(record) {
 $('#versions').addEventListener('click', async e => {
   const v = Number(e.target.closest('[data-version]')?.dataset.version); if (!v || !selected) return;
   const record = await api(`/api/v2/games/${selected}/v/${v}`);
-  player?.dispose(); player = mount($('#game'), record); shownVersion = v; renderSheet(record);
+  player?.dispose(); player = await mount($('#game'), record); shownVersion = v; renderSheet(record);
 });
+
+function kernelChecks(record) {
+  const r = record.report || {}, v = r.verification || {}, t = r.timings || {}, sec = x => (x == null ? '—' : `${(x / 1000).toFixed(2)} s`);
+  return [
+    `<div class="${v.ok ? 'ok' : 'bad'}">Preflight ${v.ok ? 'passed' : 'failed'}${v.preflightMs != null ? ` in ${v.preflightMs} ms` : ''}${v.warnings ? `, ${v.warnings} warnings` : ''}</div>`,
+    v.completable === true ? `<div class="ok">Completable: the solver reached ${esc((v.endings || []).join(', ') || 'an ending')} (${v.states ?? '?'} states, ${v.ms} ms)</div>` : v.completable === false ? `<div class="${v.exhaustive ? 'bad' : 'warn'}">${v.exhaustive ? 'No ending is reachable' : 'The solver found no ending within its budget'}</div>` : '',
+    v.beatsNeverFired?.length ? `<div class="warn">Beats the solver never reached: ${esc(v.beatsNeverFired.join(', '))}</div>` : '',
+    r.outline ? `<div class="muted">Outline: ${esc(r.outline.source)}${r.outline.fellBack ? ' (fell back to the procedural skeleton)' : ''}, ${r.outline.rounds?.length ?? 0} rounds</div>` : '',
+    t.requestToFirstPlayableMs != null ? `<div class="muted">Request → first playable ${sec(t.requestToFirstPlayableMs)} (decompose ${sec(t.decomposeMs)}, select ${sec(t.selectMs)}, outline ${sec(t.outlineMs)}, build ${t.firstPlayableBuildMs} ms)</div>` : '',
+    r.detail ? `<div class="muted">Detail ${esc(r.detail.task)}: ${r.detail.ok ? 'accepted' : `rejected (${esc(r.detail.reason)})`} in ${sec(r.detail.ms)}</div>` : '',
+    r.path ? `<div class="muted">Change made by ${r.path === 'tweak' ? 'a parameter tweak (no model)' : r.path === 'model' ? 'targeted model edits' : 'nothing'}${t.totalMs != null ? ` in ${sec(t.totalMs)}` : ''}</div>` : '',
+    ...(r.selection?.mechanics || []).slice(0, 8).map(m => `<div class="muted">${esc(m.description)} → ${m.primitives?.length ? m.primitives.map(x => `<code>${esc(x)}</code>`).join(' ') : '<em>no primitive</em>'}</div>`),
+    `<div class="muted">Seed ${esc(record.provenance?.seed ?? '')}, doc ${esc((record.docHash || '').slice(0, 8))}, ${esc(record.provenance?.pipeline || '')}</div>`,
+  ].join('');
+}
 
 // ---------- selection ----------
 async function select(id) {
@@ -224,7 +256,7 @@ async function select(id) {
   const { meta, latest } = await api(`/api/v2/games/${selected}`).catch(() => ({}));
   if (token !== selecting) return;
   if (!meta) { welcome(); return; }
-  if (latest) playView(meta, latest); else { build(selected); revealRows = 0; constructionView(meta); }
+  if (latest) await playView(meta, latest); else { build(selected); revealRows = 0; constructionView(meta); }
   renderSheet(latest);
 }
 clearInterval(tickTimer);
@@ -238,7 +270,9 @@ const events = new EventSource('/api/v2/events');
 events.addEventListener('stage', ev => {
   const e = JSON.parse(ev.data), b = build(e.gameId);
   b.stage = e.stage;
-  b.detail = e.stage === 'animated' ? `${e.done} of ${e.of} frames` : e.stage === 'painted' ? `${e.done} of ${e.of} images` : e.stage === 'painting' ? `${e.assets} images` : e.stage === 'playtested' ? (e.winnable ? 'winnable' : 'retrying layout') : e.stage === 'revising' ? b.detail : '';
+  b.detail = e.stage === 'detail' ? e.task?.split(':').pop() : e.stage === 'detail_rejected' ? `${e.task?.split(':').pop()}: ${e.reason}` : e.stage === 'gap' ? e.mechanic : e.stage === 'revising' ? b.detail : e.stage === 'outlined' ? `${e.source}${e.fellBack ? ' (procedural fallback)' : ''}` : '';
+  if (e.stage === 'decomposed') Object.assign(b.plan, { references: e.references, mechanics: e.mechanics });
+  if (e.stage === 'selected') Object.assign(b.plan, { spaces: e.spaces, systems: e.systems, gaps: e.gaps });
   b.log.push({ label: (STAGES[e.stage] || e.stage) + (e.stage === 'painted' || e.stage === 'animated' ? ` ${e.done}/${e.of}` : ''), ms: e.ms });
   if (e.gameId === selected) renderSheet();
 });
@@ -253,8 +287,9 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
-  if (!player || !$('#game')) { const { meta } = await api(`/api/v2/games/${e.gameId}`); playView(meta, record); toast('Your game is ready. Play!'); }
-  else if (player.update(record)) { shownVersion = e.version; toast(record.stage === 'art' ? 'The art is in.' : record.stage === 'animation' ? 'Animations are in.' : `Version ${e.version} loaded.`); }
+  if (!player || !$('#game')) { const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record); toast('Your game is ready. Play!'); }
+  else if (player.update(record)) { shownVersion = e.version; toast(String(record.stage).startsWith('detail:') ? `New detail in ${record.stage.slice(7)}.` : `Version ${e.version} loaded.`); }
+  else { const { meta } = await api(`/api/v2/games/${e.gameId}`); player?.dispose(); await playView(meta, record); toast(`Version ${e.version} loaded (restarted).`); }
   renderSheet(record);
 });
 for (const type of ['job_done', 'job_failed']) events.addEventListener(type, ev => {

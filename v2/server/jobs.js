@@ -9,8 +9,9 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
 
   async function run(job) {
     running.set(job.gameId, job);
+    job.queuedMs = Date.now() - job.submittedAt; // queue time, kept apart from execution (AGENTS.md)
     const started = performance.now();
-    broadcast({ type: 'job_started', gameId: job.gameId, jobId: job.id, prompt: job.prompt });
+    broadcast({ type: 'job_started', gameId: job.gameId, jobId: job.id, prompt: job.prompt, queuedMs: job.queuedMs });
     const ctx = {
       job, store,
       stage(name, detail = {}) { job.stages.push({ name, at: Math.round(performance.now() - started), ...detail }); broadcast({ type: 'stage', gameId: job.gameId, jobId: job.id, stage: name, ...detail, ms: Math.round(performance.now() - started) }); },
@@ -40,7 +41,7 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     running: () => [...running.values()].map(j => ({ gameId: j.gameId, jobId: j.id, stages: j.stages })),
     submit(job) {
-      const full = { id: `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, stages: [], ...job };
+      const full = { id: `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, stages: [], ...job, submittedAt: Date.now() };
       if (running.size < maxConcurrent) run(full); else { queue.push(full); broadcast({ type: 'queued', gameId: full.gameId, jobId: full.id, position: queue.length }); }
       return full;
     },

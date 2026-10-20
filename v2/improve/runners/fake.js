@@ -5,12 +5,18 @@ import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
 import { sh } from './proc.js';
-import { modPaths } from '../prompt.js';
+import { modPaths, primitivePaths } from '../prompt.js';
 
 /** The three deliverables of a well-formed promotion. */
 export const goodChanges = modId => {
   const p = modPaths(modId);
   return [{ path: p.mod, status: 'A', content: `export default { id: '${modId}' };\n` }, { path: p.test, status: 'A', content: '// test\n' }, { path: p.index, status: 'M', content: '// index\n' }];
+};
+
+/** The three deliverables of a well-formed primitive promotion (target 'primitive'). */
+export const goodPrimitiveChanges = primitiveId => {
+  const p = primitivePaths(primitiveId);
+  return [{ path: p.primitive, status: 'A', content: `export default { id: '${primitiveId}' };\n` }, { path: p.test, status: 'A', content: '// test\n' }, { path: p.index, status: 'A', content: '// index\n' }];
 };
 
 const wait = (ms, signal) => new Promise(resolve => {
@@ -41,7 +47,7 @@ export function createFakeRunner({ attempts = [{}], verify = () => ({ code: 0 })
       if (signal?.aborted) return { aborted: true, completed: false, exitCode: null };
       // By default every attempt edits the mod (so repairs make progress); scripted changes are taken as given.
       const changes = typeof step.changes === 'function' ? step.changes(workspace.job) : step.changes
-        ?? goodChanges(workspace.job.modId).map(c => (c.status === 'A' && c.path.startsWith('v2/') ? { ...c, content: `${c.content}// attempt ${attempt}\n` } : c));
+        ?? (workspace.job.target === 'primitive' ? goodPrimitiveChanges(workspace.job.primitiveId) : goodChanges(workspace.job.modId)).map(c => (c.status === 'A' && c.path.startsWith('v2/') ? { ...c, content: `${c.content}// attempt ${attempt}\n` } : c));
       for (const c of changes) workspace.files.set(c.path, c);
       return { completed: step.completed ?? true, exitCode: step.exitCode ?? 0, turns: step.turns ?? 3, costUsd: step.costUsd ?? 0.01, sessionId: `session-${workspace.job.id}`, isError: false, subtype: 'success', resultText: 'done', stderrTail: step.stderr ?? '' };
     },
