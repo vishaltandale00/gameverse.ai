@@ -88,3 +88,49 @@ export function composeRenderer(kit, game, { art } = {}) {
   wrapped.fx = render.fx; wrapped.inner = render;
   return wrapped;
 }
+
+// ---------- shared by native mods and sandboxed experiments (v2/kits/EXTENDING.md) ----------
+const OP_CAPABILITY = { spawn: 'spawn', setBlocked: 'terrain', score: 'score', hurt: 'hurt', defeat: 'defeat', stun: 'stun', emit: null };
+
+/** Plain-JSON view of the world for a sandbox. Grid kits with size() also get a blocked bitmap. */
+export function snapshot(kit, world, state, events = []) {
+  const caps = new Set(kit.world?.capabilities || []);
+  const size = world.size?.(state) || null;
+  let blocked = null;
+  if (size && size.w * size.h <= 20000) {
+    let bits = '';
+    for (let y = 0; y < size.h; y++) for (let x = 0; x < size.w; x++) bits += world.blocked(state, x, y) ? '1' : '0';
+    blocked = { w: size.w, h: size.h, bits };
+  }
+  return {
+    frame: state.frame ?? null, active: !!world.active(state), size,
+    player: caps.has('player') ? world.player(state) : null,
+    enemies: caps.has('enemies') ? world.enemies(state).map(({ id, name, x, y, radius, hittable }) => ({ id, name, x, y, radius, hittable })) : [],
+    blocked, lives: world.lives?.(state) ?? null,
+    events: events.map(e => ({ ...e })),
+    capabilities: [...caps],
+  };
+}
+
+/** Apply operations through the adapter, honoring declared capabilities. Returns { applied, dropped }. */
+export function applyOps(kit, world, state, ops = [], emit = () => {}) {
+  const caps = new Set(kit.world?.capabilities || []);
+  let applied = 0, dropped = 0;
+  for (const o of Array.isArray(ops) ? ops.slice(0, 64) : []) {
+    const cap = OP_CAPABILITY[o?.op];
+    if (cap === undefined || (cap && !caps.has(cap))) { dropped++; continue; }
+    const num = v => Number.isFinite(v) ? v : 0;
+    try {
+      if (o.op === 'spawn' && world.spawn) world.spawn(state, { x: num(o.x), y: num(o.y), kind: typeof o.kind === 'string' ? o.kind.slice(0, 24) : undefined, hp: o.hp });
+      else if (o.op === 'setBlocked' && world.setBlocked) world.setBlocked(state, Math.round(num(o.x)), Math.round(num(o.y)), !!o.on);
+      else if (o.op === 'score' && world.addScore) world.addScore(state, Math.max(-1e6, Math.min(1e6, Math.round(num(o.n)))));
+      else if (o.op === 'hurt' && world.hurtPlayer) world.hurtPlayer(state, { by: String(o.by || 'experiment').slice(0, 40) });
+      else if (o.op === 'defeat') world.defeat(state, o.id, { by: 'experiment' });
+      else if (o.op === 'stun' && world.stun) world.stun(state, o.id, Math.max(1, Math.min(600, Math.round(num(o.frames) || 60))));
+      else if (o.op === 'emit') emit(String(o.name || 'experiment').slice(0, 32), typeof o.data === 'object' && o.data ? o.data : {});
+      else { dropped++; continue; }
+      applied++;
+    } catch { dropped++; }
+  }
+  return { applied, dropped };
+}
