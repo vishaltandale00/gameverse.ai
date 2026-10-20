@@ -1,0 +1,60 @@
+// Story as data: acts of beats. A beat fires once when its `when` predicate
+// holds and every beat in `after` has fired; it runs its effects. Acts are
+// sequential unless `parallel` is set. The verifier can solve this graph.
+export default {
+  id: 'plot.storyboard',
+  card: {
+    intent: 'Runs the story: acts made of beats that fire when their trigger predicate holds (after prerequisite beats) and apply effects such as dialogue, items, flags, quests and endings.',
+    views: ['any'],
+    params: { sequentialActs: { type: 'boolean', default: true, effect: 'beats in act N+1 wait until every non-optional beat in act N has fired' } },
+    provides: { events: ['beat', 'act_start', 'act_complete'] },
+    reads: ['plot.storyboard', 'plot.characters', 'plot.endings'],
+  },
+  logic(logic) {
+    logic.predicate('beat', { refs: p => [['beat', p.beat]], test: (p, rt) => Boolean(rt.store('plot.storyboard').fired?.[p.beat]) });
+    logic.effect('say', {
+      refs: e => [['character', e.character]],
+      run: (e, rt) => rt.emit('say', { character: e.character, text: e.text }),
+    });
+  },
+  validate(config, doc, ctx) {
+    const errors = [], acts = doc.plot?.storyboard?.acts;
+    if (!Array.isArray(acts) || !acts.length) return [{ code: 'plot_missing', path: 'plot.storyboard.acts', message: 'storyboard needs at least one act' }];
+    const beats = new Set(acts.flatMap(a => (a.beats || []).map(b => b.id)));
+    acts.forEach((a, i) => (a.beats || []).forEach((b, j) => {
+      const path = `plot.storyboard.acts[${i}].beats[${j}]`;
+      if (b.when) ctx.checkPredicate(b.when, `${path}.when`, errors);
+      (b.do || []).forEach((e, k) => ctx.checkEffect(e, `${path}.do[${k}]`, errors));
+      for (const dep of b.after || []) if (!beats.has(dep)) errors.push({ code: 'ref_unknown', path: `${path}.after`, message: `unknown beat '${dep}'` });
+    }));
+    return errors;
+  },
+  install(rt, config) {
+    const acts = rt.doc.plot.storyboard.acts;
+    rt.system('plot', rt => {
+      // Fetch state every step: restore() replaces it.
+      const s = rt.store('plot.storyboard');
+      s.fired ??= {}; s.act ??= 0; s.done ??= {};
+      // Bounded fixpoint: beats unlocked by this frame's beats can fire in the same frame.
+      for (let pass = 0; pass < 8; pass++) {
+        let progressed = false;
+        acts.forEach((act, ai) => {
+          if (config.sequentialActs && ai > s.act) return;
+          for (const b of act.beats || []) {
+            if (s.fired[b.id] || !(b.after || []).every(d => s.fired[d]) || (b.when && !rt.test(b.when))) continue;
+            s.fired[b.id] = rt.state.frame + 1; progressed = true;
+            rt.emit('beat', { beat: b.id, act: act.id });
+            rt.run(b.do || [], { beat: b.id });
+            if (rt.state.status !== 'playing') return;
+          }
+        });
+        const current = acts[s.act];
+        if (current && !s.done[current.id] && (current.beats || []).filter(b => !b.optional).every(b => s.fired[b.id])) {
+          s.done[current.id] = true; rt.emit('act_complete', { act: current.id });
+          if (s.act < acts.length - 1) { s.act++; rt.emit('act_start', { act: acts[s.act].id }); progressed = true; }
+        }
+        if (!progressed || rt.state.status !== 'playing') break;
+      }
+    });
+  },
+};
