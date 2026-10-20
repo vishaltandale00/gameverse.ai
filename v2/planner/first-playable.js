@@ -59,8 +59,12 @@ export function replayCheck(doc, registry, logic, { seed, steps = 240, runs = 2 
     const inputs = [];
     for (let i = 0; i < steps && rt.state.status === 'playing'; i++) {
       let input = script?.[i];
-      if (!script) { const opts = rt.availableOptions(); input = opts.length && i % 4 === 0 ? { actions: opts[(i / 4) % opts.length | 0].actions } : {}; inputs.push(input); }
-      rt.step(input || {});
+      // Every run observes options at the same steps (as solvers do): reading options should not change state,
+      // but a primitive that lazily initializes on first read would otherwise look nondeterministic here.
+      if (script && i % 4 === 0) rt.availableOptions();
+      // Options may hand out live references (an entity's position); record a copy so the replay gets the same input.
+      if (!script) { const opts = i % 4 === 0 ? rt.availableOptions() : []; input = opts.length ? structuredClone({ actions: opts[(i / 4) % opts.length | 0].actions }) : {}; inputs.push(structuredClone(input)); }
+      rt.step(structuredClone(input || {}));
     }
     script ??= inputs;
     hashes.push(hashOf(rt.snapshot()));

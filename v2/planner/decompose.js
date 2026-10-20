@@ -81,7 +81,7 @@ const titleFrom = prompt => (prompt.match(/[A-Za-z0-9']+/g) || ['Untitled']).sli
 const VERBS = [
   ['explore', 'explore places and travel between them', /\b(explor\w*|wander\w*|travel\w*|journey\w*|adventur\w*|map|world|roam\w*)\b/],
   ['talk', 'talk to characters', /\b(talk\w*|dialog\w*|conversation\w*|chat\w*|npcs?|villagers?|interrogat\w*|persuad\w*)\b/],
-  ['story', 'follow a story told in acts and beats', /\b(story|stories|narrative|plot|quest\w*|mystery|detective|chapter\w*|tale)\b/],
+  ['story', 'follow a story with chapters and an ending', /\b(story|stories|narrative|plot|quest\w*|mystery|detective|chapter\w*|tale)\b/],
   ['collect', 'find and collect items', /\b(collect\w*|gather\w*|pick\w* up|loot\w*|treasure\w*|coins?|keys?|items?|find\w*)\b/],
   ['fight', 'fight enemies in real time', /\b(fight\w*|combat|battl\w*|attack\w*|swords?|enem(y|ies)|boss\w*|duel\w*|souls?like|monsters?)\b/],
   ['shoot', 'shoot projectiles at targets', /\b(shoot\w*|guns?|blast\w*|lasers?|rifles?|snip\w*|bullets?|shooter)\b/],

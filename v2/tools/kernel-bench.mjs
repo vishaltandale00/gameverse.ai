@@ -85,8 +85,8 @@ export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = tru
         decomposition: { source: out.decomposition.source, references: out.decomposition.references.map(x => x.name), mechanics: out.decomposition.mechanics.length },
         selection: { spaces: out.selection.spaces.map(s => s.use), systems: out.selection.systems.length, gaps: out.selection.gaps.length, provider: out.selection.provider || 'lexical' },
         outline: out.outline, preflightFirstPass: out.outline.firstPassOk, preflightAfterRepair: true,
-        firstPlayableCompletable: fp?.report?.verification?.completable ?? null, finalCompletable: final.completable, finalExhaustive: final.exhaustive,
-        detail: { proposed: out.detail.proposed, accepted: out.detail.accepted, rejected: out.detail.rejected },
+        firstPlayableCompletable: out.firstVerification?.completable ?? null, finalCompletable: final.completable, finalExhaustive: final.exhaustive,
+        detail: { proposed: out.detail.proposed, accepted: out.detail.accepted, rejected: out.detail.rejected, tasks: out.detail.tasks },
         replayDeterministic: replay.deterministic, replayHash: replay.hash, versions: versions.length, docHash: hashOf(finalDoc),
       });
     } catch (error) {
@@ -113,7 +113,7 @@ export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = tru
       writers: { spec: writers.spec ? `${writers.spec.provider}:${writers.spec.model}` : null, code: writers.code ? `${writers.code.provider}:${writers.code.model}` : null },
       decisions: decisions?.provider ?? null, offline,
       machine: { platform: os.platform(), release: os.release(), arch: os.arch(), cpuModel: cpus[0]?.model || null, cpuCount: cpus.length, memoryGb: Math.round(os.totalmem() / 2 ** 30), node: process.version, loadavg: os.loadavg().map(x => +x.toFixed(2)) },
-      nesting: 'requestToFirstPlayableMs = decomposeMs + selectMs + outlineMs (contains outlineModelMs) + firstPlayableBuildMs + firstVerifyMs (+ publish); detailMs runs after it; totalMs covers all',
+      nesting: 'requestToFirstPlayableMs = decomposeMs + selectMs (includes the agency check) + outlineMs (contains outlineModelMs) + firstPlayableBuildMs (+ publish); firstVerifyMs and detailMs run after it; totalMs covers all',
     },
     summary: {
       runs: runs.length, succeeded: ok.length, failed: runs.length - ok.length,

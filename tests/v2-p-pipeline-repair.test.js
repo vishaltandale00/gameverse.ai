@@ -47,8 +47,8 @@ test('references: near misses re-pointed, creatable kinds stubbed, dangling zone
 test('primitives: unknown ones removed and reported, missing vocabulary providers added', () => {
   const doc = manor();
   doc.systems = [{ use: 'plot.storyboard' }, { use: 'gameplay.made.up' }]; // give_item and the item predicate now have no provider
-  // Preflight only flags the unknown primitive: the logic vocabulary is catalogue-wide (kernel request in v2/kernel/requests/pipeline.md).
-  assert.deepEqual(codes(doc), ['primitive_unknown']);
+  // The kernel reports the missing owner (requested in v2/kernel/requests/pipeline.md); repair adds it from the hint.
+  assert.ok(codes(doc).includes('primitive_unknown') && codes(doc).includes('vocabulary_owner_missing'));
   const r = repairDocument(doc, { registry, logic });
   assert.ok(r.ok, describeErrors(r.errors));
   assert.deepEqual(r.removed.map(x => x.use), ['gameplay.made.up']);

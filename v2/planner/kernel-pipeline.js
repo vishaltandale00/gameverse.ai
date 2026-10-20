@@ -63,16 +63,18 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.firstPlayableBuildMs = ms(t);
     if (!fp.ok) throw Object.assign(Error(`The first playable would not start: ${[...fp.errors, ...fp.problems].slice(0, 3).map(e => e.message || e.code).join('; ')}`), { status: 422 });
     let current = fp.doc;
-    t = performance.now();
-    const base = await verifyDocument(current, registry, logic, { budgetMs: cfg.solveBudgetMs });
-    timings.firstVerifyMs = ms(t);
-    timings.requestToFirstPlayableMs = ms(t0);
     const gaps = [...selection.gaps.map(gapNote), ...[...(outline.removed || []), ...fp.removed].map(r => ({ capability: r.use, why: r.why, kind: r.kind === 'capability' ? 'capability' : 'removed' }))];
     await ctx.store.updateMeta(job.gameId, { title: current.title, kind: 'kernel' });
     const common = { kind: 'kernel', decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps, summary: current.logline || decomposition.premise };
     const provenance = extra => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: base.ok, verification: summarizeVerify(base), outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    // Publish before full verification: preflight passed and the world booted; the verifier's report follows.
+    timings.requestToFirstPlayableMs = ms(t0);
+    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: null, verification: { ok: true, source: 'preflight', pending: true, preflightMs: null }, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs });
+    t = performance.now();
+    const base = await verifyDocument(current, registry, logic, { budgetMs: cfg.solveBudgetMs });
+    timings.firstVerifyMs = ms(t);
+    ctx.stage('verified', { ms: timings.firstVerifyMs, verification: summarizeVerify(base) });
 
     // Layer 3: detail patches in parallel; merges are serialized in completion order.
     const tasks = detailTasks(current, { max: cfg.maxDetailTasks });
@@ -123,7 +125,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     }
     timings.totalMs = ms(t0);
     ctx.stage('complete', { timings, detail: { proposed: detail.proposed, accepted: detail.accepted, rejected: detail.rejected }, gaps: filled });
-    return { doc: current, timings, detail, gaps: filled, decomposition, selection, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, base };
+    return { doc: current, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, base };
   }
 
   async function revise(job, ctx) {

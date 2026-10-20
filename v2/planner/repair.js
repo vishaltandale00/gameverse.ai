@@ -20,7 +20,11 @@ export function parsePath(path) {
   return keys;
 }
 export const getAt = (obj, keys) => keys.reduce((o, k) => (o == null ? undefined : o[k]), obj);
-function setAt(obj, keys, value) { const parent = getAt(obj, keys.slice(0, -1)); if (parent && typeof parent === 'object') parent[keys.at(-1)] = value; }
+function setAt(obj, keys, value) {
+  let parent = obj;
+  for (let i = 0; i < keys.length - 1; i++) { if (parent[keys[i]] == null) parent[keys[i]] = typeof keys[i + 1] === 'number' ? [] : {}; parent = parent[keys[i]]; if (typeof parent !== 'object') return; }
+  parent[keys.at(-1)] = value;
+}
 function deleteAt(obj, keys) {
   const parent = getAt(obj, keys.slice(0, -1)), k = keys.at(-1);
   if (Array.isArray(parent) && typeof k === 'number') parent.splice(k, 1);
@@ -134,7 +138,7 @@ function safePreflight(doc, registry, logic) {
  * repairDocument(doc, { registry, logic, rounds }) -> { doc, ok, checked, errors, fixes, removed, rounds }
  * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
  */
-export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null } = {}) {
+export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false } = {}) {
   const doc = structuredClone(input);
   const fixes = [], removed = [];
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
@@ -284,6 +288,12 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           else if (loc) { removed.push({ use: loc.inst.use, why: e.message }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`); }
           break;
         }
+        case 'vocabulary_owner_missing': {
+          const m = /provided by '([^']+)'/.exec(e.message || '') || /"use": "([^"]+)"/.exec(e.hint || '');
+          if (m && addSystem(m[1], e.code)) progressed = true;
+          else if (m && (doc.systems || []).some(s => s.use === m[1])) progressed = true;
+          break;
+        }
         case 'primitive_conflict': if (loc) { removed.push({ use: loc.inst.use, why: e.message }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`); } break;
         case 'predicate_unknown': case 'effect_unknown': {
           const value = getAt(doc, keys);
@@ -310,6 +320,35 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
     if (!progressed) break;
   }
   checked = safePreflight(doc, registry, logic);
+  // Last resort (procedural skeletons): an error no generic fix handles comes from some primitive's own
+  // validate(); find the systems[] instance whose removal clears it, remove it, and report it as a gap.
+  if (!checked.ok && isolate) {
+    for (let pass = 0; pass < 6 && !checked.ok; pass++) {
+      const before = checked.errors.length;
+      // An instance and everything that requires it go together (removing a dependency alone just re-adds it).
+      const withDependents = i => {
+        const out = new Set([i]);
+        for (let grew = true; grew;) { grew = false; (doc.systems || []).forEach((s, j) => { if (out.has(j)) return; const req = requirementsOf(registry, s.use).primitives; if ([...out].some(k => req.some(r => doc.systems[k].use === r || doc.systems[k].use.startsWith(r + '.')))) { out.add(j); grew = true; } }); }
+        return [...out];
+      };
+      const without = idx => ({ ...doc, systems: doc.systems.filter((_, j) => !idx.includes(j)) });
+      const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l?.keys[0] === 'systems');
+      let drop = located ? withDependents(located.keys[1]) : null;
+      if (!drop) {
+        let bestCount = before;
+        (doc.systems || []).forEach((_, i) => { const idx = withDependents(i); const n = safePreflight(without(idx), registry, logic).errors.length; if (n < bestCount || (n === bestCount && drop && idx.length < drop.length && n < before)) { drop = idx; bestCount = n; } });
+      }
+      if (!drop) break;
+      for (const i of drop) {
+        removed.push({ use: doc.systems[i].use, why: `could not be configured automatically: ${checked.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}` });
+        fixes.push({ code: 'isolate', path: `systems[${i}]`, action: `removed ${doc.systems[i].use}` });
+      }
+      doc.systems = doc.systems.filter((_, j) => !drop.includes(j));
+      const again = repairDocument(doc, { registry, logic, rounds, fallbackSpace });
+      Object.assign(doc, again.doc); fixes.push(...again.fixes); removed.push(...again.removed);
+      checked = again.checked || safePreflight(doc, registry, logic);
+    }
+  }
   return { doc, ok: checked.ok, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION };
 }
 

@@ -13,7 +13,7 @@ import { vocabIndex, selectPrimitives } from './select.js';
 import { firstPlayable } from './first-playable.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
-import { verifyDocument, newErrors, newProblems, staticPlot } from './verify-adapter.js';
+import { verifyDocument, newErrors, newErrorCodes, newProblems, staticPlot } from './verify-adapter.js';
 
 export const OUTLINE_VERSION = 'outline/0.1';
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
@@ -127,7 +127,7 @@ export function proceduralOutline({ decomposition, selection, registry, logic, s
   };
   if (!doc.graphics.length) delete doc.graphics;
   const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
-  const repaired = repairDocument(doc, { registry, logic, fallbackSpace });
+  const repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true });
   return { doc: repaired.doc, ok: repaired.ok, errors: repaired.errors, fixes: repaired.fixes, removed: repaired.removed };
 }
 const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.bounds.min[2] + 1] : z.rect ? [z.rect[0] + Math.min(1, (z.rect[2] - z.rect[0]) / 2), z.rect[1] + Math.min(1, (z.rect[3] - z.rect[1]) / 2)] : z.range ? [z.range[0] + 0.5, 0, 0] : null;
@@ -264,7 +264,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
         // Static plot analysis first (ms): gate cycles, unobtainable items, unreachable endings, quests that never start...
         skeletonStatic ??= await staticPlot(skeleton.doc, logic);
         const draftStatic = await staticPlot(repaired.doc, logic);
-        const errs = newErrors(skeletonStatic, draftStatic);
+        const errs = newErrorCodes(skeletonStatic, draftStatic);
         rounds.at(-1).staticErrors = errs.length;
         // With an error, the warnings beside it usually name the cause (an unobtainable item behind an unreachable ending).
         problems = errs.length ? [...errs, ...newProblems(skeletonStatic, draftStatic).filter(p => p.severity !== 'error')] : [];
@@ -272,7 +272,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       if (verify && round < maxRounds && !problems.length) {
         skeletonVerify ??= await verifyDocument(skeleton.doc, registry, logic, { budgetMs: verifyBudgetMs });
         const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs: verifyBudgetMs });
-        problems = newErrors(skeletonVerify, v).filter(p => p.stage !== 'preflight');
+        problems = newErrorCodes(skeletonVerify, v).filter(p => p.stage !== 'preflight');
         rounds.at(-1).verifyErrors = problems.length;
       }
       if (!problems.length) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [] };

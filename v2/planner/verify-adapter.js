@@ -53,6 +53,8 @@ export async function staticPlot(doc, logic) {
 const errorsOf = v => new Set((v?.problems || []).filter(p => p.severity === 'error').map(p => `${p.code}|${p.path}`));
 /** Problems of any severity a change introduced (context for model repair rounds). */
 export const newProblems = (before, after) => { const b = new Set((before?.problems || []).map(p => `${p.code}|${p.path}`)); return (after?.problems || []).filter(p => !b.has(`${p.code}|${p.path}`)); };
+/** Error problems whose code the baseline never had at any path (limits shared with a baseline are not the draft's fault). */
+export const newErrorCodes = (before, after) => { const b = new Set((before?.problems || []).filter(p => p.severity === 'error').map(p => p.code)); return (after?.problems || []).filter(p => p.severity === 'error' && !b.has(p.code)); };
 /** Error problems a change introduced (code|path not present before). */
 export const newErrors = (before, after) => { const b = errorsOf(before); return (after?.problems || []).filter(p => p.severity === 'error' && !b.has(`${p.code}|${p.path}`)); };
 /**

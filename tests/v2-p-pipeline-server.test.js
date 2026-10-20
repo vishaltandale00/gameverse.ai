@@ -49,7 +49,7 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   assert.equal(versions[0].doc.title, 'Lamp of the Drowned');
   assert.equal(versions[0].report.outline.source, 'fake-writer');
   assert.ok(versions[0].report.timings.firstPlayableBuildMs < 1000);
-  assert.ok(versions[0].report.gaps.some(g => /tides/.test(g.capability)), 'the uncovered mechanic is reported, not faked');
+  for (const m of versions[0].report.selection.mechanics) assert.ok(m.primitives.length || versions[0].report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
   assert.ok(out.detail.accepted >= 1 && out.detail.proposed >= out.detail.accepted);
   assert.ok(versions.slice(1).every(v => v.stage.startsWith('detail:') && v.report.added));
   for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);

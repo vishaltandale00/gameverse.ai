@@ -2,11 +2,11 @@
 
 Each request names the workaround the planner (`v2/planner/*`) uses today.
 
-## 1. Vocabulary owners in preflight
+## 1. Vocabulary owners in preflight (done: `vocabulary_owner_missing`, kernel cbc7e2d8)
 
 The logic vocabulary is built from the whole catalogue, so a document that uses `give_item` or `{ "item": ... }` without `gameplay.inventory` in `systems[]` passes preflight; the effect then runs without its primitive's `install` (caches, starting inventory).
 
-- **Workaround:** `planner/repair.js` `missingOwners()` walks effects and predicates (under `when gate if requires fail condition unless not`) and adds the owning primitive (`select.js` `vocabIndex()`).
+- **Now:** repair adds `{use: owner}` from the hint. The earlier workaround, `planner/repair.js` `missingOwners()`, walks effects and predicates (under `when gate if requires fail condition unless not`) and adds the owning primitive (`select.js` `vocabIndex()`); it stays as a fallback.
 - **Request:** preflight reports `vocabulary_owner_missing` (with the owner id in the hint) when a used predicate/effect kind's owner is not in the document.
 
 ## 2. Zone shape in space cards

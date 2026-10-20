@@ -90,7 +90,7 @@ test('a decision model picks among the candidates per mechanic; "none" makes a g
 });
 
 test('the vocabulary index names which primitive registers each predicate and effect', () => {
-  const { registry } = buildCatalogue();
+  const { registry } = testCatalogue();
   const v = vocabIndex(registry);
   assert.equal(v.effects.give_item, 'gameplay.inventory');
   assert.equal(v.predicates.item, 'gameplay.inventory');

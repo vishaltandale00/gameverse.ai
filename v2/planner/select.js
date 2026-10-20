@@ -22,7 +22,7 @@ const GROUPS = [
   'talk dialogue conversation speak say chat line',
   'collect item inventory pickup gather loot carry bag',
   'explore zone location travel room place map exit navigate region',
-  'story plot beat act narrative quest scene',
+  'story plot act narrative quest scene',
   'move walk run jump platform movement locomotion',
   'build place block construct structure',
   'mine dig block terrain cell',
@@ -212,7 +212,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   for (const id of [...chosen]) for (const c of registry.get(id)?.card.conflicts || []) if (chosen.has(c) && c !== id) chosen.delete(c);
   // Input mapping: when anything offers player actions, the catalogue's input primitive (if one is registered) binds them.
-  if ([...chosen].some(id => registry.get(id)?.card.provides?.actions?.length)) for (const id of registry.ids('engine').filter(x => x.startsWith('engine.input.'))) chosen.add(id);
+  if ([...chosen].some(id => registry.get(id)?.card.provides?.actions?.length)) {
+    const input = registry.cards('engine').filter(c => c.id.startsWith('engine.input.')).map(c => ({ id: c.id, score: relevance({ verb: 'map', description: 'map device keys and buttons to player verbs and actions' }, c) })).sort((a, b) => b.score - a.score)[0];
+    if (input) chosen.add(input.id);
+  }
 
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);

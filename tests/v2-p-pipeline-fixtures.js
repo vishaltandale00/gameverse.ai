@@ -3,6 +3,7 @@
 // None of them is registered in the catalogue.
 import { testSpace } from '../v2/kernel/testing.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
+import { PRIMITIVES } from '../v2/primitives/index.js';
 
 const ALL = testSpace.card.provides.capabilities;
 export const flatSpace = {
@@ -56,7 +57,11 @@ export const tunnels = {
   install() {},
 };
 export const extras = [flatSpace, dash, warp, tunnels];
-export const testCatalogue = (more = []) => buildCatalogue([...extras, ...more]);
+// Unit tests use a fixed slice of the real catalogue, so they don't change meaning as workstreams add
+// primitives; the server/e2e tests and the benchmark run against the full catalogue.
+export const BASE_IDS = ['engine.space.graph', 'engine.space.grid', 'engine.space.tilemap', 'plot.storyboard', 'gameplay.inventory', 'graphics.ui.story'];
+export const basePrimitives = () => BASE_IDS.map(id => PRIMITIVES.find(p => p.id === id)).filter(Boolean);
+export const testCatalogue = (more = []) => buildCatalogue([...extras, ...more], basePrimitives());
 
 /** A writer that replays scripted replies (strings or functions of the request) and records every call. */
 export function fakeWriter(replies, { model = 'fake-writer' } = {}) {
