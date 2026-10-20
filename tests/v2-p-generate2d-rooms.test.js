@@ -6,6 +6,7 @@ import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
 import generators from '../v2/primitives/engine/generate2d.index.js';
+import SPACES2D from '../v2/primitives/engine/spaces2d.index.js';
 import { Raster } from '../v2/primitives/engine/generate2d-lib.js';
 import { reachSide, reachTop, movementFor, ROLE } from '../v2/primitives/engine/generate2d-reach.js';
 
@@ -102,4 +103,39 @@ test('tilemap.rooms: preflight rejects bad configs with stable codes', () => {
   for (const c of ['room_overlap', 'room_style_unknown', 'ability_unknown', 'room_rect_invalid', 'room_outside_zone']) assert.ok(got.includes(c), `${c} in ${got}`);
   const e = doc(); e.spaces[0].generators[0].with.rooms[0].exits[0].side = 'up';
   assert.ok(codes(e).includes('param_option'));
+});
+
+test('tilemap.rooms: on the real tilemap the space\'s own pathing agrees every exit is reachable', () => {
+  const blocks = [{ id: 'stone', solid: true }, { id: 'plank', solid: true }, { id: 'rung', tags: ['one_way'] }, { id: 'spikes', solid: false, tags: ['hazard'] }, { id: 'water', solid: false, tags: ['liquid'] }, { id: 'door', solid: true }];
+  for (const seed of [1, 2, 3]) {
+    const d = doc({}, seed);
+    d.spaces[0] = { ...d.spaces[0], use: 'engine.space.tilemap', with: { size: [100, 60], mode: 'side' } };
+    d.content.blocks = blocks; d.content.archetypes[0].components = { body: { size: [0.8, 0.9] } }; d.player.at = [3.5, 3.5];
+    const { rt } = compile(d, { primitives: [...PRIMS, ...SPACES2D] });
+    const st = rt.store(KEY), api = rt.space('w');
+    assert.deepEqual(st.problems, [], `seed ${seed}`);
+    assert.equal(rt.state.spaces.w.log.length, 0, 'generation is baseline, not edits');
+    for (const r of st.rooms) for (const e of r.exits) assert.ok(e.cells.some(c => api.canReach(rt.player().at, [c[0] + 0.5, c[1] + 0.5], rt, {})), `seed ${seed}: ${r.id}.${e.side}`);
+  }
+});
+
+test('tilemap.rooms: doors to other zones pair up, are proven as links and carry the player (gates apply)', () => {
+  const d = doc();
+  d.spaces[0].generators[0].with.rooms = [
+    { id: 'west', zone: 'a', rect: [0, 0, 20, 12], exits: [{ side: 'r', to: 'b', gate: { flag: 'key_turned' } }] },
+    { id: 'east', zone: 'b', rect: [70, 0, 90, 12], style: 'arena', exits: [{ side: 'l', to: 'a' }] },
+  ];
+  const { rt } = compile(d, { primitives: PRIMS });
+  run(rt, 1);
+  const st = rt.store(KEY), svc = rt.service('rooms'), [west] = svc.doors(), api = rt.space('w');
+  assert.deepEqual(st.problems, []);
+  assert.deepEqual(svc.doors().map(x => [x.room, x.pair.room]), [['west', 'east'], ['east', 'west']]);
+  api.setPos(rt.player(), west.port, rt); run(rt, 1);
+  assert.equal(svc.roomAt(rt.player().at), 'west', 'the gate holds');
+  assert.equal(rt.state.counts.blocked, 1);
+  rt.run([{ do: 'set_flag', flag: 'key_turned' }]);
+  api.setPos(rt.player(), [west.port[0] - 1, west.port[1]], rt); run(rt, 1);
+  api.setPos(rt.player(), west.port, rt); run(rt, 1);
+  assert.equal(svc.roomAt(rt.player().at), 'east');
+  assert.equal(rt.state.counts['room_door:b'], 1);
 });

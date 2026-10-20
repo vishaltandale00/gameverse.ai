@@ -69,7 +69,7 @@ test('chunks: tier and eligibility rules match the runner port', () => {
 
 test('chunks: side view on the tilemap writes cells along x and spawns at cell centres', () => {
   const d = { schema: 'gameverse.v2.game/0.2', id: 'side', title: 'Side', seed: 2,
-    spaces: [{ id: 'run', use: 'engine.space.tilemap', with: { size: [400, 12], mode: 'side' }, generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'floor', rows: ['..o.', '....', '####'] }], legend: LEGEND, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], ahead: 30 } }] }],
+    spaces: [{ id: 'run', use: 'engine.space.tilemap', with: { size: [400, 12], mode: 'side' }, generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'floor', rows: ['..o.', '....', '####'] }], legend: LEGEND, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], ahead: 30, chunkZones: true } }] }],
     content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }], blocks: [{ id: 'crate', solid: true }] }, player: { archetype: 'hero', at: [2.5, 5.5] } };
   const { rt } = compile(d, { primitives: ALL });
   run(rt, 1);
@@ -78,6 +78,7 @@ test('chunks: side view on the tilemap writes cells along x and spawns at cell c
   assert.equal(api.getCell([10, 1]), null);
   const coin = rt.query('chunk').find(e => e.archetype === 'coin');
   assert.equal(coin.at[0] % 1, 0.5); assert.equal(coin.at[1], 2.5);
+  assert.deepEqual(rt.state.spaces.run.zones[0].rect, [10, 0, 14, 3], 'each chunk is a zone a solver can name');
 });
 
 test('chunks: same seed and run replay exactly; another seed differs', () => {

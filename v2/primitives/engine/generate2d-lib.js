@@ -101,7 +101,7 @@ export function cellWriter(rt, space) {
   };
 }
 
-/** Add generated zones to the space: api.addZone when present, else through a fresh copy of rt.doc. */
+/** Add generated zones to the space: api.addZone when present (zones live in state), else, at install time only, through a fresh copy of rt.doc. */
 export function addZones(rt, space, zones) {
   if (!zones.length) return;
   if (typeof space.api.addZone === 'function') { for (const z of zones) space.api.addZone(z, rt); return; }

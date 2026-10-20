@@ -11,7 +11,7 @@
 // `maxShift` cells per step, never through a `blocks` char); impassable chunks
 // are dropped from the pool with a problem, and an empty pool falls back to a
 // plain gap. Runtime choice uses rt.random(), so courses replay exactly.
-import { withDefaults, spaceOf, cellWriter, publish, spawnAt, problem } from './generate2d-lib.js';
+import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.chunks';
 const AX = { x: 0, y: 1, z: 2 };
@@ -81,6 +81,7 @@ export default {
       follow: { type: 'string', default: 'player', effect: 'entity whose progress drives streaming' },
       maxShift: { type: 'integer', min: 0, max: 8, default: 1, effect: 'cross cells a line may shift per step in the passability proof' },
       clearBehind: { type: 'boolean', default: true, effect: 'clear placed cells behind as well as entities' },
+      chunkZones: { type: 'boolean', default: false, effect: 'add a zone chunk_<n> per placed chunk (x/y axes; spaces with addZone, which keep zones in state) so solvers can name the chunk a run fails in' },
     },
     provides: { events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['generation', 'chunks'] },
     requires: { capabilities: ['position'] },
@@ -120,6 +121,11 @@ export default {
         if (def.archetype) { const e = spawnAt(rt, space, def.archetype, pos, { ...(structuredClone(def.components || {})), chunk: { id: chunk.id, char: ch, n: s.chunkN } }); ids.push(e.id); s.placed.push({ id: e.id, p: start + i * chunk.spacing }); }
       }
       writer.flush();
+      if (config.chunkZones && ax < 2 && cx < 2 && typeof space.api.addZone === 'function') { // the chunk's footprint as a zone: [progress span] × [cross span]
+        const r = [0, 0, 0, 0], o = config.origin;
+        r[ax] = (o[ax] ?? 0) + start; r[ax + 2] = r[ax] + g.P * chunk.spacing; r[cx] = o[cx] ?? 0; r[cx + 2] = r[cx] + g.X;
+        addZones(rt, space, [{ id: `chunk_${s.chunkN + 1}`, name: chunk.id, rect: r, tags: ['chunk', chunk.id] }]);
+      }
       return g.P * chunk.spacing;
     };
     const spawnChunk = () => {

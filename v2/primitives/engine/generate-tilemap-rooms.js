@@ -8,7 +8,7 @@
 // rungs under high exits) which is proven too. Declare the rung block one_way in content.blocks for
 // real platformer spaces (testSpace treats every block as solid but only the proof walks it). Styles and palettes are data.
 // Coordinates are tiles, y up; rect = [x0, y0, x1, y1) as space zones.
-import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, problem, rectsOverlap, inRect } from './generate2d-lib.js';
+import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect } from './generate2d-lib.js';
 import { ROLE, reachSide, reachTop, movementFor, ABILITY_EFFECTS } from './generate2d-reach.js';
 
 const { EMPTY, SOLID, HAZARD, WATER, LADDER, ONEWAY } = ROLE;
@@ -72,10 +72,11 @@ export default {
       attempts: { type: 'integer', min: 1, max: 32, default: 6, effect: 'sub-seeds tried per room before the plain fallback' },
       oneWayPlatforms: { type: 'boolean', default: false, effect: 'platforms can be jumped through from below (needs a one_way block)' },
       spawnFeatures: { type: 'boolean', default: true },
+      doorWarp: { type: 'boolean', default: true, effect: 'stepping onto a door tile moves the player to the paired door (exit gates apply)' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'rooms'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
-    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'start_blocked'],
+    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
   validate(raw, doc, ctx, inst = {}) {
@@ -112,7 +113,24 @@ export default {
       roomAt: at => st().rooms.find(r => inRect(r.rect, Math.floor(at[0]), Math.floor(at[1])))?.id ?? null,
       graph: () => st().graph,
       problems: () => st().problems,
+      doors: () => st().rooms.flatMap(r => r.exits.filter(e => e.door).map(e => ({ room: r.id, to: e.to, port: e.port, pair: e.pair ?? null, gate: e.gate ?? null }))),
     };
+    // Doors: stepping onto a door's inner tile takes the walker to its partner's (gates permitting).
+    if (config.doorWarp) {
+      const at = new Map(result.rooms.flatMap(r => r.exits.filter(e => e.door && e.pair).map(e => [e.port.join(','), e])));
+      rt.system('late', rt => {
+        const s = st(); s.lastCell ??= {};
+        for (const e of [rt.player()].filter(Boolean)) {
+          if (e.space !== space.sid) continue;
+          const k = cellOfEntity(space, e).slice(0, 2).join(','); if (s.lastCell[e.id] === k) continue;
+          s.lastCell[e.id] = k;
+          const d = at.get(k); if (!d) continue;
+          if (d.gate && !rt.test(d.gate, { self: e.id })) { rt.emit('blocked', { who: e.id, to: d.to }); continue; }
+          placeOn(rt, space, e, d.pair.port); s.lastCell[e.id] = d.pair.port.join(',');
+          rt.emitTyped('room_door', d.to, { who: e.id, to: d.pair.room });
+        }
+      }, ID);
+    }
     publish(rt, instance, space, ID, result, { rooms: api });
   },
 };
@@ -180,11 +198,12 @@ export function generateRooms(config, seed, start = null) {
     problems.push(...best.problems.map(p => ({ ...p, path: `rooms[${ri}]${p.path ? '.' + p.path : ''}` })));
     for (let y = 0; y < best.grid.h; y++) for (let x = 0; x < best.grid.w; x++) cells.push({ at: [r.rect[0] + x, r.rect[1] + y], block: best.blocks[y * best.grid.w + x] });
     out.push({ id: r.id, zone: r.zone, rect: r.rect, style: r.style, attempt: best.attempt, fallback: best.plain,
-      exits: openings.get(r.id).map(o => ({ side: o.side, to: o.to, peer: o.peer ?? null, gate: o.gate, door: Boolean(o.door), cells: o.cells })), features: best.features });
+      exits: openings.get(r.id).map(o => ({ side: o.side, to: o.to, peer: o.peer ?? null, gate: o.gate, door: Boolean(o.door), cells: o.cells, ...(o.door ? { port: o.port } : {}) })), features: best.features });
   });
   // 3. The composed map, proven as a whole: from the player start (else the first room's first exit)
   // with every ability the document mentions, every room and every exit must be reached. Unmatched
-  // exits are doors to other zones; a reached door makes that zone's door-linked rooms start points.
+  // exits with a `to` zone are doors: each pairs with the nearest door of that zone leading back (else
+  // any door there), and reaching a door continues from its partner's inner tile.
   const all = movementFor(config.movement, [...config.requiresAbilities, ...rooms.flatMap(r => r.requiresAbilities || [])], config.abilities);
   const bx0 = Math.min(...rooms.map(r => r.rect[0])), by0 = Math.min(...rooms.map(r => r.rect[1]));
   const BW = Math.max(...rooms.map(r => r.rect[2])) - bx0, BH = Math.max(...rooms.map(r => r.rect[3])) - by0;
@@ -192,9 +211,17 @@ export function generateRooms(config, seed, start = null) {
   out.forEach((r, ri) => {
     const b = built[ri], ox = r.rect[0] - bx0, oy = r.rect[1] - by0;
     for (let y = 0; y < b.grid.h; y++) for (let x = 0; x < b.grid.w; x++) big.set(ox + x, oy + y, b.grid.get(x, y));
-    b.goals.forEach((port, i) => goals.set(((i / b.grid.w) | 0) * 0 + (oy + ((i / b.grid.w) | 0)) * BW + ox + (i % b.grid.w), `${r.id}#${port}`));
+    b.goals.forEach((port, i) => goals.set((oy + ((i / b.grid.w) | 0)) * BW + ox + (i % b.grid.w), `${r.id}#${port}`));
     portStarts.set(r.id, b.starts.map(s0 => ({ ...s0, x: s0.x + ox, y: s0.y + oy })));
   });
+  const doors = out.flatMap(r => r.exits.map((e, pi) => ({ r, e, pi })).filter(d => d.e.door && d.e.to));
+  const mid = r => [(r.rect[0] + r.rect[2]) / 2, (r.rect[1] + r.rect[3]) / 2], gap = (a, b) => Math.hypot(mid(a)[0] - mid(b)[0], mid(a)[1] - mid(b)[1]);
+  for (const d of doors) {
+    const there = doors.filter(o => o.r !== d.r && o.r.zone === d.e.to), back = there.filter(o => o.e.to === d.r.zone);
+    const pick = (back.length ? back : there).sort((a, b) => gap(a.r, d.r) - gap(b.r, d.r) || a.r.id.localeCompare(b.r.id))[0];
+    if (pick) d.e.pair = { room: pick.r.id, exit: pick.pi, port: pick.e.port };
+    else problems.push(problem('door_unpaired', `rooms[${out.indexOf(d.r)}].exits[${d.pi}]`, `room '${d.r.id}': the door to '${d.e.to}' has no door in that zone to lead to`, { room: d.r.id }));
+  }
   const reachG = config.mode === 'side' ? reachSide : reachTop;
   const startRoom = out.find(r => start && inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) || out[0];
   let starts = start && startRoom === out.find(r => inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) ? [{ x: Math.floor(start[0]) - bx0, y: Math.floor(start[1]) - by0 }] : portStarts.get(startRoom.id).slice(0, 1);
@@ -204,8 +231,7 @@ export function generateRooms(config, seed, start = null) {
     const res = reachG(big, all, starts, goals);
     res.hit.forEach(h => hit.add(h)); res.nodes.forEach(n => nodes.add(n));
     starts = [];
-    for (const r of out) for (const [pi, e] of r.exits.entries()) if (e.door && e.to && hit.has(`${r.id}#${pi}`))
-      for (const o of out) if (o.zone === e.to && !entered.has(o.id)) { entered.add(o.id); const ds = portStarts.get(o.id).filter((_, k) => o.exits[k]?.door); starts.push(...(ds.length ? ds : portStarts.get(o.id).slice(0, 1))); }
+    for (const d of doors) if (d.e.pair && hit.has(`${d.r.id}#${d.pi}`)) { const k = `${d.e.pair.room}#${d.e.pair.exit}`; if (!entered.has(k)) { entered.add(k); hit.add(k); starts.push(portStarts.get(d.e.pair.room)[d.e.pair.exit]); } }
   }
   out.forEach((r, ri) => {
     const ox = r.rect[0] - bx0, oy = r.rect[1] - by0, b = built[ri];
@@ -284,7 +310,7 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
       put(dx, dy, SOLID, palette.door);
       const ix = o.side === 'l' ? 1 : o.side === 'r' ? W - 2 : dx, iy = o.side === 't' ? top : o.side === 'b' ? floor : floor;
       if (grid.get(ix, iy) !== EMPTY && grid.get(ix, iy) !== LADDER) put(ix, iy, EMPTY);
-      mark(ix, iy); starts.push({ x: ix, y: iy, port: oi });
+      mark(ix, iy); starts.push({ x: ix, y: iy, port: oi }); o.port = [r.rect[0] + ix, r.rect[1] + iy];
     } else if (o.side === 'l' || o.side === 'r') {
       const x = o.side === 'l' ? 0 : W - 1, inner = o.side === 'l' ? 1 : W - 2, y0 = o.span[0] - r.rect[1], y1 = o.span[1] - r.rect[1];
       for (let y = y0; y < y1; y++) { put(x, y, EMPTY); if (grid.get(inner, y) === SOLID) put(inner, y, EMPTY); mark(x, y); }

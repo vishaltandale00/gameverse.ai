@@ -1497,7 +1497,7 @@
          {"kind":"lore_tablet","id":"tablet_choir_1"},
          {"kind":"pickup","item":"map_fragment"}
         ],
-        "exits": [{"side":"r"},{"side":"b"}]
+        "exits": [{"side":"t","to":"glasswater","gate":{"all":[{"ability":"ember_step"},{"ability":"briar_grip"}]}},{"side":"r"},{"side":"b"}]
        },
        {
         "id": "sc_cantor_arena",
