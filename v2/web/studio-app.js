@@ -318,7 +318,8 @@ select(location.hash.slice(1));
   toggle.addEventListener('click', () => set(!document.body.classList.contains('theater')));
   addEventListener('keydown', e => {
     if (e.key !== 't' && e.key !== 'T') return;
-    if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    // defaultPrevented: the focused game claimed the key for one of its verbs (player.js).
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
     set(!document.body.classList.contains('theater'));
   });
   document.body.append(toggle);

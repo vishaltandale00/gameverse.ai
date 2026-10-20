@@ -11,6 +11,7 @@ import { createWorld, DT } from '/v2/kernel/world.js';
 import { experimentPrimitives } from '/v2/experiments/primitive-host.js';
 import { createWorkerBox } from '/v2/experiments/primitive-runtime.js';
 import { withDefaultGraphics } from '/v2/primitives/graphics/ui-defaults.js';
+import { keyName, expand } from '/v2/primitives/engine/runtime-lib-input.js';
 
 // three.js is optional for the host: DOM and canvas renderers work without it (view.THREE is then null).
 const THREE = await import('/runtime/three/three.module.js').catch(() => null);
@@ -35,7 +36,8 @@ function catalogueFor(doc, extra) {
  * The view a mounted game's graphics primitives receive (KERNEL_API.md §6, plus host additions):
  *   container, THREE (null when three.js is unavailable), act(actions), onFrame(fn(alpha)), input (set by engine.input.*),
  *   pause(on)        hold the simulation; actions sent with act() still apply, one step each (menus, inventory, title);
- *   paused           whether the simulation is held;
+ *   paused           whether the simulation is held (by the game's UI, or by the host while the window is unfocused);
+ *   setTimeScale(s)  wall-clock pacing of the fixed steps, s in [0, 1] (hit-stop, slow motion); 0 holds, inputs still queue;
  *   restart()        back to the world's first state;  load(snapshot) restore a saved state;
  *   now()            presentation clock in ms (animation only; simulation never reads it);
  *   createRenderer   optional factory from the host (e.g. headless GL in tests); undefined in the studio.
@@ -53,13 +55,16 @@ export function mountGame(container, record, { onState, primitives = null, now =
   const pending = [];
   // Input is applied on the next step even if the display loop is throttled.
   // input(): set by engine.input.actions -> { actions, axes: { move: [x, y], look: [x, y] }, held }.
-  let paused = false, first = null, last = performance.now(), acc = 0, raf = 0, version = record.version, disposed = false;
+  // uiPaused: view.pause() from the game's UI; away: the window lost focus (the host holds the game until it returns).
+  let uiPaused = false, away = false, timeScale = 1, first = null, last = performance.now(), acc = 0, raf = 0, version = record.version, disposed = false;
+  const held = () => uiPaused || away;
   const makeView = () => ({
     container, THREE, input: null, now, createRenderer,
     act: actions => { pending.push(actions); queueMicrotask(() => tick(performance.now(), true)); },
     onFrame: fn => frames.push(fn),
-    pause: on => { paused = Boolean(on); last = performance.now(); acc = 0; },
-    get paused() { return paused; },
+    pause: on => { uiPaused = Boolean(on); last = performance.now(); acc = 0; },
+    get paused() { return held(); },
+    setTimeScale: s => { const v = Number(s); timeScale = Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; },
     restart: () => { if (first) rt.restore(first); pending.length = 0; acc = 0; },
     load: snapshot => { rt.restore(snapshot); pending.length = 0; acc = 0; },
   });
@@ -68,12 +73,12 @@ export function mountGame(container, record, { onState, primitives = null, now =
   first = rt.snapshot();
   function tick(nowMs, force = false) {
     if (disposed) return;
-    if (paused) {
+    if (held()) {
       // Held: only UI actions advance the world, one step each.
       while (pending.length) rt.step({ actions: pending.shift() });
       last = nowMs; acc = 0;
     } else {
-      acc = Math.min(acc + (nowMs - last) / 1000, 0.25); last = nowMs;
+      acc = Math.min(acc + ((nowMs - last) / 1000) * timeScale, 0.25); last = nowMs;
       if (force && acc < DT) acc = DT;
       while (acc >= DT) {
         const live = view.input?.() || {};
@@ -84,6 +89,7 @@ export function mountGame(container, record, { onState, primitives = null, now =
     onState?.(rt.state);
   }
   const loop = now => { tick(now); if (!disposed) raf = requestAnimationFrame(loop); };
+  const detachHost = attachHost(container, () => rt, on => { away = on; last = performance.now(); acc = 0; });
   tick(performance.now(), true); // first frame without waiting for the display loop
   raf = requestAnimationFrame(loop);
   return {
@@ -114,6 +120,40 @@ export function mountGame(container, record, { onState, primitives = null, now =
       try { rt.restore({ ...state, docId: ok.doc.id }); } catch { /* incompatible state: start fresh */ }
       version = next.version; return true;
     },
-    dispose() { disposed = true; cancelAnimationFrame(raf); for (const b of cat.boxes) b.dispose?.(); container.replaceChildren(); },
+    dispose() { disposed = true; cancelAnimationFrame(raf); detachHost(); for (const b of cat.boxes) b.dispose?.(); container.replaceChildren(); },
   };
+}
+
+/**
+ * Page-level host behaviour around a mounted game:
+ * - the game container is focusable and takes focus on mount and on pointer down, so keys go to the game
+ *   rather than a studio text box that had focus;
+ * - while focus is inside the game, keys bound to the game's verbs (engine.input.actions) have their default
+ *   action prevented, so they neither scroll the page nor type into or trigger page controls;
+ * - the simulation is held while the window is blurred or the page hidden, and resumes when it returns.
+ */
+function attachHost(container, getRt, setAway) {
+  if (typeof window === 'undefined') return () => {};
+  if (!container.hasAttribute?.('tabindex')) container.tabIndex = 0;
+  const focusGame = () => { if (!container.contains(document.activeElement)) container.focus?.({ preventScroll: true }); };
+  const typing = el => /^(input|textarea|select)$/i.test(el?.tagName || '') || el?.isContentEditable;
+  const boundKeys = () => {
+    const rt = getRt();
+    if (!rt?.hasService?.('input')) return null;
+    const keys = new Set();
+    for (const list of Object.values(rt.service('input').bindings?.() || {})) for (const k of list) for (const x of expand(k) || []) keys.add(x);
+    return keys;
+  };
+  const onKey = ev => {
+    if (ev.metaKey || ev.ctrlKey || typing(ev.target)) return;
+    const k = keyName(ev.code);
+    if (k && boundKeys()?.has(k)) ev.preventDefault();
+  };
+  const away = () => setAway(true);
+  const back = () => { if (!document.hidden) setAway(false); };
+  const onVisibility = () => (document.hidden ? away() : back());
+  const listeners = [[container, 'keydown', onKey], [container, 'keyup', onKey], [container, 'pointerdown', focusGame], [window, 'blur', away], [window, 'focus', back], [document, 'visibilitychange', onVisibility]];
+  for (const [t, name, fn] of listeners) t.addEventListener(name, fn);
+  queueMicrotask(focusGame);
+  return () => { for (const [t, name, fn] of listeners) t.removeEventListener(name, fn); };
 }
