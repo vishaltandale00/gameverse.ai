@@ -163,6 +163,6 @@ function drive(rt, config, G, api, { id, c, e }, cars, up) {
   }
   pos ??= along(lane, c.s);
   e.components.body = { ...(e.components.body || {}), facing: pos.dir, vel: r6(mul(pos.dir, c.v)) };
-  const at = placeAt(api, pos.at, e.components.body);
+  const at = typeof api.standAt === 'function' ? r6(v3(api.standAt(pos.at, e))) : placeAt(api, pos.at, e.components.body); // feet on the lane surface
   api.setPos(e, e.at.length === 2 ? at.slice(0, 2) : at, rt);
 }
