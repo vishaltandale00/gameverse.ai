@@ -1,0 +1,226 @@
+// Hand-written sample content, one per mode. SAMPLES.lanes is the kit's
+// content.sample; the others back tests, offline mode and the lab page.
+
+const lanes = {
+  title: 'Signal Sprint', logline: 'A courier fox races the rail yard at dawn, one step ahead of the security drone.',
+  mode: 'lanes', control: 'jump', feel: 'snappy',
+  artStyle: 'bright cartoon vector, city rail yard at sunset', background: '#2a1f4a',
+  music: { mood: 'energetic', tempo: 144, key: 'D', scale: 'mixolydian', instrument: 'synth' },
+  cast: { hero: { name: 'Pip', look: 'fox' }, chaser: { name: 'Warden Drone', look: 'robot' }, coin: { name: 'Bolt', kind: 'coin' }, hazard: { name: 'Barrier', kind: 'electric' }, goal: { name: 'Depot', kind: 'flag' } },
+  speed: { start: 13, max: 26, rampSeconds: 100 },
+  rules: { width: 3, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 1, coin: 10, nearMiss: 50 },
+  obstacles: [
+    { char: 'J', kind: 'low', name: 'Barrier', speed: 0, size: 0, period: 0 },
+    { char: 'S', kind: 'high', name: 'Signal Gate', speed: 0, size: 0, period: 0 },
+    { char: 'T', kind: 'wall', name: 'Freight Car', speed: 0, size: 14, period: 0 },
+    { char: 'M', kind: 'mover', name: 'Express', speed: 0.5, size: 16, period: 0 },
+  ],
+  chunks: [
+    { id: 'warmup', tier: 1, spacing: 11, rows: ['o.o', '.J.', 'o.o', 'J.J', '.o.'] },
+    { id: 'slides', tier: 1, spacing: 11, rows: ['S..', '.o.', '..S', 'oSo', '...'] },
+    { id: 'freight', tier: 1, spacing: 10, rows: ['T.o', 'T.o', '..J', 'o.T', 'o.T'] },
+    { id: 'zigzag', tier: 2, spacing: 10, rows: ['T..', 'T.J', '.T.', '..T', 'J.T', '.S.'] },
+    { id: 'express', tier: 2, spacing: 11, rows: ['M..', '...', '..M', 'o.o', 'J*J'] },
+    { id: 'gates', tier: 2, spacing: 10, rows: ['SJS', '...', 'JSJ', 'o.o'] },
+    { id: 'gauntlet', tier: 3, spacing: 9, rows: ['T.S', 'T.J', 'TM.', '..T', 'J.T', 'S.T'] },
+    { id: 'crossing', tier: 3, spacing: 12, rows: ['M.M', '...', '.M.', 'J.J', 'S*S'] },
+  ],
+  segments: [],
+  powerups: [
+    { kind: 'magnet', name: 'Magnet Mitts', seconds: 10 },
+    { kind: 'jetpack', name: 'Steam Pack', seconds: 6 },
+    { kind: 'multiplier', name: 'Double Time', seconds: 10 },
+    { kind: 'shield', name: 'Hoverboard', seconds: 14 },
+  ],
+  missions: [
+    { kind: 'coins', target: 40, label: 'Grab 40 bolts' },
+    { kind: 'jumps', target: 8, label: 'Jump 8 times' },
+    { kind: 'slides', target: 5, label: 'Slide 5 times' },
+    { kind: 'lane_switches', target: 25, label: 'Switch lanes 25 times' },
+    { kind: 'distance', target: 1500, label: 'Run 1500 m' },
+    { kind: 'near_misses', target: 3, label: '3 near misses' },
+  ],
+};
+
+const side = {
+  title: 'Skyline Dash', logline: 'A blue hedgehog sprints across the rooftops of a city that is falling apart.',
+  mode: 'side', control: 'jump', feel: 'snappy',
+  artStyle: 'clean cartoon vector, city rooftops at night', background: '#141b33',
+  music: { mood: 'tense', tempo: 150, key: 'E', scale: 'minor', instrument: 'synth' },
+  cast: { hero: { name: 'Quill', look: 'hedgehog' }, chaser: { name: 'Pigeon', look: 'bird' }, coin: { name: 'Ring', kind: 'ring' }, hazard: { name: 'Antenna', kind: 'spikes' }, goal: { name: 'Tower', kind: 'beacon' } },
+  speed: { start: 9, max: 17, rampSeconds: 90 },
+  rules: { width: 0, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 1, coin: 10, nearMiss: 40 },
+  obstacles: [
+    { char: 'x', kind: 'crate', name: 'Crate', speed: 0.3, size: 0, period: 0 },
+    { char: '^', kind: 'spike', name: 'Antenna', speed: 0, size: 0, period: 0 },
+    { char: 'b', kind: 'bird', name: 'Pigeon', speed: 0.15, size: 0, period: 1.2 },
+  ],
+  chunks: [
+    { id: 'rooftops', tier: 1, spacing: 2, rows: ['#', '##', '##', '##', '##o', '##', '.', '.', '##', '##x', '##', '#'] },
+    { id: 'antennas', tier: 1, spacing: 1.5, rows: ['#', '#', '#^', '#', '#', '#', '#o', '#^', '#', '#', '#'] },
+    { id: 'pigeons', tier: 2, spacing: 2, rows: ['#', '#', '#', '#b', '#', '#', '##', '##', '##', '##...b', '##', '#', '#'] },
+    { id: 'stairs', tier: 2, spacing: 1.5, rows: ['#', '##', '##', '###', '###', '###o', '###', '.', '.', '##', '##', '##x', '##', '#', '#'] },
+    { id: 'leaps', tier: 3, spacing: 2, rows: ['#', '#', '.', '.', '##', '##^', '##', '.', '#', '#o', '.', '#', '#'] },
+    { id: 'clutter', tier: 3, spacing: 1.5, rows: ['#', '#x', '#', '#', '##', '##', '##x', '##', '.', '.', '###', '###', '###b', '###', '#', '#'] },
+  ],
+  segments: [],
+  powerups: [
+    { kind: 'magnet', name: 'Ring Magnet', seconds: 9 },
+    { kind: 'shield', name: 'Bubble', seconds: 12 },
+    { kind: 'multiplier', name: 'Overdrive', seconds: 10 },
+  ],
+  missions: [
+    { kind: 'coins', target: 30, label: 'Collect 30 rings' },
+    { kind: 'jumps', target: 20, label: 'Jump 20 times' },
+    { kind: 'distance', target: 800, label: 'Run 800 m' },
+    { kind: 'near_misses', target: 4, label: '4 near misses' },
+  ],
+};
+
+const flap = {
+  title: 'Lantern Glide', logline: 'A paper bat flutters through the reed gates of a moonlit marsh.',
+  mode: 'flap', control: 'jump', feel: 'snappy',
+  artStyle: 'soft cartoon vector, haunted marsh at night', background: '#1c2240',
+  music: { mood: 'dreamy', tempo: 104, key: 'F', scale: 'pentatonic', instrument: 'bell' },
+  cast: { hero: { name: 'Wisp', look: 'bat' }, chaser: { name: 'Owl', look: 'bird' }, coin: { name: 'Firefly', kind: 'orb' }, hazard: { name: 'Reed Gate', kind: 'thorns' }, goal: { name: 'Moon Pool', kind: 'portal' } },
+  speed: { start: 4, max: 5.6, rampSeconds: 80 },
+  rules: { width: 0, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 2, coin: 10, nearMiss: 30 },
+  obstacles: [
+    { char: 'g', kind: 'gate', name: 'Swaying Reeds', speed: 0, size: 1.5, period: 2.5 },
+  ],
+  chunks: [
+    { id: 'easy', tier: 1, spacing: 6.5, rows: ['###.....####', '#####.....##', '##.....#####', '####..o..###'] },
+    { id: 'wave', tier: 1, spacing: 6.5, rows: ['##.....#####', '###.....####', '####.....###', '#####.....##'] },
+    { id: 'tight', tier: 2, spacing: 6, rows: ['###....#####', '#####....###', '##....######', '#####....###', '###..o.#####'] },
+    { id: 'zig', tier: 2, spacing: 6, rows: ['###....#####', '######....##', '###....#####', '######....##'] },
+    { id: 'swaying', tier: 3, spacing: 6, rows: ['ggg....ggggg', '####....####', 'gggg....gggg', '###.o..#####'] },
+    { id: 'squeeze', tier: 3, spacing: 5.5, rows: ['####...#####', '#####...####', '####...#####', '###...######'] },
+  ],
+  segments: [],
+  powerups: [
+    { kind: 'shield', name: 'Glow Shell', seconds: 10 },
+    { kind: 'slowmo', name: 'Moon Hush', seconds: 6 },
+  ],
+  missions: [
+    { kind: 'distance', target: 120, label: 'Glide 120 m' },
+    { kind: 'coins', target: 8, label: 'Catch 8 fireflies' },
+    { kind: 'flaps', target: 100, label: 'Flap 100 times' },
+    { kind: 'near_misses', target: 3, label: 'Brush 3 reeds' },
+  ],
+};
+
+const climb = {
+  title: 'Cloud Hopper', logline: 'A frog bounces up a tower of clouds, stomping storm imps on the way to the sun.',
+  mode: 'climb', control: 'jump', feel: 'snappy',
+  artStyle: 'bright cartoon vector, sky islands at day', background: '#5aa8e8',
+  music: { mood: 'playful', tempo: 126, key: 'G', scale: 'major', instrument: 'pluck' },
+  cast: { hero: { name: 'Hopkin', look: 'frog' }, chaser: { name: 'Storm Imp', look: 'ogre' }, coin: { name: 'Star', kind: 'star' }, hazard: { name: 'Void', kind: 'electric' }, goal: { name: 'Sun Gate', kind: 'portal' } },
+  speed: { start: 1, max: 1.4, rampSeconds: 90 },
+  rules: { width: 9, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 2, coin: 10, nearMiss: 30 },
+  obstacles: [
+    { char: '-', kind: 'moving', name: 'Drift Cloud', speed: 1.8, size: 2, period: 0 },
+    { char: '~', kind: 'breaking', name: 'Puff Cloud', speed: 0, size: 0, period: 0 },
+    { char: 's', kind: 'spring', name: 'Spring Mushroom', speed: 0, size: 0, period: 0 },
+    { char: ':', kind: 'vanishing', name: 'Mist Cloud', speed: 0, size: 0, period: 0 },
+    { char: 'E', kind: 'enemy', name: 'Storm Imp', speed: 1, size: 1.5, period: 0 },
+    { char: 'O', kind: 'hole', name: 'Void', speed: 0, size: 0.8, period: 0 },
+  ],
+  chunks: [
+    { id: 'steps', tier: 1, spacing: 1.6, rows: ['..==.....', '......==.', '...==....', '.=.....o.', '.....==..', '..~....=.', '==.......', '....==...'] },
+    { id: 'springs', tier: 1, spacing: 1.7, rows: ['....=....', '.==....s.', '.....==..', '..o...=..', '=......==', '...==....', '......o..', '.==......'] },
+    { id: 'drifters', tier: 2, spacing: 1.8, rows: ['...==....', '......-..', '..-......', '.......==', '...-.....', '~...:...~', '.-.......', '....==...'] },
+    { id: 'imps', tier: 2, spacing: 1.7, rows: ['==.....==', '....E....', '..==.....', '......==.', '.:.......', '....==...', 'E......o.', '..==.....'] },
+    { id: 'void', tier: 3, spacing: 1.6, rows: ['....==...', '.O.......', '......-..', '..:......', '.......:.', '...s.....', '.........', 'O....==..', '..==.....'] },
+    { id: 'crumble', tier: 3, spacing: 1.5, rows: ['..==.....', '~...~...~', '......:..', '.~..-....', '........=', '..:...~..', '....-....', '.==......'] },
+  ],
+  segments: [],
+  powerups: [
+    { kind: 'jetpack', name: 'Propeller Cap', seconds: 4 },
+    { kind: 'superjump', name: 'Spring Boots', seconds: 8 },
+    { kind: 'shield', name: 'Lily Shield', seconds: 10 },
+  ],
+  missions: [
+    { kind: 'distance', target: 100, label: 'Climb 100 m' },
+    { kind: 'coins', target: 15, label: 'Grab 15 stars' },
+    { kind: 'stomps', target: 3, label: 'Stomp 3 imps' },
+    { kind: 'jumps', target: 60, label: 'Bounce 60 times' },
+  ],
+};
+
+const hop = {
+  title: 'Meadow Crossing', logline: 'A rabbit hops across roads, rivers and rails to reach the far meadow before the hawk does.',
+  mode: 'hop', control: 'jump', feel: 'snappy',
+  artStyle: 'chunky cartoon vector, countryside meadow at day', background: '#6fbf5a',
+  music: { mood: 'playful', tempo: 120, key: 'C', scale: 'major', instrument: 'pluck' },
+  cast: { hero: { name: 'Clover', look: 'rabbit' }, chaser: { name: 'Hawk', look: 'bird' }, coin: { name: 'Carrot', kind: 'fruit' }, hazard: { name: 'Traffic', kind: 'mine' }, goal: { name: 'Burrow', kind: 'nest' } },
+  speed: { start: 0.3, max: 0.75, rampSeconds: 90 },
+  rules: { width: 9, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 10, coin: 10, nearMiss: 25 },
+  obstacles: [
+    { char: 'c', kind: 'road', name: 'Hay Cart', speed: 2.2, size: 1.5, period: 6 },
+    { char: 'v', kind: 'road', name: 'Milk Van', speed: 3.2, size: 2, period: 8 },
+    { char: 'l', kind: 'river', name: 'Brook', speed: 1.3, size: 3, period: 5 },
+    { char: 'r', kind: 'rail', name: 'Freight Train', speed: 0, size: 12, period: 7 },
+  ],
+  chunks: [
+    { id: 'meadow', tier: 1, spacing: 1, rows: ['..T...T..', 'ccccccccc', 'ccccccccc', '.T..o..T.', 'lllllllll', 'lllllllll', '...T.....'] },
+    { id: 'lane', tier: 1, spacing: 1, rows: ['T.......T', 'vvvvvvvvv', '..o......', 'ccccccccc', 'vvvvvvvvv', '....T....'] },
+    { id: 'rails', tier: 2, spacing: 1, rows: ['...T.....', 'rrrrrrrrr', '.........', 'ccccccccc', 'ccccccccc', 'rrrrrrrrr', '..T..T...'] },
+    { id: 'river', tier: 2, spacing: 1, rows: ['.T.....T.', 'lllllllll', 'lllllllll', 'lllllllll', '..o......', 'vvvvvvvvv'] },
+    { id: 'rush', tier: 3, spacing: 1, rows: ['....T....', 'vvvvvvvvv', 'ccccccccc', 'vvvvvvvvv', 'rrrrrrrrr', 'lllllllll', 'lllllllll', 'T.......T'] },
+  ],
+  segments: [],
+  powerups: [
+    { kind: 'shield', name: 'Clover Charm', seconds: 12 },
+    { kind: 'magnet', name: 'Carrot Call', seconds: 10 },
+  ],
+  missions: [
+    { kind: 'hops', target: 50, label: 'Hop 50 times' },
+    { kind: 'coins', target: 5, label: 'Nibble 5 carrots' },
+    { kind: 'distance', target: 60, label: 'Cross 60 rows' },
+    { kind: 'near_misses', target: 3, label: 'Dodge 3 close calls' },
+  ],
+};
+
+const dash = {
+  title: 'Pulse Circuit', logline: 'A robot cube rides the beat through a neon circuit of spikes, pads and gravity flips.',
+  mode: 'rhythm-dash', control: 'jump', feel: 'snappy',
+  artStyle: 'neon vector, cyber factory at night', background: '#1a0f33',
+  music: { mood: 'energetic', tempo: 132, key: 'A', scale: 'minor', instrument: 'synth' },
+  cast: { hero: { name: 'Volt', look: 'robot' }, chaser: { name: 'Glitch', look: 'alien' }, coin: { name: 'Chip', kind: 'battery' }, hazard: { name: 'Spike', kind: 'spikes' }, goal: { name: 'Exit', kind: 'portal' } },
+  speed: { start: 1, max: 1, rampSeconds: 60 },
+  rules: { width: 0, lives: 1, goalDistance: 0, density: 1 },
+  scoring: { perMeter: 1, coin: 25, nearMiss: 20 },
+  obstacles: [],
+  chunks: [],
+  segments: [
+    { type: 'spikes', bars: 2, intensity: 1 },
+    { type: 'blocks', bars: 2, intensity: 1 },
+    { type: 'spikes', bars: 2, intensity: 2 },
+    { type: 'pads', bars: 2, intensity: 2 },
+    { type: 'stairs', bars: 2, intensity: 1 },
+    { type: 'orbs', bars: 2, intensity: 1 },
+    { type: 'gravity', bars: 2, intensity: 1 },
+    { type: 'run', bars: 1, intensity: 1 },
+    { type: 'speed', bars: 2, intensity: 2 },
+    { type: 'spikes', bars: 2, intensity: 2 },
+    { type: 'gaps', bars: 2, intensity: 2 },
+    { type: 'blocks', bars: 2, intensity: 2 },
+    { type: 'orbs', bars: 2, intensity: 2 },
+    { type: 'speed', bars: 1, intensity: 1 },
+    { type: 'spikes', bars: 2, intensity: 3 },
+  ],
+  powerups: [],
+  missions: [
+    { kind: 'distance', target: 300, label: 'Dash 300 m' },
+    { kind: 'coins', target: 6, label: 'Grab 6 chips' },
+    { kind: 'jumps', target: 40, label: 'Jump 40 times' },
+  ],
+};
+
+export const SAMPLES = { lanes, side, flap, climb, hop, 'rhythm-dash': dash };
+export const SAMPLE = lanes;
