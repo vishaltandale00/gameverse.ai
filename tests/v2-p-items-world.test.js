@@ -2,12 +2,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { doc, make, steps, checkWith, codes, gameInstances } from './v2-p-items-fixtures.js';
+const health = (max, start = max) => ({ max, start });
 
 const goTo = (rt, at) => rt.space('world').setPos(rt.player(), at, rt);
-const hero = { id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, health: {} } };
+const hero = { id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, health: health(10) } };
 
 // ---------- rest + checkpoint ----------
-const camp = () => doc({
+const camp = () => doc({ combat: true, resources: [{ id: 'stamina', max: 50, startFull: false, start: 1 }],
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.rest', with: { skipTo: 'dawn', safeRequired: true, safeRadius: 6, respawnsEnemies: true } },
     { use: 'gameplay.checkpoint', with: { restoreAll: true, fastTravelBetween: true } }],
   content: { archetypes: [hero,
@@ -19,14 +20,15 @@ const camp = () => doc({
 test('rest/checkpoint: preflight, rest at a bed, unsafe rest, checkpoint respawn and fast travel', () => {
   const r = checkWith(camp()); assert.ok(r.ok, JSON.stringify(r.errors));
   const { rt } = make(camp());
-  rt.state.vars['time.hour'] = 22; rt.state.vars.hp = 2; rt.state.vars['hp.max'] = 10; rt.state.vars['res.stamina'] = 1; rt.state.vars['res.stamina.max'] = 50;
+  rt.state.vars['time.hour'] = 22; rt.player().components.health.hp = 2; rt.step();
+  assert.equal(rt.state.vars.hp, 2); assert.equal(rt.state.vars['res.stamina'], 1);
   rt.spawn('bed', { id: 'bed_home', at: [2, 1, 0] });
   rt.spawn('flag', { at: [20, 1, 0] });
   rt.step({ actions: { interact: true } });
   assert.equal(rt.state.counts.rested, 1);
   assert.equal(rt.state.vars['time.hour'], 6, 'slept until dawn');
   assert.equal(rt.state.vars['time.day'], 1);
-  assert.equal(rt.state.vars.hp, 10); assert.equal(rt.state.vars['res.stamina'], 50);
+  assert.equal(rt.player().components.health.hp, 10); assert.equal(rt.state.vars['res.stamina'], 50, 'rest refilled the real pool');
   assert.equal(rt.state.counts.respawn_enemies, 1, 'rest resets enemies (the checkpoint here does not)');
   assert.ok(rt.test({ at_checkpoint: 'bed_home' }));
   // A wolf nearby makes resting unsafe.
@@ -137,48 +139,52 @@ test('collectible: v2/games instances preflight without param errors', () => {
 });
 
 // ---------- hazard ----------
-const cave = () => doc({
-  space: { gravity: 0 },
+// With the real combat owners (damage, kill, apply_status), or without them (hazards then only emit events).
+const cave = (combat = true) => doc({
+  combat, space: { gravity: 0 },
   systems: [{ use: 'gameplay.checkpoint' }, { use: 'gameplay.hazard', with: {
     types: [{ id: 'spikes', damage: 1, respawn: 'nearest-safe' }, { id: 'lava', dps: 4, status: 'burning' }, { id: 'pit', kill: true, respawn: 'checkpoint' }],
     volumes: [{ type: 'spikes', at: [10, 1, 0], size: [2, 1, 1] }],
     fallDamage: { minHeight: 3, perMeter: 2 }, killY: -1, killType: 'pit', window: { margin: 0 },
   } }],
   zones: [{ id: 'yard', rect: [0, 0, 8, 16] }, { id: 'magma', rect: [20, 0, 24, 16], tags: ['hazard:lava'] }],
-  content: { archetypes: [hero, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: 'spikes' } }] },
+  content: { statuses: [{ id: 'burning', duration: 3 }], archetypes: [{ ...hero, components: { ...hero.components, health: health(100) } }, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: 'spikes' } }] },
 });
 
 test('hazard: volumes, entities, zones, falls and kill planes', () => {
   const r = checkWith(cave()); assert.ok(r.ok, JSON.stringify(r.errors));
   const { rt } = make(cave());
-  rt.state.vars.hp = 20;
+  const hp = () => rt.player().components.health.hp;
   goTo(rt, [8, 1, 0]); rt.step();             // safe footing recorded (testSpace grounded = solid below? no gravity: body.grounded default)
   goTo(rt, [10, 1, 0]); rt.step();
   assert.equal(rt.state.counts['hazard_hit:spikes'], 1);
-  assert.equal(rt.state.vars['dmg.player'], 1);
+  assert.equal(hp(), 99); assert.equal(rt.state.vars.hp, 99);
   assert.deepEqual(rt.player().at, [8, 1, 0], 'returned to safe footing');
   rt.spawn('spike_ball', { at: [4, 6, 0] });
   goTo(rt, [4, 6, 0]); rt.step();
   assert.equal(rt.state.counts['hazard_hit:spikes'], 2, 'hazard entity');
+  assert.equal(hp(), 98);
   // Lava zone: status on entry, 4 dps in 0.5 s ticks.
   goTo(rt, [21, 1, 0]); steps(rt, 60);
   assert.equal(rt.state.counts['hazard_hit:lava'], 1);
-  assert.equal(rt.state.flags['status.burning'], true);
-  assert.equal(rt.state.vars['dmg.player'], 1 + 1 + 4);
+  assert.ok(rt.player().components.status.burning > 0, 'burning applied by gameplay.combat.status');
+  assert.equal(hp(), 98 - 4, 'two 0.5 s ticks of 4 dps');
   goTo(rt, [2, 1, 0]); rt.step();
   assert.equal(rt.state.counts.hazard_exit, 1, 'left the lava (instant hazards respawned the player out)');
   // Falls: airborne from y=9 to landing at y=1 is 8 units, 5 over the minimum.
   rt.player().components.body.grounded = false; goTo(rt, [2, 9, 0]); rt.step();
   goTo(rt, [2, 1, 0]); rt.player().components.body.grounded = true; rt.step();
   assert.equal(rt.state.events.find(e => e.name === 'fell').damage, 10);
+  assert.equal(hp(), 84);
   // Kill plane respawns at the start point (no checkpoint activated).
   goTo(rt, [3, -3, 0]); rt.step();
   assert.equal(rt.state.counts['hazard_hit:pit'], 1);
+  assert.equal(rt.player().components.health.dead, true, 'killed through gameplay.combat.health');
   assert.deepEqual(rt.player().at, [1, 1, 0]);
 });
 
 test('hazard: rising window and space bounds kill the player', () => {
-  const d = cave(); d.systems[1].with = { types: d.systems[1].with.types, window: { margin: 3 } };
+  const d = cave(false); d.systems[1].with = { types: d.systems[1].with.types, window: { margin: 3 } };
   const { rt } = make(d);
   goTo(rt, [2, 10, 0]); rt.step(); goTo(rt, [2, 7.5, 0]); rt.step();
   assert.equal(rt.state.counts['hazard_hit:kill'] ?? 0, 0);
@@ -186,7 +192,7 @@ test('hazard: rising window and space bounds kill the player', () => {
   assert.equal(rt.state.counts['hazard_hit:kill'], 1, 'no killType: plain kill');
   assert.equal(rt.state.counts.hazard_killed, 1, 'no kill effect registered: event only');
   // A space with a bounds() window.
-  const { rt: b } = make(cave());
+  const { rt: b } = make(cave(false));
   b.space('world').bounds = () => ({ min: [0, 0], max: [10, 10], wrap: [false, false] });
   goTo(b, [14, 4, 0]); b.step();
   assert.equal(b.state.counts['hazard_hit:pit'], 1);

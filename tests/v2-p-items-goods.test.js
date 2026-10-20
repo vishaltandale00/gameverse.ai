@@ -2,10 +2,13 @@
 // gameplay.container, gameplay.loot, gameplay.economy.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doc, make, steps, checkWith, codes, gameInstances } from './v2-p-items-fixtures.js';
+import { doc as base, make, steps, checkWith, codes, gameInstances } from './v2-p-items-fixtures.js';
+
+// Item effects heal and gain, so every document here runs the real combat owners.
+const doc = (over, ...rest) => base({ combat: true, ...over }, ...rest);
 
 const bagOf = (rt, who = 'player') => rt.state.prim['gameplay.inventory'][who] || {};
-const hero = { id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, equipment: { slots: ['weapon', 'head', 'charm'] } } };
+const hero = { id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, health: { max: 10, start: 1 }, equipment: { slots: ['weapon', 'head', 'charm'] } } };
 const ITEMS = [
   { id: 'apple', name: 'Apple', kind: 'food', stack: 4, value: 3, tags: ['fruit'], ingredient: { tags: ['fruit'], effects: { heal: 2 } }, use: { fx: [{ do: 'heal', who: 'player', amount: 1 }], cooldown: 0.5 } },
   { id: 'meat', name: 'Meat', kind: 'food', value: 5, ingredient: { tags: ['meat'], effects: { heal: 4, stamina: 1 } } },
@@ -60,9 +63,8 @@ const kit = () => doc({
 
 test('item.use: effects, cooldowns, consumption and denial reasons', () => {
   const { rt } = make(kit());
-  rt.state.vars.hp = 1; rt.state.vars['hp.max'] = 10;
   rt.step({ actions: { use_item: 'apple' } });
-  assert.equal(rt.state.vars.hp, 2); assert.equal(bagOf(rt).apple, 2);
+  assert.equal(rt.player().components.health.hp, 2); assert.equal(rt.state.vars.hp, 2); assert.equal(bagOf(rt).apple, 2);
   assert.equal(rt.state.counts['used_item:apple'], 1);
   rt.step({ actions: { use_item: 'apple' } });
   assert.equal(rt.state.events.find(e => e.name === 'use_denied').reason, 'cooldown');
@@ -132,7 +134,7 @@ test('equipment: replay, bad config codes and game instances', () => {
 });
 
 // ---------- crafting ----------
-const kitchen = (discover = 'learned') => doc({
+const kitchen = (discover = 'learned') => doc({ resources: [{ id: 'stamina', max: 10, startFull: false, start: 0 }],
   systems: [{ use: 'gameplay.inventory', with: { start: [{ item: 'apple', count: 4 }, { item: 'meat', count: 2 }, { item: 'ore', count: 5 }] } }, { use: 'gameplay.item.use' },
     { use: 'gameplay.crafting', with: { stations: [{ id: 'fire', name: 'Campfire', tags: ['cook'] }, { id: 'forge', name: 'Forge', tags: ['smith'], zone: 'field' }], handCraft: false, queue: true, merge: { enabled: false, stat: 'effects' }, discover, failItem: 'mush' } }],
   content: { items: ITEMS, archetypes: [hero, { id: 'campfire', kind: 'prop', components: { station: 'fire' } }],
@@ -146,7 +148,6 @@ const kitchen = (discover = 'learned') => doc({
 test('crafting: stations, timed queues, merged effects, learning and experiments', () => {
   assert.ok(checkWith(kitchen()).ok, JSON.stringify(checkWith(kitchen()).errors));
   const { rt } = make(kitchen('experiment'));
-  rt.state.vars.hp = 0;
   rt.step({ actions: { craft: 'r_stew' } });
   assert.equal(rt.state.events.find(e => e.name === 'craft_failed').reason, 'station');
   rt.spawn('campfire', { at: [2, 1, 0] });
@@ -159,7 +160,8 @@ test('crafting: stations, timed queues, merged effects, learning and experiments
   // The stew carries meat (heal 4, stamina 1) + apple (heal 2): eating it applies them.
   rt.step({ actions: { use_item: 'stew' } });
   assert.equal(rt.state.flags.ate_stew, true);
-  assert.equal(rt.state.vars.hp, 6); assert.equal(rt.state.vars['buff.stamina'], 1);
+  assert.equal(rt.player().components.health.hp, 7, '1 + heal 6 from the ingredients');
+  assert.equal(rt.state.vars['res.stamina'], 1, 'stamina went through the resource pool');
   // Learned via flag; forge by zone.
   rt.space('world').setPos(rt.player(), [10, 1, 0], rt); rt.step();
   rt.step({ actions: { craft: 'r_ingot' } });

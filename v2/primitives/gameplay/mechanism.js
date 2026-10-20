@@ -16,7 +16,7 @@
 // units per second).
 import { compare } from '../../kernel/logic.js';
 import { count, take } from './inventory.js';
-import { addScore, runIf, boxAt, boxOf, boxesTouch, center, isVec, v3, add, sub, len, norm, dot, posForMin, whoKey, velocity, setVelocity } from './items-lib.js';
+import { addScore, runIf, boxAt, boxOf, boxesTouch, center, isVec, v3, add, sub, len, norm, dot, posForMin, whoKey, velocity, setVelocity, testIf } from './items-lib.js';
 
 const KEY = 'gameplay.mechanism';
 export const KINDS = ['door', 'lever', 'plate', 'breakable', 'lift', 'gate', 'trap', 'timer', 'flipper', 'bumper', 'kicker', 'plunger', 'rollover', 'drop_target', 'ramp', 'spring', 'platform'];
@@ -24,6 +24,9 @@ const PLATFORM_MODES = ['solid', 'moving', 'breaking', 'vanishing'];
 const INITIAL = { door: 'closed', lever: 'off', plate: 'up', breakable: 'intact', lift: 'stop0', gate: 'closed', trap: 'armed', timer: 'idle', flipper: 'down', bumper: 'idle', kicker: 'idle', plunger: 'idle', rollover: 'off', drop_target: 'up', ramp: 'idle', spring: 'idle', platform: 'solid' };
 const USABLE = new Set(['door', 'lever', 'lift', 'timer', 'breakable']);
 const ENTITY_DEFAULT = new Set(['lift', 'platform', 'flipper', 'bumper', 'drop_target']);
+/** Kinds that block as bodies; without cells to write they get an entity so continuous spaces collide with them. */
+const BLOCKING = new Set(['door', 'gate', 'breakable']);
+const SOLID_WHEN = { door: s => !s.active, gate: s => !s.active, drop_target: s => !s.active, breakable: s => s.state !== 'broken', lift: () => true, bumper: () => true, flipper: () => true, kicker: () => true };
 /** Classic arcade bunker (shmup): 12 × 7 cells with cut corners and an arch underneath. */
 export const BUNKER = ['..########..', '.##########.', '############', '############', '####....####', '####....####', '####....####'];
 
@@ -139,7 +142,7 @@ export default {
     st(); // created at install, so reads later never add state
     const frames = sec => Math.max(1, Math.round(sec / rt.dt));
     // plot.gate locks ('mechanism:<id>') apply on top of the mechanism's own gate predicate.
-    const gateOk = (m, who) => !(rt.hasService('gates') && rt.service('gates').locked(`mechanism:${m.id}`)) && (m.gate === undefined || rt.test(typeof m.gate === 'string' ? { gate: m.gate } : m.gate, { actor: who, self: entIdOf(m) }));
+    const gateOk = (m, who) => !(rt.hasService('gates') && rt.service('gates').locked(`mechanism:${m.id}`)) && (m.gate === undefined || testIf(rt, typeof m.gate === 'string' ? { gate: m.gate } : m.gate, { actor: who, self: entIdOf(m) }, false));
     const entIdOf = m => `mech_${m.id}`;
     const pattern = m => m.pattern ?? (m.preset === 'bunker' ? BUNKER : null);
 
@@ -288,7 +291,12 @@ export default {
       const e = rt.entity(entIdOf(m)); if (!e) return;
       const s = st().m[m.id];
       e.components.mechanismState = { state: s.state, active: s.active };
-      e.components.blocker = ['door', 'gate'].includes(m.kind) ? !s.active : m.kind === 'drop_target' ? !s.active : m.kind === 'platform' ? s.state !== 'broken' && s.state !== 'gone' : m.kind === 'lift' || m.kind === 'bumper' || m.kind === 'flipper';
+      // Obstacles for other bodies' slide (KERNEL_API §2 body.solid / body.oneWay): closed doors and gates,
+      // intact breakables, standing drop targets, lifts and toys are solid; platforms and springs are
+      // ridden from above only (breaking platforms never hold).
+      const body = (e.components.body ??= {});
+      if (m.kind === 'platform' || m.kind === 'spring') { body.solid = false; body.oneWay = m.mode !== 'breaking' && s.state !== 'broken' && s.state !== 'gone'; }
+      else { body.solid = Boolean(SOLID_WHEN[m.kind]?.(s)); delete body.oneWay; }
     }
 
     // ----- init: state, cells, entities (first step, so spaces and the player exist) -----
@@ -301,7 +309,8 @@ export default {
         const cells = initCells(m); if (cells) ms.cells = cells;
         if (['door', 'gate', 'breakable', 'drop_target'].includes(m.kind)) writeCells(m, true);
         if (ms.cells) mirror(m);
-        const wantEntity = m.entity ?? (ENTITY_DEFAULT.has(m.kind) || USABLE.has(m.kind) && m.prompt != null);
+        const cellBacked = m.block && m.cells != null && typeof rt.space(spaceOf(m)).setCell === 'function';
+        const wantEntity = m.entity ?? (ENTITY_DEFAULT.has(m.kind) || (BLOCKING.has(m.kind) && !cellBacked && !pattern(m)) || (USABLE.has(m.kind) && m.prompt != null));
         if (wantEntity && !rt.entity(entIdOf(m))) {
           const sid = spaceOf(m), body = { size: v3(m.size).slice(0, isVec(m.at) ? Math.max(2, m.at.length) : 3) };
           const comps = { mechanism: m.id, body };

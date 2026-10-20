@@ -160,8 +160,8 @@ test('preflight rejects broken quests with stable codes', () => {
     { id: 'b4', title: 'B4', prereq: ['b3'], timeLimit: -1, rewards: { xp: 5, coins: 3 }, objectives: [{ id: 'o', kind: 'defeat' }] },
   );
   const r = check(d);
-  for (const c of ['quest_invalid', 'ref_unknown', 'quest_cycle', 'objective_kind_unknown', 'id_duplicate', 'objective_invalid', 'param_range', 'param_unknown', 'param_missing', 'field_unknown', 'effect_unknown']) assert.ok(codes(r).includes(c), c);
-  assert.ok(r.errors.some(e => e.code === 'effect_unknown' && /give_xp/.test(e.message)), 'xp rewards need a progression primitive');
+  for (const c of ['quest_invalid', 'ref_unknown', 'quest_cycle', 'objective_kind_unknown', 'id_duplicate', 'objective_invalid', 'param_range', 'param_unknown', 'param_missing', 'field_unknown']) assert.ok(codes(r).includes(c), c);
+  assert.ok(r.errors.some(e => ['effect_unknown', 'vocabulary_owner_missing'].includes(e.code) && /give_xp/.test(e.message)), 'xp rewards need a progression primitive');
   const p = doc({ maxActive: 0 });
   assert.deepEqual(codes(check(p)), ['param_range']);
   const bad = doc(); bad.plot.storyboard.acts[0].beats[0].when = { quest: 'q_main', state: 'finished' };

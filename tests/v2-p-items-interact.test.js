@@ -91,11 +91,20 @@ test('interact: harvest regrows, hold-to-use and scripted interact', () => {
 test('interact: solver options cover interactables in reach and reachable ones', () => {
   const { rt } = setup();
   rt.step();
+  // Listing options must not pathfind: one reachable() set per listing, path() only in apply.
+  const sp = rt.space('world'), calls = { path: 0, reachable: 0 };
+  const path = sp.path, reachable = sp.reachable;
+  sp.path = (...a) => { calls.path++; return path(...a); };
+  sp.reachable = (...a) => { calls.reachable++; return reachable(...a); };
   const opts = rt.availableOptions().filter(o => o.actions.interact);
+  rt.availableOptions();
+  assert.equal(calls.path, 0, 'no path() while listing');
+  assert.equal(calls.reachable, 1, 'one cached reachable() set for the frame and cell');
   assert.ok(opts.some(o => o.actions.interact === 'sage' && !o.apply), 'in reach');
   const far = opts.find(o => o.actions.interact === 'tree1');
   assert.ok(far?.apply, 'reachable via path');
   far.apply(rt);
+  assert.equal(calls.path, 1, 'path() runs when the option is applied');
   for (let i = 0; i < far.steps; i++) rt.step({ actions: far.actions });
   assert.equal(rt.state.counts['used:tree1'], 1);
   assert.ok(!opts.some(o => o.actions.interact === 'vault1'), 'locked ones are not offered');

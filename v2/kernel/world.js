@@ -11,8 +11,10 @@ export const DT = 1 / 60;
 
 export function buildLogic(registry, Logic) {
   const logic = new Logic();
-  for (const id of registry.ids()) { logic.owner = id; registry.get(id).logic?.(logic); }
-  logic.owner = null;
+  // Real owners first; ambient providers (stand-ins, pure vocabulary libraries) only fill kinds nobody owns.
+  const ids = registry.ids(), ambient = id => Boolean(registry.get(id).card.ambient);
+  for (const id of [...ids.filter(i => !ambient(i)), ...ids.filter(ambient)]) { logic.owner = id; logic.ambient = ambient(id); registry.get(id).logic?.(logic); }
+  logic.owner = null; logic.ambient = false;
   // One owner per vocabulary kind: a silent overwrite would change behavior by load order.
   if (logic.duplicates.length) throw Error(`vocabulary registered twice: ${logic.duplicates.map(d => `${d.type} '${d.kind}' by ${d.first} and ${d.second}`).join('; ')}`);
   return logic;
@@ -79,6 +81,8 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     /** Register fn(rt) -> [{ label, actions: { name: value }, steps? }] of meaningful player choices now.
      *  Used by solvers and playtesters; continuous spaces offer macro options (travel to a zone). */
     options(fn) { optionProviders.push(fn); },
+    /** Options from every provider except `skip` (lets a provider defer to others without recursing). */
+    optionsExcept(skip) { return optionProviders.filter(fn => fn !== skip).flatMap(fn => fn(rt) || []); },
     availableOptions() {
       const all = optionProviders.flatMap(fn => fn(rt) || []), m = state.modal;
       return m ? all.filter(o => o.modal === m.owner || Object.keys(o.actions || {}).some(a => m.actions.includes(a))) : all;
@@ -112,6 +116,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     entity: id => state.entities[id],
     /** who: undefined|'player' -> player; 'self' -> context.self; else an entity id (characters spawn with their id). */
     resolve(who, context = {}) {
+      if ((who === undefined || who === null) && context.defaultWho) who = context.defaultWho; // e.g. AI rules: subject is the agent
       if (who === undefined || who === null || who === 'player') return state.entities.player || null;
       if (who === 'self') return state.entities[context.self] || null;
       return state.entities[who] || null;
@@ -153,9 +158,14 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
      * changes); those that keep derived caches implement extend(rt, cfg, added).
      */
     extend(normalizedDoc, added) {
-      const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)) };
+      const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)),
+        generators: new Map((rt.doc.spaces || []).map(s => [s.id, (s.generators || []).length])) };
       rt.doc = normalizedDoc;
-      for (const s of normalizedDoc.spaces) if (!before.spaces.has(s.id)) { install(s, `spaces.${s.id}`); (s.generators || []).forEach((g, j) => install({ ...g, space: s.id }, `spaces.${s.id}.generators[${j}]`)); }
+      for (const s of normalizedDoc.spaces) {
+        if (!before.spaces.has(s.id)) install(s, `spaces.${s.id}`);
+        // New generators run on new spaces and on existing ones (detail patches add rooms, structures, scatter...).
+        (s.generators || []).forEach((g, j) => { if (j >= (before.generators.get(s.id) ?? 0)) install({ ...g, space: s.id }, `spaces.${s.id}.generators[${j}]`); });
+      }
       for (const instance of [...normalizedDoc.spaces, ...(normalizedDoc.systems || []).slice(0, before.systems), ...(headless ? [] : (normalizedDoc.graphics || []).slice(0, before.graphics))]) {
         registry.get(instance.use)?.extend?.(rt, instance.with || {}, added, instance);
       }
