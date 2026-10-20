@@ -39,7 +39,7 @@ export class Logic {
       const api = rt.space(e.space), d = api.nearest(e, p.near, rt);
       return d !== null && d <= (p.within ?? 1);
     } });
-    this.predicate('cell', { test: (p, rt) => rt.space(p.space).getCell(p.cell) === p.block });
+    this.predicate('cell', { test: (p, rt, c) => { const sid = p.space ?? rt.resolve(p.who, c)?.space; return sid != null && rt.space(sid).getCell(p.cell, p.layer) === p.block; } });
     this.effect('teleport', { refs: e => e.zone ? [['zone', e.zone]] : [], run: (e, rt, c) => {
       const ent = rt.resolve(e.who, c); if (!ent) return;
       if (e.space && e.space !== ent.space) rt.moveToSpace(ent, e.space, e.at ?? null, e.zone);
