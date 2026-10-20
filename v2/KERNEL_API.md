@@ -82,6 +82,18 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 | `occupancy` | `occupant cellsInRange moveCost coverAt` |
 | `los` | `los visibleFrom` |
 
+- **Anchors.** `api.anchor` says what `e.at` means:
+  - `'center'`: the centre of the body box, y up (continuous spaces: tilemap, arena2d, physics2d, track, voxel, mesh3d);
+  - `'cell'`: the grid space;
+  - `'slot'`: the graph and none spaces;
+  - `'min'`: the test space only.
+
+  Never assume one. Use `bodyBox(entity, api)` from `kernel/testing.js` (safe to import at runtime) or read `api.anchor`.
+- **Signatures.**
+  - Reachability: `reachable(from, rt, opts)` and `canReach(a, b, rt, opts)`, with `opts = {abilities, envelope, who}`.
+  - Cells: `getCell(at, layer?)`.
+  - Validators: `validate(config, doc, ctx, {path, id, use, space})`.
+- **Capability lists.** `bounds`, `wrap` and `dynamics` are kernel capabilities alongside those above. Space-specific ones (`joints`, `boxes`, `ledges`, `scroll`, `settle`, `cellRules`...) are documented in `card.provides.capabilityMethods`; conformance checks them.
 - **Kernel-owned spatial vocabulary.** The predicates `zone`, `near` and `cell` and the effects `teleport` and `move_to` are registered by the kernel and dispatch through the subject's space. Spaces must not register them. `move_to` only records intent in `components.moveTo`; movement and AI primitives carry it out.
 - **Zone events.** Spaces emit `enter_zone` / `leave_zone` (typed: `enter_zone:<zone>`) as entities move, and keep `entity.zone` current.
 - **State.** Space state lives in `rt.state.spaces[id]`; cell spaces store generator params plus an edit log.
