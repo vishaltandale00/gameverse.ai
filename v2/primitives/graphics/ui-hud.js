@@ -9,7 +9,8 @@ import { uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pul
 import { icon, itemIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
-import { spaceGeometry, project, heading, bearing } from './ui-spatial.js';
+import { spaceGeometry, heading, bearing } from './ui-spatial.js';
+import { entityPos } from './ui-cartography.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const pos = (d = 'top-left') => ({ type: 'string', default: d, options: POSITIONS, effect: 'screen anchor' });
@@ -144,7 +145,7 @@ export function hudModel(rt, config, local = {}) {
     const space = rt.doc.spaces.find(s => s.id === player.space);
     const geo = local.geometry?.(space) || spaceGeometry(space);
     if (!geo.graph) {
-      const here = project(player.at, geo.plane), hdg = heading(player, geo.plane) ?? 0;
+      const here = entityPos(rt, player, geo), hdg = heading(player, geo.plane) ?? 0;
       const markers = [];
       const target = q && (q.objectives || []).find(x => x.state !== 'done' && x.zone)?.zone;
       const tz = target && geo.zones.find(z => z.id === target);

@@ -30,7 +30,7 @@ export function createSheet(host, opts) {
       if (verb === 'back' || verb === opts.hotkey) { sheet.close(); return true; }
       // Another sheet's hotkey switches straight to it.
       if (['inventory', 'journal', 'map'].includes(verb)) { sheet.close(); host.input.press(verb); return true; }
-      if (verb === 'prev' || verb === 'next') { switchTab(verb === 'next' ? 1 : -1); return true; }
+      if (verb === 'prev' || verb === 'next') { if (tabList.length < 2 && nav.onVerb) return nav.onVerb(verb) ?? true; switchTab(verb === 'next' ? 1 : -1); return true; }
       if (['up', 'down', 'left', 'right'].includes(verb)) {
         if (nav.onMove?.(verb) === true) return true;
         const i = moveFocus(index, verb, items.length, nav.columns || 1);

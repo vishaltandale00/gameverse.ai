@@ -5,6 +5,16 @@
 import { spaceGeometry, project, heading, insideShape } from './ui-spatial.js';
 import { hashHue, titleCase } from './ui-lib.js';
 import * as S from './ui-sources.js';
+import { bodyBox } from '../../kernel/testing.js';
+
+/** An entity's map-plane position: the centre of its body box (KERNEL_API §3 anchors), or its slot zone in graph spaces. */
+export function entityPos(rt, e, geo) {
+  if (geo.graph) return geo.zones.find(z => z.id === e.at)?.center || null;
+  if (!Array.isArray(e.at)) return null;
+  let api = null; try { api = rt.space(e.space); } catch { /* space not installed */ }
+  const b = api ? bodyBox(e, api) : { min: e.at, max: e.at };
+  return project(b.min.map((v, i) => (v + (b.max[i] ?? v)) / 2), geo.plane);
+}
 
 export const TRAVEL_TAGS = ['fast_travel', 'travel', 'bench', 'shrine', 'hub', 'checkpoint', 'town', 'camp', 'station'];
 
@@ -32,14 +42,14 @@ export function mapModel(rt, opts = {}) {
   const p = rt.player();
   const { space, geo } = geometryFor(rt, p?.space);
   const graph = geo.graph;
-  const here = p ? (graph ? geo.zones.find(z => z.id === p.at)?.center : project(p.at, geo.plane)) : null;
+  const here = p ? entityPos(rt, p, geo) : null;
   const currentZone = p ? (graph ? p.at : p.zone || geo.zones.find(z => here && insideShape(z.shape, here))?.id) : null;
   const zones = geo.zones.map(z => ({ ...z, discovered: !opts.fog || S.discovered(rt, z.id) || z.id === currentZone, current: z.id === currentZone, travel: TRAVEL_TAGS.some(t => z.tags.includes(t)) }));
   const markers = [];
   if (opts.markers?.length) for (const e of Object.values(rt.state.entities)) {
     if (e.id === 'player' || e.space !== space.id || e.components?.health?.dead) continue;
     const m = opts.markers.find(mk => entityHasTag(rt, e, mk.tag)); if (!m) continue;
-    const pos = graph ? geo.zones.find(z => z.id === e.at)?.center : project(e.at, geo.plane);
+    const pos = entityPos(rt, e, geo);
     if (pos) markers.push({ id: e.id, pos, icon: m.icon, color: m.color, tag: m.tag });
   }
   const pins = [];
