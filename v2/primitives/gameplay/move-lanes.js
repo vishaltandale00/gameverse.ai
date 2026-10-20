@@ -27,7 +27,7 @@ export default {
   card: {
     intent: 'Endless-runner lanes: auto-run forward with a speed ramp, switch lanes, jump low barriers, slide under high ones, dive from the air into a slide, and stumble on trips with a chaser that catches you on a second stumble.',
     views: ['3p', 'td'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       lanes: { type: 'integer', min: 2, max: 9, default: 3, effect: 'number of lanes' },
       laneWidth: num(0.2, 20, 1, 'units', 'distance between lane centres'),
@@ -52,6 +52,25 @@ export default {
     envelope,
   },
   envelope,
+  /**
+   * Verifier travel macro: run along the track, switching to each waypoint's lane before its
+   * forward position is passed, in real steps. True when the last waypoint's lane is held
+   * as it is passed.
+   */
+  travel(rt, path, config) {
+    const e = rt.player(); if (!e || !Array.isArray(path) || !path.length) return false;
+    const dims = e.at.length, fwd = config.forward && config.forward !== 'auto' ? config.forward : dims === 3 ? '+z' : '+y';
+    const F = AXIS[fwd[1]], fs = fwd[0] === '-' ? -1 : 1, L = dims === 3 ? (F === 0 ? 2 : 0) : (F === 0 ? 1 : 0), half = (config.laneWidth ?? 1) / 2;
+    let ok = true;
+    for (const wp of path.slice(1)) {
+      e.components.moveTo = { at: wp.slice(), run: true };
+      let guard = 0;
+      while (rt.state.status === 'playing' && (wp[F] - e.at[F]) * fs > 0 && guard++ < 3600) rt.step({});
+      ok = Math.abs(e.at[L] - wp[L]) <= half + 1e-6;
+    }
+    delete e.components.moveTo;
+    return rt.state.status === 'playing' && ok;
+  },
   logic(logic) {
     logic.effect('trip', { run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (ent) trip(rt, ent); } });
     logic.predicate('lane', {
@@ -83,7 +102,7 @@ export default {
         const b = bodyOf(e), s = state(e, 'lanes'), ctl = controls(rt, e), dt = rt.dt, now = rt.state.time;
         if (s.origin == null) { s.lane = Math.round(mid); s.x = s.lane - mid; s.y = 0; s.vy = 0; s.air = false; s.slideT = 0; s.jumpQ = 0; s.chaseT = 0; s.tripT = 0; s.dist = 0; s.from = s.lane; s.origin = round6(e.at[L] - s.x * c.laneWidth); }
         // Edge-triggered lane switch; switching into a blocked lane stumbles.
-        const press = ctl ? (ctl.pressed('left') ? -1 : 0) + (ctl.pressed('right') ? 1 : 0) || stickEdge(ctl, s) : npcSwitch(e, s, L, c, mid);
+        const press = ctl && !e.components.moveTo ? (ctl.pressed('left') ? -1 : 0) + (ctl.pressed('right') ? 1 : 0) || stickEdge(ctl, s) : npcSwitch(e, s, L, c, mid);
         if (press) {
           const to = s.lane + press;
           if (to >= 0 && to < c.lanes) {

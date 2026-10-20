@@ -9,7 +9,7 @@
 // which combat.projectile can read for twin-stick fire.
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey,
-  controls, verbs, ensureShared, motor, settle, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS,
+  controls, verbs, ensureShared, motor, settle, v3, setFacing, spaceWraps, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.ship';
@@ -23,7 +23,7 @@ export default {
   card: {
     intent: 'Ship controls for shmups and arena shooters: rail (side to side), eight-way, twin-stick (separate aim with auto-aim) or inertial Asteroids flight (rotate, thrust, drag, wraparound), with a slow focus mode and hyperspace jumps, clamped to or wrapping around the play bounds.',
     views: ['td', 'side'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 }, aim: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, aim: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       mode: { type: 'string', options: ['rail', 'eightway', 'twinstick', 'inertial'], default: 'eightway', effect: 'control scheme' },
       speed: num(1, 2000, 190, 'units/s', 'top speed (kit: 140-240 px/s)'),
@@ -49,6 +49,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['bounds', 'wrap', 'overlap', 'distance'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   install(rt, c, instance) {
@@ -110,7 +112,7 @@ export default {
         if (c.collide) motor(rt, e, api, b.vel.map(v => v * dt));
         else { pos[A] += b.vel[A] * dt; pos[B] += b.vel[B] * dt; }
         if (!c.collide || c.mode === 'inertial') {
-          if (bounds && typeof api.wrapPos !== 'function') {
+          if (bounds && !spaceWraps(api)) {
             if (wrap) { for (const [i, k] of [[A, 0], [B, 1]]) { const lo = bounds.min[k], span = bounds.max[k] - lo; pos[i] = lo + ((((pos[i] - lo) % span) + span) % span); } }
             else { const m = c.margin; pos[A] = clamp(pos[A], bounds.min[0] + m, bounds.max[0] - m); pos[B] = clamp(pos[B], bounds.min[1] + m, bounds.max[1] - m); }
           }

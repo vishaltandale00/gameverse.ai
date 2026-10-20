@@ -14,7 +14,7 @@
 import {
   clamp, approach, round6, mv, bodyOf, state, spaceApi, frameOf, intent, motor, claim, ownedBy, registerBase, isBaseFor,
   driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset, hasAbility, wallBeside,
-  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS,
+  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.platformer';
@@ -91,7 +91,7 @@ export default {
   card: {
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       preset: { type: 'string', options: Object.keys(PLATFORMER_PRESETS), default: 'custom', effect: 'base tuning; explicit params override it' },
       feel: { type: 'string', options: Object.keys(FEEL), default: 'snappy', effect: 'runner feel: scales gravity and jump (floaty 0.82/1.04, heavy 1.18/0.97)' },
@@ -124,6 +124,8 @@ export default {
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['overlap', 'raycast', 'editCells', 'pathfind'], services: ['character'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   validate(config) {
@@ -163,7 +165,14 @@ export function stepPlatformer(rt, e, c) {
   let x = clamp(it.dir[X] ?? 0, -1, 1);
   const y = ctl ? ctl.move[1] : it.vert;
   if (it.source === 'moveTo' || it.source === 'steer') x = Math.abs(x) > 0.05 ? Math.sign(x) : 0;
-  const jumpP = it.jump, jumpH = it.jumpHeld;
+  let jumpP = it.jump, jumpH = it.jumpHeld;
+  if (it.source === 'moveTo' && it.wp && jumpP && b.grounded) {
+    // Launch when the waypoint is within the horizontal distance covered while rising.
+    const reach = Math.max(1.2, Math.max(c.run, c.autoRun) * (c.jump / Math.max(1, (c.gravity > 0 ? c.gravity : fr.gmag || 60) * c.gravityScale)) * 1.1);
+    if (Math.abs(it.wp[X] - e.at[X]) > reach) jumpP = jumpH = false;
+  }
+  // Path jumps are held through the rise unless that would overshoot the waypoint by a body height.
+  if (it.source === 'moveTo' && it.wp && !b.grounded && b.vel[Y] * up > 0 && it.wp[Y] * up + 1 > e.at[Y] * up) jumpH = true;
   const dashP = Boolean(ctl?.pressed('dash')), grab = Boolean(ctl?.down('grab') || ctl?.down('climb'));
   const glideH = Boolean(ctl?.down('glide')) || jumpH;
   let vx = b.vel[X], vy = b.vel[Y] * up;

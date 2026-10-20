@@ -20,7 +20,7 @@
 // (fright mode, eating pauses).
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, probe, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS,
+  ensureShared, probe, spaceWraps, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.grid';
@@ -41,7 +41,7 @@ export default {
   card: {
     intent: 'Grid-locked movement. lane mode: Pac-Man style continuous movement along cell lanes, with buffered turns, a cornering window, instant reversal and stopping at walls. step mode: one-cell hops with walk/run timing, turn-in-place, queued hops and one-way ledges (Pokémon overworld, Crossy Road). Cell tags add ledges, one-way cells, class-only doors and speed zones.',
     views: ['td', 'board', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       mode: { type: 'string', options: ['lane', 'step'], default: 'step', effect: 'lane: continuous along lanes; step: discrete hops' },
       speed: { type: 'number', min: 0.5, max: 60, default: round6(BASE_SPEED * 0.8), unit: 'cells/s', effect: 'lane speed (classic level 1: 0.8 × 9.47)' },
@@ -61,6 +61,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['navigate', 'editCells', 'pathfind', 'bounds', 'wrap'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, { discrete: true, perWaypoint: 60 }),
   },
   envelope,
   install(rt, c, instance) {
@@ -100,7 +102,7 @@ function grid(rt, e, api, c) {
   const classes = e.components.move?.classes || [];
   const open = (from, d) => {
     const v = dv(d), to = [from[0] + v[0], from[1] + v[1]], w = toWorld(to);
-    if (typeof api.inBounds === 'function' && !api.inBounds(w) && !c.wrap && typeof api.wrapPos !== 'function') return false;
+    if (typeof api.inBounds === 'function' && !api.inBounds(w) && !c.wrap && !spaceWraps(api)) return false;
     const tags = tagsAtWorld(w);
     if (tags.includes(`no:${NAMES[d]}`)) return false;
     const only = tags.filter(t => t.startsWith('only:')).map(t => t.slice(5));
@@ -154,7 +156,7 @@ function stepLane(rt, e, api, c, G) {
     else if (W === g.dir) { if (G.open([cx, cy], W)) g.moving = true; }
     else {
       const offAxis = !g.moving || g.dir < 0 ? 0 : D[g.dir][0] ? Math.abs(pa - cx) : Math.abs(pb - cy);
-      if (offAxis <= c.corner && G.open([cx, cy], W)) { if (g.dir !== W) rt.emit('turned', { who: e.id, dir: NAMES[W] }); g.dir = W; g.moving = true; }
+      if (offAxis <= c.corner && G.open([cx, cy], W)) { if (g.dir >= 0 && g.dir !== W) rt.emit('turned', { who: e.id, dir: NAMES[W] }); g.dir = W; g.moving = true; }
     }
   }
   b.vel = [0, 0, 0];
@@ -173,7 +175,7 @@ function stepLane(rt, e, api, c, G) {
     setFacing(e, G.fr, vel);
   }
   let to = G.toWorld([round6(pa), round6(pb)]);
-  if (c.wrap && typeof api.wrapPos !== 'function') to = wrapAt(api, to, G);
+  if (c.wrap && !spaceWraps(api)) to = wrapAt(api, to, G);
   api.setPos(e, to, rt);
   b.state = g.moving ? 'grid' : 'idle';
   b.controller = 'move';
@@ -198,6 +200,7 @@ function stepCell(rt, e, api, c, G) {
       const m = g.move; g.move = null;
       rt.emit('stepped', { who: e.id, at: e.at, ledge: Boolean(m.ledge) });
       if (g.queue != null) { const q = g.queue; g.queue = null; tryStep(rt, e, api, c, G, g, q, running); }
+      else { const held = wanted(rt, e, api, c, G, G.lanePos().map(Math.round)); if (held >= 0 && held === g.face) tryStep(rt, e, api, c, G, g, held, running); } // keep walking without a gap frame
     }
     publish(e, g, G);
     return;

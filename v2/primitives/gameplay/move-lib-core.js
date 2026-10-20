@@ -82,6 +82,8 @@ export function frameOf(api, e, planeParam = 'auto') {
   const vert = up ?? (dims === 3 && !plane.includes(1) ? 1 : dims === 2 && plane.length === 1 ? 1 - plane[0] : null);
   return { dims, up, upSign, vert, plane, g, gmag };
 }
+/** Does the space wrap entities itself (bounds().wrap)? Then movers must not wrap or clamp on their own. */
+export const spaceWraps = api => { const b = typeof api?.bounds === 'function' ? api.bounds() : null; return Boolean(b?.wrap?.some?.(Boolean)); };
 /** True when the frame is a side view: one horizontal axis plus a vertical one. */
 export const sideView = fr => fr.plane.length === 1 && fr.vert !== null;
 
@@ -143,7 +145,14 @@ export function zoneTags(rt, e, p) {
 
 /** Water submersion of a body: fraction 0..1 of probes (feet, middle, head) in liquid, and whether the head is under. */
 export function submersion(rt, api, e, fr, tags = ['water', 'liquid', 'fluid']) {
-  if (!dimsOf(e) || fr.vert === null) return { frac: 0, head: false, surfaceAt: null };
+  if (!dimsOf(e)) return { frac: 0, head: false };
+  if (fr.vert === null) {
+    // Top-down: no depth axis, so the body is in liquid when its centre (or most of its footprint) is.
+    const b = boxOf(api, e), c = b.min.map((m, i) => m + b.size[i] / 2);
+    const pts = [c, ...[[0.2, 0.2], [0.8, 0.8]].map(([u, w]) => { const p = c.slice(); p[fr.plane[0]] = b.min[fr.plane[0]] + b.size[fr.plane[0]] * u; p[fr.plane[1]] = b.min[fr.plane[1]] + b.size[fr.plane[1]] * w; return p; })];
+    const wet = pts.map(p => (canProbe(api) && probe(rt, api, p).tags.some(t => tags.includes(t))) || zoneTags(rt, e, p).some(t => tags.includes(t)));
+    return { frac: wet[0] ? 1 : wet.filter(Boolean).length / 3, head: false, feet: wet[0] };
+  }
   const b = boxOf(api, e), v = fr.vert, pts = [0.1, 0.5, 0.9].map(k => { const p = b.min.map((m, i) => m + b.size[i] / 2); p[v] = b.min[v] + b.size[v] * k; return p; });
   const wet = p => {
     if (canProbe(api)) { const pr = probe(rt, api, p); if (pr.tags.some(t => tags.includes(t))) return true; }
@@ -386,13 +395,16 @@ function follow(rt, e, api, fr, opts) {
   const target = mt.at ?? zoneAnchor(rt, e, mt.zone);
   if (target == null) return done('no_target');
   const dist = opts.free3d ? len(sub(v3(e.at), v3(target))) : planeDist(fr, e.at, target);
-  if (dimsOf(e) && dist <= tol) return done(true);
+  // In gravity frames a point is only reached at its height too (a ledge top, not the wall below it).
+  const vtol = !opts.free3d && fr.up !== null ? Math.max(0.75, e.components.body?.size?.[fr.up] ?? 1) : Infinity;
+  const vOk = p => vtol === Infinity || Math.abs((e.at[fr.up] ?? 0) - (p[fr.up] ?? 0)) <= vtol;
+  if (dimsOf(e) && dist <= tol && vOk(target)) return done(true);
   if (!P.pts) {
     const p = pathFor(rt, e, api, mt, target, opts.envelope);
     if (!p || !p.length) return done(false);
     P.pts = structuredClone(p); P.i = 0;
   }
-  const near = wp => (opts.free3d ? len(sub(v3(e.at), v3(wp))) : planeDist(fr, e.at, wp)) <= tol;
+  const near = wp => (opts.free3d ? len(sub(v3(e.at), v3(wp))) : planeDist(fr, e.at, wp)) <= tol && vOk(wp);
   while (P.i < P.pts.length - 1 && near(P.pts[P.i])) P.i++;
   const wp = P.pts[P.i];
   if (P.best === null || dist < P.best - 0.02) { P.best = dist; P.stuck = 0; } else if (P.f !== rt.state.frame) P.stuck += rt.dt;
@@ -400,6 +412,7 @@ function follow(rt, e, api, fr, opts) {
   if (P.stuck > (opts.stuckSec ?? 2)) { P.pts = null; P.tries++; P.stuck = 0; P.best = null; if (P.tries > 3) return done('stuck'); }
   const raw = sub(v3(wp), v3(e.at));
   out.dir = norm(opts.free3d ? raw : project(fr, raw));
+  out.wp = v3(wp);
   if (fr.vert !== null) {
     out.vert = clamp(raw[fr.vert], -1, 1);
     if (!opts.free3d && raw[fr.vert] > (opts.jumpRise ?? 0.6)) out.jump = out.jumpHeld = true;
@@ -417,6 +430,28 @@ export function pathFor(rt, e, api, mt, target, envelope) {
   const known = mt?.zone && mt.at == null && (typeof api.zones?.has === 'function' ? api.zones.has(mt.zone) : false);
   if (known) { const p = api.path(e.at, mt.zone, opts); if (Array.isArray(p) && p.length) return p; }
   return target == null ? null : api.path(e.at, target, opts);
+}
+
+/**
+ * Drive e along a given space path in real steps (the verifier's travel macro contract):
+ * the path is installed as e's moveTo plan, so the controller's own intent-following code
+ * moves it with the same physics as input. Returns true when the last waypoint was reached.
+ * opts: { who='player', perWaypoint=120 frames, run=true, discrete=false }.
+ */
+export function travelAlong(rt, path, { who = 'player', perWaypoint = 120, run = true, discrete = false } = {}) {
+  const e = rt.resolve(who);
+  if (!e || !Array.isArray(path) || !path.length) return false;
+  const last = path[path.length - 1], at = Array.isArray(last) ? last.slice() : last;
+  if (dimsOf(e) && !Array.isArray(at)) return false;
+  e.components.moveTo = { zone: dimsOf(e) ? null : at, at: dimsOf(e) ? at : null, run };
+  mv(e).path = discrete
+    ? { key: JSON.stringify(dimsOf(e) ? at : at), pts: structuredClone(path), i: 1 }
+    : { key: JSON.stringify([null, at]), pts: structuredClone(path), i: 0, best: null, stuck: 0, tries: 0 };
+  const before = rt.state.counts.arrived || 0, budget = perWaypoint * path.length;
+  for (let f = 0; f < budget && rt.state.status === 'playing' && e.components.moveTo; f++) rt.step({});
+  const arrived = (rt.state.counts.arrived || 0) > before;
+  if (e.components.moveTo) { delete e.components.moveTo; mv(e).path = null; }
+  return arrived;
 }
 
 /** Discrete next step toward moveTo on navigate spaces (grid cells, graph zones). Returns the neighbour or null. */

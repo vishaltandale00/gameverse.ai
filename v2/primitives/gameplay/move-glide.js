@@ -1,7 +1,7 @@
 // Gliding (paraglider, wing-suit, cape, umbrella): while airborne and falling,
 // holding glide caps the fall speed and carries you forward at glide speed.
 // It drains stamina. Updraft cells or zones give lift.
-import { round6, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, zoneTags, probe, canProbe, boxOf, COMMON_PARAMS, norm } from './move-lib-core.js';
+import { round6, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, zoneTags, probe, canProbe, boxOf, COMMON_PARAMS, norm, travelAlong } from './move-lib-core.js';
 
 const ID = 'gameplay.move.glide';
 
@@ -15,7 +15,7 @@ export default {
   card: {
     intent: 'Glide while falling: hold glide (or jump) in the air to cap your fall speed and sail forward, spending stamina; updraft cells or zones lift you. Gate it behind an ability to make it a progression unlock.',
     views: ['3p', '1p', 'side', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       fallSpeed: { type: 'number', min: 0.5, max: 6, default: 2.8, unit: 'units/s', effect: 'maximum sink speed while gliding' },
       speed: { type: 'number', min: 0.5, max: 40, default: 7, unit: 'units/s', effect: 'horizontal glide speed' },
@@ -33,6 +33,8 @@ export default {
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['editCells', 'raycast'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   install(rt, c, instance) {

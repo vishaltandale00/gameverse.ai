@@ -8,7 +8,7 @@
 import {
   clamp, len, norm, round6, mv, bodyOf, state, spaceApi, dimsOf, isContinuous, frameOf, intent, motor, claim, ownedBy,
   registerBase, isBaseFor, driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset,
-  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS,
+  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
 } from './move-lib-core.js';
 import { compare } from '../../kernel/logic.js';
 
@@ -35,7 +35,7 @@ export default {
   card: {
     intent: 'Ground locomotion for the player and NPCs: walk, run, sprint (drains a stamina pool), crouch and jump, with acceleration, air control, coyote time, jump buffer and feel presets. Works in 3D, side and top-down continuous spaces and steps cell by cell on grid or graph spaces.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 }, look: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       walk: { type: 'number', min: 0.5, max: 8, default: 3, unit: 'units/s', effect: 'speed with a light stick or the walk verb' },
       run: { type: 'number', min: 0.5, max: 20, default: 6, unit: 'units/s', effect: 'default moving speed' },
@@ -64,6 +64,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'pathfind', 'navigate', 'editCells'], services: ['character'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   logic(logic) {

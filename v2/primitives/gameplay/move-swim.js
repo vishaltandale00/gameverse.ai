@@ -5,7 +5,7 @@
 // combat.health's `damage` effect. A jump at the surface climbs out.
 import {
   round6, bodyOf, intent, installOverlay, integrate, submersion, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, hurt, boxOf, probe, zoneTags,
-  COMMON_PARAMS, controls,
+  COMMON_PARAMS, controls, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.swim';
@@ -20,7 +20,7 @@ export default {
   card: {
     intent: 'Swim, float and dive in liquid: buoyancy brings you to the surface, dive and ascend verbs move you underwater, breath runs down while the head is submerged and drowning damage follows, and jumping at the surface climbs out.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       speed: { type: 'number', min: 0.2, max: 20, default: 3, unit: 'units/s', effect: 'swim speed' },
       sprint: { type: 'number', min: 0, max: 30, default: 0, unit: 'units/s', effect: 'fast swim speed with the sprint verb (0 = none)' },
@@ -42,6 +42,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['editCells', 'surface', 'gravity', 'raycast'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   install(rt, c, instance) {

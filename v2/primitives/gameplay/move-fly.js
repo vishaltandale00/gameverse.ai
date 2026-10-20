@@ -5,7 +5,7 @@
 // from a resource pool or an internal tank that refills on the ground.
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, pool, canSpend,
-  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, MACRO_PARAMS, len,
+  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, MACRO_PARAMS, len, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.fly';
@@ -23,7 +23,7 @@ export default {
   card: {
     intent: 'Flight: free 3D/side flight with ascend and descend, or jetpack thrust against gravity, always on or toggled by a verb or a double jump, optionally burning fuel. Use it for creative-mode flying, wings, jetpacks, flying NPCs and drones.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       style: { type: 'string', options: ['free', 'thrust'], default: 'free', effect: 'free: no gravity while flying; thrust: hold jump/ascend to push against gravity' },
       toggle: { type: 'string', options: ['verb', 'double_jump', 'always'], default: 'verb', effect: 'how flight starts: the fly verb, a double tap of jump in the air, or always flying' },
@@ -41,6 +41,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind'], services: ['character'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   install(rt, c, instance) {

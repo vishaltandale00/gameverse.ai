@@ -9,7 +9,7 @@
 // Runtime fields kept on the mount component: rider, gait, st (stamina), called.
 // The rider gets components.move.riding = <mount id>, body.state = 'ride' and body.riding.
 import {
-  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, MACRO_PARAMS,
+  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
 } from './move-lib-core.js';
 import { stepWalk, walkConfig } from './move-walk.js';
 
@@ -26,7 +26,7 @@ export default {
   card: {
     intent: 'Mounts: ride creatures with walk/trot/gallop gaits and a stamina meter, build bond while riding (untamed mounts buck until bonded), jump while mounted, and call your mount to you from within range. Any entity with a `mount` component can be ridden.',
     views: ['3p', 'td', 'iso', 'side'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       walk: num(0.5, 20, 3, 'units/s', 'walk gait speed'), trot: num(0.5, 40, 7, 'units/s', 'trot gait speed'), gallop: num(0.5, 80, 14, 'units/s', 'gallop gait speed (sprint)'),
       accel: num(0.5, 200, 10, 'units/s²', 'how quickly gaits change speed'),
@@ -48,6 +48,8 @@ export default {
     optional: { capabilities: ['gravity', 'pathfind', 'distance'] },
     reads: ['content.archetypes'],
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   logic(logic) {

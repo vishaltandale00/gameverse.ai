@@ -6,7 +6,7 @@
 // onto the ledge.
 import {
   round6, bodyOf, intent, installOverlay, integrate, wallBeside, ledgeAt, probe, boxOf, canProbe, pool, canSpend,
-  hasAbility, verbs, ensureShared, wallProbeDirs, zoneTags, COMMON_PARAMS, controls,
+  hasAbility, verbs, ensureShared, wallProbeDirs, zoneTags, COMMON_PARAMS, controls, travelAlong,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.climb';
@@ -21,7 +21,7 @@ export default {
   card: {
     intent: 'Climb ladders and climbable walls: push into or grab a surface to climb up, down and sideways at a set speed, drain stamina while climbing, jump off, slip when exhausted, and mantle over the top. Surfaces are ladders, any steep wall, or cells/zones carrying climb tags.',
     views: ['1p', '3p', 'side', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       speed: { type: 'number', min: 0.1, max: 20, default: 1.4, unit: 'units/s', effect: 'climbing speed' },
       surfaces: { type: 'string', options: ['ladders', 'any', 'tagged'], default: 'ladders', effect: 'ladders: ladder cells only; any: every steep solid wall; tagged: walls whose cell or zone carries a climb tag' },
@@ -41,6 +41,8 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'editCells', 'raycast', 'overlap'] },
     envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
   validate(config) {
