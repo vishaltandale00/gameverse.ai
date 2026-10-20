@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compile, run } from '../v2/kernel/testing.js';
 import { PRIMITIVES, catalogue } from '../v2/primitives/index.js';
-import { preflight } from '../v2/kernel/document.js';
+import { preflight, mergePatch } from '../v2/kernel/document.js';
 
 const BLOCKS = ['bedrock', 'stone', 'dirt', 'grass', 'sand', 'gravel', 'snow', 'water', 'lava', 'coal_ore'].map(id => ({ id, solid: !['water', 'lava'].includes(id) }));
 const BIOMES = { biomes: [{ id: 'plains', temp: [0.3, 0.7], moist: [0, 0.6], surface: 'grass', sub: 'dirt' }, { id: 'tundra', temp: [0, 0.3], moist: [0, 1], surface: 'snow', sub: 'dirt' }, { id: 'desert', temp: [0.7, 1], moist: [0, 0.4], surface: 'sand', sub: 'sand' }], regions: [{ zone: 'meadow', biome: 'plains', blend: 8 }], blendWidth: 8 };
@@ -165,4 +165,18 @@ test('nature: mesh3d terrain, biome materials, slopes and water depth', () => {
   assert.notEqual(api.heightSample(77, 91), make(vale(10)).rt.space('vale').heightSample(77, 91));
   const lakes = rt.service('waterDepthAt').lakes();
   assert.ok(lakes.length >= 1 && rt.service('waterDepthAt')(lakes[0].at[0], lakes[0].at[2]) > 1);
+});
+
+test('nature: hot-loaded zones rebuild the world model and keep edits', () => {
+  const { rt } = make(isle());
+  const api = rt.space('isle');
+  api.setCell([2.5, 60.5, 2.5], 'stone', rt);
+  const { doc, added } = mergePatch(rt.doc, { spaces: [{ id: 'isle', zones: [{ id: 'cove', bounds: { min: [60, 0, 60], max: [90, 128, 90] } }] }] });
+  const checked = preflight(doc, registry, logic);
+  assert.ok(checked.ok, JSON.stringify(checked.errors));
+  rt.extend(checked.doc, added);
+  rt.run([{ do: 'teleport', zone: 'cove' }]);
+  assert.ok(rt.test({ zone: 'cove' }));
+  assert.equal(api.getCell([2.5, 60.5, 2.5]), 'stone', 'edits survive the rebuild');
+  assert.ok(api.groundAt(0, 0).y >= 42, 'terrain regenerates identically');
 });
