@@ -26,7 +26,8 @@ const USABLE = new Set(['door', 'lever', 'lift', 'timer', 'breakable']);
 const ENTITY_DEFAULT = new Set(['lift', 'platform', 'flipper', 'bumper', 'drop_target']);
 /** Kinds that block as bodies; without cells to write they get an entity so continuous spaces collide with them. */
 const BLOCKING = new Set(['door', 'gate', 'breakable']);
-const SOLID_WHEN = { door: s => !s.active, gate: s => !s.active, drop_target: s => !s.active, breakable: s => s.state !== 'broken', lift: () => true, bumper: () => true, flipper: () => true, kicker: () => true };
+// Physics toys (bumpers, kickers, flippers, drop targets) stay non-solid: they act on overlap and set the ball's velocity themselves.
+const SOLID_WHEN = { door: s => !s.active, gate: s => !s.active, breakable: s => s.state !== 'broken', lift: () => true };
 /** Classic arcade bunker (shmup): 12 × 7 cells with cut corners and an arch underneath. */
 export const BUNKER = ['..########..', '.##########.', '############', '############', '####....####', '####....####', '####....####'];
 
@@ -292,7 +293,7 @@ export default {
       const s = st().m[m.id];
       e.components.mechanismState = { state: s.state, active: s.active };
       // Obstacles for other bodies' slide (KERNEL_API §2 body.solid / body.oneWay): closed doors and gates,
-      // intact breakables, standing drop targets, lifts and toys are solid; platforms and springs are
+      // intact breakables and lifts are solid; toys work by overlap; platforms and springs are
       // ridden from above only (breaking platforms never hold).
       const body = (e.components.body ??= {});
       if (m.kind === 'platform' || m.kind === 'spring') { body.solid = false; body.oneWay = m.mode !== 'breaking' && s.state !== 'broken' && s.state !== 'gone'; }
