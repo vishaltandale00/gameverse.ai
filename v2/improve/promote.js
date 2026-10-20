@@ -8,7 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveConfig, configRef } from './config.js';
 import { createJobStore, newJob, transition, timingReport, TERMINAL } from './jobs.js';
-import { buildPrompt, repairPrompt, modPaths } from './prompt.js';
+import { buildPrompt, repairPrompt, modPaths, primitivePaths, primitiveSlug, buildPrimitivePrompt, primitiveRepairPrompt } from './prompt.js';
 import { fastForward } from './runners/git.js';
 import { redact } from './runners/proc.js';
 import { availableKits, loadKit } from '../kits/registry.js';
@@ -16,13 +16,14 @@ import { MODS } from '../kits/mods/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const CHECKER = join(HERE, 'check-mod.mjs');
+export const PRIMITIVE_CHECKER = join(HERE, 'check-primitive.mjs');
 const ID = /^[a-z0-9][a-z0-9-]{3,63}$/;
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/^[^a-z]+/, '').slice(0, 32).replace(/-+$/, '');
 
 /** Scope gate over the change list: allowed paths, add-only outside `modifiable`, and the required deliverables. */
-export function scopeCheck(files, scope, modId) {
+export function scopeCheck(files, scope, modId, target = 'mod') {
   const problems = [], outside = [];
-  const p = modPaths(modId);
+  const p = target === 'primitive' ? { ...primitivePaths(modId), mod: primitivePaths(modId).primitive } : modPaths(modId);
   for (const f of files) {
     const inside = scope.allowedPrefixes.some(prefix => f.path.startsWith(prefix));
     if (!inside) { outside.push(f.path); if (!scope.allowOutside) { problems.push(`${f.path}: outside the allowed paths (${scope.allowedPrefixes.join(', ')})`); continue; } }
@@ -31,7 +32,7 @@ export function scopeCheck(files, scope, modId) {
   const has = (path, status) => files.some(f => f.path === path && (!status || f.status === status));
   if (!has(p.mod, 'A')) problems.push(`missing deliverable: new file ${p.mod}`);
   if (!has(p.test, 'A')) problems.push(`missing deliverable: new file ${p.test}`);
-  if (!has(p.index)) problems.push(`missing deliverable: register the mod in ${p.index}`);
+  if (!has(p.index)) problems.push(`missing deliverable: register the ${target === 'primitive' ? 'primitive' : 'mod'} in ${p.index}`);
   return { ok: !problems.length, problems, outside };
 }
 
@@ -43,6 +44,8 @@ export function createImprovementService({ root, runner, config: overrides = {},
   if (!runner) throw Error('improvement service: a runner is required');
   const config = resolveConfig({ runner: runner.id, ...overrides });
   const L = config.limits;
+  // What each target may touch and how the job checks it (the mod target keeps the original top-level config).
+  const targetOf = job => (job.target === 'primitive' ? { scope: config.targets.primitive.scope, verification: config.targets.primitive.verification } : { scope: config.scope, verification: config.verification });
   const store = createJobStore(dataDir || join(root, 'local-data/v2/improve'));
   const events = new EventEmitter();
   const active = new Map(); // jobId -> { ac }
@@ -57,7 +60,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
   };
   const view = job => job && {
     id: job.id, state: job.state, target: job.target, kitId: job.kitId, kitVersion: job.kitVersion, gameId: job.gameId, gameVersion: job.gameVersion,
-    userId: job.userId, modId: job.modId, experiment: job.experiment,
+    userId: job.userId, modId: job.modId, primitiveId: job.primitiveId ?? null, experiment: job.experiment,
     createdAt: job.createdAt, startedAt: job.startedAt, finishedAt: job.finishedAt,
     outcome: job.outcome, reason: job.reason, cancelRequested: job.cancelRequested,
     queuePosition: job.state === 'queued' ? store.all().filter(j => j.state === 'queued').findIndex(j => j.id === job.id) + 1 : null,
@@ -108,12 +111,19 @@ export function createImprovementService({ root, runner, config: overrides = {},
       workspace = await bounded(runner.prepare({ job, signal }), L.prepareTimeoutMs, 'preparing', ac);
       job.context.sourceCommit = workspace.base;
       store.save(job);
-      const kits = (await availableKits()).map(({ kit }) => kit);
-      const kit = kits.find(k => k.id === job.kitId);
       const experiment = experiments.get(job.id);
       const ref = rel => readFileSync(join(HERE, '..', rel), 'utf8');
-      const firstPrompt = buildPrompt({ experiment, kitId: job.kitId, kit, kits, modId: job.modId, extending: ref('kits/EXTENDING.md'),
-        weaponSource: ref('kits/mods/weapon.js'), composeSource: ref('kits/mods/compose.js'), scope: config.scope });
+      let firstPrompt;
+      if (job.target === 'primitive') {
+        const doc = experiment.doc || {};
+        const gameSummary = { title: doc.title, spaces: (doc.spaces || []).map(s => s.use), systems: (doc.systems || []).map(s => s.use) };
+        firstPrompt = buildPrimitivePrompt({ experiment, primitiveId: job.primitiveId, kernelApi: ref('KERNEL_API.md'), hostSource: ref('experiments/primitive-host.js'), scope: targetOf(job).scope, gameSummary });
+      } else {
+        const kits = (await availableKits()).map(({ kit }) => kit);
+        const kit = kits.find(k => k.id === job.kitId);
+        firstPrompt = buildPrompt({ experiment, kitId: job.kitId, kit, kits, modId: job.modId, extending: ref('kits/EXTENDING.md'),
+          weaponSource: ref('kits/mods/weapon.js'), composeSource: ref('kits/mods/compose.js'), scope: config.scope });
+      }
       writeFileSync(join(logs, 'prompt-0.txt'), firstPrompt);
       let session = null, feedback = null;
       for (let n = 0; n <= L.maxRepairAttempts; n++) {
@@ -122,7 +132,9 @@ export function createImprovementService({ root, runner, config: overrides = {},
         job.attempts.push(attempt);
         move(job, 'coding', { attempt: n });
         const resume = n > 0 && config.agent.resumeForRepairs && session;
-        const prompt = n === 0 ? firstPrompt : repairPrompt({ attempt: n, maxRepairs: L.maxRepairAttempts, failures: feedback, modId: job.modId, kitId: job.kitId, scope: config.scope, fresh: !resume });
+        const prompt = n === 0 ? firstPrompt : job.target === 'primitive'
+          ? primitiveRepairPrompt({ attempt: n, maxRepairs: L.maxRepairAttempts, failures: feedback, primitiveId: job.primitiveId, scope: targetOf(job).scope, fresh: !resume })
+          : repairPrompt({ attempt: n, maxRepairs: L.maxRepairAttempts, failures: feedback, modId: job.modId, kitId: job.kitId, scope: config.scope, fresh: !resume });
         if (n) writeFileSync(join(logs, `prompt-${n}.txt`), prompt);
         const started = Date.now();
         const coding = await runner.code({ workspace, job, prompt, attempt: n, config, resumeSession: resume ? session : null, signal,
@@ -182,18 +194,20 @@ export function createImprovementService({ root, runner, config: overrides = {},
 
   async function verify(job, workspace, n, signal) {
     const started = Date.now(), checks = [];
-    const p = modPaths(job.modId);
+    const p = job.target === 'primitive' ? { ...primitivePaths(job.primitiveId), mod: primitivePaths(job.primitiveId).primitive } : modPaths(job.modId);
+    const { scope: tScope, verification } = targetOf(job);
     const changes = await runner.changes({ workspace });
     job.result = { branch: null, commit: null, files: changes.files, diffstat: changes.diffstat };
     writeFileSync(join(store.jobDir(job.id), 'changes.patch'), changes.patch || '');
-    const scope = scopeCheck(changes.files, config.scope, job.modId);
-    if (scope.outside.length && config.scope.allowOutside) job.result.outsideScopeAllowed = scope.outside;
+    const scope = scopeCheck(changes.files, tScope, job.target === 'primitive' ? job.primitiveId : job.modId, job.target);
+    if (scope.outside.length && tScope.allowOutside) job.result.outsideScopeAllowed = scope.outside;
     checks.push({ id: 'scope', ok: scope.ok, ms: Date.now() - started, problems: scope.problems });
     emit(job, 'improve_check', { attempt: n, id: 'scope', ok: scope.ok, ms: Date.now() - started, problems: scope.problems });
-    const vars = { modTest: p.test, kitTest: config.kitTests[job.kitId] || config.kitTests.pattern.replace('{kitId}', job.kitId), kitId: job.kitId, modId: job.modId, checker: workspace.checker || CHECKER, workdir: workspace.dir || '.' };
+    const vars = { modTest: p.test, kitTest: job.kitId ? config.kitTests[job.kitId] || config.kitTests.pattern.replace('{kitId}', job.kitId) : '', kitId: job.kitId || '', modId: job.modId, checker: workspace.checker || CHECKER, workdir: workspace.dir || '.',
+      primitiveTest: p.test, primitiveId: job.primitiveId || '', docFile: join(store.jobDir(job.id), 'game.json'), primitiveChecker: workspace.primitiveChecker || PRIMITIVE_CHECKER };
     let output = '';
     // Out-of-scope or missing deliverables: nothing else runs (the scope gate refuses the result as it is).
-    if (scope.ok) for (const cmd of config.verification) {
+    if (scope.ok) for (const cmd of verification) {
       if (signal.aborted) break;
       const argv = substitute(cmd.argv, vars);
       const res = await runner.exec({ workspace, argv, timeoutMs: L.verifyCommandTimeoutMs, signal });
@@ -212,11 +226,41 @@ export function createImprovementService({ root, runner, config: overrides = {},
     return { ok: !failed.length, ms: Date.now() - started, checks, patchSha256: createHash('sha256').update(changes.patch || '').digest('hex'), feedback: feedback.slice(0, L.maxFeedbackChars + 200) };
   }
 
-  const commitMessage = job => `Promote experiment ${JSON.stringify(job.experiment.label || job.experiment.id || 'experiment')} to the ${job.modId} mod\n\n` +
-    `Improvement job ${job.id}; loop ${config.id}@${config.version}; runner ${runner.id}@${runner.version}; kit ${job.kitId}@${job.kitVersion}; base ${job.context.sourceCommit}.\n` +
-    `Verified by the job: ${config.verification.map(c => c.id).join(', ')}.`;
+  const commitMessage = job => (job.target === 'primitive'
+    ? `Promote experiment ${JSON.stringify(job.experiment.label || job.experiment.id || 'experiment')} to the ${job.primitiveId} primitive\n\n` +
+      `Improvement job ${job.id}; loop ${config.id}@${config.version}; runner ${runner.id}@${runner.version}; game ${job.gameId}@${job.gameVersion ?? '?'}; base ${job.context.sourceCommit}.\n` +
+      `Verified by the job: ${targetOf(job).verification.map(c => c.id).join(', ')}.`
+    : `Promote experiment ${JSON.stringify(job.experiment.label || job.experiment.id || 'experiment')} to the ${job.modId} mod\n\n` +
+      `Improvement job ${job.id}; loop ${config.id}@${config.version}; runner ${runner.id}@${runner.version}; kit ${job.kitId}@${job.kitVersion}; base ${job.context.sourceCommit}.\n` +
+      `Verified by the job: ${config.verification.map(c => c.id).join(', ')}.`);
 
   const experiments = new Map(); // the experiment code is kept in memory and in experiment.json, not in report.json
+
+  /** Target 'primitive': an experiment primitive (card + sandboxed module) becomes a native primitive under v2/primitives/promoted. */
+  async function startPrimitive({ experiment, gameId, gameVersion, userId, doc, registry }) {
+    if (!experiment?.card?.id || typeof experiment.code !== 'string' || !experiment.code.trim()) throw Error('a primitive experiment (card and code) is required');
+    if (experiment.code.length > L.maxExperimentCodeChars) throw Error(`experiment code is over ${L.maxExperimentCodeChars} characters`);
+    if (typeof gameId !== 'string' || !gameId) throw Error('gameId is required');
+    if (!doc || typeof doc !== 'object') throw Error('the game document is required (the gate replays it with the native primitive)');
+    if (store.all().filter(j => j.state === 'queued').length >= L.maxQueuedJobs) throw Error(`the promotion queue is full (${L.maxQueuedJobs})`);
+    const primitiveId = experiment.card.id;
+    if (registry?.has?.(primitiveId) && !registry.get(primitiveId)?.card?.experimental) throw Error(`primitive '${primitiveId}' is already registered`);
+    if (existsSync(join(root, primitivePaths(primitiveId).primitive))) throw Error(`primitive '${primitiveId}' already exists in v2/primitives/promoted`);
+    if (store.all().some(j => j.primitiveId === primitiveId && !['failed', 'cancelled'].includes(j.state))) throw Error(`a promotion of '${primitiveId}' is already running or done`);
+    const jobId = `${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomBytes(4).toString('hex')}`;
+    const codeSha256 = createHash('sha256').update(experiment.code).digest('hex');
+    const job = newJob({ id: jobId, now: Date.now(), experiment, codeSha256, kitId: null, kitVersion: null, gameId, gameVersion, userId, target: 'primitive', modId: primitiveSlug(primitiveId),
+      config: configRef(config), runner: { id: runner.id, version: runner.version } });
+    job.primitiveId = primitiveId;
+    store.create(job);
+    const record = { id: experiment.id ?? null, label: experiment.label ?? null, request: experiment.request ?? null, card: experiment.card, code: experiment.code, instance: experiment.instance || null, schema: experiment.schema || null };
+    writeFileSync(join(store.jobDir(jobId), 'experiment.json'), JSON.stringify(record, null, 2));
+    writeFileSync(join(store.jobDir(jobId), 'game.json'), JSON.stringify(doc));
+    experiments.set(jobId, { ...record, doc });
+    emit(job, 'improve_queued', { target: 'primitive', primitiveId, position: store.all().filter(j => j.state === 'queued').length });
+    pump();
+    return view(job);
+  }
 
   return {
     config, events,
@@ -225,8 +269,9 @@ export function createImprovementService({ root, runner, config: overrides = {},
     /** Subscribe to every event; returns an unsubscribe function. */
     subscribe(fn) { events.on('event', fn); return () => events.off('event', fn); },
 
-    async start({ experiment, kitId, gameId, gameVersion = null, userId = null, target = 'mod', modId = null } = {}) {
-      if (target !== 'mod') throw Error(`unsupported promotion target '${target}' (only 'mod')`);
+    async start({ experiment, kitId, gameId, gameVersion = null, userId = null, target = 'mod', modId = null, doc = null, registry = null } = {}) {
+      if (target === 'primitive') return startPrimitive({ experiment, gameId, gameVersion, userId, doc, registry });
+      if (target !== 'mod') throw Error(`unsupported promotion target '${target}' (mod or primitive)`);
       if (!experiment || typeof experiment.code !== 'string' || !experiment.code.trim()) throw Error('experiment.code is required');
       if (experiment.code.length > L.maxExperimentCodeChars) throw Error(`experiment code is over ${L.maxExperimentCodeChars} characters`);
       if (typeof gameId !== 'string' || !gameId) throw Error('gameId is required');

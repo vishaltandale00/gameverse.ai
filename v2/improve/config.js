@@ -5,7 +5,7 @@
 
 export const LOOP_CONFIG = Object.freeze({
   id: 'gameverse.v2.promote-mod',
-  version: '0.1.0',
+  version: '0.2.0', // 0.2.0: adds the 'primitive' target (experiment primitive -> native kernel primitive)
   runner: 'local-claude', // 'local-claude' | 'daytona' | 'fake'
 
   limits: {
@@ -61,6 +61,19 @@ export const LOOP_CONFIG = Object.freeze({
     { id: 'kit-tests', argv: ['node', '--test', '{kitTest}'] },
     { id: 'compose', argv: ['node', '{checker}', '--root', '{workdir}', '--kit', '{kitId}', '--mod', '{modId}'] },
   ],
+
+  // Target 'primitive': same limits, agent and repair policy; its own scope and host-owned checks.
+  // {primitiveTest} {primitiveId} {docFile} {primitiveChecker} are filled per job.
+  targets: {
+    primitive: {
+      scope: { allowedPrefixes: ['v2/primitives/promoted/', 'tests/'], modifiable: ['v2/primitives/promoted/index.js'], allowOutside: false },
+      verification: [
+        { id: 'primitive-tests', argv: ['node', '--test', '{primitiveTest}'] },
+        { id: 'kernel', argv: ['node', '--test', 'tests/v2-kernel.test.js', 'tests/v2-kernel-conformance.test.js'] },
+        { id: 'gate', argv: ['node', '{primitiveChecker}', '--root', '{workdir}', '--doc', '{docFile}', '--primitive', '{primitiveId}'] },
+      ],
+    },
+  },
 });
 
 const POSITIVE = ['prepareTimeoutMs', 'codingTimeoutMs', 'verifyCommandTimeoutMs', 'jobTimeoutMs', 'maxAgentTurns', 'maxBudgetUsd',
@@ -77,6 +90,7 @@ export function resolveConfig(overrides = {}) {
     kitTests: { ...base.kitTests, ...overrides.kitTests },
     repair: { ...base.repair, ...overrides.repair },
     verification: overrides.verification || base.verification,
+    targets: { primitive: { ...base.targets.primitive, ...overrides.targets?.primitive, scope: { ...base.targets.primitive.scope, ...overrides.targets?.primitive?.scope } } },
   };
   for (const k of POSITIVE) {
     const v = cfg.limits[k];
@@ -86,7 +100,7 @@ export function resolveConfig(overrides = {}) {
   if (!Number.isInteger(r) || r < 0 || r > 10) throw Error('loop config: limits.maxRepairAttempts must be an integer 0..10');
   if (typeof cfg.id !== 'string' || !/^\d+\.\d+\.\d+$/.test(cfg.version)) throw Error('loop config: id and semver version are required');
   if (!Array.isArray(cfg.verification) || !cfg.verification.length) throw Error('loop config: verification commands are required');
-  for (const c of cfg.verification) if (!c?.id || !Array.isArray(c.argv) || !c.argv.length) throw Error(`loop config: bad verification command ${JSON.stringify(c)}`);
+  for (const c of [...cfg.verification, ...cfg.targets.primitive.verification]) if (!c?.id || !Array.isArray(c.argv) || !c.argv.length) throw Error(`loop config: bad verification command ${JSON.stringify(c)}`);
   if (!cfg.agent.allowedTools.every(t => typeof t === 'string')) throw Error('loop config: agent.allowedTools must be strings');
   return Object.freeze(cfg);
 }
