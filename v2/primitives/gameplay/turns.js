@@ -15,7 +15,7 @@
 // unit's space offers them, so the same primitive runs on a grid, a mesh or
 // engine.space.none.
 import { compare } from '../../kernel/logic.js';
-import { alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
+import { withDefaults, alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
 
 const ID = 'gameplay.turns';
 const DEFAULT_SIDES = [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'ai', members: [] }];
@@ -33,6 +33,9 @@ const ACTION_FIELDS = {
   ai: { type: 'number', default: 1, min: 0, max: 100, effect: 'AI preference weight (0 = AI never uses it)' },
 };
 
+const SIDE_FIELDS = { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string' }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
+const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'boolean', default: true }, do: { type: 'effects', default: [] } };
+
 export default {
   id: ID,
   card: {
@@ -41,7 +44,7 @@ export default {
     params: {
       order: { type: 'string', options: ['alternate', 'initiative', 'simultaneous'], default: 'alternate', effect: 'turn structure' },
       grain: { type: 'string', options: ['side', 'unit'], default: 'side', effect: 'alternate: a whole side acts per turn (XCOM) or one unit per side turn (chess)' },
-      sides: { type: 'list', min: 1, default: DEFAULT_SIDES, of: { type: 'object', fields: { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string' }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } } }, effect: 'teams; units join by components.turns.side or members (id/archetype/tag)' },
+      sides: { type: 'list', min: 1, default: DEFAULT_SIDES, of: { type: 'object', fields: SIDE_FIELDS }, effect: 'teams; units join by components.turns.side or members (id/archetype/tag)' },
       ap: { type: 'integer', default: 2, min: 0, max: 99, effect: 'action points per unit per turn' },
       movePerAp: { type: 'integer', default: 4, min: 0, max: 64, effect: 'cells (or path cost) moved per action point; 0 disables moving' },
       actions: { type: 'list', default: [{ id: 'attack', range: 6, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions' },
@@ -49,7 +52,7 @@ export default {
       overwatchAction: { type: 'string', effect: 'action fired on overwatch (default: first hostile unit action)' },
       overwatchPenalty: { type: 'number', default: 15, min: 0, max: 100, effect: 'aim penalty for reaction shots' },
       hitChance: { type: 'boolean', default: true, effect: 'roll hit/crit; false = actions always hit' },
-      phases: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, auto: { type: 'boolean', default: true }, do: { type: 'effects', default: [] } } }, effect: 'per-turn phases; auto phases run and advance, others wait for next_phase' },
+      phases: { type: 'list', default: [], of: { type: 'object', fields: PHASE_FIELDS }, effect: 'per-turn phases; auto phases run and advance, others wait for next_phase' },
       initiativeRoll: { type: 'integer', default: 0, min: 0, max: 100, effect: 'random 0..n added to initiative each round' },
       permadeath: { type: 'boolean', default: true, effect: 'defeated units are gone for good (else downed and revivable)' },
       bleedout: { type: 'integer', default: 0, min: 0, max: 99, unit: 'rounds', effect: 'downed units die after this many rounds (0 = never) when permadeath is off' },
@@ -105,6 +108,7 @@ export default {
     return errors;
   },
   install(rt, config) {
+    config = { ...config, actions: config.actions.map(a => withDefaults(ACTION_FIELDS, a)), sides: config.sides.map(x => withDefaults(SIDE_FIELDS, x)), phases: config.phases.map(x => withDefaults(PHASE_FIELDS, x)) };
     const ACT = new Map(config.actions.map(a => [a.id, a]));
     const SIDE = new Map(config.sides.map(s => [s.id, s]));
     const owAction = ACT.get(config.overwatchAction) || config.actions.find(a => a.target === 'unit' && a.hostile);

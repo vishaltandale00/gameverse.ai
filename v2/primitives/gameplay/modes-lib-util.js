@@ -1,6 +1,7 @@
 // Shared helpers for the modes workstream (vehicles, race, turns, cards, waves,
 // rounds, stage.sequence, minigame, rts, automation, rewind, portal, sports).
 // Pure functions over JSON; nothing here touches rt.state except through rt.
+import { checkFields } from '../../kernel/params.js';
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const v3 = a => [a?.[0] ?? 0, a?.[1] ?? 0, a?.[2] ?? 0];
 export const add = (a, b) => a.map((v, i) => v + (b[i] ?? 0));
@@ -116,3 +117,6 @@ export const instancesOf = (doc, use) => (doc.systems || []).map((s, i) => ({ s,
 export function needFields(e, fields, path, errors) {
   for (const f of fields) if (e[f] === undefined || e[f] === null || e[f] === '') errors.push({ code: 'effect_invalid', path, message: `'${e.do}' needs '${f}'` });
 }
+
+/** Apply a field schema's defaults to a value (list/object defaults skip nested defaults in preflight). */
+export function withDefaults(fields, value = {}) { return checkFields(fields, value, '', [], null, true); }
