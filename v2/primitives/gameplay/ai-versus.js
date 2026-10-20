@@ -55,6 +55,17 @@ export function motionFrames(motion, button) {
   }
 }
 
+/**
+ * Canonical frames for a motion: engine.input.motions' frames() when that primitive is installed
+ * (so document-defined motions and leniency are honored), else the kit table above.
+ */
+export function macroFrames(rt, config, motion, btn) {
+  const verb = btn === 'a' ? config.buttons.a : config.buttons.b;
+  const fr = rt.hasService('motions') ? rt.service('motions').frames(motion, verb, 1) : null;
+  if (!fr) return motionFrames(motion, btn);
+  return fr.map(f => { const ax = f.axes.move ?? Object.values(f.axes)[0] ?? [0, 0]; return [ax[0], -ax[1], f.held[config.buttons.a] ? 1 : 0, f.held[config.buttons.b] ? 1 : 0]; });
+}
+
 const CPU = {
   level: { type: 'integer', min: 1, max: 5 }, style: { type: 'string', options: Object.keys(PREF) },
   opponent: { type: 'string' },
@@ -152,10 +163,12 @@ function think(rt, config, e, opp, br) {
   const NEUTRAL = [0, 0, 0, 0];
   const specials = specialsOf(rt, e, me), sup = superOf(e, me);
   const has = arch => specials.find(s => s.archetype === arch && !(s.air && !me.air && specials.some(o => !o.air && o.motion === s.motion)));
+  const M = (motion, btn) => macroFrames(rt, config, motion, btn);
   const macroOf = (sp, btn) => {
+    if (sp.raw) return M(sp.motion, btn);
     if (sp.motion === 'charge-bf' && (br.charge.b >= CHARGE || br.charge.bm > 0)) return [press(1, 0, btn)];
     if (sp.motion === 'charge-du' && (br.charge.d >= CHARGE || br.charge.dm > 0)) return [press(0, -1, btn)];
-    return motionFrames(sp.motion, btn);
+    return M(sp.motion, btn);
   };
   const queue = list => { br.macro = list.slice(); return br.macro.length ? next(br, me, op, L, R) : NEUTRAL; };
   br.blocking = false;
@@ -238,7 +251,7 @@ function think(rt, config, e, opp, br) {
     if (br.punishGo && rt.state.frame - br.recSeen >= Math.round(L.react * 0.5) && dist < 120 && !op.air) {
       br.punishGo = false;
       rt.emit('cpu_intent', { who: e.id, intent: 'punish' });
-      if (canSuper && R() < L.superUse) return queue(motionFrames(sup.motion ?? 'qcf2', sup.button ?? 'b'));
+      if (canSuper && R() < L.superUse) return queue(M(sup.motion ?? 'qcf2', sup.button ?? 'b'));
       return queue(comboRoute(br, has, canSuper ? sup : null, dist < 70 ? 'light' : 'heavy', macroOf));
     }
   }
@@ -274,7 +287,7 @@ function think(rt, config, e, opp, br) {
     case 'hop': br.intent = 'wait'; return queue([[0, -1, 0, 0], [0, -1, 0, 0]]);
     case 'fireball': { br.intent = 'wait'; const sp = has('fireball') || has('ground_wave'); return sp && !projOut ? queue(macroOf(sp, R() < 0.5 ? 'a' : 'b')) : NEUTRAL; }
     case 'special': { br.intent = 'wait'; const sp = br.pick && specials.find(s => s.archetype === br.pick); return sp ? queue(macroOf(sp, R() < 0.5 ? 'a' : 'b')) : NEUTRAL; }
-    case 'super': br.intent = 'wait'; return sup ? queue(motionFrames(sup.motion ?? 'qcf2', sup.button ?? 'b')) : NEUTRAL;
+    case 'super': br.intent = 'wait'; return sup ? queue(M(sup.motion ?? 'qcf2', sup.button ?? 'b')) : NEUTRAL;
     case 'throw': br.intent = 'wait'; return dist < throwRange ? queue([['throw'], [0, 0, 0, 0]]) : out(1, 0);
     case 'grab': { br.intent = 'wait'; const g = has('command_grab'); return g ? queue(macroOf(g, dist < 70 ? 'a' : 'b')) : NEUTRAL; }
     case 'poke': br.intent = 'wait'; return queue(R() < 0.5 ? [press(0, 1, 'b'), ...hold(4, 0, 1)] : [press(0, 0, 'b')]);
@@ -323,7 +336,7 @@ function chooseIntent(e, me, L, R, dist, has, projOut, br, sup, specials) {
 /** Hit-confirmed combo macro: light chain into a cancel, or heavy into a special (or super with meter). */
 function comboRoute(br, has, sup, kind, macroOf) {
   const sp = CANCELLABLE.map(a => has(a)).find(Boolean);
-  const finish = sup ? motionFrames(sup.motion ?? 'qcf2', sup.button ?? 'b') : sp ? macroOf(sp, 'b') : [];
+  const finish = sup ? macroOf({ motion: sup.motion ?? 'qcf2', raw: true }, sup.button ?? 'b') : sp ? macroOf(sp, 'b') : [];
   if (kind === 'light') return [press(0, 1, 'a'), ...hold(5, 0, 1), 'confirm', press(0, 1, 'a'), ...hold(5, 0, 1), 'confirm', press(0, 1, 'b'), ...hold(4, 0, 1)];
   return [press(0, 0, 'a'), ...hold(5, 0, 0), 'confirm', press(0, 0, 'b'), ...hold(14, 0, 0), 'confirm', ...finish];
 }

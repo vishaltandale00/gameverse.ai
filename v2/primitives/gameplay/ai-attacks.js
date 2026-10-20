@@ -275,7 +275,7 @@ function hit(rt, e, a, atk, sh, o) {
 
 function selfDestruct(rt, e) {
   rt.emit('self_destruct', { who: e.id });
-  if (rt.logic.effects.has('kill')) rt.run([{ do: 'kill', who: e.id, by: e.id }]);
+  if (rt.canRun('kill')) rt.run([{ do: 'kill', who: e.id, by: e.id }]);
   if (rt.entity(e.id) && !e.components.health) rt.despawn(e.id);
 }
 

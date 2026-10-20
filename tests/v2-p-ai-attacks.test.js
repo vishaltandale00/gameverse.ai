@@ -8,7 +8,7 @@ import AI from '../v2/primitives/gameplay/ai.index.js';
 import { volley } from '../v2/primitives/gameplay/ai-lib-bullets.js';
 
 // Test double for combat.health: the `damage` effect the real one provides.
-const health = { id: 'gameplay.test.health', card: { intent: 'test hp', params: {}, provides: { events: ['damaged'] } },
+const health = { id: 'gameplay.test.health', card: { ambient: true, intent: 'test hp', params: {}, provides: { events: ['damaged'] } },
   logic(l) { l.effect('damage', { run: (e, rt) => { const t = rt.entity(e.who); if (!t) return; const h = (t.components.health ??= { max: 10, hp: 10 }); h.hp = (h.hp ?? h.max) - e.amount; rt.emit('damaged', { who: t.id, by: e.by, amount: e.amount }); } }); } };
 const P = [...AI, testSpace, health];
 const doc = ({ archetypes = [], solid = [], attacks = {}, player = [2, 10, 0], gravity = 0 } = {}) => ({

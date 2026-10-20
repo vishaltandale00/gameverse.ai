@@ -6,7 +6,7 @@ import { compile, run } from '../v2/kernel/testing.js';
 import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 import AI from '../v2/primitives/gameplay/ai.index.js';
 
-const painter = { id: 'engine.generate.aiboard', card: { intent: 'test board painter', params: { rows: { type: 'list', of: { type: 'string' }, default: [] }, legend: { type: 'object', open: true, default: {} } } },
+const painter = { id: 'engine.generate.aiboard', card: { ambient: true, intent: 'test board painter', params: { rows: { type: 'list', of: { type: 'string' }, default: [] }, legend: { type: 'object', open: true, default: {} } } },
   install(rt, cfg, inst) { const H = cfg.rows.length; rt.space(inst.space).bake(cfg.rows.flatMap((line, i) => [...line].map((ch, x) => ({ at: [x, H - 1 - i], block: cfg.legend[ch] ?? null })).filter(c => c.block)), rt); } };
 const P = [...spaces2d, painter, ...AI];
 // Top line = highest row (grid yAxis up). House (4,1) behind a ghost-only door (4,2); tunnel row 3 wraps; no-up tile at (2,4).

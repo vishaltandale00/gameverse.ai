@@ -10,7 +10,7 @@ import { motionFrames, LEVELS } from '../v2/primitives/gameplay/ai-versus.js';
 // input the CPU sends through components.input (consumed in the input phase, as engine.input does).
 const MOVES = { '5A': { startup: 4, active: 3, recovery: 7, total: 14, damage: 30, level: 'mid', reach: 1 }, '5B': { startup: 8, active: 4, recovery: 15, total: 27, damage: 80, level: 'mid', reach: 1.2 },
   '2B': { startup: 7, active: 4, recovery: 19, total: 30, damage: 70, level: 'low', reach: 1.3 }, heavy_end: { startup: 10, active: 3, recovery: 40, total: 53, damage: 90, level: 'mid', reach: 1.2 } };
-const fighter = { id: 'gameplay.test.fighter', card: { intent: 'test fighter', params: {}, provides: { services: ['melee'] } },
+const fighter = { id: 'gameplay.test.fighter', card: { ambient: true, intent: 'test fighter', params: {}, provides: { services: ['melee'] } },
   install(rt) {
     rt.provide('melee', { moves: () => MOVES });
     rt.system('input', rt => { for (const e of rt.query('cpu')) { const i = e.components.input; if (!i) continue; (rt.store('test.log')[e.id] ??= []).push({ f: rt.state.frame, move: i.axes.move.slice(), held: { ...i.held }, actions: { ...i.actions } }); i.actions = {}; } });
@@ -69,6 +69,21 @@ test('specials are honest motion macros through components.input (facing-correct
     }
   }
   assert.fail('no quarter-circle-forward + press found');
+});
+
+test('the real motion parser (engine.input.motions) recognizes the CPU specials', async () => {
+  const { PRIMITIVES } = await import('../v2/primitives/index.js');
+  const motions = PRIMITIVES.find(p => p.id === 'engine.input.motions');
+  let seen = 0;
+  for (let seed = 1; seed <= 10 && !seen; seed++) {
+    const d = doc({ level: 5, style: 'zoner', specials: [{ archetype: 'fireball', motion: 'qcf' }] }, { seed });
+    d.systems.unshift({ use: 'engine.input.motions', with: { buttons: ['attack', 'heavy'] } });
+    const { rt } = compile(d, { primitives: [...P, motions] });
+    const c = rt.spawn('cpu', { at: [30, 1, 0] });
+    rt.on('motion:qcf', ev => { if (ev.who === c.id) seen++; });
+    run(rt, 300);
+  }
+  assert.ok(seen >= 1, 'a CPU quarter-circle was parsed as motion:qcf');
 });
 
 test('punishes long recoveries with a combo, and techs throws by pressing the throw verb', () => {

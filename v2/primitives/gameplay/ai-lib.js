@@ -293,8 +293,8 @@ export function applyHit(rt, by, target, { amount = 0, type, status, sec, dir, k
   let result = { applied: false };
   if (!(amount > 0) && !status) return result;
   if (rt.hasService('combat')) return rt.service('combat').hit(target, { amount, type, by: by?.id, dir, knockback, status, tags }) || result;
-  if (amount > 0 && rt.logic.effects.has('damage')) { rt.run([{ do: 'damage', who: target.id, amount, ...(type ? { type } : {}), ...(by ? { by: by.id } : {}) }]); result = { applied: true, damage: amount }; }
-  if (status && rt.logic.effects.has('apply_status') && rt.state.entities[target.id]) { rt.run([{ do: 'apply_status', who: target.id, status, ...(sec ? { sec } : {}) }]); result.applied = true; }
+  if (amount > 0 && rt.canRun('damage')) { rt.run([{ do: 'damage', who: target.id, amount, ...(type ? { type } : {}), ...(by ? { by: by.id } : {}) }]); result = { applied: true, damage: amount }; }
+  if (status && rt.canRun('apply_status') && rt.state.entities[target.id]) { rt.run([{ do: 'apply_status', who: target.id, status, ...(sec ? { sec } : {}) }]); result.applied = true; }
   return result;
 }
 /** Is the entity dead per combat.health (components.health.dead or hp <= 0)? */

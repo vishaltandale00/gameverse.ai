@@ -204,7 +204,7 @@ function bribe(rt) {
   if (!cfg.bribe) { rt.emit('bribe_failed', { reason: 'no_bribes' }); return; }
   const cost = cfg.bribe.cost * level, money = rt.state.vars[`money.${cfg.bribe.currency}`] ?? 0;
   if (money < cost) { rt.emit('bribe_failed', { reason: 'funds', cost }); return; }
-  if (!rt.logic.effects.has('take_money')) { rt.emit('bribe_failed', { reason: 'no_economy', cost }); return; }
+  if (!rt.canRun('take_money')) { rt.emit('bribe_failed', { reason: 'no_economy', cost }); return; }
   rt.run([{ do: 'take_money', amount: cost, currency: cfg.bribe.currency }]);
   setHeat(rt, 0); st(rt).reports = [];
   rt.emit('bribed', { cost, level });

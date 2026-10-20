@@ -23,7 +23,7 @@ const lattice = (explicitLanes = false) => {
   for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { if (i < 2) add(`n${i}${j}`, `n${i + 1}${j}`); if (j < 2) add(`n${i}${j}`, `n${i}${j + 1}`); }
   return { nodes, edges };
 };
-const roads = { id: 'engine.generate.testroads', card: { intent: 'test road graph', params: { lanes: { type: 'boolean', default: false } }, provides: { services: ['roadgraph'] } },
+const roads = { id: 'engine.generate.testroads', card: { ambient: true, intent: 'test road graph', params: { lanes: { type: 'boolean', default: false } }, provides: { services: ['roadgraph'] } },
   install(rt, cfg) { const g = lattice(cfg.lanes); const fn = () => g; fn.graph = () => g; rt.provide('roadgraph', fn); } };
 const P = [...AI, testSpace, roads];
 const doc = ({ traffic, crowd, lanes = false, player = [60, 60, 0] } = {}) => ({
@@ -37,6 +37,7 @@ const doc = ({ traffic, crowd, lanes = false, player = [60, 60, 0] } = {}) => ({
 const cars = rt => Object.values(rt.state.entities).filter(e => e.components.traffic);
 const peds = rt => Object.values(rt.state.entities).filter(e => e.components.crowdAgent);
 /** Distance from p to the nearest street centreline (lattice lines x/y ∈ {20, 60, 100}). */
+const nearNode = p => [20, 60, 100].some(x => [20, 60, 100].some(y => Math.hypot(p[0] - x, p[1] - y) < 6.5));
 const offLine = p => { const dx = Math.min(...[20, 60, 100].map(v => Math.abs(p[0] - v))), dy = Math.min(...[20, 60, 100].map(v => Math.abs(p[1] - v))); return Math.min(dx, dy); };
 
 for (const lanes of [false, true]) test(`traffic: cars spawn on lanes and drive lane to lane (${lanes ? 'explicit' : 'synthesized'} lanes)`, () => {
@@ -45,29 +46,29 @@ for (const lanes of [false, true]) test(`traffic: cars spawn on lanes and drive 
   assert.equal(cars(rt).length, 10);
   const prev = new Map(cars(rt).map(e => [e.id, e.at.slice()]));
   let maxStep = 0;
-  for (let i = 0; i < 600; i++) { rt.step(); for (const e of cars(rt)) { const p = prev.get(e.id); if (p) maxStep = Math.max(maxStep, Math.hypot(e.at[0] - p[0], e.at[1] - p[1])); prev.set(e.id, e.at.slice()); assert.ok(Math.abs(offLine(e.at) - 1.5) < 0.05 || offLine(e.at) > 2.9, `on its lane: ${e.at}`); } }
+  for (let i = 0; i < 600; i++) { rt.step(); for (const e of cars(rt)) { const p = prev.get(e.id); if (p) maxStep = Math.max(maxStep, Math.hypot(e.at[0] - p[0], e.at[1] - p[1])); prev.set(e.id, e.at.slice()); if (!nearNode(e.at)) assert.ok(Math.abs(offLine(e.at) - 1.5) < 0.05, `on its lane: ${e.at}`); } }
   assert.ok(maxStep <= 10 * 1.6 / 60 + 0.05, `kinematic lane motion (max step ${maxStep})`);
   const moved = cars(rt).filter(e => e.components.body.vel.some(v => Math.abs(v) > 1)).length;
   assert.ok(moved >= 3, 'cars are moving');
 });
 
 test('traffic: following keeps a gap, red lights stop cars, the player blocks a lane, panic speeds them up', () => {
-  const { rt } = compile(doc({ traffic: { maxCars: 0, lightCycle: 10, amber: 0 } }), { primitives: P });
+  const { rt } = compile(doc({ traffic: { maxCars: 0, lightCycle: 3, amber: 0 }, player: [80, 80, 0] }), { primitives: P });
   rt.step();
   const S = () => rt.store('gameplay.ai.traffic');
   // Two cars on the same lane heading for the signal at n11 (lane n01-n11:f0 runs +x along y=60).
   const lead = rt.spawn('sedan', { at: [30, 58.5, 0], components: { traffic: true } }), tail = rt.spawn('sedan', { at: [22, 58.5, 0], components: { traffic: true } });
-  S().cars[lead.id] = { lane: 'n01-n11:f0', s: 12, v: 0, panic: 0 }; S().cars[tail.id] = { lane: 'n01-n11:f0', s: 4, v: 10, panic: 0 };
+  S().cars[lead.id] = { lane: 'n01-n11:f0', s: 12, v: 0, panic: 0 }; S().cars[tail.id] = { lane: 'n01-n11:f0', s: 4, v: 0, panic: 0 };
   let minGap = Infinity, stoppedAtRed = false;
-  for (let i = 0; i < 360; i++) {
+  for (let i = 0; i < 600; i++) {
     rt.step();
     const a = S().cars[lead.id], b = S().cars[tail.id];
     if (a && b && a.lane === b.lane) minGap = Math.min(minGap, a.s - b.s);
     // Axis 0 (x) is green on even cycles; on odd cycles the lead must hold at the stop line.
-    if (Math.floor(rt.state.time / 10) % 2 === 1 && a?.lane === 'n01-n11:f0' && a.v < 0.01 && 40 - a.s < 6) stoppedAtRed = true;
+    if (Math.floor(rt.state.time / 3) % 2 === 1 && a?.lane === 'n01-n11:f0' && a.v < 0.01 && 40 - a.s < 7) stoppedAtRed = true;
   }
   assert.ok(minGap >= 4.5, `gap kept: ${minGap}`);
-  assert.ok(stoppedAtRed || rt.state.counts.light_changed >= 1, 'signal cycles');
+  assert.ok(stoppedAtRed, 'the lead car held at the red light'); assert.ok(rt.state.counts.light_changed >= 3);
   // Player standing in a lane: an oncoming car stops behind them, and a fast car hitting them reports a collision.
   const { rt: r2 } = compile(doc({ traffic: { maxCars: 0 }, player: [70, 21.5, 0] }), { primitives: P });
   r2.step();
@@ -89,7 +90,7 @@ test('crowd: pedestrians stroll sidewalks, keep apart, panic away from gunfire',
   const { rt } = compile(doc({ crowd: { maxPeds: 12, density: 1 } }), { primitives: P });
   run(rt, 30);
   assert.equal(peds(rt).length, 12);
-  for (const e of peds(rt)) assert.ok(Math.abs(offLine(e.at) - 4) < 0.6, `on a sidewalk: ${e.at}`);
+  for (const e of peds(rt)) if (!nearNode(e.at)) assert.ok(Math.abs(offLine(e.at) - 4) < 0.6, `on a sidewalk: ${e.at}`);
   const start = new Map(peds(rt).map(e => [e.id, e.at.slice()]));
   run(rt, 300);
   assert.ok(peds(rt).filter(e => Math.hypot(e.at[0] - start.get(e.id)[0], e.at[1] - start.get(e.id)[1]) > 2).length >= 8, 'they walk');
@@ -114,7 +115,7 @@ test('crowd without roads wanders reachable ground near where it appeared; both 
 
 test('preflight: bad traffic/crowd configs and a missing road graph are rejected with stable codes', () => {
   const { registry, logic } = catalogue([testSpace, roads]);
-  const bad = doc({ traffic: { spawnRadius: [50, 10], despawnRadius: 20, archetypes: [{ archetype: 'tank' }] }, crowd: { spawnRadius: [5, 100], despawnRadius: 50 } });
+  const bad = doc({ traffic: { spawnRadius: [50, 10], despawnRadius: 5, archetypes: [{ archetype: 'tank' }] }, crowd: { spawnRadius: [5, 100], despawnRadius: 50 } });
   const codes = preflight(bad, registry, logic).errors.map(e => e.code);
   for (const c of ['param_range', 'traffic_despawn_radius', 'ref_unknown', 'crowd_despawn_radius']) assert.ok(codes.includes(c), c);
   const noRoads = doc({ traffic: {} }); delete noRoads.spaces[0].generators;

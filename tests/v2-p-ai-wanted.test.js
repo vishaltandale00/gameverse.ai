@@ -7,7 +7,7 @@ import { preflight } from '../v2/kernel/document.js';
 import AI from '../v2/primitives/gameplay/ai.index.js';
 
 // Test double for gameplay.economy's take_money.
-const economy = { id: 'gameplay.test.economy', card: { intent: 'test money', params: {} }, logic(l) { l.effect('take_money', { run: (e, rt) => { rt.state.vars[`money.${e.currency ?? 'gold'}`] -= e.amount; } }); } };
+const economy = { id: 'gameplay.test.economy', card: { ambient: true, intent: 'test money', params: {} }, logic(l) { l.effect('take_money', { run: (e, rt) => { rt.state.vars[`money.${e.currency ?? 'gold'}`] -= e.amount; } }); } };
 const P = [...AI, testSpace, economy];
 const doc = (wanted = {}, { zones = [] } = {}) => ({
   schema: 'gameverse.v2.game/0.2', id: 'wanted', title: 'Wanted', seed: 9,

@@ -100,21 +100,35 @@ function placeAt(api, p, body) {
   return r6(up && (api.anchor ?? 'center') === 'center' ? add(p, mul(up, h / 2)) : p);
 }
 
+/** Quadratic connector across a junction from the end of lane a to the start of lane b, controlled by the node. */
+function connector(a, b, node) {
+  const p0 = a.points[a.points.length - 1], p2 = b.points[0], p1 = node ? v3(node) : mul(add(p0, p2), 0.5);
+  const straight = len(sub(p2, p0)) < 1e-6 || Math.abs(dot(norm(sub(p1, p0)), norm(sub(p2, p1)))) > 0.999;
+  const ctrl = straight ? mul(add(p0, p2), 0.5) : p1;
+  let length = 0, prev = p0; for (let k = 1; k <= 8; k++) { const q = bez(p0, ctrl, p2, k / 8); length += len(sub(q, prev)); prev = q; }
+  return { to: b.id, p0, p1: r6(ctrl), p2, length: round6(Math.max(length, 1e-3)) };
+}
+const bez = (a, b, c, t) => add(add(mul(a, (1 - t) ** 2), mul(b, 2 * (1 - t) * t)), mul(c, t * t));
+function turnPoint(turn, s) { const t = Math.min(1, s / turn.length), at = r6(bez(turn.p0, turn.p1, turn.p2, t)); const d = norm(add(mul(sub(turn.p1, turn.p0), 2 * (1 - t)), mul(sub(turn.p2, turn.p1), 2 * t))); return { at, dir: r6(d) }; }
+
 function drive(rt, config, G, api, { id, c, e }, cars, up) {
   let lane = G.lanes.get(c.lane);
   if (!lane) { rt.despawn(id); return; }
   const now = rt.state.time, panic = c.panic > now, vmax = limit(config, lane) * (panic ? 1.6 : 1);
-  const here = along(lane, c.s), fwd = here.dir;
+  const here = c.turn ? turnPoint(c.turn, c.s) : along(lane, c.s), fwd = here.dir;
   // Leader: nearest car ahead in the lane, or the player / any vehicle in the lane corridor.
   let gap = Infinity, leaderV = 0, blocker = null;
-  for (const o of cars) if (o.id !== id && o.c.lane === c.lane && o.c.s > c.s && o.c.s - c.s < gap) { gap = o.c.s - c.s; leaderV = o.c.v; blocker = o.id; }
+  const laneKey = x => (x.turn ? `turn:${x.turn.to}` : x.lane);
+  for (const o of cars) if (o.id !== id && laneKey(o.c) === laneKey(c) && o.c.s > c.s && o.c.s - c.s < gap) { gap = o.c.s - c.s; leaderV = o.c.v; blocker = o.id; }
+  // Entering a lane: a car still near its start is ahead of one crossing the junction into it.
+  if (c.turn) for (const o of cars) if (o.id !== id && o.c.lane === c.turn.to && !o.c.turn && c.turn.length - c.s + o.c.s < gap) { gap = c.turn.length - c.s + o.c.s; leaderV = o.c.v; blocker = o.id; }
   for (const o of Object.values(rt.state.entities)) {
     if (o === e || o.components.traffic || o.space !== e.space || dead(o) || !(o.id === 'player' || o.components.vehicle)) continue;
     const rel = sub(o.at, e.at), ahead = dot(rel, fwd), across = len(sub(rel, mul(fwd, ahead)));
     if (ahead > 0 && ahead < gap && across < config.laneWidth * 0.6) { gap = ahead; leaderV = 0; blocker = o.id; }
   }
   // Stop line: a red/amber signal, or a junction another car holds.
-  const node = G.nodes.get(lane.to), toEnd = lane.length - c.s, junction = node && (node.light || node.out.length >= 3);
+  const node = c.turn ? null : G.nodes.get(lane.to), toEnd = lane.length - c.s, junction = node && (node.light || node.out.length >= 3);
   let mustStop = false;
   if (junction && !panic) {
     if (config.lights && node.light) {
@@ -128,18 +142,26 @@ function drive(rt, config, G, api, { id, c, e }, cars, up) {
     }
   }
   if (mustStop && toEnd < gap) { gap = Math.max(0, toEnd - 0.5); leaderV = 0; blocker = blocker ?? `stop:${node.id}`; }
-  // Car following with a time headway.
-  const free = gap - config.minGap, want = free <= 0 ? 0 : Math.min(vmax, leaderV + free / Math.max(0.1, config.headway));
+  // Car following (Gipps-style safe speed): stop within the free gap at the comfortable brake, with a reaction headway.
+  const free = gap - config.minGap, bt = config.brake * (leaderV > 0.1 ? config.headway : 0.25); // stopped obstacles and stop lines: brake to a halt
+  const want = free <= 0.25 ? 0 : Math.min(vmax, -bt + Math.sqrt(bt * bt + leaderV * leaderV + 2 * config.brake * free));
   c.v = round6(c.v < want ? Math.min(want, c.v + config.accel * rt.dt) : Math.max(want, c.v - config.brake * rt.dt));
   if (gap < 1 && c.v > 2 && blocker && !String(blocker).startsWith('stop:') && rt.entity(blocker)) { rt.emit('traffic_collision', { who: id, with: blocker, speed: round6(c.v) }); c.v = 0; }
   c.s = round6(c.s + c.v * rt.dt);
-  // Lane end: release the junction and continue on a lane leaving the node.
-  for (let guard = 0; c.s >= lane.length && guard < 4; guard++) {
+  // Lane end: release the junction, then cross it on a curved connector into a lane leaving the node.
+  let pos = null;
+  for (let guard = 0; guard < 4; guard++) {
+    if (c.turn) {
+      if (c.s < c.turn.length) { pos = turnPoint(c.turn, c.s); break; }
+      c.s = round6(c.s - c.turn.length); c.lane = c.turn.to; c.turn = null; lane = G.lanes.get(c.lane);
+      if (!lane) { rt.despawn(id); return; }
+    }
+    if (c.s < lane.length) break;
     if (st(rt).junction[lane.to] === id) delete st(rt).junction[lane.to];
     const nx = nextLane(rt, G, lane); if (!nx) { c.s = lane.length; c.v = 0; break; }
-    c.s = round6(c.s - lane.length); c.lane = nx.id; lane = nx;
+    c.s = round6(c.s - lane.length); c.turn = connector(lane, nx, G.nodes.get(lane.to)?.at);
   }
-  const pos = along(lane, c.s);
+  pos ??= along(lane, c.s);
   e.components.body = { ...(e.components.body || {}), facing: pos.dir, vel: r6(mul(pos.dir, c.v)) };
   const at = placeAt(api, pos.at, e.components.body);
   api.setPos(e, e.at.length === 2 ? at.slice(0, 2) : at, rt);
