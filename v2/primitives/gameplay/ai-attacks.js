@@ -102,6 +102,13 @@ export default {
       for (const e of Object.values(rt.state.entities)) {
         if (!Array.isArray(e.components.attacks) || !e.components.attacks.length || e.id === 'player') continue;
         if (dead(e)) { const a = st(rt).agents?.[e.id]; if (a) a.phase = 'idle'; continue; }
+        // Stunned (combat health.stun frames) or a dazed boss: no new attacks, and a running one is cancelled.
+        if ((e.components.health?.stun ?? 0) > 0 || e.components.boss?.dazed) {
+          const a = st(rt).agents?.[e.id];
+          if (a && a.phase !== 'idle') { rt.emit('attack_cancelled', { who: e.id, attack: a.attack, by: 'stun' }); a.phase = 'idle'; a.gcd = round6(rt.state.time + config.globalCooldown); delete e.components.steer; }
+          if (e.components.ai) e.components.ai.attacking = null;
+          continue;
+        }
         const a = agentOf(rt, e.id);
         if (a.phase === 'idle') { if (now >= a.gcd) start(rt, e, a, config, shapes); }
         else advance(rt, e, a, config, shapes);
@@ -141,7 +148,9 @@ const liveSummons = (rt, e) => Object.values(rt.state.entities).filter(o => o.co
 function start(rt, e, a, config, shapes) {
   const t = targetOf(rt, e); if (!t) return;
   const d = distBetween(rt, e, t), ph = phaseOf(e), now = rt.state.time, ctx = { self: e.id, target: t.id };
+  const pattern = Array.isArray(e.components.boss?.pattern) && e.components.boss.pattern.length ? new Set(e.components.boss.pattern) : null;
   const ok = e.components.attacks.filter(x => {
+    if (pattern && !pattern.has(x.id)) return false; // combat.boss: the attacks this phase allows
     const sh = shapes[x.shape] || (x.summon ? SHAPES.summon : SHAPES.arc);
     const range = x.range ?? 1.5;
     if (sh.kind !== 'summon' && sh.kind !== 'self' && !(range > 0 && d <= range)) return false;
@@ -164,7 +173,9 @@ function start(rt, e, a, config, shapes) {
 function advance(rt, e, a, config, shapes) {
   const atk = e.components.attacks.find(x => x.id === a.attack);
   if (!atk) { a.phase = 'idle'; return; }
-  const now = rt.state.time, el = now - a.t0, wind = atk.windup ?? 0, act = atk.active ?? 0.1, rec = atk.recover ?? 0.3;
+  // combat.boss phase speed scales the whole attack timeline.
+  const k = 1 / Math.max(0.05, e.components.boss?.speed ?? 1);
+  const now = rt.state.time, el = now - a.t0, wind = (atk.windup ?? 0) * k, act = (atk.active ?? 0.1) * k, rec = (atk.recover ?? 0.3) * k;
   const sh = { ...(shapes[atk.shape] || (atk.summon ? SHAPES.summon : SHAPES.arc)) };
   if (a.phase === 'windup' && el >= wind - 1e-9) {
     a.phase = 'active'; a.t1 = now;

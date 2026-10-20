@@ -46,6 +46,21 @@ test('out of range, wrong phase or failing `when`: no attack; boss phase unlocks
   assert.equal(hp(rt), h, 'out of range');
 });
 
+test('combat.boss phases: pattern restricts the choice, speed scales timing, dazed and stunned bosses hold fire', () => {
+  const atks = [{ id: 'jab', range: 3, windup: 0.5, active: 0.1, recover: 0.2, damage: 1 }, { id: 'slam', range: 3, windup: 0.5, active: 0.1, recover: 0.2, damage: 10 }];
+  const { rt } = compile(doc({ archetypes: [foe(atks)] }), { primitives: P });
+  const f = rt.spawn('foe', { at: [4, 10, 0] });
+  f.components.boss = { phase: 2, pattern: ['slam'], speed: 2 };
+  let t0 = null, t1 = null;
+  for (let i = 0; i < 40 && t1 === null; i++) { rt.step(); if (t0 === null && rt.state.events.some(e => e.name === 'telegraph')) t0 = i; if (rt.state.events.some(e => e.name === 'attack_hit')) t1 = i; }
+  assert.equal(hp(rt), 90, 'only the phase pattern (slam) is used');
+  assert.ok(t1 - t0 >= 14 && t1 - t0 <= 16, `windup halved at speed 2 (${t1 - t0} frames)`);
+  f.components.boss.dazed = true; const h = hp(rt); run(rt, 120);
+  assert.equal(hp(rt), h, 'dazed: no attacks');
+  f.components.boss.dazed = false; f.components.health = { hp: 5, max: 5, stun: 999 }; run(rt, 120);
+  assert.equal(hp(rt), h, 'stunned: no attacks');
+});
+
 test('projectiles travel, hit, and are stopped by walls; lobbed shots arc', () => {
   const shooter = foe([{ id: 'bolt', range: 20, windup: 0.2, active: 0.05, recover: 2, damage: 4, shape: 'projectile', projectile: { speed: 12 } }]);
   const { rt } = compile(doc({ archetypes: [shooter] }), { primitives: P });

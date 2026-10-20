@@ -39,7 +39,7 @@ export default {
       hourLength: { type: 'number', default: 60, min: 0.01, unit: 's', effect: 'fallback clock when the hour var is absent: seconds per game hour' },
       startHour: { type: 'number', default: 8, min: 0, max: 24 },
       speed: { type: 'number', default: 1.6, min: 0, effect: 'walking speed for NPCs without an ai.speed' },
-      arrive: { type: 'number', default: 1, min: 0, effect: 'arrival radius' },
+      arrive: { type: 'number', default: 0.25, min: 0, effect: 'arrival radius' },
     },
     provides: { events: ['departed', 'departed:*', 'arrived', 'arrived:*', 'schedule_changed'] },
     requires: { capabilities: ['position'] },
