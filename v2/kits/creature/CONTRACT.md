@@ -297,13 +297,35 @@ Decisions made where this contract was open or the host differs:
 - **Input.** The host gives `{ x, y, a, b }` with no Start button. A confirms and talks. B goes back,
   and holding it runs. A quick tap of B while standing still (released within 14 frames, no step
   taken) opens the start menu: Party, Bag, Dex, Save and Close. There is no Map or Options entry yet.
-- **Generated content is a journey.** The model writes the compact shape in `generate/schema.js`:
-  the cast, types, moves and species, a home town, one chapter per gym, and a finale. A chapter has
-  1–3 routes or caves, then a town with a gym. `generate/from-model.js` expands it into the §1 content:
-  linear connects, a badge gate on the way out of each gym town, and services.
-  `generate/balance.js` and `generate/tune.js` then set levels on the curve, fix stats, learnsets and
-  the chart, and simulation-tune the leaders. A generated game stores the journey, so a revision edits
-  exactly what the model wrote. Hand-written full content, like the sample, works too.
+- **Generated content is compact.** The model fills `generate/compact.js`, about 1.1–1.6k output
+  tokens or 7–11 s with gpt-4.1-mini. It writes names, looks, types and the journey:
+  - types, each listing the types it beats and naming its weak, strong and status move;
+  - three starter lines and some wild lines, each with a role and named forms with looks;
+  - six item names;
+  - one chapter per gym (routes, a town, a gym leader of one type) and a finale.
+
+  The kit derives the rest: moves and effects by type style, learnsets, base stats by role and
+  stage, ids, gym teams, gym trainers and filler types when there are fewer than six.
+  `fromCompact` expands it into the older journey shape (`generate/schema.js`, still accepted).
+  `generate/from-model.js` turns that into §1 content: linear connects, a badge gate on the way out
+  of each gym town, and services. `generate/balance.js` and `generate/tune.js` then repair it. A
+  generated game stores the compact content, so a revision edits exactly what the model wrote.
+  Hand-written full content, like the sample, works too.
+- **Repair first.** Validation never rejects schema-shaped content it can fix. Fuzz tests cover
+  missing types, unknown names, empty lists and extreme settings. `tune.js` simulates each leader
+  and repairs until the worst starter wins at least 88% of 60 runs. The repairs go from least to most
+  invasive:
+  1. add an earlier wild creature that counters the gym type;
+  2. lower levels within the curve band;
+  3. remove the leader's heal;
+  4. drop backup creatures;
+  5. use pre-evolved forms;
+  6. switch to an easy AI.
+
+  Wild top levels drop the same way until level-matched battles are won.
+- **Verification problems are content faults only.** Each has a `path` and a `hint`. The scripted
+  playthrough is informational: reachability and the battle sims prove the content, so a bot that
+  stalls is reported in `report.playthrough` and never sent back to the model.
 - **Real options for common requests.** These live in `content.settings`:
   - `routeLength` (24–160 tiles; areas can override it with `length`);
   - `encounterRate` (percent; areas can override it);
@@ -327,5 +349,5 @@ Decisions made where this contract was open or the host differs:
 - **The verifier's balance sim** uses a curve-level party: the starter line at `L(g)−1` plus the two
   best catches so far at `L(g)−3`. The party leads with its best matchup and carries `2+2g` heals, and
   it must win at least 70% of 200 runs per gym for every starter. Level-matched wild battles must be
-  won at least 95% of the time. The scripted playthrough uses the real inputs and runs once per
-  starter while the budget lasts.
+  won at least 95% of the time. The scripted playthrough uses the real inputs and runs once, for the
+  first starter, within the budget.
