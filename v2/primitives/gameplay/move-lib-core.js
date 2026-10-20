@@ -38,6 +38,8 @@ export const norm = a => { const l = len(a); return l > 1e-9 ? a.map(v => v / l)
 export const round6 = v => Math.round(v * 1e6) / 1e6;
 const AXES = ['x', 'y', 'z'];
 
+import { movementEnvelope } from './move-lib-envelope.js';
+
 // ---------------------------------------------------------------- vocabulary of other primitives
 
 /** Another primitive's effect/predicate is usable only when its owner is installed (KERNEL_API §5). */
@@ -679,22 +681,80 @@ export function ensureShared(rt, macro = {}) {
   rt.options(rt => {
     const p = rt.player(); if (!p?.space || S.max <= 0) return [];
     const api = spaceApi(rt, p); if (!api) return [];
-    const zones = rt.doc.spaces.find(s => s.id === p.space)?.zones || [];
-    const here = zones.filter(z => api.inZone?.(p, z.id, rt)).map(z => z.id);
-    const out = [];
-    for (const z of zones) {
-      if (here.includes(z.id)) continue;
-      const to = zoneAnchor(rt, p, z.id); if (to == null) continue;
-      let pathLen = null;
-      if (dimsOf(p) && typeof api.path === 'function') { const path = api.path(p.at, to, {}); if (!path) continue; pathLen = path.length; }
-      else if (dimsOf(p)) pathLen = len(sub(v3(to), v3(p.at)));
-      else pathLen = 1;
-      const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((pathLen + 2) / S.speed) * 1.6 / rt.dt)));
-      out.push({ label: `travel to ${z.id}`, actions: { travel: z.id }, steps, macro: true, apply: rt => travel(rt, z.id, steps, S) });
-      if (out.length >= S.max) break;
-    }
-    return out;
+    // Listing is cheap: one reachable() set per step (memoised), membership tests, a distance
+    // heuristic for `steps`. The real path is planned only when the option is applied or stepped.
+    const listed = reachableZones(rt, p, api);
+    return listed.slice(0, S.max).map(({ id, dist }) => {
+      const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((dist + 2) / S.speed) * 1.6 / rt.dt)));
+      return { label: `travel to ${id}`, actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
+    });
   });
+}
+
+/** Cheap point for a zone (no cell scans): at, spawn, rect/bounds centre, centre, polygon centroid. */
+function zoneCentre(z, e) {
+  const dims = dimsOf(e), fill = q => { const out = e.at.slice(); q.forEach((v, i) => { if (v != null && i < dims) out[i] = v; }); return out; };
+  if (Array.isArray(z.at)) return fill(z.at);
+  if (Array.isArray(z.spawn)) return fill(z.spawn);
+  if (Array.isArray(z.rect)) return fill([(z.rect[0] + z.rect[2]) / 2, (z.rect[1] + z.rect[3]) / 2]);
+  if (z.bounds?.min && z.bounds?.max) return fill(z.bounds.min.map((v, i) => (v + z.bounds.max[i]) / 2));
+  const c = z.bounds?.center || z.center;
+  if (c) return dims === 3 ? fill([c[0], null, c[1]]) : fill(c);
+  if (Array.isArray(z.polygon) && z.polygon.length) { const n = z.polygon.length, cx = z.polygon.reduce((a, q) => a + q[0], 0) / n, cz = z.polygon.reduce((a, q) => a + q[1], 0) / n; return dims === 3 ? fill([cx, null, cz]) : fill([cx, cz]); }
+  return null;
+}
+
+/** The movement envelope the player has now (current abilities and grants), memoised per step. */
+export function playerEnvelope(rt, e) {
+  const c = rt.caches, key = `${rt.state.frame}|${e.id}`;
+  if (c.moveEnvKey === key && c.moveEnvState === rt.state.prim) return c.moveEnv;
+  const names = new Set([...grantsIndex(rt).keys()].filter(n => hasAbility(rt, e, n)));
+  for (const k of Object.keys(rt.state.flags)) if (k.startsWith('ability.') && rt.state.flags[k]) names.add(k.slice(8));
+  const env = rt.registry ? movementEnvelope(rt.doc, rt.registry, [...names]) : {};
+  c.moveEnvKey = key; c.moveEnvState = rt.state.prim; c.moveEnv = { env, names };
+  return c.moveEnv;
+}
+
+/**
+ * Zones of e's space it is not in and can reach, nearest first: [{id, dist}]. One
+ * space.reachable() call per step and player cell (memoised in rt.caches), then membership:
+ * zone ids (graph spaces) or the cell keys of a zone's cells (cellOf keys, else joined integer cells).
+ * Spaces without reachable list every zone. dist is a straight-line heuristic, not a path length.
+ */
+export function reachableZones(rt, e, api) {
+  const zones = rt.doc.spaces.find(s => s.id === e.space)?.zones || [];
+  const cellKey = at => (typeof api.cellOf === 'function' ? api.cellOf({ ...e, at }) : Array.isArray(at) ? at.map(v => Math.floor(v)).join(',') : at);
+  const here = typeof api.cellOf === 'function' ? api.cellOf(e) : cellKey(e.at);
+  const c = rt.caches, key = `${rt.state.frame}|${e.space}|${JSON.stringify(here)}`;
+  if (c.moveZonesKey === key && c.moveZonesState === rt.state.prim) return c.moveZones;
+  let set = null;
+  if (typeof api.reachable === 'function') {
+    const { env, names } = playerEnvelope(rt, e), size = e.components.body?.size;
+    const opts = { envelope: env, abilities: Object.fromEntries([...names].map(n => [n, true])), who: e.id, ...(size ? { width: size[0], height: size[1] } : {}) };
+    set = api.reachable(typeof api.cellOf === 'function' ? here : e.at, rt, opts);
+  }
+  const reached = z => {
+    if (!set) return true;
+    if (set.has(z.id)) return true;
+    const cells = [];
+    if (Array.isArray(z.cells)) cells.push(...z.cells);
+    else if (Array.isArray(z.rect)) { let n = 0; for (let x = Math.floor(z.rect[0]); x < z.rect[2] && n < 4096; x++) for (let y = Math.floor(z.rect[1]); y < z.rect[3] && n < 4096; y++, n++) cells.push([x, y]); }
+    const off = api.anchor === 'center' ? 0.5 : 0, h = e.components.body?.size?.[1] ?? 1;
+    for (const [x, y] of cells) {
+      const at = e.at.slice(); at[0] = x + off; at[1] = y + (api.anchor === 'center' ? h / 2 : 0);
+      if (set.has(cellKey(at))) return true;
+    }
+    return false;
+  };
+  const out = [];
+  for (const z of zones) {
+    if (api.inZone?.(e, z.id, rt) || !reached(z)) continue;
+    const to = dimsOf(e) ? zoneCentre(z, e) : z.id;
+    out.push({ id: z.id, dist: dimsOf(e) && to ? len(sub(v3(to), v3(e.at))) : 1 });
+  }
+  out.sort((a, b) => a.dist - b.dist || (a.id < b.id ? -1 : 1));
+  c.moveZonesKey = key; c.moveZonesState = rt.state.prim; c.moveZones = out;
+  return out;
 }
 
 function travel(rt, zone, steps, S) {
