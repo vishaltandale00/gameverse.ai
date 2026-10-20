@@ -53,7 +53,15 @@ function headless(doc, registry) {
     if (registry.has(s.use)) { real.add(s.id); return { ...s, generators: (s.generators || []).filter(g => registry.has(g.use)) }; }
     return { id: s.id, use: 'engine.space.test', with: { size: [10 * (s.zones || []).length + 2, 12, 1] }, zones: (s.zones || []).map((z, i) => ({ id: z.id, rect: [10 * i, 0, 10 * i + 10, 12], tags: z.tags })) };
   });
-  d.systems = (d.systems || []).filter(s => registry.has(s.use)); d.graphics = [];
+  // Keep registered systems whose required services some kept system (or the real spaces' generators) still provides.
+  const provided = new Set(); let kept = (d.systems || []).filter(s => registry.has(s.use));
+  const gens = d.spaces.flatMap(s => s.generators || []).map(g => g.use);
+  for (let again = true; again;) {
+    provided.clear(); for (const id of [...kept.map(s => s.use), ...gens]) for (const v of registry.get(id).card.provides?.services || []) provided.add(v);
+    const next = kept.filter(s => (registry.get(s.use).card.requires?.services || []).every(v => provided.has(v)));
+    again = next.length !== kept.length; kept = next;
+  }
+  d.systems = kept; d.graphics = [];
   const space = d.player.space ?? d.spaces[0].id;
   d.player = { archetype: d.player.archetype, space, at: real.has(space) ? d.player.at : [1, 1, 0] };
   return { doc: d, real };
@@ -89,6 +97,10 @@ test('the full plots run headless: characters spawn, every character can be talk
       settle();
       for (const c of r.doc.plot.characters) {
         settle();
+        // Entering a boss arena starts its fight and locks the player in (gameplay.combat.boss lockArena); the test
+        // walks the whole map by teleport, so it stands each fight down before moving on.
+        const boss = rt.service('boss');
+        if (boss) for (const b of r.doc.systems.filter(x => x.use === 'gameplay.combat.boss').flatMap(x => x.with.bosses)) if (boss.state(b.id) === 'active') boss.reset(b.id);
         const e = rt.entity(c.id); if (!e || rt.state.status !== 'playing') continue;
         if (e.space !== rt.player().space) rt.moveToSpace(rt.player(), e.space, e.at); else rt.space(e.space).setPos(rt.player(), e.at, rt);
         rt.step({ actions: { talk: c.id } });
