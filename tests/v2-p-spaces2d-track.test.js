@@ -91,6 +91,35 @@ test('track: zones are track segments with optional lanes', () => {
   assert.equal(api.nearest(p, 'start', rt), 10);
 });
 
+test('track: a gate blocks its lane until opened; one-way moving platforms carry riders', () => {
+  const rt = make(), api = rt.space('rail'), p = rt.player();
+  const gate = rt.spawn('barrier', { id: 'gate', at: [6, 1, 1.5], components: { mechanism: 'g1', body: { size: [0.4, 1, 3], solid: true } } });
+  let r = api.slide(p, [10, 0, 0], rt);
+  assert.equal(r.blocked.x, true); assert.deepEqual(r.touched, ['gate']);
+  assert.equal(api.raycast(p.at, [1, 0, 0], 20, { ignore: 'player' }).id, 'gate');
+  gate.components.body.solid = false;
+  r = api.slide(p, [10, 0, 0], rt); assert.equal(r.blocked.x, false, 'opened');
+  // A one-way hover platform moving along the track: jump through it from below, ride it from above.
+  const hover = rt.spawn('barrier', { id: 'hover', at: [14, 1, 2], components: { body: { size: [4, 1, 0.4], solid: true, oneWay: true, ballistic: true, collide: false, gravityScale: 0, vel: [0, 0, 0] } } });
+  api.setPos(p, [14, 1, 0.9], rt);
+  r = api.slide(p, [0, 0, 3], rt); assert.equal(r.blocked.z, false, 'through from below');
+  r = api.slide(p, [0, 0, -3], rt);
+  assert.ok(r.grounded && r.on === 'hover' && Math.abs(p.at[2] - 3.1) < 1e-9, `lands on top: ${p.at}`);
+  r = api.slide(p, [3, 0, 0], rt); assert.equal(r.blocked.x, false, 'one-way does not block along the track');
+  api.setPos(p, [14, 1, 3.1], rt); api.slide(p, [0, 0, -0.1], rt);
+  hover.components.body.vel = [6, 0, 0.5]; run(rt, 30);
+  assert.ok(Math.abs(hover.at[0] - 17) < 1e-6 && Math.abs(p.at[0] - 17) < 1e-6 && Math.abs(p.at[2] - 3.35) < 1e-6, `rider carried: ${p.at}`);
+});
+
+test('track: removeZone and moveZone', () => {
+  const rt = make(), api = rt.space('rail');
+  api.moveZone('tunnel', { range: [0, 5], lanes: [1, 1] }, rt);
+  assert.ok(rt.test({ zone: 'tunnel' }) && rt.state.events.some(e => e.name === 'enter_zone:tunnel'));
+  api.removeZone('tunnel', rt);
+  assert.equal(rt.test({ zone: 'tunnel' }), false);
+  assert.throws(() => api.moveZone('start', { range: 3 }, rt));
+});
+
 test('track: deterministic replay', () => {
   const go = () => { const rt = make(); for (let i = 0; i < 5; i++) rt.spawn(i % 2 ? 'train' : 'barrier', { at: [8 + i * 7, i % 3, 1.5] }); const api = rt.space('rail'); for (let i = 0; i < 80; i++) { api.slide(rt.player(), [0.3, i % 20 === 0 ? 1 : 0, 0], rt); rt.step(); } return rt.snapshot(); };
   assert.deepEqual(go(), go());

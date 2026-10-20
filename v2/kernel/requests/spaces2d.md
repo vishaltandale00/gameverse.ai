@@ -1,5 +1,7 @@
 # Kernel requests from the spaces2d workstream
 
+Status after the 35736ab1 kernel update: requests 1 (validate gets the instance), 2 (conformance reads `capabilityMethods`), 3 (`api.anchor`) and 4 (`canReach(a, b, rt, opts)`) are done, and spaces2d now uses them. Request 5 is partly covered: spaces now have `removeZone`/`moveZone`, so dynamic zones can be real space zones, but preflight still can't see generated zone ids. Request 6 is open.
+
 Each request has the workaround the spaces2d primitives use today.
 
 ## 1. Pass the instance to `validate`
