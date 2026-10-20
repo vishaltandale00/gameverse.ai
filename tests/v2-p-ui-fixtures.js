@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import { testSpace } from '../v2/kernel/testing.js';
 import inventory from '../v2/primitives/gameplay/inventory.js';
+import feedback from '../v2/primitives/graphics/ui-feedback.js';
 
 export const fx = {
   id: 'gameplay.fixture.fx',
@@ -35,7 +36,7 @@ export function baseDoc({ graphics = [], systems = [], plot, content = {}, zones
     graphics,
   };
 }
-export const BASE = [testSpace, fx, inventory];
+export const BASE = [testSpace, fx, inventory, feedback];
 
 /** Every instance of primitive `use` in v2/games/*.json, as reduced documents preflighting only that instance. */
 export function gameInstances(use) {

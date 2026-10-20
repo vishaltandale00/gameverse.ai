@@ -7,6 +7,7 @@ import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
 import { mount } from './v2-p-ui-dom.js';
+import feedback from '../v2/primitives/graphics/ui-feedback.js';
 import audioSynth, { cueTable, scheduleCues, selectMusic, musicPlan, nextBar, uiRecipe, DEFAULT_CUES } from '../v2/primitives/graphics/audio-synth.js';
 import { composeStems, stemsFor, pitchClasses, voiceRecipe, createMixer, noteLayers, SCALE_NAMES, LAYER_STEMS, STEM_PARTS, VOICE_NAMES } from '../v2/art/audio.js';
 
@@ -21,7 +22,7 @@ const fixture = {
     rt.action('fire', () => rt.run(config.effects));
   },
 };
-const PRIMS = [testSpace, audioSynth, fixture];
+const PRIMS = [testSpace, audioSynth, fixture, feedback];
 
 const base = (audio = {}, systems = [{ use: 'gameplay.test.audio-fixture' }]) => ({
   schema: 'gameverse.v2.game/0.2', id: 't', title: 'T', logline: 'A quiet lantern in a hollow cave',

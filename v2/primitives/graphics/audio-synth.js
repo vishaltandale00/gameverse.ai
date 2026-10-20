@@ -213,12 +213,7 @@ function validate(config) {
   return errors;
 }
 
-function logic(l) {
-  l.effect('play_sound', {
-    check(e, path, errors) { if (typeof e.cue !== 'string' || !e.cue) errors.push({ code: 'audio_cue_missing', path, message: 'play_sound needs cue: <event or cue name>' }); },
-    run(e, rt) { rt.emit('play_sound', { cue: e.cue }); },
-  });
-}
+// play_sound {cue} is owned by graphics.ui.feedback (ambient), so documents without audio can use it.
 
 const MODES = ['title', 'play', 'pause', 'off'];
 
@@ -284,4 +279,4 @@ function install(rt, config) {
   });
 }
 
-export default { id: ID, card, logic, validate, install };
+export default { id: ID, card, validate, install };

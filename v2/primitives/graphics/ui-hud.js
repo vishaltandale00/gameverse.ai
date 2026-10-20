@@ -50,7 +50,7 @@ const card = {
     crosshair: { type: 'string', default: 'none', options: ['none', 'dot', 'cross'], effect: 'aim reticle' },
     comboWindow: { type: 'number', default: 1.2, min: 0.2, max: 5, unit: 's', effect: 'time between hits that keeps a combo going' },
   },
-  provides: { events: ['notify'] },
+  requires: { primitives: [] },
   reads: ['content.items', 'content.statuses', 'plot.quests'],
 };
 
@@ -159,12 +159,6 @@ export function hudModel(rt, config, local = {}) {
 export default {
   id: 'graphics.ui.hud',
   card,
-  logic(logic) {
-    logic.effect('notify', {
-      check: (e, path, errors) => { if (typeof e.text !== 'string' || !e.text) errors.push({ code: 'ui_notify_text', path, message: 'notify needs text' }); if (e.kind && !['info', 'quest', 'warn', 'item', 'level'].includes(e.kind)) errors.push({ code: 'ui_notify_kind', path, message: `kind '${e.kind}' is not info|quest|warn|item|level` }); },
-      run: (e, rt) => rt.emit('notify', { text: e.text, kind: e.kind || 'info' }),
-    });
-  },
   validate(config) {
     const errors = [];
     config.meters?.forEach((m, i) => { if (!m.pool && !m.var) errors.push({ code: 'ui_meter_unbound', path: `with.meters[${i}]`, message: 'a meter needs a pool or a var', hint: "e.g. { pool: 'stamina' } or { var: 'hp' }" }); });
