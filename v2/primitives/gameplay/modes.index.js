@@ -11,5 +11,6 @@ import rounds from './rounds.js';
 import stageSequence from './stage-sequence.js';
 import minigame from './minigame.js';
 import rts from './rts.js';
+import automation from './automation.js';
 
-export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame, rts];
+export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame, rts, automation];
