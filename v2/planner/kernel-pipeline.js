@@ -86,10 +86,13 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       catch (error) { detail.tasks.push({ task: task.id, ok: false, reason: 'writer', error: String(error.message || error).slice(0, 120), ms: ms(tt) }); detail.proposed++; detail.rejected.push({ task: task.id, reason: 'writer' }); return; }
       detail.proposed++;
       await (merging = merging.then(async () => {
-        let result = await acceptPatch({ current, patch: written.patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs });
+        // A patch never takes the pipeline down: anything that throws while checking it is a rejection.
+        const accept = patch => acceptPatch({ current, patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs })
+          .catch(error => ({ ok: false, reason: 'threw', errors: [{ code: 'patch_threw', path: '$', message: String(error?.message || error).slice(0, 200) }], patch }));
+        let result = await accept(written.patch);
         for (let r = 0; !result.ok && spec && r < cfg.detailRepairs && result.reason !== 'empty'; r++) {
           try { written = await writeDetail({ writer: spec, doc: current, task, registry, logic, errors: result.errors, previous: result.patch }); } catch { break; }
-          result = await acceptPatch({ current, patch: written.patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs });
+          result = await accept(written.patch);
         }
         const entry = { task: task.id, ok: result.ok, source: written.source, modelMs: written.ms ?? null, ms: ms(tt), ...(result.ok ? { fixes: result.fixes.length } : { reason: result.reason, errors: (result.errors || []).slice(0, 4).map(e => e.code || e.message) }) };
         detail.tasks.push(entry);

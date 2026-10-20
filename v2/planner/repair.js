@@ -96,6 +96,40 @@ const title = id => String(id).replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.to
 const STUB = { character: id => ({ id, name: title(id) }), archetype: id => ({ id, components: {} }), ending: id => ({ id, title: title(id), outcome: 'won' }), item: id => ({ id, name: title(id) }) };
 const CREATABLE = new Set(['character', 'archetype', 'ending', 'item', 'quest', 'recipe']);
 
+const asList = v => (v === undefined || v === null ? undefined : Array.isArray(v) ? v : [v]);
+/**
+ * Coerce the kernel document's own structure (ARCHITECTURE.md §3, not any primitive's params) so that
+ * validators never see a beat whose `do` is an object or a space whose `zones` is a map. Models make these
+ * slips; primitives' validators may assume the documented shapes.
+ */
+export function normalizeShape(doc, fixes = []) {
+  const fix = (path, what) => fixes.push({ code: 'shape', path, action: what });
+  for (const key of ['spaces', 'systems', 'graphics']) if (doc[key] !== undefined && !Array.isArray(doc[key])) { doc[key] = asList(doc[key]).filter(x => x && typeof x === 'object'); fix(key, 'made a list'); }
+  (doc.spaces || []).forEach((s, i) => { for (const k of ['zones', 'generators']) if (s[k] !== undefined && !Array.isArray(s[k])) { s[k] = typeof s[k] === 'object' ? Object.entries(s[k]).map(([id, z]) => ({ id, ...(z || {}) })) : []; fix(`spaces[${i}].${k}`, 'made a list'); }
+    (s.zones || []).forEach((z, j) => { if (z.exits !== undefined && !Array.isArray(z.exits)) { z.exits = asList(z.exits); fix(`spaces[${i}].zones[${j}].exits`, 'made a list'); } }); });
+  const plot = doc.plot;
+  if (plot && typeof plot === 'object') {
+    for (const k of ['characters', 'quests', 'endings']) if (plot[k] !== undefined && !Array.isArray(plot[k])) { plot[k] = typeof plot[k] === 'object' ? Object.entries(plot[k]).map(([id, x]) => ({ id, ...(x || {}) })) : []; fix(`plot.${k}`, 'made a list'); }
+    const acts = plot.storyboard?.acts;
+    if (acts !== undefined && !Array.isArray(acts)) { plot.storyboard.acts = asList(acts); fix('plot.storyboard.acts', 'made a list'); }
+    (plot.storyboard?.acts || []).forEach((a, i) => {
+      if (!Array.isArray(a.beats)) { a.beats = asList(a.beats) || []; fix(`plot.storyboard.acts[${i}].beats`, 'made a list'); }
+      a.beats.forEach((b, j) => {
+        if (b.do !== undefined && !Array.isArray(b.do)) { b.do = asList(b.do); fix(`plot.storyboard.acts[${i}].beats[${j}].do`, 'made a list'); }
+        if (b.after !== undefined && !Array.isArray(b.after)) { b.after = asList(b.after); fix(`plot.storyboard.acts[${i}].beats[${j}].after`, 'made a list'); }
+      });
+    });
+  }
+  if (doc.content && typeof doc.content === 'object') for (const k of ['items', 'archetypes', 'recipes']) if (doc.content[k] !== undefined && !Array.isArray(doc.content[k])) { doc.content[k] = typeof doc.content[k] === 'object' ? Object.entries(doc.content[k]).map(([id, x]) => ({ id, ...(x || {}) })) : []; fix(`content.${k}`, 'made a list'); }
+  return doc;
+}
+
+/** preflight that reports a validator crash as an error instead of throwing. */
+function safePreflight(doc, registry, logic) {
+  try { return preflight(doc, registry, logic); }
+  catch (error) { return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
+}
+
 /**
  * repairDocument(doc, { registry, logic, rounds }) -> { doc, ok, checked, errors, fixes, removed, rounds }
  * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
@@ -103,6 +137,8 @@ const CREATABLE = new Set(['character', 'archetype', 'ending', 'item', 'quest', 
 export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null } = {}) {
   const doc = structuredClone(input);
   const fixes = [], removed = [];
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
+  normalizeShape(doc, fixes);
   const vocab = vocabIndex(registry);
   const ctx = {
     ensureId(kind) {
@@ -134,7 +170,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
 
   let checked = null;
   for (let round = 0; round < rounds; round++) {
-    checked = preflight(doc, registry, logic);
+    checked = safePreflight(doc, registry, logic);
     // Preflight accepts vocabulary whose owning primitive is registered but not in the document
     // (kernel request: pipeline.md); add the owners so the effects run with their primitive installed.
     if (checked.ok) {
@@ -273,7 +309,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
     for (const k of unique) deleteAt(doc, k);
     if (!progressed) break;
   }
-  checked = preflight(doc, registry, logic);
+  checked = safePreflight(doc, registry, logic);
   return { doc, ok: checked.ok, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION };
 }
 
