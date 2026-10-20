@@ -11,9 +11,9 @@ import { stubHealth, doc, drive } from '../v2/primitives/gameplay/modes-lib-test
 const P = [...modes, testSpace, stubHealth];
 const CARDS = [
   { id: 'strike', name: 'Strike', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 6 }] },
-  { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'block', amount: 5 }] },
+  { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'card_block', amount: 5 }] },
   { id: 'bash', name: 'Bash', cost: 2, type: 'attack', effects: [{ do: 'card_damage', amount: 8 }, { do: 'card_mod', mod: 'vulnerable', amount: 2, who: 'target' }] },
-  { id: 'pommel', name: 'Pommel', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 9 }, { do: 'draw', count: 1 }] },
+  { id: 'pommel', name: 'Pommel', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 9 }, { do: 'draw_cards', count: 1 }] },
   { id: 'rage', name: 'Rage', cost: 0, type: 'power', target: 'self', effects: [{ do: 'card_mod', mod: 'strength', amount: 2 }] },
   { id: 'squire', name: 'Squire', cost: 1, type: 'minion', power: 2, health: 3 },
   { id: 'wall', name: 'Wall', cost: 1, type: 'minion', power: 0, health: 5, keywords: ['taunt'] },

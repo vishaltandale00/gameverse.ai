@@ -54,10 +54,10 @@ export default {
     const svc = rt => rt.service('cards');
     const ctxWho = (who, rt, c) => (who === 'target' ? c.target : who === 'owner' || who === undefined ? c.owner ?? c.self : rt.resolve(who, c)?.id ?? who);
     logic.effect('card_damage', { check: (e, p, errs) => { if (!(e.amount >= 0)) errs.push(err('effect_invalid', p, 'card_damage needs amount >= 0')); }, run: (e, rt, c) => svc(rt).damageEffect(e, c) });
-    logic.effect('block', { run: (e, rt, c) => svc(rt).gainBlock(ctxWho(e.who, rt, c), e.amount ?? 0) });
-    logic.effect('draw', { run: (e, rt, c) => svc(rt).draw(ctxWho(e.who, rt, c), e.count ?? 1) });
+    logic.effect('card_block', { run: (e, rt, c) => svc(rt).gainBlock(ctxWho(e.who, rt, c), e.amount ?? 0) });
+    logic.effect('draw_cards', { run: (e, rt, c) => svc(rt).draw(ctxWho(e.who, rt, c), e.count ?? 1) });
     logic.effect('gain_energy', { run: (e, rt, c) => svc(rt).gainEnergy(ctxWho(e.who, rt, c), e.amount ?? 1) });
-    logic.effect('discard', { run: (e, rt, c) => svc(rt).discard(ctxWho(e.who, rt, c), e.count ?? 1, Boolean(e.random)) });
+    logic.effect('discard_cards', { run: (e, rt, c) => svc(rt).discard(ctxWho(e.who, rt, c), e.count ?? 1, Boolean(e.random)) });
     logic.effect('add_card', { refs: e => [['card', e.card]], run: (e, rt, c) => svc(rt).addCard(ctxWho(e.who, rt, c), e.card, e.pile ?? 'hand', e.count ?? 1) });
     logic.effect('card_mod', { check: (e, p, errs) => { if (!MODS.includes(e.mod)) errs.push(err('effect_invalid', `${p}.mod`, `mod must be ${MODS.join('|')}`)); }, run: (e, rt, c) => svc(rt).mod(ctxWho(e.who, rt, c), e.mod, e.amount ?? 1) });
     logic.effect('add_to_deck', { refs: e => [['card', e.card]], run: (e, rt) => svc(rt).addToDeck(e.card) });
