@@ -1,0 +1,555 @@
+{
+  "runId": "gameverse-lean-geometry-2026-10-16",
+  "outcome": "passed-with-explicit-trust-boundary",
+  "source": {
+    "baseCommit": "c8f8698bdfabcca6f0d4badabcdeb719544624f7",
+    "originMain": "c8f8698bdfabcca6f0d4badabcdeb719544624f7",
+    "workingTreeFingerprint": "ba96f9df294c5a1f4d9af9f11f9bcb8935836b93411fec68d051433ada32b78d",
+    "sha256": {
+      "package.json": "013b110ff0abd9cb8f7267e2b94c36ca9b426dc69b0933e19f27507808436070",
+      "package-lock.json": "7841f08adfa474910b7018edf4452a7348aef2eec7e0e10f5ecf8165b82686b4",
+      "scripts/serve.mjs": "560c0c2626859e444fd71e0659b0dd674d9d53898a499272123c471b7f944682",
+      "scripts/verify-geometry.mjs": "9e46c94cff5adda595e3d21bf0fda39aa97ea62d87d7e917be851e0ef710037f",
+      "src/neighborhood-math.js": "e75053f7e44ab50b6d1bb9bddbbc89e7a542c833b60be80ff7860ad8758d4926",
+      "src/neighborhood-controller.js": "daa08ebd5c644175b0e43d3828c6a19c1addeb2e3b0cdb6bae68e5ffac40bb5b",
+      "src/neighborhood-world.js": "aded1d4f3f56f29c98b81544cbd6fffb0f2cb5fc11cbcd62c2bfb8eca7f6e8d4",
+      "src/neighborhood.js": "cbfb9b225aaf7851d7238d03ba75b68a422ca697240a3647e219ba539254808a",
+      "src/neighborhood-safety.js": "ae942f2e2e189d7490c0770b26a950c84414875b5c4785455c2eeda51c7a8dee",
+      "src/neighborhood-certified.generated.js": "c0f9e36aa2565bc84f238b727762afa049e2009ef1203cf7eeedb7776c37204d",
+      "style.css": "8563e4bca9278ac36c8b8ef9fccafeb038f301afb1d18bda041d7b43a189da3c",
+      "tests/neighborhood-controller.test.js": "4d98dfda68f3563bbe24feab1e88814be5ca5b55f9edc8e8ef6742996ac2fac1",
+      "tests/neighborhood.test.js": "ed60b4229632c7ac64813b7d35ef2807b6dc017f8da024675c1a2c206dbe4fc3",
+      "tests/neighborhood-safety.test.js": "ce08282b2ea5b23411556ee36c4daf7b2bf4bebad4ec3bbceaa7566abadc9d80",
+      "verification/Geometry.lean": "34d3d8ede68e7092ad61c3fd7b384c5219caf8b60f3675bcbcc060319b38bee6",
+      "verification/Kernel.lean": "d6a3304af327e39bb20502c580d95024553d5e2b7039012473e41b5f1e7c2f8a",
+      "verification/Generate.lean": "75fbff1b1c58ba99a7098232dc2d179f31337dce043372e6cdc9beb82bc9a9d3",
+      "verification/lean-toolchain": "ca5f1f601d34c49079e38d7e7041eb0f2a9c227fbc1df0f404820069a052330c"
+    },
+    "uncommitted": true
+  },
+  "rebase": {
+    "outcome": "completed",
+    "from": "0d98de68e0f6664b65022a0a53763d0a25b1b716",
+    "onto": "c8f8698bdfabcca6f0d4badabcdeb719544624f7",
+    "conflicts": false,
+    "upstreamVoiceChangesPreserved": true,
+    "recoveryStash": "5c7f85e1649f1afeb5493a24f2b6ffc5520ecea5"
+  },
+  "formal": {
+    "toolchain": "Lean (version 4.35.0, arm64-apple-darwin24.6.0, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release)",
+    "proofRunId": "geometry-lean-2026-10-16T07-36-43.927Z",
+    "totalMs": 3475.983958,
+    "auditedTheorems": {
+      "Gameverse.cauchy": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Gameverse.plane_sound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Gameverse.segment_sound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Gameverse.compileI_correct": [
+        "propext"
+      ],
+      "Gameverse.compileB_correct": [
+        "propext",
+        "Quot.sound"
+      ],
+      "Gameverse.separatorExpr_spec": [
+        "propext"
+      ],
+      "Gameverse.generated_separator_sound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Gameverse.generated_bounds_sound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Gameverse.generated_world_sound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    "stages": [
+      {
+        "stage": "toolchain",
+        "durationMs": 222.291084,
+        "outcome": "passed",
+        "exitCode": 0,
+        "stdout": "Lean (version 4.35.0, arm64-apple-darwin24.6.0, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release)\n",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "stage": "proof:Geometry",
+        "durationMs": 2540.2238749999997,
+        "outcome": "passed",
+        "exitCode": 0,
+        "stdout": "'Gameverse.cauchy' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Gameverse.plane_sound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Gameverse.segment_sound' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "stage": "proof:Kernel",
+        "durationMs": 439.10275,
+        "outcome": "passed",
+        "exitCode": 0,
+        "stdout": "'Gameverse.compileI_correct' depends on axioms: [propext]\n'Gameverse.compileB_correct' depends on axioms: [propext, Quot.sound]\n'Gameverse.separatorExpr_spec' depends on axioms: [propext]\n'Gameverse.generated_separator_sound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Gameverse.generated_bounds_sound' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Gameverse.generated_world_sound' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "stage": "generate",
+        "durationMs": 263.54008299999987,
+        "outcome": "passed",
+        "exitCode": 0,
+        "stdout": "// GENERATED by verification/Kernel.lean; do not edit.\n// Exact BigInt separator: args = start XYZ, end XYZ, box low XYZ, high XYZ, radius, normal XYZ.\nexport function certifiedSeparator(a) {\n  return (((((a[13]*a[13])+(a[14]*a[14]))+(a[15]*a[15]))<=(0n)?(0n):(1n))*(((0n)<=((((a[13]*a[0])+(a[14]*a[1]))+(a[15]*a[2]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8]))))?(1n):(0n))*(((0n)<=((((a[13]*a[3])+(a[14]*a[4]))+(a[15]*a[5]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8]))))?(1n):(0n))*((((a[12]*a[12])*(((a[13]*a[13])+(a[14]*a[14]))+(a[15]*a[15])))<=(((((a[13]*a[0])+(a[14]*a[1]))+(a[15]*a[2]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8]))))*((((a[13]*a[0])+(a[14]*a[1]))+(a[15]*a[2]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8])))))?(1n):(0n))*(((a[12]*a[12])*(((a[13]*a[13])+(a[14]*a[14]))+(a[15]*a[15])))<=(((((a[13]*a[3])+(a[14]*a[4]))+(a[15]*a[5]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8]))))*((((a[13]*a[3])+(a[14]*a[4]))+(a[15]*a[5]))-((((0n)<=a[13]?(a[13]*a[9]):(a[13]*a[6]))+((0n)<=a[14]?(a[14]*a[10]):(a[14]*a[7])))+((0n)<=a[15]?(a[15]*a[11]):(a[15]*a[8])))))?(1n):(0n)))))) === 1n;\n}\nexport function certifiedBounds(a) {\n  return (((a[3]+a[2])<=a[0]?(1n):(0n))*(((a[0]+a[2])<=a[4]?(1n):(0n))*(((a[5]+a[2])<=a[1]?(1n):(0n))*((a[1]+a[2])<=a[6]?(1n):(0n))))) === 1n;\n}\nexport function certifiedWorld(queries) { return queries.every(certifiedSeparator); }\n",
+        "stderr": "",
+        "error": null
+      }
+    ],
+    "generatedRuntime": {
+      "path": "src/neighborhood-certified.generated.js",
+      "sha256": "c0f9e36aa2565bc84f238b727762afa049e2009ef1203cf7eeedb7776c37204d",
+      "generatedSha256": "c0f9e36aa2565bc84f238b727762afa049e2009ef1203cf7eeedb7776c37204d",
+      "byteMatch": true,
+      "bytes": 1767
+    },
+    "scope": "Exact rational separating-plane certificate: circular player footprint and 3D camera-ball swept segments versus every authored static proxy; player bounds. Generated kernel actually called before player and final camera/lookAt commits.",
+    "trustedBoundary": [
+      "Lean kernel and standard logical axioms",
+      "Small JavaScript syntax printer and ECMAScript engine semantics",
+      "Audited DataView/dyadic rounding, proxy/argument coverage, caching and selection/fallback bridge",
+      "Controller wiring and correspondence between render meshes and authored collision proxies"
+    ],
+    "notClaimed": [
+      "Proof of the entire numerical proposal sweep or sin/sqrt/exp implementations",
+      "GPU/Three.js rasterization or visual quality",
+      "Swept-path guarantee for explicit recovery from already-invalid poses",
+      "Formal real-number density development or all mesh/proxy correspondence"
+    ],
+    "finalPreparationNote": "Rechecked after removing an extra EOF blank line from Kernel.lean before commit; runtime semantics and generated bytes unchanged."
+  },
+  "negativeDrift": {
+    "passed": true,
+    "expectedOutcome": "reject changed generated JS",
+    "actualOutcome": "failed",
+    "generatedSha256": "c0f9e36aa2565bc84f238b727762afa049e2009ef1203cf7eeedb7776c37204d",
+    "tamperedSha256": "1052e5ae488fbaec72dc40cbd080a946943cb5e69399704e67e5db7a1497aa97",
+    "error": "Generated runtime differs from checked Lean definitions; do not claim verification. Regenerate with --write after reviewing the change.",
+    "totalMs": 3470.141666
+  },
+  "tests": {
+    "outcome": "passed",
+    "exitCode": 0,
+    "commandMs": 250.42499999999998,
+    "tests": 70,
+    "passed": 70,
+    "failed": 0,
+    "runnerMs": 138.495834,
+    "error": null
+  },
+  "packagedEditedSourceByteMatch": true,
+  "browser": {
+    "mode": "rebased-certified",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "version": "alder-neighborhood-certified-safety-3",
+    "arcadeAvailable": true,
+    "wallPose": {
+      "x": -41.31098937988281,
+      "z": -21.099945068359375
+    },
+    "fpsSamples": [
+      60,
+      60,
+      60,
+      60
+    ],
+    "finalSafety": {
+      "playerChecks": 873,
+      "cameraChecks": 875,
+      "rejectedProposals": 0,
+      "recoveries": 0,
+      "grid": 65536,
+      "kernel": "lean-separator-v1"
+    },
+    "errors": [],
+    "failedResources": [],
+    "recording": "local-data/route-polish/rebased-certified-capture/route.webm",
+    "cameraResize": {
+      "viewport": {
+        "width": 1920,
+        "height": 360
+      },
+      "radius": 0.28597913664460384,
+      "minimumCameraClearance": 0.34527282714843466,
+      "diagnostics": {
+        "version": "alder-neighborhood-certified-safety-3",
+        "state": "playing",
+        "x": -48,
+        "z": 10.5,
+        "yaw": -1.08,
+        "pitch": 0.24,
+        "speed": 0,
+        "paused": false,
+        "disposed": false,
+        "camera": {
+          "x": -52.45472717285156,
+          "y": 2.7860565185546875,
+          "z": 12.880661010742188,
+          "distance": 5.199997038979029,
+          "desiredDistance": 5.2
+        },
+        "safety": {
+          "playerChecks": 13,
+          "cameraChecks": 16,
+          "rejectedProposals": 0,
+          "recoveries": 0,
+          "grid": 65536,
+          "kernel": "lean-separator-v1"
+        },
+        "cameraTarget": {
+          "x": -48,
+          "y": 1.5500030517578125,
+          "z": 10.5
+        },
+        "heldKeys": [],
+        "pointerLocked": false,
+        "gamepad": {
+          "connected": false,
+          "index": null,
+          "id": null,
+          "armed": false,
+          "move": {
+            "x": 0,
+            "y": 0
+          },
+          "look": {
+            "x": 0,
+            "y": 0
+          },
+          "buttons": []
+        },
+        "renderer": "Three.js WebGL2",
+        "rendererVersion": "186",
+        "renderedFrames": 13,
+        "activeMs": 172.39999999999998,
+        "recentFps": null,
+        "loadToFirstRenderMs": 182.39999961853027,
+        "drawCalls": 221,
+        "triangles": 149790,
+        "colliderCount": 106,
+        "entrance": {
+          "x": -43,
+          "z": -19.8,
+          "radius": 2.8,
+          "gameId": "firered",
+          "name": "Alder Arcade",
+          "distance": 30.709770432225636,
+          "available": false
+        }
+      }
+    },
+    "maliciousProposals": {
+      "diagnostics": {
+        "version": "alder-neighborhood-certified-safety-3",
+        "state": "playing",
+        "x": -43,
+        "z": -21.0909423828125,
+        "yaw": -2.8980000000000015,
+        "pitch": 0.24,
+        "speed": 0,
+        "paused": false,
+        "disposed": false,
+        "camera": {
+          "x": -43.01918029785156,
+          "y": 1.5694732666015625,
+          "z": -21.168167114257812,
+          "distance": 0.08191844870685158,
+          "desiredDistance": 5.2
+        },
+        "safety": {
+          "playerChecks": 100,
+          "cameraChecks": 102,
+          "rejectedProposals": 160,
+          "recoveries": 0,
+          "grid": 65536,
+          "kernel": "lean-separator-v1"
+        },
+        "cameraTarget": {
+          "x": -43,
+          "y": 1.5500030517578125,
+          "z": -21.0909423828125
+        },
+        "heldKeys": [],
+        "pointerLocked": false,
+        "gamepad": {
+          "connected": false,
+          "index": null,
+          "id": null,
+          "armed": false,
+          "move": {
+            "x": 0,
+            "y": 0
+          },
+          "look": {
+            "x": 0,
+            "y": 0
+          },
+          "buttons": []
+        },
+        "renderer": "Three.js WebGL2",
+        "rendererVersion": "186",
+        "renderedFrames": 100,
+        "activeMs": 1626.0000005722045,
+        "recentFps": 61,
+        "loadToFirstRenderMs": 155,
+        "drawCalls": 115,
+        "triangles": 133064,
+        "colliderCount": 106,
+        "entrance": {
+          "x": -43,
+          "z": -19.8,
+          "radius": 2.8,
+          "gameId": "firered",
+          "name": "Alder Arcade",
+          "distance": 1.2909423828124993,
+          "available": true
+        }
+      },
+      "minimumPlayerClearance": 0.3290576171875017,
+      "minimumCameraClearance": 0.2518328857421892,
+      "errors": [],
+      "injection": {
+        "movement": "Always propose (-43,-37), inside the arcade building.",
+        "camera": "Always propose 8.5m boom, ignoring obstacles. Orbit to face through frontage.",
+        "scope": "Only untrusted proposal exports overridden in this isolated browser context. Generated kernel and integration unmodified."
+      }
+    }
+  },
+  "performance": {
+    "environment": {
+      "node": "22.23.2",
+      "npm": "10.9.8",
+      "os": "macOS 26.6.1",
+      "architecture": "arm64",
+      "browser": "153.0.8010.12",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "controller": {
+      "scope": "Actual NeighborhoodController.update, isolated fixture using copies of actual frozen scene proxies; excludes renderer/avatar animation/GPU work.",
+      "stepsPerSample": 1800,
+      "warmupSamples": 1,
+      "sampleCount": 5,
+      "playerProxies": 106,
+      "cameraProxies": 159,
+      "beforeMedianMs": 28.600000381469727,
+      "afterMedianMs": 146.19999980926514,
+      "beforeMsPerUpdate": 0.015888889100816515,
+      "afterMsPerUpdate": 0.0812222221162584,
+      "addedMsPerUpdate": 0.06533333301544189,
+      "beforeSamples": [
+        {
+          "setupMs": 0.10000038146972656,
+          "durationMs": 28.600000381469727,
+          "finalPosition": {
+            "x": -32.13589943484291,
+            "z": 9.823057579269037
+          },
+          "finalCamera": {
+            "x": -32.13589943484291,
+            "y": 2.576053657421099,
+            "z": 14.874015048499587
+          }
+        },
+        {
+          "setupMs": 0.09999942779541016,
+          "durationMs": 28.90000057220459,
+          "finalPosition": {
+            "x": -32.13589943484291,
+            "z": 9.823057579269037
+          },
+          "finalCamera": {
+            "x": -32.13589943484291,
+            "y": 2.576053657421099,
+            "z": 14.874015048499587
+          }
+        },
+        {
+          "setupMs": 0,
+          "durationMs": 28.100000381469727,
+          "finalPosition": {
+            "x": -32.13589943484291,
+            "z": 9.823057579269037
+          },
+          "finalCamera": {
+            "x": -32.13589943484291,
+            "y": 2.576053657421099,
+            "z": 14.874015048499587
+          }
+        },
+        {
+          "setupMs": 0.09999942779541016,
+          "durationMs": 28.300000190734863,
+          "finalPosition": {
+            "x": -32.13589943484291,
+            "z": 9.823057579269037
+          },
+          "finalCamera": {
+            "x": -32.13589943484291,
+            "y": 2.576053657421099,
+            "z": 14.874015048499587
+          }
+        },
+        {
+          "setupMs": 0.09999942779541016,
+          "durationMs": 28.700000762939453,
+          "finalPosition": {
+            "x": -32.13589943484291,
+            "z": 9.823057579269037
+          },
+          "finalCamera": {
+            "x": -32.13589943484291,
+            "y": 2.576053657421099,
+            "z": 14.874015048499587
+          }
+        }
+      ],
+      "afterSamples": [
+        {
+          "setupMs": 0.20000076293945312,
+          "durationMs": 149,
+          "finalPosition": {
+            "x": -32.13591003417969,
+            "z": 9.822128295898438
+          },
+          "finalCamera": {
+            "x": -32.13591003417969,
+            "y": 2.5760345458984375,
+            "z": 14.873001098632812
+          }
+        },
+        {
+          "setupMs": 0.09999942779541016,
+          "durationMs": 146.19999980926514,
+          "finalPosition": {
+            "x": -32.13591003417969,
+            "z": 9.822128295898438
+          },
+          "finalCamera": {
+            "x": -32.13591003417969,
+            "y": 2.5760345458984375,
+            "z": 14.873001098632812
+          }
+        },
+        {
+          "setupMs": 0,
+          "durationMs": 147,
+          "finalPosition": {
+            "x": -32.13591003417969,
+            "z": 9.822128295898438
+          },
+          "finalCamera": {
+            "x": -32.13591003417969,
+            "y": 2.5760345458984375,
+            "z": 14.873001098632812
+          }
+        },
+        {
+          "setupMs": 0.09999942779541016,
+          "durationMs": 145.69999980926514,
+          "finalPosition": {
+            "x": -32.13591003417969,
+            "z": 9.822128295898438
+          },
+          "finalCamera": {
+            "x": -32.13591003417969,
+            "y": 2.5760345458984375,
+            "z": 14.873001098632812
+          }
+        },
+        {
+          "setupMs": 0.20000076293945312,
+          "durationMs": 145.19999980926514,
+          "finalPosition": {
+            "x": -32.13591003417969,
+            "z": 9.822128295898438
+          },
+          "finalCamera": {
+            "x": -32.13591003417969,
+            "y": 2.5760345458984375,
+            "z": 14.873001098632812
+          }
+        }
+      ],
+      "note": "Same deterministic inputs and scene proxy values, same machine/browser/toolchain; excludes renderer, animation and GPU work. Component benchmark is independent of upstream voice UI."
+    },
+    "build": {
+      "mode": "Clean output; warm installed dependencies/filesystem; one sample each",
+      "before": {
+        "innerMs": 20.2,
+        "commandSeconds": 0.14,
+        "sourceBase": "0d98de6"
+      },
+      "after": {
+        "innerMs": 23.8,
+        "commandSeconds": 0.12,
+        "sourceBase": "c8f8698"
+      },
+      "comparisonGap": "Rebase also brought upstream voice files/dependency. Build samples do not isolate geometry overhead or establish a latency SLA. Inner copy time is nested in command time."
+    },
+    "proofToolchainSetup": {
+      "downloadBytes": 570422530,
+      "downloadSeconds": 10.23,
+      "extractionSeconds": 5.22,
+      "sha256": "c0c6f34f35ba1dcc5c4a5fd106fefab9eb5e8469712624dd2c868d51b63177c2",
+      "installLocation": "local-data/lean-verification/lean-4.35.0-darwin_aarch64",
+      "globalInstall": false
+    },
+    "routineChecks": "Existing Node test command now scopes tests/*.test.js; Lean verification remains manual. No added CI job/build stage or geometry npm dependency.",
+    "unavailable": {
+      "ciQueueTime": null,
+      "ciJobTime": null,
+      "improvementHarnessRun": null,
+      "minimumHardwareMatrix": null
+    }
+  },
+  "retainedFailures": [
+    {
+      "stage": "initial browser integration",
+      "outcome": "timeout in two runs",
+      "cause": "Dev-server whitelist excluded generated module filename",
+      "resolution": "Added exact filename route and restarted local server; post-fix and post-rebase routes pass"
+    },
+    {
+      "stage": "first broad Node discovery",
+      "outcome": "85 tests passed, scope included saved baseline copies",
+      "resolution": "Saved baseline tests renamed as snapshots; routine test command scoped to tests directory. Final post-rebase suite70 tests passed"
+    }
+  ],
+  "evidence": {
+    "verificationGuide": "verification/README.md",
+    "proofReceipt": "local-data/lean-verification/latest.json",
+    "negativeReceipt": "local-data/lean-verification/negative-drift.json",
+    "testLog": "local-data/lean-verification/final-tests.log",
+    "controllerBefore": "local-data/lean-verification/before-controller.json",
+    "controllerAfter": "local-data/lean-verification/after-controller.json"
+  }
+}

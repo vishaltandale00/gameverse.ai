@@ -1,0 +1,72 @@
+{
+  "schema": "gameverse.hosted-agent-ux/1",
+  "run_id": "5b7e89ba-5918-4959-b3d5-177378ba24f5",
+  "recorded_at": "2026-10-18T18:10:46.421Z",
+  "source_commit": "38eaa4cb584018cb47eeab9c7998f8401ed95410",
+  "source_dirty": true,
+  "source_files_sha256": {
+    "account.html": "dfdbb5f3c09d15b895c6bdba8dd14de61dd65d809359b7714fe46d296972283c",
+    "account.css": "7d07e7f2c769cfc5ae64224d4bdfe8621c040361a37cb318d38fc5af64c5ac70",
+    "agent-auth.html": "e2a4e109a7630af7ba8f1ceb292313e7026c13f9742089cbacf0123028e3d07e",
+    "src/account-page.js": "01520b22538b7a76236be33b7aee947db9e31884e1656103bf123ba0ce44fc02",
+    "src/agent-auth.js": "71911dbf9eda7af7734de5c00c55182af74ea0ede614bdfdaac307363b057a6a",
+    "src/agent-connection-view.js": "ef9839211a119033d9a772cc9eacb24894b37003934018b8b2ee3dcbcfd8b92e",
+    "scripts/build.mjs": "5c5c66a3aed4eda365e588da4958f10a9a854e99f5e280434b2ada983f66db7e",
+    "infra/cloudflare/account-jobs.js": "7e990a41ebaf8f68fd519ed764219414d095fb6e33dd9977d02e5d4f46bc7216",
+    "tests/hosting/jobs.test.js": "2a3d9c03478f48ca2572c6f11b8f6db1fb7f88a13ac7e8f552faf11d8b5e16de",
+    "tests/hosting/connection-view.test.js": "2b57ca235208dce4833104608b75c3b9bb76829b40c300d9e23e57acfe6e59ef",
+    "wrangler.staging.jsonc": "2e1ab1e8a22cadd1b31832fad82677b7cf33be27332dc03a2657019d3e9a8e34"
+  },
+  "deployment_version": "8c26510b-f8f1-44f0-b460-4927e8643dfa",
+  "previous_deployment": "847d626b-4291-4d3d-8414-41a529ef8894",
+  "origin": "https://gameverse.build",
+  "local_tests": {
+    "passed": 29,
+    "wall_ms": 4201.877666,
+    "followup_affected_checks": 5,
+    "followup_wall_ms": 1670.589125,
+    "providers": "synthetic"
+  },
+  "browser_checks": {
+    "source": "real account UI with synthetic local endpoints",
+    "connect_opens_tab_in_click": true,
+    "immediate_preparation": true,
+    "immediate_verification": true,
+    "code_form_removed_while_verifying": true,
+    "verification_after_reload": true,
+    "completion": true,
+    "technical_controls_collapsed": true,
+    "live_connected_account_preserved": true,
+    "exact_browser_tab_index": "browser controlled"
+  },
+  "clean_frontend_copy": {
+    "before_ms": 35.7,
+    "after_ms": 45,
+    "cache": "warm filesystem and installed dependencies",
+    "mode": "clean",
+    "comparison_limit": "single representative pair; no CI, native build or improvement-latency claim"
+  },
+  "worker": {
+    "raw_kib": 63.77,
+    "gzip_kib": 16.1,
+    "asset_upload_seconds": 0.92,
+    "worker_upload_seconds": 4.61,
+    "trigger_seconds": 1.15,
+    "reported_startup_ms": 3
+  },
+  "live_smoke": {
+    "run_id": "707cd114-9e50-45e2-86ae-bb8a03338abc",
+    "checks": 4,
+    "requests": 15,
+    "wall_ms": 1531.324542,
+    "model_calls": 0
+  },
+  "actual_agent_result_receipt": "hosted-connected-agent-runs-20261018.json",
+  "new_model_calls_for_ux_change": 0,
+  "limitations": [
+    "New connection-progress behavior verified with local synthetic provider responses; real retained connection and results verified live",
+    "Exact native browser tab placement is not controlled by the web app",
+    "CI/native game build/simulation/evaluation timings unavailable",
+    "Scope is account/connection UX; no game improvement or complete Slice 1 claim"
+  ]
+}

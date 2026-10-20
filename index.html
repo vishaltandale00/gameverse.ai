@@ -10,7 +10,7 @@
 <body class="application-loading">
   <div id="application-loading" role="status"><span class="brand-mark">✳</span><h1>Gameverse</h1><p>Opening your world…</p></div>
   <main id="application-error" hidden><p class="eyebrow">GAMEVERSE</p><h1>Let’s try that again.</h1><p id="application-error-message" role="status"></p><button id="reload-application" class="primary">Reload</button><a href="/v0">Open the game collection ↗</a></main>
-  <header class="topbar"><a href="/" class="brand" aria-label="Gameverse home"><span class="brand-mark">✳</span>gameverse<span class="brand-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><button data-view="discover" class="active" aria-current="page">Explore</button><button data-view="workshop">Mashup <span>↗</span></button><button data-view="play">Play</button></nav><button id="profile-button" class="profile-button">Create character <span>↗</span></button></header>
+  <header class="topbar"><a href="/" class="brand" aria-label="Gameverse home"><span class="brand-mark">✳</span>gameverse<span class="brand-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><button data-view="discover" class="active" aria-current="page">Explore</button><button data-view="workshop">Mashup <span>↗</span></button><button data-view="play">Play</button></nav><a class="account-link" href="/account" target="_blank" rel="noopener">Account &amp; agent ↗</a><button id="profile-button" class="profile-button">Create character <span>↗</span></button></header>
   <main id="home" hidden>
     <section class="mining-updates" aria-label="Research freshness"><div><span class="mining-label"><span class="tiny-dot green"></span> RESEARCH SNAPSHOT</span><span id="mining-updated">Loading local research…</span><span id="mining-counts"></span></div><div class="mining-actions"><a class="collection-world-return" href="/v1">Alder District ↗</a><span id="mining-map-note">Embedding map retained</span><button id="refresh-research" type="button">Refresh research ↻</button></div><p id="mining-message" role="status" aria-live="polite"></p></section>
     <div id="discover-view">
@@ -37,14 +37,48 @@
   <footer><span>MADE FOR THE WAY YOU PLAY.</span><span>Single player. Local first. <span class="footer-star">✳</span></span></footer>
   <div id="notice" role="status" aria-live="polite"></div>
   <button id="voice-button" type="button" aria-label="Give voice feedback — R3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11v1a6 6 0 0 0 12 0v-1M12 18v3M9 21h6"/></svg><span>Voice feedback</span><kbd>R3</kbd></button>
+  <section id="agent-panel" aria-label="Simulated players" hidden>
+    <h2>Simulated players</h2>
+    <ul id="agent-runs"></ul>
+    <button id="agent-stop-all" type="button" hidden>Stop all</button>
+    <details id="agent-details"><summary>Details</summary>
+      <p id="agent-ack"></p><pre id="agent-status"></pre>
+    </details>
+  </section>
+  <div id="qualification-step" role="status" hidden></div>
   <dialog id="voice-dialog" aria-labelledby="voice-title" aria-describedby="voice-message">
     <div class="voice-caption"><span class="voice-status-dot" aria-hidden="true"></span><span id="voice-target">Voice feedback</span><time id="voice-time" hidden>00:00</time></div><h2 id="voice-title">Opening microphone…</h2>
     <p id="voice-message" role="status" aria-live="polite"></p><blockquote id="voice-transcript" aria-live="polite" hidden></blockquote>
     <div class="dialog-actions"><button id="voice-cancel">Cancel · B</button><button id="voice-stop" class="primary" hidden>Send request · R3</button><button id="voice-done" class="primary" hidden>Return to game</button></div>
   </dialog>
-  <dialog id="world-menu" aria-labelledby="world-menu-title"><button id="world-menu-close" class="close" aria-label="Return to Gameverse">×</button><p class="eyebrow">ALDER DISTRICT</p><h2 id="world-menu-title">Gameverse</h2><p id="world-menu-message">Your world is paused. FireRed is waiting at Alder Arcade.</p><div class="dialog-actions"><button id="world-resume" class="primary">Return to Gameverse →</button><button id="world-character">Choose character</button><button id="world-reload" hidden>Reopen Gameverse</button></div><p class="controller-menu-hint">D-pad / left stick to choose · A to select · B / Start to resume</p><p id="world-controller-status" class="small">Keyboard + mouse · press a controller button to connect</p><div class="world-research-links"><a href="/v0?view=play">Game collection ↗</a><a href="/v0?view=workshop">Mashup workshop ↗</a><a href="/v0?view=discover">Explore game research ↗</a></div></dialog>
-  <dialog id="profile-dialog" aria-labelledby="profile-title"><button class="close" data-close="profile-dialog" aria-label="Close character creator">×</button><p class="eyebrow">YOUR PLACE IN GAMEVERSE</p><h2 id="profile-title">Choose your character.</h2><div id="existing-profiles"></div><form id="profile-form"><label for="character-name">What should we call you?</label><input id="character-name" name="name" maxlength="24" placeholder="Your name" required autocomplete="nickname"><button type="button" id="show-letters" class="text-button">Use controller keyboard</button><div id="letters" hidden></div><label>Pick a companion</label><div id="avatars" class="avatars"></div><button type="submit" class="primary">Let’s play <span>→</span></button></form><p class="small">Your Gameverse profile owns your progress. FireRed has its own trainer creation.</p></dialog>
-  <dialog id="session-dialog" aria-labelledby="session-title"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="session-title">Game paused.</h2><p id="session-message">Return to the collection to save this exact moment.</p><p class="controller-menu-hint">GAMEVERSE MENU · D-pad / left stick to choose · A to select · B to resume<br>Start and View / Back belong to the current GBA game.</p><div class="dialog-actions"><button id="resume-button" class="primary">Keep playing →</button><button id="save-return">Save & return to collection</button><button id="battery-fallback" hidden>Use last confirmed in-game save</button><button id="download-save">Download last confirmed in-game save</button><button id="feedback-button" class="text-button">Voice feedback · R3</button><button id="force-return" class="danger text-button">Leave without saving…</button></div></dialog>
+  <dialog id="world-menu" aria-labelledby="world-menu-title"><button id="world-menu-close" class="close" aria-label="Return to Gameverse">×</button><p class="eyebrow">ALDER DISTRICT</p><h2 id="world-menu-title">Gameverse</h2><p id="world-menu-message">Your world is paused. FireRed is waiting at Alder Arcade.</p><div class="dialog-actions"><button id="world-resume" class="primary">Return to Gameverse →</button><button data-venue="soccer">Juniper Pitch · 5v5 Soccer</button><button data-venue="football">Foundry Field · 7v7 Football</button><button id="world-character">Choose character</button><button id="world-reload" hidden>Reopen Gameverse</button></div><p class="controller-menu-hint">D-pad / left stick to choose · A to select · B / Start to resume</p><p id="world-controller-status" class="small">Keyboard + mouse · press a controller button to connect</p><div class="world-research-links"><a href="/v0?view=play">Game collection ↗</a><a href="/v0?view=workshop">Mashup workshop ↗</a><a href="/v0?view=discover">Explore game research ↗</a></div></dialog>
+  <dialog id="profile-dialog" aria-labelledby="profile-title">
+    <button class="close" data-close="profile-dialog" aria-label="Close character creator">×</button>
+    <p class="eyebrow">YOUR PLACE IN GAMEVERSE</p><h2 id="profile-title">Choose your character.</h2>
+    <div id="existing-profiles"></div>
+    <form id="profile-form">
+      <div id="profile-edit">
+        <label for="character-name">What should we call you?</label>
+        <div class="name-voice-actions"><button type="button" id="name-record">Say your name · R3</button><button type="button" id="name-cancel" hidden>Cancel voice · B</button></div>
+        <p id="name-status" class="small" role="status" aria-live="polite">Say your name, or enter it with the controller keyboard.</p>
+        <p id="name-live" aria-live="polite" hidden></p>
+        <input id="character-name" name="name" maxlength="24" placeholder="Your name" required autocomplete="nickname" aria-describedby="name-status">
+        <p class="small">Controller keyboard · D-pad / left stick to choose · A to select</p>
+        <div id="letters" role="group" aria-label="Controller keyboard"></div>
+        <div class="name-key-actions"><button type="button" id="name-case" aria-pressed="false">Lowercase</button><button type="button" id="name-space">Space</button><button type="button" id="name-backspace">Delete</button><button type="button" id="name-clear">Clear</button></div>
+        <label>Pick a companion</label><div id="avatars" class="avatars"></div>
+        <button type="submit" id="name-review-button" class="primary">Review character <span>→</span></button>
+      </div>
+      <div id="profile-review" hidden>
+        <p class="eyebrow">LOOK RIGHT?</p><div id="profile-review-avatar" aria-hidden="true"></div><h3 id="profile-review-name"></h3>
+        <p>Your character will be saved on this device when you confirm.</p>
+        <button type="submit" id="profile-confirm" class="primary">Confirm &amp; create character · A</button>
+        <button type="button" id="name-edit" class="text-button">Edit name or companion · B</button>
+      </div>
+    </form>
+    <p class="small">Your Gameverse profile owns your progress. FireRed has its own trainer creation.</p>
+  </dialog>
+  <dialog id="session-dialog" aria-labelledby="session-title"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="session-title">Game paused.</h2><p id="session-message">Return to the collection to save this exact moment.</p><p class="controller-menu-hint">GAMEVERSE MENU · D-pad / left stick to choose · A to select · B to resume<br><span id="session-control-note">Start and View / Back belong to FireRed.</span></p><div class="dialog-actions"><button id="resume-button" class="primary">Keep playing →</button><button id="save-return">Save & return to collection</button><button id="battery-fallback" hidden>Use last confirmed in-game save</button><button id="download-save">Download last confirmed in-game save</button><button id="feedback-button" class="text-button">Voice feedback · R3</button><button id="force-return" class="danger text-button">Leave without saving…</button></div></dialog>
   <noscript>Gameverse needs JavaScript to run the local game environment.</noscript>
 </body>
 </html>

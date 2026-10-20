@@ -1,0 +1,78 @@
+{
+  "schema": "prefab-iteration/1",
+  "run_id": "sid-rpg-weekend-template",
+  "source_commit": "prepared-at-run-time",
+  "environment_version": "libmgba/0.10.5",
+  "adapter_version": "sid-rpg-navigation/2",
+  "loop_config_ref": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+  "mechanism_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "base_rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+  "limits": {
+    "attempts": 1,
+    "model_calls": 20,
+    "native_frames": 6000,
+    "wall_seconds": 90,
+    "cost_usd": null
+  },
+  "supported_requests": [],
+  "experiment": {
+    "adapter_id": "sid-rpg-navigation/2",
+    "profile": {
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
+      "sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f"
+    },
+    "memory_profile": {
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
+      "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157"
+    },
+    "provider_manifest_ref": {
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
+      "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157"
+    },
+    "fixture_recipe": {
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-fixture.json",
+      "sha256": "07dfa90cf8b921cf6109b97ebc4e3ef1e1e8e6c29041e12667c2dfb85f4be118"
+    },
+    "scenario_ref": {
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json",
+      "sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac"
+    },
+    "goal": "source_scenario_graph",
+    "max_steps": 200,
+    "max_model_calls": 20,
+    "max_frames": 6000,
+    "max_seconds": 90,
+    "model_timeout": 10,
+    "confidence": 0.65,
+    "margin": 0.2,
+    "confidence_basis": "uncalibrated_provider_score",
+    "calibration_artifact": null,
+    "native_option": {
+      "max_frames": 600
+    },
+    "policy_ref": {
+      "path": "tools/playtester/models.py",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "sid_env_file_env": "GAMEVERSE_SID_ENV_FILE",
+    "models": {
+      "system1": {
+        "provider": "d1",
+        "model": "ramblerun/Decision-AI"
+      },
+      "system2": {
+        "provider": "explicit_chat",
+        "model": "ramblerun/Multimodal-AI"
+      }
+    }
+  },
+  "coverage": "Pinned original SID Emerald baseline postgame quest stages0 through6 using recovered source navigation and modern semantic/battle S1/S2. Candidate/mod comparison unavailable; incomplete milestones remain partial.",
+  "mechanism_refs": [],
+  "pause_after_experiment": false,
+  "model_repair_diagnosis": false,
+  "runtime_manifest": {
+    "path": "contracts/improvement-provider-pack.json",
+    "recipe_id": "sid-rpg-weekend-original",
+    "version_basis": "recipe-readset/1"
+  }
+}

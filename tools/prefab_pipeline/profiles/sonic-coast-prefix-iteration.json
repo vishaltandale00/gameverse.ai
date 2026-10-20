@@ -1,0 +1,105 @@
+{
+  "schema": "prefab-iteration/1",
+  "run_id": "sonic-coast-prefix-template",
+  "source_commit": "prepared-at-run-time",
+  "environment_version": "libmgba/0.10.5",
+  "adapter_version": "sonic-native-traversal/1",
+  "loop_config_ref": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+  "mechanism_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "base_rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "limits": {
+    "attempts": 1,
+    "model_calls": 20,
+    "native_frames": 6000,
+    "wall_seconds": 90,
+    "cost_usd": null
+  },
+  "supported_requests": [
+    {
+      "schema": "native-prefab-mod-request/1",
+      "request_id": "sonic-metroid-native-ir-progress-20261016-v1",
+      "intent": "Retained full native Sonic campaign with original MZM combat/controller/assets; emitted source acquisition/events own connected upgrade progression in task-owned persistent state",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 65536,
+        "subprocess_s": 20
+      },
+      "plan": {
+        "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+        "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025"
+      },
+      "rom": {
+        "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+        "sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020"
+      },
+      "strategy_lowering": {
+        "backend": "sonic-metroid-strategy/1",
+        "strategy": {
+          "path": "research/deep-extraction/sonic-metroid/strategy.json",
+          "sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931"
+        },
+        "lowerer": {
+          "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+          "sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8"
+        }
+      }
+    }
+  ],
+  "experiment": {
+    "adapter_id": "sonic-native-traversal/1",
+    "profile": {
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-actions.json",
+      "sha256": "c9cd488ada46406b15edca02ed983f3600bdde4db02433bbb16c3e19c8bd874f"
+    },
+    "memory_profile": {
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-memory.json",
+      "sha256": "64a3c082aa1d4d73058cb482e8626d0a4e842c311eca212a790cc7a9ccd86243"
+    },
+    "fixture_recipe": {
+      "path": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "sha256": "82d8f298db17c54e02f3524251ff102cdd6c85f2b0e7a8af2ddf7a175cd0a6e7"
+    },
+    "scenario_ref": {
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-scenario.json",
+      "sha256": "79e5b82839e361bca54762e0a759f0c68ce1803d4b1d0a5c72d0b1ade1295b01"
+    },
+    "goal": "source_scenario_graph",
+    "max_steps": 100,
+    "max_model_calls": 20,
+    "max_frames": 6000,
+    "max_seconds": 90,
+    "model_timeout": 10,
+    "confidence": 0.65,
+    "margin": 0.2,
+    "confidence_basis": "uncalibrated_provider_score",
+    "calibration_artifact": null,
+    "native_option": {
+      "max_frames": 600,
+      "motion_sample_frames": 120
+    },
+    "policy_ref": {
+      "path": "tools/playtester/models.py",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "sid_env_file_env": "GAMEVERSE_SID_ENV_FILE",
+    "models": {
+      "system1": {
+        "provider": "d1",
+        "model": "ramblerun/Decision-AI"
+      },
+      "system2": {
+        "provider": "explicit_chat",
+        "model": "ramblerun/Multimodal-AI"
+      }
+    }
+  },
+  "coverage": "Existing pinned Sonic/MZM cartridge only. Stage0\u21921\u21922 is native progression through first boss/capsule route; boss defeat and switch causality are inferred from source progression unless separately observed native callback evidence is retained. This is not full-game completion.",
+  "mechanism_refs": [],
+  "pause_after_experiment": false,
+  "model_repair_diagnosis": false,
+  "runtime_manifest": {
+    "path": "contracts/improvement-provider-pack.json",
+    "recipe_id": "sonic-metroid-coast-campaign",
+    "version_basis": "recipe-readset/1"
+  }
+}

@@ -5,6 +5,8 @@
 .env
 .env.*
 !.env.example
+.dev.vars*
+.wrangler/
 *.pem
 *.key
 
@@ -39,3 +41,8 @@ saves/
 *.state
 
 # Retained textual research logs are intentional provenance.
+
+# Generated qualification output (reports are retained under control/evidence-*)
+verification/prereq-*/
+verification/qualification-*/
+verification/journey-*/

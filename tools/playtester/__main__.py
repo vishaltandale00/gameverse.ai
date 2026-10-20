@@ -20,6 +20,7 @@ def main():
     source.add_argument("--adapter-command", nargs=argparse.REMAINDER,
                         help="Private JSONL worker argv; this option must come last")
     parser.add_argument("--profile", type=Path)
+    parser.add_argument("--sid-env-file", type=Path, help="Explicit sidbot SID_LLM_URL/SID_LLM_KEY credential reference; never logged")
     parser.add_argument("--output", type=Path, required=True, help="New output directory; never overwrites a run")
     parser.add_argument("--policy", choices=("frontier", "d1", "openai"), default="frontier")
     parser.add_argument("--system2", choices=("none", "chat"), default="none")
@@ -37,6 +38,9 @@ def main():
     args = parser.parse_args()
     adapter = None
     try:
+        if args.sid_env_file:
+            from tools.whole_game.model_config import load_sid_reference
+            load_sid_reference(args.sid_env_file)
         profile = json.loads(args.profile.read_text()) if args.profile else None
         game = json.loads(args.game.read_text()) if args.game else None
         if game is not None and profile is None:

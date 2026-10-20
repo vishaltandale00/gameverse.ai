@@ -19,7 +19,7 @@ npm run dev
 
 Open **http://127.0.0.1:4173**. Create a Gameverse character, then play FireRed. It still has its own trainer creation. Use the same origin/browser for progress; `localhost` and `127.0.0.1` have separate storage.
 
-The server binds only to the loopback interface and serves an explicit file allowlist. Games, third-party checkouts, source-derived data and build logs remain in ignored `vendor/`, `local-data/` and `artifacts/`. No game download or external processing runs in the browser.
+The server binds only to the loopback interface and serves an explicit file allowlist. Games, third-party checkouts, source-derived data and build logs remain in ignored `vendor/`, `local-data/` and `artifacts/`. No game download runs in the browser. Optional voice audio streams through the local backend for configured external transcription; see [voice setup and evidence](VOICE_DEVELOPMENT.md).
 
 `npm run build` packages the shell/runtime only into ignored `dist/`. That output deliberately disables cartridge entries; use `npm run dev` for local source-built games. It is not a deployed or distributable game release.
 
@@ -36,6 +36,8 @@ For FireRed edits, change tracked source under `vendor/pokefirered` and rerun `n
 An existing forest patch was applied, built into a distinct candidate and reversed from the source checkout. The launcher still points at the matching original cartridge. The candidate's gameplay has not been exercised.
 
 ## Controls and progress
+
+- Live voice feedback: R3 starts; R3 again sends and dismisses the panel, with finalization/saving in the background. B / Circle cancels before sending, then returns to gameplay. Voice does not pause the active game. Configure the server key/provider/model using [VOICE_DEVELOPMENT.md](VOICE_DEVELOPMENT.md). The local backend stores requests; the improvement harness is not connected.
 
 - Keyboard: arrows = D-pad; X/Z = A/B; A/S = L/R; Enter = Start; right Shift = Select; Escape = pause/menu.
 - Standard gamepad mapping: bottom/right face = A/B; shoulders = L/R; D-pad or left stick = movement; Start/Select as labeled. Y opens the Gameverse menu; Guide or both triggers also works. In Gameverse menus, D-pad/left stick chooses, A selects, and B resumes or goes back. USB Xbox detection and world movement were confirmed by the user; physical DualSense and full Xbox camera/button behavior remain unverified.

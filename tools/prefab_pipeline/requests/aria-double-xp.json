@@ -1,0 +1,27 @@
+{
+  "schema": "prefab-mod-request/1",
+  "request_id": "aria-double-xp-prefab-20261016",
+  "intent": "Double actual enemy defeat XP in the complete original Aria cartridge using its recovered reward prefab",
+  "prefab_id": "castlevania.aria.enemy_defeat_rewards",
+  "modification": {
+    "behavior": "defeat_rewards",
+    "parameter": "xp_scale",
+    "value": 2
+  },
+  "package": {
+    "path": "research/deep-extraction/castlevania/defeat.package.json",
+    "sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777"
+  },
+  "plan": {
+    "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+    "sha256": "7ff21f6104d7ba6756bb1e262a7ffd3caf4c11c3c4fa961ffb483a2f21beb66b"
+  },
+  "qualification": {
+    "path": "research/deep-extraction/castlevania/defeat-qualification.json",
+    "sha256": "6c6785b69fdc883f3b373aaa23e1f847adb1899c54c0ac59cc7bd579057780f5"
+  },
+  "rom": {
+    "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+    "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+  }
+}

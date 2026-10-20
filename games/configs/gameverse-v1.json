@@ -13,6 +13,16 @@
       "id": "firered",
       "catalogId": "firered",
       "adapter": "gameverse-gba-worker/0.1.0"
+    },
+    {
+      "id": "soccer",
+      "catalogId": "soccer",
+      "adapter": "gameverse-custom-sports/1.0.0"
+    },
+    {
+      "id": "football",
+      "catalogId": "football",
+      "adapter": "gameverse-custom-sports/1.0.0"
     }
   ]
 }

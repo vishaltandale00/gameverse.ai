@@ -1,0 +1,32 @@
+{
+  "schema": "gameverse.improvement-http-smoke/1",
+  "timestamp": "2026-10-16T18:05:30.206Z",
+  "transport": "Real HTTP loopback ephemeral listener; no builds/model calls",
+  "checks": [
+    {
+      "path": "/api/improvement/capabilities",
+      "status": 200,
+      "bytes": 5378
+    },
+    {
+      "path": "/api/improvement/runs/b588b40f-cbf5-42ec-93c7-6e7a65c81d6d",
+      "status": 200,
+      "bytes": 24661
+    },
+    {
+      "path": "/api/improvement/runs/b588b40f-cbf5-42ec-93c7-6e7a65c81d6d/artifacts/rom",
+      "status": 200,
+      "bytes": 16777216
+    },
+    {
+      "path": "/api/improvement/runs",
+      "status": 422,
+      "bytes": 106
+    },
+    {
+      "path": "/api/improvement/capabilities",
+      "status": 403,
+      "bytes": 80
+    }
+  ]
+}

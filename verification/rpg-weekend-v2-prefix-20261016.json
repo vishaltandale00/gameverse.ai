@@ -1,0 +1,134 @@
+{
+  "schema": "gameverse.rpg-prefix-comparison/1",
+  "run_id": "b098d2bf-8c32-4550-9495-a6f27bc7f3e0",
+  "outcome": "partial",
+  "stop_reason": "remaining_frame_budget_too_small",
+  "scope": "Existing original-save source-owned post-Champion weekend quest, stages0 through6. This prefix reached stage2 only; no battle or full quest qualification, candidate modification, compilation or mod-quality claim.",
+  "source": {
+    "schema": "gameverse.rpg-prefix-source-context/1",
+    "source_commit": "a88e321bdf80c383cb6cbdf8ed20ed4ddd66a461",
+    "expected_loop_version": "d5d05962ac045ed251af3dacc3bc5a56e25f9aaff278816330a2043968d9364f",
+    "expected_readset_sha256": "723e39651fa1e0a3e6ca08ce79c2dd5c16c87b8a006139da551d102af77fdec7",
+    "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+    "native_sha256": "977359b8e073684818abc28340b99885e0e8fa1c68f6b92e7cbcd1c48b9e98f4",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.9.6",
+    "node": "v24.14.0",
+    "scope": "Fresh same-original-save RPGv2 comparison; old adapter v1 checkpoint not reused",
+    "adapter_version": "sid-rpg-navigation/2"
+  },
+  "identity": {
+    "loop_version": "d5d05962ac045ed251af3dacc3bc5a56e25f9aaff278816330a2043968d9364f",
+    "version_basis": "recipe-readset/1",
+    "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+    "input_sha256": "88858ca979b66bf9bc21a40e30dbc0f3113845f4da03a217cf1b5d8862331ae8",
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "iteration_sha256": "d3282840d457d3c810350100e7096010daedae4d85e561f588e8006af7888e3a",
+    "adapter_version": "sid-rpg-navigation/2",
+    "checkpoint": {
+      "state": "562f858577c2d0e1b7a366169fd3b37884b9be7890979762f4aaad4810e58b30",
+      "learning_context": "2823625005b9f019785ce1e524bea19fb61cf6d59a4f4332451c6d018e634058",
+      "observation": "25dfcc5d72b568b315d64de3c737c483124334816603863ac5843bd086789fb1"
+    }
+  },
+  "limits": {
+    "attempts": 1,
+    "model_calls": 20,
+    "native_frames": 6000,
+    "wall_seconds": 90
+  },
+  "observed": {
+    "provider_calls": 14,
+    "system1_calls": 5,
+    "system2_calls": 9,
+    "system1_successes": 1,
+    "system1_http413_failures": 4,
+    "system2_successes": 9,
+    "system2_reasons": {
+      "low_confidence_or_margin": 1,
+      "decision_failed": 4,
+      "all_actions_stationary": 4
+    },
+    "actions": 99,
+    "deterministic_decisions": 90,
+    "setup_native_frames": 1692,
+    "play_native_frames": 3798,
+    "total_native_frames": 5490,
+    "quest_stages": [
+      0,
+      1,
+      2
+    ],
+    "battle_observations": 0,
+    "repairs": 0
+  },
+  "timing": {
+    "api": {
+      "queue_s": null,
+      "execution_wall_s": 40.11815975,
+      "build_s": null,
+      "simulation_s": 39.61528,
+      "evaluation_s": 1.8e-05,
+      "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+      "backend_total_s": 39.820087
+    },
+    "backend_stage_wall_s": {
+      "admit": 0.074203,
+      "artifact-reference": 0.093055,
+      "experiment": 39.61528,
+      "diagnose": 1.8e-05
+    },
+    "play_loop": {
+      "total_wall_s": 37.797474,
+      "observation_wall_s": 0.383947,
+      "action_wall_s": 5.342678,
+      "model_wall_s": {
+        "system1": 1.5051020829999966,
+        "system2": 30.515601210000007
+      },
+      "frames_per_action": 38.36363636363637,
+      "frames_per_model_call": 271.2857142857143,
+      "policy_wall_s": 32.033146,
+      "deadline_overshoot_s": 0.0,
+      "queue_s": null,
+      "build_s": null
+    },
+    "http_poll_elapsed_s": 40.829710792,
+    "nominal_native_fps": 59.72750056960583,
+    "simulated_play_seconds": 63.58879852294922,
+    "simulated_play_seconds_per_worker_wall_second": 1.5850377714034907,
+    "accounting": "Startup excluded from gameplay numerator. Model request time includes network/provider queue. Stage/policy/worker measurements overlap; do not add. Build, queue, cost and inference-only timing unavailable."
+  },
+  "comparison": {
+    "baseline_run_id": "d2e7374b-540e-4fa8-873b-79199f3cc184",
+    "same_original_rom_elf_ordinary_save_fixture": true,
+    "fresh_save_restart": true,
+    "old_checkpoint_reused": false,
+    "same_ceiling_20calls_6000frames_90s": true,
+    "v1": {
+      "calls": 20,
+      "play_frames": 439,
+      "worker_wall_s": 51.56329075,
+      "quest_stage_max": 0,
+      "all_actions_stationary_s2_calls": 18
+    },
+    "v2": {
+      "calls": 14,
+      "play_frames": 3798,
+      "worker_wall_s": 40.11815975,
+      "quest_stage_max": 2,
+      "all_actions_stationary_s2_calls": 4
+    },
+    "limitation": "Different runtime and model outputs; descriptive bounded same-input comparison, not a controlled provider benchmark. V2 stopped with510nativeframes unused because the next max600-frame option could not fit."
+  },
+  "verification": {
+    "canonical_input_hash": true,
+    "download_digests": true,
+    "pinned_refs_checked": 18,
+    "events_report_digest_binding": true,
+    "all_provider_requests_bound_to_current_observation": true,
+    "original_rom_elf_save_pins_unchanged": true,
+    "new_process_resume_exercised": false
+  },
+  "blocked_followup": "Do not spend approved100call campaign until four D1 HTTP413 transport failures are diagnosed/resolved. Old v1 and this v2 prefix remain immutable source-identity evidence; no checkpoint repinning across code changes."
+}

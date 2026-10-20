@@ -1,0 +1,177 @@
+{
+  "schema": "gameverse.central-discovery-publication-summary/1",
+  "date": "2026-10-16",
+  "scope": "Sanitized owner-retained local publication/discovery metadata; no library database, game-derived IR, source assets or private payload is distributed.",
+  "source_receipt_sha256": "287a62bc0fccb280eb9717a453baf827dafaed38a58539f770fe89710edbac70",
+  "discovery_verification_sha256": "18c5e84fcf4978958a94e2eea2fe5190a4c3e6c899a101ea7d3336c0b6eac989",
+  "producer_ledger_sha256": "c200b38f1c205d0bdf3eff565123371f7ab9c82f74f9be0debe7bf4f6acd53fd",
+  "baseline": {
+    "central_packages": 170,
+    "catalog_unique_source_root_identities": 159,
+    "capability_records": 5,
+    "ready_phase_variants": 29,
+    "ready_canonical_modules": 20
+  },
+  "current": {
+    "central_packages": 183,
+    "catalog_unique_source_root_identities": 171,
+    "typed_port_subset_packages": 159,
+    "capability_records": 21,
+    "capability_canonical_module_ids": 19,
+    "ready_phase_variants": 29,
+    "ready_canonical_modules": 20
+  },
+  "delta": {
+    "central_packages": 13,
+    "genuinely_new_researched_source_roots": 11,
+    "historical_source_roots_newly_centrally_represented": 1,
+    "historical_MMZ_domain_specialization_packages": 2,
+    "capability_records": 16,
+    "new_ready_prefabs": 0
+  },
+  "classification_notes": [
+    "Catalog unique source identities increase12:11 new researched roots plus historical MMZ0801b29c newly represented by two selector-domain packages. Domain variants are not new source functions.",
+    "Prior installed roots and source-entry replacements are separated from newly recovered roots in producer ledger.",
+    "Source assets identified, captured/emitted and independently regenerated remain separate record counters; no blanket asset regeneration credit.",
+    "Evidence-linked capabilities do not grant complete mechanics, whole-game equivalence or interchangeable prefab readiness."
+  ],
+  "remaining_dependencies": [
+    "DBA direct disjoint fixture domain only; actual parent actor/global alias unproved; composition/general replacement false.",
+    "MMZ exact selector0/1 outside-cartridge variants; no runtime guard, dynamic-selector/caller/lifecycle admission.",
+    "SMA4 finite projected witness only; omitted RAM liveness/minSP and upper16ABI unproved; complete ABI/general replacement false.",
+    "PMD emitted outside ROM only; binding not runtime-qualified and no installed IR credit.",
+    "Fusion corrected draw-distance/standing metadata inherits unchanged native body; new exact-hash graph admission pending, old graph historical.",
+    "Other source host callbacks, ownership, scheduling and lifecycle gaps remain explicit per capability record; no forced dependency sequence or whole-game closure."
+  ],
+  "discovery": {
+    "outcome": "pass",
+    "selected_games": [
+      "final-fantasy-tactics-advance",
+      "final-fantasy-i-and-ii-dawn-of-souls",
+      "wario-land-4",
+      "dragon-ball-advanced-adventure",
+      "driv3r",
+      "megaman-zero",
+      "metroid-fusion",
+      "legend-of-zelda-the-the-minish-cap",
+      "castlevania-aria-of-sorrow",
+      "mario-and-luigi-superstar-saga",
+      "crash-bandicoot-the-huge-adventure",
+      "super-mario-advance-4-super-mario-bros-3",
+      "pokemon-mystery-dungeon-red-rescue-team",
+      "pokemon-ruby-version",
+      "pokemon-leafgreen-version"
+    ],
+    "selected_library_records": 19,
+    "selected_canonical_library_modules": 17,
+    "extracted_capsules": 56,
+    "semantic_request_count": 16,
+    "current_inputs_unchanged": true,
+    "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "contract_errors": {},
+    "contract_diagnostics": [],
+    "planning": {
+      "status": "blocked",
+      "executable_ready": false,
+      "consumed_capsules": 56,
+      "diagnostic_codes": [
+        "backend.unsupported",
+        "capability.unsatisfied",
+        "closure.incomplete",
+        "closure.obligation",
+        "dependency.missing"
+      ]
+    },
+    "timing": {
+      "extract_cli_wall_s": 0.82683025,
+      "plan_cli_wall_s": 0.6504743749999999,
+      "plan_admission_wall_s": 0.564985666,
+      "queue_s": null,
+      "build_s": null,
+      "native_s": null,
+      "model_s": null,
+      "accounting": "CLI wall times measured separately; plan admission is nested. No baseline comparison for this expanded 15-game input set."
+    }
+  },
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "operation": "extract",
+      "exit_code": 1,
+      "wall_s": 0.162597291,
+      "evidence_sha256": "b4a094be26f60fb5ad52464b27c68dcf68eaeebc120f9a9659bfebeaf74f083f"
+    },
+    {
+      "attempt": 2,
+      "operation": "extract",
+      "exit_code": 1,
+      "wall_s": 0.462003208,
+      "evidence_sha256": "2291cbd609dd1f86ae6e532fea861583bd5c999aa505c700d881c4a8380ad72d"
+    },
+    {
+      "attempt": 3,
+      "operation": "extract",
+      "exit_code": 0,
+      "wall_s": 0.82683025,
+      "evidence_sha256": "260259a0edb6e285d701ff710c10d66eb99d0fa909f14864792ca6b6a47e921f"
+    },
+    {
+      "attempt": 4,
+      "operation": "plan",
+      "exit_code": 2,
+      "wall_s": 0.6504743749999999,
+      "evidence_sha256": "a57c8684d8eee3e56100a6c9c27f26d93564c69047fe1a0981ae9f2db70318df"
+    }
+  ],
+  "source_only_refresh": {
+    "checks_passed": 11,
+    "wall_s": 1.959674334
+  },
+  "verification_provenance": "Retained producer/intake execution and independent QC; publisher verified immutable receipt hash and sanitized metadata, without rerunning production discovery.",
+  "publication_new_runs": {
+    "native": 0,
+    "build": 0,
+    "model": 0
+  },
+  "limits": [
+    "Actual extraction succeeded; planning intentionally remains blocked by backend, capability, closure and dependency gaps, not schema errors.",
+    "No new closed interchangeable prefabs or whole-game reconstruction is demonstrated.",
+    "Discovery depends on the separately installed authorized local library; the public checkout contains generic source only.",
+    "Queue and comparable expanded-input before/after latency baselines are unavailable; plan admission time is nested in plan CLI wall time."
+  ],
+  "local_loader_fixes": {
+    "public_source_included": false,
+    "behavior": [
+      "Preserve scalar/list/map inventory metadata and structured false gap flags.",
+      "Retain string source-contract references without inventing inline mappings; missing mapping/domain warnings remain explicit.",
+      "Reject unsupported inventory field types."
+    ],
+    "implementation_pins": [
+      {
+        "path": "tools/prefab_pipeline/extraction.py",
+        "sha256": "2b21eef99cb9191df2c37b9a2c43173cf603067878bd3fc3706e1a5a7f0f9d7c"
+      },
+      {
+        "path": "tools/prefab_pipeline/library_index.py",
+        "sha256": "26071402ee6745edb9092356b4ec8b934b4efd13cbf324ef7b89b7004255f348"
+      },
+      {
+        "path": "tools/prefab_pipeline/test_library_index.py",
+        "sha256": "c509e7e7c5f65e57e754ba8c76b19e0d20caab2def35e51c33ca9ce2c8475314"
+      }
+    ],
+    "focused_owner_checks": [
+      {
+        "tests_passed": 1,
+        "wall_s": 0.004
+      },
+      {
+        "tests_passed": 2,
+        "wall_s": 0.008
+      }
+    ],
+    "review_scope": "Narrow generic compatibility delta reviewed in local production pipeline; no new publisher execution.",
+    "public_gap": "The extractor, its library loader and full producer frontend are not shipped by this PR. A future export needs both runtime modules plus existing synthetic extraction test fixtures; no source or database is silently assumed present."
+  }
+}

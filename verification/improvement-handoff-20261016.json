@@ -1,0 +1,70 @@
+{
+  "schema": "gameverse.improvement-handoff-portability/1",
+  "date": "2026-10-16",
+  "run_id": "isolated-handoff-portability-20261016",
+  "export_base_commit": "b58ae3ee1aa5f7c24f67ddcc9c872a03e23fba27",
+  "source_checkout_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "provider_manifest": "contracts/improvement-provider-pack.json",
+  "provider_files": 60,
+  "status": "candidate-built",
+  "request_sha256": "c8531fd02326c04ed057c72b2e47d91b30911717828862e8bf68d93cf9f7878f",
+  "artifact_sha256": "6f52161e9826a16f2f063e452d6b63ef554d4efcce867eece0be418b401b86c8",
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "mode": "clean isolated checkout; provider installed from authorized existing local checkout; existing machine toolchain",
+  "model_calls": 0,
+  "backend_total_s": 0.347796,
+  "stages": [
+    {
+      "name": "admit",
+      "outcome": "passed",
+      "wall_s": 0.004135
+    },
+    {
+      "name": "strategy-lowering",
+      "outcome": "passed",
+      "wall_s": 0.025082
+    },
+    {
+      "name": "merge-strategy",
+      "outcome": "passed",
+      "wall_s": 0.005118
+    },
+    {
+      "name": "prepare",
+      "outcome": "passed",
+      "wall_s": 0.003516
+    },
+    {
+      "name": "build",
+      "outcome": "passed",
+      "wall_s": 0.291864
+    }
+  ],
+  "accounting": "Admission, lowering, preparation and compiler build stages nested within total_wall_s; compiler sub-stages overlap parent build; queue unavailable",
+  "queue_s": null,
+  "before_after_baseline": null,
+  "ci_measurements": null,
+  "quality": "candidate construction only; gameplay/campaign equivalence and save compatibility not qualified",
+  "distribution": "No provider payload or generated candidate included in commit",
+  "node_tests": {
+    "passed": 9,
+    "skipped": 0,
+    "runner_duration_ms": 216.532958
+  },
+  "python_tests": {
+    "passed": 35,
+    "runner_duration_s": 0.063
+  },
+  "provider_capabilities_after_install": [
+    {
+      "id": "aria-double-xp",
+      "installed": true,
+      "missing_inputs": []
+    },
+    {
+      "id": "aria-soulstride",
+      "installed": true,
+      "missing_inputs": []
+    }
+  ]
+}

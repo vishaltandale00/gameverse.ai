@@ -39,7 +39,25 @@ static void drain(struct mCore* core) {
     }
 }
 int main(int argc, char** argv) {
-    if (argc != 3) return 2;
+    const char* initialSave = NULL;
+    if (argc >= 5 && !strcmp(argv[argc - 2], "--initial-save")) {
+        initialSave = argv[argc - 1]; argc -= 2;
+    }
+    if (argc != 3 && argc != 5 && argc != 6) return 2;
+    unsigned mailboxBase = 0, mailboxSize = 0, callbackAddress = 0;
+    if (argc == 5 && !strcmp(argv[3], "--callback-watch")) {
+        callbackAddress = strtoul(argv[4], NULL, 0);
+        if (callbackAddress < 0x03000000 || callbackAddress > 0x03008000 - 4) return 2;
+    } else if (argc >= 5) {
+        mailboxBase = strtoul(argv[3], NULL, 0);
+        mailboxSize = strtoul(argv[4], NULL, 0);
+        if (!mailboxSize || mailboxSize > 8192 || mailboxBase < 0x02000000 ||
+            mailboxBase > 0x02040000 - mailboxSize) return 2;
+    }
+    if (argc == 6) {
+        callbackAddress = strtoul(argv[5], NULL, 0);
+        if (callbackAddress < 0x03000000 || callbackAddress > 0x03008000 - 4) return 2;
+    }
     mLogSetDefaultLogger(&logger);
     struct mCore* core = GBACoreCreate();
     if (!core || !core->init(core)) return 3;
@@ -52,6 +70,13 @@ int main(int argc, char** argv) {
     core->setVideoBuffer(core, pixels, 240);
     core->setAudioBufferSize(core, 4096);
     if (!mCoreLoadFile(core, argv[1])) return 5;
+    /* Python supplies only a private session copy. mGBA owns the VFile
+     * after a successful load and may flush battery writes to that copy. */
+    if (initialSave) {
+        struct VFile* save = VFileOpen(initialSave, O_RDWR);
+        if (!save) return 6;
+        if (!core->loadSave(core, save)) { save->close(save); return 6; }
+    }
     core->rtc.override = RTC_FIXED;
     core->rtc.value = 1704067200000LL;
     core->reset(core);
@@ -62,23 +87,62 @@ int main(int argc, char** argv) {
     unsigned long long recorded = 0, recordingFrame = 0;
     unsigned stride = 2;
     FILE* video = NULL;
+    unsigned watchAddress[32], watchWidth[32], watchMask[32], watchCount = 0;
     puts("OK ready"); fflush(stdout);
     while (fgets(line, sizeof(line), stdin)) {
         unsigned a = 0, b = 0;
         int fields = sscanf(line, "%31s %u %u", op, &a, &b);
         if (fields < 1) { puts("ERR command"); }
-        else if (!strcmp(op, "step") && fields == 3 && a < 1024 && b <= 3600) {
+        else if ((!strcmp(op, "step") || !strcmp(op, "stepw")) && fields == 3 && a < 1024 && b <= 3600) {
             core->setKeys(core, a);
             int videoOk = 1;
+            unsigned advanced = 0;
+            int watchHit = -1;
+            unsigned watchBefore[32];
+            for (unsigned w = 0; w < watchCount; ++w) {
+                unsigned value = 0;
+                for (unsigned j = 0; j < watchWidth[w]; ++j)
+                    value |= (unsigned) core->busRead8(core, watchAddress[w] + j) << (8 * j);
+                watchBefore[w] = value & watchMask[w];
+            }
+            unsigned callbackBefore = callbackAddress ? core->busRead32(core, callbackAddress) : 0;
             for (unsigned i = 0; i < b; ++i) {
-                core->runFrame(core); drain(core);
+                core->runFrame(core); drain(core); ++advanced;
                 if (video && recordingFrame++ % stride == 0) {
                     if (!writePixels(video, pixels)) videoOk = 0;
                     else ++recorded;
                 }
+                /* Source words sampled after EVERY frame, before another
+                 * frame can hide a transient boundary. Read-only RAM only. */
+                for (unsigned w = 0; w < watchCount; ++w) {
+                    unsigned value = 0;
+                    for (unsigned j = 0; j < watchWidth[w]; ++j)
+                        value |= (unsigned) core->busRead8(core, watchAddress[w] + j) << (8 * j);
+                    if ((value & watchMask[w]) != watchBefore[w]) { watchHit = (int) w; break; }
+                }
+                if (watchHit >= 0) break;
+                /* Stop at the source-owned region export boundary; never skip
+                 * a READY travel event while running a longer input batch. */
+                if (callbackAddress && core->busRead32(core, callbackAddress) != callbackBefore) break;
+                if (mailboxSize >= 24 && core->busRead32(core, mailboxBase) == 0x57474D31 &&
+                    core->busRead32(core, mailboxBase + 16) == 1 &&
+                    core->busRead32(core, mailboxBase + 20) == 2) break;
             }
-            core->setKeys(core, 0); frames += b;
-            if (videoOk) printf("OK %llu\n", frames); else puts("ERR recording");
+            core->setKeys(core, 0); frames += advanced;
+            if (!videoOk) puts("ERR recording");
+            else if (!strcmp(op, "stepw")) printf("OK %llu %d\n", frames, watchHit);
+            else printf("OK %llu\n", frames);
+        } else if (!strcmp(op, "unwatch")) {
+            watchCount = 0; puts("OK cleared");
+        } else if (!strcmp(op, "watch") && fields == 3 && watchCount < 32 &&
+                   (b == 1 || b == 2 || b == 4) &&
+                   ((a >= 0x02000000 && a <= 0x02040000 - b) ||
+                    (a >= 0x03000000 && a <= 0x03008000 - b))) {
+            unsigned mask;
+            if (sscanf(line, "%*s %*u %*u %u", &mask) == 1 && mask) {
+                watchAddress[watchCount] = a; watchWidth[watchCount] = b;
+                watchMask[watchCount++] = mask; puts("OK watching");
+            } else puts("ERR watch");
         } else if (!strcmp(op, "frame")) {
             snprintf(path, sizeof(path), "%s/frame.rgba", argv[2]);
             FILE* f = fopen(path, "wb");
@@ -94,6 +158,20 @@ int main(int argc, char** argv) {
             printf("OK ");
             for (unsigned i = 0; i < b; ++i) printf("%02x", (unsigned) core->busRead8(core, a + i));
             putchar('\n');
+        } else if (!strcmp(op, "write") && fields == 3 && mailboxSize && b > 0 && b <= 64 &&
+                   a >= mailboxBase && a <= mailboxBase + mailboxSize - b && b <= mailboxSize) {
+            char hex[129];
+            int n = 0, valid = 1;
+            if (sscanf(line, "%*s %*u %*u %128s%n", hex, &n) != 1 || strlen(hex) != b * 2) valid = 0;
+            for (unsigned i = 0; valid && i < b * 2; ++i)
+                if (!((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'a' && hex[i] <= 'f'))) valid = 0;
+            if (valid) {
+                for (unsigned i = 0; i < b; ++i) {
+                    char byte[3] = {hex[2*i], hex[2*i+1], 0};
+                    core->busWrite8(core, a + i, strtoul(byte, NULL, 16));
+                }
+                puts("OK written");
+            } else puts("ERR mailbox");
         } else if (!strcmp(op, "record") && fields >= 2 && a <= 1) {
             if (a == 1 && !video && fields == 3 && b >= 1 && b <= 6) {
                 snprintf(path, sizeof(path), "%s/video.rgba", argv[2]);

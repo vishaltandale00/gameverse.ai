@@ -105,8 +105,7 @@ available actions; it cannot create button commands, run code, write RAM or
 access tools. A valid JSON `action_id` or STOP is required. A single JSON code
 fence is accepted; arbitrary surrounding prose is rejected. A long reason is
 truncated to 240 characters after parsing, rather than discarding a valid action.
-Failed/invalid LLM
-output stops the bot; no silently chosen fallback action.
+Invalid JSON or an unavailable action ID gets at most one explicit schema repair by default (`Limits.max_system2_repairs`), carrying the validation code and current allowed IDs back to System2. Each request is separately recorded and charged against the configured call/time limits. Persistently invalid output stops with a retained partial result; no silently chosen fallback action.
 
 ## Adapter seam and ROM sessions
 
@@ -242,3 +241,37 @@ The bounded native-ROM integration pilot retained at
 uncertain choices escalated visibly, and the LLM returned valid structured
 actions with thinking disabled and JSON mode enabled. This verifies integration
 and honest stopping, not autonomous platform control or a completed ROM objective.
+
+
+## Whole-source composition runs
+
+`python3 -m tools.whole_game.pilot --full-scenario` uses this same controller with
+unlimited System2 **round count**, while preserving overall action, frame,
+decision, and wall limits. System2's plan hypothesis and subsequent observed
+outcomes return to System1. A resource boundary produces a partial checkpoint;
+it is never scenario completion. The optional pipeline pins full source build
+receipts and separates loop policy from candidate artifact identity.
+
+`--sid-env-file /explicit/reference` opts into sidbot's existing
+`SID_LLM_URL`/`SID_LLM_KEY` mechanism without persisting or logging values.
+`--resume-context` restores same-game model learning; profile revision transfer
+requires an explicit exact prior profile proof via `--resume-from-profile`.
+Paired composition saves restore through the adapter's `--resume-checkpoint`.
+
+A source-proven noninteractive copyright callback permits continuation of a
+model-selected wait across observed frame batches, stopping for a callback or
+source travel event. Incomplete callback/party observations are explicitly
+marked partial; unchanged callback alone cannot prove a dialogue or walking
+barrier. Full-scenario probes require at least 60 no-progress emulated frames
+before masking an action, in addition to the attempt threshold. These are
+configurable starting policies, not calibrated guarantees.
+
+## Native improvement integration
+
+The registered `tools.playtester.experiment.experiment_native_candidate` callback runs this controller inside the public improvement pipeline. Supported native adapters are `aria-readonly-reward-fragment/1` and `sonic-native-traversal/1`; ROMs, source evidence and saved states remain private, pinned provider inputs. No browser, SDK or Python package installation is required. Build the native bridge against an existing mGBA installation with `make -C tools/re/session MGBA_PREFIX=/path/to/mgba/prefix`; the generated executable is not committed. Missing native binaries and credential references produce explicit prerequisite errors.
+
+Set `GAMEVERSE_SID_ENV_FILE` to the authorized external SID environment-file reference. Public experiment templates use `sid_env_file_env`, not a personal file path or credential value. The existing loader reads only `SID_LLM_URL` and `SID_LLM_KEY`; inherited model environment settings retain their documented precedence. Effective model/provider identities and endpoints are recorded without keys, and declared model identities are checked before model calls. System1 confidence, margin and consistency gate decisions; insufficient confidence goes to System2. The total call/frame/time budget bounds a chunk, while the System2 cycle count is unrestricted within that budget. A resource stop is partial progress, never task completion.
+
+Native stepping is unthrottled. Source event auditing may use one-frame steps inside a model-selected macro and stop at an observed event; it does not choose inputs. The Aria audit records a newly initialized Skeleton slot with its original callback, matching player parent, actual player impulse and MP observations. Existing initialized slots are seeded before inputs to avoid false births. This frame observation is not an instruction-level hook trace. Input-readiness fixture actions are explicitly scripted setup, separate from model decisions, with all newly executed setup frames charged.
+
+A continuation checkpoint pins the ROM, native binary, runtime source, effective action/observation profiles, model identities, native state, saved observation and learning context. A fresh worker restores graph visits, failed probes and historical System2 hypotheses. Loading a raw native state requires one explicitly reported framebuffer integration frame; the resumed observation is fresh and is not claimed byte-identical to the pre-render observation. Native action throughput, simulated duration, model time and total elapsed time are reported separately; no fixed speed multiplier is an acceptance rule.

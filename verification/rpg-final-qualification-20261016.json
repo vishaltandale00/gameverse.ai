@@ -1,0 +1,343 @@
+{
+  "schema": "gameverse.rpg-final-qualification/1",
+  "run_id": "3589625d-4431-4318-87df-00e95970907f",
+  "source": {
+    "source_commit": "96c5566a018896bf91ebbc5d6ad2d84f9adbf7cb",
+    "loop_version": "5b8b2365464694abf19dd29265db66c7a4cbcf5489c52e2ce4f754d32c7b3d52",
+    "runtime_readset_sha256": "779c1c9b86cd11b93acfafe23068d17e3e44ce1e23c30732fc62a4c5346996a6",
+    "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+    "prior_current_ledger_calls": 66,
+    "this_campaign_call_cap": 34,
+    "total_current_ceiling": 100,
+    "prior_separate_v1_calls": 20,
+    "scope": "Fresh original save, final cancellation-before-experiment/new-controller state-continuity qualification; no oldcheckpoint adoption and no furtherwaves."
+  },
+  "identity": {
+    "loop_version": "5b8b2365464694abf19dd29265db66c7a4cbcf5489c52e2ce4f754d32c7b3d52",
+    "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "campaign_input_sha256": "8af2737d0f1b49f86e84ecd545bb2f343f5dcb891027cf1df032f498215789a7",
+    "campaign_report_sha256": "75fd72d76300c8893fc57667551bd4a325b4018718c3e20ba0ae7f98e4163dc7"
+  },
+  "outcome": "partial",
+  "reason": "campaign_model_calls_budget_exhausted",
+  "scope": "Existing original post-Champion Ocean City weekend source quest. Source stages0\u21924 and battle presence observed; pair-battle win/stage5, gym gauntlet/stage6 and whole quest remain unqualified. No fresh-game gym, modification, compilation, mod-quality or reconstruction-equivalence claim.",
+  "limits": {
+    "chunks": 32,
+    "repairs": 0,
+    "model_calls": 34,
+    "native_frames": 120000,
+    "wall_seconds": 600,
+    "cost_usd": null
+  },
+  "observed": {
+    "provider_calls": 34,
+    "provider_statuses": [
+      {
+        "kind": "decision",
+        "status": "success",
+        "count": 9
+      },
+      {
+        "kind": "system2",
+        "status": "success",
+        "count": 25
+      }
+    ],
+    "gate_and_escalation_reasons": [
+      {
+        "kind": "decision",
+        "reason": "low_confidence_or_margin",
+        "count": 8
+      },
+      {
+        "kind": "system2",
+        "reason": "low_confidence_or_margin",
+        "count": 8
+      },
+      {
+        "kind": "system2",
+        "reason": "all_actions_stationary",
+        "count": 16
+      },
+      {
+        "kind": "decision",
+        "reason": "stop_recommended",
+        "count": 1
+      },
+      {
+        "kind": "system2",
+        "reason": "stop_recommended",
+        "count": 1
+      }
+    ],
+    "model_aliases": {
+      "system1": "ramblerun/Decision-AI",
+      "system2": "ramblerun/Multimodal-AI"
+    },
+    "model_serving_revisions": "unavailable; configured aliases",
+    "confidence_threshold": 0.65,
+    "margin_threshold": 0.2,
+    "per_system2_call_cap": null,
+    "native_frames": 7893,
+    "startup_frames": 1692,
+    "resume_render_integration_frames": 1,
+    "play_frames": 6200,
+    "actions": 164,
+    "quest_stages": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "battle_observations": 4,
+    "battle_win_observed": false,
+    "gym_complete_observed": false,
+    "repairs": 0
+  },
+  "chunks": [
+    {
+      "number": 1,
+      "status": "partial",
+      "reason": "experiment_budget_exhausted",
+      "usage": {
+        "model_calls": 14,
+        "native_frames": 5490,
+        "cost_usd": null
+      },
+      "wall_s": 28.416388,
+      "had_initial_checkpoint": false,
+      "checkpoint_hashes": {
+        "state": "2729b230c61293d0ed1c21f8cec8583fb173dc6961bf29e43ca4a0291ae91db6",
+        "learning_context": "02a9773302db789c6ba4092863d9c66b9e996adbc2730d5591847d25908a6e23",
+        "observation": "cf34bbd773ae49bcd7794d7ba435332284e1f8ea417d75239b50fecfc6e91877"
+      },
+      "quest_stages": [
+        0,
+        1,
+        2
+      ],
+      "battle_observations": 0,
+      "actions": 99,
+      "play_frames": 3798,
+      "setup_frames": 1692,
+      "resume_render_integration_frames": 0,
+      "model_calls": {
+        "decision": 5,
+        "system2": 9
+      },
+      "play_loop_timing": {
+        "total_wall_s": 26.389464,
+        "observation_wall_s": 0.379017,
+        "action_wall_s": 5.232236,
+        "model_wall_s": {
+          "system1": 2.1261772900000016,
+          "system2": 18.602753666
+        },
+        "frames_per_action": 38.36363636363637,
+        "frames_per_model_call": 271.2857142857143,
+        "policy_wall_s": 20.742215,
+        "deadline_overshoot_s": 0.0,
+        "queue_s": null,
+        "build_s": null
+      }
+    },
+    {
+      "number": 2,
+      "status": "partial",
+      "reason": "campaign_cancel_requested",
+      "usage": {
+        "model_calls": 0,
+        "native_frames": 0,
+        "cost_usd": 0.0
+      },
+      "wall_s": 0.005016,
+      "had_initial_checkpoint": true
+    },
+    {
+      "number": 3,
+      "status": "partial",
+      "reason": "experiment_budget_exhausted",
+      "usage": {
+        "model_calls": 20,
+        "native_frames": 2403,
+        "cost_usd": null
+      },
+      "wall_s": 30.848946,
+      "had_initial_checkpoint": true,
+      "checkpoint_hashes": {
+        "state": "35233ab52f7dbe6b78c8fd51db329d67ef6c3f98cdd38c1176993fd282f6d9ef",
+        "learning_context": "f0385b70455c2b9df05067c2a4448b68eb381964b2674d5c6a0e55b52bd8cf54",
+        "observation": "ddd84794589fdaebddda726eb5973dd816f25959192b03fe8a556afb20d6125d"
+      },
+      "quest_stages": [
+        2,
+        3,
+        4
+      ],
+      "battle_observations": 4,
+      "actions": 65,
+      "play_frames": 2402,
+      "setup_frames": 1,
+      "resume_render_integration_frames": 1,
+      "model_calls": {
+        "decision": 4,
+        "system2": 16
+      },
+      "play_loop_timing": {
+        "total_wall_s": 29.145529,
+        "observation_wall_s": 0.400751,
+        "action_wall_s": 3.099072,
+        "model_wall_s": {
+          "system1": 1.490481126000001,
+          "system2": 24.11457904400001
+        },
+        "frames_per_action": 36.95384615384615,
+        "frames_per_model_call": 120.1,
+        "policy_wall_s": 25.6184,
+        "deadline_overshoot_s": 0.0,
+        "queue_s": null,
+        "build_s": null
+      }
+    }
+  ],
+  "continuity_verification": {
+    "cancelled_before_second_experiment": true,
+    "cancelled_child_model_calls": 0,
+    "cancelled_child_native_frames": 0,
+    "new_controller_supervisor_instance": true,
+    "worker_owner_token_and_port_changed": true,
+    "resumed_from_first_chunk_not_zero_use_cancelled_child": true,
+    "initial_native_learning_observation_scenario_navigation_and_runtime_checkpoint_refs_exactly_match": true,
+    "loaded_state_sha256": "2729b230c61293d0ed1c21f8cec8583fb173dc6961bf29e43ca4a0291ae91db6",
+    "learning_context_sha256": "02a9773302db789c6ba4092863d9c66b9e996adbc2730d5591847d25908a6e23",
+    "checkpoint_observation_sha256": "cf34bbd773ae49bcd7794d7ba435332284e1f8ea417d75239b50fecfc6e91877",
+    "one_resume_render_integration_frame": true,
+    "startup_1692_frames_not_replayed": true,
+    "saved_vs_first_resumed_source_facts_equal": {
+      "map": true,
+      "x": true,
+      "y": true,
+      "elev": true,
+      "facing": true,
+      "in_battle": true,
+      "story": true
+    },
+    "observation_equality_scope": "Measured source state fields listed above; rendering integration advances one native frame, so raw screenshot/frame/entire observation equality is not claimed.",
+    "all34_provider_requests_bound_to_current_observation": true,
+    "canonical_campaign_and_all_chunk_input_hashes": true,
+    "all_chunk_report_and_native_learning_observation_file_hashes": true,
+    "api_download_digest_binding": true,
+    "old_version_checkpoint_adoption": false
+  },
+  "timing": {
+    "api": {
+      "queue_s": null,
+      "execution_wall_s": 60.162394459,
+      "build_s": null,
+      "simulation_s": null,
+      "evaluation_s": null,
+      "accounting": "Campaign total includes resume downtime and retained prefix; active wall nests chunk stages. Composite experiment includes model calls; queue unavailable.",
+      "backend_total_s": 60.61258
+    },
+    "campaign_elapsed_wall_s": 60.61258,
+    "campaign_active_wall_s": 59.954978,
+    "model_wall_s": {
+      "system1": 3.6166584160000026,
+      "system2": 42.71733271000001
+    },
+    "simulated_play_seconds": 103.80477905273438,
+    "simulated_play_seconds_per_worker_wall_second": 1.725409701295652,
+    "accounting": "Whole-worker ratio includes native startup, observations, model request/network/provider queue wall, reference admission and controller work. Startup/render frames excluded from simulation numerator. Models/stages/worker wall overlap; do not sum. Build/queue/inference-only/cost unavailable, not zero."
+  },
+  "before_after": {
+    "same_original_rom_elf_ordinary_save_and_fixture": true,
+    "v1_play_frames": 439,
+    "v1_worker_wall_s": 51.56329075,
+    "v1_quest_stage_max": 0,
+    "v1_whole_worker_speed_ratio": 0.1425442006954443,
+    "v2_prefix_play_frames": 3798,
+    "v2_prefix_worker_wall_s": 40.11815975,
+    "v2_prefix_quest_stage_max": 2,
+    "v2_prefix_whole_worker_speed_ratio": 1.5850377714034907,
+    "final_campaign_play_frames": 6200,
+    "final_campaign_worker_wall_s": 60.162394459,
+    "final_campaign_quest_stage_max": 4,
+    "final_campaign_whole_worker_speed_ratio": 1.725409701295652,
+    "caveat": "Descriptive same-input bounded runs across source fixes, different model choices and resource scope; not identical action replay or model accuracy benchmark. No fixed40x performance promise."
+  },
+  "complete_rpg_cost_ledger": [
+    {
+      "scope": "prior v1 prefix, separately authorized",
+      "run_id": "d2e7374b-540e-4fa8-873b-79199f3cc184",
+      "calls": 20,
+      "native_frames": 2131,
+      "worker_wall_s": 51.56329075,
+      "quest_stage_max": 0,
+      "outcome": "partial, singleton wait bottleneck"
+    },
+    {
+      "scope": "v2 fresh-save prefix",
+      "run_id": "b098d2bf-8c32-4550-9495-a6f27bc7f3e0",
+      "calls": 14,
+      "native_frames": 5490,
+      "worker_wall_s": 40.11815975,
+      "quest_stage_max": 2,
+      "outcome": "partial, four D1 HTTP413 transport failures"
+    },
+    {
+      "scope": "four exact-retained-observation D1 rechecks",
+      "calls": 4,
+      "native_frames": 0,
+      "worker_wall_s": 1.862158,
+      "quest_stage_max": null,
+      "outcome": "four HTTP200, all below unchanged confidence gate; not gameplay"
+    },
+    {
+      "scope": "cancelled campaign before lineage fix",
+      "run_id": "961f2a47-b56a-4142-b87d-5274368db9ca",
+      "calls": 48,
+      "native_frames": 13383,
+      "worker_wall_s": 83.430079791,
+      "quest_stage_max": 4,
+      "outcome": "cancelled, duplicate restarted row retained; later actual native checkpoint resume entered battle"
+    },
+    {
+      "scope": "final fixed cancellation-continuity campaign",
+      "run_id": "3589625d-4431-4318-87df-00e95970907f",
+      "calls": 34,
+      "native_frames": 7893,
+      "worker_wall_s": 60.162394459,
+      "quest_stage_max": 4,
+      "outcome": "partial model-call budget exhausted, cancellation continuity verified"
+    }
+  ],
+  "spend_totals": {
+    "current_call_ceiling": 100,
+    "current_calls_used": 100,
+    "current_calls_remaining": 0,
+    "prior_separate_v1_calls": 20,
+    "all_rpg_provider_calls_including_prior_failures": 120,
+    "all_rpg_native_frames_including_failed_duplicate_work": 28897,
+    "all_rpg_worker_or_targeted_wall_s_including_failed_duplicate_work": 237.13608274999996,
+    "provider_cost_usd": null,
+    "provider_http413_failures": 4,
+    "all_other_provider_requests_success": 116
+  },
+  "remaining_coverage": {
+    "quest_stage5_pair_battle_win": "unobserved",
+    "quest_stage6_gym_gauntlet_completion": "unobserved",
+    "remaining_source_wait_gap": "WaitForMovementFinish with ScriptMovement_MoveObjects produces singleton wait outside positive source-event whitelist; four stage1 stationary S2 calls in first chunk. This is noninteractive source progress missing from the current whitelist, distinct from D1 low-confidence rejection. Left unchanged in final wave.",
+    "special_battle_ui": "Battle presence observed; unusual target/party/bag/replacement UI still offers uncertain model-controlled button choices; no battle-policy accuracy or full win claim.",
+    "broad_game_accuracy_and_full_game": "unmeasured",
+    "candidate_comparison": "not evaluated; original traversal only"
+  },
+  "closure": {
+    "api_server_cleanly_stopped": true,
+    "model_lease_released": true,
+    "no_further_waves": true,
+    "full_private_receipts_retained": true,
+    "sanitized_only": true
+  }
+}

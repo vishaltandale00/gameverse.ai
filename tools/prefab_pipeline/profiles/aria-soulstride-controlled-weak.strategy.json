@@ -1,0 +1,96 @@
+{
+  "schema": "gameverse.connected-strategy/1",
+  "id": "aria-soulstride-controlled-weak",
+  "operator_set": "aria-soulstride/1",
+  "operators": [
+    "sample_owned_soul_tier",
+    "directional_successful_skeleton_birth_lunge",
+    "inherit_projectile_momentum",
+    "moving_defeat_first_soul",
+    "moving_defeat_mp_refund"
+  ],
+  "parameters": {
+    "tier_every": 3,
+    "tier_cap": 2,
+    "lunge_speed_q16": 65536,
+    "tier_speed_q16": 32768,
+    "lift_q16": 98304,
+    "moving_threshold_q16": 65536,
+    "mp_refund": 4,
+    "tier_refund": 2,
+    "projectile_inherit_divisor": 2
+  },
+  "reward_strategy": {
+    "schema": "gameverse.reward-strategy/1",
+    "id": "first-unowned-soul",
+    "insertion": "before-soul-roll",
+    "eligible_descriptor_policy": "reviewed-source-soul-eligibility",
+    "eligible_species": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "when": {
+      "op": "equal",
+      "type": "bool",
+      "args": [
+        {
+          "op": "field",
+          "name": "owned_count",
+          "type": "u32"
+        },
+        {
+          "op": "const",
+          "value": 0,
+          "type": "u32"
+        }
+      ]
+    },
+    "action": "spawn-descriptor-soul-and-return",
+    "intent": "Enemy defeat requests the enemy's eligible unowned soul as a real pickup; collection adds persistent inventory and stops the guarantee for later defeats.",
+    "state_policy": "Read existing owned count, retain defeat once-bit and original save inventory; no new state. Until collection, further eligible defeated entities may also request a pickup.",
+    "eligibility": "Eleven source-reviewed ordinary species0..10 admitted by the pinned native callback/reward-path certificate, including nine active-soul providers. Original normal-mode/character, once-only and inventory-capacity guards remain. Other species, including boss/scripted and unreviewed encounters, retain original policy."
+  },
+  "source_generators": [
+    {
+      "path": "tools/prefab_pipeline/soulstride_movement.py",
+      "sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90"
+    },
+    {
+      "path": "tools/prefab_pipeline/soulstride_progression.py",
+      "sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac"
+    }
+  ],
+  "rules": [
+    "Hold exactly one horizontal direction while Up+attack successfully casts the Winged Skeleton soul: on real bone birth after native MP debit and partner allocation, commit directional 3px/frame lunge and 1.5px/frame upward velocity; original Soma caster remains intact.",
+    "Starter bone inherits half caster horizontal velocity, clamped to 4px/frame contribution; original terrain/contact/retirement remain.",
+    "At an ordinary enemy defeat while player horizontal speed >=1px/frame, refund4MP capped at real maxMP; source-certified first unowned souls spawn as actual pickups.",
+    "Every3 distinct owned active early souls advances tier up to2: lunge speed +0.5px/frame per tier; moving-defeat refund +2MP per tier. Native collection/save own progression."
+  ],
+  "limits": [
+    "Moving is sampled at defeat callback, not last-hit attribution.",
+    "No grounded-state assumption or guaranteed new-route claim.",
+    "Original controller consumes velocity next tick; native trajectory fixtures and model traversal are separate evidence.",
+    "Lunge and projectile momentum are Winged-Skeleton-soul specific; the previous generic cast hook belongs alternate character and does not establish ordinary Soma reachability."
+  ],
+  "native_route": {
+    "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
+    "sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6"
+  },
+  "test_fixture": {
+    "schema": "declared-controlled-regression/1",
+    "purpose": "Explicit integration fixture; not a naturally discovered defect",
+    "parameter": "lunge_speed_q16",
+    "configured": 65536,
+    "required_minimum": 196608,
+    "measurement": "Read-only native successful Winged Skeleton birth impulse, not endpoint animation or model assertion"
+  }
+}

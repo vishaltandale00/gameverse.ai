@@ -1,14 +1,15 @@
 import * as THREE from '/runtime/three/three.module.js';
-import { createNeighborhoodWorld } from './neighborhood-world.js';
+import { createNeighborhoodWorld, BLOCKS } from './neighborhood-world.js';
 import { NeighborhoodController } from './neighborhood-controller.js';
-import { FIRE_RED_ENTRANCE } from './neighborhood-math.js';
+import { FIRE_RED_ENTRANCE, GAME_ENTRANCES, nearestEntrance } from './neighborhood-math.js';
 
 const VERSION = 'alder-neighborhood-certified-safety-3';
 
-export async function openNeighborhood(container, onMenu, initialPose, onEnterFireRed, configuration = {}) {
+export async function openNeighborhood(container, onMenu, initialPose, onEnterGame, configuration = {}) {
   const started = performance.now(), abort = new AbortController();
   let renderer, world, controller, frame, observer, disposed = false, paused = false, failed = false, suspended = false, entering = false;
   let renderedFrames = 0, lastTime = performance.now(), activeMs = 0, sampleMs = 0, sampleFrames = 0, fps = null;
+  let executionHold = false;
   container.innerHTML = `<div class="neighborhood-canvas"></div>
     <div class="neighborhood-heading"><span class="neighborhood-kicker">YOUR WORLD, YOUR ADVENTURE</span><h1>Gameverse<span>Alder District · take your time.</span></h1><p class="neighborhood-input-status">Keyboard + mouse · press a controller button to connect</p></div>
     <button class="neighborhood-return" type="button">Menu <span>☰</span></button>
@@ -22,6 +23,20 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
   const locationLabel = document.createElement('span'); locationLabel.textContent = `${configuration.location || 'Alder District'} · take your time.`;
   query('.neighborhood-heading h1').replaceChildren(document.createTextNode(configuration.title || 'Gameverse'), locationLabel);
   query('.neighborhood-destination').hidden = configuration.hasFireRed === false;
+  const venues = GAME_ENTRANCES.filter(venue => !configuration.gameIds || configuration.gameIds.includes(venue.gameId));
+  const map = document.createElement('div'); map.className = 'neighborhood-venue-map';
+  map.innerHTML = `<span class="neighborhood-kicker">VENUE MAP · NORTH UP</span>
+    <svg viewBox="-85 -60 170 120" role="img" aria-label="Alder District venue map: Arcade west, Soccer northeast, Football southeast. The white arrow is you and your camera direction.">
+      <rect x="-85" y="-60" width="170" height="120" fill="#46564b" />
+      ${BLOCKS.map(block => `<rect x="${block.x - block.width / 2}" y="${block.z - block.depth / 2}" width="${block.width}" height="${block.depth}" rx="2" fill="#25382e" />`).join('')}
+      <path d="M-85 0H85 M0-60V60" stroke="#a0ab9570" stroke-width=".5" stroke-dasharray="3 3" />
+      ${venues.map(venue => `<g fill="${venue.color || '#e6cf91'}"><circle cx="${venue.x}" cy="${venue.z}" r="2.5" stroke="#0e2019" stroke-width="1" />
+        <text x="${venue.x}" y="${venue.z + (venue.z > 0 ? 10 : -7)}" text-anchor="middle" font-size="7">${venue.gameId === 'firered' ? 'ARCADE' : venue.gameId.toUpperCase()}</text></g>`).join('')}
+      <g class="neighborhood-map-player" fill="#fff" stroke="#14251b" stroke-width=".8"><path d="M0-5 3.5 3 0 1.5-3.5 3Z" /></g>
+    </svg><span class="neighborhood-map-help">Follow the streets to a marker · A / E to enter</span>`;
+  map.hidden = !venues.length; container.append(map);
+  const mapPlayer = map.querySelector('.neighborhood-map-player');
+  let lastMapUpdate = -Infinity;
   function pause(value) {
     if (disposed || failed || suspended || !controller) return;
     paused = value; controller.setPaused(value); overlay.hidden = !value; resumeButton.hidden = !value;
@@ -38,20 +53,21 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
   function resume(note = '') {
     if (disposed) return;
     suspended = false; entering = false; query('.neighborhood-enter').disabled = false;
-    query('.neighborhood-enter').innerHTML = 'Enter FireRed <kbd>E</kbd>';
+    query('.neighborhood-enter').textContent = `Enter ${entrance()?.title || 'game'} · E / A`;
     query('.neighborhood-entry-message').textContent = note;
     if (failed) { overlay.hidden = false; returnButton.focus(); }
     else pause(false);
   }
-  function entranceDistance() { return controller ? Math.hypot(controller.position.x - FIRE_RED_ENTRANCE.x, controller.position.z - FIRE_RED_ENTRANCE.z) : Infinity; }
-  async function enterFireRed() {
-    if (!onEnterFireRed || configuration.hasFireRed === false || entering || paused || suspended || failed || disposed || entranceDistance() > FIRE_RED_ENTRANCE.radius) return;
-    entering = true; query('.neighborhood-enter').disabled = true; query('.neighborhood-enter').textContent = 'Opening FireRed…';
+  function entrance() { return controller ? nearestEntrance(controller.position, configuration.gameIds) : null; }
+  function entranceDistance() { return entrance()?.distance ?? Infinity; }
+  async function enterGame() {
+    if (!onEnterGame || !entrance() || entering || paused || suspended || failed || disposed || entranceDistance() > entrance().radius) return;
+    entering = true; query('.neighborhood-enter').disabled = true; query('.neighborhood-enter').textContent = `Opening ${entrance().title}…`;
     query('.neighborhood-entry-message').textContent = ''; suspend();
-    try { await onEnterFireRed(); }
+    try { await onEnterGame(entrance().gameId); }
     catch (error) { resume(error.message || 'FireRed could not open. Try again.'); }
   }
-  query('.neighborhood-enter').addEventListener('click', enterFireRed, { signal: abort.signal });
+  query('.neighborhood-enter').addEventListener('click', enterGame, { signal: abort.signal });
   function dispose() {
     if (disposed) return;
     disposed = true; cancelAnimationFrame(frame); abort.abort(); observer?.disconnect(); controller?.dispose(); world?.dispose();
@@ -70,15 +86,15 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
   window.addEventListener('keydown', event => {
     if (suspended || disposed || document.querySelector('dialog[open]:not(#voice-dialog)')) return;
     if (event.code === 'Escape' && !event.repeat) { event.preventDefault(); pause(!paused); }
-    if (event.code === 'KeyE' && !event.repeat && !event.target.closest?.('button, input')) { event.preventDefault(); enterFireRed(); }
+    if (event.code === 'KeyE' && !event.repeat && !event.target.closest?.('button, input')) { event.preventDefault(); enterGame(); }
   }, { signal: abort.signal });
   let firstRenderMs = null;
   const diagnostics = Object.freeze({
     read() { return { version: VERSION, state: disposed ? 'disposed' : failed ? 'failed' : suspended ? 'suspended' : paused ? 'paused' : controller ? 'playing' : 'loading',
-      ...controller?.observe(), renderer: 'Three.js WebGL2', rendererVersion: THREE.REVISION, renderedFrames, activeMs, recentFps: fps,
+      ...controller?.observe(), renderer: 'Three.js WebGL2', rendererVersion: THREE.REVISION, renderedFrames, activeMs, recentFps: fps, executionHold,
       loadToFirstRenderMs: firstRenderMs, drawCalls: renderer?.info.render.calls ?? null,
       triangles: renderer?.info.render.triangles ?? null, colliderCount: world?.colliders.length ?? 0,
-      entrance: { ...FIRE_RED_ENTRANCE, distance: entranceDistance(), available: !suspended && !paused && entranceDistance() <= FIRE_RED_ENTRANCE.radius } }; },
+      entrance: { ...entrance(), available: !suspended && !paused && entranceDistance() <= (entrance()?.radius || 0) } }; },
     colliders() { return world?.colliders.map(box => ({ ...box })) || []; },
     cameraColliders() { return world?.cameraColliders.map(box => ({ ...box })) || []; },
   });
@@ -97,7 +113,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     if (disposed) return { dispose };
     const camera = new THREE.PerspectiveCamera(55, 1, 0.08, 600);
     world = createNeighborhoodWorld(renderer, { hasFireRed: configuration.hasFireRed !== false });
-    controller = new NeighborhoodController(canvas, camera, world, pause, initialPose, enterFireRed);
+    controller = new NeighborhoodController(canvas, camera, world, pause, initialPose, enterGame);
     function resize() {
       const { width, height } = container.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
@@ -108,25 +124,43 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       } catch (error) { fail(error); }
     }
     observer = new ResizeObserver(resize); observer.observe(container); resize();
-    if (failed) return { dispose, suspend, resume, observe: diagnostics.read };
+    // The host registers the real controller/world as an overworld surface.
+    if (failed) return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
     renderer.render(world.scene, camera); renderedFrames++; firstRenderMs = performance.now() - started;
     overlay.hidden = true; canvas.focus({ preventScroll: true }); lastTime = performance.now();
     function animate(now) {
       if (disposed || failed) return;
       frame = requestAnimationFrame(animate);
       const elapsed = now - lastTime; lastTime = now;
-      if (paused || document.hidden) return;
+      const hidden = paused || suspended || document.hidden;
+      // A held execution keeps simulating while hidden; otherwise the ordinary
+      // suspension applies and no resources are spent in the background.
+      if (hidden && !executionHold) return;
       const dt = Math.min(elapsed / 1000, 0.05);
       try { controller.update(dt); } catch (error) { fail(error); return; }
-      if (paused || suspended) return;
-      renderer.render(world.scene, camera); renderedFrames++; activeMs += elapsed;
+      activeMs += elapsed;
+      if (hidden) return;
+      renderer.render(world.scene, camera); renderedFrames++;
       sampleMs += elapsed; sampleFrames++;
       if (sampleMs >= 1000) { fps = Math.round(sampleFrames * 1000 / sampleMs); sampleMs = 0; sampleFrames = 0; }
       const { x, z } = controller.position;
+      // A small SVG marker at 10 Hz; no extra renderer, assets or per-frame layout.
+      if (now - lastMapUpdate >= 100) {
+        mapPlayer.setAttribute('transform', `translate(${x} ${z}) rotate(${-controller.yaw * 180 / Math.PI})`);
+        lastMapUpdate = now;
+      }
       query('.neighborhood-location strong').textContent = z > 18 && x < -10 ? 'ALDER GARDEN' : Math.abs(x) < 10 ? 'JUNIPER AVENUE' : 'ALDER STREET';
-      const distance = entranceDistance();
-      query('.neighborhood-distance').textContent = distance <= FIRE_RED_ENTRANCE.radius ? 'You are at the entrance' : `${Math.round(distance)} m · look for the amber arcade sign`;
-      query('.neighborhood-entry').hidden = configuration.hasFireRed === false || distance > FIRE_RED_ENTRANCE.radius;
+      const destination = entrance(), distance = entranceDistance();
+      query('.neighborhood-distance').textContent = distance <= (destination?.radius || 0) ? 'You are at the entrance' : `${Math.round(distance)} m · follow the venue sign`;
+      query('.neighborhood-destination strong').textContent = destination?.title || 'Explore the district';
+      query('.neighborhood-directions').textContent = destination?.name || '';
+      query('.neighborhood-entry').hidden = !destination || distance > destination.radius;
+      map.hidden = !venues.length || Boolean(destination && distance <= destination.radius);
+      if (destination) {
+        query('.neighborhood-entry .neighborhood-kicker').textContent = destination.name;
+        query('.neighborhood-entry strong').textContent = destination.title;
+        query('.neighborhood-enter').textContent = `Enter ${destination.title} · E / A`;
+      }
       const gamepad = controller.observe().gamepad;
       query('.neighborhood-key-hints').hidden = Boolean(gamepad?.connected);
       query('.neighborhood-pad-hints').hidden = !gamepad?.connected;
@@ -134,6 +168,13 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     }
     frame = requestAnimationFrame(animate);
   } catch (error) { fail(error); }
+  // Host-facing execution hold. Generic keepalive only: the engine never learns
+  // why the run wants to keep stepping.
+  function holdExecution(value) {
+    executionHold = Boolean(value);
+    if (controller) controller.executionHold = executionHold;
+    return { held: executionHold, paused, suspended };
+  }
   function fail(error) {
     if (disposed) return;
     failed = true; cancelAnimationFrame(frame); controller?.setPaused(true); overlay.hidden = false; resumeButton.hidden = true;
@@ -141,5 +182,5 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     message.textContent = `${error.message} Menu gives you recovery and character options.`;
     returnButton.focus();
   }
-  return { dispose, suspend, resume, observe: diagnostics.read };
+  return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
 }

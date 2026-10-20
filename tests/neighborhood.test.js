@@ -104,3 +104,12 @@ test('overhead awnings retract the camera without blocking the walking pavement'
   const distance = cameraDistance(target, boom, 5.2, [ARCADE_FRONTAGE, canopy]);
   assert.ok(distance > 1 && distance < 2, 'camera must stop beneath the marquee');
 });
+
+test('sports have distinct reachable pavement venues and nearest-game discovery', async () => {
+  const { SPORT_ENTRANCES, nearestEntrance } = await import('../src/neighborhood-math.js');
+  for (const venue of SPORT_ENTRANCES) {
+    assert.equal(nearestEntrance(venue).gameId, venue.gameId);
+    assert.equal(nearestEntrance(venue).distance, 0);
+    assert.equal(nearestEntrance(venue, ['firered']).gameId, 'firered');
+  }
+});

@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "game_id": "sonic-metroid-signal-descent",
+  "game_version": "50757987593917bddafe6b32c3355cb9af32d899468850af69115bad59f3d855",
+  "objective": "Navigate the EXISTING Sonic/MZM cartridge from earliest native coastline with no upgrades through both coastal acts and first boss/capsule route into Factory(stage2). Acquire Morph(1),Missile(2),Bomb(4),HighJump(8),Ice(16),Speed(64); target mask95. Solve native locks using observed gear: Missile R+B, Bomb while morphed, Ice-frozen creatures as platforms, HighJump/Speed where required. Controls: Dpad moves; fresh A jumps/held A sets height; B beam/hold then release charge; L aims/brakes and diagonal aim; Down Morph/recharge after cache, Up stands. Source x/y, stage, plane, equipment/resources, objects and current image override historical model plans. Native momentum/loops retain source authority. Choose route/actions from CURRENT evidence; no scripted route is performed by the bot. Original2460frame boot/title setup is not model gameplay. Completion requires ordered source milestone graph; absence of progress may be collision, input timing, missing upgrade, native object, or an unsupported observation gap. Diagnose actual barriers rather than repeat an unjustified action. Every chosen option ends early on a native event/obstacle sample; durations are maximums. No general game completion or model accuracy claim.",
+  "awareness": {
+    "perspective": "side_view",
+    "locomotion": "platform",
+    "basis": "Existing native Sonic campaign and source-owned task progression/read-only actor facts; world knowledge remains partial.",
+    "progress_evidence_scope": "source_defined_traversal"
+  },
+  "actions": [
+    {
+      "id": "wait",
+      "keys": [],
+      "frames": 120,
+      "description": "Release buttons; permit native animation, timed bomb or scene transition. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "release",
+      "keys": [],
+      "frames": 2,
+      "description": "Release held B/A to permit charge shot or new press edge. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 600,
+      "description": "Travel RIGHT until a native event or obstacle sample; route is not guaranteed safe. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left",
+      "keys": [
+        "LEFT"
+      ],
+      "frames": 600,
+      "description": "Travel LEFT until a native event or obstacle sample; explore an alternate route when current evidence supports it. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_beam",
+      "keys": [
+        "RIGHT",
+        "B"
+      ],
+      "frames": 240,
+      "description": "Travel RIGHT while holding B beam/charge; release separately for charged shot. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left_beam",
+      "keys": [
+        "LEFT",
+        "B"
+      ],
+      "frames": 240,
+      "description": "Travel LEFT while holding B beam/charge; release separately for charged shot. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "jump",
+      "keys": [
+        "A"
+      ],
+      "frames": 60,
+      "description": "Jump using fresh A edge and hold; directionless height/contact probe. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_jump",
+      "keys": [
+        "RIGHT",
+        "A"
+      ],
+      "frames": 120,
+      "description": "Travel RIGHT with fresh A jump edge; held A is a single jump, not repeated autojump. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left_jump",
+      "keys": [
+        "LEFT",
+        "A"
+      ],
+      "frames": 120,
+      "description": "Travel LEFT with fresh A jump edge; held A is a single jump, not repeated autojump. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_jump_beam",
+      "keys": [
+        "RIGHT",
+        "A",
+        "B"
+      ],
+      "frames": 120,
+      "description": "Travel RIGHT and fresh A jump while holding B beam/charge. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left_jump_beam",
+      "keys": [
+        "LEFT",
+        "A",
+        "B"
+      ],
+      "frames": 120,
+      "description": "Travel LEFT and fresh A jump while holding B beam/charge. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "beam",
+      "keys": [
+        "B"
+      ],
+      "frames": 120,
+      "description": "Fire/charge B beam; while morphed this places timed bombs, conditional on current ability/state. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "missile",
+      "keys": [
+        "R",
+        "B"
+      ],
+      "frames": 20,
+      "description": "R+B missile after acquiring Missile and with actual ammo; use current facing. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_missile",
+      "keys": [
+        "RIGHT",
+        "R",
+        "B"
+      ],
+      "frames": 24,
+      "description": "Face/travel RIGHT while using R+B missile, requiring acquired Missile and ammo. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "morph",
+      "keys": [
+        "DOWN"
+      ],
+      "frames": 2,
+      "description": "DOWN enters Morph after acquiring Morph; at a known cache/beacon DOWN can recharge. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "stand",
+      "keys": [
+        "UP"
+      ],
+      "frames": 2,
+      "description": "UP stands from Morph when native clearance permits. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "bomb",
+      "keys": [
+        "B"
+      ],
+      "frames": 2,
+      "description": "Tap B for timed bomb while actually morphed with Bomb ability; otherwise ordinary beam input. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "aim_brake",
+      "keys": [
+        "L"
+      ],
+      "frames": 24,
+      "description": "L aims/brakes; not a general dash. Can wait in place before aimed beam. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "up_beam",
+      "keys": [
+        "L",
+        "UP",
+        "B"
+      ],
+      "frames": 48,
+      "description": "L+UP+B aims beam vertically; current target source geometry governs whether contact occurs. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_up_beam",
+      "keys": [
+        "L",
+        "UP",
+        "RIGHT",
+        "B"
+      ],
+      "frames": 48,
+      "description": "L+UP+RIGHT+B aims diagonal beam toward upper right; no contact assumed. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left_up_beam",
+      "keys": [
+        "L",
+        "UP",
+        "LEFT",
+        "B"
+      ],
+      "frames": 48,
+      "description": "L+UP+LEFT+B aims diagonal beam toward upper left; no contact assumed. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "down_beam",
+      "keys": [
+        "L",
+        "DOWN",
+        "B"
+      ],
+      "frames": 48,
+      "description": "L+DOWN+B aims beam downward when native state permits. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "right_wall_jump",
+      "keys": [
+        "L",
+        "RIGHT",
+        "A"
+      ],
+      "frames": 24,
+      "description": "L+RIGHT+fresh A attempts precision wall transfer only at a genuine arrested airborne static wall. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    },
+    {
+      "id": "left_wall_jump",
+      "keys": [
+        "L",
+        "LEFT",
+        "A"
+      ],
+      "frames": 24,
+      "description": "L+LEFT+fresh A attempts precision wall transfer only at a genuine arrested airborne static wall. Native option stops at first source watch change (stage, gear, resource, gate, death, attachment), stationary sample or bounded timeout; reobserve before next choice."
+    }
+  ]
+}

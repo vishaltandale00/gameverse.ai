@@ -1,0 +1,111 @@
+{
+  "schema": "gameverse.rpg-navigation-verification/1",
+  "verification_id": "916285572461493f9738092586170898",
+  "recorded_utc": "2026-10-16T19:26:44.255067+00:00",
+  "scope": "Zero-model local navigation, checkpoint replay, source POI boundary and contract verification. The meaningful original weekend quest is configured but has not been model-qualified.",
+  "source": {
+    "base_commit": "2e7b00f0288cb50d64d8845276ba6c1ce12d37ea",
+    "working_tree_changes": true,
+    "files_sha256": {
+      "tools/playtester/rpg_adapter.py": "4afe6f1985e363a8bce504c0eef5ce9aa01773db2f64dd566c1fb8c09062d65e",
+      "tools/playtester/test_rpg_adapter.py": "760b80a3a259a89d82287dc8360e441373469fe4e0545bebff1b911125f0f96d",
+      "tools/playtester/mod_quality.py": "01c7e9fa4d9806fed8542366b6326dc264ca5fdcca7f1ec73113636ff7a281af",
+      "tools/playtester/test_mod_quality.py": "bc452d22710369ab88a7535c588266f2b3ba1f48e7558c1dd9e0838009ea9420",
+      "tools/playtester/profiles/pokemon-rpg-navigation.json": "ea4210e2b1b81eeaf4f87af685a70903a5426c1da2fedbc699ab7b82f212e812",
+      "tools/playtester/profiles/pokemon-rpg-weekend-quest.json": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "tools/playtester/profiles/pokemon-rpg-weekend-fixture.json": "07dfa90cf8b921cf6109b97ebc4e3ef1e1e8e6c29041e12667c2dfb85f4be118"
+    },
+    "provider_sources_sha256": {
+      "sidbot.py": "060121a7b6a3be64d70577690cea24b8829a639cb00505078e35235a79a16979",
+      "world.py": "bf787683fe8f7903a0a0e2258e786f7953c187b96bba602d468e8f8b5365604a",
+      "battler.py": "a30211a77f31beecb4a615d52bfc4a70377ae140318df6c1eb3fd748d554a948"
+    }
+  },
+  "provider": {
+    "manifest_file_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+    "source_tree_sha256": "c20917371921119c4204a50d7708c006b0b7cb01a3fceb3fe8fe1eedb0252e27",
+    "source_tree_files": 9705,
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "elf_sha256": "6977510d5ab798941553132ac35eed4fd8590ee2279a6c0ae09243a49e30d962",
+    "initial_battery_save_sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+    "native_binary_sha256": "977359b8e073684818abc28340b99885e0e8fa1c68f6b92e7cbcd1c48b9e98f4",
+    "provider_files_distributed": false
+  },
+  "checks": {
+    "command": "GAMEVERSE_RPG_PROVIDER_ROOT=<explicit local install root> python3 -m unittest tools.playtester.test_rpg_adapter tools.playtester.test_mod_quality tools.playtester.test_scenario -q",
+    "provider_reference_configured": true,
+    "tests_run": 31,
+    "outcome": "passed",
+    "wall_s": 0.166,
+    "coverage": [
+      "Exact recovered BFS collision, NPC occupancy and warp avoidance",
+      "Bounded routes and source-POI interruption before old semantic policies",
+      "Existing low-confidence D1 to S2 escalation with controlled policy doubles",
+      "Native counter, navigation boundary and blocked-edge restore",
+      "Source-observed menu cursors and story milestones",
+      "Matched-boundary per-mod contract and unchanged-baseline rejection",
+      "Report/event cryptographic binding, swapped-stream rejection and unbound legacy-report rejection"
+    ]
+  },
+  "same_room_native": {
+    "run_id": "b98e63849ac44075ab8c481c611b909f",
+    "outcome": "success",
+    "native_frames": 121,
+    "deterministic_tile_steps": 8,
+    "checkpoint_restore_source_state_matched": true,
+    "direct_route_wall_s": 0.197369334,
+    "playtester_total_wall_including_models_s": 0.208149,
+    "actual_d1_calls": 0,
+    "actual_system2_calls": 0,
+    "report_sha256": "986a7e392aa7713651aa8495f3765e259c93ab0230aeceaecf3f360508a21796",
+    "event_stream_sha256": "75e6e3ee2ed04b1b07bbba1c2d5f49dda5666c354f3b8e02ff05e46de6fc887a",
+    "scope": "Same-room source navigation/checkpoint smoke only; retained report predates new report.events_sha256 qualification binding and is not submitted as mod-quality evidence."
+  },
+  "source_poi_native": {
+    "outcome": "stopped_at_observed_source_script_boundary",
+    "named_available_options": 8,
+    "native_frames": 19,
+    "deterministic_tile_steps": 2,
+    "wall_s": 0.04085187499999998,
+    "decision_boundary": "script",
+    "actual_model_calls": 0,
+    "source_matches_current_adapter": true
+  },
+  "timing_context": {
+    "machine": "arm64",
+    "python": "3.9.6",
+    "os": "Darwin",
+    "emulator": {
+      "name": "libmgba",
+      "version": "0.10.5",
+      "frequency_hz": 16777216,
+      "frame_cycles": 280896,
+      "bios": "mGBA HLE; skipBios=true",
+      "rtc": "fixed 2024-01-01 UTC"
+    },
+    "build_mode": null,
+    "build_wall_s": null,
+    "queue_wall_s": null,
+    "final_provider_manifest_generation_wall_s": 0.378949666,
+    "initial_manifest_generation_wall_s": 1.010250667,
+    "initial_manifest_files": 9601,
+    "stage_overlap": "Direct route, replay, setup and unit checks are separate measurements, not summed into one campaign time.",
+    "before_after_model_policy_benchmark": null,
+    "gap": "No comparable model-driven movement baseline was run; no measured model-call savings or full quest duration is claimed."
+  },
+  "qualification": {
+    "ordinary_save_setup_is_gameplay": false,
+    "models_sent_screenshots_or_ram": false,
+    "d1_s2_live_battle_qualified": false,
+    "weekend_quest_through_stage6_qualified": false,
+    "candidate_changed_mechanic_qualified": false,
+    "full_campaign_qualified": false,
+    "earlier_counter_failure_retained_locally": true
+  },
+  "excluded_material": [
+    "Provider source paths",
+    "ROM, ELF, battery-save and snapshot bytes",
+    "Screenshots, raw RAM, transcripts and credentials"
+  ]
+}

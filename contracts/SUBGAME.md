@@ -1,6 +1,8 @@
 # Subgame contract
 
-> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](../DEVELOPMENT.md).
+> Later 2026-10-16 scope update: the user authorized original soccer and American football custom subgames alongside FireRed. [Current sports scope, controls and evidence](../SPORTS_DEVELOPMENT.md) supersede the earlier FireRed-only expansion restriction below. The current custom adapter runs trusted built-in modules synchronously; isolation and interruption of arbitrary untrusted generated games are not qualified. The broader host requirements below remain requirements, not claims that this adapter satisfies them. Improvement-loop ownership and implementation are unchanged.
+
+> Historical 2026-10-16 initial scope: Pokémon FireRed was the sole initial game, compiled from editable source. Mario was deferred and did not block slice 1. The original milestone prioritized FireRed play, controls, save/return/resume and recovery before expanding. [FireRed setup, evidence and remaining gates](../DEVELOPMENT.md).
 Version: 0.3 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
 Defines the seam between the [base game](BASE_GAME.md) and independently delivered games. [Slice 1](../plans/ENVIRONMENT_SLICES.md) includes complete FireRed (PRD R02) as the sole initial game, exact-session resume (R17) and normal-save fallback. Slice 2 adds world navigation; slice 3 adds loop integration. FireRed requires qualification; no additional game or fixture is required.

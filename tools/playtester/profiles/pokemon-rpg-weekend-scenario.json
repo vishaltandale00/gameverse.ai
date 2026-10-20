@@ -1,0 +1,21 @@
+{
+  "schema": "native-scenario-graph/1",
+  "id": "sid-original-ocean-city-weekend-through-seacrets",
+  "objective": "Observe actual post-Champion Ocean City weekend progression through Seacrets after the source football pair battle and gym gauntlet.",
+  "scope": "Original SID chapter 18 baseline quest qualification from the supplied post-Champion save. Source story progression only; not a modified-candidate comparison, a fresh-game gym run, or full campaign qualification.",
+  "source_contract": {
+    "owner": "game provider",
+    "files": ["include/constants/vars.h", "data/scripts/sid/ch18_ocean_city.inc", "dev_scripts/sid/objectives.json"],
+    "pin": "The exact provider manifest source tree/source-input hash is required by the adapter; these paths are identifiers within that provider."
+  },
+  "nodes": [
+    {"id":"post_champion_start", "conditions":[{"field":"story.FLAG_SYS_GAME_CLEAR","op":"eq","value":1},{"field":"story.VAR_SID_OC_WEEKEND","op":"eq","value":0}]},
+    {"id":"arrival_chat", "after":["post_champion_start"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":1}]},
+    {"id":"crew_greeting", "after":["arrival_chat"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":2}]},
+    {"id":"beach", "after":["crew_greeting"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":3}]},
+    {"id":"football_pair_battle_ready", "after":["beach"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":4}]},
+    {"id":"football_pair_battle_won", "after":["football_pair_battle_ready"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":5}]},
+    {"id":"gym_gauntlet_completed_seacrets", "after":["football_pair_battle_won"], "conditions":[{"field":"story.VAR_SID_OC_WEEKEND","op":"ge","value":6},{"field":"story.FLAG_SYS_GAME_CLEAR","op":"eq","value":1}]}
+  ],
+  "goals": ["gym_gauntlet_completed_seacrets"]
+}

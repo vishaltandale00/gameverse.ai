@@ -477,7 +477,10 @@ dialog::backdrop { background:#09100d80; backdrop-filter:blur(2px); }
 dialog .eyebrow { color:#a8b3a8; letter-spacing:.08em; font-family:inherit; font-size:10px; }
 dialog .close { color:#a2aaa3; }
 dialog .close:hover { color:#edf0e9; background:#ffffff0a; }
-dialog button:focus-visible, dialog a:focus-visible, dialog input:focus-visible { outline:2px solid #bdcdb2; outline-offset:3px; }
+/* Gamepad focus is programmatic; browsers may keep mouse modality after Menu
+   was clicked, so :focus-visible alone hides the selected controller action. */
+dialog button:focus, dialog a:focus, dialog input:focus-visible { outline:2px solid #bdcdb2; outline-offset:3px; }
+dialog button:focus { background-color:#334337; }
 dialog .dialog-actions { gap:2px; margin-top:24px; }
 dialog .dialog-actions button {
   border:0; border-radius:4px; padding:14px; text-align:left;
@@ -488,6 +491,7 @@ dialog .dialog-actions button.primary {
   color:#e1ecd8; background:#d4dfca12; margin:0; border-left:2px solid #c9d7bd;
 }
 dialog .dialog-actions button.primary:hover:not(:disabled) { background:#d4dfca1d; }
+dialog .dialog-actions button:focus { background:#334337; }
 dialog .dialog-actions .danger { color:#dfa48e; }
 dialog .controller-menu-hint { border-top:1px solid var(--line); padding-top:18px; margin-top:24px; font-size:11px; }
 #world-menu { background:#19201d; }
@@ -501,6 +505,10 @@ dialog .controller-menu-hint { border-top:1px solid var(--line); padding-top:18p
 #profile-dialog .primary:hover { background:#e1ead9; }
 #profile-dialog .text-button, #profile-dialog .existing-profile { color:#a8b3a8; }
 #profile-dialog #letters button { border-color:#ffffff18; }
+/* Gamepad focus is programmatic, so browsers do not always match :focus-visible. */
+#profile-dialog button:focus { outline:2px solid #bdcdb2; outline-offset:3px; }
+#profile-dialog button:not(.primary):hover:not(:disabled) { background:#d4dfca1d; }
+#name-case[aria-pressed=true] { background:#d4dfca12; border-color:#c9d7bd; }
 /* Voice is a small HUD panel; keep the game visible while input is paused. */
 #voice-button {
   display:flex; align-items:center; gap:9px; position:fixed; right:24px; bottom:24px; z-index:30;
@@ -604,6 +612,14 @@ dialog .primary {
   margin-top:12px}
 #letters button {
   padding:9px}
+.name-voice-actions, .name-key-actions { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+.name-voice-actions button { flex:1; }
+.name-key-actions button { flex:1; padding:9px 7px; font-size:12px; }
+#name-status { min-height:36px; margin:12px 0; }
+#name-live { padding:10px; border-left:2px solid #c9d7bd; overflow-wrap:anywhere; }
+#profile-review { padding-top:20px; }
+#profile-review-avatar { font-size:44px; }
+#profile-review-name { font-size:28px; overflow-wrap:anywhere; }
 .player-heading {
   display:flex;
   justify-content:space-between;
@@ -820,6 +836,10 @@ footer {
 .neighborhood-return span { margin-left:20px; }
 .neighborhood-destination { position:absolute; top:100px; right:32px; padding:17px 19px; border:1px solid #edc08266; border-radius:8px; background:#27362be6; max-width:300px; pointer-events:none; }
 .neighborhood-destination strong { display:block; margin:9px 0; font:21px Georgia,serif; }
+.neighborhood-venue-map { position:absolute; right:32px; bottom:155px; width:220px; padding:11px; border:1px solid #d8d9ad55; border-radius:8px; background:#1b2c25ed; pointer-events:none; }
+.neighborhood-venue-map svg { display:block; width:100%; margin:8px 0; border-radius:4px; }
+.neighborhood-map-help { display:block; font-size:10px; line-height:1.5; color:#d2dccf; }
+@media(max-width:760px) { .neighborhood-venue-map { right:16px; bottom:180px; width:160px; padding:8px; } .neighborhood-venue-map .neighborhood-kicker { font-size:8px; } }
 .neighborhood-directions, .neighborhood-distance { display:block; font-size:11px; line-height:1.7; }
 .neighborhood-distance { color:#f2c98b; }
 .neighborhood-entry { position:absolute; left:50%; bottom:115px; transform:translateX(-50%); width:min(390px,calc(100% - 32px)); padding:22px; text-align:center; border:1px solid #e0bc7c88; border-radius:10px; background:#29382df0; box-shadow:0 10px 30px #17221866; }
@@ -913,6 +933,72 @@ body.playing-subgame #player {
 }
 .controller-menu-hint { color:var(--muted); font-size:12px; line-height:1.6; }
 @keyframes subgame-controls-hint { 0%,75% { opacity:1; } 100% { opacity:0; } }
+/* Original sports share one broadcast shell, while each sport owns its field and camera. */
+.playing-sports .screen { display:block; color:#f2f5ed; font-family:Arial,sans-serif; }
+.playing-sports .screen canvas { width:100%; height:100%; aspect-ratio:auto; display:block; object-fit:fill; outline:none; }
+.sports-stage { position:absolute; inset:0; }
+.playing-sports .play-controls { display:none; }
+.sports-broadcast { position:absolute; top:24px; left:28px; pointer-events:none; filter:drop-shadow(0 4px 15px #0005); }
+.sports-live { display:block; font-size:10px; letter-spacing:2.5px; color:#d4e5e7; margin-bottom:8px; }
+.sports-scoreboard { display:flex; align-items:stretch; background:#101f2cf2; border:1px solid #ffffff26; border-radius:7px; overflow:hidden; }
+.sports-team { padding:12px 18px; font-size:12px; font-weight:800; letter-spacing:1px; border-bottom:3px solid #72e6cf; }
+.sports-team.away { border-color:#ff896b; }
+.sports-team small { display:block; font-size:8px; font-weight:400; color:#b5c4cb; margin-top:4px; letter-spacing:2px; }
+.sports-score { align-self:center; min-width:88px; text-align:center; font-size:26px; letter-spacing:4px; font-variant-numeric:tabular-nums; }
+.sports-scoreboard time { background:#e9efdd; color:#152b2a; font:700 18px monospace; display:flex; align-items:center; padding:0 14px; }
+.sports-match-label { padding:7px 12px; background:#101f2cc9; width:fit-content; border-radius:0 0 5px 5px; font-size:11px; letter-spacing:.7px; }
+.sports-banner { position:absolute; top:130px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; background:#0b1c29d9; border:1px solid #ffffff20; padding:9px 22px; border-radius:8px; max-width:75vw; }
+.sports-banner .sports-label { display:none; }
+.sports-banner h2 { font-size:19px; margin:0; color:#f6f3e9; letter-spacing:-.3px; }
+.sports-banner p:empty { display:none; }
+.sports-banner.sports-intro { top:42%; padding:30px 46px; transform:translate(-50%,-50%); box-shadow:0 16px 80px #0007; backdrop-filter:blur(10px); }
+.sports-intro .sports-label { display:block; color:#82e9d3; font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-bottom:12px; }
+.sports-intro h2 { font-size:clamp(24px,3vw,40px); font-weight:800; }
+.sports-intro p { font-size:13px; color:#c4d4d9; margin:12px 0 22px; }
+.sports-start { pointer-events:auto; border:0; border-radius:5px; background:#b9f06b; color:#152a24; font-size:13px; font-weight:700; padding:13px 25px; }
+.sports-start:hover { background:#ddffa8; }
+.sports-bottom { position:absolute; bottom:15px; left:24px; right:24px; display:flex; flex-direction:column; align-items:center; pointer-events:none; gap:7px; }
+.sports-meter { display:flex; align-items:center; gap:10px; padding:6px 13px; border-radius:4px; background:#0b1c29e6; font:9px monospace; letter-spacing:1px; }
+.sports-meter progress { width:125px; height:7px; accent-color:#c5f275; border:0; }
+.sports-context { font-size:12px; color:#e8f2e9; background:#0b1c29da; padding:7px 14px; border-radius:4px; text-align:center; }
+.sports-context:empty { display:none; }
+.sports-controls { font-size:10px; color:#bdcbd1; padding:6px 12px; background:#081723d9; border-radius:4px; text-align:center; line-height:1.6; }
+.sports-athlete { display:flex; align-items:center; gap:16px; background:#081c29ed; padding:7px 12px; border-radius:5px; font:10px monospace; letter-spacing:1px; border-left:3px solid #70e4cf; }
+.sports-athlete label { display:flex; align-items:center; gap:8px; color:#c0d6dc; }
+.sports-athlete meter { width:85px; height:9px; }
+.sports-skill-state { color:#b9f06b; min-width:84px; }
+.sports-skill-hint { color:#e2edc6; font-size:12px; text-align:center; text-shadow:0 1px 4px #000; background:#0a1d29c9; padding:5px 10px; border-radius:4px; }
+.sports-skill-hint:empty { display:none; }
+.sports-power-value { min-width:30px; color:#b9f06b; text-align:right; }
+.sports-meter { opacity:.68; transition:opacity .12s,box-shadow .12s; }
+.sports-meter.charging { opacity:1; box-shadow:0 0 0 1px #b9f06b88,0 0 20px #b9f06b22; }
+.sports-action { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; font:800 13px system-ui; letter-spacing:3px; color:#d6fff2; padding:7px 15px; border-radius:20px; background:#0b1f2bae; border:1px solid #82e6d377; opacity:0; }
+.sports-action[data-kind=tackle],.sports-action[data-kind=denied] { color:#ffd6ac; border-color:#ff9d5588; }
+.sports-action[data-kind=goal] { font-size:28px; color:#e4ff9c; }
+.sports-radar { position:absolute; top:80px; right:16px; border:1px solid #b4decb33; border-radius:5px; overflow:hidden; pointer-events:none; box-shadow:0 4px 20px #0003; }
+.sports-radar span { display:block; padding:4px 7px; font:8px monospace; letter-spacing:2px; color:#a9c6c5; background:#0b1d29dc; }
+.sports-radar canvas { display:block; width:168px; height:104px; }
+@media(max-width:900px) { .sports-radar { top:86px; right:12px; } .sports-radar canvas { width:126px; height:78px; } }
+@media(max-width:550px) { .sports-radar { top:150px; right:8px; } .sports-radar canvas { width:105px; height:65px; } .sports-skill-hint { font-size:10px; } }
+.sports-playbook { position:absolute; bottom:210px; left:50%; transform:translateX(-50%); display:flex; gap:9px; padding:9px; border-radius:9px; background:#102331e8; max-width:90%; }
+.sports-playbook:empty { display:none; }
+.sports-playbook button { background:#243c49; color:#e8f0ed; border:1px solid #6c899966; border-radius:5px; padding:12px 22px; font-size:13px; white-space:nowrap; }
+.sports-playbook button[aria-pressed=true] { background:#b9f06b; color:#15302a; border-color:#dcffa6; }
+.sport-card-art { background:linear-gradient(125deg,#102d3b,#22655f); padding:32px; min-height:210px; color:#e8f3e2; }
+.football .sport-card-art { background:linear-gradient(125deg,#2b2440,#995d41); }
+.sport-card-art span { font-size:10px; letter-spacing:2px; }
+.sport-card-art h3 { font-size:36px; margin:28px 0 10px; }
+@media(max-width:700px) {
+  .sports-broadcast { top:65px; left:12px; }
+  .sports-team { padding:8px 10px; font-size:10px; }
+  .sports-score { font-size:22px; min-width:70px; }
+  .sports-scoreboard time { font-size:15px; padding:0 9px; }
+  .sports-banner:not(.sports-intro) { top:170px; }
+  .sports-banner.sports-intro { width:85%; padding:24px; }
+  .sports-bottom { bottom:10px; left:8px; right:8px; }
+  .sports-playbook { bottom:220px; gap:4px; }
+  .sports-playbook button { padding:10px 8px; font-size:11px; }
+}
 @media (prefers-reduced-motion:reduce) {
   .playing-subgame .play-controls { animation:none; }
 }
@@ -921,3 +1007,43 @@ body.playing-subgame #player {
 .mzm-emerald-wilds-v2 .game-art{background:linear-gradient(150deg,#b8c7a1,#709c82 48%,#375e57);isolation:isolate}.mzm-emerald-wilds-v2 .art-label{color:#e7ebd5}.wilds-moon{position:absolute;left:14%;top:20%;width:69px;height:69px;background:#dce3b9;border-radius:50%;box-shadow:0 0 45px #eff0b933}.wilds-canopy{position:absolute;width:120%;height:65%;left:-10%;bottom:-8%;background:#527c60;clip-path:polygon(0 100%,8% 60%,18% 66%,24% 20%,34% 36%,40% 6%,49% 50%,60% 25%,70% 46%,81% 10%,92% 55%,100% 35%,100% 100%)}.wilds-canopy.canopy-front{height:38%;bottom:0;background:#2f5949;clip-path:polygon(0 100%,12% 47%,25% 59%,36% 27%,44% 57%,59% 32%,68% 55%,84% 15%,100% 52%,100% 100%)}.wilds-route{position:absolute;left:8%;right:8%;bottom:10%;height:1px;background:#b4c69377;transform:rotate(-9deg)}.wilds-seed{position:absolute;right:18%;top:21%;font-size:32px;color:#e3dc9e}.mzm-emerald-wilds-v2 .art-title.wilds-title{z-index:1;color:#f1eed7;font:31px/1 Georgia,serif;letter-spacing:2px;text-shadow:0 2px 14px #365a48}.wilds-title small{display:block;font:16px/1.3 Georgia,serif;color:#d8dec0}.mzm-emerald-wilds-v2 .wilds-title span{font:33px/1 Georgia,serif;color:#e3e5c8;letter-spacing:2px}.wilds-title em{display:block;font:8px/1.4 'Courier New',monospace;letter-spacing:6px;margin-top:13px;color:#dde4c7}.mzm-emerald-wilds-v2 .art-caption{z-index:1;color:#cbd9b5}
 
 .world-application .main-nav{display:none}.world-research-links{display:grid;gap:10px;margin-top:20px;border-top:1px solid #d7ddce;padding-top:17px}.world-research-links a{font-size:12px;color:#5b7550;text-decoration:none;padding:7px 0}.world-research-links a:hover{text-decoration:underline}.world-research-links a:focus-visible{outline:2px solid #92a87e;outline-offset:3px}
+.account-link{font-size:12px;color:var(--green);text-decoration:none;white-space:nowrap}
+.account-link:hover{text-decoration:underline}
+@media(max-width:780px){body:not(.world-application) .topbar{height:auto;min-height:80px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}body:not(.world-application) .main-nav{order:4;width:100%;justify-content:center}}
+/* Always-available takeover status and Stop. Rendered outside every dialog so an
+   outstanding planner, decision or reflection request can never hide Stop. */
+#agent-panel { position: fixed; right: 18px; bottom: 18px; z-index: 40; max-width: 320px; display: grid; gap: 8px;
+  padding: 14px 16px; border: 1px solid #2f5f55; border-radius: 14px; background: #06181ced; color: #dff3ea;
+  font-size: 13px; backdrop-filter: blur(6px); }
+#agent-panel[hidden] { display: none; }
+#agent-panel h2 { margin: 0; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #8ad6bf; }
+#agent-panel p, #agent-panel pre { margin: 0; white-space: pre-wrap; font: inherit; }
+#agent-runs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+#agent-runs li { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+#agent-panel button { padding: 4px 12px; border-radius: 999px; border: 1px solid #6ce3ce; background: #0d2b28; color: #d8fff3; cursor: pointer; }
+#agent-panel button:hover { background: #164a43; }
+
+/* One compact gameplay row; diagnostics are opt-in and never hide Stop. */
+#agent-panel { width: min(360px, calc(100vw - 28px)); max-width: none; box-sizing: border-box; }
+#agent-runs { gap: 12px; }
+#agent-runs li { gap: 12px; }
+.agent-player-copy { display: grid; gap: 4px; min-width: 0; }
+.agent-player-copy strong { font-size: 14px; font-weight: 600; }
+.agent-player-state { color: #b6cfc7; font-size: 12px; line-height: 1.4; }
+.agent-player-controls { display: flex; gap: 6px; flex-shrink: 0; }
+#agent-panel button { min-height: 32px; }
+#agent-panel button:disabled { opacity: .55; cursor: wait; }
+#agent-details { border-top: 1px solid #2f5f55; padding-top: 8px; color: #b6cfc7; }
+#agent-details summary { cursor: pointer; font-size: 12px; }
+#agent-details p, #agent-details pre { margin-top: 8px; max-height: 110px; overflow: auto; overflow-wrap: anywhere; }
+#qualification-step { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 45; max-width: min(600px, calc(100vw - 32px)); padding: 10px 16px; border: 1px solid #8ad6bf; border-radius: 10px; background: #06181cf0; color: #e5fff4; font: 13px/1.5 sans-serif; pointer-events: none; }
+#qualification-step[hidden] { display: none; }
+@media (max-width: 600px) { #agent-panel { right: 10px; bottom: 10px; padding: 12px; } }
+
+@media (max-width: 600px) {
+  body:has(#agent-panel:not([hidden])) #notice { bottom: calc(var(--agent-panel-height, 240px) + 26px); }
+}
+
+/* Each retained runtime owns its view; another game never clears its canvas. */
+.session-view { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.playing-sports .session-view { display: block; }

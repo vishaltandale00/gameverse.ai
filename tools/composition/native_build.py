@@ -88,6 +88,8 @@ def validate(doc, rom):
         raise ValueError('Unknown native host ABI')
     if sha(rom) != host['rom_sha256'] or hashlib.sha1(rom).hexdigest() != host['rom_sha1'] or len(rom) != host['rom_bytes']:
         raise ValueError('Foundation ROM identity mismatch')
+    global_regions = validate_global_regions(host, rom)
+    projected_regions = validate_projected_regions(host, rom)
     if integer(host['append_address']) != 0x08000000 + len(rom):
         raise ValueError('Payload must append after entire retained cartridge')
     if host['output_bytes'] not in (1<<23, 1<<24, 1<<25) or host['output_bytes'] <= len(rom):
@@ -116,7 +118,24 @@ def validate(doc, rom):
         if package['native_implementation']['origin'] not in ('self_decompilation', 'new_bridge') or recovery['dependency_closure']['status'] != 'closed':
             raise ValueError('Own recovered component or explicit new bridge with closed native dependencies required')
         if recovery['rom_sha256'] != sha(rom) and not recovery.get('dynamic_witness_refs'):
-            raise ValueError('Cross-ROM component requires recovery witnesses')
+            # Immutable asset data has byte-extraction witnesses, not fabricated
+            # gameplay/differential witnesses. Verify the separately supplied
+            # source cartridge and every claimed data range before compilation.
+            data = recovery.get('data_recovery')
+            if package['native_implementation'].get('kind') != 'extracted_asset_data' or not data:
+                raise ValueError('Cross-ROM component requires recovery witnesses')
+            source_rom = pinned_file(data['source_rom']).read_bytes()
+            if sha(source_rom) != recovery['rom_sha256'] or not data.get('ranges'):
+                raise ValueError('Cross-ROM asset source identity/ranges missing')
+            for span in data['ranges']:
+                offset = integer(span['address']) - 0x08000000
+                if offset < 0 or span['size'] <= 0 or offset + span['size'] > len(source_rom) or sha(source_rom[offset:offset+span['size']]) != span['sha256']:
+                    raise ValueError('Cross-ROM asset original data range mismatch')
+            witness = json.loads(pinned_file(data['extraction_receipt']).read_text())
+            if witness.get('rom_sha256') != recovery['rom_sha256']:
+                raise ValueError('Cross-ROM asset extraction identity mismatch')
+            if package['lowering']['native_v1'].get('exports') or package['lowering']['native_v1'].get('host_calls'):
+                raise ValueError('Static asset witness cannot qualify executable hook/service behavior')
         if recovery['rom_sha256'] == sha(rom):
             for span in recovery['ranges']:
                 offset = integer(span['address']) - 0x08000000
@@ -141,7 +160,7 @@ def validate(doc, rom):
             if export['return'] not in ('void', 'i32') or len(export['args']) > 4 or any(t not in TYPES for t in export['args']) or symbol in exports:
                 raise ValueError('Unsupported native export ABI')
             exports[symbol] = export
-        validate_states(native['state_bindings'])
+        validate_states(native['state_bindings'], global_regions, projected_regions)
         packages[instance] = {'document': package, 'pin': selection['package'], 'native': native, 'exports': exports}
     services = {}
     for service in host.get('services', []):
@@ -244,6 +263,21 @@ def validate(doc, rom):
         selected.append((binding, hook, export))
     if not selected:
         raise ValueError('Native composition must bind executable hooks')
+    for instance, package in packages.items():
+        for state in package['native']['state_bindings']:
+            if state['storage'] not in ('host-global', 'host-projected-actor'):
+                continue
+            region = (global_regions if state['storage'] == 'host-global' else projected_regions)[state['region']]
+            needed = 'write' if any(f['access'] == 'read-write' for f in state['fields']) else 'read'
+            if not any(a.get('state') == region['owner'] and a.get('phase') in region['phases']
+                       and a.get('op') == needed for a in components[instance].get('accesses', [])):
+                raise ValueError('Native global binding lacks resolved logical owner authority')
+            if not any(binding['instance'] == instance and hook['phase'] in region['phases']
+                       and (needed != 'write' or region['owner'] in hook['writes'])
+                       and any(a.get('state') == region['owner'] and a.get('phase') == hook['phase']
+                               and a.get('op') == needed for a in components[instance].get('accesses', []))
+                       for binding, hook, _ in selected):
+                raise ValueError('Native global binding lacks matching hook phase authority')
     # All selected packages participate in the call graph, directly or via deps.
     used = {b['instance'] for b, _, _ in selected}
     for p in packages.values():
@@ -254,9 +288,124 @@ def validate(doc, rom):
     return spec, host, packages, source_pins, selected, static
 
 
-def validate_states(bindings):
+def _global_fields(fields, size):
+    if not isinstance(fields, list) or not fields:
+        raise ValueError('Typed native global fields required')
+    end = 0
+    for field in sorted(fields, key=lambda row: integer(row['offset'])):
+        exact_keys(field, ['offset', 'width', 'type', 'quantity', 'access'],
+                   ['offset', 'width', 'type', 'quantity', 'access'])
+        offset, width = integer(field['offset']), integer(field['width'])
+        if (width not in (8, 16, 32) or field['type'] not in ('u'+str(width), 'i'+str(width))
+                or field['access'] not in ('read', 'read-write')
+                or not isinstance(field['quantity'], str) or not field['quantity']
+                or offset < end or offset % (width//8) or offset+width//8 > size):
+            raise ValueError('Invalid, overlapping or unaligned typed native global field')
+        end = offset+width//8
+
+
+def validate_global_regions(host, rom):
+    """Pinned host authority for existing RAM only; never reserve or allocate it."""
+    regions, spans = {}, []
+    for region in host['campaign'].get('global_regions', []):
+        exact_keys(region, ['id', 'address', 'bytes', 'owner', 'phases', 'fields', 'source_evidence', 'address_source'],
+                   ['id', 'address', 'bytes', 'owner', 'phases', 'fields', 'source_evidence', 'address_source'])
+        identity = identifier(region['id'])
+        address, size = integer(region['address']), integer(region['bytes'])
+        if (identity in regions or not 1 <= size <= 4096 or not region['owner'] or not isinstance(region['phases'], list) or not region['phases']
+                or any(not isinstance(phase, str) or not phase for phase in region['phases'])
+                or len(set(region['phases'])) != len(region['phases'])
+                or not any(start <= address and address+size <= end for start, end in ((0x02000000, 0x02040000), (0x03000000, 0x03008000)))
+                or any(address < other+extent and other < address+size for other, extent in spans)):
+            raise ValueError('Invalid, overlapping or non-RAM native global region')
+        _global_fields(region['fields'], size)
+        if any((address+integer(field['offset'])) % (integer(field['width'])//8) for field in region['fields']):
+            raise ValueError('Unaligned native global address')
+        if not isinstance(region['source_evidence'], list) or not region['source_evidence']:
+            raise ValueError('Native global source evidence pins required')
+        for evidence in region['source_evidence']:
+            pinned_file(evidence)
+        origin = region['address_source']
+        exact_keys(origin, ['address', 'preimage', 'offset'], ['address', 'preimage', 'offset'])
+        literal = integer(origin['address'])-0x08000000
+        preimage = bytes.fromhex(origin['preimage'])
+        if (literal < 0 or len(preimage) != 4 or literal+4 > len(rom)
+                or rom[literal:literal+4] != preimage
+                or int.from_bytes(preimage, 'little')+integer(origin['offset']) != address):
+            raise ValueError('Native global pointer origin differs from original ROM')
+        spans.append((address, size))
+        regions[identity] = region
+    return regions
+
+
+def validate_projected_regions(host, rom):
+    """Exactly one RAM pointer lookup, tied to the invoking actor's parent."""
+    result, spans = {}, []
+    for region in host['campaign'].get('projected_regions', []):
+        exact_keys(region, ['id', 'bytes', 'owner', 'phases', 'fields', 'source_evidence', 'projection'],
+                   ['id', 'bytes', 'owner', 'phases', 'fields', 'source_evidence', 'projection'])
+        identity = identifier(region['id'])
+        size = integer(region['bytes'])
+        if identity in result or not 1 <= size <= 4096 or not region['owner']:
+            raise ValueError('Invalid projected actor region')
+        if (not isinstance(region['phases'], list) or not region['phases']
+                or any(not isinstance(x, str) or not x for x in region['phases'])
+                or len(set(region['phases'])) != len(region['phases'])):
+            raise ValueError('Projected actor phases required')
+        _global_fields(region['fields'], size)
+        projection = region['projection']
+        exact_keys(projection, ['kind', 'root_source', 'pointer_slot_offset', 'subject_parent_offset', 'field_offset'],
+                   ['kind', 'root_source', 'pointer_slot_offset', 'subject_parent_offset', 'field_offset'])
+        if projection['kind'] != 'canonical-actor-parent/1':
+            raise ValueError('Unsupported actor pointer projection')
+        root = projection['root_source']
+        exact_keys(root, ['address', 'preimage'], ['address', 'preimage'])
+        offset = integer(root['address'])-0x08000000
+        raw = bytes.fromhex(root['preimage'])
+        if offset < 0 or offset % 4 or len(raw) != 4 or rom[offset:offset+4] != raw:
+            raise ValueError('Projected actor root differs from original ROM')
+        base = int.from_bytes(raw, 'little')
+        pointer_slot = base+integer(projection['pointer_slot_offset'])
+        if (pointer_slot % 4 or not any(start <= pointer_slot and pointer_slot+4 <= end
+                for start, end in ((0x02000000, 0x02040000), (0x03000000, 0x03008000)))):
+            raise ValueError('Projected actor canonical pointer slot outside aligned RAM')
+        parent, field = integer(projection['subject_parent_offset']), integer(projection['field_offset'])
+        if parent % 4 or field % 4 or not 0 <= parent <= 4092 or not 0 <= field <= 4096-size:
+            raise ValueError('Invalid projected actor field/parent extent')
+        for old_slot, old_start, old_size, old_region in spans:
+            if pointer_slot == old_slot and field < old_start+old_size and old_start < field+size:
+                # Reuse is explicit only for the identical canonical owner and
+                # typed projection. A second name cannot acquire new authority.
+                if (region['owner'] != old_region['owner'] or field != old_start or size != old_size
+                        or region['fields'] != old_region['fields']
+                        or projection['subject_parent_offset'] != old_region['projection']['subject_parent_offset']):
+                    raise ValueError('Conflicting overlapping projected actor authority')
+        if not isinstance(region['source_evidence'], list) or not region['source_evidence']:
+            raise ValueError('Projected actor source evidence required')
+        for evidence in region['source_evidence']:
+            pinned_file(evidence)
+        spans.append((pointer_slot, field, size, region))
+        result[identity] = region
+    return result
+
+
+def validate_states(bindings, global_regions=None, projected_regions=None):
     seen = set()
     for state in bindings:
+        if state.get('storage') in ('host-global', 'host-projected-actor'):
+            exact_keys(state, ['id', 'storage', 'region', 'bytes', 'lifetime', 'fields', 'allocation'],
+                       ['id', 'storage', 'region', 'bytes', 'lifetime', 'fields', 'allocation'])
+            identifier(state['id'])
+            projected = state['storage'] == 'host-projected-actor'
+            region = ((projected_regions if projected else global_regions) or {}).get(state['region'])
+            if (state['id'] in seen or region is None or state['allocation'] is not None
+                    or state['lifetime'] != ('native-entity' if projected else 'campaign') or integer(state['bytes']) != region['bytes']):
+                raise ValueError('Unclaimed native global region or invalid allocation/lifetime')
+            _global_fields(state['fields'], state['bytes'])
+            if any(field not in region['fields'] for field in state['fields']):
+                raise ValueError('Native global fields exceed exact host type/access authority')
+            seen.add(state['id'])
+            continue
         exact_keys(state, ['id', 'storage', 'bytes', 'lifetime', 'writes', 'allocation'],
                    ['id', 'storage', 'bytes', 'lifetime', 'writes', 'allocation'])
         identifier(state['id'])
@@ -282,19 +431,25 @@ def validate_states(bindings):
             end = offset + width//8
 
 
-def state_header(packages):
-    rows = ['#include <stdint.h>', '#include <stddef.h>',
+def state_header(packages, projected_regions=None):
+    rows = ['#ifndef GV_NATIVE_STATE_LAYOUT_H', '#define GV_NATIVE_STATE_LAYOUT_H',
+            '#include <stdint.h>', '#include <stddef.h>',
             '/* Existing host storage only: generated layouts never allocate BSS. */']
+    if projected_regions:
+        rows.extend(['static inline int gv_existing_ram_span(uintptr_t p, uintptr_t size) {',
+                     'return !(p & 3u) && ((p >= 0x02000000u && p < 0x02040000u && size <= 0x02040000u-p) ||',
+                     '(p >= 0x03000000u && p < 0x03008000u && size <= 0x03008000u-p));', '}'])
     for instance, package in sorted(packages.items()):
         for state in package['native']['state_bindings']:
             name = 'gv_state_' + instance + '_' + state['id']
             rows.append('struct __attribute__((packed)) %s {' % name)
             end = 0
-            fields = sorted(state['writes'], key=lambda row: row['offset'])
+            fields = sorted(state['fields'] if state['storage'] in ('host-global', 'host-projected-actor') else state['writes'], key=lambda row: row['offset'])
             for n, field in enumerate(fields):
                 if field['offset'] > end:
                     rows.append('uint8_t reserved_%d[%d];' % (n, field['offset']-end))
-                rows.append('uint%d_t field_%d;' % (field['width'], n))
+                c_type = ('int' if field.get('type', '').startswith('i') else 'uint') + str(field['width']) + '_t'
+                rows.append('%s field_%d;' % (c_type, n))
                 end = field['offset'] + field['width']//8
             if state['bytes'] > end:
                 rows.append('uint8_t reserved_tail[%d];' % (state['bytes']-end))
@@ -302,7 +457,21 @@ def state_header(packages):
             rows.append('_Static_assert(sizeof(struct %s)==%d,"host state extent");' % (name,state['bytes']))
             for n, field in enumerate(fields):
                 rows.append('_Static_assert(offsetof(struct %s,field_%d)==%d,"host field offset");' % (name,n,field['offset']))
-    return '\n'.join(rows)+'\n'
+            if state['storage'] == 'host-projected-actor':
+                region = projected_regions[state['region']]
+                projection = region['projection']
+                base = int.from_bytes(bytes.fromhex(projection['root_source']['preimage']), 'little')
+                slot = base+integer(projection['pointer_slot_offset'])
+                parent, offset = integer(projection['subject_parent_offset']), integer(projection['field_offset'])
+                helper = 'gv_access_' + instance + '_' + state['id']
+                rows.extend(['static inline volatile struct %s *%s(void *subject) {' % (name, helper),
+                             'uintptr_t actor=(uintptr_t)subject;',
+                             'if (!gv_existing_ram_span(actor,%du)) return NULL;' % (parent+4),
+                             'uintptr_t player=*(volatile uint32_t *)0x%xu;' % slot,
+                             'if (!gv_existing_ram_span(player,%du)) return NULL;' % (offset+state['bytes']),
+                             'if (*(volatile uint32_t *)(actor+%du) != player) return NULL;' % parent,
+                             'return (volatile struct %s *)(player+%du);' % (name, offset), '}'])
+    return '\n'.join(rows+['#endif'])+'\n'
 
 
 def argument(arg, host, expected_type=None, hook=None):
@@ -343,6 +512,25 @@ def argument(arg, host, expected_type=None, hook=None):
     raise ValueError('Unknown native argument expression')
 
 
+REQUIRED_TOOLS = ('git', 'cc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy', 'arm-none-eabi-nm')
+
+
+def resolve_tools(names=REQUIRED_TOOLS):
+    """Resolve every required executable before hashing or invoking any tool."""
+    resolved = {name: shutil.which(name) for name in names}
+    missing = [name for name, path in resolved.items() if path is None]
+    if missing:
+        raise ValueError('Missing native build tools on PATH: ' + ', '.join(missing) +
+                         '. Install the required toolchain or update PATH before retrying.')
+    binaries = {}
+    for name, path in resolved.items():
+        # Keep the selected executable (including a configured PATH symlink),
+        # but make it absolute before subprocess changes its working directory.
+        executable = Path(path).absolute()
+        binaries[name] = {'path': str(executable), 'sha256': sha(executable.resolve().read_bytes())}
+    return binaries
+
+
 def build(plan, rom_path, out):
     out = Path(out).resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -357,6 +545,7 @@ def build(plan, rom_path, out):
         receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
     deadline = started + plan.get('native_build', {}).get('max_build_s', 60)
     def command(label, argv, timeout):
+        argv = [receipt['tool_binaries'][argv[0]]['path'], *argv[1:]]
         timeout = min(timeout, deadline-time.monotonic())
         if timeout <= 0:
             raise ValueError('Total native build time budget exhausted')
@@ -379,8 +568,8 @@ def build(plan, rom_path, out):
         rom = Path(rom_path).read_bytes()
         spec, host, packages, sources, hooks, static = validate(plan, rom)
         receipt['limits'] = {'stage_timeout_s': spec['timeout_s'], 'max_build_s': spec.get('max_build_s', 60), 'max_payload_bytes': spec['max_payload_bytes']}
+        receipt['tool_binaries'] = resolve_tools()
         receipt['source_commit'] = command('source-context', ['git', 'rev-parse', 'HEAD'], 3).strip()
-        receipt['tool_binaries'] = {name: {'path': shutil.which(name), 'sha256': sha(Path(shutil.which(name)).resolve().read_bytes())} for name in ['cc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy']}
         receipt['compiler'] = command('toolchain', ['cc', '--version'], 3).splitlines()[0]
         receipt['host_sha256'] = sha(canonical(host))
         receipt['foundation_sha256'] = sha(rom)
@@ -391,7 +580,8 @@ def build(plan, rom_path, out):
             snapshot.write_bytes(pinned_file(package['pin']).read_bytes())
         (out / 'plan.json').write_text(json.dumps(plan, indent=2)+'\n')
         (out / 'static-resolution.json').write_text(json.dumps(static, indent=2)+'\n')
-        (out / 'state-layout.h').write_text(state_header(packages))
+        projected = {r['id']: r for r in host['campaign'].get('projected_regions', [])}
+        (out / 'state-layout.h').write_text(state_header(packages, projected))
         generated = ['#include <stdint.h>', '#include "state-layout.h"', '/* Generated from immutable component graph. */']
         prototypes = set()
         provenance = []
@@ -411,7 +601,7 @@ def build(plan, rom_path, out):
         (out / 'state-layout.json').write_text(json.dumps(states, indent=2)+'\n')
         wrapper_path = out / 'bindings.c'
         wrapper_path.write_text('\n'.join(generated)+'\n')
-        compile_flags = ['cc', '-target', 'armv4t-none-eabi', '-mcpu=arm7tdmi', '-mthumb', '-ffreestanding', '-fno-builtin', '-fno-common', '-Os', '-Wall', '-Wextra', '-Werror']
+        compile_flags = ['cc', '-target', 'armv4t-none-eabi', '-mcpu=arm7tdmi', '-mthumb', '-ffreestanding', '-fno-builtin', '-fno-common', '-Os', '-Wall', '-Wextra', '-Werror', '-I', str(out)]
         objects = []
         for ref in sources:
             snapshot = out / 'sources' / ref

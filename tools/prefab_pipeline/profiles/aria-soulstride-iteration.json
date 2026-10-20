@@ -1,0 +1,126 @@
+{
+  "schema": "prefab-iteration/1",
+  "run_id": "aria-soulstride-profile-template",
+  "source_commit": "prepared-at-run-time",
+  "environment_version": "libmgba/0.10.5",
+  "adapter_version": "aria-readonly-reward-fragment/1",
+  "loop_config_ref": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+  "mechanism_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "base_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "limits": {
+    "attempts": 2,
+    "model_calls": 36,
+    "native_frames": 13000,
+    "wall_seconds": 180,
+    "cost_usd": null
+  },
+  "supported_requests": [
+    {
+      "schema": "native-prefab-mod-request/1",
+      "request_id": "aria-soulstride-controlled-weak-v1",
+      "intent": "Controlled integration baseline: intentionally configure legal 1px/frame successful Skeleton birth lunge against explicit required minimum3px/frame. Preserve every other native combat/progression setting.",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 16384,
+        "subprocess_s": 20
+      },
+      "strategy_lowering": {
+        "backend": "connected-strategy/1",
+        "strategy": {
+          "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+          "sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048"
+        },
+        "lowerer": {
+          "path": "tools/prefab_pipeline/momentum_strategy.py",
+          "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+        }
+      },
+      "plan": {
+        "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+        "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+      },
+      "rom": {
+        "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+        "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+      }
+    },
+    {
+      "schema": "native-prefab-mod-request/1",
+      "request_id": "aria-soulstride-controlled-repaired-v1",
+      "intent": "Reviewed causal repair: change only successful Skeleton birth lunge_speed_q16 from65536(1px/frame) to196608(3px/frame), matching declared native impulse objective. Preserve other native settings and guards.",
+      "limits": {
+        "max_build_s": 60,
+        "max_payload_bytes": 16384,
+        "subprocess_s": 20
+      },
+      "strategy_lowering": {
+        "backend": "connected-strategy/1",
+        "strategy": {
+          "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+          "sha256": "c241e43180b8a33202ab8f168a0219f5c08cc44a2f59cec509c2a5d7b80c15b2"
+        },
+        "lowerer": {
+          "path": "tools/prefab_pipeline/momentum_strategy.py",
+          "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+        }
+      },
+      "plan": {
+        "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+        "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+      },
+      "rom": {
+        "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+        "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+      }
+    }
+  ],
+  "experiment": {
+    "profile": {
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-actions.json",
+      "sha256": "c47d05a018a2fe8a301bd80ee51285ea5a894a4f1d1295c0adc159ddaaa64119"
+    },
+    "memory_profile": {
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-memory.json",
+      "sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484"
+    },
+    "fixture_recipe": {
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-fixture.json",
+      "sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b"
+    },
+    "goal": "skeleton_birth_impulse",
+    "max_steps": 12,
+    "max_model_calls": 24,
+    "max_frames": 960,
+    "max_seconds": 60,
+    "model_timeout": 10,
+    "confidence": 0.65,
+    "margin": 0.2,
+    "confidence_basis": "uncalibrated_provider_score",
+    "calibration_artifact": null,
+    "policy_ref": {
+      "path": "tools/playtester/models.py",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "sid_env_file_env": "GAMEVERSE_SID_ENV_FILE",
+    "target_abs_velocity_q16": 196608,
+    "native_event_audit": true,
+    "models": {
+      "system1": {
+        "provider": "d1",
+        "model": "ramblerun/Decision-AI"
+      },
+      "system2": {
+        "provider": "explicit_chat",
+        "model": "ramblerun/Multimodal-AI"
+      }
+    }
+  },
+  "coverage": "Declared controlled integration regression: baseline legal1px successful native Skeleton birth impulse versus explicit3px minimum; actual native observation and model-selected reviewed3px repair, rebuild/fresh-fixture retest. First chunk pauses with exact native/model context; continuation is a new process. Not a naturally discovered game defect, campaign benchmark, or activation.",
+  "mechanism_refs": [],
+  "pause_after_experiment": true,
+  "model_repair_diagnosis": true,
+  "runtime_manifest": {
+    "path": "contracts/improvement-provider-pack.json",
+    "recipe_id": "aria-soulstride-controlled-lunge"
+  }
+}

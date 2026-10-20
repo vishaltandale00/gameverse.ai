@@ -1,0 +1,103 @@
+{
+  "schema": "gameverse.hosted-connections-qualification/1",
+  "run_id": "45dd0960-b274-4652-8a31-9ddd4e3f6c4e",
+  "recorded_at": "2026-10-18T14:01:27.966Z",
+  "source_commit": "38eaa4cb584018cb47eeab9c7998f8401ed95410",
+  "source_dirty": true,
+  "source_files_sha256": {
+    "infra/cloudflare/worker.js": "882e872ce25b6cb4e4508752e8652ba06a459bdc0c408042409405fc3bf7fd16",
+    "infra/cloudflare/project-state.js": "860031de34b82d6ef25558fc2b717dc111880156eaaab637c57c28207baaac14",
+    "infra/cloudflare/agent-connections.js": "136fd582fae594091733a122f36f074fb5813943a53068e1c2004cadaeae8171",
+    "infra/cloudflare/credential-vault.js": "e0d97b69381ab605e5fe2652e6ba7e72e5ee688e72dd56045aea6cfae0eb1471",
+    "wrangler.staging.jsonc": "9952efb03a4d0483d80f21b448f30695c308f5abceeeb213eb377c601a234af7",
+    "package-lock.json": "a55118749c4d2fa20636419e1e70e364107ec74395bf62f11eff2f6a60d8be4d",
+    "tests/hosting/cloudflare.test.js": "ddb816b146f5a4661478c4fd6407f7a9841c599a126f20d3f752da801a8b34c1",
+    "tests/hosting/connections.test.js": "4033c5aa8e835f7e5cae5423b24b6d137acc187b0dcb3e25fb4e134dd4cc508c",
+    "tests/hosting/fixtures/connections-worker.js": "4244d164a2c29baf6a7680e87f26141cae672f3281c3667c8e90a8f5d750feb9",
+    "tests/hosting/fixtures/wrangler.connections.jsonc": "fdae251f8cacbd8f621684189a37e92ba2297e9e32908747e2b9a5fb1b9d7f6b"
+  },
+  "environment": {
+    "node": "v22.23.2",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "wrangler": "4.151.1",
+    "runtime": "local-workerd",
+    "credentials": "synthetic-fixtures-only",
+    "dependency_setup_ms": null
+  },
+  "attempts": [
+    {
+      "stage": "pre-change-baseline",
+      "outcome": "failed",
+      "command": "npm run test:hosting",
+      "tests": 5,
+      "passed": 1,
+      "failed": 4,
+      "runner_wall_ms": 3144.250375,
+      "source_files_sha256": {
+        "infra/cloudflare/worker.js": "8e99e0e4866ff2340a9e86035ccfde8e3dbfb1773e3aa0bda9929610d3f76d03",
+        "infra/cloudflare/project-state.js": "860031de34b82d6ef25558fc2b717dc111880156eaaab637c57c28207baaac14",
+        "wrangler.staging.jsonc": "8bd95c01dc3e15cc4dcfe6ec92d921b62400eb4f016c205de6429cbb3f1f8017",
+        "tests/hosting/cloudflare.test.js": "ddb816b146f5a4661478c4fd6407f7a9841c599a126f20d3f752da801a8b34c1"
+      },
+      "reason": "ProxyWorker reported Network connection lost on first project create; dependent checks failed. Exact cause unqualified. Subsequent expanded local checks passed."
+    },
+    {
+      "stage": "final-local-qualification",
+      "outcome": "passed",
+      "command": "npm run test:hosting",
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "runner_wall_ms": 1151.527833,
+      "nested_groups_ms": {
+        "staging_foundation": 600.610375,
+        "crypto": 10.930875,
+        "connections_including_restart": 678.042375
+      },
+      "timing_scope": "Node test runner wall time; groups run in parallel and contain nested checks, so their times must not be summed."
+    },
+    {
+      "stage": "worker-dry-run",
+      "outcome": "passed",
+      "command": "npm run infra:check",
+      "command_wall_ms": 723.802375,
+      "compiler_only_ms": null,
+      "cache_state": "unavailable",
+      "upload_kib": 17.35,
+      "gzip_kib": 4.97,
+      "deployment": false
+    }
+  ],
+  "coverage": [
+    "Ciphertext substitution and tampering rejected; bounded opaque credential payloads",
+    "Account binding, provider defaults and metadata-only listing",
+    "Serialized refresh, revision conflicts and fresh-use auth-state reuse",
+    "Disconnect races cannot restore credentials; cleanup acknowledgement required",
+    "Superseded/cancelled browser callbacks rejected",
+    "Reconnect state retains selected provider without fallback",
+    "Expired use cannot authorize replacement compute or late refresh",
+    "Real local workerd restart retains encrypted credentials and active-use locks"
+  ],
+  "unavailable_measurements": {
+    "successful_comparable_pre_change_baseline_ms": null,
+    "ci_queue_ms": null,
+    "ci_job_ms": null,
+    "native_build_ms": null,
+    "sandbox_queue_ms": null,
+    "improvement_run_ms": null
+  },
+  "daytona_jobs": 0,
+  "model_calls": 0,
+  "deployed": false,
+  "limits": [
+    "No Gameverse login or session authorization implemented.",
+    "No real provider login, credential refresh or sandbox authentication qualified.",
+    "No pending request continuation, browser UI, job admission or sandbox cancellation implemented.",
+    "Cancellation checks cover durable intent and credential fencing only, not actual process termination.",
+    "Single credential-encryption key format; rotation, re-encryption and recovery are not implemented.",
+    "Local connection lease duration bound is not a production job SLA."
+  ]
+}

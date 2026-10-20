@@ -2,6 +2,13 @@ import { WALK_SPEED, RUN_SPEED, SPAWN, clamp, angleDelta, cameraRelativeInput, m
 import { certifyCameraPose, safetyObservations } from './neighborhood-safety.js';
 import { StandardGamepadInput } from './gamepad.js';
 
+// World-basis movement for host-granted runs: +z is the world's "north" the
+// overworld surface declares, independent of any camera orientation.
+const worldDirection = (side, forward) => {
+  const length = Math.max(1, Math.hypot(side, forward));
+  return { x: side / length, z: forward / length };
+};
+
 export class NeighborhoodController {
   constructor(canvas, camera, world, onPause, initialPose, onInteract = () => {}) {
     this.canvas = canvas; this.camera = camera; this.world = world; this.onPause = onPause;
@@ -11,6 +18,7 @@ export class NeighborhoodController {
     this.position = { x: pose.x, z: pose.z }; this.yaw = pose.yaw; this.pitch = pose.pitch;
     this.keys = new Set(); this.velocity = { x: 0, z: 0 }; this.distance = 5.2; this.actualDistance = 5.2; this.targetHeight = null;
     this.speed = 0; this.paused = false; this.dragging = false; this.disposed = false; this.heading = 1.1;
+    this.executionHold = false;
     this.abort = new AbortController(); const options = { signal: this.abort.signal };
     const movement = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
     window.addEventListener('keydown', event => {
@@ -64,20 +72,38 @@ export class NeighborhoodController {
     if (!paused) this.canvas.focus({ preventScroll: true });
   }
   update(dt) {
-    if (this.paused || this.disposed) return;
+    // `executionHold` is set by the host-facing runtime when a granted run owns
+    // the character: the simulation keeps stepping even though the view is
+    // paused/hidden. Human input stays cleared while paused.
+    if ((this.paused && !this.executionHold) || this.disposed) return;
     // The shell owns menu/GBA polling while this controller is paused.
     this.gamepadState = this.gamepadInput.sample(globalThis.navigator?.getGamepads?.() || []);
     const pad = this.gamepadState;
     if (pad.disconnected || pad.pressed[9]) { this.requestPause(); return; }
     if (pad.pressed[0]) this.onInteract();
-    if (this.paused || this.disposed) return;
+    if ((this.paused && !this.executionHold) || this.disposed) return;
     this.yaw -= pad.look.x * dt * 2.4;
     this.pitch = clamp(this.pitch + pad.look.y * dt * 1.6, -0.08, 0.95);
     const held = (...keys) => keys.some(k => this.keys.has(k));
-    const forward = Number(held('KeyW', 'ArrowUp')) - Number(held('KeyS', 'ArrowDown')) - pad.move.y + Number(!!pad.buttons[12]) - Number(!!pad.buttons[13]);
-    const side = Number(held('KeyD', 'ArrowRight')) - Number(held('KeyA', 'ArrowLeft')) + pad.move.x + Number(!!pad.buttons[15]) - Number(!!pad.buttons[14]);
-    const direction = cameraRelativeInput(side, forward, this.yaw);
-    const running = held('ShiftLeft', 'ShiftRight') || !!pad.buttons[4], targetSpeed = running ? RUN_SPEED : WALK_SPEED;
+    const humanForward = Number(held('KeyW', 'ArrowUp')) - Number(held('KeyS', 'ArrowDown')) - pad.move.y + Number(!!pad.buttons[12]) - Number(!!pad.buttons[13]);
+    const humanSide = Number(held('KeyD', 'ArrowRight')) - Number(held('KeyA', 'ArrowLeft')) + pad.move.x + Number(!!pad.buttons[15]) - Number(!!pad.buttons[14]);
+    const humanRunning = held('ShiftLeft', 'ShiftRight') || !!pad.buttons[4];
+    // While a host-granted run drives the character, the human keeps the camera:
+    // movement input orbits/dollies the spectator boom instead of walking, and
+    // look input already only touches the camera. Camera safety is unchanged.
+    const driven = this.agentDrive;
+    if (driven) {
+      this.humanSpectatorInput = Boolean(humanForward || humanSide || pad.look.x || pad.look.y || this.dragging);
+      this.yaw -= humanSide * dt * 1.9;
+      this.distance = clamp(this.distance - humanForward * dt * 3.4, 2.5, 8.5);
+    }
+    const forward = driven ? (driven.forward || 0) : humanForward;
+    const side = driven ? (driven.side || 0) : humanSide;
+    // A granted run steers in world directions. Human input is camera relative,
+    // but the spectator boom must never bend the agent's trajectory, so agent
+    // movement is resolved against the world basis instead of this.yaw.
+    const direction = driven ? worldDirection(side, forward) : cameraRelativeInput(side, forward, this.yaw);
+    const running = driven ? Boolean(driven.run) : humanRunning, targetSpeed = running ? RUN_SPEED : WALK_SPEED;
     const smoothing = 1 - Math.exp(-dt * 11);
     this.velocity.x += (direction.x * targetSpeed - this.velocity.x) * smoothing;
     this.velocity.z += (direction.z * targetSpeed - this.velocity.z) * smoothing;
@@ -120,6 +146,7 @@ export class NeighborhoodController {
     return { ...this.pose(), speed: this.speed, paused: this.paused, disposed: this.disposed,
       camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, distance: this.actualDistance, desiredDistance: this.distance },
       safety: safetyObservations(), cameraTarget: { ...this.cameraTarget },
+      agentDriven: Boolean(this.agentDrive), spectatorCamera: Boolean(this.agentDrive), humanSpectatorInput: Boolean(this.humanSpectatorInput),
       heldKeys: [...this.keys], pointerLocked: document.pointerLockElement === this.canvas,
       gamepad: { connected: this.gamepadState.connected, index: this.gamepadState.index, id: this.gamepadState.id,
         armed: this.gamepadState.armed, move: { ...this.gamepadState.move }, look: { ...this.gamepadState.look }, buttons: [...this.gamepadState.buttons] } };

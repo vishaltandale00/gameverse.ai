@@ -21,7 +21,6 @@ test('collection games expand while both configurations preserve FireRed progres
     assert.deepEqual(games.map(game => game.id), config.subgames.map(binding => binding.id));
     assert.equal(games.find(game => game.id === 'firered'), catalogGame);
     assert.ok(!games.some(game => game.id === 'deferred-game'));
-    assert.deepEqual(games.map(game => game.id), config.base.kind === 'neighborhood' ? ['firered'] : ['firered', 'mzm-emerald-wilds-v2', 'sonic-metroid-movement-v1', 'ir-workshop']);
     validateGameBinding(config, catalogGame, { adapter: 'gameverse-gba-worker/0.1.0' });
     return progressKey({ profileId: 'same-player', gameId: games[0].id, cartridgeSha256: 'cartridge', wasmSha256: 'core', loaderSha256: 'loader', adapter: 'gameverse-gba-worker/0.1.0', snapshotFormat: 'format' });
   });
@@ -32,4 +31,13 @@ test('configuration mistakes cannot silently redirect progress or use the wrong 
   assert.throws(() => validateGameBinding(configs[1], { id: 'firered' }, { adapter: 'wrong-core-adapter' }), /different adapter/);
   assert.throws(() => validateGameBinding(configs[1], { id: 'unknown' }, { adapter: 'gameverse-gba-worker/0.1.0' }), /not available/);
   assert.equal(configuredGames(configs[1], [])[0].ready, false);
+});
+
+
+test('custom browser games bind only to their supported adapter in the world', () => {
+  const game = { id: 'soccer', kind: 'custom-sports', adapter: 'gameverse-custom-sports/1.0.0', ready: true };
+  assert.equal(configuredGames(configs[1], [game])[1], game);
+  validateGameBinding(configs[1], game, game);
+  assert.throws(() => validateGameBinding(configs[0], game, game), /not available/);
+  assert.throws(() => validateGameBinding(configs[1], game, { adapter: 'gameverse-gba-worker/0.1.0' }), /different adapter/);
 });

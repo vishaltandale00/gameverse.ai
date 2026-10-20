@@ -1,0 +1,122 @@
+{
+  "schema": "gameverse.rpg-prefix-verification/1",
+  "run_id": "d2e7374b-540e-4fa8-873b-79199f3cc184",
+  "outcome": "partial",
+  "stop_reason": "model_call_limit",
+  "scope": "Existing original source-owned post-Champion weekend quest; no candidate modification. Bounded prefix is not quest qualification.",
+  "source": {
+    "schema": "gameverse.rpg-prefix-source-context/1",
+    "source_commit": "2e7b00f0288cb50d64d8845276ba6c1ce12d37ea",
+    "staged_diff_sha256": "11b7d45e4767866c9445f17b9618b6f2a31a40c66617ca2e7c6a80f8fb992562",
+    "expected_loop_version": "58e312979f0445d1ec6f199883f36d7caaad9a4ab8586955fb18a740ef658878",
+    "expected_readset_sha256": "e3bf39a278f272703a83b6a76040ecc43382b401ddb8b067c854f9391f1939e1",
+    "profile_sha256": "cc0c4797759ce21dfc475ec2c45b8d92664f26f99fa0448e2cf7d8768b9d20bc",
+    "native_sha256": "977359b8e073684818abc28340b99885e0e8fa1c68f6b92e7cbcd1c48b9e98f4",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.9.6",
+    "node": "v24.14.0",
+    "scope": "Original supplied post-Champion weekend quest; no candidate modification, fresh-game gym or whole-game claim"
+  },
+  "identity": {
+    "version_basis": "recipe-readset/1",
+    "loop_version": "58e312979f0445d1ec6f199883f36d7caaad9a4ab8586955fb18a740ef658878",
+    "profile_sha256": "cc0c4797759ce21dfc475ec2c45b8d92664f26f99fa0448e2cf7d8768b9d20bc",
+    "input_sha256": "e194f67bf0464b9f4c74fc890a0dd4b152f0b87a9170baec17acc970f836579f",
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "iteration_sha256": "de2e7ecf528f16aff26798d6f5bb1142f71bae8eb6881628455e50dc353bcfa8",
+    "checkpoint_state_sha256": "70f6ae2ceae910ce16bb72b87f77ec6859cfdf95d3068e2d537a44f971c6ee5e",
+    "checkpoint_learning_sha256": "c26ec50946381027ceb7865ac2371bd9541381658374c782bfc5df5a6828dc0f",
+    "checkpoint_observation_sha256": "d55e662aef435d4c7e4083f97d8407c8be0cf2a8daa733306c7af35846af3edf",
+    "adapter_version": "sid-rpg-navigation/1",
+    "environment_version": "libmgba/0.10.5"
+  },
+  "limits": {
+    "model_calls": 20,
+    "native_frames": 6000,
+    "wall_seconds": 90,
+    "attempts": 1
+  },
+  "observed": {
+    "provider_calls": 20,
+    "system1_calls": 1,
+    "system2_calls": 19,
+    "provider_successes": 20,
+    "system1_rejected_low_confidence_or_margin": 1,
+    "system2_reasons": {
+      "low_confidence_or_margin": 1,
+      "all_actions_stationary": 18
+    },
+    "actions": 36,
+    "deterministic_decisions": 17,
+    "setup_native_frames": 1692,
+    "play_native_frames": 439,
+    "total_native_frames": 2131,
+    "quest_stages": [
+      0
+    ],
+    "scenario_nodes": [
+      "post_champion_start"
+    ],
+    "battle_observations": 0,
+    "quest_completed": false,
+    "repairs": []
+  },
+  "timing": {
+    "api": {
+      "queue_s": null,
+      "execution_wall_s": 51.56329075,
+      "build_s": null,
+      "simulation_s": 51.098177,
+      "evaluation_s": 1.9e-05,
+      "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+      "backend_total_s": 51.295891
+    },
+    "backend_stage_wall_s": {
+      "admit": 0.075232,
+      "artifact-reference": 0.092501,
+      "experiment": 51.098177,
+      "diagnose": 1.9e-05
+    },
+    "play_loop": {
+      "total_wall_s": 49.259915,
+      "observation_wall_s": 0.1651,
+      "action_wall_s": 0.37045,
+      "model_wall_s": {
+        "system1": 0.2713190000000001,
+        "system2": 48.42201137200001
+      },
+      "frames_per_action": 12.194444444444445,
+      "frames_per_model_call": 21.95,
+      "policy_wall_s": 48.705598,
+      "deadline_overshoot_s": 0.0,
+      "queue_s": null,
+      "build_s": null
+    },
+    "startup_wall_s": 1.782319,
+    "experiment_total_wall_s": 51.074719,
+    "http_poll_elapsed_s": 52.97708708300001,
+    "nominal_native_fps": 59.72750056960583,
+    "simulated_play_seconds": 7.350048065185547,
+    "simulated_play_seconds_per_worker_wall_second": 0.1425442006954443,
+    "simulated_play_seconds_per_play_loop_wall_second": 0.14920951579363356,
+    "action_only_frames_per_second": 1185.045215278715,
+    "accounting": "Startup excluded from simulated play numerator; model/network/queue wall included in worker and play-loop ratios. Stage and policy times overlap; do not sum. No comparable prior complete quest benchmark. Provider queue/inference split and cost unavailable."
+  },
+  "verification": {
+    "canonical_input_hash": true,
+    "artifact_http_statuses": {
+      "result": 200,
+      "rom": 200,
+      "iteration": 200
+    },
+    "download_digests": true,
+    "pinned_local_refs_checked": 18,
+    "events_report_digest_binding": true,
+    "all_20_provider_calls_bound_to_current_observation": true,
+    "original_rom_elf_save_provider_pins_unchanged": true,
+    "new_process_resume_exercised": false,
+    "mod_quality": "not-evaluated; original traversal only"
+  },
+  "finding": "18 S2 calls escalated all_actions_stationary while the adapter exposed singleton wait/text actions; quest remained stage0. Source-backed printer/script batching fix is a separate runtime revision requiring a truthful new-identity restart or explicit compatible migration. No larger campaign authorized from this result.",
+  "next_step": "Preserve this prefix and compare a bounded same-save restart after independently reviewed adapter fix; then choose continuation resources from measured semantic progress."
+}

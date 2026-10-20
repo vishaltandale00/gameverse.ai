@@ -158,6 +158,83 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(report["steps"], 1)
         self.assertEqual(report["system2_calls"], 1)
 
+    def test_model_wait_continues_only_in_source_proven_noninteractive_callback(self):
+        class BootAdapter(ModelAdapter):
+            def observe(self):
+                obs = super().observe()
+                obs['progress'] = {'source_progress': self.frame}
+                obs['facts'] = {'source_callback2': 1 if self.frame < 6 else 2,
+                                'noninteractive_wait_safe': self.frame < 6}
+                return obs
+        policy = FixedPolicy({'accepted': True, 'action_id': 'wait'})
+        tester = Playtester(BootAdapter(), profile(), policy, limits=Limits(max_steps=4))
+        report = tester.run()
+        self.assertEqual(report['steps'], 4)
+        self.assertEqual(policy.calls, 2)
+        self.assertTrue(any(event.get('result', {}).get('record', {}).get('policy') == 'continue_model_wait'
+                            for event in tester.events))
+
+    def test_tiny_ignored_probes_wait_for_minimum_frames_before_barrier(self):
+        report = Playtester(StationaryAdapter(), profile(), FrontierPolicy(),
+                            limits=Limits(max_steps=5, stationary_min_frames=12)).run()
+        self.assertEqual(report['steps'], 5)
+        self.assertEqual(report['barrier_candidates'], [])
+        report = Playtester(StationaryAdapter(), profile(), FrontierPolicy(),
+                            limits=Limits(max_steps=8, stationary_min_frames=12)).run()
+        self.assertEqual(report['steps'], 6)
+        self.assertEqual(report['reason'], 'needs_system2:all_actions_stationary')
+
+    def test_partial_source_progress_does_not_mask_visible_dialogue_changes(self):
+        configured = profile()
+        configured['awareness']['progress_evidence_scope'] = 'partial'
+        report = Playtester(StationaryAdapter(animated=True), configured, FrontierPolicy(),
+                            limits=Limits(max_steps=5)).run()
+        self.assertEqual(report['steps'], 5)
+        self.assertEqual(report['barrier_candidates'], [])
+        self.assertEqual(report['transitions'][0]['progress_basis'], 'partial_structured_plus_visual')
+
+    def test_invalid_system2_choice_is_repaired_with_current_action_schema(self):
+        class RepairPolicy:
+            def __init__(self):
+                self.contexts = []
+            def choose(self, context, options, timeout_s):
+                self.contexts.append(context)
+                if len(self.contexts) == 1:
+                    return {'accepted': False, 'record': {'error': 'invalid_llm_action_id',
+                                                         'proposed_action_id': 'START'}}
+                return {'accepted': True, 'action_id': 'walk', 'reason': 'valid repaired action'}
+        slow = RepairPolicy()
+        tester = Playtester(ModelAdapter(), profile(), FixedPolicy({'accepted': False}), system2=slow,
+                            limits=Limits(max_steps=1, max_escalations=None))
+        report = tester.run()
+        self.assertEqual(report['steps'], 1)
+        self.assertEqual(report['system2_calls'], 2)
+        self.assertEqual(slow.contexts[1]['invalid_response_repair']['proposed_action_id'], 'START')
+        self.assertIn('walk', slow.contexts[1]['invalid_response_repair']['allowed_action_ids'])
+
+    def test_system2_replans_repeat_until_global_limit_without_round_cap(self):
+        fast = FixedPolicy({"accepted": False, "reason": "ambiguous"})
+        slow = FixedPolicy({"accepted": True, "action_id": "walk"})
+        report = Playtester(ModelAdapter(), profile(), fast, system2=slow,
+                            limits=Limits(max_steps=5, max_escalations=None, stationary_threshold=10)).run()
+        self.assertEqual(report["reason"], "step_limit")
+        self.assertEqual(report["system2_calls"], 5)
+        self.assertEqual(report["steps"], 5)
+        self.assertNotEqual(report["status"], "success")
+
+    def test_native_integration_frames_are_counted_against_global_budget(self):
+        class IntegratingAdapter(StationaryAdapter):
+            def hello(self):
+                return dict(super().hello(), max_integration_frames=3)
+            def act(self, action, *, max_frames):
+                spent = min(5, max_frames)
+                self.frame += spent
+                return {"frames": spent, "integration_frames": spent - 2}
+        report = Playtester(IntegratingAdapter(), profile(), FrontierPolicy(),
+                            limits=Limits(max_frames=5)).run()
+        self.assertEqual(report["frames"], 5)
+        self.assertEqual(report["reason"], "frame_limit")
+
     def test_frame_budget_does_not_overshoot(self):
         report = Playtester(StationaryAdapter(), profile(), FrontierPolicy(), limits=Limits(max_frames=3)).run()
         self.assertEqual(report["frames"], 2)
@@ -241,6 +318,24 @@ class ModelTests(unittest.TestCase):
         self.assertTrue(result["accepted"])
         self.assertNotIn("secret-key", json.dumps(result))
         self.assertEqual(seen[0]["chat_template_kwargs"], {"enable_thinking": False})
+
+    def test_chat_current_observation_overrides_historical_hypothesis(self):
+        context = dict(self.context, step=11, context_assembled_at_utc="2026-10-16T20:00:00+00:00",
+            observation=dict(self.context["observation"], frame=265, facts={"MP": 1}),
+            memory={"system2_plan": {"hypothesis": "Player has 80 MP", "planned_at_step": 0}})
+        seen = []
+        def transport(url, key, payload, timeout):
+            seen.append(payload)
+            return {"choices": [{"message": {"content": '{"action_id":"left","reason":"current state checked"}'}}]}
+        result = ChatPolicy(base_url="http://localhost", model="m", api_key="fake", transport=transport).choose(context, self.options, .2)
+        prompt = json.loads(seen[0]["messages"][1]["content"][0]["text"])["context"]
+        self.assertEqual(prompt["observation"]["facts"]["MP"], 1)
+        self.assertFalse(prompt["memory"]["system2_plan"]["authoritative_current_state"])
+        self.assertEqual(prompt["evidence_precedence"]["as_of_frame"], 265)
+        self.assertEqual(prompt["evidence_precedence"]["context_assembled_at_utc"], context["context_assembled_at_utc"])
+        self.assertIn("override", seen[0]["messages"][0]["content"])
+        self.assertEqual(result["record"]["observation_frame"], 265)
+        self.assertNotIn("authoritative_current_state", context["memory"]["system2_plan"])
 
     def test_chat_rejects_prose_code_and_unknown_actions(self):
         for content in ("left because yes", '{"action_id":"shell","reason":"run arbitrary command"}',

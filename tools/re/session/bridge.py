@@ -29,7 +29,23 @@ def png(rgba):
 
 
 class NativeSession:
-    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None, memory_profile=None):
+    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None, initial_save=None, expected_initial_save_sha256=None, memory_profile=None, mailbox_profile=None, callback_profile=None):
+        if initial_save is not None and initial_state is not None:
+            raise ValueError('conflicting_initial_state_and_save')
+        if expected_initial_save_sha256 is not None and initial_save is None:
+            raise ValueError('initial_save_required_for_hash')
+        save_bytes = None
+        self.initial_save = None
+        if initial_save is not None:
+            source_save = Path(initial_save).resolve()
+            if not source_save.is_file() or not 1 <= source_save.stat().st_size <= 1024 * 1024:
+                raise ValueError('invalid_initial_save_size')
+            save_bytes = source_save.read_bytes()
+            save_sha256 = hashlib.sha256(save_bytes).hexdigest()
+            if expected_initial_save_sha256 is not None and save_sha256 != expected_initial_save_sha256:
+                raise ValueError('initial_save_sha256_mismatch')
+            self.initial_save = {'path': str(source_save), 'sha256': save_sha256, 'bytes': len(save_bytes),
+                                 'provenance': 'private battery-save copy loaded before native reset; source never opened by emulator'}
         self.out = Path(out).resolve()
         # Require a fresh output directory: never reuse another run's saves.
         self.out.mkdir(parents=True, exist_ok=False)
@@ -38,14 +54,55 @@ class NativeSession:
         self.session_id = uuid.uuid4().hex
         self.max_frames, self.timeout = max_frames, timeout
         self.frame, self.sequence, self.checkpoints = 0, 0, {}
+        self.native_counter = 0
+        self.watches = []
+        self.metrics = {'command_count': {}, 'command_wall_s': {}, 'png_wall_s': 0., 'rgba_read_wall_s': 0.}
         self.memory_profile = None
         if memory_profile:
             profile = json.loads(Path(memory_profile).read_text())
             if profile.get('rom_sha256') != self.game_version:
                 raise ValueError('memory_profile_rom_mismatch')
             self.memory_profile = profile
+        if not Path(binary).is_file():
+            raise ValueError('native_session_binary_unavailable: run make -C tools/re/session with MGBA_PREFIX for installed mGBA')
+        self.binary_sha256 = hashlib.sha256(Path(binary).read_bytes()).hexdigest()
+        self.mailbox_profile = None
+        native_args = [str(Path(binary).resolve()), str(self.rom), str(self.out)]
+        if mailbox_profile:
+            profile = json.loads(Path(mailbox_profile).read_text()) if isinstance(mailbox_profile, (str, Path)) else dict(mailbox_profile)
+            if profile.get('rom_sha256') != self.game_version:
+                raise ValueError('mailbox_profile_rom_mismatch')
+            elf = Path(profile['elf']['path'])
+            if hashlib.sha256(elf.read_bytes()).hexdigest() != profile['elf']['sha256']:
+                raise ValueError('mailbox_profile_elf_mismatch')
+            from tools.whole_game.elf_symbols import symbol
+            address, size = symbol(elf, 'gWholeGameBridge')
+            if profile['address'] != address or profile['bytes'] != size:
+                raise ValueError('mailbox_profile_symbol_mismatch')
+            self.mailbox_profile = profile
+            main_address, main_size = symbol(elf, 'gMain')
+            if main_size < 8 or not 0x03000000 <= main_address + 4 <= 0x03008000 - 4:
+                raise ValueError('invalid_source_callback_address')
+            native_args += [str(address), str(size), str(main_address + 4)]
+        if callback_profile:
+            if mailbox_profile:
+                raise ValueError('conflicting_source_watch_profiles')
+            profile = dict(callback_profile)
+            elf = Path(profile['elf']['path'])
+            if profile['rom_sha256'] != self.game_version or hashlib.sha256(elf.read_bytes()).hexdigest() != profile['elf']['sha256']:
+                raise ValueError('callback_profile_artifact_mismatch')
+            from tools.whole_game.elf_symbols import symbol
+            address, size = symbol(elf, 'gMain')
+            if size < 8 or not 0x03000000 <= address + 4 <= 0x03008000 - 4:
+                raise ValueError('callback_profile_symbol_mismatch')
+            native_args += ['--callback-watch', str(address + 4)]
+        if save_bytes is not None:
+            private_save = self.out / 'initial-battery.sav'
+            private_save.write_bytes(save_bytes)
+            native_args += ['--initial-save', str(private_save)]
+        self.callback_profile = callback_profile
         self.recording = None
-        self.process = subprocess.Popen([str(Path(binary).resolve()), str(self.rom), str(self.out)],
+        self.process = subprocess.Popen(native_args,
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                         bufsize=0)
         try:
@@ -58,12 +115,14 @@ class NativeSession:
                 source = Path(initial_state).resolve()
                 shutil.copyfile(source, self.out / 'checkpoint-0.ss')
                 self._command('load 0')
+                loaded_counter = self.native_counter
                 # A raw state contains no framebuffer. Render one real frame;
                 # include it in relative frame accounting, rather than show blank pixels.
-                self._command('step 0 1')
+                self.native_counter = int(self._command('step 0 1'))
                 self.frame = 1
                 self.initial_state = {'path': str(source), 'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
-                                      'source_frame': None, 'provenance': 'explicit caller input; native format checked'}
+                                      'source_frame': None, 'loaded_session_native_counter': loaded_counter,
+                                      'render_integration_frames': 1, 'provenance': 'exact caller state loaded before one explicit native framebuffer integration frame'}
             else:
                 self.initial_state = None
         except BaseException:
@@ -79,18 +138,28 @@ class NativeSession:
         return line[3:].decode().strip()
 
     def _command(self, text):
-        self.process.stdin.write((text + '\n').encode())
-        self.process.stdin.flush()
-        return self._read()
+        started = time.monotonic()
+        try:
+            self.process.stdin.write((text + '\n').encode())
+            self.process.stdin.flush()
+            return self._read()
+        finally:
+            operation = text.split()[0]
+            self.metrics['command_count'][operation] = self.metrics['command_count'].get(operation, 0) + 1
+            self.metrics['command_wall_s'][operation] = self.metrics['command_wall_s'].get(operation, 0.) + time.monotonic() - started
 
     def observe(self):
         self._command('frame')
+        started = time.monotonic()
         raw = (self.out / 'frame.rgba').read_bytes()
+        self.metrics['rgba_read_wall_s'] += time.monotonic() - started
         if len(raw) != 240 * 160 * 4:
             raise ValueError('invalid_frame')
         self.sequence += 1
         target = self.out / ('observation-%06d.png' % self.sequence)
+        started = time.monotonic()
         target.write_bytes(png(raw))
+        self.metrics['png_wall_s'] += time.monotonic() - started
         # Quantized 30x20 screen sample. Animation can still cause false novelty.
         coarse = bytes((raw[(y * 240 + x) * 4 + c] // 32)
                        for y in range(4, 160, 8) for x in range(4, 240, 8) for c in range(3))
@@ -107,6 +176,7 @@ class NativeSession:
                 'evidence': {'image_sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
                              'state_key_basis': 'quantized_screen_only; animation is not objective progress',
                              'frame_basis': 'session-relative advanced frames', 'initial_state': self.initial_state,
+                             'initial_save': self.initial_save,
                              'memory_profile': self.memory_profile}}
 
     def read_memory(self, address, length):
@@ -118,6 +188,16 @@ class NativeSession:
         if len(raw) != length:
             raise ValueError('invalid_ram_response')
         return raw
+
+    def write_mailbox(self, offset, data):
+        """Source transport only; no public JSONL write operation is exposed."""
+        profile = self.mailbox_profile
+        if not profile or type(offset) is not int or not isinstance(data, bytes) or not data or not 0 <= offset <= profile['bytes'] - len(data):
+            raise ValueError('invalid_mailbox_write')
+        for start in range(0, len(data), 64):
+            chunk = data[start:start + 64]
+            self._command('write %d %d %s' % (profile['address'] + offset + start, len(chunk), chunk.hex()))
+        self.restored_observation = None
 
     def read_facts(self):
         facts = {}
@@ -185,6 +265,27 @@ class NativeSession:
             raw.unlink()
         return report
 
+    def configure_watches(self, watches):
+        """Version-pinned adapter supplies named read-only source boundaries."""
+        if not isinstance(watches, list) or len(watches) > 32:
+            raise ValueError('invalid_source_watches')
+        for watch in watches:
+            address, width, mask = watch.get('address'), watch.get('bytes'), watch.get('mask')
+            if (type(address) is not int or width not in (1, 2, 4) or type(mask) is not int or
+                not 0 < mask < 1 << (width * 8) or not isinstance(watch.get('name'), str) or
+                not any(base <= address <= end - width for base, end in
+                        ((0x02000000, 0x02040000), (0x03000000, 0x03008000)))):
+                raise ValueError('invalid_source_watch')
+        self._command('unwatch')
+        for watch in watches:
+            self._command('watch %d %d %d' % (watch['address'], watch['bytes'], watch['mask']))
+        self.watches = copy.deepcopy(watches)
+
+    def _step(self, mask, frames):
+        response = self._command('%s %d %d' % ('stepw' if self.watches else 'step', mask, frames)).split()
+        hit = int(response[1]) if self.watches else -1
+        return int(response[0]), (self.watches[hit]['name'] if hit >= 0 else None)
+
     def act(self, action, limit):
         frames, keys = action.get('frames'), action.get('keys', [])
         if (type(frames) is not int or not 1 <= frames <= min(limit, self.max_frames)
@@ -193,9 +294,20 @@ class NativeSession:
         mask = 0
         for key in keys:
             mask |= KEYS[key]
-        self._command('step %d %d' % (mask, frames))
-        self.frame += frames
-        return {'frames': frames}
+        # A source-game button probe ends with one sampled key-up frame so
+        # consecutive model taps are distinct GBA newKeys events. The release
+        # stays inside the requested frame budget. Export breakpoint wins.
+        press_frames = frames - 1 if (self.mailbox_profile or self.callback_profile) and keys and frames > 1 else frames
+        counter, boundary = self._step(mask, press_frames)
+        if not boundary and press_frames < frames and counter - self.native_counter == press_frames:
+            counter, boundary = self._step(0, 1)
+        advanced = counter - self.native_counter
+        if not 0 < advanced <= frames:
+            raise ValueError('invalid_native_frame_receipt')
+        self.native_counter = counter
+        self.frame += advanced
+        return {'frames': advanced, 'source_breakpoint': advanced < frames or boundary is not None,
+                'decision_boundary': boundary}
 
     def close(self):
         process = getattr(self, 'process', None)
@@ -218,6 +330,8 @@ def main():
     parser.add_argument('--out', type=Path, required=True, help='Fresh private directory; must not already exist')
     parser.add_argument('--binary', type=Path, default=Path(__file__).parent / 'build/gba-session')
     parser.add_argument('--initial-state', type=Path)
+    parser.add_argument('--initial-save', type=Path)
+    parser.add_argument('--initial-save-sha256')
     parser.add_argument('--memory-profile', type=Path, help='ROM-hash-pinned, read-only RAM facts and source refs')
     parser.add_argument('--max-action-frames', type=int, default=120)
     parser.add_argument('--command-timeout', type=float, default=10)
@@ -227,7 +341,8 @@ def main():
     session = None
     try:
         session = NativeSession(args.rom, args.out, args.binary, max_frames=args.max_action_frames,
-                                timeout=args.command_timeout, initial_state=args.initial_state, memory_profile=args.memory_profile)
+                                timeout=args.command_timeout, initial_state=args.initial_state, initial_save=args.initial_save,
+                                expected_initial_save_sha256=args.initial_save_sha256, memory_profile=args.memory_profile)
         while True:
             raw = sys.stdin.buffer.readline(65537)
             if not raw:
@@ -264,7 +379,8 @@ def main():
                     token = uuid.uuid4().hex
                     observation = session.observe()
                     session.checkpoints[token] = (slot, session.frame, observation)
-                    result = {'checkpoint': token, 'frame': session.frame}
+                    result = {'checkpoint': token, 'frame': session.frame,
+                              'state_path': str(session.out / ('checkpoint-%d.ss' % slot))}
                 elif op == 'read_memory':
                     result = {'hex': session.read_memory(request['address'], request['length']).hex(), 'frame': session.frame}
                 elif op == 'record_start':

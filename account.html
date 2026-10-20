@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5ef"><title>Account · Gameverse</title>
+  <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/account.css">
+  <script type="module" src="/src/account-page.js"></script>
+</head>
+<body class="account-page">
+  <header class="topbar"><a href="/" class="brand"><span class="brand-mark">✳</span>gameverse<span class="brand-dot">.</span></a><a href="/" class="back-to-play">Back to play ↗</a></header>
+  <main class="account-main">
+    <header class="account-header"><div><h1>Account</h1><p>Your games. Your agent.</p></div><div id="account-summary" class="account-summary" hidden><span id="account-name"></span><button id="sign-out" class="text-button">Sign out</button></div></header>
+    <p id="account-status" role="status" aria-live="polite">Loading your account…</p>
+    <section id="sign-in-panel" class="account-card sign-in-card" hidden>
+      <h2>Welcome to Gameverse</h2><p>Sign in with a code sent to your phone.</p>
+      <form id="phone-form"><label for="phone-country">Country or region</label>
+        <select id="phone-country" autocomplete="country" aria-describedby="phone-country-hint"><option value="US">United States (+1)</option></select>
+        <p id="phone-country-hint" class="small">Suggested from your location or browser.</p>
+        <label for="phone-number">Phone number</label><input id="phone-number" type="tel" autocomplete="tel" placeholder="(201) 555-0123" required maxlength="32" aria-describedby="phone-number-hint">
+        <p id="phone-number-hint" class="small">Local numbers and + country codes both work. Invited accounts only.</p>
+        <button class="primary" id="send-code" type="submit">Send code</button>
+      </form>
+      <form id="code-form" hidden><label for="phone-code">Verification code</label><input id="phone-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+        <div class="inline-actions"><button class="primary" id="verify-phone" type="submit">Verify & continue</button><button type="button" id="different-phone" class="text-button">Change number</button></div>
+      </form>
+    </section>
+    <section id="signed-in-panel" hidden>
+      <section class="account-card agents-section"><div class="section-heading"><h2>Your agents</h2><span class="subtle">Connect when you need one</span></div><div id="agent-connections"></div></section>
+      <section class="account-card activity-section"><div class="section-heading"><h2>Recent activity</h2></div><p id="empty-jobs" class="empty-state">Your creations and improvements will appear here.</p><div id="job-list"></div></section>
+      <details id="developer-panel" class="developer-panel" hidden><summary>Developer tools <span>Invited access</span></summary><div class="developer-content"><h2>Test your connection</h2><p>Run a small coding check with Claude. It edits a Python function and verifies four cases.</p>
+        <form id="job-form"><label for="test-note">Run note</label><textarea id="test-note" maxlength="4000" rows="2" required>Verify that my connected agent can edit source and run tests.</textarea><button class="primary" id="run-check" type="submit">Run coding check</button></form><p class="small">Public addition fixture · no game changes</p></div></details>
+    </section>
+    <dialog id="result-dialog"><div class="section-heading"><h2>Coding check</h2><button id="close-result" class="text-button" aria-label="Close result">Close ×</button></div><div id="result-summary"></div><details><summary>Technical details</summary><pre id="result-content"></pre></details></dialog>
+  </main>
+  <footer><span>GAMEVERSE</span><span>Pilot</span></footer>
+</body>
+</html>

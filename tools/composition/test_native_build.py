@@ -2,6 +2,8 @@
 import copy
 import hashlib
 import json
+import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -56,6 +58,169 @@ class NativeContracts(unittest.TestCase):
     def package_update(self):
         self.write('package.json', self.package)
         self.plan['native_build']['packages'][0]['package'] = self.pin('package.json')
+
+    def global_fixture(self):
+        self.rom = self.rom[:24] + bytes.fromhex('00000002') + self.rom[28:]
+        self.package['native_implementation']['recovery']['rom_sha256'] = native.sha(self.rom)
+        self.host.update(rom_sha256=native.sha(self.rom), rom_sha1=hashlib.sha1(self.rom).hexdigest())
+        fields = [{'offset': 0, 'width': 16, 'type': 'i16', 'quantity': 'current_mp', 'access': 'read-write'},
+                  {'offset': 4, 'width': 16, 'type': 'u16', 'quantity': 'maximum_mp', 'access': 'read'}]
+        self.region = {'id': 'magic', 'address': '0x02000010', 'bytes': 6, 'owner': 'actor', 'phases': ['tick'],
+                       'fields': fields, 'source_evidence': [self.pin('leaf.c')],
+                       'address_source': {'address': '0x08000018', 'preimage': '00000002', 'offset': 16}}
+        self.host['campaign']['global_regions'] = [self.region]
+        self.lease = {'id': 'magic', 'storage': 'host-global', 'region': 'magic', 'bytes': 6,
+                      'lifetime': 'campaign', 'fields': copy.deepcopy(fields), 'allocation': None}
+        self.package['lowering']['native_v1']['state_bindings'] = [self.lease]
+        self.global_update()
+
+    def global_update(self):
+        self.write('host.json', self.host)
+        self.plan['native_build']['host'] = self.pin('host.json')
+        self.package_update()
+
+    def test_missing_tools_preflight_has_actionable_list_without_processes(self):
+        self.write('fixture.gba', self.rom)
+        empty_path = self.root / 'empty-path';empty_path.mkdir()
+        with patch.dict(os.environ, {'PATH': str(empty_path)}), patch.object(native.platform, 'platform', return_value='hermetic-test'), patch.object(native.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'Missing native build tools on PATH: git, cc, arm-none-eabi-ld, arm-none-eabi-objcopy, arm-none-eabi-nm'):
+                native.build(self.plan, self.root/'fixture.gba', self.root/'output')
+        run.assert_not_called()
+        receipt=json.loads((self.root/'output/receipt.json').read_text())
+        self.assertEqual(receipt['outcome'],'failed')
+        self.assertIn('update PATH',receipt['error'])
+        self.assertEqual(receipt['stages'],[])
+
+    def test_tool_resolution_preserves_selected_real_binary_provenance(self):
+        # Use the real Python executable as data; execute no compiler or stub.
+        executable=Path(sys.executable).absolute()
+        empty_path=self.root/'empty-path';empty_path.mkdir()
+        with patch.dict(os.environ, {'PATH':str(empty_path)}):
+            result=native.resolve_tools((str(executable),))
+        self.assertEqual(result[str(executable)]['path'],str(executable))
+        self.assertEqual(result[str(executable)]['sha256'],native.sha(executable.resolve().read_bytes()))
+
+    def test_global_typed_existing_ram_no_allocation(self):
+        self.global_fixture()
+        _, _, packages, _, _, _ = native.validate(self.plan, self.rom)
+        header = native.state_header(packages)
+        self.assertIn('int16_t field_0;', header)
+        self.assertIn('uint16_t field_1;', header)
+        self.assertNotIn('static struct', header)
+        self.lease['fields'] = self.lease['fields'][:1]
+        self.global_update()
+        self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
+
+    def test_global_mmio_overlap_alignment_and_bounds_rejected(self):
+        for address in ('0x04000010', '0x02000011', '0x0203fffe', '0x03007ffe'):
+            with self.subTest(address=address):
+                self.global_fixture()
+                self.region['address'] = address
+                self.global_update()
+                with self.assertRaises(ValueError):
+                    native.validate(self.plan, self.rom)
+        self.global_fixture()
+        duplicate = copy.deepcopy(self.region)
+        duplicate['id'] = 'other'
+        self.host['campaign']['global_regions'].append(duplicate)
+        self.global_update()
+        with self.assertRaisesRegex(ValueError, 'overlapping'):
+            native.validate(self.plan, self.rom)
+
+    def test_global_unclaimed_signedness_access_and_allocation_rejected(self):
+        for mutation in (lambda lease: lease.update(region='unknown'),
+                         lambda lease: lease.update(allocation={'bytes': 6}),
+                         lambda lease: lease['fields'][0].update(type='u16'),
+                         lambda lease: lease['fields'][1].update(access='read-write'),
+                         lambda lease: lease['fields'][1].update(offset=2)):
+            self.global_fixture()
+            mutation(self.lease)
+            self.global_update()
+            with self.assertRaises(ValueError):
+                native.validate(self.plan, self.rom)
+
+    def test_global_source_and_rom_pointer_pins_required(self):
+        self.global_fixture()
+        self.region['source_evidence'][0]['sha256'] = '0'*64
+        self.global_update()
+        with self.assertRaisesRegex(ValueError, 'hash mismatch'):
+            native.validate(self.plan, self.rom)
+        self.global_fixture()
+        self.region['address_source']['offset'] = 18
+        self.global_update()
+        with self.assertRaisesRegex(ValueError, 'pointer origin'):
+            native.validate(self.plan, self.rom)
+
+    def test_global_owner_and_phase_must_match_resolved_hook(self):
+        for key, value in (('owner', 'unclaimed'), ('phases', ['other'])):
+            self.global_fixture()
+            self.region[key] = value
+            self.global_update()
+            with self.assertRaisesRegex(ValueError, 'logical owner authority'):
+                native.validate(self.plan, self.rom)
+
+    def projected_fixture(self):
+        self.global_fixture()
+        fields = [{'offset': 0, 'width': 32, 'type': 'i32', 'quantity': 'velocity_x', 'access': 'read-write'},
+                  {'offset': 4, 'width': 32, 'type': 'i32', 'quantity': 'velocity_y', 'access': 'read-write'}]
+        self.projected = {'id': 'player_motion', 'bytes': 8, 'owner': 'actor', 'phases': ['tick'], 'fields': fields,
+                          'source_evidence': [self.pin('leaf.c')],
+                          'projection': {'kind': 'canonical-actor-parent/1',
+                                         'root_source': {'address': '0x08000018', 'preimage': '00000002'},
+                                         'pointer_slot_offset': 16, 'subject_parent_offset': 20, 'field_offset': 72}}
+        self.host['campaign']['projected_regions'] = [self.projected]
+        self.lease = {'id': 'player_motion', 'storage': 'host-projected-actor', 'region': 'player_motion',
+                      'bytes': 8, 'lifetime': 'native-entity', 'fields': copy.deepcopy(fields), 'allocation': None}
+        self.package['lowering']['native_v1']['state_bindings'] = [self.lease]
+        self.global_update()
+
+    def test_projected_actor_emits_guarded_signed_accessor(self):
+        self.projected_fixture()
+        _, host, packages, _, _, _ = native.validate(self.plan, self.rom)
+        header = native.state_header(packages, native.validate_projected_regions(host, self.rom))
+        self.assertIn('gv_access_motion_player_motion(void *subject)', header)
+        self.assertIn('int32_t field_0;', header)
+        self.assertIn('int32_t field_1;', header)
+        # Both actor extents and parent identity are checked before a pointer to
+        # writable velocity is returned; no actor allocation/default is emitted.
+        self.assertLess(header.index('gv_existing_ram_span(actor,24u)'), header.index('actor+20u'))
+        self.assertLess(header.index('gv_existing_ram_span(player,80u)'), header.index('actor+20u'))
+        self.assertLess(header.index('actor+20u) != player'), header.index('player+72u'))
+
+    def test_projected_actor_rejects_unpinned_or_unsafe_pointer_chain(self):
+        for mutation in (lambda p: p.update(kind='arbitrary-chain'),
+                         lambda p: p['root_source'].update(preimage='01000002'),
+                         lambda p: p.update(pointer_slot_offset=0x02000000),
+                         lambda p: p.update(pointer_slot_offset=17),
+                         lambda p: p.update(subject_parent_offset=21),
+                         lambda p: p.update(field_offset=4096)):
+            self.projected_fixture()
+            mutation(self.projected['projection'])
+            self.global_update()
+            with self.assertRaises(ValueError):
+                native.validate(self.plan, self.rom)
+
+    def test_projected_actor_requires_exact_owner_field_and_phase(self):
+        for mutate in (lambda: self.projected.update(owner='not_actor'),
+                       lambda: self.projected.update(phases=['effect']),
+                       lambda: self.lease['fields'][0].update(type='u32')):
+            self.projected_fixture()
+            mutate()
+            self.global_update()
+            with self.assertRaises(ValueError):
+                native.validate(self.plan, self.rom)
+
+    def test_projected_actor_rejects_overlapping_divergent_owner(self):
+        self.projected_fixture()
+        other = copy.deepcopy(self.projected)
+        other.update(id='second_name', owner='another_authority')
+        self.host['campaign']['projected_regions'].append(other)
+        self.global_update()
+        with self.assertRaisesRegex(ValueError, 'overlapping projected actor authority'):
+            native.validate(self.plan, self.rom)
+        other['owner'] = self.projected['owner']
+        self.global_update()
+        self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
 
     def test_typed_second_register_and_empty_callback_contract(self):
         hook = self.host['hooks'][0]
