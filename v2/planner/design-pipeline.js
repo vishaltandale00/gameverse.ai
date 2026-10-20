@@ -8,6 +8,8 @@ import { checkArcade } from './arcade-pipeline.js';
 import { partialSpec } from './partial.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
+import { routeIdea, PLANNED } from './router.js';
+import { runKitPipeline, KIT_GAME_SCHEMA } from './kit-pipeline.js';
 
 export const DESIGN_PIPELINE_VERSION = 'v2-design/0.1';
 
@@ -38,11 +40,22 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
 export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null }) {
   return async function pipeline(job, ctx) {
     const previous = job.base ? await ctx.store.version(job.gameId, job.base) : null;
+    // Kit games revise inside their kit; new ideas are routed to the engine that plays their genre.
+    if (previous?.doc?.schema === KIT_GAME_SCHEMA) return runKitPipeline(job, ctx, { client, model, kitId: previous.doc.kit, previous, art });
+    let route = null;
+    if (!previous) {
+      ctx.stage('routing', { model });
+      route = await routeIdea({ client, model, prompt: job.prompt, answers: job.answers });
+      ctx.stage('routed', { engine: route.engine, needs: route.needs, why: route.why, ms: route.ms });
+      if (route.engine !== 'arcade' && route.engine !== 'none') return runKitPipeline(job, ctx, { client, model, kitId: route.engine, previous: null, art, route });
+    }
     ctx.stage(previous ? 'revising' : 'designing', { model });
     let lastDraft = 0;
     const onDelta = text => { const now = performance.now(); if (now - lastDraft < 150) return; lastDraft = now; ctx.draft({ partial: partialSpec(text) }); };
     const reply = await client.complete({ model, effort, system: DESIGN_PROMPT, user: designRequest({ prompt: job.prompt, answers: job.answers, previousDesign: previous?.report?.design, change: job.change }), schema: { name: 'game_design', schema: DESIGN_SCHEMA }, onDelta });
     const design = JSON.parse(reply.text);
+    // No engine plays this genre yet: say so plainly rather than pass a different genre off as the idea.
+    if (route && route.needs && route.needs !== 'none') design.gaps = [{ capability: `${PLANNED[route.needs] || route.needs} kit`, why: `${route.why} This version is the closest platformer/top-down game until that kit exists.` }, ...(design.gaps || [])];
     const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
     ctx.stage('building', { ms: reply.ms });
     // Procedural art: the art direction call runs while the level builds, so the first playable already has its art.
@@ -60,7 +73,7 @@ export function createDesignPipeline({ client, model, effort, registry = default
     }
     const record = await ctx.publish({
       doc: painted ? { ...built.spec, art: painted.art } : built.spec, stage: previous ? `revision: ${job.change}` : 'playable',
-      report: { ...built.check.report, kind: 'arcade2d', design, ...(painted ? { art: painted.report } : {}), summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, relaxed: built.relaxed || [], layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
+      report: { ...built.check.report, kind: 'arcade2d', design, route, ...(painted ? { art: painted.report } : {}), summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, relaxed: built.relaxed || [], layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
       provenance: { pipeline: DESIGN_PIPELINE_VERSION, model: reply.model, seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, designHash: hashOf(design), specHash: hashOf(built.spec) },
     });
     if (art && !art.procedural) await art(job, ctx, { design, spec: built.spec, record });

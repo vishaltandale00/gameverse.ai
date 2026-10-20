@@ -3,10 +3,11 @@
 // the /api/v2/events stream; new versions hot-load into the running game.
 import { mountGame } from '/v2/web/player.js';
 import { mountArcade } from '/v2/web/arcade-player.js';
+import { mountKit } from '/v2/web/kit-player.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : mountGame(el, record);
+const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? mountKit(el, record) : mountGame(el, record);
 const STAGES = { designing: 'Designing the game', revising: 'Revising the design', building: 'Building the level', playtesting: 'Playtesting', playtested: 'Playtested', painting: 'Painting the art', painted: 'Painting the art', paint_failed: 'Painting the art', animating: 'Animating', animated: 'Animating', animate_failed: 'Animating', outline: 'Outlining', verified: 'Checked', complete: 'Done' };
 const QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Make jumping floatier', 'Make it night time', 'Add a time limit'];
 
@@ -113,6 +114,7 @@ function renderConstruction() {
 function playView(meta, record) {
   $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p></header>
     ${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}
+    ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
     <div class="board" id="game"></div>
     <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button></form>
     <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;
