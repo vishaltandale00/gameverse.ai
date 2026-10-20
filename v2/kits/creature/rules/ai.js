@@ -77,9 +77,11 @@ export function foeAction(content, battle, rng) {
   const side = battle.foe, me = side.party[side.active];
   if (battle.kind === 'wild') return { kind: 'move', index: wildMove(me, rng) };
   // Difficulty (content.settings.difficulty): easy trainers often pick at random; hard ones all heal once.
-  const healer = battle.kind === 'leader' || battle.kind === 'champion' || battle.difficulty === 'hard';
+  // A trainer can also carry its own tuning from balance(): noHeal, and ai 'easy'.
+  const t = side.trainer || {};
+  const healer = (battle.kind === 'leader' || battle.kind === 'champion' || battle.difficulty === 'hard') && !t.noHeal;
   if (healer && !side.healUsed && me.hp > 0 && me.hp < statsOf(content, me).hp * 0.25) return { kind: 'heal' };
-  if (battle.difficulty === 'easy' && rand(rng) < 0.5) return { kind: 'move', index: wildMove(me, rng) };
+  if ((battle.difficulty === 'easy' || t.ai === 'easy') && rand(rng) < 0.5) return { kind: 'move', index: wildMove(me, rng) };
   return { kind: 'move', index: bestMove(content, side, battle.player) };
 }
 

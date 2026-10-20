@@ -1,0 +1,325 @@
+{
+ "settings": {
+  "routeLength": 50,
+  "encounterRate": 10,
+  "difficulty": "normal",
+  "levelStep": 7
+ },
+ "title": "Sands of Mirajah",
+ "logline": "Explore the vast desert kingdom of Mirajah, capturing creatures and battling to become the Desert Champion.",
+ "artStyle": "warm-toned pixel art with intricate desert patterns",
+ "mood": "adventurous",
+ "region": {
+  "name": "Mirajah",
+  "description": "a sprawling desert realm filled with ancient ruins and sandy dunes"
+ },
+ "player": {
+  "name": "Tariq",
+  "look": "light desert robes, tan skin, short dark hair"
+ },
+ "rival": {
+  "name": "Zahra",
+  "look": "sleek dark outfit, red scarf, long black hair"
+ },
+ "mentor": {
+  "name": "Elder Nahir",
+  "look": "robes with sun motifs, gray beard, gentle eyes"
+ },
+ "types": [
+  {
+   "name": "Sand",
+   "color": "#d2b48c",
+   "look": "earthy, grainy texture",
+   "beats": [],
+   "moves": {
+    "weak": "Pebble Toss",
+    "strong": "Quicksand Slam",
+    "status": "Dust Veil"
+   }
+  },
+  {
+   "name": "Flare",
+   "color": "#e86830",
+   "look": "bright orange flames",
+   "beats": [
+    "Vine"
+   ],
+   "moves": {
+    "weak": "Spark Flick",
+    "strong": "Blazing Strike",
+    "status": "Heat Wave"
+   }
+  },
+  {
+   "name": "Vine",
+   "color": "#3a7c27",
+   "look": "twisting green leaves",
+   "beats": [
+    "Torrent"
+   ],
+   "moves": {
+    "weak": "Leaf Flick",
+    "strong": "Vine Lash",
+    "status": "Growth Spurt"
+   }
+  },
+  {
+   "name": "Torrent",
+   "color": "#3067e8",
+   "look": "shimmering water droplets",
+   "beats": [
+    "Sand"
+   ],
+   "moves": {
+    "weak": "Splash Swipe",
+    "strong": "Tidal Crush",
+    "status": "Soak"
+   }
+  }
+ ],
+ "starters": [
+  {
+   "types": [
+    "Sand"
+   ],
+   "role": "balanced",
+   "forms": [
+    {
+     "name": "Dunble",
+     "look": "small lizard, sandy brown, tail spike"
+    },
+    {
+     "name": "Dunrock",
+     "look": "four-legged lizard, rock-like back"
+    },
+    {
+     "name": "Sandrex",
+     "look": "large reptile, armored scales, tail club"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Flare"
+   ],
+   "role": "fast",
+   "forms": [
+    {
+     "name": "Flitto",
+     "look": "small flame fox, bright orange fur"
+    },
+    {
+     "name": "Flarena",
+     "look": "four-legged fox, fiery mane"
+    },
+    {
+     "name": "Flareonix",
+     "look": "sleek fox, blazing tail, sharp eyes"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Vine"
+   ],
+   "role": "special",
+   "forms": [
+    {
+     "name": "Spriglet",
+     "look": "small plant creature, leaf ears"
+    },
+    {
+     "name": "Sprigon",
+     "look": "bipedal with vine arms, green body"
+    },
+    {
+     "name": "Vinetar",
+     "look": "tall, regal, lush vines, glowing eyes"
+    }
+   ]
+  }
+ ],
+ "wild": [
+  {
+   "types": [
+    "Sand"
+   ],
+   "role": "bulky",
+   "forms": [
+    {
+     "name": "Pebblit",
+     "look": "small rocky blob, dusty colors"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Flare"
+   ],
+   "role": "fast",
+   "forms": [
+    {
+     "name": "Cinderet",
+     "look": "sparky small bird, red and gold"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Vine"
+   ],
+   "role": "balanced",
+   "forms": [
+    {
+     "name": "Leafin",
+     "look": "leafy quadruped, mossy green"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Torrent"
+   ],
+   "role": "strong",
+   "forms": [
+    {
+     "name": "Driblet",
+     "look": "tiny water rodent, blue tones"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Sand",
+    "Flare"
+   ],
+   "role": "special",
+   "forms": [
+    {
+     "name": "Smoldera",
+     "look": "fiery sand serpent, glowing scales"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Torrent",
+    "Vine"
+   ],
+   "role": "balanced",
+   "forms": [
+    {
+     "name": "Mudvine",
+     "look": "wet leafy amphibian, muddy green"
+    }
+   ]
+  }
+ ],
+ "items": {
+  "ball": "Sand Orb",
+  "greatBall": "Sun Ball",
+  "potion": "Desert Potion",
+  "superPotion": "Mirage Elixir",
+  "cure": "Oasis Herb",
+  "revive": "Sunstone"
+ },
+ "home": {
+  "name": "Oasis Town",
+  "theme": "lush desert oasis with palm trees and water"
+ },
+ "chapters": [
+  {
+   "routes": [
+    {
+     "name": "Whispering Dunes",
+     "kind": "route",
+     "theme": "rolling sand dunes with sparse shrubs",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Pebblit",
+      "Flitto",
+      "Leafin"
+     ],
+     "trainers": [
+      {
+       "name": "Halim",
+       "class": "Desert Wanderer",
+       "team": [
+        "Pebblit",
+        "Flitto"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Sunscorch Cavern",
+     "kind": "cave",
+     "theme": "hot rocky cave with glowing crystals",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Dunble",
+      "Cinderet"
+     ],
+     "trainers": []
+    }
+   ],
+   "town": {
+    "name": "Blazeport",
+    "theme": "mining town with hot springs"
+   },
+   "gym": {
+    "leader": "Nahla",
+    "look": "flame-patterned robe, fiery hair",
+    "type": "Flare",
+    "badge": "Sunflare Badge",
+    "quote": "Feel the heat of the desert's heart!"
+   }
+  }
+ ],
+ "finale": {
+  "routes": [
+   {
+    "name": "Mirajah Ruins",
+    "kind": "route",
+    "theme": "ancient stone ruins buried in sand",
+    "length": 0,
+    "encounterRate": 0,
+    "wild": [
+     "Sandrex",
+     "Flareonix",
+     "Vinetar",
+     "Driblet"
+    ],
+    "trainers": [
+     {
+      "name": "Saber",
+      "class": "Ruins Guardian",
+      "team": [
+       "Sandrex",
+       "Vinetar",
+       "Driblet"
+      ]
+     }
+    ]
+   }
+  ],
+  "league": {
+   "name": "Mirajah Championship",
+   "theme": "grand arena carved from sandstone"
+  },
+  "champion": {
+   "name": "Selim",
+   "look": "gold and sand-colored robes, commanding presence",
+   "team": [
+    "Sandrex",
+    "Flareonix",
+    "Vinetar",
+    "Driblet",
+    "Smoldera"
+   ],
+   "quote": "The desert tests those who dare to conquer its sands."
+  }
+ }
+}

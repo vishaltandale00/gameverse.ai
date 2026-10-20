@@ -8,8 +8,8 @@
 import { validate as validateFull, settingsOf, gymOrder } from './content.js';
 import { isModelShape, fromModel } from './generate/from-model.js';
 import { balance } from './generate/balance.js';
-import { tuneLeaders } from './generate/tune.js';
-import { MODEL_SCHEMA, MODEL_PROMPT } from './generate/schema.js';
+import { tuneLeaders, tuneWild } from './generate/tune.js';
+import { COMPACT_SCHEMA, COMPACT_PROMPT, isCompactShape, fromCompact } from './generate/compact.js';
 import { SAMPLE_CONTENT } from './fixtures/sample.js';
 import { createGame as createFullGame, GAME_VERSION } from './game.js';
 import { createRenderer } from './ui/renderer.js';
@@ -18,15 +18,19 @@ import { cast as castFull } from './cast.js';
 
 const EXPANDED = new WeakMap();
 
-/** Validate either shape. For a journey, the stored content is the journey (settings filled). */
+/**
+ * Validate any shape. Generated content (compact, or the older journey) is stored as written, with
+ * settings filled; validation expands, repairs and tunes it, and only fails on what can't be fixed.
+ */
 export function validate(input) {
-  if (!isModelShape(input)) return validateFull(input);
+  const compact = isCompactShape(input);
+  if (!compact && !isModelShape(input)) return validateFull(input);
   const journey = structuredClone(input);
   journey.settings = settingsOf(journey);
-  const { content: full, fixes } = balance(fromModel(journey));
+  const { content: full, fixes } = balance(fromModel(compact ? fromCompact(journey) : journey));
   let v = validateFull(full);
   // Simulation-tune leaders on the expanded game (the journey itself keeps the model's choices).
-  if (v.ok) { fixes.push(...tuneLeaders(v.content)); v = validateFull(v.content); }
+  if (v.ok) { fixes.push(...tuneWild(v.content), ...tuneLeaders(v.content)); v = validateFull(v.content); }
   if (v.ok) EXPANDED.set(journey, v.content);
   return {
     ok: v.ok, content: journey, fixes, full: v.content,
@@ -37,7 +41,7 @@ export function validate(input) {
 
 /** Full, validated content for either shape (cached per journey object). */
 export function expand(content) {
-  if (!isModelShape(content)) return validateFull(content).content;
+  if (!isModelShape(content) && !isCompactShape(content)) return validateFull(content).content;
   if (EXPANDED.has(content)) return EXPANDED.get(content);
   const r = validate(content);
   const full = EXPANDED.get(r.content) || r.full;
@@ -64,7 +68,7 @@ export default {
   version: GAME_VERSION,
   summary: 'Explore towns and routes, catch creatures in tall grass, battle with typed moves, level up and evolve, earn gym badges, beat your rival and the champion.',
   examples: ['Pokémon Red/Blue', 'Pokémon Gold/Silver', 'Pokémon Ruby/Sapphire'],
-  content: { schema: MODEL_SCHEMA, prompt: MODEL_PROMPT, sample: SAMPLE_CONTENT },
+  content: { schema: COMPACT_SCHEMA, prompt: COMPACT_PROMPT, sample: SAMPLE_CONTENT },
   validate, cast, createGame, createRenderer, verify, goal, stats, expand,
   controls: [
     { input: 'move', label: 'Walk (hold B to run)' },

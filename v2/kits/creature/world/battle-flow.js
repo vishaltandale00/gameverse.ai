@@ -29,7 +29,7 @@ export function beginBattle(game, state, op) {
     const t = lookup(content).trainers.get(op.trainer);
     kind = t.isLeader ? 'leader' : 'trainer'; foe = mk(t.party);
     const ace = Math.max(...t.party.map(m => m.level));
-    trainer = { id: t.id, name: speakerName(content, t.id), short: t.name, look: t.look, prize: t.prize ?? ace * 100, defeat: t.defeat, sprite: t.isLeader ? 'leader' : 'trainer', leader: !!t.isLeader };
+    trainer = { id: t.id, name: speakerName(content, t.id), short: t.name, look: t.look, prize: t.prize ?? ace * 100, defeat: t.defeat, sprite: t.isLeader ? 'leader' : 'trainer', leader: !!t.isLeader, noHeal: !!t.noHeal, ai: t.ai || null };
   } else {
     kind = 'trainer'; foe = mk(op.party);
     trainer = { id: 'challenger', name: op.name || 'Challenger', short: op.name || 'Challenger', prize: 100, sprite: 'trainer' };
