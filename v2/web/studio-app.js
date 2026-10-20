@@ -119,6 +119,7 @@ function playView(meta, record) {
     ${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
     ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
+    ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}</p>` : ''}
     <div class="board" id="game"></div>
     <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button></form>

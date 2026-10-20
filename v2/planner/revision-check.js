@@ -34,13 +34,13 @@ export const NOT_APPLIED = 0.8;
 const INSTRUCTIONS = "Do these changes actually carry out the player's request, as the player would see it in the game? Answer no if the changes are only cosmetic, unrelated, or a stand-in for something the engine cannot really do (for example renaming something or switching a style when the request asks for a different size, a new mechanic or a new mode).";
 
 /** { applied, why, summary, diff, provider } or null when there's nothing to check. */
-export async function checkRevision(decisions, { change, engine, before, after, unsupported = [] }) {
+export async function checkRevision(decisions, { change, engine, before, after, unsupported = [], originalStandIns = false }) {
   if (!change) return null;
   const diff = contentDiff(before, after), summary = changeSummary(diff);
   if (!decisions) return { applied: null, summary, diff: diff.length, provider: null };
   try {
     const { answers, provider } = await decisions.decide({
-      state: { engine, request: change, changes: diff.length ? diff : ['nothing changed'], reportedUnsupported: unsupported.map(u => u.request) },
+      state: { engine, request: change, changes: diff.length ? diff : ['nothing changed'], reportedUnsupported: unsupported.map(u => u.request), ...(originalStandIns ? { note: 'Games use original names: a request for an existing character is carried out by adding an original look-alike with a new name. That counts as doing it.' } : {}) },
       questions: { applied: { type: 'noul', instructions: INSTRUCTIONS } },
     });
     const applied = answers.applied?.noul ?? null;

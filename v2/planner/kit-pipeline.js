@@ -40,7 +40,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     ...(available.length ? { mods: modsSchema(kit) } : {}),
     unsupported: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['request', 'why'], properties: { request: { type: 'string' }, why: { type: 'string' } } } },
   } };
-  const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content).\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
+  const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content). When the player asks for an existing character, add an original look-alike: the same silhouette, palette, signature moves and personality, under a new name.\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
   // Generate, validate, verify. Validation errors and verification problems (a level the bot
   // can't clear, a target nobody can reach) go back to the model for repair, up to three tries.
   const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
@@ -90,7 +90,10 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   // Keep only mods this kit can run, normalized, so hosts and saves see a stable shape.
   mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
   // On revisions, check that the change really happened; if not, say so rather than claim it.
-  const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {} }, after: { content, mods }, unsupported: unsupported || [] }) : null;
+  // A request naming an existing character ("add Goku") is done with an original look-alike; say so plainly.
+  const namesFranchise = previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
+  const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {} }, after: { content, mods }, unsupported: unsupported || [], originalStandIns: namesFranchise }) : null;
+  const renamedNote = namesFranchise && revisionCheck?.diff ? [{ capability: job.change, why: `Games use original names, so this was added as an original look-alike with its own name (${revisionCheck.summary.join(', ')}). Ask for a different name or look anytime.`, kind: 'renamed' }] : [];
   if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)
     unsupported = [{ request: job.change, why: revisionCheck.why }];
   const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, mods, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
@@ -111,7 +114,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   return ctx.publish({
     doc: painted ? { ...doc, art: painted.art } : doc,
     stage: previousContent ? `revision: ${job.change}` : 'playable',
-    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: (unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' })), route: route || null, revisionCheck, changes: revisionCheck?.summary || [], artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
+    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: [...renamedNote, ...(unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' }))], route: route || null, revisionCheck, changes: revisionCheck?.summary || [], artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
     provenance: { pipeline: KIT_PIPELINE_VERSION, kit: kit.id, kitVersion: kit.version, model: reply?.model || 'offline', seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, contentHash: hashOf(content) },
   });
 }
