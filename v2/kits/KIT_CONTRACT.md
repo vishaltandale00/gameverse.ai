@@ -69,6 +69,35 @@ any kit.
   - screen shake (off with `reducedMotion`);
   - a readable HUD.
 
+## World adapter and mods
+
+Concepts mix across genres through **mods** (`v2/kits/mods/`): mechanics written once and switched
+on inside any kit that can host them. Pac-Man with guns is the maze kit plus the `weapon` mod. A kit
+opts in by describing its world:
+
+```js
+world: {
+  capabilities: ['player', 'enemies', 'blocked', 'defeat', 'stun', 'lives'],  // what this world can report and do
+  buttons: ['a'],              // buttons the kit itself uses; mods get the free ones
+  adapter(game) -> {           // world units (tiles or the kit's own units)
+    active(state),             // true while play is live (not intros, deaths or menus)
+    player(state) -> { x, y, facing: { x, y } },
+    enemies(state) -> [{ id, name, x, y, radius, hittable }],
+    blocked(state, x, y),      // terrain blocks movement and shots here
+    wrap?(state, x, y) -> [x, y],
+    defeat(state, id, { by }) -> points,   // the genre decides what defeat means (eyes, explode, KO)
+    stun?(state, id, frames),  // a stunned enemy doesn't move or hurt
+    lives?(state),
+  },
+}
+```
+
+The renderer sets `render.view = { X(x), Y(y), s, clip?, hud? }` each frame, mapping world units to
+CSS pixels, so mods draw in the same space. Hosts and the pipeline go through
+`composeGame`/`composeRenderer`, which offer a kit exactly the mods its capabilities and free buttons
+allow. The content model switches mods on in a fixed-shape `mods` object, and anything neither the
+kit nor a mod can express is listed as unsupported, never claimed.
+
 ## Verification
 
 `verify` must prove the content playable before it publishes. Depending on the genre, a bot plays

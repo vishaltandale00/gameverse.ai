@@ -211,6 +211,13 @@ function fruit(g, r, color) {
 }
 const BONUS_COLORS = ['#ff3b5c', '#ffb03a', '#c86bff', '#5fe36a', '#ffd23f', '#3ad8e8'];
 
+/** Little stars circling a stunned hunter's head. */
+function stunStars(g, r, t, reduced) {
+  for (let i = 0; i < 3; i++) {
+    const a = (reduced ? 0 : t * 5) + (i * TAU) / 3, x = Math.cos(a) * r * 0.9, y = -r * 1.05 + Math.sin(a) * r * 0.25;
+    g.save(); g.translate(x, y); g.fillStyle = '#ffe14a'; starPath(g, r * 0.22); g.fill(); g.restore();
+  }
+}
 function starPath(g, r) {
   g.beginPath();
   for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU, rr = i % 2 ? r * 0.38 : r; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
@@ -335,15 +342,17 @@ export function createRenderer(game, { art } = {}) {
       ctx.save(); ctx.translate(xx, y + bob);
       if (eyesOnly) eyes(ctx, r, h.dir);
       else if (img) {
-        const color = h.fright ? (flashing ? FRIGHT_FLASH : FRIGHT_BLUE) : h.color;
+        const color = h.fright ? (flashing ? FRIGHT_FLASH : FRIGHT_BLUE) : h.stunT > 0 ? '#cfeaff' : h.color;
         if (!reduced) { ctx.shadowColor = color; ctx.shadowBlur = s * 0.35; }
         drawSprite(ctx, tinted(img, color), 0, 0, size, { box: boxOf(image(hunterFrames?.idle) || img), flip: face < 0, rot: wobble });
         ctx.shadowBlur = 0;
         if (h.fright) scaredFace(ctx, r * 0.8, flashing ? '#ff4d6d' : '#ffd9c8');
+        if (h.stunT > 0) stunStars(ctx, r, fx.t, reduced);
       } else {
         ctx.rotate(wobble);
         ghostBody(ctx, r, h.fright ? (flashing ? FRIGHT_FLASH : FRIGHT_BLUE) : h.color, Math.floor(fx.t * 8) % 2);
         if (h.fright) scaredFace(ctx, r, flashing ? '#ff4d6d' : '#ffd9c8'); else eyes(ctx, r, h.dir);
+        if (h.stunT > 0) stunStars(ctx, r, fx.t, reduced);
       }
       ctx.restore();
     }
@@ -489,6 +498,8 @@ export function createRenderer(game, { art } = {}) {
     ctx.restore();
     ctx.restore();
     drawHud(ctx, state, ox, oy, s, my + H * s);
+    // World-to-screen mapping for mods drawn on top (v2/kits/mods/compose.js).
+    render.view = { X: x => X(x) + sx, Y: y => Y(y) + sy, s, clip: { x: ox, y: my, w: W * s, h: H * s }, hud: { x: ox + (W * s) / 2, y: my + H * s + s * 1.15 } };
   }
   render.fx = fx;
   return render;

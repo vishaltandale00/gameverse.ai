@@ -288,6 +288,7 @@ export function createGame(content, { seed = 1 } = {}) {
   }
   function moveHunters(s, L, maze) {
     for (const h of s.hunters) {
+      if (h.stunT > 0) { h.stunT--; continue; } // stunned (by a mod): frozen in place
       const d = hunterSpeed(s, h, maze, L) * STEP;
       if (h.state === 'active' || h.state === 'eyes') gridMove(s, h, d, maze, L);
       else scripted(s, h, d);
@@ -320,7 +321,7 @@ export function createGame(content, { seed = 1 } = {}) {
   function collide(s) {
     const p = s.player;
     for (const h of s.hunters) {
-      if (!(h.state === 'active' || (h.state === 'leaving' && h.y < 12))) continue;
+      if (!(h.state === 'active' || (h.state === 'leaving' && h.y < 12)) || h.stunT > 0) continue;
       if (wrapDist(p, h) >= 0.6) continue;
       if (h.fright) {
         const points = 200 * 2 ** Math.min(s.chain, 3);
@@ -378,5 +379,5 @@ export function createGame(content, { seed = 1 } = {}) {
     return s;
   }
 
-  return { content, seed, width: W, height: H, levelCount: levels.length, createState, step, mazeFor, levelInfo, targetFor };
+  return { content, seed, width: W, height: H, levelCount: levels.length, createState, step, mazeFor, levelInfo, targetFor, addScore };
 }

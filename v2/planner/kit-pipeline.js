@@ -3,6 +3,7 @@
 // parallel, and one version publishes with its art. Revisions rewrite content
 // against the current content; the art stays locked (see art-procedural.js).
 import { loadKit } from '../kits/registry.js';
+import { modsFor, modsSchema, modsPrompt } from '../kits/mods/compose.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
 
@@ -19,22 +20,33 @@ function artInputs(kit, content, doc) {
 }
 
 function contentRequest({ prompt, answers, previous, change }) {
-  if (previous) return `Current content:\n${JSON.stringify(previous)}\n\nChange request: ${change}\nKeep everything the request doesn't mention.`;
+  if (previous) return `Current game (content and mods):\n${JSON.stringify(previous)}\n\nChange request: ${change}\nKeep everything the request doesn't mention.`;
   return `Game idea: ${prompt}${answers?.length ? `\n\nPlayer preferences:\n${answers.map(a => `- ${a.question}: ${a.answer}`).join('\n')}` : ''}`;
 }
 
 export async function runKitPipeline(job, ctx, { client, model, kitId, previous, art, route }) {
   const kit = await loadKit(kitId);
   const previousContent = previous?.doc?.schema === KIT_GAME_SCHEMA ? previous.doc.content : null;
+  const available = modsFor(kit);
   ctx.stage(previousContent ? 'revising' : 'designing', { model, kit: kit.id });
   // Write content; if it fails validation, send the errors back once for repair.
-  let content = null, checked = null, reply = null, attempts = 0, user = contentRequest({ prompt: job.prompt, answers: job.answers, previous: previousContent, change: job.change });
-  const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content). Reply with JSON matching the schema.`;
+  let content = null, unsupported = [], checked = null, reply = null, attempts = 0, user = contentRequest({ prompt: job.prompt, answers: job.answers, previous: previousContent && { content: previousContent, mods: previous.doc.mods || {} }, change: job.change });
+  let mods = previous?.doc?.mods || {};
+  // The kit can only do what its schema expresses. Anything else the player asks for is listed,
+  // never quietly dropped or claimed in the title and pitch ("Blaster Maze" with no blaster).
+  const schema = { type: 'object', additionalProperties: false, required: ['content', ...(available.length ? ['mods'] : []), 'unsupported'], properties: {
+    content: kit.content.schema,
+    ...(available.length ? { mods: modsSchema(kit) } : {}),
+    unsupported: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['request', 'why'], properties: { request: { type: 'string' }, why: { type: 'string' } } } },
+  } };
+  const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content).\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
   while (attempts < 2) {
     attempts++;
     if (client) {
-      reply = await client.complete({ model, system, user, schema: { name: `${kit.id}_content`, schema: kit.content.schema } });
-      content = JSON.parse(reply.text);
+      reply = await client.complete({ model, system, user, schema: { name: `${kit.id}_content`, schema } });
+      const parsed = JSON.parse(reply.text);
+      ({ content, unsupported } = parsed);
+      if (parsed.mods) mods = parsed.mods;
     } else content = previousContent || kit.content.sample;
     checked = kit.validate(content);
     if (checked.ok || !client) break;
@@ -44,7 +56,9 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   content = checked.content;
 
   const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
-  const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
+  // Keep only mods this kit can run, normalized, so hosts and saves see a stable shape.
+  mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
+  const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, mods, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
   const inputs = artInputs(kit, content, doc);
   // Art direction runs while the kit verifies the content.
   const directing = art?.procedural ? art.direct({ design: inputs.design, previous: previous?.doc?.schema === KIT_GAME_SCHEMA ? { ...previous, report: { ...previous.report, design: previous.report?.artDesign } } : null, change: job.change || null }) : null;
@@ -64,7 +78,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   return ctx.publish({
     doc: painted ? { ...doc, art: painted.art } : doc,
     stage: previousContent ? `revision: ${job.change}` : 'playable',
-    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: [], route: route || null, artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
+    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: (unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' })), route: route || null, artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
     provenance: { pipeline: KIT_PIPELINE_VERSION, kit: kit.id, kitVersion: kit.version, model: reply?.model || 'offline', seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, contentHash: hashOf(content) },
   });
 }

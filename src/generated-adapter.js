@@ -9,6 +9,7 @@ import { preflight } from '/v2/engine/spec.js';
 import { compose, DT, NEUTRAL_INPUT } from '/v2/engine/compose.js';
 import { createRenderer } from '/v2/engine/render2d.js';
 import { loadKit } from '/v2/kits/registry.js';
+import { composeGame, composeRenderer } from '/v2/kits/mods/compose.js';
 import { StandardGamepadInput } from './gamepad.js';
 import { GENERATED_KEYS, generatedInput, encodeCheckpoint, decodeCheckpoint, canCarryState } from './generated-games.js';
 
@@ -41,9 +42,9 @@ export class GeneratedGameAdapter {
       const kit = await loadKit(record.doc.kit);
       const checked = kit.validate(record.doc.content);
       if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid content'}).`);
-      const made = kit.createGame(checked.content, { seed: record.doc.seed ?? 1 });
+      const made = composeGame(kit, checked.content, { seed: record.doc.seed ?? 1, mods: record.doc.mods || {} });
       const game = { createState: () => made.createState(), step: (state, input) => made.step(state, input), check: kitCheck };
-      return { version: record.version, kit, spec: { id: record.doc.id, title: record.doc.title, kit: kit.id, content: record.doc.content }, game, render: kit.createRenderer(made, { art: record.doc.art || {} }) };
+      return { version: record.version, kit, spec: { id: record.doc.id, title: record.doc.title, kit: kit.id, content: record.doc.content, mods: record.doc.mods || {} }, game, render: composeRenderer(kit, made, { art: record.doc.art || {} }) };
     }
     const checked = preflight(record.doc, registry);
     if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid spec'}).`);
@@ -145,7 +146,7 @@ export class GeneratedGameAdapter {
       const next = await this.build(await this.fetchVersion(version));
       if (this.disposed || next.version <= this.current.version) return;
       // Kit games carry state across versions whose content is unchanged (new art, same rules).
-      let carried = next.kit || this.current.kit ? next.kit === this.current.kit && JSON.stringify(next.spec.content) === JSON.stringify(this.current.spec.content) : canCarryState(this.current.spec, next.spec);
+      let carried = next.kit || this.current.kit ? next.kit === this.current.kit && JSON.stringify([next.spec.content, next.spec.mods]) === JSON.stringify([this.current.spec.content, this.current.spec.mods]) : canCarryState(this.current.spec, next.spec);
       if (carried) {
         try {
           const probe = structuredClone(this.state);

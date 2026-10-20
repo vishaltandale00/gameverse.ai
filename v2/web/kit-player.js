@@ -2,6 +2,7 @@
 // screens, input, sound and hot reload for every kit. The kit owns rules and
 // drawing (see v2/kits/KIT_CONTRACT.md); this file owns everything around play.
 import { loadKit } from '/v2/kits/registry.js';
+import { composeGame, composeRenderer } from '/v2/kits/mods/compose.js';
 import { esc, titleParts } from './arcade-overlay.js';
 
 const DT = 1 / 60;
@@ -11,7 +12,7 @@ const BACK = new Set(['Escape', 'KeyP']);
 const PREV = new Set(['ArrowUp', 'ArrowLeft', 'KeyW', 'KeyA']), NEXT = new Set(['ArrowDown', 'ArrowRight', 'KeyS', 'KeyD']);
 const MUTE_KEY = 'gameverse.v2.muted';
 // Kit events → the shared sound bank.
-const SOUND_OF = { power: 'reach_goal', extra_life: 'reach_goal', level_up: 'reach_goal', won: 'reach_goal', lost: 'fell' };
+const SOUND_OF = { power: 'reach_goal', extra_life: 'reach_goal', level_up: 'reach_goal', won: 'reach_goal', lost: 'fell', blast: 'stomp', empty: 'menu_move' };
 
 let storage = null;
 try { storage = globalThis.localStorage ?? null; } catch {}
@@ -21,7 +22,7 @@ const kbd = k => `<kbd>${esc(k)}</kbd>`, pad = k => `<kbd class="pad">${esc(k)}<
 const KEYS_FOR = { move: [`${kbd('←')}${kbd('↑')}${kbd('↓')}${kbd('→')} or ${kbd('WASD')}`, `${pad('✚')} or ${pad('L')}`], a: [`${kbd('Space')} or ${kbd('Z')}`, pad('A')], b: [`${kbd('X')} or ${kbd('K')}`, pad('X')] };
 function controlRows(kit, device) {
   const gp = device === 'gamepad' ? 1 : 0;
-  const rows = (kit.controls || [{ input: 'move', label: 'Move' }]).map(c => [c.label, KEYS_FOR[c.input]?.[gp] || '']);
+  const rows = (kit.gameControls || kit.controls || [{ input: 'move', label: 'Move' }]).map(c => [c.label, KEYS_FOR[c.input]?.[gp] || '']);
   rows.push(['Pause', gp ? pad('Start') : kbd('Esc')]);
   if (!gp) rows.push(['Restart', kbd('R')]);
   return rows;
@@ -217,10 +218,12 @@ export function mountKit(container, record) {
     if (disposed) return false;
     const checked = nextKit.validate(nextDoc.content);
     if (!checked.ok) { screenEl.innerHTML = `<p class="gv-reason">This game failed its checks in the browser.</p>`; return false; }
-    const sameRules = kit === nextKit && JSON.stringify(doc.content) === JSON.stringify(nextDoc.content);
+    const sameRules = kit?.id === nextKit.id && JSON.stringify([doc.content, doc.mods]) === JSON.stringify([nextDoc.content, nextDoc.mods]);
     doc = nextDoc; kit = nextKit;
-    game = kit.createGame(checked.content, { seed: doc.seed ?? 1 });
-    render = kit.createRenderer(game, { art: doc.art || {} });
+    // Mods from other genres ride on top of the kit (v2/kits/mods).
+    game = composeGame(kit, checked.content, { seed: doc.seed ?? 1, mods: doc.mods || {} });
+    render = composeRenderer(kit, game, { art: doc.art || {} });
+    kit = { ...kit, gameControls: game.controls };
     canvas.setAttribute('aria-label', doc.title);
     root.dataset.pixel = doc.art?.style && /pixel/i.test(doc.art.style) ? 'true' : 'false';
     renderHelp();
