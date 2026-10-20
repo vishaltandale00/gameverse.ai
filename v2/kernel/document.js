@@ -105,7 +105,7 @@ export function preflight(doc, registry, logic) {
     for (const req of p.card.requires.primitives || []) if (![...used].some(id => id === req || id.startsWith(req + '.'))) errors.push({ code: 'requires_unmet', path: n._path, message: `'${p.id}' requires a '${req}' primitive` });
     for (const sv of p.card.requires.services || []) if (!ctx.provides.services.has(sv)) errors.push({ code: 'service_missing', path: n._path, message: `'${p.id}' needs service '${sv}'`, hint: 'add a primitive whose card provides it' });
     for (const c of p.card.conflicts || []) if (used.has(c)) errors.push({ code: 'primitive_conflict', path: n._path, message: `'${p.id}' conflicts with '${c}'` });
-    for (const err of p.validate?.(n.with, doc, ctx) || []) errors.push({ ...err, path: err.path || n._path });
+    for (const err of p.validate?.(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []) errors.push({ ...err, path: err.path || n._path });
   }
 
   // Data sections must be read by some primitive.
