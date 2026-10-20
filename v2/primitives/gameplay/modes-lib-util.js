@@ -19,7 +19,7 @@ export const DEG = Math.PI / 180;
 export const sign = x => (x > 0 ? 1 : x < 0 ? -1 : 0);
 /** Move v toward target by at most step. */
 export const approach = (v, target, step) => (v < target ? Math.min(target, v + step) : Math.max(target, v - step));
-export const wrapAngle = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+export const wrapAngle = a => { a = Number.isFinite(a) ? a % (2 * Math.PI) : 0; while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }; // % first: Infinity or 1e9 would otherwise loop for ever / ~1e8 times
 
 /**
  * Entities are alive unless their health component (owned by combat.health)
