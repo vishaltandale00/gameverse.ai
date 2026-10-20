@@ -2,16 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gameverse v2</title>
-  <link rel="stylesheet" href="/v2/web/app.css">
-  <script type="module" src="/v2/web/app.js"></script>
+  <title>Gameverse Studio</title>
+  <link rel="stylesheet" href="/v2/web/studio.css">
+  <script type="module" src="/v2/web/studio-app.js"></script>
 </head>
 <body>
-  <main>
-    <header><h1>Gameverse <span>v2</span></h1><p id="status" role="status">Loading…</p></header>
-    <canvas id="game" width="960" height="540" tabindex="0" aria-label="Game"></canvas>
-    <p class="help">Arrows / WASD move · Space / Z = A (jump) · X = B (fire) · R restarts</p>
-    <pre id="report" aria-label="Playtest report"></pre>
+  <aside class="library" aria-label="Your games">
+    <a class="brand" href="/v2">gameverse <b>studio</b></a>
+    <form id="create" class="create">
+      <label for="prompt">What should we make?</label>
+      <textarea id="prompt" rows="3" placeholder="Minecraft in GTA: mine, build and drive through a living city…" required></textarea>
+      <button type="submit">Make it</button>
+    </form>
+    <h2>Your games</h2>
+    <ul id="games" class="games"></ul>
+  </aside>
+  <main id="stage" class="stage">
+    <section class="empty"><h1>Describe a game.</h1><p>It's playable in seconds, and keeps growing while you play.</p></section>
   </main>
+  <aside id="inspector" class="inspector" aria-label="Build progress and checks" hidden>
+    <h2>Build</h2><ol id="timeline" class="timeline"></ol>
+    <h2>Checks</h2><div id="checks" class="checks"></div>
+  </aside>
 </body>
 </html>

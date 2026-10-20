@@ -16,7 +16,13 @@ export function buildLogic(registry, Logic) {
 }
 
 /** doc must be the normalized document returned by preflight(). */
-export function createWorld(doc, registry, logic, { seed, headless = true } = {}) {
+/**
+ * view (browser only, when headless is false) is supplied by the host page:
+ *   { container: HTMLElement, act(actions), onFrame(fn(alpha)), input?() }
+ * Graphics primitives render into view.container, register per-frame draws
+ * with view.onFrame, and send player choices through view.act({ name: value }).
+ */
+export function createWorld(doc, registry, logic, { seed, headless = true, view = null } = {}) {
   const state = {
     schema: 'gameverse.v2.state/0.1', docId: doc.id, frame: 0, time: 0, status: 'playing', ending: null,
     rng: seedFrom(seed ?? doc.seed ?? doc.id), vars: {}, flags: {}, counts: {}, events: [],
@@ -26,7 +32,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true } = {}
   let order = 0;
 
   const rt = {
-    doc, registry, logic, headless, dt: DT, input: {}, caches: {},
+    doc, registry, logic, headless, view, dt: DT, input: {}, caches: {},
     get state() { return state; },
     random: () => random(state),
     emit(name, data = {}) {
