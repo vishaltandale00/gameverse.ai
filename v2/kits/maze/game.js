@@ -7,7 +7,7 @@
 // state in place and returns it, so `state = step(state, input)` and
 // `step(state, input)` both work.
 import { random, seedFrom } from '../../kernel/rng.js';
-import { buildMaze, isOpen, wrapX, W, H, EXIT, SLOTS, BONUS_AT } from './maze.js';
+import { buildMaze, isOpen, wrapX, sizeOf, W, H } from './maze.js';
 
 export const DX = [0, -1, 0, 1], DY = [-1, 0, 1, 0]; // up, left, down, right (also the classic tie order)
 export const UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3, NONE = -1;
@@ -27,24 +27,48 @@ const SPEEDS = [
 ];
 export const FRIGHT_SECONDS = [6, 5, 4, 3, 2, 5, 2, 2, 1, 5, 2, 1, 1, 3, 1, 1, 1, 1];
 const SCHEDULES = [[7, 20, 7, 20, 5, 20, 5, Infinity], [7, 20, 7, 20, 5, 1033, 1 / 60, Infinity], [5, 20, 5, 20, 5, 1037, 1 / 60, Infinity]];
-const DOT_LIMITS = [[0, 0, 30, 60, 90, 120], [0, 0, 0, 50, 80, 110], [0, 0, 0, 0, 0, 0]];
+const DOT_LIMITS = [[0, 0, 30, 60, 90, 120, 150, 180], [0, 0, 0, 50, 80, 110, 140, 170], [0, 0, 0, 0, 0, 0, 0, 0]];
 const GLOBAL_LIMITS = [0, 7, 17, 32, 47, 62];
 const ELROY = [[20, 10], [30, 15], [40, 20], [40, 20], [40, 20], [50, 25], [50, 25], [50, 25], [60, 30], [60, 30], [60, 30], [80, 40]];
 const CORNER_ORDER = ['chaser', 'ambusher', 'whimsical', 'shy'];
-/** Scatter targets just outside the maze, as in the arcade. */
+/** Scatter targets just outside the classic maze, as in the arcade. */
 export const CORNERS = { chaser: [W - 3, -4], ambusher: [2, -4], whimsical: [W - 1, H + 1], shy: [0, H + 1] };
+/**
+ * Per size: hunters scale with area (×mult of the content's list, up to cap; extra ones are
+ * numbered copies), and the frightened and bonus timers stretch a little because things are
+ * farther apart. Tile speeds stay classic at every size.
+ */
+export const SIZE_RULES = {
+  classic: { hunters: 1, cap: 6, fright: 1, bonus: 1 },
+  large: { hunters: 1.5, cap: 6, fright: 1.15, bonus: 1.25 },
+  huge: { hunters: 2, cap: 8, fright: 1.3, bonus: 1.5 },
+  vast: { hunters: 2, cap: 8, fright: 1.5, bonus: 2 },
+};
+const NUMERALS = ['', ' II', ' III', ' IV'];
+
+/**
+ * A house's scatter box: its band of rows (split halfway between house rows) across the map,
+ * or across its own half for a side house. At the classic size this is the whole maze, so the
+ * corners are the arcade's.
+ */
+export function scatterCorners(maze, house) {
+  const rows = [...new Set(maze.houses.map(q => q.center.y))].sort((a, b) => a - b), k = rows.indexOf(house.center.y);
+  const y0 = k <= 0 ? 0 : Math.round((rows[k - 1] + rows[k]) / 2), y1 = k === rows.length - 1 ? maze.h - 1 : Math.round((rows[k] + rows[k + 1]) / 2);
+  const x0 = house.side > 0 ? maze.w / 2 : 0, x1 = house.side < 0 ? maze.w / 2 - 1 : maze.w - 1;
+  return { chaser: [x1 - 2, y0 - 4], ambusher: [x0 + 2, y0 - 4], whimsical: [x1, y1 + 2], shy: [x0, y1 + 2] };
+}
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const sign = v => (v > 0 ? 1 : v < 0 ? -1 : 0);
 const rev = d => (d < 0 ? d : (d + 2) % 4);
 const emit = (s, name, data = {}) => s.events.push({ name, ...data });
 /** Distance between two positions, the short way round through the tunnels. */
-export function wrapDist(a, b) {
+export function wrapDist(a, b, w = W) {
   const dx = Math.abs(a.x - b.x), dy = a.y - b.y;
-  const wx = Math.min(dx, W - dx);
+  const wx = Math.min(dx, w - dx);
   return Math.hypot(wx, dy);
 }
-export const tileOf = e => ({ x: wrapX(Math.round(e.x)), y: Math.round(e.y) });
+export const tileOf = (e, w = W) => ({ x: wrapX(Math.round(e.x), w), y: Math.round(e.y) });
 
 /** Which way the held stick asks for; on a diagonal, the axis that would turn. */
 export function inputDir(input, dir) {
@@ -59,18 +83,30 @@ export function createGame(content, { seed = 1 } = {}) {
   const levels = content.levels;
   const mazes = new Map();
   const seedKey = String(seed);
-  // Each hunter's scatter corner: its personality's corner, or the next free one.
-  const used = new Set();
-  const corners = content.hunters.map(h => {
-    let k = used.has(h.personality) ? CORNER_ORDER.find(c => !used.has(c)) : h.personality;
-    if (!k) k = CORNER_ORDER[used.size % 4];
-    used.add(k);
-    return CORNERS[k];
-  });
+  const sizeAt = i => levels[i % levels.length].maze.size || 'classic';
+  /**
+   * Level i's hunters: the content's list, scaled with the maze's area, spread over its houses
+   * round-robin. The first hunter of each house starts outside; each takes its personality's
+   * scatter corner of its house's region, or the next free one.
+   */
+  function rosterFor(i) {
+    const maze = mazeFor(i), rule = SIZE_RULES[maze.size] || SIZE_RULES.classic, n = content.hunters.length;
+    const count = Math.min(rule.cap, maze.size === 'classic' ? n : Math.max(n, Math.ceil(n * rule.hunters)));
+    const used = maze.houses.map(() => new Set());
+    return Array.from({ length: count }, (_, j) => {
+      const base = content.hunters[j % n], home = j % maze.houses.length, slot = Math.floor(j / maze.houses.length);
+      let k = used[home].has(base.personality) ? CORNER_ORDER.find(c => !used[home].has(c)) : base.personality;
+      if (!k) k = CORNER_ORDER[used[home].size % 4];
+      used[home].add(k);
+      return { name: base.name + NUMERALS[Math.min(3, Math.floor(j / n))], personality: base.personality, color: base.color, home, slot, corner: scatterCorners(maze, maze.houses[home])[k] };
+    });
+  }
 
   /** Parameters of level i (0-based). Endless play cycles the content levels, a little faster each loop. */
-  function levelInfo(i) {
-    const n = levels.length, lv = levels[i % n], number = i + 1;
+  const infos = new Map();
+  function levelInfo(i) { if (!infos.has(i)) infos.set(i, computeLevelInfo(i)); return infos.get(i); }
+  function computeLevelInfo(i) {
+    const n = levels.length, lv = levels[i % n], number = i + 1, rule = SIZE_RULES[sizeAt(i)] || SIZE_RULES.classic;
     const tier = number === 1 ? 0 : number <= 4 ? 1 : 2;
     const loop = Math.floor(i / n);
     const mult = lv.speed * Math.min(1.25, 1 + 0.05 * loop);
@@ -78,7 +114,7 @@ export function createGame(content, { seed = 1 } = {}) {
     const bonus = content.bonus[Math.min(i, content.bonus.length - 1)];
     return {
       index: i, number, tier, speed: { ...sp, eyes: 2 * BASE_SPEED * mult, house: 0.5 * sp.ghost, leaving: 0.6 * sp.ghost },
-      frightFrames: FRIGHT_SECONDS[Math.min(i, FRIGHT_SECONDS.length - 1)] * FPS,
+      frightFrames: Math.round(FRIGHT_SECONDS[Math.min(i, FRIGHT_SECONDS.length - 1)] * FPS * rule.fright), bonusFrames: Math.round(BONUS_TIME * rule.bonus),
       schedule: SCHEDULES[tier].map(sec => (Number.isFinite(sec) ? Math.max(1, Math.round(sec * FPS)) : Infinity)),
       dotLimits: DOT_LIMITS[Math.min(i, 2)], idleFrames: (number < 5 ? 4 : 3) * FPS,
       elroy: ELROY[Math.min(i, ELROY.length - 1)], bonus,
@@ -92,12 +128,12 @@ export function createGame(content, { seed = 1 } = {}) {
   function resetActors(s) {
     const maze = mazeFor(s.level);
     s.player = { x: maze.start.x, y: maze.start.y, dir: LEFT, want: NONE, moving: true, face: -1, eatT: 0, travel: 0 };
-    s.hunters = content.hunters.map((h, i) => {
-      const slot = SLOTS[Math.min(i, SLOTS.length - 1)];
+    s.hunters = rosterFor(s.level).map((h, i) => {
+      const slot = maze.houses[h.home].slots[Math.min(h.slot, 5)];
       return {
-        index: i, name: h.name, personality: h.personality, color: h.color, corner: corners[i],
-        x: slot.x, y: slot.y, dir: i === 0 ? LEFT : i % 2 ? DOWN : UP,
-        state: i === 0 ? 'active' : 'house', fright: false, dots: s.hunters?.[i]?.dots ?? 0,
+        index: i, name: h.name, personality: h.personality, color: h.color, corner: h.corner, home: h.home,
+        x: slot.x, y: slot.y, dir: h.slot === 0 ? LEFT : h.slot % 2 ? DOWN : UP,
+        state: h.slot === 0 ? 'active' : 'house', fright: false, dots: s.hunters?.[i]?.dots ?? 0,
       };
     });
     s.mode = 'scatter'; s.modeIdx = 0; s.modeT = 0;
@@ -106,11 +142,12 @@ export function createGame(content, { seed = 1 } = {}) {
   function loadLevel(s, i) {
     s.level = i;
     const maze = mazeFor(i);
-    s.pellets = new Array(W * H).fill(0);
+    s.pellets = new Array(maze.w * maze.h).fill(0);
     for (const p of maze.pellets) s.pellets[p] = 1;
     for (const p of maze.power) s.pellets[p] = 2;
     s.pelletsTotal = maze.pellets.length; s.pelletsLeft = maze.pellets.length; s.pelletsEaten = 0;
-    s.bonusAt = [Math.min(70, Math.floor(s.pelletsTotal * 0.3)), Math.min(170, Math.floor(s.pelletsTotal * 0.7))];
+    // Classic: at 70 and 170 pellets; bigger mazes keep the same fractions of the level.
+    s.bonusAt = maze.size === 'classic' ? [Math.min(70, Math.floor(s.pelletsTotal * 0.3)), Math.min(170, Math.floor(s.pelletsTotal * 0.7))] : [Math.round(s.pelletsTotal * 0.29), Math.round(s.pelletsTotal * 0.7)];
     s.globalDots = null;
     s.hunters = null;
     resetActors(s);
@@ -159,10 +196,10 @@ export function createGame(content, { seed = 1 } = {}) {
     if (Math.abs(c - a) <= d && !isOpen(maze, ax, ay)) { p.travel += Math.abs(c - a); a = c; p.moving = false; }
     else { a += sg * d; p.travel += d; }
     if (horiz) { p.x = a; p.face = sg; } else p.y = a;
-    if (p.x < -0.5) p.x += W; else if (p.x >= W - 0.5) p.x -= W;
+    if (p.x < -0.5) p.x += maze.w; else if (p.x >= maze.w - 0.5) p.x -= maze.w;
   }
-  function eat(s, L) {
-    const p = s.player, t = tileOf(p), i = t.y * W + t.x, v = s.pellets[i];
+  function eat(s, L, maze) {
+    const p = s.player, t = tileOf(p, maze.w), i = t.y * maze.w + t.x, v = s.pellets[i];
     if (!v) return;
     s.pellets[i] = 0; s.pelletsLeft--; s.pelletsEaten++; s.sinceEat = 0; p.eatT = 8;
     if (v === 2) { addScore(s, 50); emit(s, 'power', { points: 50, x: t.x, y: t.y }); startFright(s, L); }
@@ -170,7 +207,7 @@ export function createGame(content, { seed = 1 } = {}) {
     if (s.globalDots != null) s.globalDots++;
     else { const h = s.hunters.find(q => q.state === 'house'); if (h) h.dots++; }
     if (s.pelletsEaten === s.bonusAt[0] || s.pelletsEaten === s.bonusAt[1]) {
-      s.bonus = { t: BONUS_TIME, name: L.bonus.name, points: L.bonus.points, x: BONUS_AT.x, y: BONUS_AT.y };
+      s.bonus = { t: L.bonusFrames, name: L.bonus.name, points: L.bonus.points, x: maze.bonusAt.x, y: maze.bonusAt.y };
       emit(s, 'bonus_spawn', { prize: L.bonus.name, points: L.bonus.points });
     }
     if (s.pelletsLeft === 0) {
@@ -192,20 +229,21 @@ export function createGame(content, { seed = 1 } = {}) {
   // ---------- hunters ----------
   /** The tile a hunter heads for right now (also used by tests). */
   function targetFor(s, h, L = levelInfo(s.level)) {
-    if (h.state === 'eyes') return [EXIT.x, EXIT.y];
-    const p = tileOf(s.player), pd = s.player.dir < 0 ? LEFT : s.player.dir;
+    const maze = mazeFor(s.level), home = maze.houses[h.home ?? 0];
+    if (h.state === 'eyes') return [home.exit.x, home.exit.y];
+    const p = tileOf(s.player, maze.w), pd = s.player.dir < 0 ? LEFT : s.player.dir;
     const elroy = h.personality === 'chaser' && s.pelletsLeft <= L.elroy[0];
     if (s.mode === 'scatter' && !elroy) return h.corner;
     switch (h.personality) {
       case 'ambusher': return [p.x + 4 * DX[pd], p.y + 4 * DY[pd]];
       case 'whimsical': {
         const pivot = [p.x + 2 * DX[pd], p.y + 2 * DY[pd]];
-        const ref = s.hunters.find(q => q.personality === 'chaser') || s.hunters[0];
-        const c = tileOf(ref);
+        const ref = s.hunters.find(q => q.personality === 'chaser' && q.home === h.home) || s.hunters.find(q => q.personality === 'chaser') || s.hunters[0];
+        const c = tileOf(ref, maze.w);
         return [2 * pivot[0] - c.x, 2 * pivot[1] - c.y];
       }
       case 'shy': {
-        const t = tileOf(h);
+        const t = tileOf(h, maze.w);
         return Math.hypot(t.x - p.x, t.y - p.y) > 8 ? [p.x, p.y] : h.corner;
       }
       default: return [p.x, p.y];
@@ -213,7 +251,7 @@ export function createGame(content, { seed = 1 } = {}) {
   }
   function decide(s, h, maze, L) {
     const cx = h.x, cy = h.y, options = [];
-    const blockUp = content.noUpwardTurns && h.state === 'active' && !h.fright && maze.noUp.includes(cy * W + cx);
+    const blockUp = content.noUpwardTurns && h.state === 'active' && !h.fright && maze.noUp.includes(cy * maze.w + cx);
     for (let d = 0; d < 4; d++) {
       if (h.dir >= 0 && d === rev(h.dir)) continue;
       if (d === UP && blockUp) continue;
@@ -237,31 +275,34 @@ export function createGame(content, { seed = 1 } = {}) {
     h.dir = axis === 'x' ? (delta < 0 ? LEFT : RIGHT) : (delta < 0 ? UP : DOWN);
     return 0;
   }
-  function scripted(s, h, d) {
+  /** Scripted moves inside and through a hunter's own house (bobbing, leaving, eyes going back in). */
+  function scripted(s, h, d, maze) {
+    const { exit, center } = maze.houses[h.home ?? 0];
     if (h.state === 'house') {
       h.dir = h.dir === UP ? UP : DOWN;
       h.y += (h.dir === UP ? -1 : 1) * d;
-      if (h.y <= 13.5) { h.y = 13.5; h.dir = DOWN; } else if (h.y >= 14.5) { h.y = 14.5; h.dir = UP; }
+      if (h.y <= center.y - 0.5) { h.y = center.y - 0.5; h.dir = DOWN; } else if (h.y >= center.y + 0.5) { h.y = center.y + 0.5; h.dir = UP; }
       return;
     }
     if (h.state === 'leaving') {
-      if (Math.abs(h.x - EXIT.x) > EPS) { d = toward(h, 'y', 14, d); if (d > 0) d = toward(h, 'x', EXIT.x, d); }
-      if (d > 0) d = toward(h, 'y', EXIT.y, d);
-      if (Math.abs(h.x - EXIT.x) < EPS && Math.abs(h.y - EXIT.y) < EPS) { h.state = 'active'; h.dir = LEFT; h.x = EXIT.x; h.y = EXIT.y; }
+      if (Math.abs(h.x - exit.x) > EPS) { d = toward(h, 'y', center.y, d); if (d > 0) d = toward(h, 'x', exit.x, d); }
+      if (d > 0) d = toward(h, 'y', exit.y, d);
+      if (Math.abs(h.x - exit.x) < EPS && Math.abs(h.y - exit.y) < EPS) { h.state = 'active'; h.dir = LEFT; h.x = exit.x; h.y = exit.y; }
       return;
     }
     if (h.state === 'entering') {
-      d = toward(h, 'x', EXIT.x, d);
-      if (d > 0) d = toward(h, 'y', 14, d);
-      if (Math.abs(h.y - 14) < EPS) { h.state = 'leaving'; h.fright = false; h.dir = UP; emit(s, 'revived', { hunter: h.name }); }
+      d = toward(h, 'x', exit.x, d);
+      if (d > 0) d = toward(h, 'y', center.y, d);
+      if (Math.abs(h.y - center.y) < EPS) { h.state = 'leaving'; h.fright = false; h.dir = UP; emit(s, 'revived', { hunter: h.name }); }
     }
   }
   function gridMove(s, h, d, maze, L) {
     let rem = d;
     for (let guard = 0; rem > EPS && guard < 4; guard++) {
       if (Math.abs(h.x - Math.round(h.x)) < EPS && Math.abs(h.y - Math.round(h.y)) < EPS) {
-        h.x = wrapX(Math.round(h.x)); h.y = Math.round(h.y);
-        if (h.state === 'eyes' && h.y === EXIT.y && (h.x === 13 || h.x === 14)) { h.state = 'entering'; scripted(s, h, rem); return; }
+        h.x = wrapX(Math.round(h.x), maze.w); h.y = Math.round(h.y);
+        const exit = maze.houses[h.home ?? 0].exit;
+        if (h.state === 'eyes' && h.y === exit.y && Math.abs(h.x - exit.x) === 0.5) { h.state = 'entering'; scripted(s, h, rem, maze); return; }
         decide(s, h, maze, L);
       }
       const horiz = DX[h.dir] !== 0, sg = horiz ? DX[h.dir] : DY[h.dir], a = horiz ? h.x : h.y;
@@ -271,15 +312,15 @@ export function createGame(content, { seed = 1 } = {}) {
       if (horiz) h.x = a + sg * step; else h.y = a + sg * step;
       rem -= step;
     }
-    if (h.x < -0.5) h.x += W; else if (h.x >= W - 0.5) h.x -= W;
+    if (h.x < -0.5) h.x += maze.w; else if (h.x >= maze.w - 0.5) h.x -= maze.w;
   }
   function hunterSpeed(s, h, maze, L) {
     if (h.state === 'eyes' || h.state === 'entering') return L.speed.eyes;
     if (h.state === 'house') return L.speed.house;
     if (h.state === 'leaving') return L.speed.leaving;
     if (h.fright) return L.speed.fright;
-    const t = tileOf(h);
-    if (maze.tunnels.includes(t.y) && (t.x <= 4 || t.x >= W - 5)) return L.speed.tunnel;
+    const t = tileOf(h, maze.w);
+    if (maze.tunnels.includes(t.y) && (t.x <= 4 || t.x >= maze.w - 5)) return L.speed.tunnel;
     if (h.personality === 'chaser') {
       if (s.pelletsLeft <= L.elroy[1]) return L.speed.elroy2;
       if (s.pelletsLeft <= L.elroy[0]) return L.speed.elroy1;
@@ -291,12 +332,12 @@ export function createGame(content, { seed = 1 } = {}) {
       if (h.stunT > 0) { h.stunT--; continue; } // stunned (by a mod): frozen in place
       const d = hunterSpeed(s, h, maze, L) * STEP;
       if (h.state === 'active' || h.state === 'eyes') gridMove(s, h, d, maze, L);
-      else scripted(s, h, d);
+      else scripted(s, h, d, maze);
     }
   }
 
   // ---------- timers, release, collisions ----------
-  function timers(s, L) {
+  function timers(s, L, maze) {
     if (s.frightT > 0) {
       if (--s.frightT === 0) { for (const h of s.hunters) h.fright = false; emit(s, 'fright_end'); }
     } else if (++s.modeT >= L.schedule[s.modeIdx]) {
@@ -306,7 +347,7 @@ export function createGame(content, { seed = 1 } = {}) {
       emit(s, 'mode', { mode: s.mode });
     }
     if (s.bonus && --s.bonus.t <= 0) s.bonus = null;
-    if (s.bonus && wrapDist(s.player, s.bonus) < 0.7) {
+    if (s.bonus && wrapDist(s.player, s.bonus, maze.w) < 0.7) {
       addScore(s, s.bonus.points);
       emit(s, 'collect', { item: 'bonus', prize: s.bonus.name, points: s.bonus.points, x: s.bonus.x, y: s.bonus.y });
       s.bonus = null;
@@ -318,11 +359,11 @@ export function createGame(content, { seed = 1 } = {}) {
     if (s.sinceEat >= L.idleFrames) { go = true; s.sinceEat = 0; }
     if (go) { h.state = 'leaving'; emit(s, 'release', { hunter: h.name }); }
   }
-  function collide(s) {
+  function collide(s, maze) {
     const p = s.player;
     for (const h of s.hunters) {
-      if (!(h.state === 'active' || (h.state === 'leaving' && h.y < 12)) || h.stunT > 0) continue;
-      if (wrapDist(p, h) >= 0.6) continue;
+      if (!(h.state === 'active' || (h.state === 'leaving' && h.y < maze.houses[h.home ?? 0].y0)) || h.stunT > 0) continue;
+      if (wrapDist(p, h, maze.w) >= 0.6) continue;
       if (h.fright) {
         const points = 200 * 2 ** Math.min(s.chain, 3);
         s.chain++;
@@ -343,13 +384,13 @@ export function createGame(content, { seed = 1 } = {}) {
     if (s.pauseT > 0) { s.pauseT--; return; }
     const L = levelInfo(s.level), maze = mazeFor(s.level);
     movePlayer(s, L, maze);
-    eat(s, L);
+    eat(s, L, maze);
     if (s.phase !== 'play') return;
-    collide(s);
+    collide(s, maze);
     if (s.phase !== 'play' || s.pauseT > 0) return;
-    timers(s, L);
+    timers(s, L, maze);
     moveHunters(s, L, maze);
-    collide(s);
+    collide(s, maze);
   }
 
   function step(s, input = {}) {
@@ -379,5 +420,7 @@ export function createGame(content, { seed = 1 } = {}) {
     return s;
   }
 
-  return { content, seed, width: W, height: H, levelCount: levels.length, createState, step, mazeFor, levelInfo, targetFor, addScore };
+  const first = sizeOf(sizeAt(0));
+  // width/height are level 1's; every level's own dimensions are on mazeFor(i).w/h.
+  return { content, seed, width: first.w, height: first.h, levelCount: levels.length, createState, step, mazeFor, levelInfo, targetFor, addScore, rosterFor };
 }

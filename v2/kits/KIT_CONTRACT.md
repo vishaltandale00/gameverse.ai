@@ -111,8 +111,10 @@ world: {
 }
 ```
 
-The renderer sets `render.view = { X(x), Y(y), s, clip?, hud? }` each frame, mapping world units to
-CSS pixels, so mods draw in the same space. Hosts and the pipeline go through
+The renderer sets `render.view = { X(x), Y(y), s, clip?, hud?, camera? }` each frame, mapping world units to
+CSS pixels, so mods draw in the same space. When a world is too big to fit at a readable size the
+renderer scrolls: X/Y then include the camera, `clip` is the visible viewport, and `camera` is
+`{ x, y, w, h }` in world units (null when everything fits). Hosts and the pipeline go through
 `composeGame`/`composeRenderer`, which offer a kit exactly the mods its capabilities and free buttons
 allow. The content model switches mods on in a fixed-shape `mods` object, and anything neither the
 kit nor a mod can express is listed as unsupported, never claimed.
@@ -126,6 +128,11 @@ it or a solver checks it. The `report` records:
 - the wall time spent.
 
 Keep it under `budgetMs`, by default 2000 ms.
+
+Validation repairs what it can: it pads or trims rows to the right width, clamps numbers, fixes
+ids with `v2/kits/ids.js` and fills defaults, each with a warning. It rejects only content that
+can't be fixed. It is idempotent: `validate(validate(x).content)` passes and gives the same content
+(`tests/v2-kits-contract.test.js` checks this for every kit).
 
 Verification must fail only on content that is actually at fault. Each problem names that content
 with a `path` (like `levels[3]`), a `message` and a `hint` (like "lower speed"), because the pipeline

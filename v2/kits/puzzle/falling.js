@@ -60,10 +60,12 @@ export function buildTypes(content) {
   return types;
 }
 
-export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, fast = false } = {}) {
+// Options for verification: startAt plays one level in isolation, stay keeps playing that level after
+// its goal is met (s.goalMet records it), fast skips the intro banner only (clears keep real timing).
+export function createFalling(content, { seed = 1, startAt = 0, fast = false, stay = false } = {}) {
   const types = buildTypes(content);
   const R = content.rules, W = R.width, H = R.height + HIDDEN;
-  const clearFrames = fast ? 1 : CLEAR_FRAMES;
+  const clearFrames = CLEAR_FRAMES;
 
   const cellsOf = (p, r = p.r, x = p.x, y = p.y) => types[p.t].states[r].map(([cx, cy]) => [x + cx, y + cy]);
   function fits(board, t, r, x, y) {
@@ -121,7 +123,7 @@ export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, 
     const s = Object.assign(baseState('falling', seed), {
       board: new Array(W * H).fill(0), bag: [], queue: [], piece: null, pieceId: 0,
       hold: -1, holdUsed: false, grav: 0, lockT: 0, lockMoves: 0, lowest: 0, shift: { dir: 0, t: 0 }, last: null, kick: 0,
-      lines: 0, levelLines: 0, speed: 1, combo: -1, b2b: false, clearRows: [], lastClear: null,
+      lines: 0, levelLines: 0, speed: 1, combo: -1, b2b: false, clearRows: [], lastClear: null, goalMet: null,
       stats: { pieces: 0, singles: 0, doubles: 0, triples: 0, tetrises: 0, tspins: 0, maxCombo: 0, perfect: 0 },
     });
     refill(s);
@@ -234,6 +236,7 @@ export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, 
   }
   function checkLevel(s) {
     if (!goalMet(s)) return;
+    if (stay) { if (!s.goalMet) { s.goalMet = { pieces: s.stats.pieces, frames: s.levelT }; emit(s, 'goal'); } return; }
     if (isLastLevel(content, s.level)) { win(s); return; }
     const L = levelAt(content, s.level), carry = L.goal === 'lines' ? s.levelLines - L.target : 0;
     startLevel(s, s.level + 1);
@@ -258,7 +261,7 @@ export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, 
     s.levelT++;
     const L = levelAt(content, s.level);
     if (L.goal === 'survive' && s.levelT >= L.timeSec * 60) { checkLevel(s); if (s.status !== 'playing') return s; }
-    else if (L.timeSec && L.goal !== 'survive' && s.levelT >= L.timeSec * 60) { lose(s, 'Time up'); return s; }
+    else if (L.timeSec && L.goal !== 'survive' && !s.goalMet && s.levelT >= L.timeSec * 60) { lose(s, 'Time up'); return s; }
     if (s.phase === 'clear') { if (--s.phaseT <= 0) finishClear(s); return s; }
     if (!s.piece) { spawn(s); if (s.status !== 'playing') return s; }
     const p = s.piece;
@@ -276,7 +279,7 @@ export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, 
       return s;
     }
     const soft = e.y > 0;
-    const g = soft ? Math.max(gravityRows(fixedSpeed || s.speed) * SOFT_FACTOR, 0.34) : gravityRows(fixedSpeed || s.speed);
+    const g = soft ? Math.max(gravityRows(s.speed) * SOFT_FACTOR, 0.34) : gravityRows(s.speed);
     s.grav += g;
     while (s.grav >= 1) {
       s.grav -= 1;
@@ -293,60 +296,14 @@ export function createFalling(content, { seed = 1, fixedSpeed = 0, startAt = 0, 
     return s;
   }
 
-  return { mode: 'falling', content, types, W, H, HIDDEN, createState, step, fits, dropY, ghostY, cellsOf, gravityRows };
-}
-
-// ---------- heuristic bot (classic weights: aggregate height, lines, holes, bumpiness) ----------
-const WEIGHTS = { height: -0.510066, lines: 0.760666, holes: -0.35663, bump: -0.184483 };
-export function evaluateBoard(board, lines, W, H) {
-  let agg = 0, holes = 0, bump = 0, prev = -1;
-  for (let x = 0; x < W; x++) {
-    let h = 0, seen = false;
-    for (let y = 0; y < H; y++) {
-      const v = board[y * W + x];
-      if (v && !seen) { seen = true; h = H - y; }
-      else if (!v && seen) holes++;
-    }
-    agg += h;
-    if (prev >= 0) bump += Math.abs(h - prev);
-    prev = h;
+  /** Where a rotation would put a piece on this board (with kicks), or null. Used by the bot's path check. */
+  function rotateTry(board, t, r, x, y, dir) {
+    const to = (r + dir + 4) % 4, kicks = kicksFor(types[t], r, to);
+    for (const [kx, ky] of kicks) if (fits(board, t, to, x + kx, y + ky)) return { r: to, x: x + kx, y: y + ky };
+    return null;
   }
-  return WEIGHTS.height * agg + WEIGHTS.lines * lines + WEIGHTS.holes * holes + WEIGHTS.bump * bump;
+
+  return { mode: 'falling', content, types, W, H, HIDDEN, createState, step, fits, dropY, ghostY, cellsOf, gravityRows, rotateTry };
 }
 
-export function bestPlacement(game, s) {
-  const p = s.piece; if (!p) return null;
-  const { W, H } = game;
-  let best = null;
-  const T = game.types[p.t], rots = T.kicks === 'O' ? 1 : 4;
-  for (let r = 0; r < rots; r++) {
-    for (let x = -3; x < W + 1; x++) {
-      if (!game.fits(s.board, p.t, r, x, p.y)) continue;
-      const y = game.dropY(s.board, p.t, r, x, p.y);
-      const b = s.board.slice();
-      for (const [cx, cy] of T.states[r]) b[(y + cy) * W + x + cx] = 1;
-      let lines = 0; const keep = [];
-      for (let yy = 0; yy < H; yy++) { const row = b.slice(yy * W, yy * W + W); if (row.every(Boolean)) lines++; else keep.push(...row); }
-      const after = [...new Array(lines * W).fill(0), ...keep];
-      const v = evaluateBoard(after, lines, W, H);
-      if (!best || v > best.v) best = { r, x, v };
-    }
-  }
-  return best;
-}
-
-/** Input source that plays the falling game: plan a placement per piece, then rotate, shift and hard drop. */
-export function fallingBot(game) {
-  let plan = null, planFor = -1, tick = 0, stuck = 0, lastX = null;
-  const idle = { x: 0, y: 0, a: false, b: false };
-  return s => {
-    if (s.phase !== 'play' || !s.piece) return idle;
-    if (planFor !== s.piece.id) { plan = bestPlacement(game, s); planFor = s.piece.id; stuck = 0; lastX = null; }
-    if (++tick % 2) return idle; // release between presses so every press is an edge
-    const p = s.piece;
-    if (!plan) return { ...idle, y: -1 };
-    if (p.r !== plan.r && stuck < 8) { stuck++; return (plan.r - p.r + 4) % 4 === 3 ? { ...idle, b: true } : { ...idle, a: true }; }
-    if (p.x !== plan.x && stuck < 24) { stuck = lastX === p.x ? stuck + 1 : stuck; lastX = p.x; return { ...idle, x: Math.sign(plan.x - p.x) }; }
-    return { ...idle, y: -1 };
-  };
-}
+export { fallingBot } from './falling-bot.js';

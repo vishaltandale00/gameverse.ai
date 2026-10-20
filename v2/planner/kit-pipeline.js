@@ -4,7 +4,7 @@
 // against the current content; the art stays locked (see art-procedural.js).
 import { loadKit } from '../kits/registry.js';
 import { modsFor, modsSchema, modsPrompt } from '../kits/mods/compose.js';
-import { checkRevision, changeSummary, NOT_APPLIED } from './revision-check.js';
+import { checkRevision, changeSummary, NOT_APPLIED, shrunkLists, asksToRemove } from './revision-check.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
 
@@ -53,6 +53,14 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
       ({ content, unsupported } = parsed);
       if (parsed.mods) mods = parsed.mods;
     } else content = previousContent || kit.content.sample;
+    // A revision must keep what it wasn't asked to remove (8 levels must not quietly become 1).
+    if (previousContent && client && attempts < 3) {
+      const shrunk = shrunkLists(previousContent, content);
+      if (shrunk.length && !(await asksToRemove(decisions, job.change, shrunk))) {
+        user = `${user}\n\nYour previous answer dropped content the request did not ask to remove: ${shrunk.map(s => `${s.path} went from ${s.before} to ${s.after} items`).join('; ')}. Keep every existing item and change only what the request asks.`;
+        continue;
+      }
+    }
     checked = kit.validate(content);
     if (!checked.ok) {
       if (!client) break;

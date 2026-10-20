@@ -48,3 +48,30 @@ export async function checkRevision(decisions, { change, engine, before, after, 
     return { applied, why, summary, diff: diff.length, provider };
   } catch { return { applied: null, summary, diff: diff.length, provider: null }; }
 }
+
+/** Lists that got shorter between two content objects (top level and one level down), e.g. levels 8 → 1. */
+export function shrunkLists(before, after, path = '', depth = 0, out = []) {
+  if (!before || !after || typeof before !== 'object' || typeof after !== 'object') return out;
+  for (const [k, a] of Object.entries(before)) {
+    const b = after[k], p = path ? `${path}.${k}` : k;
+    if (Array.isArray(a) && Array.isArray(b) && b.length < a.length) out.push({ path: p, before: a.length, after: b.length });
+    else if (depth < 1 && a && typeof a === 'object' && !Array.isArray(a)) shrunkLists(a, b, p, depth + 1, out);
+  }
+  return out;
+}
+
+const REMOVE_QUESTION = 'Does the request explicitly ask for fewer of these items, or to merge them into one? Answer yes only when the request itself says fewer, less, one, only, remove or similar about them. Answer no when the request is about something else, such as size, speed, looks or a new feature, even if fewer items would be one way to do it.';
+const REMOVE_WORDS = /\b(fewer|less|remove|delete|drop|cut|shorter|smaller|reduce|only|just one|single|one level|no more)\b/i;
+/** Does the change request ask to remove or reduce these lists? Decision model when available, words otherwise. */
+export async function asksToRemove(decisions, change, shrunk) {
+  if (!change) return false;
+  if (decisions) {
+    try {
+      const { answers, provider } = await decisions.decide({ state: { request: change, shrank: shrunk.map(s => `${s.path}: ${s.before} → ${s.after}`) }, questions: { remove: { type: 'noul', instructions: REMOVE_QUESTION } } });
+      // Providers are calibrated differently: on 6 clear cases d1 needed 0.9 to get all right ("make it
+      // faster" scored 0.88), OpenAI Decisions separated them at 0.5 (0.04 vs 0.98+).
+      if (answers.remove?.noul != null) return answers.remove.noul >= (provider === 'd1' ? 0.9 : 0.5);
+    } catch {}
+  }
+  return REMOVE_WORDS.test(change);
+}

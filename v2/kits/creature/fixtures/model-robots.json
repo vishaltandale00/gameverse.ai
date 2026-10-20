@@ -1,0 +1,455 @@
+{
+ "settings": {
+  "routeLength": 50,
+  "encounterRate": 10,
+  "difficulty": "normal",
+  "levelStep": 7
+ },
+ "title": "Robo Quest: Stellar Bonds",
+ "logline": "Explore the vast cosmic frontier to capture and battle robotic creatures across futuristic planets.",
+ "artStyle": "sleek pixel art with neon sci-fi aesthetic",
+ "mood": "adventurous",
+ "region": {
+  "name": "Nebulon Sector",
+  "description": "a sprawling star system full of diverse mechanized lifeforms and cosmic phenomena"
+ },
+ "player": {
+  "name": "Arin",
+  "look": "silver jacket, blue visor, short black hair"
+ },
+ "rival": {
+  "name": "Vex",
+  "look": "red armor suit, sharp yellow eyes, short white hair"
+ },
+ "mentor": {
+  "name": "Professor Circuit",
+  "look": "white lab coat, round glasses, spiky green hair"
+ },
+ "types": [
+  {
+   "name": "Mech",
+   "color": "#B0B0B0",
+   "look": "glossy metallic",
+   "beats": [],
+   "moves": {
+    "weak": "Pulse Tackle",
+    "strong": "Gear Crush",
+    "status": "System Shield"
+   }
+  },
+  {
+   "name": "Plasma",
+   "color": "#FF4500",
+   "look": "glowing fluid energy",
+   "beats": [
+    "Quantum"
+   ],
+   "moves": {
+    "weak": "Spark Jab",
+    "strong": "Flare Burst",
+    "status": "Heat Wave"
+   }
+  },
+  {
+   "name": "Quantum",
+   "color": "#4B0082",
+   "look": "shimmering particles",
+   "beats": [
+    "Nano"
+   ],
+   "moves": {
+    "weak": "Signal Flicker",
+    "strong": "Phase Strike",
+    "status": "Cloaking"
+   }
+  },
+  {
+   "name": "Nano",
+   "color": "#32CD32",
+   "look": "tiny robotic swarms",
+   "beats": [
+    "Mech"
+   ],
+   "moves": {
+    "weak": "Micro Slap",
+    "strong": "Swarm Slash",
+    "status": "Repair Protocol"
+   }
+  },
+  {
+   "name": "Cryo",
+   "color": "#00FFFF",
+   "look": "icy blue alloys",
+   "beats": [
+    "Plasma"
+   ],
+   "moves": {
+    "weak": "Frost Swipe",
+    "strong": "Glacier Lance",
+    "status": "Freeze Field"
+   }
+  },
+  {
+   "name": "EMP",
+   "color": "#FFD700",
+   "look": "electric sparks",
+   "beats": [
+    "Cryo",
+    "Quantum"
+   ],
+   "moves": {
+    "weak": "Shock Tap",
+    "strong": "Pulse Cannon",
+    "status": "Disrupt Signal"
+   }
+  }
+ ],
+ "starters": [
+  {
+   "types": [
+    "Mech"
+   ],
+   "role": "balanced",
+   "forms": [
+    {
+     "name": "Coglet",
+     "look": "small rounded robot, steel gray, single red eye"
+    },
+    {
+     "name": "Gearion",
+     "look": "four-legged mech, gunmetal color, glowing blue lines"
+    },
+    {
+     "name": "Treadon",
+     "look": "bipedal tank-like, heavy plated, bright blue accents"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Plasma"
+   ],
+   "role": "fast",
+   "forms": [
+    {
+     "name": "Flarez",
+     "look": "slim, orange glowing core, hover jetpacks"
+    },
+    {
+     "name": "Pyrovolt",
+     "look": "sleek humanoid, fiery red plasma veins"
+    },
+    {
+     "name": "Solarix",
+     "look": "tall, radiant plasma blades, bright yellow pulses"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Quantum"
+   ],
+   "role": "special",
+   "forms": [
+    {
+     "name": "Quibit",
+     "look": "small orb with floating particles"
+    },
+    {
+     "name": "Phasor",
+     "look": "ghostly humanoid outline, purple shimmer"
+    },
+    {
+     "name": "Entroxis",
+     "look": "large armored quantum mech, fragmented bits"
+    }
+   ]
+  }
+ ],
+ "wild": [
+  {
+   "types": [
+    "Nano"
+   ],
+   "role": "fast",
+   "forms": [
+    {
+     "name": "Micrill",
+     "look": "tiny bug-like bots, green lights"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Cryo"
+   ],
+   "role": "bulky",
+   "forms": [
+    {
+     "name": "Glacion",
+     "look": "ice-crystal plating, pale blue"
+    }
+   ]
+  },
+  {
+   "types": [
+    "EMP"
+   ],
+   "role": "special",
+   "forms": [
+    {
+     "name": "Zapling",
+     "look": "sparks surrounding small core"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Mech",
+    "Cryo"
+   ],
+   "role": "strong",
+   "forms": [
+    {
+     "name": "Frostron",
+     "look": "four-legged mech with icy claws"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Plasma",
+    "EMP"
+   ],
+   "role": "fast",
+   "forms": [
+    {
+     "name": "Voltix",
+     "look": "birdlike with flaming wings"
+    }
+   ]
+  },
+  {
+   "types": [
+    "Quantum",
+    "Nano"
+   ],
+   "role": "special",
+   "forms": [
+    {
+     "name": "Spectron",
+     "look": "swarming particles with glowing eyes"
+    }
+   ]
+  }
+ ],
+ "items": {
+  "ball": "Capture Orb",
+  "greatBall": "Hyper Capture Orb",
+  "potion": "Nano Repair Kit",
+  "superPotion": "Advanced Repair Kit",
+  "cure": "Status Purge",
+  "revive": "Reboot Module"
+ },
+ "home": {
+  "name": "Nova Base",
+  "theme": "futuristic space station"
+ },
+ "chapters": [
+  {
+   "routes": [
+    {
+     "name": "Orbit Trail",
+     "kind": "route",
+     "theme": "floating platforms above a glowing planet",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Coglet",
+      "Micrill",
+      "Zapling"
+     ],
+     "trainers": [
+      {
+       "name": "Tech Trainee Lina",
+       "class": "Trainee",
+       "team": [
+        "Coglet",
+        "Zapling"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Ion Cavern",
+     "kind": "cave",
+     "theme": "dark tunnels lit by glowing crystals",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Glacion",
+      "Micrill"
+     ],
+     "trainers": [
+      {
+       "name": "Miner Dax",
+       "class": "Engineer",
+       "team": [
+        "Glacion"
+       ]
+      }
+     ]
+    }
+   ],
+   "town": {
+    "name": "Ion Haven",
+    "theme": "industrial space colony"
+   },
+   "gym": {
+    "leader": "Axel",
+    "look": "silver armor, blue visor",
+    "type": "Mech",
+    "badge": "Core Badge",
+    "quote": "Steel and precision win the fight."
+   }
+  },
+  {
+   "routes": [
+    {
+     "name": "Solar Pathway",
+     "kind": "route",
+     "theme": "sunlit rocky plains with energy crystals",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Flarez",
+      "Voltix",
+      "Zapling"
+     ],
+     "trainers": [
+      {
+       "name": "Scout Mira",
+       "class": "Explorer",
+       "team": [
+        "Flarez",
+        "Zapling"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Plasma Fields",
+     "kind": "route",
+     "theme": "fields charged with plasma energy",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Voltix",
+      "Zapling"
+     ],
+     "trainers": []
+    }
+   ],
+   "town": {
+    "name": "Blaze City",
+    "theme": "energy hub with plasma reactors"
+   },
+   "gym": {
+    "leader": "Vela",
+    "look": "fiery red armor, flaming hair",
+    "type": "Plasma",
+    "badge": "Flare Badge",
+    "quote": "Feel the burn of my plasma!"
+   }
+  },
+  {
+   "routes": [
+    {
+     "name": "Quantum Labyrinth",
+     "kind": "cave",
+     "theme": "maze of shifting quantum walls",
+     "length": 0,
+     "encounterRate": 0,
+     "wild": [
+      "Quibit",
+      "Spectron"
+     ],
+     "trainers": [
+      {
+       "name": "Cipher",
+       "class": "Scientist",
+       "team": [
+        "Quibit",
+        "Spectron"
+       ]
+      }
+     ]
+    }
+   ],
+   "town": {
+    "name": "Phase Gate",
+    "theme": "high-tech city with cloaking tech"
+   },
+   "gym": {
+    "leader": "Nova",
+    "look": "purple cloak, pixelated eyes",
+    "type": "Quantum",
+    "badge": "Phase Badge",
+    "quote": "Reality is what you perceive."
+   }
+  }
+ ],
+ "finale": {
+  "routes": [
+   {
+    "name": "Nebula Ridge",
+    "kind": "route",
+    "theme": "starry cliffs with cosmic winds",
+    "length": 0,
+    "encounterRate": 0,
+    "wild": [
+     "Treadon",
+     "Solarix",
+     "Entroxis",
+     "Frostron",
+     "Spectron"
+    ],
+    "trainers": [
+     {
+      "name": "Ace Pilot Ryn",
+      "class": "Ace Trainer",
+      "team": [
+       "Treadon",
+       "Solarix",
+       "Frostron"
+      ]
+     },
+     {
+      "name": "Quantum Master Lio",
+      "class": "Elite Trainer",
+      "team": [
+       "Entroxis",
+       "Spectron"
+      ]
+     }
+    ]
+   }
+  ],
+  "league": {
+   "name": "Nebulon League",
+   "theme": "elite star arena floating in space"
+  },
+  "champion": {
+   "name": "Zenith",
+   "look": "glowing armor, multi-colored visor",
+   "team": [
+    "Treadon",
+    "Solarix",
+    "Entroxis",
+    "Frostron",
+    "Spectron"
+   ],
+   "quote": "Only those who master machine and star can ascend."
+  }
+ }
+}
