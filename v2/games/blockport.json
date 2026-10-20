@@ -1132,7 +1132,7 @@
       "choices": [
        {"text":"Tell me about the Deep Works.","next":"n2"},
        {"text":"What's the blue ore?","next":"n3"},
-       {"text":"Can I help with the survey?","next":"n4","if":{"quest":"s_survey","state":"available"}}
+       {"text":"Can I help with the survey?","next":"n4","if":{"quest":"s_survey","state":"available"}},{"text":"Goodbye.","end":true}
       ]
      },
      "n2": {
