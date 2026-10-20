@@ -125,6 +125,7 @@ export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = tru
       preflightFirstPassRate: offline ? null : rate(ok.map(r => r.preflightFirstPass)), preflightFirstPassUnavailable: offline ? 'no model outline in offline mode (the procedural skeleton is valid by construction)' : undefined,
       preflightPassRate: rate(runs.map(r => (r.ok ? true : r.preflightAfterRepair))),
       outlineFallbackRate: rate(ok.map(r => r.outline.fellBack)),
+      outlineIsolatedRate: rate(ok.map(r => r.outline.isolated)), // model outline kept, one+ primitive removed as a gap
       solverCompletableRate: { firstPlayable: rate(ok.map(r => r.firstPlayableCompletable)), final: rate(ok.map(r => r.finalCompletable)) },
       detailAcceptance: { accepted, proposed, ratio: proposed ? +(accepted / proposed).toFixed(3) : null },
       replayDeterministicRate: rate(ok.map(r => r.replayDeterministic)),

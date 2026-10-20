@@ -73,11 +73,16 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   assert.equal(two.calls.length, 2);
   assert.match(two.calls[1].user, /\[picky_title\] title: the title must start with "The" \(hint: rename the game\)/, 'the repair round names the stable code, path and hint');
   assert.deepEqual(m.rounds.map(x => x.kind), ['procedural', 'model', 'model_repair']);
-  // A model that never validates: bounded rounds, then the valid skeleton, and the report says so.
+  // A model that never validates: bounded rounds, then the primitive it can't configure is isolated (a reported gap)
+  // and the model's world and story are kept.
   const stubborn = fakeWriter([needsModel]);
   const f = await writeOutline({ writer: stubborn, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
   assert.equal(stubborn.calls.length, 2);
-  assert.ok(f.ok && f.fellBack && f.source === 'procedural');
+  assert.ok(f.ok && f.isolated && f.source === 'fake-writer' && f.doc.title === 'Drowned Lamp');
+  assert.deepEqual(f.removed.map(r => r.use), ['gameplay.test.picky']);
+  // No usable draft at all: the valid skeleton, and the report says so.
+  const garbage = await writeOutline({ writer: fakeWriter(['no json here']), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, maxRounds: 1 });
+  assert.ok(garbage.ok && garbage.fellBack && garbage.source === 'procedural');
 });
 
 test('model outline: static plot analysis (plotGraph) and verification problems drive repair rounds', async () => {

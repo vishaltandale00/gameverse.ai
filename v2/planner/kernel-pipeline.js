@@ -69,7 +69,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const provenance = extra => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
     // Publish before full verification: preflight passed and the world booted; the verifier's report follows.
     timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: null, verification: { ok: true, source: 'preflight', pending: true, preflightMs: null }, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: null, verification: { ok: true, source: 'preflight', pending: true, preflightMs: null }, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs });
     t = performance.now();
     const base = await verifyDocument(current, registry, logic, { budgetMs: cfg.solveBudgetMs });
@@ -125,7 +125,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     }
     timings.totalMs = ms(t0);
     ctx.stage('complete', { timings, detail: { proposed: detail.proposed, accepted: detail.accepted, rejected: detail.rejected }, gaps: filled });
-    return { doc: current, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) }, base };
+    return { doc: current, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, base };
   }
 
   async function revise(job, ctx) {
