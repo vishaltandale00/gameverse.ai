@@ -11,6 +11,7 @@ import { testSpace } from '../v2/kernel/testing.js';
 import spaceGraph from '../v2/primitives/engine/space-graph.js';
 import storyboard from '../v2/primitives/plot/storyboard.js';
 import inventory from '../v2/primitives/gameplay/inventory.js';
+import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 
 const P = defaults => Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, { type: 'json', default: v }]));
 const fx = (id, intent, params, { card = {}, ...rest } = {}) => ({ id, ...rest, card: { intent, views: ['any'], params: P(params), ...card } });
@@ -79,6 +80,34 @@ export const ledgeSpace = {
     };
   },
 };
+
+// ---------- real 2D spaces: level painting and platforming ----------
+
+/** Paints cells through the space's bake(): rows are strings, top line = highest y; legend maps chars to blocks. */
+export const rows = { id: 'engine.generate.fixture-rows', card: { intent: 'test: paint cells from text rows', views: ['any'], params: P({ rows: [], legend: {}, layer: null }) },
+  install(rt, cfg, inst) { const H = cfg.rows.length; rt.space(inst.space).bake(cfg.rows.flatMap((line, i) => [...line].map((ch, x) => ({ at: [x, H - 1 - i], block: cfg.legend[ch] ?? null })).filter(c => c.block)), rt, cfg.layer ? { layer: cfg.layer } : {}); } };
+
+/** Side-view platforming on a gravity space via slide(): move axes run, `jump` from the ground, a second jump with double_jump. */
+export const platformer = fx('gameplay.fixture.platformer', 'test: run and jump', { run: 6, jump: 17 }, {
+  card: { provides: { actions: ['jump'] }, envelope: (c, abilities) => ({ mode: 'continuous', run: c.run, jumpHeight: Math.floor(c.jump ** 2 / 120), jumpDistance: Math.floor(c.run * 2 * c.jump / 60), doubleJump: abilities.has('double_jump') }) },
+  install(rt, cfg) {
+    rt.action('jump', () => {
+      const p = rt.player(); if (!p) return; const b = p.components.body, s = rt.store('gameplay.fixture.platformer');
+      if (b.grounded) { b.vel[1] = cfg.jump; s.air = 0; }
+      else if (rt.test({ ability: 'double_jump' }) && !(s.air > 0)) { b.vel[1] = cfg.jump; s.air = 1; }
+    });
+    rt.system('movement', rt => {
+      const p = rt.player(); if (!p) return;
+      const api = rt.space(p.space), b = p.components.body; b.vel ??= [0, 0];
+      b.vel[0] = cfg.run * Math.sign(rt.input.axes?.move?.[0] || 0);
+      b.vel[1] += (api.gravityAt(p.at)[1] || 0) * rt.dt;
+      const r = api.slide(p, [b.vel[0] * rt.dt, b.vel[1] * rt.dt], rt);
+      if (r.blocked.y) b.vel[1] = 0;
+      b.grounded = r.grounded;
+      if (p.at[1] < 0.2) end(rt, 'lost', 'fell');
+    });
+  },
+});
 
 // ---------- boards ----------
 
@@ -375,9 +404,9 @@ export const travel = fx('gameplay.fixture.travel', 'test: macro travel options'
 
 // ---------- catalogues and documents ----------
 
-export const FIXTURES = [step, glide, spawner, abilities, falling, slide, match, pellets, chasers, bullets, runner, melee, launcher, balls, battle, travel, ...Object.values(breakers)];
+export const FIXTURES = [rows, platformer, step, glide, spawner, abilities, falling, slide, match, pellets, chasers, bullets, runner, melee, launcher, balls, battle, travel, ...Object.values(breakers)];
 export function fixtureCatalogue(extra = []) {
-  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, storyboard, inventory, ...FIXTURES, ...extra]);
+  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, ...spaces2d.filter(p => p.id !== 'engine.space.graph'), storyboard, inventory, ...FIXTURES, ...extra]);
   return { registry, logic: buildLogic(registry, Logic) };
 }
 export function normalized(doc, cat = fixtureCatalogue()) {
