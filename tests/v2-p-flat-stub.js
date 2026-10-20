@@ -4,6 +4,7 @@
 // (kind, size, config, layers, getCell/cellsIn, collisionOf, bounds, anchor).
 // The fakes are never registered in the catalogue.
 import { compile } from '../v2/kernel/testing.js';
+import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 
 export function recordingContext(canvas) {
   const calls = new Map(), state = { fillStyle: '#000', strokeStyle: '#000', globalAlpha: 1, globalCompositeOperation: 'source-over', font: '10px sans-serif', lineWidth: 1, filter: 'none' };
@@ -64,85 +65,65 @@ export function drawCalls(view) {
   return out;
 }
 
-const v2 = a => [a?.[0] ?? 0, a?.[1] ?? 0];
-function fakeSpace(kind, extra = {}) {
-  return {
-    id: `engine.space.${kind}`,
-    card: { intent: `Fake ${kind} space for flat renderer tests.`, views: ['any'], params: { size: { type: 'list', default: [32, 18], of: { type: 'number' } }, tile: { type: 'integer', default: 16 }, mode: { type: 'string', default: 'side' }, layers: { type: 'list', default: ['bg', 'solid', 'fg'], of: { type: 'string' } }, topology: { type: 'string', default: 'square' }, yAxis: { type: 'string', default: 'up' }, wrap: { type: 'string', default: 'none' }, view: { type: 'string', default: 'side' }, lanes: { type: 'integer', default: 3 }, cells: { type: 'json', default: null } }, provides: { capabilities: ['position', 'distance'], events: ['enter_zone', 'leave_zone', 'cell_changed'] } },
-    install(rt, config, instance) {
-      const sid = instance.id, [W, Hh] = config.size;
-      const st = () => (rt.state.spaces[sid].cells ??= structuredClone(config.cells || defaultCells(kind, W, Hh)));
-      const zones = () => rt.doc.spaces.find(s => s.id === sid)?.zones || [];
-      const zoneAt = at => zones().find(z => z.rect && at[0] >= z.rect[0] && at[1] >= z.rect[1] && at[0] < z.rect[2] && at[1] < z.rect[3])?.id ?? null;
-      const api = {
-        kind, size: config.size, config, layers: config.layers, anchor: kind === 'grid' ? 'cell' : 'center',
-        place(e) { e.at = e.at ? v2(e.at).concat(e.at.length > 2 ? [e.at[2]] : []) : [2, 2]; e.zone = zoneAt(e.at); }, remove() {}, pos: e => e.at, setPos(e, at) { e.at = at.slice(); e.zone = zoneAt(at); },
-        entitiesAt: () => [], inZone: (e, z) => zoneAt(e.at) === z, zoneAt, teleport(e, { at }) { if (at) e.at = at.slice(); }, nearest: () => null,
-        distance: (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]),
-        getCell(at, layer = 'solid') { return st()[layer]?.[`${Math.floor(at[0])},${Math.floor(at[1])}`] ?? null; },
-        cellsIn([[x0, y0], [x1, y1]], layer = 'solid') { const out = [], L = st()[layer] || {}; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const b = L[`${x},${y}`]; if (b != null) out.push({ at: [x, y], block: b }); } return out; },
-        setCell(at, block, rt2, layer = 'solid') { const L = st()[layer] ??= {}; const k = `${at[0]},${at[1]}`, from = L[k] ?? null; if (block == null) delete L[k]; else L[k] = block; rt2.emit('cell_changed', { at, from, to: block }); return true; },
-        collisionOf: b => (rt.doc.content?.blocks?.find(x => x.id === b)?.solid === false ? 'none' : 'solid'),
-        bounds: () => ({ min: [0, 0], max: [W, Hh], wrap: [false, false] }),
-        cellCenter: c => [c[0] + (config.topology === 'hex' && c[1] % 2 ? 0.5 : 0), c[1]],
-        ...extra,
-      };
-      if (kind === 'physics2d') { api.walls = () => [{ id: 'floor', kind: 'box', x0: 0, y0: 0, x1: W, y1: 0.5 }]; api.joints = () => []; }
-      if (kind === 'track') api.bounds = () => ({ min: [Math.max(0, (rt.player()?.at?.[0] || 0) - 5), 0, 0], max: [(rt.player()?.at?.[0] || 0) + 80, config.lanes, 4], wrap: [false, false] });
-      rt.defineSpace(sid, api);
-    },
-  };
-}
-function defaultCells(kind, W, H) {
-  const solid = {}, bg = {}, fg = {};
-  if (kind === 'tilemap') {
-    for (let x = 0; x < W; x++) { solid[`${x},0`] = 'stone'; solid[`${x},1`] = x > 10 && x < 14 ? undefined : 'stone'; }
-    for (let x = 6; x < 10; x++) solid[`${x},5`] = 'stone';
-    for (let x = 11; x < 14; x++) solid[`${x},1`] = 'water';
-    for (let x = 0; x < W; x++) for (let y = 2; y < H; y++) if ((x * 7 + y * 3) % 5 === 0) bg[`${x},${y}`] = 'stone';
-    fg['3,3'] = 'stone'; solid['16,2'] = 'spikes';
-    for (const k of Object.keys(solid)) if (solid[k] === undefined) delete solid[k];
-  }
-  if (kind === 'grid') { for (let x = 0; x < W; x++) { solid[`${x},0`] = 'wall'; solid[`${x},${H - 1}`] = 'wall'; } for (let y = 0; y < H; y++) { solid[`0,${y}`] = 'wall'; solid[`${W - 1},${y}`] = 'wall'; } solid['4,4'] = 'wall'; solid['5,4'] = 'wall'; solid['5,5'] = 'wall'; }
-  return { solid, bg, fg };
-}
-export const fakeSpaces = Object.fromEntries(['tilemap', 'grid', 'physics2d', 'arena2d', 'track', 'graph', 'none'].map(k => [k, fakeSpace(k)]));
-
+/** Fills cells on game start from its config: cells = [{ box:[[x0,y0],[x1,y1]], block, layer? }]. */
+export const cellFiller = {
+  id: 'gameplay.flattest.cells',
+  card: { intent: 'Test helper: fills boxes of cells on game start.', params: { cells: { type: 'json', default: [] } }, reads: ['content.blocks'] },
+  install(rt, config) {
+    rt.on('game_start', (d, r) => { const sid = r.doc.spaces[0].id, api = r.space(sid); for (const c of config.cells) { const [[x0, y0], [x1, y1]] = c.box; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) api.setCell([x, y], c.block, r, null, c.layer); } });
+  },
+};
 /** A gameplay primitive that walks the player right and hops, to animate states. */
 export const mover = {
   id: 'gameplay.flattest.mover',
   card: { intent: 'Test mover: walks the player and hops, emitting jump/land/hit.', params: { speed: { type: 'number', default: 4 } }, provides: { events: ['jump', 'land', 'hit', 'defeated'] } },
   install(rt, config) {
-    rt.on('game_start', (d, r) => { const sid = r.doc.spaces[0].id; r.spawn('slime', { space: sid, at: [6, 2.6], components: { body: { size: [0.9, 0.8], vel: [0, 0], grounded: true } } }); r.spawn('coin', { space: sid, at: [8, 3] }); });
+    rt.on('game_start', (d, r) => { const sid = r.doc.spaces[0].id, kind = r.space(sid).kind; if (kind === 'none') return; const at = kind === 'grid' ? [[6, 2], [7, 5]] : kind === 'track' ? [[12, 0, 0.5], [20, 2, 1]] : [[6, 2.6], [8, 3]]; r.spawn('slime', { space: sid, at: at[0], components: { body: { size: [0.9, 0.8], vel: [0, 0], grounded: true } } }); r.spawn('coin', { space: sid, at: at[1] }); });
     rt.system('movement', r => {
       const p = r.player(); if (!p || !p.at) return;
+      const kind = r.space(p.space).kind, f = r.state.frame;
+      if (kind === 'grid') { if (f % 20 === 0) p.at = [Math.min(8, p.at[0] + 1), p.at[1]]; return; }
+      if (kind === 'track') { p.at = [p.at[0] + config.speed / 60, 1 + Math.sin(f / 40) * 0.5, p.at[2]]; return; }
       const b = (p.components.body ??= { size: [0.8, 1.2], vel: [0, 0], grounded: true, facing: 1 });
-      const f = r.state.frame;
       b.vel = [config.speed, f % 60 < 20 ? 3 : f % 60 < 40 ? -3 : 0]; b.grounded = f % 60 >= 40; b.facing = 1;
       p.at = [p.at[0] + b.vel[0] / 60, p.at[1] + (b.grounded ? 0 : b.vel[1] / 60)];
       if (f % 60 === 0) r.emit('jump', { who: 'player' });
       if (f % 60 === 40) r.emit('land', { who: 'player' });
-      if (f % 45 === 10) r.emit('hit', { who: 'player', target: Object.keys(r.state.entities).find(id => id !== 'player') || 'player' });
+      if (f % 45 === 10) r.emit('hit', { who: 'player', target: Object.keys(r.state.entities).find(id => id !== 'player') || 'player', amount: 3 });
     });
   },
 };
 
-/** A minimal document for a fake space kind with a player and a couple of archetypes. */
-export function docFor(kind, { graphics = [], spaceWith = {}, content = {}, player = {}, zones } = {}) {
+const SPACE_WITH = {
+  tilemap: { size: [32, 18], tile: 16, mode: 'side' },
+  grid: { size: [10, 8], layers: ['terrain'], rules: { wall: { pass: false } } },
+  physics2d: { bounds: [20, 12], walls: [{ id: 'floor', kind: 'box', at: [10, 0.25], size: [20, 0.5] }] },
+  arena2d: { size: [16, 9], solids: [[0, 0, 16, 1]], platforms: [{ x0: 4, x1: 8, y: 4 }] },
+  track: { lanes: 3 },
+  none: {},
+};
+const CELLS = {
+  tilemap: [{ box: [[0, 0], [31, 1]], block: 'stone' }, { box: [[11, 1], [13, 1]], block: 'water' }, { box: [[6, 5], [9, 5]], block: 'stone' }, { box: [[16, 2], [16, 2]], block: 'spikes' }, { box: [[2, 3], [4, 8]], block: 'stone', layer: 'bg' }, { box: [[20, 4], [21, 5]], block: 'stone', layer: 'fg' }],
+  grid: [{ box: [[0, 0], [9, 0]], block: 'wall' }, { box: [[0, 7], [9, 7]], block: 'wall' }, { box: [[0, 0], [0, 7]], block: 'wall' }, { box: [[9, 0], [9, 7]], block: 'wall' }, { box: [[4, 3], [5, 4]], block: 'wall' }, { box: [[2, 5], [2, 5]], block: 'gem' }],
+};
+const START = { tilemap: [3, 2.6], grid: [2, 2], physics2d: [3, 3], arena2d: [3, 2], track: [0, 1, 0.5], none: null };
+
+/** A minimal document on a real 2D space with a player and a couple of archetypes. */
+export function docFor(kind, { graphics = [], spaceWith = {}, content = {}, player = {}, zones, cells } = {}) {
   return {
     schema: 'gameverse.v2.game/0.2', id: `flat-${kind}`, title: `Flat ${kind} test`, logline: 'a test in a cave',
-    spaces: [{ id: 'world', use: `engine.space.${kind}`, with: spaceWith, zones: zones || [{ id: 'start', name: 'Start', rect: [0, 0, 16, 18] }, { id: 'east', name: 'East', rect: [16, 0, 32, 18] }] }],
-    content: { blocks: [{ id: 'stone', color: '#5a5668', solid: true, tile: 'rock' }, { id: 'water', color: '#2a5a9a', solid: false, tags: ['liquid'], transparent: true }, { id: 'spikes', color: '#b0b4b8', solid: false, tags: ['hazard'] }, { id: 'wall', color: '#3a3aa8', solid: true }], archetypes: [{ id: 'hero', kind: 'player', components: {} }, { id: 'slime', kind: 'enemy', components: { health: { max: 3 } } }, { id: 'coin', kind: 'pickup', components: {} }], ...content },
-    systems: [{ use: 'gameplay.flattest.mover' }],
+    spaces: [{ id: 'world', use: `engine.space.${kind}`, with: { ...SPACE_WITH[kind], ...spaceWith }, zones: zones || (kind === 'tilemap' ? [{ id: 'start', name: 'Start', rect: [0, 0, 16, 18] }, { id: 'east', name: 'East', rect: [16, 0, 32, 18] }] : []) }],
+    content: { blocks: [{ id: 'stone', color: '#5a5668', solid: true, tile: 'rock' }, { id: 'water', color: '#2a5a9a', solid: false, tags: ['liquid'], transparent: true }, { id: 'spikes', color: '#b0b4b8', solid: false, tags: ['hazard'] }, { id: 'wall', color: '#3a3aa8', solid: true }, { id: 'gem', color: '#ff5a7a', solid: false, tile: 'gem' }], archetypes: [{ id: 'hero', kind: 'player', components: {} }, { id: 'slime', kind: 'enemy', components: { health: { hp: 3, max: 3 } } }, { id: 'coin', kind: 'pickup', components: {} }], ...content },
+    systems: [{ use: 'gameplay.flattest.cells', with: { cells: cells ?? CELLS[kind] ?? [] } }, { use: 'gameplay.flattest.mover' }],
     graphics,
-    player: { archetype: 'hero', space: 'world', at: [3, 2.6], ...player },
+    player: { archetype: 'hero', space: 'world', at: START[kind], ...player },
   };
 }
 
 /** Compile in "browser" mode with a fake view; returns { rt, view, checked }. */
 export function mount(doc, primitives, { seed = 1 } = {}) {
   const view = fakeView();
-  const out = compile(doc, { primitives: [...Object.values(fakeSpaces), mover, ...primitives], headless: false, view, seed });
+  const out = compile(doc, { primitives: [...spaces2d, cellFiller, mover, ...primitives], headless: false, view, seed });
   return { ...out, view };
 }
 /** Step the sim and draw frames in lockstep. */

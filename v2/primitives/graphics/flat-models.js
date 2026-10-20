@@ -14,7 +14,7 @@ import { drawVector, glow } from './flat-vector.js';
 import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, drawBones, rigFrom, isFighterSpec, RIG_HEIGHT } from './flat-rig.js';
 import { roleOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
 
-export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win'];
+export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win', 'dazed'];
 
 /** The model spec for an entity: its own components.model, else its archetype's. */
 export function modelSpec(doc, e) {
@@ -73,7 +73,8 @@ export function lookOf(H, e, view = 'side') {
 }
 
 // ---------- presentation state ----------
-const deadOf = e => { const h = e.components?.health; return h && typeof h === 'object' && (h.hp ?? h.current ?? 1) <= 0 && (h.max ?? 1) > 0 && h.hp !== undefined; };
+const deadOf = e => { const h = e.components?.health; return Boolean(h && typeof h === 'object' && (h.dead || (Number.isFinite(h.hp) && h.hp <= 0))); };
+const stunned = e => Object.entries(e.components?.status || {}).some(([k, v]) => v > 0 && /stun|daze|dizzy|confus|sleep|frozen|freeze/.test(k));
 /** Presentation state of an entity this frame: { state, age, speed }. Updates the tracker (cache only). */
 export function presentState(F, item, tr, view) {
   const e = item.e, now = F.t, body = e.components?.body || {}, vel = item.vel || [0, 0];
@@ -85,6 +86,7 @@ export function presentState(F, item, tr, view) {
   else if (now - tr.attack < 0.36) state = 'attack';
   else if (now - tr.dash < 0.22 || body.dashing) state = 'dash';
   else if (view === 'side' && body.grounded === false) state = body.wall || body.onWall ? 'wallslide' : (vel[1] > 0.3 ? 'jump' : 'fall');
+  else if (stunned(e)) state = 'dazed';
   else if (body.crouch) state = 'crouch';
   else if (body.guard || body.blocking) state = 'block';
   else if (now - tr.land < 0.12) state = 'land';
@@ -162,7 +164,7 @@ export function drawEntity(F, item, P) {
   // Pickups bob and goals pulse.
   if (L.role === 'pickup' && !item.ghost) y -= (Math.sin(t * 3 + hash(seedOf(item.id)) * 6) * 0.5 + 0.5) * P.unit * 0.12;
   // Invulnerability blinking after a hit.
-  const hp = e.components?.health, inv = (hp && (hp.invuln ?? hp.iframes ?? 0)) || e.components?.status?.invulnerable;
+  const hp = e.components?.health, inv = (hp && hp.invulnerable > 0) || e.components?.status?.invulnerable > 0;
   if (inv && Math.floor(t * 16) % 2 === 0 && !item.ghost) alpha *= 0.3;
   const flash = S.state === 'hurt' ? clamp01(1 - S.age / 0.14) : item.ghost?.cause === 'die' ? clamp01(1 - item.k * 4) : 0;
   // Shadow on the ground plane.
@@ -179,6 +181,13 @@ export function drawEntity(F, item, P) {
   tr.trail = tr.trail.filter(p => t - p.t < 0.2);
   for (const p of tr.trail) { const a = (1 - (t - p.t) / 0.2) * 0.35 * alpha; drawLook(F, L, item, tr, S, { ...P, x: p.x, y: p.y }, { sx, sy, rot, alpha: a, flash: 0, tint: true }); }
   drawLook(F, L, item, tr, S, P, { x, y, sx, sy, rot, alpha, flash });
+  // Stunned: stars circle the head.
+  if (S.state === 'dazed' && !item.ghost) for (let i = 0; i < 3; i++) {
+    const a = (F.reduced ? 0 : t * 5) + (i * TAU) / 3, R = P.w * 0.45;
+    g.save(); g.translate(x + Math.cos(a) * R, y - P.h * 1.08 + Math.sin(a) * R * 0.3); g.fillStyle = '#ffe14a'; g.beginPath();
+    for (let k = 0; k < 8; k++) { const b = (k / 8) * TAU, rr = k % 2 ? R * 0.12 : R * 0.3; g.lineTo(Math.cos(b) * rr, Math.sin(b) * rr); }
+    g.closePath(); g.fill(); g.restore();
+  }
   // Halo for glowing models and light carriers.
   if (L.glow && !item.ghost) glow(g, x, y - P.h * 0.55, Math.max(P.w, P.h) * (L.glow.radius > 3 ? 0.9 : 0.75), col(L.glow.color, '#ffd890'), 0.55 + Math.sin(t * 5) * 0.08);
   if (L.role === 'goal' && !item.ghost) { const pulse = 0.5 + 0.5 * Math.sin(t * 3); glow(g, x, y - P.h * 0.5, Math.max(P.w, P.h) * (1.1 + pulse * 0.3), '#fff2a0', 0.35 + pulse * 0.2); }
