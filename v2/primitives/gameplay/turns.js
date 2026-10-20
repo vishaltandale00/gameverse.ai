@@ -34,6 +34,10 @@ const ACTION_FIELDS = {
 };
 
 const SIDE_FIELDS = { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string' }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
+const TURN_VERBS = ['turn_act', 'turn_move', 'end_turn', 'next_phase', 'select_unit'];
+/** Verbs other modes (cards...) add to the turn modal: registered at their install, read when a battle opens. */
+export const modalExtra = rt => [...(rt.caches['gameplay.turns:modal'] ??= new Set())];
+export const allowInTurnModal = (rt, verbs) => { const set = (rt.caches['gameplay.turns:modal'] ??= new Set()); for (const v of verbs) set.add(v); };
 const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'boolean', default: true }, do: { type: 'effects', default: [] } };
 
 export default {
@@ -59,6 +63,7 @@ export default {
       despawnFallen: { type: 'boolean', default: false, effect: 'remove fallen units from the world' },
       maxRounds: { type: 'integer', default: 0, min: 0, max: 9999, effect: 'end after this many rounds (0 = no limit)' },
       autoStart: { type: 'boolean', default: true, effect: 'start at game start (otherwise start_turns)' },
+      modal: { type: 'boolean', default: true, effect: 'while a battle runs, only turn verbs (and verbs other modes register, e.g. play_card) are accepted' },
       aiDelay: { type: 'integer', default: 0, min: 0, max: 600, unit: 'frames', effect: 'frames between AI decisions (for presentation)' },
       onVictory: { type: 'effects', default: [], effect: 'when a player-controlled side wins' },
       onDefeat: { type: 'effects', default: [], effect: 'when the last player-controlled side is defeated' },
@@ -154,6 +159,7 @@ export default {
     function stop(s, winner) {
       if (!s.active) return;
       s.active = false; s.winner = winner; s.current = null;
+      if (config.modal) rt.closeModal(ID);
       rt.emit('turns_over', { winner });
       const playerSides = config.sides.filter(x => x.control === 'player').map(x => x.id);
       if (winner && playerSides.includes(winner)) rt.run(config.onVictory);
@@ -164,6 +170,7 @@ export default {
     function start(s) {
       if (s.active) return;
       s.active = true; s.round = 0; s.defeated = {}; s.winner = null; s.ptr = {}; s.decisions = 0;
+      if (config.modal) rt.openModal(ID, { actions: [...TURN_VERBS, ...modalExtra(rt)], kind: 'battle' });
       gather(s);
       rt.emit('turns_start', { sides: config.sides.map(x => x.id), order: config.order });
       roundStart(s);

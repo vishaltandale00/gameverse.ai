@@ -31,7 +31,7 @@ export const waterSpace = {
 
 export const stubHealth = {
   id: 'gameplay.combat.health',
-  card: { intent: 'test stub: hp in components.health', provides: { events: ['damaged', 'defeated', 'defeated:*', 'died'] } },
+  card: { intent: 'test stub: hp in components.health', ambient: true, provides: { events: ['damaged', 'defeated', 'defeated:*', 'died'] } },
   logic(logic) {
     const hp = (rt, e, c) => { const t = rt.resolve(e.who, c); if (!t) return null; const h = (t.components.health ??= { max: 10 }); h.hp ??= h.max; return { t, h }; };
     logic.effect('damage', { run: (e, rt, c) => { const r = hp(rt, e, c); if (!r || r.h.hp <= 0) return; r.h.hp = Math.max(0, r.h.hp - (e.amount ?? 1)); rt.emit('damaged', { who: r.t.id, amount: e.amount ?? 1 }); if (r.h.hp === 0) { rt.emit('died', { who: r.t.id }); rt.emitTyped('defeated', r.t.archetype, { who: r.t.id }); } } });

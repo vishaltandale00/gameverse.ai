@@ -91,6 +91,7 @@ export default {
       if (g.kind === 'mash') a.meter = 0;
       s.plays[id] = (s.plays[id] ?? 0) + 1;
       rt.state.flags.paused = Boolean(g.freeze);
+      rt.openModal(ID, { actions: ['mg_press', 'mg_input', 'mg_quit'], kind: 'minigame' });
       rt.emitTyped('minigame_start', id, { game: id, kind: g.kind, keys: a.keys ?? null });
       runBound(rt, g.onStart, { actor: 'player' });
     }
@@ -100,7 +101,7 @@ export default {
       s.active = null; s.results[a.game] = result; s.last = result;
       if (a.frozen) thaw(a);
       if (p && g.returnPlayer && a.ret) { if (p.space !== a.ret.space) rt.moveToSpace(p, a.ret.space, a.ret.at); else rt.space(p.space).setPos(p, a.ret.at, rt); }
-      delete rt.state.flags.paused;
+      delete rt.state.flags.paused; rt.closeModal(ID);
       rt.emitTyped('minigame_end', a.game, { game: a.game, result, hits: a.hits, misses: a.misses });
       runBound(rt, result === 'won' ? g.onWin : result === 'lost' ? g.onLose : [], { actor: 'player' });
       runBound(rt, g.onEnd, { actor: 'player' });
@@ -166,7 +167,7 @@ export default {
 
     rt.options(rt => {
       const a = st().active; if (!a) return [];
-      if (a.kind === 'timing' || a.kind === 'mash') return [{ label: 'minigame press', actions: { mg_press: true } }, { label: 'minigame wait', actions: {} }];
+      if (a.kind === 'timing' || a.kind === 'mash') return [{ label: 'minigame press', actions: { mg_press: true } }, { label: 'minigame wait', actions: {}, modal: ID }];
       if (a.kind === 'sequence') return GAME.get(a.game).sequence.verbs.map(k => ({ label: `minigame ${k}`, actions: { mg_input: k } }));
       return [];
     });

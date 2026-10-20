@@ -10,6 +10,7 @@
 // Turn boundaries come from gameplay.turns (sides map to owners). Hit points
 // stay with gameplay.combat.health: unblocked damage runs its `damage` effect.
 import { compare } from '../../kernel/logic.js';
+import { allowInTurnModal } from './turns.js';
 import { alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
 
 const ID = 'gameplay.cards';
@@ -86,6 +87,7 @@ export default {
     return errors;
   },
   install(rt, config) {
+    allowInTurnModal(rt, ['play_card', 'attack_with', 'pick_card']);
     const defs = () => new Map((rt.doc.content?.cards || []).map(c => [c.id, c]));
     const st = () => {
       const s = rt.store(ID);
@@ -139,7 +141,7 @@ export default {
       o.hand.push(c); rt.emit('card_drawn', { who: id, card: c.card, uid: c.uid });
       return c;
     }
-    function hurt(id, amount, by) { if (amount > 0 && rt.entity(id)) rt.run([{ do: 'damage', who: id, amount, by }]); }
+    function hurt(id, amount, by) { if (amount > 0 && rt.entity(id) && rt.canRun('damage')) rt.run([{ do: 'damage', who: id, amount, by }]); }
     function dealDamage(s, from, to, base) {
       const fm = fighter(s, from).mods, D = s.fighters[to] ?? fighter(s, to);
       let amount = base + (fm.strength ?? 0);
@@ -283,6 +285,7 @@ export default {
         const pool = config.rewards.pool.slice(); s.reward = [];
         while (s.reward.length < config.rewards.choices && pool.length) s.reward.push(pool.splice(Math.floor(rt.random() * pool.length), 1)[0]);
         rt.emit('card_reward', { choices: s.reward.slice() });
+        rt.openModal(ID, { actions: ['pick_card'], kind: 'card_reward' });
       }
     });
 
@@ -293,7 +296,7 @@ export default {
       const s = st(); if (!s.reward) return;
       const card = typeof v === 'number' ? s.reward[v - 1] : s.reward.includes(v) ? v : null; // ids, or 1-based index ('skip' takes nothing)
       if (card) { s.deck.push({ card }); rt.emit('card_picked', { card }); }
-      s.reward = null;
+      s.reward = null; rt.closeModal(ID);
     });
 
     rt.system('rules', rt => {
