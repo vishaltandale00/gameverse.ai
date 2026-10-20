@@ -14,5 +14,6 @@ import rts from './rts.js';
 import automation from './automation.js';
 import rewind from './rewind.js';
 import portal from './portal.js';
+import sports from './sports.js';
 
-export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame, rts, automation, rewind, portal];
+export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame, rts, automation, rewind, portal, sports];
