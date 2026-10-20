@@ -5,5 +5,6 @@ import vehicleBoat from './vehicle-boat.js';
 import vehicleAircraft from './vehicle-aircraft.js';
 import race from './race.js';
 import turns from './turns.js';
+import cards from './cards.js';
 
-export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns];
+export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards];
