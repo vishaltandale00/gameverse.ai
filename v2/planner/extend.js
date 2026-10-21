@@ -33,7 +33,7 @@ import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { preflight } from '../kernel/document.js';
 import { checkComposition } from './compose-check.js';
 import { loopProblems } from './loop-check.js';
-import { contractsFor, populateProblems, referenceOf, idsAt } from './content.js';
+import { contractsFor, populateProblems, docRefs } from './content.js';
 import { engageDocument } from './engage.js';
 import { formBundle } from './bundles.js';
 import { pickOption, servesContext, STRUCTURAL } from './retrieval.js';
@@ -301,12 +301,7 @@ export function paramsForm(doc, use, { registry, logic }) {
   const card = cardOf(registry, use);
   const at = instancesWithPaths(doc).find(x => x.inst.use === use)?.path;
   if (!card || !at) return null;
-  /** @type {RefContext} */
-  const refs = { allowed(spec) {
-    const section = referenceOf(registry, spec);
-    if (!section) return null;
-    return [...new Set(idsAt(doc, section))];
-  } };
+  const refs = docRefs(registry, doc);
   /** @type {Array<{ key: string, codec: Codec, schema: Record<string, unknown> }>} */
   const slots = [];
   for (const [key, spec] of Object.entries(card.params || {})) {

@@ -20,7 +20,7 @@ import { preflight } from '../kernel/document.js';
 import { rulesOf, KERNEL_CODES } from '../kernel/rules.js';
 import { sectionShape, ID_PATTERN } from '../kernel/sections.js';
 import { strictSpec, decode, answerProblems } from './outline-form.js';
-import { referenceOf, idsAt } from './content.js';
+import { docRefs } from './content.js';
 import { instancesWithPaths } from './templates.js';
 import { requiredBy } from './bundles.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
@@ -87,8 +87,6 @@ export function formValues(s, limit = 16, depth = 0) {
   return [];
 }
 
-/** The reference context of a document: a field's ids are the document's ids of the section its declaration names. @param {RegistryLike} registry @param {unknown} doc @returns {RefContext} */
-export const docRefs = (registry, doc) => ({ allowed(spec) { const section = referenceOf(registry, spec); return section ? [...new Set(idsAt(doc, section))] : null; } });
 
 /**
  * A card's params as its forms ask them: each declared param, a list that defines a reference kind (card.defines `in`)

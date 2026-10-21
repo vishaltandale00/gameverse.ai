@@ -27,6 +27,7 @@ import { spawnerId } from './engage.js';
 import { cardLoop } from './loop.js';
 import { spaceExtent } from './world.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
+import { referenceIndexes } from '../kernel/document.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /**
@@ -474,4 +475,21 @@ export function declaredAt(registry, keys) {
     spec = typeof k === 'number' ? (spec.type === 'list' ? spec.of : null) : (spec.type === 'object' ? prop(spec.fields, k) : null);
   }
   return isObj(spec) ? spec : null;
+}
+
+/**
+ * The reference context of the strict forms over a document (outline-form RefContext): a `ref` field's ids are the
+ * document's ids of its kind as preflight indexes them (kernel/document.js referenceIndexes: base kinds, card.defines,
+ * spaces, zones, section paths); a field whose declaration names a section draws from that section's ids; [] when there
+ * are none to name; null for a field that is no reference.
+ * @param {RegistryLike} registry @param {unknown} doc @returns {{ allowed: (spec: any) => string[] | null }}
+ */
+export function docRefs(registry, doc) {
+  const indexes = referenceIndexes(doc, registry);
+  return { allowed(spec) {
+    const ref = isObj(spec) && spec.type === 'list' && isObj(spec.of) && spec.of.type === 'ref' ? spec.of : spec;
+    if (isObj(ref) && ref.type === 'ref' && isStr(ref.to)) return [...(indexes[ref.to] || [])].sort();
+    const section = referenceOf(registry, spec);
+    return section ? [...new Set(idsAt(doc, section))] : null;
+  } };
 }
