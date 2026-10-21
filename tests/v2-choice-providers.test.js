@@ -141,7 +141,6 @@ test('choice providers: every choice verb of every loop card offers a value in a
     }
     if (!ok) failures.push(`${card.id}.${verb}: ${tried.join(' | ')}`);
   }
-  if (process.env.CHOICE_DEBUG) console.log(passed.join('\n'));
   assert.ok(passed.length + failures.length > 40, `checked ${passed.length + failures.length} choice verbs`);
   assert.deepEqual(failures, []);
 });
