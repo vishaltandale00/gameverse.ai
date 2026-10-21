@@ -91,6 +91,30 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const job = jobs.submit({ gameId: id, prompt, answers, seed: typeof seed === 'number' && Number.isInteger(seed) ? seed : undefined, kind: 'create', submittedAt: Date.now() });
       return { gameId: id, jobId: job.id };
     }],
+    // The answer to the question a create job stopped with (the template path's readings: 409 'needs_answer'): the
+    // job's failure record keeps the questions and the pick that asked them; each answer must be one of its question's
+    // options; a create job for the same game then builds the reading chosen from that pick, asking nothing again.
+    ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/answers$/, async (body, m) => {
+      const meta = await store.meta(m[1]);
+      if (!meta) throw Object.assign(Error('No such game.'), { status: 404 });
+      if (jobs.running().some(j => j.gameId === m[1])) throw Object.assign(Error('That game is still being built.'), { status: 409 });
+      const record = await store.failure(m[1], num(meta.lastFailure));
+      const asked = prop(record, 'question');
+      if (str(prop(prop(record, 'error'), 'code')) !== 'needs_answer' || !asked) throw Object.assign(Error('That game is not waiting for an answer.'), { status: 409 });
+      const questions = objects(prop(asked, 'questions')).map(q => ({ question: str(q.question), options: isList(q.options) ? q.options.map(String) : [] }));
+      const given = prop(body, 'answers');
+      const answers = isList(given) ? objects(given).map(a => ({ question: str(a.question).slice(0, 200), answer: str(a.answer).slice(0, 200) })) : [];
+      for (const q of questions) {
+        const a = answers.find(x => x.question === q.question);
+        if (!a || !q.options.includes(a.answer)) throw Object.assign(Error(`Answer "${q.question}" with one of: ${q.options.join(' | ')}`), { status: 400 });
+      }
+      const before = objects(prop(record, 'answers')).map(a => ({ question: str(a.question), answer: str(a.answer) })).filter(a => !questions.some(q => q.question === a.question));
+      const seed = prop(record, 'seed');
+      await store.updateMeta(m[1], { status: 'generating' });
+      const job = jobs.submit({ gameId: m[1], prompt: str(meta.prompt), answers: [...before, ...answers.filter(a => questions.some(q => q.question === a.question))], pick: prop(asked, 'pick'),
+        ...(typeof seed === 'number' && Number.isInteger(seed) ? { seed } : {}), kind: 'create', submittedAt: Date.now() });
+      return { gameId: m[1], jobId: job.id };
+    }],
     // Follow-up change: a parameter tweak (no model) or targeted model ops; a new version publishes and hot-loads.
     ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/revise$/, async (body, m) => {
       const meta = await store.meta(m[1]);

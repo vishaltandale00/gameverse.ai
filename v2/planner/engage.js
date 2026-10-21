@@ -116,13 +116,15 @@ function beside(start, k) {
  * The input is not modified. When the engaged document would not preflight, the input is returned unchanged
  * (ok false, with the errors), so this step can never break a playable document.
  * force: return the engaged document even when it does not preflight yet (a caller that repairs it next).
- * @param {Doc} input @param {RegistryLike} registry @param {LogicLike} logic @param {{ force?: boolean }} [options] @returns {EngageResult}
+ * only: engage only the instances of these primitives (an extension added onto a verified template: the template's own
+ * primitives are engaged already and stay as they are).
+ * @param {Doc} input @param {RegistryLike} registry @param {LogicLike} logic @param {{ force?: boolean, only?: ReadonlySet<string> | null }} [options] @returns {EngageResult}
  */
-export function engageDocument(input, registry, logic, { force = false } = {}) {
+export function engageDocument(input, registry, logic, { force = false, only = null } = {}) {
   const doc = clone(input);
   /** @type {EngageStep[]} */ const applied = [];
   /** @type {EngageSkip[]} */ const skipped = [];
-  const found = instances(doc, registry);
+  const found = instances(doc, registry).filter(f => !only || only.has(f.id));
   if (!found.length || !doc.player) return { doc: input, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
   doc.content = isObj(doc.content) ? doc.content : {};
   doc.content.archetypes = Array.isArray(doc.content.archetypes) ? doc.content.archetypes : [];

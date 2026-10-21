@@ -83,7 +83,7 @@ export function fakeWriter(replies, { model = 'fake-writer' } = {}) {
  */
 export function stepPick(req, { title = 'Test Game', premise = 'A test premise.', name = 'the idea' } = {}) {
   if (String(req.schema?.name || '') !== 'pick_templates') return null;
-  return JSON.stringify({ title, premise, primary: { name, kind: 'game', template: 'none' }, games: [], themes: [] });
+  return JSON.stringify({ title, premise, primary: { name, kind: 'game', template: 'none' }, games: [], themes: [], readings: [], mechanics: [] });
 }
 
 /** Decisions that answer from a function of the questions. */

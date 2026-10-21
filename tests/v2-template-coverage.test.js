@@ -54,7 +54,7 @@ test('templates: unique ids, unique concept lines, every one offered by the pick
   for (const t of TEMPLATES) assert.ok(/\S/.test(t.concept), `${t.id}: a concept line`);
   const offered = offeredTemplates(TEMPLATES, registry);
   assert.deepEqual(offered.map(t => t.id), ids, 'every template composes in this catalogue');
-  const p = pickForm(offered).schema.properties;
+  const p = pickForm(offered, registry).schema.properties;
   for (const at of [p.primary.properties.template, p.games.items.properties.template]) assert.deepEqual(at.enum, [...ids, 'none']);
   const system = pickSystem(offered, registry);
   for (const t of TEMPLATES) assert.equal(system.split('\n').filter(l => l.startsWith(`- ${t.id}: `) && l.includes(t.concept)).length, 1, `${t.id}: listed once with its concept line`);

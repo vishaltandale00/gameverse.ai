@@ -14,6 +14,7 @@ import { isObj, isStr, objects, prop, messageOf } from '../kernel/guards.js';
 import { buildLogic } from '../kernel/world.js';
 import { Logic } from '../kernel/logic.js';
 import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, prefixOf } from './compose.js';
+import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -24,9 +25,15 @@ import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, pre
 /** The primary: the one game or genre played. @typedef {{ name: string, kind: string, template: string }} PickPrimary */
 /** Another game or genre the idea plays, nested in or united with the primary. @typedef {PickPrimary & { relation: string }} PickGame */
 /**
- * The pick as the model wrote it (strings kept as written: the check reports an unknown value).
- * @typedef {{ title: string, premise: string, primary: PickPrimary, games: PickGame[], themes: Theme[] }} Pick
+ * Another way the idea reads one of its concepts (the pick names it by its name): a game read as a theme, setting or
+ * character, a theme read as a game, or a game joined the other way. @typedef {{ name: string, kind: string, template: string, relation: string }} PickReading
  */
+/** A player-facing mechanic the idea names: a short verb phrase, the declared verb that is it (or none), how much the idea needs it. @typedef {{ name: string, verb: string, importance: string }} PickMechanic */
+/**
+ * The pick as the model wrote it (strings kept as written: the check reports an unknown value).
+ * @typedef {{ title: string, premise: string, primary: PickPrimary, games: PickGame[], themes: Theme[], readings: PickReading[], mechanics: PickMechanic[] }} Pick
+ */
+/** A question the template path stops with: one choice between the readings of one concept (options[i] reads as picks[i]). @typedef {{ id: string, question: string, options: string[], picks: Pick[] }} ReadingQuestion */
 /** A finding with the form field it names (a fieldForm path). @typedef {{ code: string, field: string, message: string }} FormProblem */
 /** @typedef {{ code: string, path: string, message: string }} TemplateProblem */
 /** One model call of the template path. @typedef {{ form: string, fields?: string[], model: string | null, ms: number, escalated?: boolean, problems?: string[], error?: string }} TemplateCall */
@@ -42,6 +49,10 @@ export const THEME_KINDS = Object.freeze(['theme', 'setting', 'character']);
 export const PICK_KINDS = Object.freeze([...LOOP_KINDS, ...THEME_KINDS]);
 /** How another game joins the primary. */
 export const PLAYED_RELATIONS = Object.freeze(['nested', 'union']);
+/** How a theme read as a game joins the primary (`none` for a reading that is a theme, setting or character). */
+export const READING_RELATIONS = Object.freeze(['none', ...PLAYED_RELATIONS]);
+/** How much the idea needs a mechanic it names: neither is ever dropped (an extension that cannot be built fails the build). */
+export const IMPORTANCE = Object.freeze(['core', 'extra']);
 /** A themed name: 1-40 characters, starting with a non-space. The form's pattern and the check are this one rule. */
 export const NAME_PATTERN = '^\\S.{0,39}$';
 const NAME_RE = new RegExp(NAME_PATTERN, 'u');
@@ -99,13 +110,46 @@ export const offeredTemplates = (templates, registry) => templates.filter(t => i
  * problem at its field. The rules below it need the catalogue.
  */
 export const PICK_RULES = Object.freeze({
-  pick_form: 'the answer satisfies the pick form\'s schema: its fields, enums (kinds, template ids, relations) and patterns',
+  pick_form: 'the answer satisfies the pick form\'s schema: its fields, enums (kinds, template ids, relations, verbs) and patterns',
   pick_nested_no_entry: 'a nested game needs a primary whose template\'s loops declare an entry event (card.loop.involves)',
   pick_nested_no_outcome: 'a nested game\'s template plays a loop that declares an encounter outcome (card.loop.outcome) and how an encounter starts it (card.engage.encounter.start)',
+  pick_reading_unknown: 'a reading names a concept of the pick (the primary, a game or a theme) by its name, exactly as written',
+  pick_reading_duplicate: 'a concept has at most one other reading',
+  pick_reading_invalid: 'a reading is the concept\'s other kind or relation: a theme, setting or character read as a game or genre joined nested or union (with its template); a game or genre read as a theme, setting or character (template none, relation none); a joined game read with its other relation (its own template); never the primary read as a game again',
+  pick_reading_no_primary: 'the primary read as a theme, setting or character leaves exactly one other game to be the primary',
+  pick_reading_fails: 'the pick read the other way passes the pick\'s own rules',
 });
 
-/** The pick's strict form. @param {readonly Template[]} templates @returns {ReplySchema} */
-export function pickForm(templates) {
+/** @type {WeakMap<object, string[]>} */
+const verbsCache = new WeakMap();
+/**
+ * Every player verb a card of the catalogue declares (card.loop.verbs, via cardLoop), sorted: the closed set a mechanic's
+ * verb is named from. @param {RegistryLike} registry @returns {string[]}
+ */
+export function catalogueVerbs(registry) {
+  let v = verbsCache.get(registry);
+  if (!v) { v = [...new Set(registry.cards().flatMap(c => cardLoop(c)?.verbs ?? []))].sort(); verbsCache.set(registry, v); }
+  return v;
+}
+
+/**
+ * The player verbs a document's primitives give the player (card.loop.verbs; card.loop.verbsOf when a card declares its
+ * verbs depend on the instance: runtime-lib-controls.js instanceVerbs), each with the primitives giving it.
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @returns {Map<string, string[]>}
+ */
+export function declaredVerbs(doc, registry) {
+  /** @type {Map<string, string[]>} */
+  const out = new Map();
+  for (const inst of instancesIn(doc)) {
+    const use = String(inst.use), card = registry.get(use)?.card;
+    const verbs = typeof prop(prop(card, 'loop'), 'verbsOf') === 'function' ? /** @type {string[]} */ (instanceVerbs(card, inst, doc)) : cardLoop(card)?.verbs ?? [];
+    for (const verb of verbs) if (!(out.get(verb) ?? []).includes(use)) out.set(verb, [...(out.get(verb) ?? []), use]);
+  }
+  return out;
+}
+
+/** The pick's strict form. @param {readonly Template[]} templates @param {RegistryLike} registry @returns {ReplySchema} */
+export function pickForm(templates, registry) {
   const ids = [...templates.map(t => t.id), 'none'];
   const template = (/** @type {string} */ what) => choice(ids, `the template whose concept IS ${what}; none when no template is (never the closest one)`);
   return { name: 'pick_templates', schema: strictObj({
@@ -126,6 +170,17 @@ export function pickForm(templates) {
       name: text('the theme, setting or character as the idea names it'),
       kind: choice(THEME_KINDS, 'theme, setting or character: restyles the primary\'s content, never played'),
     }), 'every theme, setting and character the idea names or implies; [] when none'),
+    readings: strictArr(strictObj({
+      name: text('the name of ONE concept above (the primary, a game or a theme), exactly as written there'),
+      kind: choice(PICK_KINDS, 'the concept read the other way: a game or genre (its loop is played) for a theme, setting or character; a theme, setting or character for a game or genre; a game or genre again for a joined game read with its other relation'),
+      template: template('this concept read as a game or genre (a joined game keeps its own); none when it is read as a theme, setting or character'),
+      relation: choice(READING_RELATIONS, 'how the concept read as a game joins the primary (nested or union); none when it is read as a theme, setting or character'),
+    }), 'every concept the idea can ALSO mean another way, so the player is asked instead of guessed for: a name that is both a game (its loop is played) and a character or theme in another game, or a game that could join the primary the other way; [] when the idea reads one way'),
+    mechanics: strictArr(strictObj({
+      name: text('the mechanic as a short verb phrase, as the idea says it'),
+      verb: choice([...catalogueVerbs(registry), 'none'], 'the player verb a primitive declares (card.loop.verbs) that IS this mechanic; none when no declared verb is'),
+      importance: choice(IMPORTANCE, 'core: the idea is not itself without it; extra: it adds to the idea'),
+    }), 'every player-facing mechanic the idea names (what the player can DO) that the chosen templates\' loops do not declare (each template lists its verbs); [] when the templates give the idea all it names'),
   }) };
 }
 
@@ -154,7 +209,8 @@ export function pickSystem(templates, registry) {
   for (const t of templates) {
     const { loops, wrappers } = templateLoops(t, registry);
     const family = loops.map(l => `${l.loop} (played ${l.interactions.join(' or ') || 'in the interaction it wraps'}; opponent: ${l.opponent ?? 'undeclared'})`).join(' + ');
-    groups.set(family, [...(groups.get(family) ?? []), `- ${t.id}: ${t.concept}${wrappers.length ? ` (sequenced by ${wrappers.join(', ')})` : ''}`]);
+    const verbs = [...declaredVerbs(t.doc, registry).keys()];
+    groups.set(family, [...(groups.get(family) ?? []), `- ${t.id}: ${t.concept}${wrappers.length ? ` (sequenced by ${wrappers.join(', ')})` : ''} [verbs: ${verbs.join(', ') || 'none'}]`]);
   }
   const listing = [...groups].map(([family, lines]) => `Loop ${family}:\n${lines.join('\n')}`).join('\n') || '(no templates in this catalogue)';
   return `You pick how a game idea is built from verified game templates.
@@ -165,6 +221,8 @@ Fill the form:
 - primary: the ONE game or genre the player plays. A named game and its genre are one concept: a game named with its genre ("a Mario game", "a Zelda-style dungeon") is that game (kind game) with the template of its genre, never the game and its genre as two concepts. template: the template whose concept IS that game or its genre, or none when no template is (never the closest one).
 - games: every OTHER game or genre the idea also plays, with its own loop: nested (entered from inside the primary) or union (played alongside it on the same space); [] when the idea plays one game.
 - themes: every theme, setting and character the idea names or implies (a character the player plays as, a place, a look): it restyles the primary's content and is never played.
+- readings: never guess between meanings. When the idea can mean a concept another way (a name that is both a game and a character: "Sonic" may be the platformer game, or the character racing in a kart game; a game that could be entered from the primary or played alongside it), write the pick for one reading and list the other here: the player chooses. [] when the idea reads one way.
+- mechanics: what the player can DO that the idea names and the chosen templates' verbs do not give ("has a gun" in a racing game), each with the declared verb that is it (none when no verb is) and whether the idea needs it (core) or it adds to it (extra). Each is built onto the template, never dropped. [] when the templates give it all.
 Also write the game's title and premise.`;
 }
 
@@ -176,6 +234,8 @@ export const narrowPick = v => ({
   primary: narrowPrimary(prop(v, 'primary')),
   games: objects(prop(v, 'games')).map(c => ({ ...narrowPrimary(c), relation: String(c.relation ?? '') })),
   themes: objects(prop(v, 'themes')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? '') })),
+  readings: objects(prop(v, 'readings')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? ''), template: String(c.template ?? ''), relation: String(c.relation ?? '') })),
+  mechanics: objects(prop(v, 'mechanics')).map(c => ({ name: String(c.name ?? ''), verb: String(c.verb ?? ''), importance: String(c.importance ?? '') })),
 });
 
 /** The entry events a document's loops declare (card.loop.involves; compose.js entryTriggers). @param {Record<string, any>} doc @param {RegistryLike} registry */
@@ -191,7 +251,7 @@ export function entryEvents(doc, registry) {
  */
 export function checkPick(pick, { templates, registry }) {
   /** @type {FormProblem[]} */
-  const problems = answerProblems(pickForm(templates).schema, pick).map(p => ({ code: 'pick_form', field: p.path, message: p.message }));
+  const problems = answerProblems(pickForm(templates, registry).schema, pick).map(p => ({ code: 'pick_form', field: p.path, message: p.message }));
   const outer = templates.find(t => t.id === pick.primary.template) ?? null;
   if (outer && !entryEvents(outer.doc, registry).length) pick.games.forEach((g, i) => {
     if (g.relation === 'nested') problems.push({ code: 'pick_nested_no_entry', field: `games[${i}].relation`, message: `'${g.name}' cannot be nested in '${outer.id}': no loop of its document declares an entry event (card.loop.involves)` });
@@ -200,8 +260,109 @@ export function checkPick(pick, { templates, registry }) {
     const inner = templates.find(t => t.id === g.template);
     if (g.relation === 'nested' && inner && !innerLoops(inner.doc, registry).length) problems.push({ code: 'pick_nested_no_outcome', field: `games[${i}].relation`, message: `'${g.name}' cannot be nested: no loop of '${inner.id}' declares an encounter outcome and how an encounter starts it (card.loop.outcome, card.engage.encounter.start)` });
   });
+  // Every other reading is a pick of its own: the concept flipped, held to the same rules.
+  pick.readings.forEach((r, i) => {
+    if (pick.readings.findIndex(x => x.name === r.name) !== i) { problems.push({ code: 'pick_reading_duplicate', field: `readings[${i}].name`, message: `'${r.name}' already has another reading (readings[${pick.readings.findIndex(x => x.name === r.name)}])` }); return; }
+    const alt = otherReading(pick, r);
+    if (!alt.pick) { problems.push({ code: alt.code, field: `readings[${i}].${alt.field}`, message: alt.message }); return; }
+    for (const p of checkPick(alt.pick, { templates, registry }).problems) problems.push({ code: 'pick_reading_fails', field: `readings[${i}]`, message: `read this way ('${r.name}' as ${r.kind}), ${p.field}: ${p.message}` });
+  });
   const stepPath = [pick.primary, ...pick.games].filter(c => c.template === 'none').map(c => c.name);
   return { problems, stepPath };
+}
+
+/** The pick without its other readings: one reading of the idea. @param {Pick} pick @returns {Pick} */
+const oneReading = pick => ({ ...structuredClone(pick), readings: [] });
+
+/**
+ * The pick read the other way for one concept (see PICK_RULES): a theme, setting or character read as a game joined
+ * nested or union; a game or genre read as a theme, setting or character (the primary's only other game becomes the
+ * primary); a joined game with its other relation. -> { pick } (its readings left out), or the problem with its field.
+ * @param {Pick} pick @param {PickReading} r
+ * @returns {{ pick: Pick, code?: undefined, field?: undefined, message?: undefined } | { pick: null, code: string, field: string, message: string }}
+ */
+export function otherReading(pick, r) {
+  const bad = (/** @type {string} */ code, /** @type {string} */ field, /** @type {string} */ message) => ({ pick: null, code, field, message });
+  const out = oneReading(pick);
+  const asLoop = LOOP_KINDS.includes(r.kind), asTheme = THEME_KINDS.includes(r.kind);
+  const game = pick.games.findIndex(g => g.name === r.name), theme = pick.themes.findIndex(t => t.name === r.name);
+  if (pick.primary.name === r.name) {
+    if (!asTheme) return bad('pick_reading_invalid', 'kind', `'${r.name}' is the primary, played already: its other reading is a theme, setting or character`);
+    if (r.template !== 'none' || r.relation !== 'none') return bad('pick_reading_invalid', r.template !== 'none' ? 'template' : 'relation', `read as a ${r.kind}, '${r.name}' has no template and no relation`);
+    if (pick.games.length !== 1) return bad('pick_reading_no_primary', 'kind', `read as a ${r.kind}, '${r.name}' leaves ${pick.games.length} other games and no single primary: the other reading needs exactly one other game to be played`);
+    const [next] = pick.games;
+    out.primary = { name: next.name, kind: next.kind, template: next.template };
+    out.games = [];
+    out.themes = [...out.themes, { name: r.name, kind: r.kind }];
+    return { pick: out };
+  }
+  if (game >= 0) {
+    const g = pick.games[game];
+    if (asTheme) {
+      if (r.template !== 'none' || r.relation !== 'none') return bad('pick_reading_invalid', r.template !== 'none' ? 'template' : 'relation', `read as a ${r.kind}, '${r.name}' has no template and no relation`);
+      out.games.splice(game, 1);
+      out.themes = [...out.themes, { name: r.name, kind: r.kind }];
+      return { pick: out };
+    }
+    if (r.template !== g.template) return bad('pick_reading_invalid', 'template', `'${r.name}' read with its other relation keeps its template '${g.template}'`);
+    if (!PLAYED_RELATIONS.includes(r.relation) || r.relation === g.relation) return bad('pick_reading_invalid', 'relation', `'${r.name}' joins ${g.relation} in the pick: its other reading joins the other way (${PLAYED_RELATIONS.filter(x => x !== g.relation).join(' or ')})`);
+    out.games[game] = { ...g, kind: r.kind, relation: r.relation };
+    return { pick: out };
+  }
+  if (theme >= 0) {
+    if (!asLoop) return bad('pick_reading_invalid', 'kind', `'${r.name}' is a ${pick.themes[theme].kind} in the pick: its other reading is a game or genre`);
+    if (!PLAYED_RELATIONS.includes(r.relation)) return bad('pick_reading_invalid', 'relation', `read as a ${r.kind}, '${r.name}' joins the primary nested or union`);
+    out.themes.splice(theme, 1);
+    out.games = [...out.games, { name: r.name, kind: r.kind, template: r.template, relation: r.relation }];
+    return { pick: out };
+  }
+  return bad('pick_reading_unknown', 'name', `'${r.name}' is not the name of a concept of the pick (${[pick.primary, ...pick.games, ...pick.themes].map(c => `'${c.name}'`).join(', ')})`);
+}
+
+/** One reading of the idea in a line, as the player is asked: the game played, the games joined to it, its themes. @param {Pick} pick */
+export function readingLabel(pick) {
+  const games = pick.games.map(g => ` + ${g.name} (${g.template}, ${g.relation})`).join('');
+  const themes = pick.themes.length ? ` with ${pick.themes.map(t => `${t.name} as the ${t.kind}`).join(', ')}` : '';
+  return `${pick.primary.name} (${pick.primary.template})${games}${themes}`.slice(0, 200);
+}
+
+/**
+ * The questions a pick with other readings stops with (ARCHITECTURE §1.1: never guess the game): one per concept the
+ * idea can mean two ways, its options the pick as written and the pick read the other way (a pick whose readings fail
+ * their checks asks nothing: its problems fail the pick first).
+ * @param {Pick} pick @returns {ReadingQuestion[]}
+ */
+export function readingQuestions(pick) {
+  return pick.readings.flatMap((r, i) => {
+    const alt = otherReading(pick, r);
+    if (!alt.pick) return [];
+    const picks = [oneReading(pick), alt.pick];
+    return [{ id: `reading_${i + 1}`, question: `"${r.name}": which game did you mean?`.slice(0, 200), options: picks.map(readingLabel), picks }];
+  });
+}
+
+/**
+ * The reading the player chose: each question answered by one of its options (answers by the question's text) flips its
+ * concept or keeps it; the chosen pick is held to the pick's rules. -> { pick (null while a question is unanswered),
+ * questions, unanswered, problems }
+ * @param {Pick} pick @param {ReadonlyArray<{ question: string, answer: string }>} answers @param {{ templates: readonly Template[], registry: RegistryLike }} ctx
+ */
+export function chooseReading(pick, answers, ctx) {
+  const questions = readingQuestions(pick);
+  const answerOf = (/** @type {ReadingQuestion} */ q) => answers.find(a => a.question === q.question && q.options.includes(a.answer))?.answer;
+  const unanswered = questions.filter(q => answerOf(q) === undefined);
+  if (unanswered.length) return { pick: null, questions, unanswered, problems: [] };
+  let chosen = oneReading(pick);
+  /** @type {FormProblem[]} */
+  const problems = [];
+  pick.readings.forEach((r, i) => {
+    const q = questions.find(x => x.id === `reading_${i + 1}`);
+    if (!q || answerOf(q) !== q.options[1]) return;
+    const alt = otherReading(chosen, r);
+    if (alt.pick) chosen = alt.pick; else problems.push({ code: alt.code, field: `readings[${i}].${alt.field}`, message: `with the other answers: ${alt.message}` });
+  });
+  problems.push(...checkPick(chosen, ctx).problems);
+  return { pick: problems.length ? null : chosen, questions, unanswered, problems };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -274,7 +435,7 @@ export async function askForm({ writer, escalate, attempts, calls, system, user,
  * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number }>}
  */
 export async function askPick({ writer, escalate, attempts, prompt, templates, registry, calls, clock }) {
-  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates), narrow: narrowPick,
+  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates, registry), narrow: narrowPick,
     check: pick => checkPick(pick, { templates, registry }).problems, code: 'template_pick_failed', what: 'The template pick' });
   return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls };
 }
@@ -463,11 +624,15 @@ export function frameTuneForm(template, doc, { registry, logic }) {
  * Ask every content form of the composed document in parallel (Promise.all), each checked and repaired on its own,
  * and apply the answers to a copy of the document: frame_tune, and one names form per template of the composition
  * (conceptForm). The themes and the premise are in every form's prompt. `parts` defaults to the template alone.
+ * `extra`: the params forms of the primitives extensions added (extend.js paramsForm), asked in the same round; their
+ * answers, like every other, are applied to `onto` (the document with the extensions; default `doc`, the composed one
+ * the frame and names forms are derived from and checked against).
  * -> { doc, forms: [{ form, calls }], rounds (the most calls any one form made: they run side by side) }
  * @param {{ writer: Writer, escalate: Writer | null, attempts: number, template: Template, doc: Record<string, any>, pick: Pick, themes: Theme[],
- *   registry: RegistryLike, logic: LogicLike, calls: TemplateCall[], clock: Clock, parts?: ComposedPart[] }} args
+ *   registry: RegistryLike, logic: LogicLike, calls: TemplateCall[], clock: Clock, parts?: ComposedPart[], onto?: Record<string, any>,
+ *   extra?: Array<{ schema: ReplySchema, narrow: (v: unknown) => Record<string, unknown>, check: (v: Record<string, unknown>) => FormProblem[], apply: (d: Record<string, any>, v: Record<string, unknown>) => void, use: string, intent: string, mechanic: string }> }} args
  */
-export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock, parts = [{ template, ids: definedIds(doc, registry) }] }) {
+export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock, parts = [{ template, ids: definedIds(doc, registry) }], onto = doc, extra = [] }) {
   const tc = performance.now();
   const named = parts.map(part => conceptForm(doc, part)).filter(/** @returns {f is NonNullable<typeof f>} */ f => f !== null);
   const frame = frameTuneForm(template, doc, { registry, logic });
@@ -479,15 +644,18 @@ Premise: ${pick.premise}
 Themes: ${themes.length ? themes.map(t => `${t.name} (${t.kind})`).join('; ') : 'none beyond the premise'}
 Write only what the form asks, in the game's theme. Ids and structure are fixed.`;
   const base = { writer, escalate, attempts, calls, clock, system, code: 'template_content_failed' };
-  const [frameAnswer, ...answers] = await Promise.all([
+  // Every form of the round runs side by side.
+  const [frameAnswer, answers, extras] = await Promise.all([
     askForm({ ...base, user: `Write the logline of '${pick.title}' and set its tuning (each slot names its current value).`, schema: frame.schema, narrow: frame.narrow, check: frame.check, what: 'The frame_tune form' }),
-    ...named.map(f => askForm({ ...base, user: `Name every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` })),
+    Promise.all(named.map(f => askForm({ ...base, user: `Name every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
+    Promise.all(extra.map(f => askForm({ ...base, user: `'${pick.title}' also has "${f.mechanic}", given by ${f.use} (${f.intent}). Set its params for the idea (null keeps a param as the primitive declares it).`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
   ]);
   const ta = performance.now();
-  const out = structuredClone(doc);
+  const out = structuredClone(onto);
   frame.apply(out, frameAnswer.value);
   named.forEach((f, i) => f.apply(out, answers[i].value));
+  extra.forEach((f, i) => f.apply(out, extras[i].value));
   clock.codeMs += performance.now() - ta;
-  const forms = [{ form: 'frame_tune', calls: frameAnswer.calls }, ...named.map((f, i) => ({ form: f.schema.name, calls: answers[i].calls }))];
+  const forms = [{ form: 'frame_tune', calls: frameAnswer.calls }, ...named.map((f, i) => ({ form: f.schema.name, calls: answers[i].calls })), ...extra.map((f, i) => ({ form: f.schema.name, calls: extras[i].calls }))];
   return { doc: out, forms, rounds: Math.max(...forms.map(f => f.calls)) };
 }
