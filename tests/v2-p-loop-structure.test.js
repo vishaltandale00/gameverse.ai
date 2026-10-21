@@ -412,7 +412,7 @@ const memoryCtx = () => {
   } };
 };
 /** The scripted spec model: decomposes the idea, maps its one core mechanic onto `mapped`, and fills the small forms. */
-const scripted = (name, mapped) => {
+const scripted = (name, mapped, replacements = []) => {
   const c = COLLECTIONS[name];
   // The iterative decomposition's forms; 'text' is the graph's view (the old 'map' was never a decomposition view).
   const decompose = decomposer(planFrom({ title: 'The Test Game', premise: `${c.description}.`, tone: 'brisk', views: ['text'], movement: 'none',
@@ -420,7 +420,7 @@ const scripted = (name, mapped) => {
     core: { loop: 'core', lose: '', theme: 'test', narrative: false, mashup: [], ...c.core } }));
   return fakeWriter([(req) => {
     const schema = String(req.schema?.name || '');
-    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: mapped } }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives
+    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: [...mapped, ...replacements] } }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives (re-planning, the replacements it would pick)
     if (built) return built;
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
@@ -433,9 +433,9 @@ const scripted = (name, mapped) => {
     return '{}';
   }]);
 };
-const run = async (name, mapped, config = {}) => {
+const run = async (name, mapped, config = {}, replacements = []) => {
   const cat = catalogue();
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted(name, mapped) }, config: { replanAttempts: 3, maxDetailTasks: 0, ...config } });
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted(name, mapped, replacements) }, config: { replanAttempts: 3, maxDetailTasks: 0, ...config } });
   const m = memoryCtx();
   const out = await pipeline({ gameId: name, prompt: COLLECTIONS[name].description, kind: 'create', seed: 5 }, m.ctx);
   return { ...m, out };
@@ -467,7 +467,7 @@ test('collect: nothing produces what the forage win counts; the build\'s coverag
 });
 
 test('race: the scramble declares no runners at all; re-planning replaces it for its mechanic with a race whose runners it declares', async () => {
-  const { out, versions } = await run('race', ['gameplay.test.scramble']);
+  const { out, versions } = await run('race', ['gameplay.test.scramble'], {}, ['gameplay.test.sprint']);
   const [first] = out.outline.attempts;
   assert.ok(first.diagnoses.some(d => d.primitive === 'gameplay.test.scramble' && d.codes.includes(LOOP_CODES.participants)), JSON.stringify(first.diagnoses));
   assert.ok(first.actions.some(a => a.action === 'replace' && a.primitive === 'gameplay.test.scramble' && a.by === 'gameplay.test.sprint'), JSON.stringify(first.actions));

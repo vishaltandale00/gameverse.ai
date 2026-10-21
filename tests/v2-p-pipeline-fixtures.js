@@ -90,10 +90,24 @@ export function fakeDecisions(answer, provider = 'fake') {
  * pick_win, pick_lose, pick_driver, pick_coverage) take the first of `steps[kind]` on offer, else "none"; a kind
  * `steps` does not list takes the best-ranked option (the first offered).
  */
-export function buildAnswer(req, { space = [], picks = {}, steps = {} } = {}) {
+export function buildAnswer(req, { space = [], picks = {}, steps = {}, covered = {} } = {}) {
   const name = String(req.schema?.name || '');
   const props = req.schema?.schema?.properties || {};
   if (name === 'pick_space') { const offered = props.space.enum; return JSON.stringify({ space: space.find(s => offered.includes(s)) || offered[0], why: 'scripted' }); }
+  // retrieval.js: a long option list is narrowed by category first (the category listing a preferred id), and a weak
+  // declared coverage match is asked as covered_by (covered: mechanic id -> the primitive that covers it, else "no").
+  if (name === 'pick_category') {
+    const mechanic = /\nMechanic (\S+) \(/.exec(req.user)?.[1];
+    const lines = req.user.split('\n').filter(l => l.startsWith('- '));
+    const want = picks[mechanic] || [];
+    const pick = props.pick.enum.find(cat => lines.some(l => l.startsWith(`- ${cat} (`) && want.some(id => l.split(': ').slice(1).join(': ').split(', ').includes(id)))) || 'none';
+    return JSON.stringify({ pick, why: 'scripted', spec: '' });
+  }
+  if (name === 'covered_by') {
+    const mechanic = /\nMechanic (\S+) \(/.exec(req.user)?.[1];
+    const offered = props.pick.enum;
+    return JSON.stringify({ pick: offered.includes(covered[mechanic]) ? covered[mechanic] : 'no', why: 'scripted' });
+  }
   if (name === 'pick_primitive') {
     const mechanic = /\nMechanic (\S+) \(/.exec(req.user)?.[1];
     const offered = props.pick.enum;

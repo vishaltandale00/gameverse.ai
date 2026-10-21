@@ -1,0 +1,190 @@
+{
+ "note": "Live run record chess-but-with-pokemon-mvhuocyc failed-1.json (2026-10-21): the decomposition, and what the build offered and picked for the two mechanics that went wrong (selection.build.steps) and the first outline attempt (figure.attempts[0]).",
+ "prompt": "chess but with pokemon",
+ "decomposition": {
+  "version": "decompose/0.2",
+  "title": "Pokémon Chess Battle",
+  "premise": "A strategic chess game where traditional chess mechanics merge with Pokémon battles. Players deploy Pokémon as chess pieces, and capturing triggers turn-based battles influenced by Pokémon types and moves.",
+  "tone": "strategic, competitive, playful",
+  "concepts": [
+   {
+    "id": "chess",
+    "name": "Chess",
+    "quote": "chess",
+    "kind": "game",
+    "keeps": [
+     "core game mechanics and strategic board game genre"
+    ],
+    "loop": "turn_based_move"
+   },
+   {
+    "id": "pokemon",
+    "name": "Pokemon",
+    "quote": "pokemon",
+    "kind": "game",
+    "keeps": [
+     "theme, characters, and creature battling elements"
+    ],
+    "loop": "pokemon_battle_loop"
+   }
+  ],
+  "references": [
+   {
+    "name": "Chess",
+    "kind": "game",
+    "keeps": [
+     "core game mechanics and strategic board game genre"
+    ]
+   },
+   {
+    "name": "Pokemon",
+    "kind": "game",
+    "keeps": [
+     "theme, characters, and creature battling elements"
+    ]
+   }
+  ],
+  "mechanics": [
+   {
+    "id": "turn_based_move",
+    "verb": "move",
+    "description": "players take turns moving their pieces on the board according to specific rules",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "capture_opponent_piece",
+    "verb": "capture",
+    "description": "pieces can capture opponent's pieces by moving onto their square",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "check_and_checkmate",
+    "verb": "check",
+    "description": "a player aims to threaten the opponent's king such that it cannot escape capture",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "pokemon_battle_loop",
+    "verb": "conduct Pokémon encounters",
+    "description": "engage in strategic Pokémon battles integrated in chess gameplay to capture or remove opponent pieces",
+    "from": "pokemon",
+    "importance": "core"
+   },
+   {
+    "id": "deploy_pokemon",
+    "verb": "deploy",
+    "description": "place Pokémon pieces strategically on the chessboard",
+    "from": "pokemon",
+    "importance": "core"
+   },
+   {
+    "id": "pokemon_moves",
+    "verb": "use moves",
+    "description": "execute moves with each Pokémon piece based on unique abilities",
+    "from": "pokemon",
+    "importance": "core"
+   },
+   {
+    "id": "status_effects",
+    "verb": "apply status effects",
+    "description": "inflict and manage status conditions during piece interactions",
+    "from": "pokemon",
+    "importance": "supporting"
+   },
+   {
+    "id": "type_advantages",
+    "verb": "exploit type advantages",
+    "description": "apply Pokémon type matchups to influence battle outcomes between pieces",
+    "from": "pokemon",
+    "importance": "supporting"
+   }
+  ],
+  "spaces": [
+   {
+    "role": "board",
+    "kind": "board",
+    "description": "The main chessboard where Pokémon pieces are placed and moved in a turn-based manner."
+   }
+  ],
+  "views": [
+   "board",
+   "ui"
+  ],
+  "movement": "none",
+  "core": {
+   "loop": "turn_based_move",
+   "interaction": "pieces-turns",
+   "opponent": "ai-rival",
+   "win": "checkmate the rival's Pokémon king",
+   "lose": "your Pokémon king is checkmated",
+   "theme": "chess with Pokémon battles",
+   "narrative": false,
+   "mashup": [
+    {
+     "relation": "nested",
+     "mechanics": [
+      "capture_opponent_piece",
+      "pokemon_battle_loop",
+      "deploy_pokemon",
+      "pokemon_moves",
+      "status_effects",
+      "type_advantages"
+     ],
+     "why": "Capturing an opponent's piece triggers a Pokémon battle resolving the capture, integrating Pokémon battling mechanics into the chess capture process."
+    }
+   ]
+  }
+ },
+ "offered": {
+  "deploy_pokemon": {
+   "candidates": [
+    "gameplay.falling.pieces",
+    "gameplay.move.grid",
+    "gameplay.blocks.place",
+    "gameplay.build.structure",
+    "gameplay.checkpoint",
+    "gameplay.move.walk",
+    "gameplay.combat.melee",
+    "gameplay.move.platformer"
+   ],
+   "pick": "gameplay.blocks.place"
+  },
+  "pokemon_moves": {
+   "candidates": [
+    "gameplay.launcher",
+    "gameplay.falling.pieces",
+    "gameplay.combat.aim",
+    "gameplay.ability.active",
+    "gameplay.item.use",
+    "gameplay.progression.abilities",
+    "gameplay.turns",
+    "gameplay.creature.party"
+   ],
+   "pick": "gameplay.ability.active"
+  }
+ },
+ "attempt": {
+  "systems": [
+   "engine.input.actions",
+   "gameplay.ability.active",
+   "gameplay.blocks.place",
+   "gameplay.combat.health",
+   "gameplay.combat.status",
+   "gameplay.creature.battle",
+   "gameplay.creature.party",
+   "gameplay.inventory",
+   "gameplay.turns"
+  ],
+  "problems": [
+   "capability_missing systems[3]: 'gameplay.blocks.place' needs raycast from space 'board'",
+   "projection_id id: a projection instance needs an id: the region space id primitives and entities bind to"
+  ],
+  "actions": [
+   "gameplay.blocks.place → gameplay.falling.pieces",
+   "repair fields"
+  ]
+ }
+}

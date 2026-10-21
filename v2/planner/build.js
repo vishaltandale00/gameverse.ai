@@ -7,22 +7,24 @@
 //      fits alone is taken without a question. It is never swapped later: a pick that needs what it lacks comes with an
 //      adapter, or is not offered. Only its configuration (spaceVariants) may change, when the whole collection still
 //      composes on it.
-//   2. A worklist of mechanics: the core loop mechanic named by the play spec (core.loop, else the primary idea's first
-//      core mechanic), the other core mechanics, then supporting and flavour ones. For each:
-//      - candidates: cards whose declared loop serves the play spec's interaction (select.js declaredFit's structural
-//        part), each offered as a single card or as a minimal BUNDLE (bundles.js formBundle): the card with the
-//        companions it only composes alongside (its requires.primitives closure, the companions its declarations name,
-//        the adapter instances projecting it onto the space), at most MAX_BUNDLE primitives. Every option composes with
-//        the collection so far (compose-check, resolve:true) without a new failure or type hole. Ranked by their
-//        declarations (declaredFit, less BUNDLE_PENALTY per extra primitive, then lexical relevance); at most
-//        MAX_CANDIDATES. A bundle whose companion is the best declared fit of a later mechanic covers it too;
-//      - ONE small strict question: pick one option id (the seed card's id, enum) or "none", with a one-line why; each
-//        option is labelled with its members and why each extra one is there;
-//      - the pick is added with its bundle, the whole collection is checked again (checkComposition) and its adapters
-//        resolved (resolveAdapters); the members' content contracts are recorded; the mechanics it covers are marked
-//        covered and skipped in the worklist (outcome 'covered');
-//      - a pick that fails a check is dropped and the model is asked again with the exact problem, over the candidates
-//        left; when none fits (or the model says none) the mechanic is a gap with the primitive or adapter signature.
+//   2. A worklist of mechanics: the core loop mechanic named by the play spec (core.loop), the other concepts' loop
+//      mechanics (concept.loop), the other core mechanics, then supporting and flavour ones. For each (retrieval.js):
+//      - coverage first: a primitive already in the collection of the mechanic's own concept (mechanic.from), its loop
+//        primitive first, may cover it by its declarations (the content sections it needs or reads, its loop verbs,
+//        progress events, the effects it owns, as the mechanic's verb names them): covered with the reason, no
+//        question; a weaker declared match is one small yes/no-with-enum question (covered_by);
+//      - otherwise EVERY valid option: each card whose declared loop serves the mechanic's interaction context (for a
+//        joined concept, its own loop's interaction), as a single card or the smallest BUNDLE (bundles.js formBundle)
+//        that is valid: no new failure or type hole in checkComposition (resolve:true) on the adapter instances
+//        resolveAdapters gives it (ids, configuration, bindings), and no new capability, service, requirement or
+//        conflict error from preflight on the partial document. declaredFit only orders the list (less BUNDLE_PENALTY
+//        per extra primitive); nothing cuts it;
+//      - ONE small strict question: pick one option id (enum: id, one-line intent, bundle members) or "none" with a
+//        reason; over MAX_LIST options, a category question (id namespaces) comes first;
+//      - the pick is added with its bundle, the whole collection is checked again and its adapters resolved; the
+//        members' content contracts are recorded;
+//      - when the model says none the mechanic is a gap with the primitive signature (adapter signatures come from
+//        the options that were not valid only because an adapter is missing).
 //   3. The loop steps (build-steps.js), after the mechanic steps: the win (when nothing in the collection declares one
 //      that can be wired), the lose (when the play spec has one and no core loop declares it), the drivers of AI
 //      opponents (loop_opponent_inert) and the coverage of what the win reads (loop_win_unaffected), each a small strict
@@ -31,46 +33,40 @@
 //   Every step is logged (mechanic, candidates, asks, checks, outcome) in the selection report.
 //
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
-import { checkComposition, documentedBy } from './compose-check.js';
-import { resolveAdapters } from './adapters.js';
-import { spaceVariants, requirementsOf, satisfying, isSpace, isGenerator, isGraphics, dataShapes } from './catalog.js';
+import { documentedBy } from './compose-check.js';
+import { spaceVariants, requirementsOf, satisfying, isSpace, dataShapes } from './catalog.js';
 import { contractsOf } from './content.js';
-import { cardLoop, endsGame } from './loop.js';
-import { isAvatar, mashupSides, unplayedLoops } from './play-spec.js';
-import { declaredFit, servesInteraction, relevance, spaceSlug, KIND_HINTS } from './select.js';
+import { cardLoop } from './loop.js';
+import { isAvatar, unplayedLoops } from './play-spec.js';
+import { relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
-import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
 import { makeAsk, loopSteps } from './build-steps.js';
-import { str, isStr, prop } from '../kernel/guards.js';
+import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, MAX_LIST } from './retrieval.js';
+import { isStr, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').Card} Card */
 /** @typedef {import('./types.js').Writer} Writer */
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./decompose.js').Mechanic} Mechanic */
-/** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
 /** @typedef {import('./compose-check.js').AdapterInstance} AdapterInstance */
-/** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
 /** @typedef {import('./select.js').SpaceChoice} SpaceChoice */
 /** @typedef {import('./select.js').Gap} Gap */
-/**
- * A candidate offered for a mechanic: its id (the seed card's, the enum value), declared-fit score (less the bundle
- * penalty), the space configuration it composes on, its members (the seed first), the companions and adapter instances
- * beyond the seed with why each is there, and the later mechanics a companion covers.
- * @typedef {{ id: string, score: number, variant: number, members: string[], extra: import('./bundles.js').Companion[], adapters: import('./bundles.js').BundleAdapter[], covers: Array<{ mechanic: string, by: string }> }} BuildCandidate
- */
-/** One model question and what came of it. @typedef {{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }} BuildAsk */
+/** An option offered for a mechanic (retrieval.js Option): seed id, ordering score, configuration, members, companions, adapters. @typedef {import('./retrieval.js').Option} BuildCandidate */
+/** One model question and what came of it; `question` names a category or coverage question (else the pick). @typedef {{ offered: string[], pick: string, why: string, ok: boolean, problem?: string, question?: string }} BuildAsk */
 /**
  * The checks run after a pick: the primitives its bundle brought beyond the pick (closure), the whole bundle, the
  * whole-collection verdict, the adapters resolved and the content contracts recorded.
  * @typedef {{ closure: string[], bundle: string[], compose: string, adapters: string[], contracts: string[], variant: Record<string, unknown> }} BuildChecks
  */
 /**
- * One worklist step. A step whose bundle covers later mechanics lists them (covers); a covered mechanic's own step has
- * outcome 'covered', no question, and names the step that covered it (coveredBy).
+ * One worklist step: every valid option offered (candidates) and the cards that serve its interaction context but are
+ * not valid (rejected, with why). A mechanic covered by a primitive already in the collection has outcome 'covered',
+ * names the step that brought that primitive (coveredBy) and why (coverage: by declarations, or asked); that step lists
+ * the mechanics it covers (covers).
  * @typedef {{ kind: 'mechanic', mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
  *   checks: BuildChecks | null, outcome: 'added' | 'reused' | 'gap' | 'covered', primitive: string | null, collection: string[], ms: number,
- *   covers?: string[], coveredBy?: string }} BuildStep
+ *   covers?: string[], coveredBy?: string, coverage?: { by: string, why: string, asked: boolean }, context?: string | null }} BuildStep
  */
 /** The space step. @typedef {{ candidates: Array<{ use: string, score: number }>, asked: boolean, pick: string, why: string }} SpaceStep */
 /**
@@ -80,8 +76,10 @@ import { str, isStr, prop } from '../kernel/guards.js';
  *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
  */
 
-export const BUILD_VERSION = 'build/0.1';
-export const MAX_CANDIDATES = 8;
+export const BUILD_VERSION = 'build/0.2';
+/** At most this many spaces are offered; mechanic options are never cut (over MAX_LIST a category question comes first). */
+export const MAX_SPACES = 8;
+export { MAX_LIST };
 
 /** @param {RegistryLike} registry @param {string} id @returns {Card | null} */
 const cardOf = (registry, id) => registry.get(id)?.card ?? null;
@@ -99,14 +97,16 @@ export function loopMechanicOf(decomposition) {
 }
 
 /**
- * The worklist: the core loop mechanic, the other core mechanics, then supporting, then flavour (each in the idea's order).
- * A concept's loop the idea does not play (a skin relation marked it flavor: play-spec.js unplayedLoops) is never built.
+ * The worklist: the core loop mechanic, the other concepts' loop mechanics (concept.loop: a concept's other mechanics
+ * are covered by, or played in, its loop), the other core mechanics, then supporting, then flavour (each in the idea's
+ * order). A concept's loop the idea does not play (a skin relation marked it flavor: play-spec.js unplayedLoops) is never built.
  * @param {{ mechanics: Mechanic[], concepts?: Array<{ loop?: string }>, core?: { mashup?: Array<{ mechanics: string[] }>, [k: string]: unknown } | null }} decomposition @returns {Mechanic[]}
  */
 export function worklist(decomposition) {
   const loop = loopMechanicOf(decomposition);
   const unplayed = unplayedLoops(decomposition);
-  const rank = (/** @type {Mechanic} */ m) => (m.id === loop ? 0 : m.importance === 'core' ? 1 : m.importance === 'supporting' ? 2 : 3);
+  const loops = new Set((decomposition.concepts || []).map(c => c.loop).filter(isStr));
+  const rank = (/** @type {Mechanic} */ m) => (m.id === loop ? 0 : loops.has(m.id) ? 1 : m.importance === 'core' ? 2 : m.importance === 'supporting' ? 3 : 4);
   return decomposition.mechanics.filter(m => !unplayed.has(m.id)).map((m, i) => ({ m, i })).sort((a, b) => rank(a.m) - rank(b.m) || a.i - b.i).map(x => x.m);
 }
 
@@ -114,7 +114,7 @@ export function worklist(decomposition) {
 const entryFits = (registry, entry, use, caps) => (Array.isArray(entry) ? entry.every(c => caps.has(c)) : registry.has(entry) ? entry === use : caps.has(entry));
 
 /**
- * The space cards that fit the play spec, best first (at most MAX_CANDIDATES): card.views shows one of the idea's views
+ * The space cards that fit the play spec, best first (at most MAX_SPACES): card.views shows one of the idea's views
  * (or 'any'), and, when loops are declared for the play spec's interaction, one of their declared spaces (an id, or the
  * capabilities a configuration of the space provides). An avatar interaction needs a space some registered generator
  * can furnish. Ranked by the declarations: named by a loop for the interaction, the primary view, the decomposed space
@@ -145,7 +145,7 @@ export function spaceCandidates(registry, decomposition, exclude = []) {
       + (kind ? kind.caps.filter(c => caps.has(c)).length - (kind.caps.length && !kind.caps.some(c => caps.has(c)) ? 2 : 0) : 0);
     out.push({ use, score, why: [byId ? `named by a loop played as ${interaction}` : byCaps ? `provides what loops played as ${interaction} declare` : '', views.length ? `shows ${views.filter(v => own.includes(v)).join(', ') || 'any view'}` : ''].filter(Boolean).join('; ') });
   }
-  return out.sort((a, b) => b.score - a.score || a.use.localeCompare(b.use)).slice(0, MAX_CANDIDATES);
+  return out.sort((a, b) => b.score - a.score || a.use.localeCompare(b.use)).slice(0, MAX_SPACES);
 }
 
 /**
@@ -168,20 +168,6 @@ export function closureOf(registry, id, have) {
   return added;
 }
 
-/** Stable keys of a check's failures and holes, to compare a step against the collection before it. @param {CompositionResult} r */
-const keysOf = r => ({
-  failures: new Map(r.failures.map(f => [`${f.check}:${f.code}:${f.unit}:${f.need ? `${f.need.kind}:${f.need.item}` : ''}`, `${f.check}: ${f.message}`])),
-  holes: new Map(r.holes.map(h => [`${h.card}:${h.field}:${h.code}`, `${h.card} ${h.field}: ${h.message}`])),
-});
-/** What `after` has that `before` did not. @param {ReturnType<typeof keysOf>} before @param {ReturnType<typeof keysOf>} after @returns {string[]} */
-const added = (before, after) => [...[...after.failures].filter(([k]) => !before.failures.has(k)).map(([, m]) => m), ...[...after.holes].filter(([k]) => !before.holes.has(k)).map(([, m]) => `type hole: ${m}`)];
-
-/**
- * Candidate order: related first (the card's own declarations speak of the mechanic), then the declared fit (less the
- * bundle penalty), then lexical relevance, then id. @param {{ id: string, score: number, related: number, rel: number }} a @param {typeof a} b
- */
-const order = (a, b) => b.related - a.related || b.score - a.score || b.rel - a.rel || a.id.localeCompare(b.id);
-
 /** Conflicts inside a collection (card.conflicts), as problem lines. @param {RegistryLike} registry @param {string[]} ids */
 const conflictsIn = (registry, ids) => ids.flatMap(id => (cardOf(registry, id)?.conflicts || []).filter(c => c !== id && ids.includes(c)).map(c => `'${id}' conflicts with '${c}' (card.conflicts)`));
 
@@ -190,9 +176,6 @@ const conflictsIn = (registry, ids) => ids.flatMap(id => (cardOf(registry, id)?.
  * @param {Mechanic} m @param {string | null} interaction @param {SpaceChoice} space @param {string} [spec]
  */
 const primitiveSignature = (m, interaction, space, spec = '') => `${m.id}: a primitive whose loop (card.loop) ${interaction ? `is played as ${interaction}, ` : ''}with verbs and progress events for "${m.description}", on ${space.use} (${space.caps.join(', ')})${spec ? `. Spec: ${spec}` : ''}`.slice(0, 600);
-
-/** @param {AdapterSpec} a */
-const adapterLine = a => `${a.id} (provides ${[...a.card.adapts.provides.capabilities, ...a.card.adapts.provides.content, ...a.card.adapts.provides.services].join(', ') || 'nothing'} from ${a.card.adapts.from.spaces.join(', ')})`;
 
 /**
  * Grow the collection mechanic by mechanic (see the header). A writer is required: without one selection is the offline
@@ -235,10 +218,11 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   let adapters = [];
   /** @type {Record<string, string>} */
   let bind = {};
-  const spaceOn = (/** @type {number} */ v) => ({ id: sid, use, with: variants[v]?.with || {} });
-  /** The collection's composition on a space configuration (adapters proposed by the checker, resolve:true). @param {string[]} ids @param {number} v */
-  const compose = (ids, v) => checkComposition({ spaces: [spaceOn(v)], systems: ids }, registry, { resolve: true, documented });
-  let baseline = keysOf(compose(systems, variant));
+  // Validity (retrieval.js): the composition on the adapter instances resolveAdapters gives it, and preflight on the
+  // partial document; the same checks decide the options and the whole collection after a pick.
+  const checks = collectionChecks({ registry, space: { id: sid, use }, variants, documented });
+  const stateOf = () => collectionState({ checks, systems, variant, variants });
+  let state = stateOf();
   /** @type {string[]} */
   const contracts = [];
   /** @type {Array<BuildStep | import('./build-steps.js').LoopStep>} */
@@ -247,166 +231,83 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   const gaps = [];
   /** @type {BuildResult['mapping']} */
   const mapping = {};
-  // A mechanic of a joined idea (a mashup relation names it, or it comes from another reference than the core loop
-  // mechanic's) is played in its own loop, its own way (nested or union, realised by adapters): its candidates are not
-  // held to the primary interaction.
-  const ideaOf = (/** @type {unknown} */ from) => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || []).join('_');
-  const primaryIdea = ideaOf(decomposition.mechanics.find(m => m.id === loopMechanicOf(decomposition))?.from);
-  // Only an entry across concepts joins an idea (select.js joinedBy): an entry within one concept relates nothing
-  // (mashup_within_concept, asked again after the build) and must not free its mechanics from the primary interaction.
-  const joined = (/** @type {Mechanic} */ m) => (decomposition.core?.mashup || []).some(x => { const s = mashupSides(x, decomposition.mechanics); return s.outer.length > 0 && s.inner.includes(m.id); }) || Boolean(primaryIdea && ideaOf(m.from) && ideaOf(m.from) !== primaryIdea);
-  const pool = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id));
+  /** Collection primitive -> the mechanics it was added or mapped for (coverage reads a mechanic's own concept). @type {Map<string, Set<string>>} */
+  const owners = new Map();
+  const own = (/** @type {string} */ id, /** @type {string} */ m) => { owners.set(id, new Set([...(owners.get(id) || []), m])); };
+  const spaceChoice = () => ({ id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] });
 
   /**
-   * Can `ids` join the collection together: the space configuration (current first) on which the collection plus them
-   * has no new failure or type hole, or the problems on the current one. @param {string[]} ids
-   * @returns {{ ok: true, variant: number } | { ok: false, why: string }}
-   */
-  const composes = ids => {
-    const more = ids.filter(id => !systems.includes(id));
-    if (!more.length) return { ok: true, variant };
-    /** @type {string[]} */
-    let first = [];
-    for (const v of [variant, ...variants.map((_, i) => i).filter(i => i !== variant)]) {
-      const extra = added(baseline, keysOf(compose([...systems, ...more], v)));
-      if (!extra.length) return { ok: true, variant: v };
-      if (v === variant) first = extra;
-    }
-    return { ok: false, why: first.slice(0, 3).join('; ') };
-  };
-  /** The adapters the whole collection plus `ids` resolves on a space configuration. @param {string[]} ids @param {number} v */
-  const resolveWith = (ids, v) => resolveAdapters({ spaces: [spaceOn(v)], systems: [...systems, ...ids.filter(id => !systems.includes(id))] }, registry, { documented });
-  /**
-   * Add a picked option with its bundle: checked as a whole collection (conflicts, composition, no new failure or type
-   * hole) and its adapters resolved; on success the collection, its adapters and content contracts are updated.
+   * Add a picked option with its bundle: checked as a whole collection (conflicts, and the same validity as the
+   * options) with its adapters resolved; on success the collection, its adapters and content contracts are updated.
    * @param {{ id: string, variant: number, members: string[], adapters: Array<{ use: string }> }} cand
-   * @returns {{ ok: true, have: boolean, closure: string[], checks: BuildChecks } | { ok: false, why: string, adapter?: AdapterSpec }}
+   * @returns {{ ok: true, have: boolean, closure: string[], checks: BuildChecks } | { ok: false, why: string }}
    */
   const tryAdd = cand => {
     const have = systems.includes(cand.id) || cand.id === use;
     const closure = have ? [] : cand.members.slice(1).filter(id => !systems.includes(id));
     const next = have ? systems : [...systems, cand.id, ...closure];
-    const whole = compose(next, cand.variant);
-    const fresh = [...conflictsIn(registry, next), ...added(baseline, keysOf(whole))];
-    /** @type {ReturnType<typeof resolveAdapters> | null} */
-    const r = fresh.length ? null : resolveAdapters({ spaces: [spaceOn(cand.variant)], systems: next }, registry, { documented });
-    const why = fresh.length ? fresh.slice(0, 3).join('; ') : r && (r.gaps.length || r.verdict === 'incompatible-needs-adapter')
-      ? `needs an adapter no registered primitive provides: ${r.gaps.map(adapterLine).join('; ') || r.result.reason}` : '';
-    if (why) return { ok: false, why, ...(r?.gaps.length ? { adapter: r.gaps[0] } : {}) };
-    systems = next; variant = cand.variant; baseline = keysOf(whole);
-    adapters = r?.adapters || []; bind = r?.bind || {};
+    const whole = state.evaluate(next.filter(id => !systems.includes(id)), cand.variant);
+    const fresh = [...conflictsIn(registry, next), ...[...whole.problems].filter(([k]) => !state.baseline.problems.has(k)).map(([, x]) => x)];
+    if (fresh.length) return { ok: false, why: fresh.slice(0, 3).join('; ') };
+    systems = next; variant = cand.variant;
+    adapters = whole.adapters; bind = whole.bind;
+    state = stateOf();
     const own = [cand.id, ...closure].flatMap(id => contractsOf(registry, id).map(c => c.key));
     for (const k of own) if (!contracts.includes(k)) contracts.push(k);
-    return { ok: true, have, closure, checks: { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: r?.verdict || whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} } };
+    return { ok: true, have, closure, checks: { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} } };
   };
 
-  /** @typedef {{ id: string, score: number, related: number, rel: number }} Fit */
-  /** @type {Map<string, Fit[]>} */
-  const fitsMemo = new Map();
-  /**
-   * The cards whose declared loop fits a mechanic, best first: a declared loop that serves the interaction (and is not
-   * another interaction's game-owning loop the spec does not join), ranked by declarations. @param {Mechanic} m @returns {Fit[]}
-   */
-  const fitsFor = m => {
-    const memo = fitsMemo.get(m.id); if (memo) return memo;
-    const own = joined(m);
-    const playedAs = own ? null : interaction;
-    const out = pool.map(card => {
-      const loop = cardLoop(card);
-      if (!loop || (!loop.verbs.length && !loop.progress.length) || !servesInteraction(card, playedAs)) return null;
-      if (playedAs && loop.interaction && loop.interaction !== playedAs && endsGame(loop.win)) return null;
-      // related: the card's own declarations (loop verbs, progress, names) speak of the mechanic, before how it is played.
-      return { id: card.id, score: declaredFit(m, card, { interaction: playedAs, joined: own }) ?? 0, related: (declaredFit(m, card, { joined: own }) ?? 0) > 0 ? 1 : 0, rel: relevance(m, card) };
-    }).filter(/** @returns {x is Fit} */ x => x !== null).sort(order);
-    fitsMemo.set(m.id, out);
-    return out;
-  };
-  const mechanicsInOrder = worklist(decomposition);
-  /** Mechanics a step's bundle already covered: mechanic id -> the covering step's mechanic and member. @type {Map<string, { by: string, primitive: string }>} */
-  const covered = new Map();
-  /**
-   * The later mechanics a bundle's companions cover (never by the seed itself): a mechanic of the same source concept as
-   * the seed's (mechanic.from; a joined idea's mechanics are never covered from the other side), whose best declared fit
-   * is the companion, whose declared loop does what the mechanic says (its verbs or progress events name it), and, when
-   * that best fit declares its own loop win, a companion that declares one too.
-   * @param {string[]} extras @param {number} at the current worklist index @param {Mechanic} m the seed's mechanic
-   * @returns {Array<{ mechanic: string, by: string }>}
-   */
-  const coverage = (extras, at, m) => {
-    /** @type {Array<{ mechanic: string, by: string }>} */
-    const out = [];
-    const wins = (/** @type {Card | null | undefined} */ c) => Boolean(cardLoop(c ?? null)?.win);
-    for (const m2 of mechanicsInOrder.slice(at + 1)) {
-      if (covered.has(m2.id) || ideaOf(m2.from) !== ideaOf(m.from) || joined(m2) !== joined(m)) continue;
-      const best = fitsFor(m2)[0];
-      const bestCard = best ? pool.find(c => c.id === best.id) : undefined;
-      const by = extras.find(id => {
-        const card = pool.find(c => c.id === id);
-        return card && best?.id === id && (declaredFit(m2, card) ?? 0) - relevance(m2, card) > 0 && (!wins(bestCard) || wins(card));
-      });
-      if (by) out.push({ mechanic: m2.id, by });
-    }
-    return out;
-  };
-
-  for (const [at, m] of mechanicsInOrder.entries()) {
+  for (const m of worklist(decomposition)) {
     const t0 = performance.now();
-    const cover = covered.get(m.id);
-    if (cover) {
-      // An earlier step's bundle covers this mechanic: no question, logged as covered.
-      steps.push({ kind: 'mechanic', mechanic: m.id, importance: m.importance, candidates: [], rejected: [], asks: [], checks: null, outcome: 'covered', primitive: cover.primitive, coveredBy: cover.by, collection: [...systems], ms: Math.round(performance.now() - t0) });
+    const header = `${premise}\nSpace: ${use} (${role})\nCollection so far: ${systems.join(', ') || '(empty)'}`;
+    /** @type {BuildStep} */
+    const step = { kind: 'mechanic', mechanic: m.id, importance: m.importance, candidates: [], rejected: [], asks: [], checks: null, outcome: 'gap', primitive: null, collection: [], ms: 0 };
+    steps.push(step);
+    // Coverage first: a primitive already in the collection of the mechanic's own concept, by its declarations.
+    const cov = coverageOf({ registry, decomposition, mechanic: m, mapping, owners });
+    let covered = cov.covered;
+    if (!covered && cov.ambiguous.length) {
+      const r = await askCoverage({ ask, registry, header, mechanic: m, ambiguous: cov.ambiguous });
+      step.asks.push({ offered: r.asked.offered, pick: r.asked.pick, why: r.asked.why, ok: Boolean(r.covered), question: 'covered_by' });
+      covered = r.covered;
+    }
+    if (covered) {
+      const by = [...(owners.get(covered.primitive) || [])][0] || '';
+      Object.assign(step, { outcome: 'covered', primitive: covered.primitive, coveredBy: by, coverage: { by: covered.primitive, why: covered.why, asked: step.asks.length > 0 } });
+      mapping[m.id] = { primitives: [covered.primitive], candidates: [], why: covered.why };
+      own(covered.primitive, m.id);
+      const owner = steps.find(s => s.kind === 'mechanic' && s.mechanic === by);
+      if (owner && owner.kind === 'mechanic') owner.covers = [...(owner.covers || []), m.id];
+      step.collection = [...systems];
+      step.ms = Math.round(performance.now() - t0);
       continue;
     }
-    // Candidates: each fitting card as a single card or the smallest bundle that composes with the collection (bundles.js),
-    // ranked by declarations less a penalty per extra primitive; only options that compose are offered.
-    /** @type {Array<BuildCandidate & { related: number, rel: number }>} */
-    const ranked = [];
-    /** @type {Array<{ id: string, why: string }>} */
-    const rejected = [];
-    // The seeds offered are the best-ranked fits that compose (alone or bundled), as for single cards: the bundle
-    // penalty only orders the options, so a seed is never pushed off the list by fits less related to the mechanic.
-    for (const f of fitsFor(m)) {
-      if (ranked.length >= MAX_CANDIDATES) break;
-      const b = formBundle({ registry, seed: f.id, systems, space: use, adapters, composes, resolve: resolveWith });
-      if (!b.ok) { rejected.push({ id: f.id, why: b.why }); continue; }
-      const size = b.members.length + b.adapters.length;
-      ranked.push({ id: f.id, score: +(f.score - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters,
-        covers: size > 1 ? coverage(b.extra.map(x => x.id), at, m) : [], related: f.related, rel: f.rel });
-    }
-    ranked.sort(order);
+    // Every valid option, ordered by declarations; the space itself when its card relates to the mechanic.
+    const found = validOptions({ registry, decomposition, mechanic: m, mapping, state, systems, space: use, adapters });
     /** @type {BuildCandidate[]} */
-    const candidates = ranked.map(({ related, rel, ...c }) => c);
-    // The space itself may be what a mechanic is (travelling between its places): offered when its card relates to it.
+    const candidates = found.options;
     const host = registry.cards().find(c => c.id === use);
-    if (host && candidates.length < MAX_CANDIDATES && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant, members: [use], extra: [], adapters: [], covers: [] });
-    /** @type {BuildStep} */
-    const step = { kind: 'mechanic', mechanic: m.id, importance: m.importance, candidates, rejected: rejected.slice(0, 6), asks: [], checks: null, outcome: 'gap', primitive: null, collection: [], ms: 0 };
-    steps.push(step);
+    if (host && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant, members: [use], extra: [], adapters: [] });
+    step.candidates = candidates;
+    step.rejected = found.rejected;
+    step.context = found.context;
     /** @type {Gap | null} */
     let gap = null;
     let open = [...candidates];
     /** @type {string | null} */
     let problem = null;
-    /** @type {AdapterSpec | undefined} */
-    let lastAdapter;
     while (open.length) {
-      const offered = open.map(c => c.id);
-      const a = await ask({ name: 'pick_primitive', field: 'pick', options: [...offered, 'none'],
-        extra: { spec: { type: 'string', description: 'when pick is "none": what a new primitive must do for this mechanic (its rules, inputs, state, events, how it is won), precise enough to build it; else ""' } },
-        system: 'You build a game from composable primitives, one mechanic at a time. Pick the ONE listed option (by its first id) that implements this mechanic as the game needs it, or "none" when none of them does (a related but different mechanic is "none"). An option written "a + b (why) + ..." is a bundle: the primitive with the companions it only works with; picking it adds them all. Every listed option already composes with the collection so far.',
-        user: `${premise}\nSpace: ${use} (${role})\nCollection so far: ${systems.join(', ') || '(empty)'}\n\nMechanic ${m.id} (${m.importance}): ${m.description}\n\nCandidates:\n${open.map(c => { const card = cardOf(registry, c.id); const loop = cardLoop(card); return `- ${bundleLabel(c)}: ${String(card?.intent || '').replace(/\s+/g, ' ').slice(0, 180)}${loop?.verbs.length ? ` (verbs: ${loop.verbs.join(', ')})` : ''}${c.covers.length ? ` [also covers ${c.covers.map(x => `${x.mechanic} via ${x.by}`).join(', ')}]` : ''}`; }).join('\n')}${problem ? `\n\n${problem}` : ''}` });
-      /** @type {BuildAsk} */
-      const asked = { offered, pick: a.pick, why: a.why, ok: false };
-      step.asks.push(asked);
+      const a = await pickOption({ ask, registry, header, mechanic: m, options: open, problem });
+      for (const x of a.asked) step.asks.push({ offered: x.offered, pick: x.pick, why: x.why, ok: false, ...(x.name !== 'pick_primitive' ? { question: x.name } : {}) });
+      const asked = step.asks[step.asks.length - 1];
       if (a.pick === 'none') {
-        const spec = str(prop(a.reply, 'spec')).slice(0, 600);
-        gap = { mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: a.why || 'no listed primitive implements it', signature: primitiveSignature(m, interaction, { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, spec) };
+        gap = { mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: a.why || 'no listed primitive implements it', signature: primitiveSignature(m, found.context, spaceChoice(), a.spec) };
         break;
       }
       const cand = /** @type {BuildCandidate} */ (open.find(c => c.id === a.pick));
       const t = tryAdd(cand);
       if (!t.ok) {
-        if (t.adapter) lastAdapter = t.adapter;
+        // Valid when offered; the whole-collection check (card.conflicts) still decides.
         asked.problem = t.why;
         open = open.filter(c => c.id !== a.pick);
         problem = `Your pick ${cand.members.length > 1 ? cand.members.join(' + ') : a.pick} was dropped: ${t.why}. Pick another listed option, or "none".`;
@@ -416,24 +317,15 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       asked.ok = true;
       step.checks = t.checks;
       step.outcome = t.have ? 'reused' : 'added'; step.primitive = a.pick;
-      // The mechanic maps to the pick and the companions it needs jointly (its requirements closure stays the pick's);
-      // the later mechanics a companion covers map to that companion and are skipped in the worklist.
-      const covering = new Set(cand.covers.map(x => x.by));
-      const joint = cand.extra.filter(x => x.kind === 'declared' && !covering.has(x.id)).map(x => x.id);
-      mapping[m.id] = { primitives: [a.pick, ...joint], candidates: candidates.map(({ id, score }) => ({ id, score })), why: a.why };
-      for (const x of cand.covers) {
-        covered.set(x.mechanic, { by: m.id, primitive: x.by });
-        mapping[x.mechanic] = { primitives: [x.by], candidates: [], why: `covered by the ${cand.members.join(' + ')} bundle picked for ${m.id}` };
-      }
-      if (cand.covers.length) step.covers = cand.covers.map(x => x.mechanic);
+      for (const id of [cand.id, ...t.closure]) own(id, m.id);
+      // The mechanic maps to the pick and the companions its declarations name (its requirements closure stays the pick's).
+      mapping[m.id] = { primitives: [a.pick, ...cand.extra.filter(x => x.kind === 'declared').map(x => x.id)], candidates: candidates.map(({ id, score }) => ({ id, score })), why: a.why };
       break;
     }
     if (!step.primitive) {
       const tried = step.asks.filter(x => x.problem).map(x => `${x.pick}: ${x.problem}`);
-      gap ??= lastAdapter && step.asks.length && step.asks.every(x => x.problem)
-        ? { mechanic: m.id, description: `needs adapter: ${adapterLine(lastAdapter)}`, importance: m.importance, kind: 'adapter', why: tried.join('; ').slice(0, 400), primitive: step.asks[step.asks.length - 1].pick, adapter: lastAdapter, signature: `adapter ${lastAdapter.id}: ${lastAdapter.card.adapts.projection}`, verdict: 'incompatible-needs-adapter' }
-        : { mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: tried.length ? `every candidate failed its checks: ${tried.join('; ')}`.slice(0, 400) : candidates.length ? 'no listed primitive implements it' : `no catalogue primitive whose declared loop serves ${interaction || 'the play spec'} composes with the collection${rejected.length ? ` (${rejected.slice(0, 2).map(x => `${x.id}: ${x.why}`).join('; ')})` : ''}`,
-          signature: primitiveSignature(m, interaction, { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }) };
+      gap ??= { mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: tried.length ? `every pick failed its checks: ${tried.join('; ')}`.slice(0, 400) : `no catalogue primitive whose declared loop serves ${found.context || 'the play spec'} is valid with the collection${found.rejected.length ? ` (${found.rejected.slice(0, 2).map(x => `${x.id}: ${x.why}`).join('; ')})` : ''}`.slice(0, 400),
+        signature: primitiveSignature(m, found.context, spaceChoice()) };
       gaps.push(gap);
       mapping[m.id] = { primitives: [], candidates: candidates.map(({ id, score }) => ({ id, score })), why: gap.why };
     }
@@ -448,7 +340,8 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
   if (loopMechanic && mapping[loopMechanic.id]?.primitives.length) {
     const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems], adapters: [...adapters], bind: { ...bind },
-      mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic.id, composes, resolve: resolveWith });
+      mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic.id,
+      composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
     const r = await loopSteps({ registry, decomposition, collection: collection(), ask, mechanic: loopMechanic, log,
       commit: (kind, pick) => {
         const t = tryAdd(pick);
