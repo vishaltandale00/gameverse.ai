@@ -25,6 +25,8 @@ const health = {
       health: { type: 'object', fields: { max: { type: 'number', min: 0.01, required: true, effect: 'hit points' }, hp: { type: 'number', min: 0 }, regen: { type: 'number', effect: 'hp per second' }, iframeSec: { type: 'number', min: 0 }, respawn: { type: 'json', effect: 'none|home|spawn or {mode, sec}' }, resist: { type: 'object', open: true, effect: 'damage type -> fraction resisted' }, armor: { type: 'object', open: true } }, effect: 'hit points' },
       touch: { type: 'object', fields: { damage: { type: 'number', min: 0, required: true }, type: { type: 'string' }, knockback: { type: 'number', min: 0 } }, effect: 'contact damage to hostile entities it overlaps' },
     },
+    // The effect that takes a holder of a component it owns out of play (an encounter's defeated participant, planner/presets.js).
+    defeats: { health: 'kill' },
     // The player can be hurt (and so lose and win fights) from the first frame.
     engage: { player: { components: { health: { max: 10 } } } },
     intent: 'Hit points for any entity with a health component: damage types with resistances and armor (from components and equipment stat vars), i-frames, hit stun, knockback, contact damage, physics impact damage, and death rules (corpse, despawn, respawn at home or spawn, split on death). Every other combat primitive deals damage through it.',
