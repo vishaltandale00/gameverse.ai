@@ -11,7 +11,7 @@
 // block as solid but only the proof walks it). Styles and palettes are data.
 // Coordinates are tiles, y up; rect = [x0, y0, x1, y1) as space zones.
 import { ENTITY_KINDS } from '../../kernel/params.js';
-import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect, documentMover } from './generate2d-lib.js';
+import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect, documentMover, docSpace } from './generate2d-lib.js';
 import { ROLE, proveReach, navMover, moverReach, moverCells } from './generate2d-reach.js';
 import { movementAbilityNames, abilityDefs } from '../gameplay/move-lib-envelope.js';
 
@@ -29,6 +29,16 @@ export const ROOM_STYLES = {
   flooded: { ground: 1, water: 0.35, platforms: 3, platformWidth: [3, 5] },
 };
 const DEFAULT_PALETTE = { wall: 'stone', ground: 'stone', platform: 'plank', rung: 'rung', hazard: 'spikes', water: 'water', door: 'door' };
+/** A role → block palette (params palette, each theme of params.themes). */
+const PALETTE = { type: 'object', fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'ref', to: 'block', effect: `${k} cells` }])) };
+/** A style recipe (params.styles): the fields ROOM_STYLES entries have that the fill reads. */
+const STYLE = { type: 'object', open: true, fields: {
+  ground: { type: 'integer', min: 0, effect: 'side view: ground rows below the floor' }, platforms: { type: 'integer', min: 0, effect: 'platforms when the room gives none' },
+  platformWidth: { type: 'list', of: { type: 'integer', min: 1 }, min: 2, max: 2, effect: '[narrowest, widest] platform in tiles' },
+  noise: { type: 'number', min: 0, max: 1, effect: 'cave noise fill chance' }, smooth: { type: 'integer', min: 0, effect: 'cave smoothing passes (default 2)' },
+  ceiling: { type: 'integer', min: 1, effect: 'side view: ceiling height above the floor' }, water: { type: 'number', min: 0, max: 1, effect: 'side view: share of the room height under water' },
+  climb: { type: 'boolean', effect: 'platforms form a climbable stair' },
+} };
 
 const feature = { type: 'object', open: true, fields: {
   kind: { type: 'string', required: true, effect: 'marker kind (bench, chest, npc, spawn, door, lever...)' },
@@ -42,10 +52,10 @@ const room = { type: 'object', fields: {
   zone: { type: 'ref', to: 'zone', required: true },
   rect: { type: 'list', of: { type: 'integer' }, min: 4, max: 4, required: true, scale: 'world', effect: '[x0,y0,x1,y1) in tiles' },
   style: { type: 'string', default: 'hall', effect: `one of the styles (${Object.keys(ROOM_STYLES).join('|')} or a key of params.styles)` },
-  theme: { type: 'string', effect: 'palette override key in params.themes' },
+  theme: { type: 'string', effect: 'a key of params.themes whose palette overrides this room' },
   platforms: { type: 'integer', min: 0, max: 40 },
   gaps: { type: 'integer', min: 0, max: 12, effect: 'pits in the floor, never wider than the jump distance' },
-  hazards: { type: 'list', of: { type: 'string' }, effect: 'hazard block ids (content.blocks ids) placed on the floor' },
+  hazards: { type: 'list', of: { type: 'ref', to: 'block' }, effect: 'hazard blocks placed on the floor' },
   features: { type: 'list', of: feature, default: [] },
   exits: { type: 'list', default: [], of: { type: 'object', fields: {
     side: { type: 'string', options: ['l', 'r', 't', 'b'], required: true },
@@ -67,9 +77,9 @@ export default {
       rooms: { type: 'list', of: room, min: 1, required: true },
       requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities (ids the document defines, or movement ability names) the player holds everywhere in the proof' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side' },
-      styles: { type: 'json', default: {}, effect: 'extra or overriding style recipes' },
-      palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'string', effect: 'a content.blocks id' }])), effect: 'role → block id' },
-      themes: { type: 'json', default: {}, effect: 'theme → palette overrides' },
+      styles: { type: 'object', default: {}, values: STYLE, effect: 'extra or overriding style recipes, by name' },
+      palette: { ...PALETTE, default: {}, effect: 'role → block' },
+      themes: { type: 'object', default: {}, values: PALETTE, effect: 'theme → palette overrides' },
       exitSize: { type: 'integer', min: 1, max: 8, default: 3, unit: 'tiles' },
       attempts: { type: 'integer', min: 1, max: 32, default: 6, effect: 'sub-seeds tried per room before the plain fallback' },
       oneWayPlatforms: { type: 'boolean', default: false, effect: 'platforms can be jumped through from below (needs a one_way block)' },
@@ -84,7 +94,15 @@ export default {
     // player, its envelope and body (generate2d-lib documentMover), on the space's navigation, taking the published
     // `passes` (paired doors); a seed whose layout cannot satisfy it reports these codes.
     traversal: { mover: 'player', problems: TRAVERSAL },
-    validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
+    rules: {
+      room_rect_invalid: { fields: ['rooms[].rect', 'exitSize'], message: 'a room rect is at least exitSize + 2 wide and exitSize + 3 tall' },
+      room_overlap: { fields: ['rooms[].rect'], message: 'room rects do not overlap', example: { rooms: [{ id: 'west', zone: 'start_area', rect: [0, 0, 20, 16], style: null, theme: null, platforms: null, gaps: null, hazards: null, requiresAbilities: null }, { id: 'east', zone: 'start_area', rect: [10, 0, 30, 16], style: null, theme: null, platforms: null, gaps: null, hazards: null, requiresAbilities: null }] } },
+      room_outside_zone: { fields: ['rooms[].rect', 'rooms[].zone'], message: "a room rect lies inside its zone's rect" },
+      room_outside_space: { fields: ['rooms[].rect'], message: 'a room rect lies inside the space (0..size)' },
+      room_style_unknown: { fields: ['rooms[].style', 'styles'], message: `style is one of ${Object.keys(ROOM_STYLES).join(', ')} or a name in styles` },
+      ability_unknown: { fields: ['requiresAbilities', 'rooms[].requiresAbilities'], message: "an ability is one the document defines (an ability reference) or a name the player's movement declares" },
+      room_duplicate: { fields: ['rooms[].id'], message: 'room ids are unique' },
+    },
   },
   /**
    * Planner hook (v2/planner/world.js): a config that builds a world for a space that has none yet,
@@ -143,8 +161,8 @@ export default {
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.zones || []).some(z => z.id === config.rooms[0]?.zone)) || null;
-    const size = sp?.with?.size, zones = new Map((sp?.zones || []).map(z => [z.id, z])), ids = new Set();
+    const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, { space: sp, config: spc } = docSpace(doc, ctx, inst, ID);
+    const size = spc.size, zones = new Map((sp?.zones || []).map(z => [z.id, z])), ids = new Set();
     // An ability is one the document defines (an `ability` reference kind) or a movement card's own ability name.
     const names = new Set([...abilityDefs(doc, ctx.registry).keys(), ...movementAbilityNames(doc, ctx.registry)]), known = a => names.has(a);
     const hint = [...names].join(', ') || 'no ability is defined in this document';

@@ -10,7 +10,7 @@
 // sub-seed is retried and the complete lattice (density 1) is the fallback.
 // Sizes, styles and house layouts are data. Maze rows run top-down; `yUp`
 // flips them into a y-up space.
-import { withDefaults, bodyCells, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, placeOn, problem } from './generate2d-lib.js';
+import { withDefaults, bodyCells, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, placeOn, problem, docSpace } from './generate2d-lib.js';
 import { seedFrom } from '../../kernel/rng.js';
 
 const ID = 'engine.generate.grid.maze';
@@ -267,7 +267,7 @@ export default {
       } }, effect: 'extra sizes by name (size names one of them)' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world', effect: 'space cell of the maze corner' },
       yUp: { type: 'boolean', default: true, effect: 'maze row 0 is the top row of the space region' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall', effect: 'a content.blocks id' }, houseWall: { type: 'string', default: 'house_wall', effect: 'a content.blocks id' }, door: { type: 'string', default: 'house_door', effect: 'a content.blocks id' } } },
+      palette: { type: 'object', default: {}, fields: { wall: { type: 'ref', to: 'block', default: 'wall', effect: 'maze walls' }, houseWall: { type: 'ref', to: 'block', default: 'house_wall', effect: 'hunter house walls' }, door: { type: 'ref', to: 'block', default: 'house_door', effect: 'hunter house doors' } } },
       pellet: { type: 'string', default: 'pellet', effect: 'archetype spawned on pellet tiles ("" for none)' },
       power: { type: 'string', default: 'power_pellet', effect: 'archetype spawned on power-pellet tiles ("" for none)' },
       pelletCounter: { type: 'string', default: 'pellets', effect: 'collectible counter of pellets (component collectible.counter)' },
@@ -306,7 +306,7 @@ export default {
     const config = withDefaults(this.card, raw);
     const errors = [], sizes = { ...SIZES, ...config.sizes }, spec = sizes[config.size];
     if (!spec) errors.push(problem('maze_size_unknown', 'size', `unknown maze size '${config.size}'`, { hint: Object.keys(sizes).join(', ') }));
-    const sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID)), size = sp?.with?.size;
+    const size = docSpace(doc, ctx, inst, ID).config.size;
     if (spec && size && (config.origin[0] + spec.w > size[0] || config.origin[1] + spec.h > size[1])) errors.push(problem('maze_outside_space', 'origin', `a ${spec.w}×${spec.h} maze at ${config.origin} does not fit the ${size[0]}×${size[1]} space`));
     return errors;
   },

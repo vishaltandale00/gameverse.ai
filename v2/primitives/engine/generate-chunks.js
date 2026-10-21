@@ -16,7 +16,7 @@
 // along the axis the followed entity has got from where it first stood, and a
 // course with a `goal` distance is a run to win (the runner mode): reaching it
 // emits course_goal and runs onGoal once.
-import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
+import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem, docSpace } from './generate2d-lib.js';
 
 const ID = 'engine.generate.chunks';
 const AX = { x: 0, y: 1, z: 2 };
@@ -75,7 +75,7 @@ export default {
         spacing: { type: 'number', min: 0.1, max: 50, default: 1, effect: 'progress units per picture step' },
         rows: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'picture of the chunk, top row first' },
       } } },
-      legend: { type: 'object', default: DEFAULT_LEGEND, values: { type: 'object', open: true, fields: { archetype: { type: 'string', effect: 'a content.archetypes id spawned at the char' }, block: { type: 'string', effect: 'a content.blocks id written at the char' }, blocks: { type: 'boolean' }, hazard: { type: 'json' }, components: { type: 'json' } } }, effect: 'char → {archetype?, block?, blocks?, hazard?, components?}; "." is empty' },
+      legend: { type: 'object', default: DEFAULT_LEGEND, values: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the char' }, block: { type: 'ref', to: 'block', effect: 'written at the char' }, blocks: { type: 'boolean', effect: 'the char blocks the way (the passability proof avoids it)' }, hazard: { type: 'boolean', effect: 'the char hurts (the passability proof avoids it)' }, components: { type: 'object', open: true, effect: 'components added to the spawned entity, by owner' } } }, effect: 'char → {archetype?, block?, blocks?, hazard?, components?}; "." is empty' },
       along: { type: 'string', options: ['rows', 'columns'], default: 'rows', effect: 'rows: the bottom row is met first (lanes, climb); columns: left to right (side view)' },
       axis: { type: 'string', options: ['x', 'y', 'z'], default: 'x', effect: 'progress axis in the space' },
       cross: { type: 'string', options: ['x', 'y', 'z'], default: 'y', effect: 'axis of the other picture dimension' },
@@ -99,7 +99,17 @@ export default {
     provides: { content: ['course', 'cells', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*', 'course_goal'], vars: ['course.distance'], services: ['generation', 'chunks'] },
     requires: { capabilities: ['position'] },
     problems: ['chunk_impassable', 'chunk_tier_missing', 'chunks_fallback'],
-    validates: ['chunk_duplicate', 'chunk_rows_ragged', 'chunk_char_unknown', 'chunk_axis_invalid', 'chunk_legend_invalid', 'chunk_goal_outside'],
+    rules: {
+      chunk_duplicate: { fields: ['chunks[].id'], message: 'chunk ids are unique' },
+      chunk_rows_ragged: { fields: ['chunks[].rows'], message: 'the rows of a chunk are all the same length' },
+      chunk_char_unknown: { fields: ['chunks[].rows', 'legend'], message: 'every char of a chunk picture is "." or a key of legend' },
+      chunk_axis_invalid: { fields: ['axis', 'cross'], message: 'cross differs from axis' },
+      // The host (a track) has no size: the example is a document of its own, a runner on a sized tilemap.
+      chunk_goal_outside: { fields: ['goal', 'origin', 'axis'], message: "a goal run (from the followed entity's start) ends inside the space along the axis", example: { at: 'spaces[0].generators[0].with.goal', doc: {
+        spaces: [{ id: 'runway', use: 'engine.space.tilemap', with: { size: [64, 16] }, generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'open', rows: ['.'] }], goal: 100 } }] }],
+        systems: [], player: { archetype: 'runner', at: [1, 1] }, content: { archetypes: [{ id: 'runner', name: 'Runner' }] },
+      } } },
+    },
   },
   /**
    * Planner hook (v2/planner/world.js), track spaces: a finite course over the zones' progress span (the track's
@@ -140,11 +150,10 @@ export default {
     const config = withDefaults(this.card, raw);
     const errors = [], legend = config.legend, ids = new Set();
     // A goal past the space's far edge along the axis can never be reached (run from the player's start when it is followed).
-    const sp = (doc?.spaces || []).find(s => s.id === inst.space), size = sp?.with?.size, ax = AX[config.axis];
+    const size = docSpace(doc, ctx, inst, ID).config.size, ax = AX[config.axis];
     const from = config.follow === 'player' && Array.isArray(doc?.player?.at) && Number.isFinite(doc.player.at[ax]) ? doc.player.at[ax] : (config.origin[ax] ?? 0);
     if (config.goal !== undefined && Array.isArray(size) && Number.isFinite(size[ax]) && from + config.goal >= size[ax]) errors.push(problem('chunk_goal_outside', 'goal', `a run of ${config.goal} from ${from} along ${config.axis} ends past the space's far edge (${size[ax]})`, { hint: `a goal below ${size[ax] - from}` }));
     if (config.axis === config.cross) errors.push(problem('chunk_axis_invalid', 'cross', 'cross must differ from axis'));
-    for (const [ch, v] of Object.entries(legend || {})) if ([...ch].length !== 1 || !v || typeof v !== 'object') errors.push(problem('chunk_legend_invalid', `legend.${ch}`, 'legend keys are single chars mapping to {archetype?, block?, blocks?, hazard?}'));
     config.chunks.forEach((c, i) => {
       if (ids.has(c.id)) errors.push(problem('chunk_duplicate', `chunks[${i}].id`, `duplicate chunk '${c.id}'`)); ids.add(c.id);
       if (new Set(c.rows.map(r => [...r].length)).size > 1) errors.push(problem('chunk_rows_ragged', `chunks[${i}].rows`, `rows of '${c.id}' differ in length`));
