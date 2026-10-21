@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import { DIRECTION_SCHEMA, DIRECTION_PROMPT, directionRequest, normalizeDirection, mergeDirection, forcedTargets, fallbackDirection, TARGETS } from '../art/direction.js';
 import { paintGameArt, ART_PAINTER_VERSION } from '../art/paint.js';
+import { artQuality } from '../verify/art-quality.js';
 import { messageOf, obj, prop } from '../kernel/guards.js';
 
 /** @typedef {ReturnType<typeof createProceduralArt>} ProceduralArt */
@@ -42,11 +43,11 @@ export function createProceduralArt({ client = null, model = 'gpt-4.1-mini' } = 
     }
   }
 
-  /** Paint and store every asset; returns { art, report }.
+  /** Paint and store every asset; returns { art, report, quality } (quality: the art checks, verify/art-quality.js; never blocking).
    * @param {{ job: { gameId: string }, ctx: { store: Pick<import('./arcade-pipeline.js').PipelineStore, 'saveAsset'> }, spec: ArtSpec, directed: Directed, previous: unknown }} request */
   async function paint({ job, ctx, spec, directed, previous }) {
     const started = performance.now();
-    const { assets, assemble } = paintGameArt(directed.direction, spec);
+    const { assets, assemble, look, palette, separation } = paintGameArt(directed.direction, spec);
     /** @type {Map<string, unknown>} */
     const urls = new Map();
     // Locked assets: a target the change didn't name keeps its previous file, even if the painter has since improved.
@@ -63,7 +64,11 @@ export function createProceduralArt({ client = null, model = 'gpt-4.1-mini' } = 
       urls.set(key, url);
     }));
     const art = assemble((/** @type {string} */ key) => urls.get(key));
-    return { art, report: { generator: ART_PAINTER_VERSION, director: directed.source, directionMs: directed.ms, paintMs: Math.round(performance.now() - started), assets: assets.length, reused, changed: directed.changed, ...(directed.error ? { directorError: directed.error } : {}) } };
+    const paintMs = Math.round(performance.now() - started);
+    // Checks run on the painted SVGs. Reused assets were checked when they were painted; a reused file may differ
+    // from this paint only when the painter has changed since.
+    const t = performance.now(), quality = artQuality(assets, look);
+    return { art, quality: { ...quality, ms: Math.round(performance.now() - t) }, report: { generator: ART_PAINTER_VERSION, director: directed.source, directionMs: directed.ms, paintMs, assets: assets.length, reused, changed: directed.changed, look: look ? { preset: look.preset, colors: palette?.length ?? null, separation } : null, ...(directed.error ? { directorError: directed.error } : {}) } };
   }
 
   return { procedural: true, direct, paint };

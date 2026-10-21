@@ -132,14 +132,15 @@ function platform(kind, c, r) {
 /**
  * Paint a 2×2 tileset atlas: groundTop, groundFill, platform, wall.
  * Returns { svg, layout } where layout matches the renderer's tileset record.
+ * An art look adds `size` (natural px of the 2.25-tile atlas) and `shading`.
  */
-export function paintTileset(input = {}, { pixel = false, seed = 'tiles' } = {}) {
+export function paintTileset(input = {}, { pixel = false, seed = 'tiles', size: natural, shading = null } = {}) {
   const material = MATERIALS.includes(input.material) ? input.material : 'dirt';
   const surf = SURFACES.includes(input.surface) ? input.surface : 'grass';
   const plat = PLATFORMS.includes(input.platform) ? input.platform : 'brick';
   const groundColor = hex(input.groundColor, '#8a5a2b'), surfaceColor = hex(input.surfaceColor, '#4fbf3a'), platformColor = hex(input.platformColor, '#c0603a');
   const r = rng(seed);
-  const d = makeDefs('t');
+  const d = makeDefs('t', shading);
   const fill = FILL[material](groundColor, r);
   const cells = {
     groundTop: fill + surface(surf, surfaceColor, groundColor),
@@ -159,7 +160,7 @@ export function paintTileset(input = {}, { pixel = false, seed = 'tiles' } = {})
     return `<g clip-path="${clip}">${uses}</g>`;
   }).join('');
   const scale = pixel ? 1 : 4;
-  const size = CELL * 2;
-  const svg = document({ width: size * scale, height: size * scale, viewBox: `0 0 ${size} ${size}`, defs: d.toString(), body, crisp: pixel });
+  const size = CELL * 2, px = natural || size * scale;
+  const svg = document({ width: px, height: px, viewBox: `0 0 ${size} ${size}`, defs: d.toString(), body, crisp: pixel });
   return { svg, layout: { ...TILE_LAYOUT, inset: PAD / CELL } };
 }

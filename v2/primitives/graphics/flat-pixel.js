@@ -71,7 +71,8 @@ export function motion(anim, f, n) {
 
 /**
  * Build one frame. Returns { w, h, data:Uint8ClampedArray, pivot:[x,y] } in buffer pixels (y down),
- * pivot at the feet. opts: { outline: hex|'' (default: derived), shading: true, flash: 0..1 (white), tint }
+ * pivot at the feet. opts: { outline: hex|'' (default: derived), shading: true, flash: 0..1 (white), tint,
+ * and an art look's (art/look.js lookPrimitives): outlineWidth 1..4 px, bands 1..4 shading tones, palette: hex[] to snap to }
  */
 export function pixelFrame(spec, anim = 'idle', f = 0, opts = {}) {
   const [SW, SH] = spec.size || [16, 16];
@@ -81,17 +82,20 @@ export function pixelFrame(spec, anim = 'idle', f = 0, opts = {}) {
   const pal = spec.palette || {};
   const colorOf = k => (typeof k === 'string' && k.startsWith('#') ? k : pal[k] || '#c8c8d0');
   const set = (x, y, rgb, a = 255) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = (y * W + x) * 4; data[i] = rgb[0]; data[i + 1] = rgb[1]; data[i + 2] = rgb[2]; data[i + 3] = a; };
-  const shading = opts.shading !== false;
+  const bands = Math.max(1, Math.min(4, Math.round(opts.bands ?? 3)));
+  const shading = opts.shading !== false && bands > 1;
   const parts = spec.parts?.length ? spec.parts : [{ rect: [Math.floor(SW * 0.2), 0, Math.ceil(SW * 0.6), Math.ceil(SH * 0.8)], c: Object.keys(pal)[0] || '#c8c8d0', name: 'body' }];
   for (const part of parts) {
     const [px, py, pw, ph] = part.rect || [0, 0, 1, 1], base = colorOf(part.c), role = roleOf(part.name);
-    const ramp = { top: hexToRgb(light(base, 0.22)), mid: hexToRgb(base), low: hexToRgb(shade(base, 0.22)), side: hexToRgb(shade(base, 0.1)) };
+    const mid = hexToRgb(base);
+    const ramp = { top: bands >= 3 ? hexToRgb(light(base, 0.22)) : mid, top2: hexToRgb(light(base, 0.4)), mid, low: hexToRgb(shade(base, 0.22)), side: bands >= 3 ? hexToRgb(shade(base, 0.1)) : mid };
     for (let x = 0; x < pw; x++) for (let y = 0; y < ph; y++) {
       let key = role;
       if (role === 'legs') key = x < pw / 2 ? 'legsL' : 'legsR';
       const [dx, dy] = off[key] || off.body;
       let rgb = ramp.mid;
-      if (shading && ph >= 3 && y === ph - 1) rgb = ramp.top;
+      if (shading && bands >= 4 && ph >= 5 && y === ph - 1) rgb = ramp.top2;
+      else if (shading && ph >= 3 && y === ph - (bands >= 4 && ph >= 5 ? 2 : 1)) rgb = ramp.top;
       else if (shading && ph >= 3 && y === 0) rgb = ramp.low;
       else if (shading && pw >= 4 && x === pw - 1) rgb = ramp.side;
       // Dash leans the upper body forward a pixel per third of the height.
@@ -114,11 +118,24 @@ export function pixelFrame(spec, anim = 'idle', f = 0, opts = {}) {
   }
   const outline = opts.outline === undefined ? outlineOf(colorOf(parts[0].c)) : opts.outline;
   if (outline) {
+    // One ring per pixel of width (within the buffer's padding).
     const o = hexToRgb(outline), solid = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++) solid[i] = data[i * 4 + 3] > 0 ? 1 : 0;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      if (solid[y * W + x]) continue;
-      if ((x > 0 && solid[y * W + x - 1]) || (x < W - 1 && solid[y * W + x + 1]) || (y > 0 && solid[(y - 1) * W + x]) || (y < H - 1 && solid[(y + 1) * W + x])) set(x, y, o);
+    for (let ring = 0; ring < Math.max(1, Math.min(PAD, Math.round(opts.outlineWidth ?? 1))); ring++) {
+      for (let i = 0; i < W * H; i++) solid[i] = data[i * 4 + 3] > 0 ? 1 : 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (solid[y * W + x]) continue;
+        if ((x > 0 && solid[y * W + x - 1]) || (x < W - 1 && solid[y * W + x + 1]) || (y > 0 && solid[(y - 1) * W + x]) || (y < H - 1 && solid[(y + 1) * W + x])) set(x, y, o);
+      }
+    }
+  }
+  if (Array.isArray(opts.palette) && opts.palette.length) {
+    const pal = opts.palette.map(hexToRgb), near = new Map();
+    for (let i = 0; i < data.length; i += 4) {
+      if (!data[i + 3]) continue;
+      const k = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+      let best = near.get(k);
+      if (!best) { let bd = Infinity; for (const p of pal) { const e = (data[i] - p[0]) ** 2 * 0.3 + (data[i + 1] - p[1]) ** 2 * 0.59 + (data[i + 2] - p[2]) ** 2 * 0.11; if (e < bd) { bd = e; best = p; } } near.set(k, best); }
+      data[i] = best[0]; data[i + 1] = best[1]; data[i + 2] = best[2];
     }
   }
   const pivot = spec.pivot || [SW / 2, 0];
