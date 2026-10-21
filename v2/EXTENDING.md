@@ -18,7 +18,7 @@ standing in for decisions, no word lists over the idea, no per-game cases; nothi
 `conflicts`, and as they apply `engage`, `loop` and `mode` (with `mode.bot` naming a registered bot), `drives`,
 `spaces` / `provides.content` / `provides.extent`, `needs.content`, `locomotion` / `medium`, `interactions`, `adapts`.
 A rule enforced in code but not declared is a defect; a missing declaration fails the checks, it is never assumed.
-Controls: a verb whose action takes a value declares it in `card.actionSpace` (enum, axis, or `choice` with `of`); a loop
+Controls: a verb whose action takes a value declares it in `card.actionSpace` (enum, axis, or `choice` with `of`, its provider `from: 'options'` or `selects`, and the events it `emits`); a refusal event goes in `card.denials`; a loop
 whose verbs depend on the instance declares `card.loop.verbsOf(config, doc)`; a space declares `card.frame`; a renderer
 or camera declares `card.projection` per view; a UI primitive declares `card.interactions` and `card.controls`.
 

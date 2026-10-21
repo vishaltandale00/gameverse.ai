@@ -9,6 +9,9 @@ export const CATALOGUE_CONFORMANCE = Object.freeze([
   Object.freeze({ file: 'tests/v2-p-loop-owners.test.js' }),
   Object.freeze({ file: 'tests/v2-p-modes-bots.test.js', name: '^modes: every card\\.mode is well formed' }),
   Object.freeze({ file: 'tests/v2-template-contract.test.js' }), // every template still passes its contract with the candidate
+  Object.freeze({ file: 'tests/v2-choice-providers.test.js', name: '^choice declarations' }), // choice verbs declare provider and emits
+  Object.freeze({ file: 'tests/v2-events-declared.test.js', name: '^declared events' }), // every event a primitive emits is declared
+  Object.freeze({ file: 'tests/v2-events-declared.test.js', name: '^denials: every event' }), // refusals are declared events
 ]);
 
 /** The `node` argv of one entry. @param {{ file: string, name?: string }} entry */

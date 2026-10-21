@@ -97,7 +97,7 @@ export default {
       groups: { type: 'list', default: [], of: { type: 'object', fields: { id: F('string', { required: true }), points: F('number', { default: 0 }), resetSec: F('number', { default: 1.5, min: 0 }), onComplete: F('effects', { default: [] }), rotateLeft: F('string', { effect: 'verb rotating lit rollovers left' }), rotateRight: F('string') } }, effect: 'rollover / drop-target banks' },
       reach: { type: 'number', default: 2.5, min: 0, max: 50, effect: 'how close a mechanism entity must be to use it (gameplay.interact range)' },
     },
-    provides: { events: ['triggered', 'triggered:*', 'opened', 'opened:*', 'closed', 'closed:*', 'broken', 'broken:*', 'deactivated', 'deactivated:*', 'mechanism_denied', 'chip', 'flip', 'bumper', 'kicked', 'launched', 'rollover', 'group_complete', 'group_complete:*', 'ramp', 'ramp_exit', 'ramp_combo', 'sprung', 'landed_on', 'timer_done', 'timer_done:*', 'trap_fired', 'trap_fired:*'], services: ['mechanisms'] },
+    provides: { events: ['timer_started', 'mechanism_hit', 'lift_arrived', 'triggered', 'triggered:*', 'opened', 'opened:*', 'closed', 'closed:*', 'broken', 'broken:*', 'deactivated', 'deactivated:*', 'mechanism_denied', 'chip', 'flip', 'bumper', 'kicked', 'launched', 'rollover', 'group_complete', 'group_complete:*', 'ramp', 'ramp_exit', 'ramp_combo', 'sprung', 'landed_on', 'timer_done', 'timer_done:*', 'trap_fired', 'trap_fired:*'], services: ['mechanisms'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
     defines: [{ kind: 'mechanism', in: 'mechanisms' }],

@@ -42,7 +42,7 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required to fly (via unlock_ability grants); empty = always' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },
-    provides: { events: ['fly_start', 'fly_end', 'fuel_empty', 'landed', 'arrived', 'arrived:*', 'move_failed'], actions: ['fly', 'ascend', 'descend', 'jump', 'sprint'] },
+    provides: { events: ['evaded', 'fly_start', 'fly_end', 'fuel_empty', 'landed', 'arrived', 'arrived:*', 'move_failed'], actions: ['fly', 'ascend', 'descend', 'jump', 'sprint'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind'], services: ['character'] },
     envelope,

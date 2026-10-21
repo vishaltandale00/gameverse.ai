@@ -48,7 +48,7 @@ export default {
   card: {
     loop: { verbs: ['accept_quest', 'track_quest'], progress: ['objective_done', 'quest_complete'], win: { when: { count: 'quest_complete', gte: '$target' }, reads: { event: 'quest_complete', by: { actions: ['accept_quest'], effects: ['complete_quest', 'set_objective'], events: ['*'] } } } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { accept_quest: { type: 'choice', of: 'an offered quest' }, track_quest: { type: 'choice', of: 'an active quest' } },
+    actionSpace: { accept_quest: { type: 'choice', of: 'an offered quest', from: 'options', emits: ['quest_started'] }, track_quest: { type: 'choice', of: 'an active quest', from: 'options', emits: ['quest_tracked'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.quests", "min": 2, "why": "quests are objectives built from goal kinds (reach, collect, deliver, defeat, talk, escort, survive, build, drive, craft, use, discover) with rewards", "example": {"id": "q_lamp", "title": "Light the lamp", "kind": "main", "giver": "keeper", "zone": "lighthouse", "summary": "Find the brass key and open the lamp room.", "autoStart": true, "objectives": [{"id": "o_talk", "kind": "talk", "character": "keeper", "text": "Speak to the keeper."}, {"id": "o_key", "kind": "collect", "item": "brass_key", "count": 1, "text": "Find the brass key."}, {"id": "o_room", "kind": "reach", "zone": "lamp_room", "text": "Open the lamp room."}], "rewards": {"items": [{"item": "lens", "count": 1}]}}},
@@ -60,7 +60,9 @@ export default {
       trackOne: { type: 'boolean', default: true, effect: 'one tracked quest; a newly started main quest is tracked when none is' },
       failOnDeathOfGiver: { type: 'boolean', default: false, effect: 'active quests fail when their giver dies' },
     },
-    provides: { events: ['quest_available', 'quest_available:*', 'quest_started', 'quest_started:*', 'quest_updated', 'objective_done', 'objective_done:*', 'objective_failed', 'quest_complete', 'quest_complete:*', 'quest_failed', 'quest_failed:*', 'quest_tracked', 'quest_blocked', 'delivered'], vars: ['quests.active', 'quests.complete'], services: ['quests'], actions: ['accept_quest', 'track_quest'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['quest_blocked'],
+    provides: { events: ['quest_branch', 'quest_available', 'quest_available:*', 'quest_started', 'quest_started:*', 'quest_updated', 'objective_done', 'objective_done:*', 'objective_failed', 'quest_complete', 'quest_complete:*', 'quest_failed', 'quest_failed:*', 'quest_tracked', 'quest_blocked', 'delivered'], vars: ['quests.active', 'quests.complete'], services: ['quests'], actions: ['accept_quest', 'track_quest'] },
     reads: ['plot.quests'],
   },
   logic(logic) {
@@ -324,10 +326,12 @@ export default {
       }
       setVars();
     }, ID);
-    rt.options(rt => (service(rt, 'dialogue')?.active() || service(rt, 'cutscene')?.playing() ? [] : api.offered().filter(id => {
+    rt.options(rt => (service(rt, 'dialogue')?.active() || service(rt, 'cutscene')?.playing() ? [] : [...api.offered().filter(id => {
       const g = quests().get(id).giver, ch = service(rt, 'character');
       return !g || !ch || ch.isPlayer(g) || ch.inRange().includes(g);
-    }).map(id => ({ label: `accept ${id}`, actions: { accept_quest: id } }))));
+    }).map(id => ({ label: `accept ${id}`, actions: { accept_quest: id } })),
+    // Any active quest other than the tracked one can be tracked.
+    ...[...quests().keys()].filter(id => rec(id)?.state === 'active' && st(rt).tracked !== id).map(id => ({ label: `track ${id}`, actions: { track_quest: id } }))]));
   },
 };
 

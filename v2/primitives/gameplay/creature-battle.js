@@ -321,7 +321,7 @@ export default {
   id: ID,
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running' } },
+    actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running', from: 'options', emits: ['battle_log'] } },
     loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
       lose: { param: 'onLose', reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
       // As an encounter: a won battle or a capture takes the foe out; a lost battle the player's side; running away leaves both.
@@ -356,8 +356,10 @@ export default {
       }, effect: 'the battle fought from the start of the game (with autoStart): a creature battler played on its own' },
       autoStart: { type: 'boolean', default: true, effect: 'start the opening battle at game start (otherwise battles start from start_battle)' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['battle_invalid'],
     provides: {
-      events: ['battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
+      events: ['battle_request', 'battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
       vars: ['battle.active', 'battle.turn'],
       actions: ['battle'],
       services: ['battle'],
@@ -404,8 +406,9 @@ export default {
     }
     function start(req) {
       const s = st(); if (s.battle) return;
-      const p = rt.player(), party = structuredClone(cs().party('player'));
-      if (!party.some(c => c.hp > 0)) { rt.emit('battle_invalid', { reason: 'no_creatures' }); return; }
+      const p = rt.player();
+      if (!cs().party('player').some(c => c.hp > 0)) { rt.emit('battle_invalid', { reason: 'no_creatures' }); return; }
+      const party = cs().lend('player', ID);
       const foe = req.foe.map(f => cs().create(f.species, f.level ?? 5));
       for (const f of foe) cs().seen('player', f.species);
       const b = {

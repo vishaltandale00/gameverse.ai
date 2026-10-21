@@ -45,9 +45,9 @@ export default {
       breakCells: { type: 'boolean', default: false, effect: 'self motion: cells hit by a ball are removed (cell_broken)' },
       unbreakable: { type: 'list', default: [], of: { type: 'string' }, effect: 'cell tokens balls never break' },
     },
-    provides: { events: ['ball_served', 'ball_launched', 'paddle_hit', 'ball_caught', 'ball_lost', 'balls_out', 'cell_broken', 'cell_broken:*', 'contact', 'multiball'], vars: ['paddle.balls', 'paddle.speed'], actions: ['launch', 'paddle_left', 'paddle_right'] },
+    provides: { events: ['paddle_request', 'ball_served', 'ball_launched', 'paddle_hit', 'ball_caught', 'ball_lost', 'balls_out', 'cell_broken', 'cell_broken:*', 'contact', 'multiball'], vars: ['paddle.balls', 'paddle.speed'], actions: ['launch', 'paddle_left', 'paddle_right'] },
     requires: { capabilities: ['position'] },
-    actionSpace: { launch: { type: 'number', min: -1, max: 1 } },
+    actionSpace: { launch: { type: 'number', min: -1, max: 1, from: 'options', emits: ['ball_launched'] } },
     reads: [],
   },
   logic(logic) {

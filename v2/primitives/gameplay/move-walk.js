@@ -8,7 +8,7 @@
 import {
   clamp, len, norm, round6, mv, bodyOf, state, spaceApi, dimsOf, isContinuous, frameOf, intent, motor, claim, ownedBy,
   registerBase, isBaseFor, driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset,
-  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
+  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones,
 } from './move-lib-core.js';
 import { compare } from '../../kernel/logic.js';
 
@@ -34,14 +34,15 @@ export default {
   id: ID,
   card: {
     // Running is the pace the move axis gives (walk slows it, sprint speeds it): there is no run press to declare.
-    loop: { verbs: ['move', 'jump', 'sprint', 'crouch', 'walk', 'travel'], progress: ['jumped', 'travelled', 'arrived'] },
+    // travel (the choices panel) exists when the document declares zones to travel to (move-lib-core.js travelZones).
+    loop: { verbs: ['move', 'jump', 'sprint', 'crouch', 'walk', 'travel'], verbsOf: (config, doc) => ['move', 'jump', 'sprint', 'crouch', 'walk', ...(travelZones(doc) ? ['travel'] : [])], progress: ['jumped', 'travelled', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
     body: { size: [0.6, 1.8, 0.6] },
     intent: 'Ground locomotion for the player and NPCs: walk, run, sprint (drains a stamina pool), crouch and jump, with acceleration, air control, coyote time, jump buffer and feel presets. Works in 3D, side and top-down continuous spaces and steps cell by cell on grid or graph spaces.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
-    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach', from: 'options', emits: ['arrived', 'travelled'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       walk: { type: 'number', min: 0.5, max: 8, default: 3, unit: 'units/s', effect: 'speed with a light stick or the walk verb' },
       run: { type: 'number', min: 0.5, max: 20, default: 6, unit: 'units/s', effect: 'default moving speed' },
@@ -66,7 +67,9 @@ export default {
       hopGravity: { type: 'number', min: 1, max: 200, default: 30, unit: 'units/s²', effect: 'gravity of the virtual hop in spaces without gravity' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },
-    provides: { events: ['jumped', 'landed', 'sprint_start', 'sprint_end', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled', 'depleted:*'], actions: ['move', 'jump', 'sprint', 'run', 'crouch', 'walk', 'travel'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['move_failed'],
+    provides: { events: ['evaded', 'jumped', 'landed', 'sprint_start', 'sprint_end', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled', 'depleted:*'], actions: ['move', 'jump', 'sprint', 'run', 'crouch', 'walk', 'travel'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'pathfind', 'navigate', 'editCells'], services: ['character'] },
     envelope,
