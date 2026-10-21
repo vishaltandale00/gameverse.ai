@@ -59,7 +59,7 @@ export default {
       queue: { type: 'boolean', default: true, effect: 'a direction pressed mid-step is taken on arrival (runner hop)' },
       up: { type: 'string', options: ['+y', '-y'], default: '+y', effect: 'which way the stick up moves on the board' },
       wrap: { type: 'boolean', default: false, effect: 'wrap around the space bounds (tunnels) when the space does not wrap itself' },
-      cellSpeed: { type: 'object', default: {}, open: true, effect: 'lane speed multiplier per cell tag, e.g. {"tunnel": 0.5}' },
+      cellSpeed: { type: 'object', default: {}, values: { type: 'number', min: 0, effect: 'speed multiplier' }, effect: 'lane speed multiplier per cell tag, e.g. {"tunnel": 0.5}' },
       offset: { type: 'number', min: -1, max: 1, effect: 'lane centre offset within a cell; default 0.5 for centre-anchored spaces, else 0' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },

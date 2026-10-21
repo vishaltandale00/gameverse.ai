@@ -27,7 +27,7 @@ export default {
     params: {
       preset: { type: 'string', options: ['arcade', 'sim', 'kart'], default: 'arcade', effect: 'handling model; archetype car.preset overrides' },
       plane: { type: 'string', options: ['auto', 'xz', 'xy'], default: 'auto', effect: 'ground plane: xz = 3D y-up, xy = 2D top-down; auto from the space' },
-      surfaces: { type: 'object', open: true, default: {}, effect: 'material id -> {grip, drag, maxSpeed} multipliers (e.g. sand {grip:0.6, drag:3, maxSpeed:0.6})' },
+      surfaces: { type: 'object', default: {}, values: { type: 'object', fields: { grip: { type: 'number', min: 0 }, drag: { type: 'number', min: 0 }, maxSpeed: { type: 'number', min: 0 } }, effect: 'multipliers on this material' }, effect: 'material id -> {grip, drag, maxSpeed} multipliers (e.g. sand {grip:0.6, drag:3, maxSpeed:0.6})' },
       stallDepth: { type: 'number', default: 0.6, min: 0, max: 10, unit: 'm', effect: 'water deeper than this floods the engine' },
       restitution: { type: 'number', default: 0.2, min: 0, max: 1, effect: 'bounce off walls' },
       crashEvent: { type: 'number', default: 2, min: 0, max: 100, unit: 'm/s', effect: 'impacts above this emit crash' },

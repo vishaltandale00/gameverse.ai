@@ -22,7 +22,7 @@ export default {
   card: {
     loop: { verbs: [], progress: ['powerup'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { powerup: { type: 'string', effect: 'a powerups[] id given when collected' } },
+    components: { powerup: { type: 'ref', to: 'powerup', effect: 'the powerups[] power-up given when collected' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "powerup", "kinds": ["pickup", "prop"], "min": 1, "placed": 2, "why": "power-ups are collected from pickup entities whose powerup component names a powerups[] id", "example": {"id": "star_pickup", "kind": "pickup", "components": {"powerup": "star"}}},
