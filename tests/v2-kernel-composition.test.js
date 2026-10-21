@@ -192,7 +192,9 @@ test('mode: a turn-based card mode on its space, with its content declared and a
   const empty = verdictOf(reg, sel('engine.space.none'), { content: { 'content.cards': [] } });
   assert.equal(empty.verdict, 'incompatible');
   assert.ok(empty.failures.some(f => f.code === 'mode_section_empty'));
-  assert.equal(verdictOf(reg, sel('engine.space.none'), { content: { content: { cards: [{ id: 'zap' }] } } }).checks.mode, 'ok');
+  // Cards are played through turns, whose mode needs the units (archetypes) that take the turns.
+  const filled = verdictOf(reg, sel('engine.space.none'), { content: { content: { cards: [{ id: 'zap' }], archetypes: [{ id: 'duelist' }] } } });
+  assert.equal(filled.checks.mode, 'ok', filled.reason);
 });
 
 test('mode: unregistered bot, unmapped core mechanic and unsupported interaction are decided failures', () => {

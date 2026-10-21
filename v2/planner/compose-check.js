@@ -578,7 +578,9 @@ export function checkComposition(input, registry, opts = {}) {
       for (const side of ['win', 'lose']) {
         const param = md[side]?.param;
         if (param == null) continue;
-        if (typeof param !== 'string' || !paramSpec(c.params, param)) { hole('mode', { card: u.use, field: `card.mode.${side}.param`, code: 'mode_param_unknown', message: `mode.${side}.param '${String(param)}' is not a card param` }); continue; }
+        // A mode played through another primitive (card.mode.via) names that primitive's params.
+        const owner = /** @type {Record<string, any>} */ ((typeof md.via === 'string' ? cardOf(registry, md.via)?.params : c.params) || {});
+        if (typeof param !== 'string' || !paramSpec(owner, param)) { hole('mode', { card: u.use, field: `card.mode.${side}.param`, code: 'mode_param_unknown', message: `mode.${side}.param '${String(param)}' is not a card param` }); continue; }
         if (side !== 'win' || !docLike || param.includes('.')) continue;
         const value = inst?.with?.[param] ?? c.params[param].default;
         const endings = new Set((isList(docLike.plot?.endings) ? docLike.plot.endings : []).map((/** @type {any} */ e) => e?.id).filter((/** @type {unknown} */ x) => typeof x === 'string'));
