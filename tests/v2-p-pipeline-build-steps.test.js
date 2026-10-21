@@ -39,8 +39,12 @@ const assertStrict = w => {
     assert.equal(c.schema.schema.additionalProperties, false);
     assert.deepEqual(c.schema.schema.required.sort(), ['pick', 'spec', 'why']);
     const options = c.schema.schema.properties.pick.enum;
-    assert.ok(options.length >= 2 && options.length <= 9 && options[options.length - 1] === 'none', options.join(', '));
-    assert.ok(c.user.length < 4000, `${c.user.length} chars`);
+    // Every option that passed the step's checks is offered (ranking orders them, never cuts them: ARCHITECTURE §5).
+    assert.ok(options.length >= 2 && options[options.length - 1] === 'none', options.join(', '));
+    assert.equal(new Set(options).size, options.length, `no duplicate options: ${options.join(', ')}`);
+    assert.ok(options.slice(0, -1).every(id => registry.has(id)), `options are registered primitives: ${options.join(', ')}`);
+    // The prompt grows with the options it must list, each line bounded (intent ≤ 160 chars plus its declarations).
+    assert.ok(c.user.length < 1000 + 300 * options.length, `${c.user.length} chars for ${options.length} options`);
   }
 };
 /** No candidate is another game: none whose loop is declared for another interaction and ends the game. */

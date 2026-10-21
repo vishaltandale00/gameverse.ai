@@ -21,7 +21,8 @@
 // win's reads), played the play spec's way, each as a single card or a minimal bundle (bundles.js formBundle) that
 // composes with the collection (compose-check) on its space or through a registered adapter, and that passes the loop
 // check of the partial collection with it (its need met, nothing new broken); ranked by their declarations against the
-// core loop mechanic and the spec's sentence; at most MAX_CANDIDATES. The model picks one id or "none". "none", or no
+// core loop mechanic and the spec's sentence for display order only: every candidate that passes is offered (ranking never
+// cuts an option: ARCHITECTURE §5, never by text overlap). The model picks one id or "none". "none", or no
 // candidate, is a gap for the gap layer (the primitive or adapter signature); nothing is added silently.
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
@@ -78,7 +79,8 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 /** One strict enum question (makeAsk). @typedef {(q: { name: string, system: string, user: string, field: string, options: string[], extra?: Record<string, Record<string, unknown>> }) => Promise<{ pick: string, why: string, reply: Record<string, unknown> }>} Ask */
 
 export const STEPS_VERSION = 'build-steps/0.1';
-export const MAX_CANDIDATES = 8;
+/** Bound on the loop steps one call asks (each step answers one need). */
+export const MAX_LOOP_STEPS = 32;
 // The loop codes a driver answers, and those the coverage step answers.
 /** @param {string} code (read at call time: loop-check.js and this module import each other through presets.js) */
 const isDriverCode = code => code === LOOP_CODES.inert || code === LOOP_CODES.loseUnaffected;
@@ -318,7 +320,6 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   // A win, lose or coverage pick joins the core loop mechanic (the seed: its companions come as its closure); a driver joins the collection only.
   const mechanicsWith = (/** @type {string} */ id) => (need.kind === 'driver' ? c.mechanics : joinLoop(c, [id], need.join ?? c.loop));
   for (const { card, rank } of pool) {
-    if (candidates.length >= MAX_CANDIDATES) break;
     const b = formBundle({ registry, seed: card.id, systems: c.systems, space: c.space.use, adapters: c.adapters, composes: c.composes, resolve: c.resolve, interaction: need.kind === 'inner' ? null : interaction });
     if (!b.ok) { rejected.push({ id: card.id, why: b.why }); continue; }
     const r = c.resolve(b.members, b.variant);
@@ -387,7 +388,7 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
   const steps = [];
   /** @type {Gap[]} */
   const gaps = [];
-  for (let guard = 0; guard < 4 * MAX_CANDIDATES; guard++) {
+  for (let guard = 0; guard < MAX_LOOP_STEPS; guard++) {
     const open = (given && !steps.length ? given : loopNeeds(registry, decomposition, c, partialCheck(registry, decomposition, c, { logic: lg })))
       .filter(n => only.includes(n.kind) && !asked.has(n.key));
     const need = open[0];
