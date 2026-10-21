@@ -4,7 +4,7 @@
 // as a pendulum on a rope you can reel in and out, or pulls you straight to the
 // anchor. Release keeps your momentum.
 import {
-  round6, bodyOf, intent, installOverlay, integrate, hasAbility, verbs, boxOf, v3, add, sub, scale, dot, len, norm, motor, probe, canProbe, blockTags, COMMON_PARAMS, travelAlong,
+  round6, bodyOf, intent, installOverlay, integrate, hasAbility, verbs, boxOf, v3, add, sub, scale, dot, len, norm, motor, probe, canProbe, blockTags, COMMON_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.grapple';
@@ -39,9 +39,13 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required; empty = always' },
       ...COMMON_PARAMS,
     },
+    rules: {
+      grapple_rope_order: { fields: ['minLen', 'ropeLen'], message: 'minLen is at most ropeLen' },
+    },
     provides: { events: ['grapple_fire', 'grapple_attach', 'grapple_miss', 'grapple_release'], actions: ['grapple'] },
     requires: { capabilities: ['position', 'raycast'] },
     optional: { capabilities: ['gravity', 'editCells'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

@@ -3,7 +3,7 @@
 // I-frames are published as components.move.invulnerableFrom/Until (state
 // time) and body.iframes (true inside the window). Combat primitives
 // should ignore hits while body.iframes is true.
-import { round6, mv, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, len, norm, COMMON_PARAMS, project, travelAlong } from './move-lib-core.js';
+import { round6, mv, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, len, norm, COMMON_PARAMS, project, travelAlong, MOVE_COMPONENTS } from './move-lib-core.js';
 
 const ID = 'gameplay.move.dodge';
 
@@ -33,11 +33,16 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required; empty = always' },
       ...COMMON_PARAMS,
     },
+    rules: {
+      dodge_iframes_order: { fields: ['iframes'], message: 'iframes is [from, until] with from ≤ until' },
+      dodge_iframes_long: { fields: ['iframes', 'sec', 'recovery'], message: 'the iframes end (iframes[1]) is at most sec + recovery' },
+    },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['dodge_failed'],
     provides: { events: ['dodge_failed', 'dodged', 'dodge_end'], actions: ['dodge'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

@@ -8,7 +8,7 @@
 import {
   clamp, len, norm, round6, mv, bodyOf, state, spaceApi, dimsOf, isContinuous, frameOf, intent, motor, claim, ownedBy,
   registerBase, isBaseFor, driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset,
-  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones,
+  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 import { compare } from '../../kernel/logic.js';
 
@@ -67,11 +67,15 @@ export default {
       hopGravity: { type: 'number', min: 1, max: 200, default: 30, unit: 'units/s²', effect: 'gravity of the virtual hop in spaces without gravity' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },
+    rules: {
+      walk_speed_order: { fields: ['walk', 'run', 'sprint', 'crouch'], message: 'walk ≤ run ≤ sprint and crouch ≤ run (after the preset)' },
+    },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['move_failed'],
     provides: { events: ['evaded', 'jumped', 'landed', 'sprint_start', 'sprint_end', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled', 'depleted:*'], actions: ['move', 'jump', 'sprint', 'run', 'crouch', 'walk', 'travel'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'pathfind', 'navigate', 'editCells'], services: ['character'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

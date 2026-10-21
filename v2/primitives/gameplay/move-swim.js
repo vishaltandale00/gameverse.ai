@@ -5,7 +5,7 @@
 // combat.health's `damage` effect. A jump at the surface climbs out.
 import {
   round6, bodyOf, intent, installOverlay, integrate, submersion, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, hurt, boxOf, probe, zoneTags,
-  COMMON_PARAMS, controls, travelAlong,
+  COMMON_PARAMS, controls, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.swim';
@@ -43,6 +43,7 @@ export default {
     provides: { events: ['jumped', 'evaded', 'submerged', 'surfaced', 'swim_start', 'swim_end', 'drowning', 'move_hurt'], vars: ['move.breath'], actions: ['dive', 'ascend', 'jump'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['editCells', 'surface', 'gravity', 'raycast'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

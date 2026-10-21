@@ -14,7 +14,7 @@
 import {
   clamp, approach, round6, mv, bodyOf, state, spaceApi, frameOf, intent, motor, claim, ownedBy, registerBase, isBaseFor,
   driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset, hasAbility, wallBeside,
-  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities, travelZones,
+  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities, travelZones, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.platformer';
@@ -133,11 +133,17 @@ export default {
       ledgeGrab: { type: 'object', effect: 'hang from ledges while falling past them, then climb up or drop', fields: { enabled: { type: 'boolean' }, climbSec: num(0, 2, 's'), hangSec: num(0.2, 60, 's'), dropCooldown: num(0, 5, 's') } },
       ...COMMON_PARAMS, plane: { ...COMMON_PARAMS.plane, default: 'x' }, ...MACRO_PARAMS,
     },
+    rules: {
+      platformer_no_lift: { fields: ['jump', 'flap.velocity', 'autoBounce.velocity', 'thrust.accel', 'preset'], message: 'at least one of jump, flap.velocity, autoBounce.velocity and thrust.accel is above 0 (after the preset): the body can leave the ground' },
+      platformer_spring_weak: { fields: ['autoBounce.spring', 'autoBounce.velocity'], message: 'autoBounce.spring is 0 (no springs) or at least autoBounce.velocity', example: { autoBounce: { velocity: 40, spring: 20, springTag: null } } },
+      platformer_climb_speed: { fields: ['abilities.wallClimb', 'wallClimb.speed'], message: 'with the wallClimb ability on, wallClimb.speed is above 0', example: { abilities: Object.fromEntries(ABILITIES.map(a => [a, a === 'wallClimb'])), wallClimb: { speed: 0 } } },
+    },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['move_failed'],
     provides: { events: ['evaded', 'jumped', 'double_jumped', 'flapped', 'dashed', 'wall_jumped', 'wall_slide', 'landed', 'bounced', 'ledge_grab', 'ledge_climb', 'glide_start', 'glide_end', 'submerged', 'surfaced', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled'], actions: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'] },
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['overlap', 'raycast', 'editCells', 'pathfind'], services: ['character'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

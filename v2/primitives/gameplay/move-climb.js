@@ -6,7 +6,7 @@
 // onto the ledge.
 import {
   round6, bodyOf, intent, installOverlay, integrate, wallBeside, ledgeAt, probe, boxOf, canProbe, pool, canSpend,
-  hasAbility, verbs, ensureShared, wallProbeDirs, zoneTags, COMMON_PARAMS, controls, travelAlong,
+  hasAbility, verbs, ensureShared, wallProbeDirs, zoneTags, COMMON_PARAMS, controls, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.climb';
@@ -39,9 +39,13 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required to climb (via unlock_ability grants); empty = always' },
       ...COMMON_PARAMS,
     },
+    rules: {
+      climb_no_tags: { fields: ['surfaces', 'tags'], message: 'surfaces=tagged needs at least one climb tag in tags', example: { surfaces: 'tagged', tags: [] } },
+    },
     provides: { events: ['jumped', 'evaded', 'climb_start', 'climb_end', 'ledge_grab', 'landed'], actions: ['climb', 'grab', 'jump'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'editCells', 'raycast', 'overlap'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

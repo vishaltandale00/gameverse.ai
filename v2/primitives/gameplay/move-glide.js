@@ -1,7 +1,7 @@
 // Gliding (paraglider, wing-suit, cape, umbrella): while airborne and falling,
 // holding glide caps the fall speed and carries you forward at glide speed.
 // It drains stamina. Updraft cells or zones give lift.
-import { round6, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, zoneTags, probe, canProbe, boxOf, COMMON_PARAMS, norm, travelAlong } from './move-lib-core.js';
+import { round6, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, zoneTags, probe, canProbe, boxOf, COMMON_PARAMS, norm, travelAlong, MOVE_COMPONENTS } from './move-lib-core.js';
 
 const ID = 'gameplay.move.glide';
 
@@ -34,6 +34,7 @@ export default {
     provides: { events: ['evaded', 'glide_start', 'glide_end'], actions: ['glide', 'jump'] },
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['editCells', 'raycast'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

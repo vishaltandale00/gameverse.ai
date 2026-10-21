@@ -5,7 +5,7 @@
 // from a resource pool or an internal tank that refills on the ground.
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, pool, canSpend,
-  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, MACRO_PARAMS, len, travelAlong,
+  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, MACRO_PARAMS, len, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.fly';
@@ -45,6 +45,7 @@ export default {
     provides: { events: ['evaded', 'fly_start', 'fly_end', 'fuel_empty', 'landed', 'arrived', 'arrived:*', 'move_failed'], actions: ['fly', 'ascend', 'descend', 'jump', 'sprint'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind'], services: ['character'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

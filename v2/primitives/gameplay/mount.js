@@ -9,7 +9,7 @@
 // Runtime fields kept on the mount component: rider, gait, st (stamina), called.
 // The rider gets components.move.riding = <mount id>, body.state = 'ride' and body.riding.
 import {
-  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
+  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, MACRO_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 import { stepWalk, walkConfig } from './move-walk.js';
 
@@ -50,6 +50,19 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind', 'distance'] },
     reads: ['content.archetypes'],
+    components: {
+      ...MOVE_COMPONENTS,
+      mount: { type: 'object', effect: 'a creature that can be ridden', fields: {
+        speed: { type: 'object', effect: 'gait speeds overriding the params', fields: { walk: num(0.5, 20, undefined, 'units/s', 'walk gait speed'), trot: num(0.5, 40, undefined, 'units/s', 'trot gait speed'), gallop: num(0.5, 80, undefined, 'units/s', 'gallop gait speed') } },
+        stamina: { type: 'object', fields: { max: num(1, 1000, undefined, '', 'mount stamina, overriding staminaMax') } },
+        bond: num(0, 1000, undefined, '', 'starting bond with its owner'),
+        tameable: { type: 'boolean', effect: 'bucks riders off until bond reaches tameBond' },
+        owner: { type: 'string', effect: 'the entity id that owns it (a call brings it); default its first rider' },
+      } },
+    },
+    rules: {
+      mount_gait_order: { fields: ['walk', 'trot', 'gallop'], message: 'walk ≤ trot ≤ gallop' },
+    },
     envelope,
   },
   envelope,

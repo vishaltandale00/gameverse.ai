@@ -20,7 +20,7 @@
 // (fright mode, eating pauses).
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, probe, spaceWraps, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones,
+  ensureShared, probe, spaceWraps, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.grid';
@@ -68,6 +68,7 @@ export default {
     provides: { events: ['evaded', 'stepped', 'bump', 'ledge_jump', 'turned', 'arrived', 'arrived:*', 'move_failed', 'move_mode'], actions: ['up', 'down', 'left', 'right', 'move', 'run', 'travel'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['navigate', 'editCells', 'pathfind', 'bounds', 'wrap'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,
