@@ -21,6 +21,18 @@
 //   input      service input.glyph(verb) / device()                                (runtime)
 //   save       service save.slots(); actions save_game/load_game                  (runtime)
 import { docSystem, titleCase } from './ui-lib.js';
+import { uiControls } from '../engine/runtime-lib-controls.js';
+
+/**
+ * The options a UI listing whole options (card.controls.options) shows: those whose verbs not every one is issued by
+ * another mounted UI primitive's card.controls.verbs (the battle screen owns `battle`, the card table `play_card`): one
+ * UI owns each option, derived from the cards. @param {any} rt @param {string} self the listing UI's id @param {any[]} options
+ */
+export function unownedOptions(rt, self, options) {
+  const verbs = uiControls(rt.doc, rt.registry).verbs;
+  const owned = v => (verbs.get(v) || []).some(u => u !== self);
+  return options.filter(o => { const vs = Object.keys(o.actions || {}); return !vs.length || !vs.every(owned); });
+}
 
 /**
  * What an entity is called on screen: its character's declared name (plot.characters), else its archetype's

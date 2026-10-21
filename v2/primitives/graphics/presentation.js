@@ -10,7 +10,7 @@
 //
 // The things (DRAWS):
 //   entities  every entity in the space, each by the role its kind and components declare (flat-art.js roleOf);
-//   cells     the space's cells, each block drawn distinguishably from every other block (its declared tile and color);
+//   cells     the space's cells (on spaces with editCells), each block drawn distinguishably (its declared tile and color);
 //   zones     the zones the loop's params name (ref to a zone: checkpoints, goals), with their names;
 //   labels    the label a block declares (content.blocks[].label: a 2048 tile's number), drawn on its cells;
 //   marks     per-cell state a primitive keeps outside cells and entities (crop stages), read from the service its card
@@ -109,7 +109,10 @@ export function presentationProblems(doc, registry) {
     for (const space of loopSpaces(doc, registry, l)) {
       const r = rendererOf(doc, registry, space);
       const draws = r ? drawsOf(registry.get(r.use)?.card, space) || [] : [];
-      const missing = shows.filter(x => !draws.includes(x));
+      // Cells and their labels are a person's to see on a space that has cells (editCells): a dungeon generated on a
+      // heightfield builds its walls as objects, which are its world, not cells.
+      const cellular = capsOf(registry, space).has('editCells');
+      const missing = shows.filter(x => !draws.includes(x) && (cellular || (x !== 'cells' && x !== 'labels')));
       if (missing.length) out.push({ code: PRESENTATION_CODES.missing, path: l.path, use: l.use, space: space.id, renderer: r?.use ?? null, missing, message: `${l.use} needs a person to see the ${missing.join(', ')} of space '${space.id}', which ${r ? `its renderer ${r.use} does not draw (card.draws: ${draws.join(', ') || 'nothing'})` : 'no renderer draws'}` });
     }
   }

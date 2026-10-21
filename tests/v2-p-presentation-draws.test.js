@@ -147,3 +147,18 @@ for (const t of TEMPLATES) {
     inView(H.lastFrame, 'after crossing the space');
   });
 }
+
+// The three.js renderers draw the zones the loops name (three-zones.js, called from render-mesh3d and render-voxel's
+// world hooks): one outlined column per zone, rebuilt when the document changes.
+test('3D: the zones a race names on a heightfield are marked, each named', async () => {
+  const THREE = await import('three');
+  const { syncZones } = await import('../v2/primitives/graphics/three-zones.js');
+  const zones = [{ id: 'gate_a', name: 'Gate A', center: [10, 10], r: 4 }, { id: 'gate_b', name: 'Gate B', bounds: { min: [30, 0, 30], max: [36, 4, 34] } }, { id: 'scenery', center: [50, 50], r: 3 }];
+  const doc = { spaces: [{ id: 'world', use: 'engine.space.mesh3d', with: {}, zones }], systems: [{ use: 'gameplay.race', with: { checkpoints: ['gate_a', 'gate_b'], laps: 2 } }] };
+  const root = new THREE.Group(), state = {};
+  const g = syncZones({ doc, registry }, THREE, root, 'world', () => 1, state);
+  assert.deepEqual(g.children.map(c => c.name), ['zone:gate_a', 'zone:gate_b'], 'the zones the race names, not the scenery zone');
+  assert.ok(root.children.includes(g));
+  assert.equal(syncZones({ doc, registry }, THREE, root, 'world', () => 1, state), g, 'kept while the document is the same');
+  assert.equal(drawsOf(registry.get('graphics.render.mesh3d').card, {}).includes('zones') && drawsOf(registry.get('graphics.render.voxel').card, {}).includes('zones'), true);
+});

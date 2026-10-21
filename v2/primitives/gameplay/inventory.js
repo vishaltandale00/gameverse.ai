@@ -62,6 +62,8 @@ const countCheck = (field) => (e, path, errors) => { if (e.count !== undefined &
 export default {
   id: 'gameplay.inventory',
   card: {
+    // What its events tell a person (the HUD's notices and the story log read it: graphics/ui-lib.js tellsOf).
+    tells: { item_gained: { label: 'Got', entry: { at: 'content.items', by: 'item' } }, item_lost: { label: 'Gave', entry: { at: 'content.items', by: 'item' } }, inventory_full: { label: 'Inventory full' } },
     loop: { verbs: [], progress: ['item_gained', 'item_transferred'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [

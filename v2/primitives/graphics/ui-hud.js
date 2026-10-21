@@ -5,7 +5,7 @@
 // combo/chain popups, crosshair, tracked objective, toasts and zone titles.
 // hudModel() is the pure view model; install() renders it and animates changes.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
+import { tellsOf, tellWords, uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
 import { icon, itemIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
@@ -314,13 +314,13 @@ export default {
     const qTitle = id => rt.doc.plot?.quests?.find(q => q.id === id)?.title || titleCase(id);
     host.on('notify', e => toast({ kind: e.kind || 'info', text: e.text, iconName: e.icon || 'check' }));
     rt.on('notify', e => toast({ kind: e.kind, text: e.text, iconName: e.kind === 'warn' ? 'skull' : e.kind === 'quest' ? 'quest' : null }));
-    rt.on('quest_started', e => toast({ kind: 'quest', kicker: 'New quest', text: qTitle(e.quest), iconName: 'quest' }));
-    rt.on('quest_complete', e => toast({ kind: 'quest', kicker: 'Quest complete', text: qTitle(e.quest), iconName: 'check' }));
-    rt.on('quest_failed', e => toast({ kind: 'warn', kicker: 'Quest failed', text: qTitle(e.quest), iconName: 'skull' }));
-    rt.on('objective_done', e => { const q = rt.doc.plot?.quests?.find(x => x.id === e.quest); const o = q?.objectives?.find(x => x.id === e.objective); if (o && !o.hidden) toast({ kind: 'quest', kicker: 'Objective done', text: o.text || titleCase(o.id), iconName: 'check' }); });
-    rt.on('item_gained', e => { if ((e.who || 'player') !== 'player') return; const it = docItem(rt.doc, e.item), ic = itemIcon(it); toast({ key: `item:${e.item}`, kind: 'item', text: itemName(rt.doc, e.item), iconName: ic.name, iconColor: ic.color, count: e.count || 1 }); });
-    rt.on('level_up', e => toast({ kind: 'level', kicker: 'Level up', text: `Level ${e.level ?? rt.state.vars.level ?? ''}`.trim(), iconName: 'star' }));
-    rt.on('ability_unlocked', e => toast({ kind: 'level', kicker: 'New ability', text: titleCase(e.ability ?? e.subject), iconName: 'bolt' }));
+    // What the document's primitives declare their events tell a person (card.tells), as notices: the same declaration
+    // the story log reads. An event naming who it happened to (`who`) is told only when that is the player.
+    for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => {
+      if (e?.who !== undefined && e.who !== 'player') return;
+      const w = tellWords(rt.doc, t, e), id = t.entry ? e?.[t.entry.by] : null;
+      toast({ key: `${t.event}:${id ?? ''}`, kind: 'info', kicker: w.title ? w.label : '', text: w.title || w.label, count: Number.isFinite(e?.count) ? e.count : 1 });
+    });
     rt.on('gate_blocked', e => { if ((e.who ?? 'player') === 'player' && e.hint) toast({ key: `gate:${e.gate}`, kind: 'warn', text: e.hint, iconName: 'lock' }); });
     rt.on('inventory_full', () => toast({ kind: 'warn', text: 'Inventory full', iconName: 'bag' }));
     // Refusals: every event the document's primitives declare as a denial (card.denials) says why a press did nothing.

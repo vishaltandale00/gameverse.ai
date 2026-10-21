@@ -55,3 +55,25 @@ for (const t of TEMPLATES) {
     assert.ok(visible.length > 0, 'the HUD shows its widgets');
   });
 }
+
+// One UI owns each option (ui-sources.js unownedOptions, from card.controls): the story UI never lists an option whose
+// every verb another mounted UI issues (the battle screen's commands), so no option appears twice.
+test('one UI owns each option: the story UI leaves to the battle and card screens the options they issue', async () => {
+  const { unownedOptions } = await import('../v2/primitives/graphics/ui-sources.js');
+  const { uiControls } = await import('../v2/primitives/engine/runtime-lib-controls.js');
+  let n = 0;
+  for (const t of TEMPLATES) {
+    const host = hostDocument(t.doc, registry);
+    if (!host.graphics.some(g => g.use === 'graphics.ui.story')) continue;
+    const m = mount(host, { primitives: PRIMITIVES, seed: 1 }); m.key('Enter'); m.frame(30);
+    const verbs = uiControls(host, registry).verbs, story = new Set(unownedOptions(m.rt, 'graphics.ui.story', m.rt.availableOptions()).map(o => o.label));
+    for (const o of m.rt.availableOptions()) {
+      const vs = Object.keys(o.actions || {}), others = vs.length && vs.every(v => (verbs.get(v) || []).some(u => u !== 'graphics.ui.story'));
+      assert.ok(!(others && story.has(o.label)), `${t.id}: '${o.label}' is listed by the story UI and issued by ${vs.map(v => verbs.get(v)).join(', ')}`);
+      if (others) n++;
+    }
+    const shown = [...m.qa('.gv-story .gv-choices .gv-btn')].map(b => b.textContent);
+    for (const o of m.rt.availableOptions().filter(o => !story.has(o.label))) assert.ok(!shown.some(s => s.includes(o.label)), `${t.id}: the story UI shows '${o.label}', which another UI owns`);
+  }
+  assert.ok(n > 0, 'battle documents offer options their battle screen owns');
+});

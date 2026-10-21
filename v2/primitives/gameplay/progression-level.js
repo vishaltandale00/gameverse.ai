@@ -18,6 +18,8 @@ export function xpToNext(curve, level) {
 export default {
   id: ID,
   card: {
+    // What its events tell a person (the HUD's notices and the story log read it: graphics/ui-lib.js tellsOf).
+    tells: { level_up: { label: 'Level up' } },
     loop: { verbs: ['allocate'], progress: ['xp_gained', 'level_up'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { allocate: { type: 'choice', of: 'a stat to raise', from: 'options', emits: ['stat_changed'] } },
