@@ -85,7 +85,7 @@ export default {
     views: ['1p', '3p', 'iso', 'td'],
     needs: { content: ['terrain', 'road-network'] },
     params: {
-      size: { type: 'list', of: { type: 'number', min: 64, max: 16384 }, min: 2, max: 2, default: [2048, 2048], unit: 'm', effect: 'world extent [x, z]; x and z run from 0 to size' },
+      size: { type: 'list', of: { type: 'number', min: 64, max: 16384 }, min: 2, max: 2, default: [2048, 2048], unit: 'm', scale: 'world', effect: 'world extent [x, z]; x and z run from 0 to size' },
       heightRes: { type: 'number', min: 0.5, max: 8, default: 2, unit: 'm', effect: 'heightfield sample spacing' },
       gravity: { type: 'number', min: -100, max: 0, default: -9.8, unit: 'm/s²', effect: 'gravity vector y' },
       navCell: { type: 'number', min: 0.25, max: 4, default: 1, unit: 'm', effect: 'finest navigation grid cell (long paths coarsen automatically)' },

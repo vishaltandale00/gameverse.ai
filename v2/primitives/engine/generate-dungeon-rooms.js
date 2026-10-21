@@ -23,13 +23,13 @@ export default {
     views: ['td', '3p', 'iso', 'side'],
     spaces: ['engine.space.tilemap', 'engine.space.grid'],
     params: {
-      rooms: { type: 'integer', min: 3, max: 80, default: 12 },
+      rooms: { type: 'integer', min: 3, max: 80, default: 12, scale: 'world', per: 'area' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },
       keys: { type: 'list', of: { type: 'ref', to: 'item' }, default: [], effect: 'one lock per key, in order along the path to the boss' },
       loot: { type: 'string', effect: 'loot table id recorded on dead-end chests' },
       boss: { type: 'ref', to: 'archetype', effect: 'spawned in the boss room' },
       zone: { type: 'ref', to: 'zone', effect: 'area to fill (rect or bounds); default the whole space' },
-      area: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: '[x0,y0,x1,y1) on the plane, overrides zone' },
+      area: { type: 'list', of: { type: 'number' }, min: 4, max: 4, scale: 'world', effect: '[x0,y0,x1,y1) on the plane, overrides zone' },
       plane: { type: 'string', options: ['xy', 'xz'], default: 'xy', effect: 'xz for 3D spaces (y = floor)' },
       floor: { type: 'number', default: 0, effect: 'height for the xz plane' },
       roomSize: { type: 'list', of: { type: 'integer', min: 3 }, min: 2, max: 2, default: [5, 9], effect: 'room side range in cells' },
@@ -41,7 +41,7 @@ export default {
       placePlayer: { type: 'boolean', default: true },
       attempts: { type: 'integer', min: 0, max: 16, default: 6 },
     },
-    provides: { content: ['cells', 'rooms', 'entities'], events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
+    provides: { content: ['cells', 'rooms', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
     defines: [],
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],
@@ -65,6 +65,16 @@ export default {
     if (!(doc.content?.archetypes || []).some(a => a?.id === 'chest')) add.archetypes.push({ id: 'chest', components: { name: 'Chest' } });
     const content = Object.fromEntries(Object.entries(add).filter(([, v]) => v.length));
     return { with: { ...pick, palette: { wall } }, ...(Object.keys(content).length ? { content } : {}) };
+  },
+  /** The area the dungeon fills on its plane: area, else its zone's rect, else the whole space (provides.extent: 'own'). */
+  extentOf(raw, space) {
+    const config = withDefaults(this.card, raw), size = space?.with?.size;
+    return config.area || zoneRect((space?.zones || []).find(z => z.id === config.zone), config.plane) || (Array.isArray(size) ? [0, 0, size[0], config.plane === 'xz' ? size[2] ?? size[1] : size[1]] : null);
+  },
+  /** Params that make the dungeon fill rect [x0, y0, x1, y1): that area, with as many rooms as it holds (3..80). */
+  fit(raw, rect) {
+    const config = withDefaults(this.card, raw), slot = config.roomSize[1] + 3, cap = Math.floor((rect[2] - rect[0]) / slot) * Math.floor((rect[3] - rect[1]) / slot);
+    return cap >= 3 ? { area: rect.slice(0, 4), rooms: Math.max(3, Math.min(80, cap, config.rooms)) } : null;
   },
   logic(logic) {
     logic.effect('open_lock', { run: (e, rt) => rt.caches.dungeonLocks?.get(e.lock)?.(rt) });

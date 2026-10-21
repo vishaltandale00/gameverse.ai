@@ -36,7 +36,7 @@ const feature = { type: 'object', open: true, fields: {
 const room = { type: 'object', fields: {
   id: { type: 'string', required: true },
   zone: { type: 'ref', to: 'zone', required: true },
-  rect: { type: 'list', of: { type: 'integer' }, min: 4, max: 4, required: true, effect: '[x0,y0,x1,y1) in tiles' },
+  rect: { type: 'list', of: { type: 'integer' }, min: 4, max: 4, required: true, scale: 'world', effect: '[x0,y0,x1,y1) in tiles' },
   style: { type: 'string', default: 'hall', effect: `one of the styles (${Object.keys(ROOM_STYLES).join('|')} or a key of params.styles)` },
   theme: { type: 'string', effect: 'palette override key in params.themes' },
   platforms: { type: 'integer', min: 0, max: 40 },
@@ -74,9 +74,9 @@ export default {
       oneWayPlatforms: { type: 'boolean', default: false, effect: 'platforms can be jumped through from below (needs a one_way block)' },
       spawnFeatures: { type: 'boolean', default: true },
       doorWarp: { type: 'boolean', default: true, effect: 'stepping onto a door tile moves the player to the paired door (exit gates apply)' },
-      keepClear: { type: 'list', default: [], of: { type: 'list', of: { type: 'integer' }, min: 4, max: 4 }, effect: 'rects [x0,y0,x1,y1) in tiles left empty (regions other primitives own, e.g. a falling-piece board); each must be reachable from the start' },
+      keepClear: { type: 'list', default: [], scale: 'world', of: { type: 'list', of: { type: 'integer' }, min: 4, max: 4 }, effect: 'rects [x0,y0,x1,y1) in tiles left empty (regions other primitives own, e.g. a falling-piece board); each must be reachable from the start' },
     },
-    provides: { content: ['cells', 'rooms'], events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
+    provides: { content: ['cells', 'rooms'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
@@ -88,6 +88,11 @@ export default {
    * shafts, and the proof's movement taken from the document's movement envelope, so the generator only
    * builds what the player's real movement can traverse. -> { with, content? } or null.
    */
+  /** The tiles the rooms fill: the bounding box of their rects (provides.extent: 'own'). */
+  extentOf(raw) {
+    const rects = (raw?.rooms || []).map(r => r.rect).filter(r => Array.isArray(r) && r.length === 4);
+    return rects.length ? [Math.min(...rects.map(r => r[0])), Math.min(...rects.map(r => r[1])), Math.max(...rects.map(r => r[2])), Math.max(...rects.map(r => r[3]))] : null;
+  },
   scaffold(space, doc, { envelope = {}, reserve = [] } = {}) {
     const E = this.card.params.exitSize.default, mode = space.with?.mode === 'topdown' ? 'topdown' : 'side';
     const [W, H] = Array.isArray(space.with?.size) ? space.with.size : [Infinity, Infinity];

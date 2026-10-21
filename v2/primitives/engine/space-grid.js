@@ -24,7 +24,7 @@ export default {
     needs: { content: ['cells'] },
     params: {
       topology: { type: 'string', options: ['square', 'hex', 'iso'], default: 'square', effect: 'square, hex (odd-r offset rows) or iso (square logic, diamond projection)' },
-      size: { type: 'list', of: { type: 'integer', min: 1, max: 512 }, min: 2, max: 2, default: [8, 8], unit: 'cells', effect: 'columns and rows' },
+      size: { type: 'list', of: { type: 'integer', min: 1, max: 512 }, min: 2, max: 2, default: [8, 8], unit: 'cells', scale: 'world', effect: 'columns and rows' },
       diagonals: { type: 'boolean', default: false, effect: 'square/iso: 8-way moves (no corner cutting past impassable cells)' },
       wrap: { type: 'string', options: ['none', 'x', 'y', 'both'], default: 'none', effect: 'wrap-around edges (maze tunnels, toroidal boards); distances take the short way round' },
       yAxis: { type: 'string', options: ['up', 'down'], default: 'up', effect: "which way rows increase on screen; 'up' and 'down' directions follow it" },

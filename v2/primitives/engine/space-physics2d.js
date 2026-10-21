@@ -26,7 +26,7 @@ export default {
     needs: { content: ['structures'] },
     params: {
       gravity: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, -9.8], unit: 'm/s²', effect: 'gravity vector (y up)' },
-      bounds: { type: 'list', of: { type: 'number', min: 1, max: 100000 }, min: 2, max: 2, default: [20, 12], unit: 'm', effect: 'world width and height from the origin' },
+      bounds: { type: 'list', of: { type: 'number', min: 1, max: 100000 }, min: 2, max: 2, default: [20, 12], unit: 'm', scale: 'world', effect: 'world width and height from the origin' },
       edges: edgesParam('solid'),
       substeps: { type: 'integer', min: 1, max: 8, default: 4, effect: 'solver substeps per frame' },
       iterations: { type: 'integer', min: 1, max: 20, default: 6, effect: 'velocity iterations per substep' },

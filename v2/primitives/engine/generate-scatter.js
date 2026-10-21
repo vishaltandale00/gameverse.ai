@@ -32,7 +32,7 @@ const card = {
     avoid: { type: 'boolean', default: true, effect: 'keep props off roads, built lots and structures' },
     maxPerTile: { type: 'integer', min: 1, max: 1000000, default: 20000, effect: 'cap per generated tile (bounds lazy generation cost)' },
   },
-  provides: { content: ['props'], events: [] },
+  provides: { content: ['props'], extent: 'overlay', events: [] },
   reads: [],
 };
 

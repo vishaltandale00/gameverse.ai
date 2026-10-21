@@ -21,7 +21,7 @@ export default {
     views: ['side', 'td'],
     needs: { content: ['structures'] },
     params: {
-      size: { type: 'list', of: { type: 'number', min: 1, max: 1e6 }, min: 2, max: 2, default: [16, 9], unit: 'u', effect: 'arena width and height from the origin' },
+      size: { type: 'list', of: { type: 'number', min: 1, max: 1e6 }, min: 2, max: 2, default: [16, 9], unit: 'u', scale: 'world', effect: 'arena width and height from the origin' },
       gravity: { type: 'number', default: 0, unit: 'u/s²', effect: 'vertical gravity for ballistic bodies and gravityAt (negative pulls down; 0 for top-down)' },
       edges: edgesParam('solid'),
       solids: rectList('solid rects [x0,y0,x1,y1]: stages, walls, blocks'),

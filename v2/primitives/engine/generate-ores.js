@@ -22,7 +22,7 @@ const card = {
       } },
     },
   },
-  provides: { content: ['ores'], events: [] },
+  provides: { content: ['ores'], extent: 'space', events: [] },
   reads: [],
 };
 

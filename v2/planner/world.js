@@ -154,9 +154,12 @@ const boot = (doc, registry, logic, seed, frames = 3) => {
   return rt;
 };
 
-/** world_empty (nothing in a space that needs a world, error) and world_incomplete (a declared need unmet, warning). */
+/**
+ * world_empty (nothing in a space that needs a world, error), world_incomplete (a declared need unmet, warning)
+ * and the extent checks (extentProblems: generated content that misses part of its cell space or leaves it).
+ */
 export function worldProblems(rt, doc, registry) {
-  const out = [];
+  const out = extentProblems(doc, registry);
   for (const { space, index } of spacesNeedingWorld(doc, registry)) {
     const c = contentOf(rt, space.id); if (!c) continue;
     const unmet = spaceNeeds(registry, space.use).filter(k => !worldContent(doc, registry, space, rt).includes(k));
@@ -287,9 +290,165 @@ function applyScaffold(doc, spaceIndex, gen, made, { start = true, registry = nu
   if (start && Array.isArray(made.start) && doc.player && (doc.player.space ?? doc.spaces[0].id) === space.id) doc.player.at = made.start;
 }
 
+// ---------- extents: what part of a space its generators fill ----------
+// A generator card declares `provides.extent`: 'space' (it fills the whole space: terrain fields, graph maps),
+// 'own' (it fills a rect given by its params: the primitive's `extentOf(config, space)` -> [x0, y0, x1, y1), and
+// `fit(config, rect, space)` -> params that make it fill rect, or null) or 'overlay' (it adds to what others lay
+// down and fills nothing of its own: roads, props, courses, pieces). A space's extent is its param declared
+// `scale: 'world'` (a [w, h] list: [0, 0, w, h)).
+
+/** [0, 0, w, h) from the space's world-scale list param; null when it has none (voxel, graph, none, a track's length). */
+export function spaceExtent(registry, space) {
+  const card = registry.get(space.use)?.card; if (!card) return null;
+  const entry = Object.entries(card.params || {}).find(([, s]) => s.scale === 'world'); if (!entry) return null;
+  const v = space.with?.[entry[0]] ?? entry[1].default;
+  return Array.isArray(v) && v.length >= 2 && v.slice(0, 2).every(x => Number.isFinite(x) && x > 0) ? [0, 0, v[0], v[1]] : null;
+}
+/** A generator instance's declared extent: { kind: 'space'|'own'|'overlay', rect } (rect for 'own' when its params give one). */
+export function extentOfGenerator(registry, gen, space) {
+  const p = registry.get(gen.use), kind = p?.card.provides?.extent || 'overlay';
+  if (kind !== 'own') return { kind, rect: null };
+  let rect = null; try { rect = typeof p.extentOf === 'function' ? p.extentOf(gen.with || {}, space) : null; } catch { rect = null; }
+  return { kind, rect: Array.isArray(rect) && rect.length === 4 && rect.every(Number.isFinite) ? rect : null };
+}
+const cellWorld = (registry, space) => spaceNeeds(registry, space.use).includes('cells');
+/** Cells of rect `area` covered by none of `rects` (counted on the integer grid; capped). */
+function uncovered(area, rects) {
+  const [x0, y0, x1, y1] = area.map(Math.round); let n = 0;
+  if ((x1 - x0) * (y1 - y0) > MAX_CELLS_SCANNED) return 0;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (!rects.some(r => x >= r[0] && x < r[2] && y >= r[1] && y < r[3])) n++;
+  return n;
+}
+/**
+ * The composition check for extents (static): a generator's own extent must lie inside its space, and in a cell
+ * space whose content comes from own-extent generators those extents must cover the whole space, otherwise the
+ * rest is an empty void that tunnels, exits and edges open into. -> problems (world_extent_outside, world_extent_mismatch)
+ */
+export function extentProblems(doc, registry) {
+  const out = [];
+  (doc.spaces || []).forEach((space, i) => {
+    const area = spaceExtent(registry, space), gens = (space.generators || []).map((g, j) => ({ g, j, ...extentOfGenerator(registry, g, space) }));
+    if (!area || !gens.length) return;
+    for (const e of gens) if (e.rect && (e.rect[0] < area[0] || e.rect[1] < area[1] || e.rect[2] > area[2] || e.rect[3] > area[3]))
+      out.push({ code: 'world_extent_outside', path: `spaces[${i}].generators[${e.j}]`, severity: 'error', stage: 'world', space: space.id,
+        message: `${e.g.use} fills [${e.rect.join(', ')}), outside the ${area[2]}×${area[3]} space '${space.id}'`, hint: `fit it to the space (its fit hook) or enlarge the space` });
+    if (!cellWorld(registry, space) || gens.some(e => e.kind === 'space')) return;
+    const own = gens.filter(e => e.kind === 'own' && e.rect);
+    if (!own.length) return;
+    const gap = uncovered(area, own.map(e => e.rect));
+    if (gap > 0) out.push({ code: 'world_extent_mismatch', path: `spaces[${i}]`, severity: 'error', stage: 'world', space: space.id, uncovered: gap,
+      message: `${own.map(e => `${e.g.use} fills [${e.rect.join(', ')})`).join('; ')} of the ${area[2]}×${area[3]} space '${space.id}': ${gap} cells are an empty void its openings lead into`,
+      hint: 'fit the generator to the space extent, or size the space to the generated extent' });
+  });
+  return out;
+}
+/**
+ * Make generated extents match their spaces (mutates doc): a cell space filled by one own-extent generator that
+ * misses part of it, or one that reaches outside it, is re-fitted through the generator's `fit` hook; when the
+ * generator can't be fitted, a space whose zones all lie inside the generated extent is resized to it. -> fixes
+ */
+export function fitExtents(doc, registry) {
+  const fixes = [];
+  (doc.spaces || []).forEach((space, i) => {
+    const area = spaceExtent(registry, space); if (!area) return;
+    const gens = (space.generators || []).map((g, j) => ({ g, j, ...extentOfGenerator(registry, g, space) }));
+    const own = gens.filter(e => e.kind === 'own' && e.rect);
+    const outside = own.filter(e => e.rect[0] < area[0] || e.rect[1] < area[1] || e.rect[2] > area[2] || e.rect[3] > area[3]);
+    const short = cellWorld(registry, space) && !gens.some(e => e.kind === 'space') && own.length === 1 && uncovered(area, [own[0].rect]) > 0;
+    for (const e of short ? own : outside) {
+      const p = registry.get(e.g.use); let fit = null;
+      try { fit = typeof p.fit === 'function' ? p.fit(e.g.with || {}, area, space) : null; } catch { fit = null; }
+      if (fit) { e.g.with = { ...(e.g.with || {}), ...fit }; fixes.push({ code: 'world_extent_fit', path: `spaces[${i}].generators[${e.j}]`, action: `fitted ${e.g.use} from [${e.rect.join(', ')}) to the ${area[2]}×${area[3]} space` }); continue; }
+      const [x0, y0, x1, y1] = e.rect, key = Object.entries(registry.get(space.use).card.params || {}).find(([, s]) => s.scale === 'world')?.[0];
+      const inside = (space.zones || []).every(z => !Array.isArray(z.rect) || (z.rect[0] >= x0 && z.rect[1] >= y0 && z.rect[2] <= x1 && z.rect[3] <= y1));
+      if (key && x0 === 0 && y0 === 0 && own.length === 1 && inside) { space.with = { ...(space.with || {}), [key]: [x1, y1] }; fixes.push({ code: 'world_extent_resize', path: `spaces[${i}].with.${key}`, action: `sized space '${space.id}' to the ${x1}×${y1} that ${e.g.use} fills` }); }
+    }
+  });
+  return fixes;
+}
+
+// ---------- scaling a world ----------
+function mulDeep(v, k, s) {
+  if (Array.isArray(v)) { const item = s?.type === 'list' ? s.of : s; return v.map(x => mulDeep(x, k, item)); }
+  if (typeof v !== 'number') return v;
+  let x = v * k;
+  if (s?.type === 'integer') x = Math.round(x);
+  if (typeof s?.min === 'number') x = Math.max(s.min, x);
+  if (typeof s?.max === 'number') x = Math.min(s.max, x);
+  return +x.toFixed(4);
+}
+/** Scale every param a schema declares `scale: 'world'` (lengths ×f; `per: 'area'` counts ×f²), recursing into list items and object fields. */
+function scaleParams(params, config, f, { defaults = true } = {}) {
+  const out = { ...config }, changed = [];
+  for (const [k, s] of Object.entries(params || {})) {
+    const has = out[k] !== undefined, v = has ? out[k] : defaults ? s.default : undefined;
+    if (v === undefined) continue;
+    const next = scaleValue(s, v, f);
+    if (JSON.stringify(next) !== JSON.stringify(v)) { out[k] = next; changed.push(k); }
+  }
+  return { config: out, changed };
+}
+function scaleValue(s, v, f) {
+  if (s?.scale === 'world') return mulDeep(v, s.per === 'area' ? f * f : f, s);
+  if (s?.type === 'list' && s.of && Array.isArray(v)) return v.map(x => scaleValue(s.of, x, f));
+  if (s?.type === 'object' && s.fields && v && typeof v === 'object' && !Array.isArray(v)) return { ...v, ...scaleParams(s.fields, v, f, { defaults: false }).config };
+  return v;
+}
+/** Which axes of a position scale with the world: a track's progress, a 3D world's x and z, every axis of a 2D one. */
+function posAxes(registry, space) {
+  const entry = Object.entries(registry.get(space.use)?.card.params || {}).find(([, s]) => s.scale === 'world');
+  if (entry && entry[1].type === 'number') return [0];
+  const caps = spaceCaps(registry, space);
+  return caps.includes('heightfield') || caps.includes('chunks') ? [0, 2] : null;
+}
+const scalePos = (p, f, axes) => (Array.isArray(p) ? p.map((v, i) => (typeof v === 'number' && (!axes || axes.includes(i)) ? +(v * f).toFixed(4) : v)) : p);
+function scaleZone(z, f, axes) {
+  const out = { ...z };
+  if (Array.isArray(z.rect)) out.rect = z.rect.map(v => +(v * f).toFixed(4));
+  if (Array.isArray(z.range)) out.range = z.range.map(v => +(v * f).toFixed(4));
+  if (z.bounds?.min && z.bounds?.max) out.bounds = { ...z.bounds, min: scalePos(z.bounds.min, f, z.bounds.min.length === 3 ? [0, 2] : null), max: scalePos(z.bounds.max, f, z.bounds.max.length === 3 ? [0, 2] : null) };
+  if (Array.isArray(z.center)) { out.center = z.center.map(v => +(v * f).toFixed(4)); if (typeof z.r === 'number') out.r = +(z.r * f).toFixed(4); }
+  if (Array.isArray(z.polygon)) out.polygon = z.polygon.map(p => p.map(v => +(v * f).toFixed(4)));
+  for (const k of ['spawn', 'at']) if (Array.isArray(z[k])) out[k] = scalePos(z[k], f, z[k].length === 3 ? axes ?? [0, 2] : null);
+  return out;
+}
+/**
+ * scaleWorld(doc, registry, factor) -> { doc, changes: [{ path, params }], unscaled: [generator ids] }
+ * "A bigger world": grows the content, not only the container. Every space's world-scale param (its extent),
+ * its zones and the player's start scale by `factor` along the world's axes; every generator's params declared
+ * `scale: 'world'` scale with it (lengths ×factor, `per: 'area'` counts ×factor²); a generator that fills its own
+ * extent is then re-fitted to the grown space (`fit`). Generators with nothing to scale are listed in `unscaled`.
+ * Never mutates its input. Zero model calls.
+ */
+export function scaleWorld(input, registry, factor) {
+  const doc = structuredClone(input), changes = [], unscaled = [], f = Number(factor);
+  if (!(f > 0) || f === 1) return { doc, changes, unscaled };
+  (doc.spaces || []).forEach((space, i) => {
+    const card = registry.get(space.use)?.card; if (!card) return;
+    const axes = posAxes(registry, space);
+    const s = scaleParams(Object.fromEntries(Object.entries(card.params || {}).filter(([, x]) => x.scale === 'world')), space.with || {}, f);
+    if (s.changed.length) { space.with = s.config; changes.push({ path: `spaces[${i}].with`, params: s.changed }); }
+    if (Array.isArray(space.zones) && space.zones.length) { space.zones = space.zones.map(z => scaleZone(z, f, axes)); changes.push({ path: `spaces[${i}].zones`, params: ['geometry'] }); }
+    if (doc.player && (doc.player.space ?? doc.spaces[0].id) === space.id && Array.isArray(doc.player.at)) { doc.player.at = scalePos(doc.player.at, f, axes); changes.push({ path: 'player.at', params: ['at'] }); }
+    const area = spaceExtent(registry, space);
+    (space.generators || []).forEach((gen, j) => {
+      const p = registry.get(gen.use); if (!p) return;
+      const g = scaleParams(p.card.params, gen.with || {}, f, { defaults: false }), done = [...g.changed];
+      gen.with = g.config;
+      if (p.card.provides?.extent === 'own' && area && typeof p.fit === 'function') {
+        let fit = null; try { fit = p.fit(gen.with, area, space); } catch { fit = null; }
+        if (fit) { gen.with = { ...gen.with, ...fit }; done.push(...Object.keys(fit).filter(k => !done.includes(k))); }
+      }
+      if (done.length) changes.push({ path: `spaces[${i}].generators[${j}].with`, params: done }); else unscaled.push(gen.use);
+    });
+  });
+  return { doc, changes, unscaled };
+}
+
 /**
  * Fill the params of generator instances that a selection added without them (the skeleton lists `{use}` only)
- * through each generator's `scaffold` hook. Mutates and returns `doc`; -> fixes.
+ * through each generator's `scaffold` hook, then fit generated extents to their spaces (fitExtents).
+ * Mutates and returns `doc`; -> fixes.
  */
 export function configureGenerators(doc, registry) {
   const fixes = [];
@@ -307,5 +466,6 @@ export function configureGenerators(doc, registry) {
     applyScaffold(doc, i, gen, made, { start: missing, registry });
     fixes.push({ code: 'generator_scaffold', path: `spaces[${i}].generators[${j}]`, action: missing ? `configured ${gen.use} from the zones` : `filled ${unset.join(', ')} of ${gen.use}` });
   }));
+  if (Array.isArray(doc.spaces)) fixes.push(...fitExtents(doc, registry));
   return fixes;
 }

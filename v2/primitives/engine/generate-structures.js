@@ -38,7 +38,7 @@ const card = {
     floorHeight: { type: 'number', min: 2, max: 10, unit: 'm', effect: 'storey height (default 4 cells on voxel, 3.5 m on mesh3d)' },
     attempts: { type: 'integer', min: 1, max: 1000, default: 60, effect: 'site tries per scattered copy' },
   },
-  provides: { content: ['structures'], services: ['structures'], events: [] },
+  provides: { content: ['structures'], extent: 'overlay', services: ['structures'], events: [] },
   reads: ['content.structures', 'content.tables'],
 };
 

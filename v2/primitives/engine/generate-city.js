@@ -25,7 +25,7 @@ const card = {
         landmarks: { type: 'list', of: { type: 'string' }, default: [] }, grid: { type: 'string', options: ['regular', 'organic', 'radial'], default: 'regular' },
       } },
     },
-    block: { type: 'list', of: { type: 'integer', min: 8, max: 400 }, min: 2, max: 2, default: [48, 48], unit: 'm', effect: 'block size between streets' },
+    block: { type: 'list', of: { type: 'integer', min: 8, max: 400 }, min: 2, max: 2, default: [48, 48], unit: 'm', scale: 'world', effect: 'block size between streets' },
     roadWidth: { type: 'number', min: 3, max: 24, default: 8, unit: 'm' },
     sidewalk: { type: 'number', min: 0, max: 10, default: 2, unit: 'm' },
     interiors: { type: 'boolean', default: false, effect: 'buildings are hollow with doors, floors and ladders' },
@@ -38,7 +38,7 @@ const card = {
     drive: { type: 'string', options: ['right', 'left'], default: 'right' },
     styles: { type: 'object', open: true, default: {}, effect: 'style -> {wall, roof, window, floor, trim...} voxel block overrides' },
   },
-  provides: { content: ['structures', 'road-network'], services: ['roadgraph', 'lotAt'], events: [] },
+  provides: { content: ['structures', 'road-network'], extent: 'overlay', services: ['roadgraph', 'lotAt'], events: [] },
   reads: [],
 };
 

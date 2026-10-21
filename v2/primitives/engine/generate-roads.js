@@ -27,14 +27,14 @@ const card = {
     },
     snapToTerrain: { type: 'boolean', default: true, effect: 'follow the ground (cut and fill); false keeps a straight grade between ends' },
     maxGrade: { type: 'number', min: 0.01, max: 1, default: 0.12, effect: 'steepest road slope (rise/run) the router prefers' },
-    grid: { type: 'number', min: 1, max: 256, unit: 'm', effect: 'routing grid cell (default: world extent / 192)' },
+    grid: { type: 'number', min: 1, max: 256, unit: 'm', scale: 'world', effect: 'routing grid cell (default: world extent / 192)' },
     drive: { type: 'string', options: ['right', 'left'], default: 'right', effect: 'which side traffic drives on (lane placement)' },
     clearance: { type: 'number', min: 0.5, max: 30, default: 2.5, unit: 'm', effect: 'bridge deck height above water' },
     lineBlock: { type: 'string', default: 'road_line', effect: 'voxel: dashed centre-line block (skipped if absent)' },
     sidewalkBlock: { type: 'string', default: 'concrete', effect: 'voxel: sidewalk block' },
     deckBlock: { type: 'string', default: 'planks', effect: 'voxel: bridge deck block' },
   },
-  provides: { content: ['road-network'], services: ['roadgraph'], events: [] },
+  provides: { content: ['road-network'], extent: 'overlay', services: ['roadgraph'], events: [] },
   reads: [],
 };
 
