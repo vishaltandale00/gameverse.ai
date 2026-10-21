@@ -243,6 +243,8 @@ export const edgesParam = (dflt = 'solid') => ({
   fields: Object.fromEntries(['left', 'right', 'bottom', 'top'].map(s => [s, { type: 'string', options: EDGE_MODES, default: dflt }])),
   effect: 'what each side of the bounds does: solid walls, open, kill (out_of_bounds event) or wrap-around',
 });
+/** The rule checkEdges enforces, declared by every space with edgesParam. */
+export const EDGES_RULES = Object.freeze({ edges_wrap_unpaired: { fields: ['edges'], message: 'left and right both wrap or neither does; bottom and top both wrap or neither does' } });
 /** Validate wrap edges come in pairs (left+right, bottom+top). */
 export function checkEdges(edges, path) {
   const errors = [];

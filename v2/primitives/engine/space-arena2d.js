@@ -7,7 +7,8 @@
 // runners; blast zones, push-apart and a leash (max separation) cover
 // platform fighters and traditional versus stages. Ballistic bodies
 // (projectiles, debris) are integrated by the space.
-import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, rectHas, rectArea, rectCenter, rectDist, rectsOverlap, boxAround, rayRect, shapeHitsRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, rectHas, rectArea, rectCenter, rectDist, rectsOverlap, boxAround, rayRect, shapeHitsRect, edgesParam, checkEdges, EDGES_RULES, wrapDelta, BOUNDS_CAPS, zoneEditor, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
+import { zonesData } from './runtime-lib.js';
 
 const EPS = 1e-6;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far since its last slide
@@ -50,6 +51,13 @@ export default {
     },
     at: 'At = [x, y] arena units, y up: the centre of the body box (components.body.size). Box sets are local [x, y, w, h] relative to the centre with x measured forward (mirrored when body.facing < 0): body.poses = {pose: {hurt, hit, push}}, body.pose, or body.boxes overriding the pose; default hurt = push = the body box, no hit boxes.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1), spawn?, tags?, rules?}',
+    data: zonesData('rect', 'spawn', 'tags'),
+    rules: {
+      ...EDGES_RULES,
+      rect_invalid: { fields: ['solids', 'platforms', 'blast'], message: 'a rect [x0, y0, x1, y1] has x1 > x0 and y1 > y0; a platform has x1 > x0' },
+      scroll_window_invalid: { fields: ['scroll.window', 'size'], message: 'the scroll window fits the arena (width and height at most size)' },
+      scroll_wrap_conflict: { fields: ['scroll.axis', 'edges'], message: 'a scrolling axis does not wrap (scroll.axis x: left/right not wrap; y: bottom/top not wrap)', example: { edges: { left: 'solid', right: 'solid', bottom: 'wrap', top: 'wrap' }, scroll: { axis: 'y', speed: null, accel: null, max: null, window: [8, 8], start: null, clamp: null, carry: null, kill: null, cull: null } } },
+    },
     state: 'rt.state.spaces[id] = {scroll?:{offset:[x,y], speed}, inside, out, blasted, zones?}',
     notes: 'Classes (scroll.clamp/carry, separate, leash, cull) match entity id, archetype, body.layer and body.tags. Bodies with body.ballistic are integrated (gravity × body.gravityScale, bounce, friction); body.collide=false passes through geometry. raycast hits static geometry as hit:"cell" with solid index (platform:i for one-way when mask.oneway) and solid entities as hit:"entity" with solid:true. Entity obstacles: body.solid entities act as solid rects in slide, body.oneWay ones as one-way platforms; body.standingOn records the support, riders are carried by ballistic movers and setPos(e, at, rt, {carry:true}) and stick to a support that rose up to 0.5; an obstacle already overlapping the mover is ignored. Zones: addZone/removeZone/moveZone.',
   },

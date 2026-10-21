@@ -33,6 +33,25 @@ export const BODY = Object.freeze({ type: 'object', open: true, effect: 'kinemat
   tags: { type: 'list', of: { type: 'string' }, effect: 'classes space rules match (grid rules appliesTo/except)' },
   gravityScale: { type: 'number', min: 0, max: 10, effect: "multiplier on the space's gravity" },
 } });
+/**
+ * Zone fields the spaces read (card.data.zones; kernel/sections.js merges them over the base { id, name }): each space
+ * declares the fields of its zone shapes from these constants, so two spaces declaring one field declare it the same way.
+ */
+export const ZONE_FIELDS = Object.freeze({
+  rect: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: 'half-open box [x0, y0, x1, y1) in the space\'s plane coordinates' },
+  spawn: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'where entities entering the zone appear' },
+  tags: { type: 'list', of: { type: 'string' }, effect: 'zone classes other primitives match' },
+  cells: { type: 'list', of: { type: 'list', of: { type: 'integer' }, min: 2, max: 2 }, effect: 'the cells [c, r] of the zone' },
+  range: { type: 'list', of: { type: 'number' }, min: 2, max: 2, effect: 'half-open track segment [p0, p1)' },
+  lanes: { type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: 'inclusive lane range [l0, l1]' },
+  bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, max: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, r: { type: 'number', min: 0 } }, effect: 'box from min to max (x, y, z or x, z)' },
+  center: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'circle centre (with r)' },
+  r: { type: 'number', min: 0, effect: 'circle radius (with center)' },
+  polygon: { type: 'list', min: 3, of: { type: 'list', of: { type: 'number' }, min: 2, max: 2 }, effect: 'ground polygon of [x, z] points' },
+});
+/** card.data for the zones a space reads: the named ZONE_FIELDS. @param {...string} names */
+export const zonesData = (...names) => ({ zones: { type: 'list', of: { type: 'object', open: true, fields: Object.fromEntries(names.map(n => [n, ZONE_FIELDS[n]])) } } });
+
 /** Seconds to whole frames (never negative). */
 export const frames = sec => Math.max(0, Math.round((sec || 0) * FPS));
 export const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;

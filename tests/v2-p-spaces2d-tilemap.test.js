@@ -197,7 +197,7 @@ test('tilemap: preflight rejects bad configs with stable codes', () => {
   const { registry, logic } = catalogue(prims.filter(p => !spaces2d.includes(p)));
   const codes = w => preflight(doc(w), registry, logic).errors.map(e => e.code);
   assert.ok(codes({ mode: 'sideways' }).includes('param_option'));
-  assert.ok(codes({ collision: { stone: 'bouncy' } }).includes('collision_invalid'));
+  assert.ok(codes({ collision: { stone: 'bouncy' } }).includes('param_type'));
   assert.ok(codes({ collisionLayers: ['walls'] }).includes('layer_unknown'));
   assert.ok(codes({ edges: { left: 'wrap', right: 'solid', bottom: 'solid', top: 'solid' } }).includes('edges_wrap_unpaired'));
   assert.ok(codes({ size: [20] }).includes('param_range'));
