@@ -25,10 +25,12 @@ async function verifyModule() {
 
 // The publish gate: the game must not crash. A playtest agent plays it headless; any thrown step,
 // NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks publishing.
-const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss', 'verify_threw']);
+const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss']);
+// Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
+const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
 export function viability(play, problems = []) {
-  const crash = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info');
-  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ') : !play ? 'the playtest did not run' : null;
+  const crash = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage));
+  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ') : null;
   return { viable: !why, viability: why };
 }
 

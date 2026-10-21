@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { tweakDocument, tweakCandidates, applyOps, resolvePath, reviseDocument, guardRevision } from '../v2/planner/doc-revise.js';
+import { tweakDocument, tweakCandidates, applyOps, resolvePath, reviseDocument, reviewChange } from '../v2/planner/doc-revise.js';
 import { contentDiff } from '../v2/planner/revision-check.js';
 import { testCatalogue, fakeWriter, fakeDecisions } from './v2-p-pipeline-fixtures.js';
 
@@ -53,21 +53,24 @@ test('revision ops use identity-aware paths; nothing else in the document moves'
   assert.equal(doc.plot.characters[0].name, 'Hobbs', 'input not mutated');
 });
 
-test('guards: dropped content and repainting are refused unless asked; the change summary comes from the document diff', async () => {
+test('review: removals and look changes the request did not ask for are notes, never refusals; only a game that cannot run is blocked', async () => {
   const before = manor();
   const dropped = structuredClone(before); dropped.content.items = dropped.content.items.slice(0, 1);
-  const g1 = await guardRevision({ before, after: dropped, change: 'make the butler friendlier' });
-  assert.deepEqual([g1.ok, g1.reason], [false, 'dropped_content']);
-  const g2 = await guardRevision({ before, after: dropped, change: 'remove the letter' });
-  assert.ok(g2.ok, 'asked for: allowed');
+  const g1 = await reviewChange({ before, after: dropped, change: 'make the butler friendlier' });
+  assert.equal(g1.block, null);
+  assert.ok(g1.notes.some(n => n.startsWith('removed content.items')), g1.notes.join('; '));
+  const g2 = await reviewChange({ before, after: dropped, change: 'remove the letter' });
+  assert.ok(!g2.notes.some(n => n.startsWith('removed')), 'asked for: no note');
   const repainted = structuredClone(before); repainted.graphics[0].with.style = 'comic';
-  assert.equal((await guardRevision({ before, after: repainted, change: 'more inventory slots' })).reason, 'art_locked');
-  assert.ok((await guardRevision({ before, after: repainted, change: 'make it look like a comic' })).ok);
+  assert.ok((await reviewChange({ before, after: repainted, change: 'more inventory slots' })).notes.includes('changed the look'));
+  assert.ok(!(await reviewChange({ before, after: repainted, change: 'make it look like a comic' })).notes.includes('changed the look'));
   const renamed = structuredClone(before); renamed.plot.characters[0].name = 'Mr. Hobbs';
-  const g3 = await guardRevision({ before, after: renamed, change: 'rename the butler' });
-  assert.ok(g3.ok);
+  const g3 = await reviewChange({ before, after: renamed, change: 'rename the butler' });
+  assert.equal(g3.block, null);
   assert.deepEqual(g3.changes, ['characters name']);
   assert.equal(g3.revisionCheck.applied, null, 'no decision model: applied is unknown, not guessed');
+  assert.equal((await reviewChange({ before, after: renamed, change: 'x', verifyAfter: { ok: false } })).block.code, 'invalid');
+  assert.equal((await reviewChange({ before, after: renamed, change: 'x', verifyAfter: { ok: true, viable: false, viability: 'runtime_error: boom' } })).block.code, 'not_playable');
 });
 
 test('a writer proposes targeted ops and names what no primitive can do', async () => {

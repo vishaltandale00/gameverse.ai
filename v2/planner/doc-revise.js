@@ -6,8 +6,9 @@
 //   confirms which candidate params the request means.
 // - reviseDocument: a writer proposes targeted ops (set/add/remove at
 //   identity-aware paths); nothing else in the document can change.
-// - guardRevision: the revision-check guards (dropped content, art lock,
-//   applied-or-not) shared by both.
+// - reviewChange: the one review of a change; blocks only a game that cannot run,
+//   everything else (removals, look changes, finishability, applied-or-not) is a note.
+import { regressed } from './verify-adapter.js';
 import { cardText, vocabulary, dataShapes } from './catalog.js';
 import { tokens } from './select.js';
 import { parsePath } from './repair.js';
@@ -185,19 +186,30 @@ const LOOKS = /\b(look|looks|color|colour|art|style|sprite|model|graphic\w*|them
 const artOf = doc => ({ graphics: doc.graphics || [], models: doc.content?.models || {}, art: doc.art || null });
 
 /**
- * The revision-check guards for kernel documents:
- * - dropped content and art changes the request didn't mention are reported in `notes` (never refused);
- * - applied: a decision model judges whether the diff carries out the request (null without one).
- * -> { ok, reason?, dropped, artChanged, revisionCheck, changes, diff }
+ * Review of a change (one place for every revision guard). The user's request is the authority:
+ * a change is blocked only when the changed game cannot run (invalid document, or the playtest crashes).
+ * Everything else the review notices is a note on the published version, never a refusal:
+ * - content the request didn't ask to remove; look changes on a request that isn't about looks;
+ * - a game that could be finished and no longer provably can;
+ * - the decision model doubting the request was fully carried out.
+ * -> { block: null | { code, message }, notes: [string], dropped, artChanged, revisionCheck, changes, diff, lines }
  */
-export async function guardRevision({ before, after, change, decisions = null, unsupported = [] }) {
+export async function reviewChange({ before, after, change, decisions = null, unsupported = [], verifyBefore = null, verifyAfter = null }) {
+  const notes = [];
+  let block = null;
+  if (verifyAfter && !verifyAfter.ok) block = { code: 'invalid', message: 'The changed game failed its document checks.' };
+  else if (verifyAfter && verifyAfter.viable === false) block = { code: 'not_playable', message: `That change leaves a game that crashes: ${verifyAfter.viability}` };
   const shrunk = [...shrunkLists(before.plot || {}, after.plot || {}, 'plot'), ...shrunkLists(before.content || {}, after.content || {}, 'content'), ...shrunkLists({ spaces: before.spaces, systems: before.systems }, { spaces: after.spaces, systems: after.systems })];
-  // The request is the authority: removals and art changes are reported with the version, never refused.
   const dropped = shrunk.length && !(await asksToRemove(decisions, change, shrunk)) ? shrunk : [];
+  if (dropped.length) notes.push(`removed ${dropped.map(d => d.path).join(', ')}`);
   const artChanged = JSON.stringify(artOf(before)) !== JSON.stringify(artOf(after));
-  const notes = [...(dropped.length ? [`removed ${dropped.map(d => d.path).join(', ')}`] : []), ...(artChanged && !LOOKS.test(change) ? ['changed the look'] : [])];
+  if (artChanged && !LOOKS.test(change)) notes.push('changed the look');
+  if (verifyBefore && verifyAfter && regressed(verifyBefore, verifyAfter)) notes.push('the game could be finished before this change and no longer provably can');
   const diff = contentDiff(strip(before), strip(after));
   const revisionCheck = await checkRevision(decisions, { change, engine: 'gameverse kernel document', before: strip(before), after: strip(after), unsupported });
-  return { ok: true, dropped, artChanged, notes, revisionCheck, changes: changeSummary(diff), diff: diff.length, lines: diff.slice(0, 20) };
+  if (revisionCheck?.notApplied) notes.push('the checker is not sure the change fully does what was asked');
+  return { block, notes, dropped, artChanged, revisionCheck, changes: changeSummary(diff), diff: diff.length, lines: diff.slice(0, 20) };
 }
+/** Kept for callers of the old name: a review without verification results. */
+export const guardRevision = args => reviewChange(args).then(r => ({ ...r, ok: true }));
 const strip = doc => { const { experiments, ...rest } = doc; return rest; };

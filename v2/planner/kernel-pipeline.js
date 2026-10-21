@@ -14,7 +14,7 @@ import { writeOutline, ensureAgency } from './outline.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
-import { tweakDocument, reviseDocument, applyOps, guardRevision } from './doc-revise.js';
+import { tweakDocument, reviseDocument, applyOps, reviewChange } from './doc-revise.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
 import { catalogHash } from './catalog.js';
@@ -201,16 +201,11 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     }
     t = performance.now();
     ctx.checkpoint?.('revision', { base: job.base, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
-    const guard = await guardRevision({ before, after, change: job.change, decisions, unsupported });
-    timings.guardMs = ms(t);
-    if (!guard.ok) throw Object.assign(Error(guard.reason === 'dropped_content' ? `That change would remove ${guard.dropped.map(d => d.path).join(', ')}, which the request didn't ask for.` : 'That change would repaint the game, which the request didn\'t ask for.'), { status: 422, code: guard.reason });
-    t = performance.now();
     const v = await verifyDocument(after, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
     const vBefore = await verifyDocument(before, registry, logic, { budgetMs: cfg.solveBudgetMs });
-    timings.verifyMs = ms(t);
-    if (!v.ok) throw Object.assign(Error('The changed game failed checks.'), { status: 422 });
-    if (!v.viable) throw Object.assign(Error(`That change leaves no playable game: ${v.viability}`), { status: 422, code: 'not_playable' });
-    if (regressed(vBefore, v)) throw Object.assign(Error('That change would make the game impossible to finish.'), { status: 422, code: 'plot_regressed' });
+    const guard = await reviewChange({ before, after, change: job.change, decisions, unsupported, verifyBefore: vBefore, verifyAfter: v });
+    timings.guardMs = ms(t); timings.verifyMs = timings.guardMs;
+    if (guard.block) throw Object.assign(Error(guard.block.message), { status: 422, code: guard.block.code });
     const notApplied = guard.revisionCheck?.notApplied || (guard.diff === 0);
     const gaps = [...(unsupported || []).map(u => ({ capability: String(u.request).slice(0, 160), why: String(u.why || '').slice(0, 240), kind: 'unsupported' })),
       ...(notApplied && !(unsupported || []).length ? [guard.diff
