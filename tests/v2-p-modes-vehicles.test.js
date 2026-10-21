@@ -74,6 +74,35 @@ test('vehicle.car: boost and kart drift mini-turbo', () => {
   assert.ok(k.entity('k1').components.drive.boostT > 0);
 });
 
+test('vehicle.core: an AI driver\'s movement intent drives the vehicle it sits in (steer toward the goal, throttle up to its speed)', () => {
+  const { rt } = compile(carDoc(), { primitives: P });
+  rt.spawn('npc', { id: 'ai1', at: [3, 2, 0] }); rt.spawn('kart', { id: 'k1', at: [3, 2, 0] }); rt.step();
+  rt.run([{ do: 'enter_vehicle', who: 'ai1', vehicle: 'k1', force: true }]);
+  assert.equal(rt.entity('ai1').components.seat.vehicle, 'k1');
+  // moveTo, as gameplay.ai.seek writes it: the kart heads for the goal and never runs much above the intent's speed.
+  rt.entity('ai1').components.moveTo = { at: [24, 9, 0], zone: null, run: false, speed: 8, by: 'ai' };
+  let closest = Infinity, fastest = 0;
+  for (let i = 0; i < 240; i++) {
+    rt.step(); const k = rt.entity('k1');
+    closest = Math.min(closest, Math.hypot(k.at[0] - 24, k.at[1] - 9)); fastest = Math.max(fastest, Math.abs(k.components.drive.vf));
+    assert.deepEqual(rt.entity('ai1').at, k.at, 'the driver rides along');
+  }
+  assert.ok(closest < 1.5, `reached the goal (closest ${closest})`);
+  assert.ok(fastest > 6 && fastest <= 8 * 1.15 + 0.5, `throttle up to the intent's speed (fastest ${fastest})`);
+  // steer, as direct-steering AI writes it: a second kart turns to the direction.
+  rt.spawn('npc', { id: 'ai2', at: [5, 9, 0] }); rt.spawn('kart', { id: 'k2', at: [5, 9, 0] }); rt.step();
+  rt.run([{ do: 'enter_vehicle', who: 'ai2', vehicle: 'k2', force: true }]);
+  rt.entity('ai2').components.steer = { dir: [0, -1, 0], speed: 4 };
+  for (let i = 0; i < 180; i++) rt.step();
+  const h = rt.entity('k2').components.drive.heading;
+  assert.ok(Math.abs(Math.atan2(Math.sin(h + Math.PI / 2), Math.cos(h + Math.PI / 2))) < 0.2, `heading turned to -y (${h})`);
+  // Without an intent the driver's explicit controls (components.drive.control) still apply.
+  delete rt.entity('ai1').components.moveTo;
+  assert.equal(rt.service('vehicles').control(rt.entity('k1')).throttle, 0);
+  rt.entity('k1').components.drive.control = { throttle: 0.5 };
+  assert.equal(rt.service('vehicles').control(rt.entity('k1')).throttle, 0.5);
+});
+
 test('vehicle.core: carjacking, locked cars, alarms and theft', () => {
   const { rt } = compile(carDoc({ core: { theftDifficulty: 1 } }), { primitives: P });
   rt.spawn('npc', { id: 'driver', at: [4, 5, 0] });

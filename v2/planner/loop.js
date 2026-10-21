@@ -98,6 +98,16 @@ export function cardLoop(card) {
 }
 
 /**
+ * Does a space fit one entry of a loop's declared spaces (card.mode.space / card.loop.space; modes-lib-mode.js): a space
+ * primitive id fits that space only; a capability list fits any space providing every capability in it. The one reading
+ * of the declaration: the composition check and the catalogue's template fit test both use it.
+ * @param {string | string[]} entry @param {string} use the space primitive id @param {Set<string>} caps the capabilities it provides
+ */
+export const spaceFitsEntry = (entry, use, caps) => (typeof entry === 'string' ? entry === use : entry.every(c => caps.has(c)));
+/** Does a space fit a loop's declared spaces: one entry fits, or the loop declares none. @param {Loop} loop @param {string} use @param {Set<string>} caps */
+export const loopSpaceFits = (loop, use, caps) => !loop.space.length || loop.space.some(e => spaceFitsEntry(e, use, caps));
+
+/**
  * The interactions a card.loop / card.mode interaction declares: a string or a list of them, 'any' (a wrapper)
  * and anything that is not a non-empty string left out. @param {unknown} v @returns {string[]}
  */

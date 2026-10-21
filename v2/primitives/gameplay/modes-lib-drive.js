@@ -121,6 +121,7 @@ export function publish(v, plane, d) {
   const { f, l } = axes(d.heading);
   const wu = f[0] * d.vf + l[0] * d.vl, ww = f[1] * d.vf + l[1] * d.vl;
   for (const k of ['heading', 'vf', 'vl', 'vy']) d[k] = r6(d[k]);
+  d.plane = plane; // the plane `heading` is measured in (vehicle.core turns AI drivers' intents into controls in it)
   d.speed = r6(Math.hypot(d.vf, d.vl) * (sign(d.vf) || 1));
   const body = (v.components.body ??= {});
   body.vel = r6v3(fromPlane(plane, wu, ww, d.vy, Array.isArray(v.at) ? v.at.length : 3));

@@ -108,11 +108,14 @@ export default {
     const distTo = (e, z) => { const api = spaceOf(rt, e); if (!has(api, 'nearest')) return 0; const d = api.nearest(e, z, rt); return d == null ? 1e9 : d; };
     const arm = s => {
       s.state = config.countdown > 0 ? 'countdown' : 'running'; s.t = 0; s.countT = frames(config.countdown); s.finishers = []; s.firstFinish = null;
-      s.racers = {}; for (const id of racerIds()) { const e = rt.entity(id); s.racers[id] = { lap: 0, next: 1 % N, inside: e ? inZone(e, CP[1 % N]) : false, lapStart: 0, laps: [], best: null, finished: false, place: null, time: 0, last: null, away: 0 }; }
+      s.racers = {}; enter(s);
       s.timer = config.timeLimit ? frames(config.timeLimit) : null; s.trace = [];
       if (s.state === 'running') begin(s); else rt.emit('race_countdown', { race: config.id, sec: config.countdown });
     };
-    const begin = s => { s.state = 'running'; s.t = 0; rt.emit('race_start', { race: config.id, racers: Object.keys(s.racers) }); spawnGhost(s); };
+    // Everyone on the grid when the race starts races: racers that appear during the countdown (spawned on the first
+    // step by a spawner listed after the race) join it at the start.
+    const enter = s => { for (const id of racerIds()) if (!s.racers[id]) { const e = rt.entity(id); s.racers[id] = { lap: 0, next: 1 % N, inside: e ? inZone(e, CP[1 % N]) : false, lapStart: 0, laps: [], best: null, finished: false, place: null, time: 0, last: null, away: 0 }; } };
+    const begin = s => { enter(s); s.state = 'running'; s.t = 0; rt.emit('race_start', { race: config.id, racers: Object.keys(s.racers) }); spawnGhost(s); };
     const spawnGhost = s => {
       if (!config.ghostArchetype || !s.ghost) return;
       const gid = `ghost-${config.id}`, p = rt.player(); if (!p) return;

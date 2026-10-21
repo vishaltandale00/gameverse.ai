@@ -121,8 +121,8 @@ export function deltaTo(api, a, b) {
   return sub(b, a);
 }
 
-/** True when a gameplay.move.* primitive owns this entity's locomotion. */
-export function moverOwned(e) { return Boolean(e?.components?.move) || e?.components?.ai?.drive === 'intent'; }
+/** True when something else carries out this entity's intents: a gameplay.move.* primitive, or the vehicle it sits in (gameplay.vehicle.core). */
+export function moverOwned(e) { return Boolean(e?.components?.move) || e?.components?.ai?.drive === 'intent' || Boolean(e?.components?.seat); }
 
 /** Busy flag shared between brain and attacks: an attack in progress roots the agent. */
 export function attacking(rt, id) { const a = rt.state.prim['gameplay.ai.attacks']?.agents?.[id]; return Boolean(a && a.phase && a.phase !== 'idle'); }
@@ -156,8 +156,13 @@ export function zonePoint(rt, spaceId, zoneId) {
   if (Array.isArray(z.center)) return v3(z.center);
   if (Array.isArray(z.rect)) return [Math.floor((z.rect[0] + z.rect[2] - 1) / 2), Math.floor((z.rect[1] + z.rect[3] - 1) / 2), 0];
   if (Array.isArray(z.box)) return mul(add(z.box[0], z.box[1]), 0.5);
-  // A segment of a progress axis (track zones: range [p0, p1), lanes [l0, l1]).
-  if (Array.isArray(z.range)) return [(z.range[0] + z.range[1]) / 2, Array.isArray(z.lanes) ? (z.lanes[0] + z.lanes[1]) / 2 : 0, 0];
+  // A segment of a progress axis (track zones: range [p0, p1), lanes [l0, l1]); a segment without lanes spans the whole
+  // cross-section, whose middle the space's bounds give (lanes 0..n-1: the middle lane).
+  if (Array.isArray(z.range)) {
+    if (Array.isArray(z.lanes)) return [(z.range[0] + z.range[1]) / 2, (z.lanes[0] + z.lanes[1]) / 2, 0];
+    const b = rt.space(spaceId).bounds();
+    return [(z.range[0] + z.range[1]) / 2, (b.min[1] + b.max[1]) / 2, 0];
+  }
   return null;
 }
 

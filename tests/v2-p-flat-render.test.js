@@ -98,3 +98,22 @@ test('the 2D camera service projects world points for UI overlays', () => {
   assert.ok(p && p[0] >= 0 && p[0] <= 960 && p[1] >= 0 && p[1] <= 540, 'the player is on screen');
   assert.equal(cam.project([-500, -500]), null, 'off-screen points are null');
 });
+
+test('graphics.render.track on a looped track: the camera runs on across the start line and racers just past it are ahead', () => {
+  const doc = docFor('track', { graphics: [{ use: 'graphics.render.track' }], spaceWith: { loop: true, length: 120 } });
+  doc.systems = doc.systems.filter(s => s.use !== 'gameplay.flattest.mover');
+  doc.player.at = [110, 1, 0.5];
+  const m = mount(doc, flat);
+  m.rt.step({});
+  m.rt.spawn('slime', { space: 'world', at: [3, 1, 0.5] });
+  // The player drives across the line (the space wraps its progress); the slime stays put just past it.
+  const ys = [];
+  for (let i = 0; i < 40; i++) {
+    const p = m.rt.player(); m.rt.space('world').setPos(p, [p.at[0] + 0.25, 1, 0.5], m.rt); m.rt.step({}); m.view.frame(1);
+    ys.push(m.rt.caches.flat.lastFrame.toScreen([3, 1, 0.5])[1]);
+  }
+  assert.equal(m.rt.space('world').laps(m.rt.player()), 1, 'the player crossed the line');
+  assert.ok(ys.every(y => y > 0), `the slime past the line is drawn ahead the whole time (${ys.slice(0, 3)} … ${ys.slice(-3)})`);
+  for (let i = 1; i < ys.length; i++) assert.ok(ys[i] >= ys[i - 1] - 1e-6, `it comes steadily closer across the line (frame ${i}: ${ys[i - 1]} -> ${ys[i]})`);
+  assert.deepEqual([...m.rt.caches.flat.errors], [], 'no layer failed');
+});

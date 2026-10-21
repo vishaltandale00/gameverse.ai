@@ -2,8 +2,10 @@
 // Seats and occupants, entering/exiting (with carjacking, locks and theft),
 // ownership, hull damage with burning and destruction, fuel, horn and radio.
 // Motion primitives (vehicle.car / boat / aircraft) read driver controls and
-// fuel through the 'vehicles' service; AI drivers write components.drive.control.
-import { alive, dist, spaceOf, bindRoles, planeFor, fromPlane, matches, sortedEntities, err, needFields, clamp, r6 } from './modes-lib-util.js';
+// fuel through the 'vehicles' service; AI drivers write components.drive.control, or the movement intents AI writes
+// for any entity (steer / moveTo), which the vehicle they sit in carries out (intentControl).
+import { alive, dist, spaceOf, bindRoles, planeFor, planeUW, fromPlane, matches, sortedEntities, err, needFields, clamp, r6 } from './modes-lib-util.js';
+import { zonePoint } from './ai-lib.js';
 
 const ID = 'gameplay.vehicle.core';
 const MOTION = ['car', 'boat', 'aircraft'];
@@ -21,8 +23,34 @@ function ensure(v) {
 }
 const kindOf = v => v.components.vehicle.kind ?? MOTION.find(k => v.components[k]) ?? 'vehicle';
 
-/** Controls for a vehicle: the player's input when the player drives, else components.drive.control (AI). */
-function controlsFor(rt, v) {
+/**
+ * An AI driver's movement intent as driver controls: the driver writes the same intents AI writes for an entity on
+ * foot (components.steer { dir, speed } or components.moveTo { at | zone, speed }, ai-lib.js locomotion contract) and the
+ * vehicle it sits in carries them out: steer toward the goal by the heading error, throttle up to the intent's speed,
+ * brake well above it. null when the driver has no intent.
+ */
+function intentControl(rt, v, driver, pref) {
+  const s = driver.components.steer, m = driver.components.moveTo, api = spaceOf(rt, v);
+  if ((!s?.dir && !m) || !api || !Array.isArray(v.at)) return null;
+  let dir = null, speed = null;
+  if (Array.isArray(s?.dir)) { dir = s.dir; speed = s.speed ?? null; }
+  else {
+    const goal = Array.isArray(m.at) ? m.at : m.zone ? zonePoint(rt, v.space, m.zone) : null;
+    if (!goal) return null;
+    dir = typeof api.delta === 'function' ? api.delta(v.at, goal) : goal.map((g, i) => g - (v.at[i] ?? 0));
+    speed = m.speed ?? null;
+  }
+  // The plane the motion primitive drives in (drive.plane, published with the heading); before its first step, this one's.
+  const d = v.components.drive || {}, plane = d.plane ?? planeFor(pref, api, v), [du, dw] = planeUW(plane, dir);
+  if (Math.hypot(du, dw) < 1e-6) return { throttle: 0, steer: 0, brake: true };
+  const h = d.heading ?? 0, vf = Math.abs(d.vf ?? 0);
+  const error = Math.atan2(Math.sin(Math.atan2(dw, du) - h), Math.cos(Math.atan2(dw, du) - h)); // goal bearing - heading, in (-π, π]
+  // vehicle.car yaws by -steer (positive steer turns toward -left), so a goal to the left (error > 0) needs negative steer.
+  return { steer: clamp(-error * 2, -1, 1), throttle: speed === null || vf < speed ? 1 : 0, brake: speed !== null && vf > speed * 1.15 };
+}
+
+/** Controls for a vehicle: the player's input when the player drives, else the AI driver's intent or components.drive.control (AI). */
+function controlsFor(rt, v, pref = 'auto') {
   const c = v.components.vehicle, driver = c?.occupants?.[0];
   const zero = { throttle: 0, steer: 0, brake: false, handbrake: false, boost: false, jump: false, up: false, down: false, pitch: 0, roll: 0 };
   if (!driver || c.destroyed) return zero;
@@ -34,14 +62,15 @@ function controlsFor(rt, v) {
     return { throttle, steer, pitch: mv[1] ?? 0, roll: mv[0] ?? 0, brake: Boolean(held.brake), handbrake: Boolean(held.handbrake || held.drift),
       boost: Boolean(act.boost || held.boost), jump: Boolean(act.jump || held.jump), up: Boolean(held.throttle_up || held.accelerate), down: Boolean(held.throttle_down || held.brake) };
   }
-  return { ...zero, ...(v.components.drive?.control || {}) };
+  const o = rt.entity(driver), intent = o ? intentControl(rt, v, o, pref) : null;
+  return { ...zero, ...(v.components.drive?.control || {}), ...(intent || {}) };
 }
 
 export default {
   id: ID,
   card: {
     loop: { verbs: ['enter_vehicle', 'exit_vehicle'], progress: ['vehicle_entered'] },
-    intent: 'Vehicles anyone can enter and exit: seats (driver + passengers), carjacking NPC drivers, locked cars with theft attempts and alarms, ownership, hull damage with burning and explosion, fuel, horn and radio. Motion comes from gameplay.vehicle.car/boat/aircraft; AI drives by writing components.drive.control.',
+    intent: 'Vehicles anyone can enter and exit: seats (driver + passengers), carjacking NPC drivers, locked cars with theft attempts and alarms, ownership, hull damage with burning and explosion, fuel, horn and radio. Motion comes from gameplay.vehicle.car/boat/aircraft; AI drives by writing components.drive.control, or through the movement intents (steer, moveTo) of the AI driver seated in it.',
     views: ['any'],
     params: {
       enterRange: { type: 'number', default: 3, min: 0.5, max: 50, unit: 'm', effect: 'how close an entity must be to enter' },
@@ -119,7 +148,7 @@ export default {
       vehicleOf: who => seatedVehicle(typeof who === 'string' ? rt.entity(who) : who),
       driver: v => ensure(v).occupants[0],
       occupants: v => ensure(v).occupants.filter(Boolean),
-      control: v => controlsFor(rt, v),
+      control: v => controlsFor(rt, v, config.plane),
       canDrive: v => { const c = ensure(v); return !c.destroyed && c.occupants[0] != null && (c.tank === 0 || c.fuelLeft > 0); },
       /** Burn fuel for |throttle| over dt; returns false when the tank is empty. */
       consume(v, throttle, dt) {

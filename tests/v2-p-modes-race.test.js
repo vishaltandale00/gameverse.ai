@@ -43,6 +43,19 @@ test('race: countdown, checkpoints, laps, positions, finish and win', () => {
   assert.ok(rt.test({ race: 'race', state: 'finished' }));
 });
 
+test('race: racers that appear during the countdown (a spawner listed after the race) race from the start', () => {
+  const { rt } = compile(raceDoc(), { primitives: P });
+  rt.step();
+  assert.deepEqual(Object.keys(rt.store('gameplay.race:race').racers), ['player'], 'armed before the rival exists');
+  rt.spawn('rival', { id: 'r1', at: [1, 1, 0] });
+  race(rt, 70, {});
+  assert.ok(rt.test({ race: 'race', state: 'running' }));
+  assert.deepEqual(Object.keys(rt.store('gameplay.race:race').racers), ['player', 'r1'], 'on the grid at the start');
+  race(rt, 600, { player: 2, r1: 1 });
+  assert.equal(rt.state.counts['race_finished:r1'], 1);
+  assert.equal(rt.store('gameplay.race:race').racers.r1.place, 1);
+});
+
 test('race: best-lap ghost is saved and replayed; wrong way warns', () => {
   const { rt } = compile(raceDoc({ ghostArchetype: 'ghosty', ghostEvery: 2, wrongWaySec: 0.2, countdown: 0, racers: [] }), { primitives: P });
   rt.step();
