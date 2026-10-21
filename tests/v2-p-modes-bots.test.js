@@ -111,6 +111,12 @@ const DOCS = {
       { player: { archetype: 'hero', at: [0, 0] } });
   },
   story: () => withExitGate(manor()),
+  farm: () => base('farm', [{ id: 'plot', use: 'engine.space.grid', with: { size: [6, 5] }, generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'dirt' }], density: 0.8, symmetry: 'none', teams: 1, deployDepth: 1 } }] }],
+    [{ use: 'gameplay.move.grid' }, { use: 'gameplay.inventory', with: { start: [{ item: 'hoe' }, { item: 'bean_seed', count: 2 }, { item: 'leek_seed', count: 1 }] } },
+      { use: 'gameplay.farming', with: { crops: [{ item: 'bean', seed: 'bean_seed', days: 1 }, { item: 'leek', seed: 'leek_seed', days: 2 }], tillable: ['dirt'], daySec: 2 } }, { use: 'plot.ending' }],
+    { items: [{ id: 'hoe', name: 'Hoe', kind: 'tool', tool: { kind: 'hoe', tier: 0 } }, { id: 'bean_seed', name: 'Bean seed', kind: 'material' }, { id: 'bean', name: 'Bean', kind: 'food' }, { id: 'leek_seed', name: 'Leek seed', kind: 'material' }, { id: 'leek', name: 'Leek', kind: 'food' }],
+      blocks: [{ id: 'dirt', name: 'Dirt', solid: false }, { id: 'farmland', name: 'Farmland', solid: false }], archetypes: [{ id: 'hero', components: {} }] },
+    { plot: { endings: [{ id: 'harvest', title: 'Harvest', when: { count: 'harvested', gte: 3 }, outcome: 'won' }] }, player: { archetype: 'hero', at: [0, 0] } }),
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
@@ -123,13 +129,14 @@ const PLAYED_AS = {
     [{ use: 'gameplay.move.grid' }, { use: 'plot.storyboard', with: { sequentialActs: false } }, { use: 'plot.ending' }], { archetypes: [{ id: 'hero', components: {} }] },
     { plot: { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b_shrine', when: { zone: 'shrine' }, do: [{ do: 'set_var', var: 'prayed', value: 1 }] }] }] }, endings: [{ id: 'blessed', title: 'Blessed', when: { beat: 'b_shrine' }, outcome: 'won', epilogue: '.' }] },
       player: { archetype: 'hero', space: 'g', at: [1, 1] } }) },
+  farm: { 'avatar-realtime': () => withMove(DOCS.farm(), 'gameplay.move.walk') },
 };
 const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loop];
 // Fast settings per bot (a few seeds, shallow searches).
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
   placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {},
-  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } },
+  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {},
 };
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
 const strip = runs => runs.map(({ budget, ...x }) => x);
@@ -206,6 +213,12 @@ test('mode creature-battle: the greedy battler wins the trainer battle the story
 });
 
 for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
+
+test('mode farm: the farming bot tills, plants, waters and harvests through the controls to the win', () => {
+  const { runs } = playMode('farm');
+  for (const verb of ['till', 'plant', 'water', 'harvest']) assert.ok(runs[0].presses[verb] > 0, `pressed ${verb}: ${JSON.stringify(runs[0].presses)}`);
+  assert.equal(runs[0].harvested, 3);
+});
 
 test('mode story: the plot solver reaches a winning ending that replays', () => {
   const { runs } = playMode('story');

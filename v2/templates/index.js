@@ -5,6 +5,7 @@
 // Each is proven in tests/v2-templates.test.js.
 import mazeChase from './maze-chase.js';
 import race from './race.js';
+import farm from './farm.js';
 
-export const TEMPLATES = Object.freeze([mazeChase, race]);
+export const TEMPLATES = Object.freeze([mazeChase, race, farm]);
 export const templateById = id => TEMPLATES.find(t => t.id === id) ?? null;
