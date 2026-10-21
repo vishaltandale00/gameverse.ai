@@ -8,6 +8,7 @@
 // creeping line, and onIdle runs. Movers can also be spawned as entities so
 // renderers and other primitives (combat, overlap) see them.
 
+import { ENTITY_KINDS } from '../../kernel/params.js';
 const ID = 'gameplay.lanes.periodic';
 const mod = (a, n) => ((a % n) + n) % n;
 /** Signed distance from x to the nearest mover centre of a road/river lane with accumulated shift. */
@@ -42,7 +43,7 @@ export default {
       axis: { type: 'integer', default: 1, min: 0, max: 2, effect: 'space axis lanes are stacked along (forward)' },
       along: { type: 'integer', default: 0, min: 0, max: 2, effect: 'space axis movers travel along' },
       width: { type: 'list', default: [0, 9], min: 2, max: 2, of: { type: 'number' }, effect: '[min, max] playable extent along the lanes' },
-      subjects: { type: 'list', default: ['player'], of: { type: 'string' }, effect: 'entity ids the lanes affect' },
+      subjects: { type: 'list', default: ['player'], of: { type: 'string', selects: ENTITY_KINDS }, effect: 'entity ids the lanes affect' },
       carHalf: { type: 'number', default: 0.32, min: 0, max: 5, effect: 'subject half-width against cars and trains' },
       nearMiss: { type: 'number', default: 0.4, min: 0, max: 5, effect: 'extra margin that counts as a near miss' },
       trainSpeed: { type: 'number', default: 30, min: 1, max: 500, unit: 'u/s' },

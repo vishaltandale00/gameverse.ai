@@ -134,7 +134,7 @@ test('board capture -> creature battle: the inner loop is asked for, the hit ent
   const placed = p.doc.systems.filter(x => x.use === NESTED);
   assert.equal(placed.length, 1);
   assert.equal(placed[0].id, s.inst.id);
-  assert.deepEqual(placed[0].with.start, [{ do: 'start_battle', kind: 'trainer', foe: [{ species: p.doc.content.species[0].id, level: 5 }] }], 'the start is filled from the document');
+  assert.deepEqual(placed[0].with.start, [{ do: 'heal_party' }, { do: 'start_battle', kind: 'trainer', foe: [{ species: p.doc.content.species[0].id, level: 5 }] }], 'the start the card declares, filled from the document');
   assert.ok(p.ok, JSON.stringify(p.errors.slice(0, 3)));
   assert.ok(preflight(p.doc, registry, logic).ok);
 });

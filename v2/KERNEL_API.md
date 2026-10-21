@@ -27,7 +27,7 @@ export default {
 };
 ```
 
-Param types: `number integer boolean string ref list object predicate effects json`. `ref` takes `to: <kind>`. `object` takes `fields` and `open`. `list` takes `of`, `min` and `max`. Defaults are applied by preflight, so `install` receives a complete config.
+Param types: `number integer boolean string ref list object predicate effects json`. `ref` takes `to: <kind>`. A `string` that selects entities (an entity id, an archetype id or a tag) declares `selects: ENTITY_KINDS` (`kernel/params.js`): a value that is an id of those kinds refers to that entry, so composition renames it with the entry; other values stay free. `object` takes `fields`, `open` and `values` (the shape of every value under a key `fields` does not name: a map with free keys). `list` takes `of`, `min` and `max`. Defaults are applied by preflight, so `install` receives a complete config.
 
 **Reference kinds** come from `card.defines`:
 - `{kind, at}` indexes a document path: a list of `{id}` or an id-keyed object.

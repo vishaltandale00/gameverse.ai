@@ -333,8 +333,11 @@ export default {
     ],
     // Creature-battle mode: menu turns against wild or trainer creatures, started by start_battle (encounters, beats).
     mode: { loop: 'creature-battle', interaction: 'menu', opponent: 'ai-rival', space: ['engine.space.none'], needs: { content: ['content.species', 'content.moves', 'content.types'], participants: null }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'balance' },
-    // As an encounter's inner loop: the participant posing it fields a creature of the document's species (a duel, not a wild catch).
-    engage: { encounter: { start: [{ do: 'start_battle', kind: 'trainer', foe: [{ species: '$first:content.species', level: 5 }] }] } },
+    // As an encounter's inner loop: every encounter is a fresh duel (the player's creatures are healed first, so a lost
+    // battle never leaves the next encounter without a creature to send out) in which the participant posing it fields
+    // a creature of the document's species (a duel, not a wild catch); the opening battle waits (autoStart off): the
+    // encounter starts every battle.
+    engage: { encounter: { start: [{ do: 'heal_party' }, { do: 'start_battle', kind: 'trainer', foe: [{ species: '$first:content.species', level: 5 }] }], config: { autoStart: false } } },
     intent: 'Turn-based creature battles (wild, trainer, leader, champion) entered from any overworld into a battle space: moves, type chart, STAB, crits, stat stages, statuses, priority/speed order, switching, items, capture, escape, experience, move learning and evolution.',
     views: ['ui', 'any'],
     params: {
@@ -346,6 +349,12 @@ export default {
       onCapture: { type: 'effects', default: [], effect: 'run after a capture' },
       evolve: { type: 'boolean', default: true, effect: 'creatures that reached their evolution level evolve after the battle' },
       currency: { type: 'string', default: 'gold', effect: 'currency for prize money (gameplay.economy give_money when present, else var money.<currency>)' },
+      opening: { type: 'object', fields: {
+        kind: { type: 'string', options: KINDS, default: 'trainer', effect: 'wild, trainer, leader or champion' },
+        trainer: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string' }, prize: { type: 'integer', min: 0, max: 100000 } }, effect: 'the opposing trainer (trainer battles)' },
+        foe: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { species: { type: 'ref', to: 'species', required: true }, level: { type: 'integer', default: 5, min: 1, max: 100 } } }, effect: "the opponent's creatures" },
+      }, effect: 'the battle fought from the start of the game (with autoStart): a creature battler played on its own' },
+      autoStart: { type: 'boolean', default: true, effect: 'start the opening battle at game start (otherwise battles start from start_battle)' },
     },
     provides: {
       events: ['battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
@@ -429,6 +438,13 @@ export default {
       rt.run(fx, {});
     }
     rt.on('battle_request', start);
+    // The opening battle, once, from the first step (after every primitive installed: the party exists).
+    if (config.opening && config.autoStart) rt.system('rules', () => {
+      const s = st(); if (s.opened) return;
+      s.opened = true;
+      const o = config.opening;
+      start({ kind: o.kind, foe: o.foe, trainer: o.trainer ? { ...o.trainer } : null, onWin: [], onLose: [] });
+    }, ID);
     rt.action('battle', v => {
       const s = st(), b = s.battle; if (!b || !v || typeof v !== 'object') return;
       const eng = E();

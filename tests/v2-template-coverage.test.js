@@ -14,7 +14,7 @@ const { registry } = buildCatalogue();
 
 /** Loops a card declares (card.mode.loop) that no template carries yet. Remove an entry when its template lands. */
 const PENDING = new Set([
-  'creature-battle', 'story',
+  'story',
 ]);
 
 const modeCards = registry.cards().filter(c => c.mode);

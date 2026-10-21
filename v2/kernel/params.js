@@ -15,6 +15,13 @@
  */
 
 export const REF_KINDS = ['character', 'item', 'zone', 'quest', 'model', 'archetype', 'space', 'beat', 'ending', 'recipe', 'block', 'dialogue'];
+/**
+ * The kinds whose ids name entities: characters spawn with id = character id, archetypes are what an entity is made
+ * of. A string param declaring `selects: ENTITY_KINDS` is an entity selector (an entity id, an archetype id or a tag,
+ * as gameplay/modes-lib-util.js `matches` reads it): a value that is an id of one of these kinds refers to that entry
+ * (composition renames it with the entry), any other value is free (an entity id a spawn names, a tag).
+ */
+export const ENTITY_KINDS = Object.freeze(['archetype', 'character']);
 /** @type {Set<string>} */
 const NONE = new Set();
 
@@ -64,7 +71,7 @@ export function checkParam(schema, value, path, errors, ctx) {
     }
     case 'object': {
       if (!value || typeof value !== 'object' || Array.isArray(value)) { fail('param_type', 'must be an object'); return value; }
-      return checkFields(schema.fields || {}, value, path, errors, ctx, schema.open);
+      return checkFields(schema.fields || {}, value, path, errors, ctx, schema.open, schema.values);
     }
     case 'predicate':
       ctx?.checkPredicate?.(value, path, errors);
@@ -82,11 +89,12 @@ export function checkParam(schema, value, path, errors, ctx) {
 }
 
 /**
- * Validate an object of fields against a field-schema map. Unknown keys are errors unless open.
- * @param {Params} fields @param {Record<string, any>} value @param {string} path @param {Problem[]} errors @param {ParamContext} ctx @param {boolean} [open]
+ * Validate an object of fields against a field-schema map. Unknown keys are errors unless open, or checked against
+ * `values` (a map whose keys are free and whose values share one declared shape: a legend's char -> entry).
+ * @param {Params} fields @param {Record<string, any>} value @param {string} path @param {Problem[]} errors @param {ParamContext} ctx @param {boolean} [open] @param {ParamSchema} [values]
  * @returns {Record<string, any>}
  */
-export function checkFields(fields, value = {}, path, errors, ctx, open = false) {
+export function checkFields(fields, value = {}, path, errors, ctx, open = false, values = undefined) {
   /** @type {Record<string, any>} */
   const out = {};
   for (const [key, schema] of Object.entries(fields)) {
@@ -95,7 +103,8 @@ export function checkFields(fields, value = {}, path, errors, ctx, open = false)
   }
   for (const key of Object.keys(value)) {
     if (key in fields) continue;
-    if (open) out[key] = value[key];
+    if (values) out[key] = checkParam(values, value[key], path ? `${path}.${key}` : key, errors, ctx);
+    else if (open) out[key] = value[key];
     else errors.push({ code: 'param_unknown', path: path ? `${path}.${key}` : key, message: `unknown parameter '${key}'`, hint: `known: ${Object.keys(fields).join(', ') || 'none'}` });
   }
   return out;

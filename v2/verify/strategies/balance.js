@@ -43,7 +43,7 @@ export default {
       }
       const won = rt.state.status === 'won' || (entityFoes && !livingFoes(rt).length && vitality(rt).alive);
       const lost = rt.state.status === 'lost' || !vitality(rt).alive;
-      return { seed, won, lost, turns, stalemate: !won && !lost && turns >= maxTurns, budget: !won && !lost && turns < maxTurns && Boolean(b.hit), hp: ownHp(rt) };
+      return { seed, won, lost, status: rt.state.status, frames: rt.state.frame, turns, stalemate: !won && !lost && turns >= maxTurns, budget: !won && !lost && turns < maxTurns && Boolean(b.hit), hp: ownHp(rt) };
     };
     const r = multiSeed(play, { seeds, passRate, b });
     const finished = r.runs.filter(x => !x.budget), stale = finished.filter(x => x.stalemate).length;

@@ -18,9 +18,9 @@
 import { withDefaults, drawSeed, stream, Raster, spaceOf, cellWriter, addZones, publish, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.grid.board';
-const piece = { type: 'object', fields: { piece: { type: 'string', required: true }, weight: { type: 'number', min: 0, default: 1 } } };
-const terrain = { type: 'object', fields: { block: { type: 'string', required: true }, weight: { type: 'number', min: 0, default: 1 }, blocks: { type: 'boolean', default: false, effect: 'impassable' } } };
-const biome = { type: 'object', fields: { block: { type: 'string', required: true }, elevation: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, moisture: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, blocks: { type: 'boolean', default: false } } };
+const piece = { type: 'object', fields: { piece: { type: 'string', required: true, effect: 'the cell token: a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 } } };
+const terrain = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 }, blocks: { type: 'boolean', default: false, effect: 'impassable' } } };
+const biome = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, elevation: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, moisture: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, blocks: { type: 'boolean', default: false } } };
 
 export const HEX_DIRS = { even: [[1, 0], [-1, 0], [0, -1], [-1, -1], [0, 1], [-1, 1]], odd: [[1, 0], [-1, 0], [1, -1], [0, -1], [1, 1], [0, 1]] };
 export const hexNeighbors = (x, y) => HEX_DIRS[y & 1 ? 'odd' : 'even'].map(([dx, dy]) => [x + dx, y + dy]);
@@ -41,7 +41,7 @@ export default {
       fillNoMatch: { type: 'boolean', default: true }, matchLength: { type: 'integer', min: 2, max: 6, default: 3 }, ensureMove: { type: 'boolean', default: true },
       terrain: { type: 'list', of: terrain, default: [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }], effect: 'tactics: obstacle/feature terrain' },
       density: { type: 'number', min: 0, max: 0.8, default: 0.18, effect: 'tactics: share of cells given terrain; lanes: field fill' },
-      ground: { type: 'string', effect: 'tactics: block of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
+      ground: { type: 'string', effect: 'tactics: the block (a content.blocks id) of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
       symmetry: { type: 'string', options: ['none', 'mirror', 'rotate'], default: 'rotate' },
       teams: { type: 'integer', min: 1, max: 4, default: 2 }, deployDepth: { type: 'integer', min: 1, max: 8, default: 2 },
       lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'string', default: 'jungle', effect: 'lanes: field block' },

@@ -26,11 +26,15 @@ export interface ParamSchema {
   maxLength?: number;
   /** `ref`: the reference kind (base REF_KINDS or a card.defines kind). */
   to?: string;
+  /** `string`: an entity selector (an entity id, an archetype id or a tag); a value that is an id of one of these kinds (params.js ENTITY_KINDS) refers to that entry. */
+  selects?: readonly string[];
   /** `list`: the element schema. */
   of?: ParamSchema;
   /** `object`: field schemas; `open` allows unknown keys. */
   fields?: Params;
   open?: boolean;
+  /** `object`: the shape of every value under a key `fields` does not name (a map with free keys: a legend's char -> entry). */
+  values?: ParamSchema;
   required?: boolean;
   /** What the param does, for the planner model (also the hint on param_missing). */
   effect?: string;

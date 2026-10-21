@@ -5,6 +5,7 @@
 //
 // Platformer mode (card.mode loop 'platformer'): a side-view level the player runs and jumps through, past pits,
 // hazards and enemies, to its goal. The win is reaching the goal (goal_reached, changed by the player's movement).
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { boxOf, boxesTouch, isVec } from './items-lib.js';
 
 const KEY = 'gameplay.goal';
@@ -28,7 +29,7 @@ export default {
     intent: 'Level goals (entities with a `goal` component: a flag pole, an exit door, a finish line): touching one fires goal_reached once and runs onReach, which ends the level (end_game won) or clears a stage of a sequence.',
     views: ['any'],
     params: {
-      reachers: { type: 'list', default: ['player'], of: { type: 'string' }, effect: 'entity ids or archetypes that reach goals by touch' },
+      reachers: { type: 'list', default: ['player'], of: { type: 'string', selects: ENTITY_KINDS }, effect: 'entity ids or archetypes that reach goals by touch' },
       onReach: { type: 'effects', default: [], effect: 'effects when a goal is reached (self = the goal, actor = the reacher)' },
     },
     provides: { events: ['goal_reached', 'goal_reached:*'], services: ['goal'] },

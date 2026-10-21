@@ -596,7 +596,11 @@ export function checkComposition(input, registry, opts = {}) {
       const md = /** @type {Record<string, any> | null} */ (cardLoop(c));
       if (!md) continue;
       const s = spaces.get(u.space);
-      const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || []), ...(docLike.spaces || []).flatMap((/** @type {any} */ sp) => (isObj(sp) && isList(sp.generators) ? sp.generators : []))].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
+      // The unit's own instance: a generator of its space, a system bound to its space, else the first of its primitive
+      // (two instances of one primitive on two spaces are two units, each read with its own config).
+      const all = docLike ? [...(docLike.systems || []), ...(docLike.graphics || []), ...(docLike.spaces || []).flatMap((/** @type {any} */ sp) => (isObj(sp) && isList(sp.generators) ? sp.generators : []))] : [];
+      const ownGen = docLike && u.slot === 'generator' ? list(prop(list(docLike.spaces).find((/** @type {any} */ sp) => isObj(sp) && sp.id === u.space), 'generators')).find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
+      const inst = docLike ? ownGen ?? all.find((/** @type {any} */ x) => isObj(x) && x.use === u.use && (x.space ?? [...spaces.keys()][0]) === u.space) ?? all.find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
       // In a document, a loop that exists only for one configuration (card.mode.applies: a course with a goal, a dungeon
       // with a boss) is no loop of an instance configured otherwise: loop.js loopExists, as the loop check reads it.
       if (inst && !loopExists(c, isObj(inst.with) ? inst.with : {})) continue;

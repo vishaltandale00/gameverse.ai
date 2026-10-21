@@ -14,6 +14,7 @@
 // Spatial rules (paths, occupancy, line of sight, cover) are used only when the
 // unit's space offers them, so the same primitive runs on a grid, a mesh or
 // engine.space.none.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { compare } from '../../kernel/logic.js';
 import { pushModal, popModal, withDefaults, alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
 
@@ -33,7 +34,7 @@ const ACTION_FIELDS = {
   ai: { type: 'number', default: 1, min: 0, max: 100, effect: 'AI preference weight (0 = AI never uses it)' },
 };
 
-const SIDE_FIELDS = { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string' }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
+const SIDE_FIELDS = { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
 const TURN_VERBS = ['turn_act', 'turn_move', 'end_turn', 'next_phase', 'select_unit'];
 /** Verbs other modes (cards...) add to the turn modal: registered at their install, read when a battle opens. */
 export const modalExtra = rt => [...(rt.caches['gameplay.turns:modal'] ??= new Set())];

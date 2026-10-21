@@ -4,6 +4,7 @@
 // rudder needs flow, the keel resists sideways slip, shallow water beaches the
 // hull, and coming to rest in a dock zone (or near a dock archetype) docks it.
 // Archetype components.boat: { maxSpeed km/h, accel m/s², turn deg/s, drag, draft m, planing km/h }.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { footOffset, has, planeFor, planeUW, clamp, KMH, DEG, sign, approach, r6, err, matchesAny, dist, sortedEntities } from './modes-lib-util.js';
 import { initDrive, reproject, moveVehicle, resolveBlock, publish, motionVehicles } from './modes-lib-drive.js';
 
@@ -21,7 +22,7 @@ export default {
       swell: { type: 'number', default: 0.15, min: 0, max: 3, unit: 'm', effect: 'bob amplitude at rest' },
       keel: { type: 'number', default: 2.5, min: 0, max: 20, effect: 'sideways slip damping' },
       docks: { type: 'list', of: { type: 'ref', to: 'zone' }, default: [], effect: 'zones where a stopped boat docks' },
-      dockArchetypes: { type: 'list', of: { type: 'string' }, default: [], effect: 'entities (archetype/tag) a stopped boat docks beside' },
+      dockArchetypes: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'entities (archetype/tag) a stopped boat docks beside' },
       dockRange: { type: 'number', default: 3, min: 0, max: 50, unit: 'm', effect: 'range for dockArchetypes' },
       dockSpeed: { type: 'number', default: 0.6, min: 0, max: 10, unit: 'm/s', effect: 'speed below which a boat counts as stopped' },
     },

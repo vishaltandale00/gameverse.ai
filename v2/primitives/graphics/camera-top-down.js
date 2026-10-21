@@ -1,6 +1,7 @@
 // graphics.camera.top-down — overhead follow camera with a dead zone, optional
 // look-ahead along the direction of motion, bounds and smoothing; `tilt` below
 // 90° foreshortens the ground plane (sprites stay upright) for a 3/4 look.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { hubOf, bindAny } from './flat-stage.js';
 import { driveTopDown } from './flat-follow.js';
 
@@ -17,7 +18,7 @@ export default {
       lookAhead: { type: 'number', default: 0, min: 0, max: 10, unit: 'tiles', effect: 'lead along the direction of travel' },
       smoothing: { type: 'number', default: 0.14, min: 0, max: 1, effect: 'per-frame catch-up' },
       roomLock: { type: 'boolean', default: false, effect: 'keep inside the current room/zone instead of the whole space' },
-      target: { type: 'string', default: 'player', effect: 'entity id, archetype or tag to follow' },
+      target: { type: 'string', selects: ENTITY_KINDS, default: 'player', effect: 'entity id, archetype or tag to follow' },
     },
   },
   install(rt, config, instance) {

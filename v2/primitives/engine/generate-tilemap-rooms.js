@@ -10,6 +10,7 @@
 // Declare the rung block one_way in content.blocks for real platformer spaces (testSpace treats every
 // block as solid but only the proof walks it). Styles and palettes are data.
 // Coordinates are tiles, y up; rect = [x0, y0, x1, y1) as space zones.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect, documentMover } from './generate2d-lib.js';
 import { ROLE, proveReach, navMover, moverReach, moverCells } from './generate2d-reach.js';
 import { movementAbilityNames, abilityDefs } from '../gameplay/move-lib-envelope.js';
@@ -33,7 +34,7 @@ const feature = { type: 'object', open: true, fields: {
   kind: { type: 'string', required: true, effect: 'marker kind (bench, chest, npc, spawn, door, lever...)' },
   id: { type: 'string', effect: 'entity id for the marker' },
   at: { type: 'list', of: { type: 'number' }, effect: 'absolute tile position; omitted = a reachable floor tile chosen by the seed' },
-  ref: { type: 'string', effect: 'archetype or character id (spawn, npc, boss_spawn)' },
+  ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id (spawn, npc, boss_spawn)' },
   count: { type: 'integer', min: 1, max: 64, effect: 'copies to place' },
 } };
 const room = { type: 'object', fields: {
@@ -44,7 +45,7 @@ const room = { type: 'object', fields: {
   theme: { type: 'string', effect: 'palette override key in params.themes' },
   platforms: { type: 'integer', min: 0, max: 40 },
   gaps: { type: 'integer', min: 0, max: 12, effect: 'pits in the floor, never wider than the jump distance' },
-  hazards: { type: 'list', of: { type: 'string' }, effect: 'hazard block ids placed on the floor' },
+  hazards: { type: 'list', of: { type: 'string' }, effect: 'hazard block ids (content.blocks ids) placed on the floor' },
   features: { type: 'list', of: feature, default: [] },
   exits: { type: 'list', default: [], of: { type: 'object', fields: {
     side: { type: 'string', options: ['l', 'r', 't', 'b'], required: true },
@@ -67,7 +68,7 @@ export default {
       requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities (ids the document defines, or movement ability names) the player holds everywhere in the proof' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side' },
       styles: { type: 'json', default: {}, effect: 'extra or overriding style recipes' },
-      palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'string' }])), effect: 'role → block id' },
+      palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'string', effect: 'a content.blocks id' }])), effect: 'role → block id' },
       themes: { type: 'json', default: {}, effect: 'theme → palette overrides' },
       exitSize: { type: 'integer', min: 1, max: 8, default: 3, unit: 'tiles' },
       attempts: { type: 'integer', min: 1, max: 32, default: 6, effect: 'sub-seeds tried per room before the plain fallback' },

@@ -11,7 +11,7 @@
 //   res.<pool>             per-second gain (+) or drain (-) of that pool
 // Runtime: rt.store(KEY)[entityId] = { active: {id: {left, stacks, tick, absorbed}}, mods };
 // components.status mirrors the frozen shape {statusId: secondsLeft}. Immunities: components.immune [ids|tags].
-import { frames, resolveWho, targetsOf, statOf, combat, service, intercept, round, err } from './combat-lib.js';
+import { frames, resolveWho, targetsOf, targetRefs, statOf, combat, service, intercept, round, err } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.status';
 const REFRESH = ['reset', 'extend', 'keep', 'max'];
@@ -43,12 +43,12 @@ export default {
       },
     });
     logic.effect('apply_status', {
-      refs: e => [['status', e.status]],
+      refs: e => [['status', e.status], ...targetRefs(e)],
       check: (e, path, errors) => { if (e.sec !== undefined && !(Number.isFinite(e.sec) && e.sec >= 0)) errors.push(err('effect_invalid', `${path}.sec`, 'sec must be >= 0 (0 = the status duration)')); },
       run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('status').apply(t, e.status, { sec: e.sec || undefined, stacks: e.stacks, by: c.self }); },
     });
     logic.effect('clear_status', {
-      refs: e => (e.status ? [['status', e.status]] : []),
+      refs: e => [...(e.status ? [['status', e.status]] : []), ...targetRefs(e)],
       run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('status').clear(t, e.status, { tag: e.tag }); },
     });
   },

@@ -15,6 +15,7 @@
 // tile-for-tile and doors with mats, and the whole warp graph is proven
 // connected from the start. Tiles are roles mapped to blocks by `tiles`
 // (walkable roles default to empty), so the look is data.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { withDefaults, bodyCells, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, addZones, publish, spawnAt, placeOn, cellOfEntity, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.tilemap.overworld';
@@ -33,7 +34,7 @@ const area = { type: 'object', fields: {
   length: { type: 'integer', min: 24, max: 160, effect: 'routes/caves: tiles along the travel axis (default 50)' },
   connects: { type: 'list', default: [], of: { type: 'object', fields: { to: { type: 'string', required: true }, gate: { type: 'predicate' } } } },
   services: { type: 'list', of: { type: 'string' }, default: [], effect: 'heal, mart, pc (town buildings or room counters)' },
-  npcs: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string' }, ref: { type: 'string', effect: 'archetype or character id' }, name: { type: 'string' }, lines: { type: 'list', of: { type: 'string' } } } } },
+  npcs: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string' }, ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id' }, name: { type: 'string' }, lines: { type: 'list', of: { type: 'string' } } } } },
   trainers: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string' }, name: { type: 'string' } } } },
   leader: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string' }, name: { type: 'string' } } },
   items: { type: 'list', of: { type: 'string' }, default: [], effect: 'pickups placed in far corners (routes, caves)' },

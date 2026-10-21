@@ -419,6 +419,11 @@ const pathOfSection = effect => /\bsection paths?\b/i.test(String(effect || ''))
 /** @param {unknown} spec */
 const free = spec => isObj(spec) && spec.type === 'string' && !(Array.isArray(spec.options) && spec.options.length);
 
+/** Every document section whose entries are ids of a reference kind (the kernel's base kinds and card.defines `at`). @param {RegistryLike} registry @returns {string[]} */
+export function definedSections(registry) {
+  return [...new Set([...Object.values(KIND_AT), ...registry.ids().flatMap(id => (registry.get(id)?.card.defines || []).map(d => d.at).filter(isStr))])];
+}
+
 /** The document section holding ids of a reference kind, or null. @param {RegistryLike} registry @param {string} kind @returns {string | null} */
 export function sectionOfKind(registry, kind) {
   if (KIND_AT[kind]) return KIND_AT[kind];

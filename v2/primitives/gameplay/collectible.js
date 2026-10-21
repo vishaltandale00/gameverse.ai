@@ -5,6 +5,7 @@
 // `interact` component are collected by using them instead). Each counter keeps
 // a var, per-zone tallies, a total (given or counted at start), and can clear the
 // level, run effects on completion and spawn timed prizes at chosen counts.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { compare } from '../../kernel/logic.js';
 import { give } from './inventory.js';
 import { addScore, boxOf, boxesTouch, center, isVec, len, sub, pull, entityByRef, whoKey, cellPoint } from './items-lib.js';
@@ -31,7 +32,7 @@ export default {
       magnet: { type: 'number', default: 0, min: 0, max: 100, unit: 'space units', effect: 'pickups within this radius drift to a collector (player adds var stat.magnet)' },
       magnetSpeed: { type: 'number', default: 8, min: 0, max: 200, unit: 'units/s', effect: 'drift speed of magnetised pickups' },
       radius: { type: 'number', default: 0.25, min: 0, max: 20, unit: 'space units', effect: 'centre distance that also counts as touching' },
-      collectors: { type: 'list', default: ['player'], of: { type: 'string' }, effect: 'entity ids or archetypes that collect by touch' },
+      collectors: { type: 'list', default: ['player'], of: { type: 'string', selects: ENTITY_KINDS }, effect: 'entity ids or archetypes that collect by touch' },
       counters: { type: 'list', default: [], of: { type: 'object', fields: {
         id: { type: 'string', required: true },
         var: { type: 'string', effect: "var holding the count (default 'collected.<id>')" },

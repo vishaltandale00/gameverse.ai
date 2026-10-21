@@ -11,6 +11,9 @@ import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
 import { parseReply } from './writer.js';
 import { preflight } from '../kernel/document.js';
 import { isObj, isStr, objects, prop, messageOf } from '../kernel/guards.js';
+import { buildLogic } from '../kernel/world.js';
+import { Logic } from '../kernel/logic.js';
+import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, prefixOf } from './compose.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -98,6 +101,7 @@ export const offeredTemplates = (templates, registry) => templates.filter(t => i
 export const PICK_RULES = Object.freeze({
   pick_form: 'the answer satisfies the pick form\'s schema: its fields, enums (kinds, template ids, relations) and patterns',
   pick_nested_no_entry: 'a nested game needs a primary whose template\'s loops declare an entry event (card.loop.involves)',
+  pick_nested_no_outcome: 'a nested game\'s template plays a loop that declares an encounter outcome (card.loop.outcome) and how an encounter starts it (card.engage.encounter.start)',
 });
 
 /** The pick's strict form. @param {readonly Template[]} templates @returns {ReplySchema} */
@@ -174,9 +178,9 @@ export const narrowPick = v => ({
   themes: objects(prop(v, 'themes')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? '') })),
 });
 
-/** The entry events the loops of a document's instances declare (card.loop.involves). @param {Record<string, any>} doc @param {RegistryLike} registry */
+/** The entry events a document's loops declare (card.loop.involves; compose.js entryTriggers). @param {Record<string, any>} doc @param {RegistryLike} registry */
 export function entryEvents(doc, registry) {
-  return instancesIn(doc).flatMap(i => Object.keys(cardLoop(registry.get(String(i.use))?.card)?.involves || {}).map(event => ({ use: String(i.use), event })));
+  return entryTriggers(doc, registry).map(t => ({ use: t.use, event: t.event }));
 }
 
 /**
@@ -191,6 +195,10 @@ export function checkPick(pick, { templates, registry }) {
   const outer = templates.find(t => t.id === pick.primary.template) ?? null;
   if (outer && !entryEvents(outer.doc, registry).length) pick.games.forEach((g, i) => {
     if (g.relation === 'nested') problems.push({ code: 'pick_nested_no_entry', field: `games[${i}].relation`, message: `'${g.name}' cannot be nested in '${outer.id}': no loop of its document declares an entry event (card.loop.involves)` });
+  });
+  pick.games.forEach((g, i) => {
+    const inner = templates.find(t => t.id === g.template);
+    if (g.relation === 'nested' && inner && !innerLoops(inner.doc, registry).length) problems.push({ code: 'pick_nested_no_outcome', field: `games[${i}].relation`, message: `'${g.name}' cannot be nested: no loop of '${inner.id}' declares an encounter outcome and how an encounter starts it (card.loop.outcome, card.engage.encounter.start)` });
   });
   const stepPath = [pick.primary, ...pick.games].filter(c => c.template === 'none').map(c => c.name);
   return { problems, stepPath };
@@ -275,33 +283,56 @@ export async function askPick({ writer, escalate, attempts, prompt, templates, r
 // 2. Composition (code).
 // ---------------------------------------------------------------------------------------------------------------
 
+/** One template's share of a composed document: the ids it defines there (by domain, compose.js definedIds). @typedef {{ template: Template, ids: Map<string, string[]> }} ComposedPart */
+/** @type {WeakMap<object, LogicLike>} */
+const logicCache = new WeakMap();
+/** The registry's vocabulary when the caller has none at hand. @param {RegistryLike} registry @returns {LogicLike} */
+const logicOf = registry => { let l = logicCache.get(registry); if (!l) { l = buildLogic(registry, Logic); logicCache.set(registry, l); } return l; };
+
 /**
  * Compose the picked templates: the primary template's document (a deep clone) with the pick's title and premise;
- * theme concepts are collected for the content forms (no adapter, §1.3). Nested and union composition (handoff
- * increment 4) is not implemented yet: such a concept is a `composition_pending` problem naming what is missing; it
- * is never dropped or substituted. With step-path concepts or pick problems there is nothing to compose (doc null).
- * @param {Pick} pick @param {{ templates: readonly Template[], registry: RegistryLike }} ctx
- * @returns {{ doc: Record<string, any> | null, template: Template | null, themes: Theme[], stepPath: string[], problems: TemplateProblem[] }}
+ * every other game joined in pick order, nested (compose.js composeNested: the inner template appended with prefixed
+ * ids and engine.adapt.nested wired from declarations, plus engine.adapt.skin when declarations decide it) or united
+ * (compose.js composeUnion: on the primary's space, only when the composition check passes, else the adapter it
+ * names). Theme concepts are collected for the content forms (no adapter, §1.3). A game that does not compose is a
+ * problem with its code and what is missing; it is never dropped or substituted. With step-path concepts or pick
+ * problems there is nothing to compose (doc null). `template` is the primary with the composed `tune` (every part's
+ * tune paths); `parts` says which ids each template contributed (the content forms are one per part).
+ * @param {Pick} pick @param {{ templates: readonly Template[], registry: RegistryLike, logic?: LogicLike }} ctx
+ * @returns {{ doc: Record<string, any> | null, template: Template | null, parts: ComposedPart[], themes: Theme[], stepPath: string[], problems: TemplateProblem[], joins: Array<Record<string, unknown>> }}
  */
-export function composeTemplates(pick, { templates, registry }) {
+export function composeTemplates(pick, { templates, registry, logic = logicOf(registry) }) {
   const { problems: checks, stepPath } = checkPick(pick, { templates, registry });
   /** @type {TemplateProblem[]} */
   const problems = checks.map(p => ({ code: p.code, path: p.field, message: p.message }));
   const themes = pick.themes.map(c => ({ name: c.name, kind: c.kind }));
-  if (stepPath.length || problems.length) return { doc: null, template: null, themes, stepPath, problems };
-  const primary = pick.primary;
-  const outer = /** @type {Template} */ (templates.find(t => t.id === primary.template));
+  if (stepPath.length || problems.length) return { doc: null, template: null, parts: [], themes, stepPath, problems, joins: [] };
+  const outer = /** @type {Template} */ (templates.find(t => t.id === pick.primary.template));
+  let doc = structuredClone(outer.doc);
+  /** @type {ComposedPart[]} */
+  const parts = [{ template: outer, ids: definedIds(outer.doc, registry) }];
+  /** @type {Array<Record<string, unknown>>} */
+  const joins = [];
   pick.games.forEach((c, i) => {
-    const how = c.relation === 'nested'
-      ? `engine.adapt.nested composition (the inner template appended with prefixed ids and entered on ${entryEvents(outer.doc, registry).map(e => e.event).join('/')})`
-      : 'union composition (both templates on one space, proven by the composition check)';
-    problems.push({ code: 'composition_pending', path: `games[${i}]`, message: `'${c.name}' (template '${c.template}') is ${c.relation} in '${primary.name}' (template '${outer.id}'): ${how} is not yet implemented` });
+    const t = /** @type {Template} */ (templates.find(x => x.id === c.template));
+    if (parts.some(p => p.template.id === t.id)) { problems.push({ code: 'compose_id_collision', path: `games[${i}].template`, message: `'${c.name}' plays template '${t.id}', which the game already composes: its ids would repeat` }); return; }
+    const host = { id: outer.id, doc };
+    const r = c.relation === 'nested' ? composeNested(host, { id: t.id, doc: t.doc }, { registry, logic }) : composeUnion(host, { id: t.id, doc: t.doc }, { registry, logic });
+    if (!r.doc) { for (const p of r.problems) problems.push({ code: p.code, path: `games[${i}]`, message: `'${c.name}' (template '${t.id}') ${c.relation} in '${pick.primary.name}' (template '${outer.id}'): ${p.path}: ${p.message}` }); return; }
+    doc = r.doc;
+    const prefix = prefixOf(t.id);
+    // Its share: the ids its document defines, as the composition named them (a union's spaces and zones are the host's).
+    const own = definedIds(t.doc, registry);
+    const ids = new Map([...own].filter(([d]) => c.relation === 'nested' || (d !== 'spaces' && d !== 'zones')).map(([d, list]) => [d, list.map(id => `${prefix}${id}`)]));
+    parts.push({ template: t, ids });
+    joins.push({ relation: c.relation, template: t.id, ...(/** @type {any} */ (r).nested || /** @type {any} */ (r).union || {}) });
   });
-  if (problems.length) return { doc: null, template: outer, themes, stepPath, problems };
-  const doc = structuredClone(outer.doc);
+  if (problems.length) return { doc: null, template: outer, parts, themes, stepPath, problems, joins };
   doc.title = pick.title;
   doc.plot = { ...(isObj(doc.plot) ? doc.plot : {}), premise: pick.premise };
-  return { doc, template: outer, themes, stepPath, problems };
+  // The composed tune: every part's paths that still name one declared param of one instance (shared instances are one).
+  const tune = [...new Set(parts.flatMap(p => p.template.tune))];
+  return { doc, template: parts.length > 1 ? { ...outer, tune } : outer, parts, themes, stepPath, problems, joins };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -333,7 +364,7 @@ const entriesAt = (doc, at) => objects(valueAt(doc, at));
 export function namesForm(section) {
   const ids = section.entries.map(e => String(e.id));
   /** @type {ReplySchema} */
-  const schema = { name: section.form, schema: strictObj(Object.fromEntries(section.entries.map(e => [String(e.id), nameSlot(`themed name of the ${section.label} entry '${e.id}' (template name: ${String(e.name ?? e.id)}); 1-40 characters`)]))) };
+  const schema = { name: section.form, schema: sectionSchema(section) };
   /** @param {unknown} v @returns {Record<string, string>} */
   const narrow = v => Object.fromEntries(ids.map(id => [id, String(prop(v, id) ?? '')]));
   /** @param {Record<string, string>} v @returns {FormProblem[]} */
@@ -341,6 +372,42 @@ export function namesForm(section) {
   /** @param {Record<string, any>} doc @param {Record<string, string>} v */
   const apply = (doc, v) => { for (const e of entriesAt(doc, section.at)) if (isStr(e.id) && v[e.id] !== undefined) e.name = v[e.id]; };
   return { schema, narrow, check, apply };
+}
+/** A section's name slots: one per entry id. @param {NamedSection} section */
+const sectionSchema = section => strictObj(Object.fromEntries(section.entries.map(e => [String(e.id), nameSlot(`themed name of the ${section.label} entry '${e.id}' (template name: ${String(e.name ?? e.id)}); 1-40 characters`)])));
+
+/**
+ * The named sections one template contributed to a composed document: each section's entries whose ids that
+ * template's part defines (compose.js definedIds, as the composition named them).
+ * @param {Record<string, any>} doc @param {ComposedPart} part @returns {NamedSection[]}
+ */
+export function partSections(doc, part) {
+  const zones = new Set(part.ids.get('zones') || []);
+  return namedSections(doc).map(s => {
+    const own = s.at.startsWith('spaces[') ? zones : new Set(part.ids.get(s.at) || []);
+    return { ...s, entries: s.entries.filter(e => own.has(String(e.id))) };
+  }).filter(s => s.entries.length > 0);
+}
+
+/**
+ * One names form per template of the composition (its concept named together, in its own theme): a slot per named
+ * entry it contributed, grouped by section ({ <section form>: { <id>: name } }); null when it contributed none.
+ * A failing name is re-asked alone (field '<section form>.<id>').
+ * @param {Record<string, any>} doc @param {ComposedPart} part
+ */
+export function conceptForm(doc, part) {
+  const sections = partSections(doc, part);
+  if (!sections.length) return null;
+  /** @type {ReplySchema} */
+  const schema = { name: `names_${part.template.id}`.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 64), schema: strictObj(Object.fromEntries(sections.map(s => [s.form, sectionSchema(s)]))) };
+  /** @param {unknown} v @returns {Record<string, Record<string, string>>} */
+  const narrow = v => Object.fromEntries(sections.map(s => [s.form, Object.fromEntries(s.entries.map(e => [String(e.id), String(prop(prop(v, s.form), String(e.id)) ?? '')]))]));
+  /** @param {Record<string, Record<string, string>>} v @returns {FormProblem[]} */
+  const check = v => sections.flatMap(s => s.entries.map(e => String(e.id)).filter(id => !NAME_RE.test(v[s.form][id]))
+    .map(id => ({ code: 'name_invalid', field: `${s.form}.${id}`, message: `a name of 1-40 characters that starts with a non-space, not '${v[s.form][id].slice(0, 60)}'` })));
+  /** @param {Record<string, any>} d @param {Record<string, Record<string, string>>} v */
+  const apply = (d, v) => { for (const s of sections) for (const e of entriesAt(d, s.at)) if (isStr(e.id) && v[s.form][e.id] !== undefined) e.name = v[s.form][e.id]; };
+  return { schema, narrow, check, apply, sections, template: part.template };
 }
 
 /**
@@ -394,31 +461,33 @@ export function frameTuneForm(template, doc, { registry, logic }) {
 
 /**
  * Ask every content form of the composed document in parallel (Promise.all), each checked and repaired on its own,
- * and apply the answers to a copy of the document. The themes and the premise are in every form's prompt.
+ * and apply the answers to a copy of the document: frame_tune, and one names form per template of the composition
+ * (conceptForm). The themes and the premise are in every form's prompt. `parts` defaults to the template alone.
  * -> { doc, forms: [{ form, calls }], rounds (the most calls any one form made: they run side by side) }
  * @param {{ writer: Writer, escalate: Writer | null, attempts: number, template: Template, doc: Record<string, any>, pick: Pick, themes: Theme[],
- *   registry: RegistryLike, logic: LogicLike, calls: TemplateCall[], clock: Clock }} args
+ *   registry: RegistryLike, logic: LogicLike, calls: TemplateCall[], clock: Clock, parts?: ComposedPart[] }} args
  */
-export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock }) {
+export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock, parts = [{ template, ids: definedIds(doc, registry) }] }) {
   const tc = performance.now();
-  const sections = namedSections(doc).map(section => ({ section, form: namesForm(section) }));
+  const named = parts.map(part => conceptForm(doc, part)).filter(/** @returns {f is NonNullable<typeof f>} */ f => f !== null);
   const frame = frameTuneForm(template, doc, { registry, logic });
   clock.codeMs += performance.now() - tc;
-  const system = `You write the content of a game built from the verified template '${template.id}' (${template.concept}).
+  const composed = parts.length > 1 ? `\nIt composes the verified templates ${parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}.` : '';
+  const system = `You write the content of a game built from the verified template '${template.id}' (${template.concept}).${composed}
 Title: ${pick.title}
 Premise: ${pick.premise}
 Themes: ${themes.length ? themes.map(t => `${t.name} (${t.kind})`).join('; ') : 'none beyond the premise'}
 Write only what the form asks, in the game's theme. Ids and structure are fixed.`;
   const base = { writer, escalate, attempts, calls, clock, system, code: 'template_content_failed' };
-  const [frameAnswer, ...named] = await Promise.all([
+  const [frameAnswer, ...answers] = await Promise.all([
     askForm({ ...base, user: `Write the logline of '${pick.title}' and set its tuning (each slot names its current value).`, schema: frame.schema, narrow: frame.narrow, check: frame.check, what: 'The frame_tune form' }),
-    ...sections.map(({ section, form }) => askForm({ ...base, user: `Name every ${section.label} entry of '${pick.title}' for its theme.`, schema: form.schema, narrow: form.narrow, check: form.check, what: `The ${section.form} form` })),
+    ...named.map(f => askForm({ ...base, user: `Name every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` })),
   ]);
   const ta = performance.now();
   const out = structuredClone(doc);
   frame.apply(out, frameAnswer.value);
-  sections.forEach(({ form }, i) => form.apply(out, named[i].value));
+  named.forEach((f, i) => f.apply(out, answers[i].value));
   clock.codeMs += performance.now() - ta;
-  const forms = [{ form: 'frame_tune', calls: frameAnswer.calls }, ...sections.map(({ section }, i) => ({ form: section.form, calls: named[i].calls }))];
+  const forms = [{ form: 'frame_tune', calls: frameAnswer.calls }, ...named.map((f, i) => ({ form: f.schema.name, calls: answers[i].calls }))];
   return { doc: out, forms, rounds: Math.max(...forms.map(f => f.calls)) };
 }

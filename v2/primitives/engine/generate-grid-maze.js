@@ -265,7 +265,7 @@ export default {
       styles: { type: 'json', default: {}, effect: 'extra styles {name:{gaps:[i..], inner:n}}' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world', effect: 'space cell of the maze corner' },
       yUp: { type: 'boolean', default: true, effect: 'maze row 0 is the top row of the space region' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall' }, houseWall: { type: 'string', default: 'house_wall' }, door: { type: 'string', default: 'house_door' } } },
+      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall', effect: 'a content.blocks id' }, houseWall: { type: 'string', default: 'house_wall', effect: 'a content.blocks id' }, door: { type: 'string', default: 'house_door', effect: 'a content.blocks id' } } },
       pellet: { type: 'string', default: 'pellet', effect: 'archetype spawned on pellet tiles ("" for none)' },
       power: { type: 'string', default: 'power_pellet', effect: 'archetype spawned on power-pellet tiles ("" for none)' },
       pelletCounter: { type: 'string', default: 'pellets', effect: 'collectible counter of pellets (component collectible.counter)' },
