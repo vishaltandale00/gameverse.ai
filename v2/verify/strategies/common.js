@@ -36,7 +36,9 @@ export function boardOf(rt, name = null) {
   if (rt.hasService(svc)) { const s = rt.service(svc); return { w: s.w, h: s.h, get: (x, y) => s.get(x, y), source: svc }; }
   for (const id of rt.spaces()) {
     const api = rt.space(id);
-    if (typeof api.getCell === 'function' && Array.isArray(api.size)) return { w: api.size[0], h: api.size[1], get: (x, y) => api.getCell([x, y, 0]), source: `space:${id}` };
+    // Only a 2D, board-scale cell space reads as a board (a voxel world or a large map is not one; puzzles declare a board service).
+    const [w, h, d = 1] = Array.isArray(api.size) ? api.size : [];
+    if (typeof api.getCell === 'function' && Number.isFinite(w) && Number.isFinite(h) && d <= 1 && w * h <= 64 * 64) return { w, h, get: (x, y) => api.getCell([x, y, 0]), source: `space:${id}` };
   }
   return null;
 }
