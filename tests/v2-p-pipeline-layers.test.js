@@ -1,5 +1,5 @@
-// Layers 1-3 of ARCHITECTURE.md §4: outline (preflight + repair rounds), first playable
-// (no model, <1 s), detail patches (repaired, guarded, verified, hot-loaded via mergePatch + rt.extend).
+// The step path's outline (preflight + repair rounds) and first playable (no model, <1 s). There is no detail pass
+// after publishing (ARCHITECTURE §5: no post-publish pass adds content the declarations did not ask for).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld } from '../v2/kernel/world.js';
@@ -7,7 +7,6 @@ import { preflight, mergePatch } from '../v2/kernel/document.js';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { proceduralOutline, writeOutline, fewShot, ensureAgency } from '../v2/planner/outline.js';
 import { firstPlayable, replayCheck } from '../v2/planner/first-playable.js';
-import { detailTasks, proceduralDetail, acceptPatch, sanitizePatch } from '../v2/planner/detail.js';
 import { verifyDocument, regressed } from '../v2/planner/verify-adapter.js';
 import { solve } from '../v2/verify/solve.js';
 import { testCatalogue, fakeWriter, decomposition, broken, picky } from './v2-p-pipeline-fixtures.js';
@@ -173,51 +172,7 @@ test('first playable: no model, well under a second, deterministic; an install t
   assert.equal(fp2.errors[0].primitive, 'gameplay.test.broken');
 });
 
-test('detail patches: sanitized (namespaced ids, optional beats), merged, verified, and hot-loaded into a running world', async () => {
-  const { d, sel } = await plan(['find and collect items']);
-  const base = firstPlayable(authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 2 }).doc), registry, logic, { seed: 2 }).doc;
-  const tasks = detailTasks(base);
-  assert.equal(tasks.length, d.zones);
-  const task = tasks[1];
-  const s = sanitizePatch({ plot: { characters: [{ id: 'fisher', name: 'Old Fisher' }], storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'chat', when: { zone: task.zone }, do: [{ do: 'say', character: 'fisher', text: 'Hm.' }] }] }, { id: 'no_such_act', beats: [{ id: 'x' }] }] } }, title: 'hijack' }, task, base);
-  assert.equal(s.title, undefined, 'only additive sections survive');
-  assert.equal(s.plot.characters[0].id, `${task.zone}_fisher`);
-  assert.deepEqual(s.plot.storyboard.acts.map(a => a.id), ['act_1']);
-  assert.equal(s.plot.storyboard.acts[0].beats[0].optional, true);
-  assert.equal(s.plot.storyboard.acts[0].beats[0].do[0].character, `${task.zone}_fisher`, 'references follow renamed ids');
-
-  const baseVerify = await verifyDocument(base, registry, logic);
-  const accepted = await acceptPatch({ current: base, patch: proceduralDetail(base, task, registry), task, registry, logic, baseVerify });
-  assert.ok(accepted.ok, JSON.stringify(accepted.errors));
-  assert.ok(accepted.added.beats.length === 1 && accepted.added.keys.includes('plot.characters'));
-  assert.ok(accepted.verify.completable, 'still completable');
-  // Hot-load into a world that is already running, then walk into the zone.
-  const rt = createWorld(preflight(base, registry, logic).doc, registry, logic, { seed: 2 });
-  rt.step();
-  rt.extend(accepted.doc, accepted.added);
-  assert.equal(rt.state.counts.content_added, 1);
-  const path = rt.space(base.spaces[0].id);
-  path.teleport(rt.player(), { zone: task.zone }, rt);
-  rt.step(); rt.step();
-  assert.ok(rt.store('plot.storyboard').fired[`${task.zone}_welcome`], 'the hot-loaded beat fired');
-
-  const empty = await acceptPatch({ current: base, patch: { title: 'x' }, task, registry, logic, baseVerify });
-  assert.equal(empty.reason, 'empty');
-  const bad = await acceptPatch({ current: base, patch: { plot: { storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'b', do: [{ do: 'explode' }] }] }] } } }, task, registry, logic, baseVerify });
-  assert.ok(bad.ok, 'an unknown effect is repaired away by code (the beat stays, harmless)');
+test('a regression is a proof: an unfinished search never counts as one', () => {
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: true }), true);
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: false }), false, 'an unfinished search is not a proof');
-});
-
-test('mergePatch keeps the outline intact: parallel zone patches never collide', async () => {
-  const { d, sel } = await plan(['find and collect items']);
-  const base = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 4 }).doc);
-  let current = base;
-  for (const task of detailTasks(base)) {
-    const r = await acceptPatch({ current, patch: proceduralDetail(base, task, registry), task, registry, logic });
-    assert.ok(r.ok, `${task.id}: ${JSON.stringify(r.errors)}`);
-    current = r.doc;
-  }
-  assert.equal(current.plot.characters.length, base.plot.characters.length + detailTasks(base).length);
-  assert.deepEqual(mergePatch(current, {}).doc.spaces, current.spaces);
 });

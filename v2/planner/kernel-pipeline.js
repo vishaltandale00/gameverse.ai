@@ -1,9 +1,9 @@
 // @ts-check
 // The ARCHITECTURE.md §4 generation pipeline for kernel documents, end to end:
-//   decompose -> select (capability-aware) -> outline (preflight + repair rounds)
-//   -> first playable (no model, <1 s) -> detail patches per zone in parallel
-//   (each repaired, guarded, verified, then published for hosts to hot-load)
-//   -> gaps (new primitives through the experiments sandbox) -> complete.
+//   template pick -> composition -> extensions -> content -> gate (the template path), or, for a game or genre no
+//   template is, the step path: decompose -> select (capability-aware) -> outline (preflight + repair rounds)
+//   -> first playable (no model, <1 s) -> gate -> gaps (new primitives through the experiments sandbox) -> complete.
+// No post-publish pass adds content the declarations did not ask for (ARCHITECTURE §5).
 // Revisions: tweak (params, no model, <1 s) else targeted model ops, both behind
 // the revision-check guards. Every stage reports measured durations; values that
 // were not measured are null, never zero (AGENTS.md).
@@ -17,7 +17,6 @@ import { diagnose, replan, gapRequest, addedBy, experimentsOf, missingText } fro
 import { applySkins, mashupAdapterProblems } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
-import { detailTasks, writeDetail, acceptPatch } from './detail.js';
 import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale } from './doc-revise.js';
 import { contentGrowth } from './revision-check.js';
 import { repairDocument, describeErrors } from './repair.js';
@@ -43,7 +42,6 @@ import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 /** @typedef {import('./verify-adapter.js').Verification} Verification */
 /** @typedef {import('./decisions.js').DecisionClient} DecisionClient */
 /** @typedef {import('./select.js').Selection} Selection */
-/** @typedef {import('./detail.js').DetailTask} DetailTask */
 /** @typedef {import('../server/jobs.js').JobSpec} JobSpec */
 /** @typedef {import('../server/jobs.js').JobContext} JobContext */
 /** The registry and logic for a document (catalog.js). @typedef {{ registry: RegistryLike, logic: LogicLike }} Catalogue */
@@ -53,19 +51,14 @@ import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
  * the stage fails); outlineRepairRounds bounds the model's field repairs inside one build attempt; replanAttempts bounds the build
  * attempts (each after diagnosing and re-planning a failure); maxGapPrimitives bounds the primitives the gap layer
  * writes (only with gaps 'auto'). When they are exhausted the build fails with what it tried and what is missing.
- * @typedef {{ detailConcurrency: number, maxDetailTasks: number, playtestMs: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
+ * @typedef {{ playtestMs: number, outlineRepairRounds: number, reviseRepairs: number,
  *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number, modelAttempts: number }} PipelineConfig
  */
 /** Stage durations: null when not measured (AGENTS.md). @typedef {Record<string, number | null>} Timings */
-/** @typedef {{ code: string, path?: string, message: string }} PatchProblem */
-/**
- * What acceptPatch (detail.js) resolves to, and the rejection a throwing check becomes.
- * @typedef {{ ok: true, doc: Doc, added: import('../kernel/types.js').Added, verify: Verification, fixes: unknown[], patch: unknown } | { ok: false, reason: string, errors: PatchProblem[], patch: unknown }} PatchResult
- */
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze(/** @type {PipelineConfig} */ ({
-  detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
+  playtestMs: 1500, outlineRepairRounds: 2, reviseRepairs: 2,
   solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3, modelAttempts: 2,
 }));
 
@@ -397,7 +390,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], content: (outline.content || []).map(p => `${p.code} ${p.path}: ${p.message}`).slice(0, 20), doc: outline.doc, attempts });
     ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts: attempts.length });
     timings.firstPlayableBuildMs = fp.ms;
-    let current = built.doc;
+    const current = built.doc;
     /** @type {GapNote[]} */
     const gaps = [...selection.gaps.map(gapNote), ...[...(outline.removed || []), ...fp.removed].map(r => ({ capability: r.use, why: r.why, kind: r.kind === 'capability' ? 'capability' : 'removed' }))];
     await ctx.store.updateMeta(job.gameId, { title: current.title, kind: 'kernel' });
@@ -413,52 +406,6 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, ...(templatePick ? { path: 'step', why: templatePick.why, templatePick } : {}), verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
-
-    // Layer 3: detail patches in parallel; merges are serialized in completion order.
-    const tasks = detailTasks(current, { max: cfg.maxDetailTasks });
-    /** @type {{ proposed: number, accepted: number, rejected: Array<{ task: string, reason: string | undefined }>, tasks: Array<Record<string, unknown>> }} */
-    const detail = { proposed: 0, accepted: 0, rejected: [], tasks: [] };
-    /** @type {Promise<void>} */
-    let merging = Promise.resolve();
-    let baseVerify = base;
-    /** @param {DetailTask} task */
-    const runTask = async task => {
-      const tt = performance.now();
-      ctx.stage('detail', { task: task.id });
-      /** @type {Awaited<ReturnType<typeof writeDetail>>} */
-      let written;
-      try { written = await writeDetail({ writer: spec, doc: current, task, registry, logic }); }
-      catch (error) { detail.tasks.push({ task: task.id, ok: false, reason: 'writer', error: errorText(error).slice(0, 120), ms: ms(tt) }); detail.proposed++; detail.rejected.push({ task: task.id, reason: 'writer' }); return; }
-      detail.proposed++;
-      await (merging = merging.then(async () => {
-        // A patch never takes the pipeline down: anything that throws while checking it is a rejection.
-        // Cast: acceptPatch (detail.js) does not declare its result, so `ok` widens to boolean and does not narrow;
-        // PatchResult is what it returns. Remove once detail.js declares it.
-        /** @param {unknown} patch @returns {Promise<PatchResult>} */
-        const accept = patch => acceptPatch({ current, patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs })
-          .then(r => /** @type {PatchResult} */ (r))
-          .catch(error => ({ ok: false, reason: 'threw', errors: [{ code: 'patch_threw', path: '$', message: errorText(error).slice(0, 200) }], patch }));
-        let result = await accept(written.patch);
-        for (let r = 0; !result.ok && spec && r < cfg.detailRepairs && result.reason !== 'empty'; r++) {
-          // Cast: writeDetail (detail.js) takes Problem[], while acceptPatch's errors include verification problems
-          // whose path is optional. Remove once writeDetail accepts PatchProblem[].
-          try { written = await writeDetail({ writer: spec, doc: current, task, registry, logic, errors: /** @type {Problem[]} */ (result.errors), previous: result.patch }); } catch { break; }
-          result = await accept(written.patch);
-        }
-        /** @type {Record<string, unknown>} */
-        const entry = { task: task.id, ok: result.ok, source: written.source, modelMs: written.ms ?? null, ms: ms(tt), ...(result.ok ? { fixes: result.fixes.length } : { reason: result.reason, errors: (result.errors || []).slice(0, 4).map(e => e.code || e.message) }) };
-        detail.tasks.push(entry);
-        if (!result.ok) { detail.rejected.push({ task: task.id, reason: result.reason }); ctx.stage('detail_rejected', { task: task.id, reason: result.reason }); return; }
-        current = result.doc; baseVerify = result.verify; detail.accepted++;
-        const tq = performance.now(), quality = qualityReport(result.verify, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
-        entry.qualityMs = quality ? ms(tq) : null;
-        await ctx.publish({ doc: current, stage: `detail:${task.zone}`, report: { ...common, added: result.added, verified: true, verification: summarizeVerify(result.verify), quality, detail: entry, timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ task: task.id }) });
-      }));
-    };
-    const queue = [...tasks];
-    await Promise.all(Array.from({ length: Math.min(cfg.detailConcurrency, queue.length) }, async () => { while (queue.length) await runTask(/** @type {DetailTask} */ (queue.shift())); }));
-    await merging;
-    timings.detailMs = ms(t0) - Number(timings.requestToFirstPlayableMs);
 
     // Layer 4: gaps -> new primitives (background, bounded by config). A gap's document comes from the experiments
     // service (its own checks ran there): it is published and handed on as it is.
@@ -480,8 +427,8 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       }
     }
     timings.totalMs = ms(t0);
-    ctx.stage('complete', { timings, detail: { proposed: detail.proposed, accepted: detail.accepted, rejected: detail.rejected }, gaps: filled });
-    return { doc: latest, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, base };
+    ctx.stage('complete', { timings, gaps: filled });
+    return { doc: latest, timings, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, base };
   }
 
   /** @param {JobSpec} job @param {JobContext} ctx */

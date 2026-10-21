@@ -11,7 +11,6 @@ import { selectPrimitives, locomotionCompleteness, baseLocomotion } from '../v2/
 import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { detailForm, detailTasks, mergeDetail, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
 import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner/doc-revise.js';
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
@@ -266,39 +265,6 @@ test('repair never removes a primitive to pass: a validate() error only the mode
   assert.ok(!kept.ok && kept.errors.some(e => e.code === 'picky_title'));
   assert.ok(kept.doc.systems.some(s => s.use === 'gameplay.test.picky'));
   assert.deepEqual([...coreOf({ mechanics: [{ importance: 'core', primitives: ['gameplay.combat.melee'] }, { importance: 'supporting', primitives: ['gameplay.score'] }], systems: ['gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.score'] }, registry)].sort(), ['gameplay.combat.health', 'gameplay.combat.melee'], 'what a core primitive requires is core too');
-});
-
-test('detail: the per-zone form adds spawns to the spawner and residents with their own lines; zones differ', async () => {
-  const lantern = JSON.parse(readFileSync(new URL('../v2/games/hollow-lantern.json', import.meta.url), 'utf8'));
-  const task = detailTasks(lantern)[2];
-  const form = detailForm({ registry, doc: lantern, task });
-  assert.deepEqual(strictProblems(form.schema.schema), []);
-  assert.equal(form.schema.schema.properties.spawns.items.properties.zone, undefined, 'spawns are fixed to the zone');
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const patch = form.toPatch({
-    archetypes: [{ id: 'moth_swarm', kind: 'enemy', name: 'Moth swarm', components: { ...blank, health: { max: 3, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } }],
-    spawns: [{ id: 'moths', archetype: 'moth_swarm', min: 3, max: 4, respawnSec: 0, when_json: null }, { id: 'more_moss', archetype: 'mossling', min: 2, max: 2, respawnSec: null, when_json: null }],
-    items: [], characters: [{ id: 'hermit', name: 'Hermit', role: 'local', bio: 'b', archetype: null, dialogue: [] }], dialogue: [], quests: [], beats: [], generators_json: null,
-  });
-  const clean = sanitizePatch(patch, task, lantern);
-  assert.ok(clean.spawns.every(r => r.zone === task.zone && r.id.startsWith(`${task.zone}_`)));
-  assert.equal(clean.spawns[0].archetype, `${task.zone}_moth_swarm`, 'new archetype ids are namespaced and spawns follow them');
-  assert.equal(clean.spawns[1].archetype, 'mossling', 'existing archetypes keep their ids');
-  assert.equal(clean.plot.characters[0].home, task.zone);
-  // Merge + repair (acceptPatch's checks before verification; verifying this full-scale game takes minutes in the strategies stage).
-  const merged = mergeDetail(lantern, clean, registry);
-  assert.deepEqual(merged.added.spawns, clean.spawns.map(x => x.id));
-  const r = repairDocument(merged.doc, { registry, logic, rounds: 4 });
-  assert.ok(r.ok, JSON.stringify(r.errors.slice(0, 2)));
-  const rules = r.doc.systems.find(s => s.use === 'engine.spawner').with.rules.filter(x => x.zone === task.zone);
-  assert.ok(rules.some(x => x.archetype === `${task.zone}_moth_swarm`));
-  // Offline detail gives each zone its own mix of the game's pickups and enemies.
-  const base = fixture('clock-dungeon').doc;
-  const placed = placeContent(base, registry).doc;
-  const ts = detailTasks(placed);
-  const mixes = ts.map(t => JSON.stringify((proceduralDetail(placed, t, registry).spawns || []).map(s => [s.archetype, s.count])));
-  assert.ok(mixes.length < 2 || new Set(mixes).size > 1, 'not the same patch in every zone');
 });
 
 test('revisions: "Bigger world" grows the generated content, and a container-only resize is caught', async () => {

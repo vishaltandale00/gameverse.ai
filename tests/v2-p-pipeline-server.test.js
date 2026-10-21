@@ -43,32 +43,25 @@ function scriptedModel() {
       const acts = [{ id: 'act_1', title: 'The climb', beats: [{ id: 'lamp', title: 'The lamp', when_json: JSON.stringify({ zone: zones.at(-1) }), after: [], optional: false, do_json: JSON.stringify([{ do: 'give_item', item: 'lens' }, { do: 'end_game', ending: 'victory' }]) }] }];
       return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, acts, dialogue: [], quests: [], items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
     }
-    if (/Write the detail patch for zone "([^"]+)"/.test(req.user)) {
-      const zone = req.user.match(/zone "([^"]+)"/)[1];
-      return JSON.stringify({ plot: { characters: [{ id: 'gull', name: 'A gull' }], storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'gull', when: { zone }, do: [{ do: 'say', character: 'gull', text: 'Kee!' }] }] }] } } });
-    }
     if (/Change request:.*dragon/.test(req.user)) return JSON.stringify({ ops: [], unsupported: [{ request: 'a dragon that breathes fire', why: 'no primitive breathes fire' }], summary: 'not possible yet' });
     if (/Change request:/.test(req.user)) return JSON.stringify({ ops: [{ op: 'set', path: 'title', value: 'Lamp of the Deep' }], unsupported: [], summary: 'renamed' });
     return '{}';
   }]);
 }
 
-test('end to end with a stubbed model: decompose, select, outline, first playable, parallel detail, revise', async () => {
+test('end to end with a stubbed model: decompose, select, outline, first playable, revise; no post-publish pass', async () => {
   const base = buildCatalogue();
   const spec = scriptedModel();
   const pipeline = createKernelPipeline({ catalogue: async () => base, writers: { spec }, decisions: null });
   const { ctx, versions, stages } = memoryCtx();
   const out = await pipeline({ gameId: 'g', prompt: 'a lighthouse mystery with tides', kind: 'create', seed: 5 }, ctx);
-  // The only publish before detail patches is the gated, themed version (no early preset publish).
-  assert.equal(versions[0].stage, 'first_playable');
-  assert.equal(versions.filter(v => !v.stage.startsWith('detail:')).length, 1, versions.map(v => v.stage).join(' '));
+  // The only publish is the gated, themed version: no early preset publish, and no later pass adds content (ARCHITECTURE §5).
+  assert.deepEqual(versions.map(v => v.stage), ['first_playable']);
   const themed = versions[0];
   assert.equal(themed.doc.title, 'Lamp of the Drowned');
   assert.equal(themed.report.outline.source, 'fake-writer');
   assert.ok(themed.report.timings.firstPlayableBuildMs < 1000);
   for (const m of themed.report.selection.mechanics) assert.ok(m.primitives.length || themed.report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
-  assert.ok(out.detail.accepted >= 1 && out.detail.proposed >= out.detail.accepted);
-  assert.ok(versions.slice(versions.indexOf(themed) + 1).every(v => v.stage.startsWith('detail:') && v.report.added));
   for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
   assert.ok(stages.some(s => s.name === 'complete'));
   // Revise: a parameter tweak takes no model call; a content change goes to the model as targeted ops.
@@ -105,7 +98,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   assert.equal(game.meta.kind, 'kernel');
   const { json: versions } = await call('GET', `/api/v2/games/${created.gameId}/versions`);
   assert.equal(versions.versions[0].stage, 'first_playable');
-  assert.ok(versions.versions.length > 1, 'detail versions follow');
+  assert.equal(versions.versions.length, 1, 'no post-publish pass adds versions');
   // A tweak, then a request nothing in this game can carry out: reported as a gap.
   let wait = done(created.gameId);
   await call('POST', `/api/v2/games/${created.gameId}/revise`, { change: 'more inventory slots' });
@@ -126,7 +119,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   assert.match(refused.json.error, /retired genre engine/);
 });
 
-test('the benchmark records latency, pass rates, detail acceptance and determinism with its context', async () => {
+test('the benchmark records latency, pass rates and determinism with its context', async () => {
   // Offline (no live model): a scripted spec writer answers the plan and the build's questions, since nothing is picked without one.
   const r = await runBench({ prompts: ['collect coins in a maze'], n: 1, offline: true, writers: { spec: mazeWriter(), code: null } });
   assert.equal(r.summary.succeeded, 1);
@@ -135,5 +128,5 @@ test('the benchmark records latency, pass rates, detail acceptance and determini
   assert.equal(r.summary.preflightFirstPassRate, null, 'not measured offline: null with a reason, never zero');
   assert.ok(r.summary.preflightFirstPassUnavailable);
   assert.ok(r.context.catalogHash && r.context.machine.node && Array.isArray(r.context.machine.loadavg));
-  assert.ok(r.summary.detailAcceptance.proposed >= 1);
+  assert.equal(r.summary.detailAcceptance, undefined, 'there is no detail stage to measure');
 });
