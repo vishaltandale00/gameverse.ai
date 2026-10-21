@@ -13,8 +13,9 @@
 //
 // Checks: capabilities (requires.capabilities ⊆ the bound space variant's capabilities, plus adapted ones),
 // services (requires.services have a provider), required primitives, conflicts, content (the space's
-// card.needs.content, and any card's own needs.content, covered by a generator whose card.spaces includes the
-// space and whose provides.content covers it), engagement (card.engage is satisfiable: config sources, spawn
+// card.needs.content, and any card's own needs.content, covered by a unit on the space whose card declares
+// provides.content for it: a generator whose card.spaces includes the space, or a mechanic that fills its space's cells
+// itself (a board), or an adapter), engagement (card.engage is satisfiable: config sources, spawn
 // roles need the spawner, enter effects need their owner, named params exist), data (card.reads sections have
 // a declaring source: kernel base kinds, a card's defines/data/dataShapes, or a documented shape).
 //
@@ -24,6 +25,7 @@
 //   generator  card.spaces = ['engine.space.tilemap', ...]     (absent = type hole)
 //              card.provides.content = ['terrain', 'rooms']   (absent = type hole)
 //   any card   card.needs.content                              (optional: content this mechanic needs on its space)
+//              card.provides.content                           (optional: world content it fills on its space itself)
 //   adapter    card.adapts = {
 //                provides: { capabilities?: [...], content?: [...], services?: [...] },
 //                from: { spaces?: [space primitive ids], capabilities?: [caps the space must already have] },
@@ -52,8 +54,10 @@
 //                content checked like card.needs.content; mode.needs.participants ({ param, min } or a number)
 //                are present in a document; mode.space (space primitive ids) is the bound space or can be
 //                reached through an adapter for the capabilities it lacks; mode.bot is a registered strategy
-//                (v2/verify/strategies); mode.win.param (and lose.param) exist and, in a document, win is
-//                wired to an ending (an end_game effect or a plot.endings id); and an input primitive whose
+//                (v2/verify/strategies); mode.win/lose.param and .end exist (on the card, or its card.mode.via
+//                primitive) and, in a document, the win of the loop that owns the game's win (loop.js winOwner) is
+//                wired to a won ending as the loop check reads it (loop.js unwired: an end_game effect in the param,
+//                or the end boolean set); and an input primitive whose
 //                card.interactions includes the interaction the loop is played in is present: the play spec's
 //                (opts.interaction) when the loop's declared interactions include it, else one of them (input
 //                cards without card.interactions are a type hole).
@@ -72,7 +76,7 @@ import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 import { OUTLINE_AUTHORS } from './world.js';
-import { cardLoop, loopSpaceFits, loopExists } from './loop.js';
+import { cardLoop, loopSpaceFits, loopExists, loopInstances, winOwner, unwired } from './loop.js';
 import { list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -421,6 +425,13 @@ export function checkComposition(input, registry, opts = {}) {
       if (c.adapts.subspace && (typeof u.id === 'string' ? spaces.get(u.id)?.projected === u.use : isDoc)) continue;
       for (const cap of c.adapts.provides.capabilities || []) s.caps.add(cap);
     }
+    /**
+     * Does a unit of the composition give its space world content `item`: its card declares provides.content (a
+     * generator, or a mechanic that fills its space's cells itself: a board) for that space kind (card.spaces, when it
+     * declares them), or it is an active adapter projecting it? (The space's own content is the space card's.)
+     * @param {Unit} g @param {string} item @param {SpaceUnit} space
+     */
+    const gives = (g, item, space) => { const gc = cardOf(registry, g.use); return (g.slot !== 'space' && (gc?.provides.content || []).includes(item) && (!isList(gc?.spaces) || gc.spaces.includes(space.use))) || (adapters.includes(g.use) && (gc?.adapts?.provides.content || []).includes(item)); };
     /** @param {(c: NonNullable<Card['adapts']>) => string[] | undefined} pick @param {string} item @param {SpaceUnit} space */
     const adapterFor = (pick, item, space) => registry.ids().filter(id => { const c = cardOf(registry, id); return c?.adapts && (pick(c.adapts) || []).includes(item) && adapterFits(c, space); })
       .sort((a, b) => ((cardOf(registry, a)?.requires.capabilities || []).every(x => space.base.has(x)) ? 0 : 1) - ((cardOf(registry, b)?.requires.capabilities || []).every(x => space.base.has(x)) ? 0 : 1) || a.localeCompare(b))[0] || null;
@@ -492,7 +503,7 @@ export function checkComposition(input, registry, opts = {}) {
         if ((sc.provides.content || []).includes(item) || (s.given || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course; a region has it from its host)
         if (inParams(sc, s, item, isDoc)) return { how: 'have' };
         if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
-        if (here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); })) return { how: 'have' };
+        if (here.some(u => gives(u, item, s))) return { how: 'have' };
         // A generator that carries a loop of its own (card.loop / card.mode: a crawl with its boss) is a mechanic, not
         // filler: content coverage never adds one (loop.js winProviders keeps the same rule for wins).
         const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return !cardLoop(c) && /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
@@ -525,7 +536,7 @@ export function checkComposition(input, registry, opts = {}) {
           continue;
         }
         need(sid, 'content', item, by);
-        const authoredMsg = OUTLINE_AUTHORS.includes(item) ? `the document gives ${short(s.use)} no ${item}` : `no generator provides '${item}' on ${short(s.use)}`;
+        const authoredMsg = OUTLINE_AUTHORS.includes(item) ? `the document gives ${short(s.use)} no ${item}` : `nothing in the composition provides '${item}' on ${short(s.use)}`;
         fail({ check: 'content', code: 'content_missing', unit: by, space: sid, message: `${authoredMsg} (needed by ${by})`, hint: declared.filter(id => (cardOf(registry, id)?.provides.content || []).includes(item)).map(id => `${id} provides it on ${(cardOf(registry, id)?.spaces || []).map(short).join(', ')}`).join('; ') || `no generator declares '${item}'`, adaptable: !OUTLINE_AUTHORS.includes(item), need: { kind: 'content', item } });
       }
     }
@@ -574,6 +585,9 @@ export function checkComposition(input, registry, opts = {}) {
     };
     const nonEmpty = (/** @type {unknown} */ v) => isList(v) ? v.length > 0 : isObj(v) ? Object.keys(v).length > 0 : false;
     const inputs = known.filter(u => u.use.startsWith('engine.input.'));
+    // The loop that owns the game's win in a document (loop.js winOwner, as the loop check finds it), checked once.
+    const winner = docLike ? winOwner(docLike, registry, loopInstances(docLike, registry), null) : null;
+    let winChecked = false;
     for (const u of known) {
       // The loop declaration: card.loop merged over card.mode (the richer form), as loop.js reads it.
       const c = /** @type {Card} */ (cardOf(registry, u.use));
@@ -592,7 +606,7 @@ export function checkComposition(input, registry, opts = {}) {
         if (!item.includes('.')) {
           if (!s) continue;
           const sc = cardOf(registry, s.use);
-          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || (sc ? inParams(sc, s, item, isDoc) : false) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
+          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || (sc ? inParams(sc, s, item, isDoc) : false) || known.some(g => g.space === u.space && gives(g, item, s));
           if (has) continue;
           const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && !cardLoop(gc) && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
           if (gen && propose(gen, u.space, `generates ${item} for ${u.use}'s mode`)) continue;
@@ -609,14 +623,18 @@ export function checkComposition(input, registry, opts = {}) {
         }
         if ((docLike || form) && !nonEmpty(sectionValue(item))) fail({ check: 'mode', code: 'mode_section_empty', unit: u.use, message: `'${u.use}' needs ${item}, which is empty`, hint: `write ${item} in the document`, adaptable: false });
       }
+      // A mode played through another primitive (card.mode.via) names that primitive's params, set on its instance.
+      const via = typeof md.via === 'string' ? md.via : null;
+      const owner = /** @type {Record<string, any>} */ ((via ? cardOf(registry, via)?.params : c.params) || {});
+      const host = via ? (docLike ? [...(docLike.systems || [])].find((/** @type {any} */ x) => isObj(x) && x.use === via) ?? null : null) : inst;
       // needs.participants: { param, min } or a number (the player counts as one).
       const part = md.needs?.participants;
       if (part !== undefined && part !== null) {
         const p = isObj(part) && typeof part.param === 'string' ? part.param : c.engage?.participants?.param;
         const min = isObj(part) ? (typeof part.min === 'number' ? part.min : 1) : typeof part === 'number' ? part : 1;
-        if (p && !c.params[p]) hole('mode', { card: u.use, field: 'card.mode.needs.participants', code: 'mode_param_unknown', message: `mode names param '${p}', which the card does not have` });
-        else if (inst && p) {
-          const listed = isList(inst.with?.[p]) ? inst.with[p].length : 0;
+        if (p && !owner[p]) hole('mode', { card: u.use, field: 'card.mode.needs.participants', code: 'mode_param_unknown', message: `mode names param '${p}', which ${via ? `its via primitive ${via}` : 'the card'} does not have` });
+        else if (host && p) {
+          const listed = isList(host.with?.[p]) ? host.with[p].length : 0;
           const count = listed + (typeof part === 'number' ? 1 : 0);
           if (count < min) fail({ check: 'mode', code: 'mode_participants_missing', unit: u.use, message: `'${u.use}' needs ${min} participant(s) in with.${p}, has ${count}`, adaptable: false });
         }
@@ -640,19 +658,23 @@ export function checkComposition(input, registry, opts = {}) {
       // bot: a registered strategy.
       if (md.bot !== undefined && md.bot !== null && !(typeof md.bot === 'string' && strategyIds.has(md.bot)))
         fail({ check: 'mode', code: 'mode_bot_unregistered', unit: u.use, message: `'${u.use}' mode.bot '${String(md.bot)}' is not a registered strategy`, hint: `strategies: ${[...strategyIds].join(', ')}`, adaptable: false });
-      // win/lose params exist; in a document, win is wired to an ending.
-      for (const side of ['win', 'lose']) {
-        const param = md[side]?.param;
-        if (param == null) continue;
-        // A mode played through another primitive (card.mode.via) names that primitive's params.
-        const owner = /** @type {Record<string, any>} */ ((typeof md.via === 'string' ? cardOf(registry, md.via)?.params : c.params) || {});
-        if (typeof param !== 'string' || !paramSpec(owner, param)) { hole('mode', { card: u.use, field: `card.mode.${side}.param`, code: 'mode_param_unknown', message: `mode.${side}.param '${String(param)}' is not a card param` }); continue; }
-        if (side !== 'win' || !docLike || param.includes('.')) continue;
-        const value = inst?.with?.[param] ?? c.params[param].default;
-        const endings = new Set((isList(docLike.plot?.endings) ? docLike.plot.endings : []).map((/** @type {any} */ e) => e?.id).filter((/** @type {unknown} */ x) => typeof x === 'string'));
-        const text = JSON.stringify(value ?? null);
-        const wired = /"do":"end_game"/.test(text) || (typeof value === 'string' && endings.has(value)) || [...endings].some(id => text.includes(`"${id}"`));
-        if (!wired) fail({ check: 'mode', code: 'mode_win_unwired', unit: u.use, message: `'${u.use}' with.${param} reaches no ending`, hint: 'end the game (end_game) or name a plot.endings id there', adaptable: false });
+      // win/lose params exist: the effects param run on it (`param`) and the boolean param that ends the game itself (`end`),
+      // named on the card or, for a mode played through another primitive (card.mode.via), on that primitive.
+      for (const side of /** @type {const} */ (['win', 'lose'])) for (const key of /** @type {const} */ (['param', 'end'])) {
+        const name = md[side]?.[key];
+        if (name == null) continue;
+        if (typeof name !== 'string' || !paramSpec(owner, name)) hole('mode', { card: u.use, field: `card.mode.${side}.${key}`, code: 'mode_param_unknown', message: `mode.${side}.${key} '${String(name)}' is not a param of ${via ? `its via primitive ${via}` : 'the card'}` });
+      }
+      // In a document, the loop that owns the game's win has it wired to a won ending, read as the loop check reads it
+      // (loop.js winOwner, unwired): a game is won one way, so another loop's declared win the document does not use (the
+      // battles a stage sequence wraps) is never demanded. This check covers the wins it declares itself: an end_game
+      // effect in the effects param, or the `end` boolean set; a win through list entries the content writes (bosses), a
+      // `when` trigger and a story ending are the loop check's (they need the content and the endings evaluator).
+      const win = winner?.use === u.use ? winner.loop.win : null;
+      if (win && !winChecked && ((typeof win.param === 'string' && !win.param.includes('.')) || typeof win.end === 'string')) {
+        winChecked = true;
+        const why = unwired(docLike, /** @type {import('./loop.js').LoopInstance} */ (winner), win, 'won', registry);
+        if (why) fail({ check: 'mode', code: 'mode_win_unwired', unit: u.use, message: `'${u.use}' wins the game and its win reaches no ending: ${why}`, hint: `end the game there (end_game)${typeof win.end === 'string' ? ` or set with.${win.end}` : ''}`, adaptable: false });
       }
       // interaction: an input primitive that serves the interaction the loop is played in (the play spec's when the
       // loop serves it, else any it declares).

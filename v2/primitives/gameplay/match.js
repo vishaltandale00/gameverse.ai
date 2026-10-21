@@ -16,7 +16,7 @@
 // gravity through setCell; refill from the top is optional.
 // Triggers: the `swap` verb, and/or `piece_locked` from gameplay.falling.pieces on
 // the same board name; while resolving it emits board_busy, then board_idle.
-import { boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleBoard, rint } from './puzzle-lib-board.js';
+import { BOARD_CONTENT, boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleBoard, rint } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.match';
 const CHAIN_POWER = [0, 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512];
@@ -257,6 +257,7 @@ export default {
       vars: ['match.moves', 'match.jelly', 'match.blockers', 'match.viruses', 'match.items', 'match.max_chain', 'score'],
       actions: ['swap'],
       services: ['board'],
+      content: [...BOARD_CONTENT],
     },
     requires: { capabilities: ['editCells'] },
   },

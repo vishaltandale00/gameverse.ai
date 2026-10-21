@@ -34,7 +34,8 @@
 // }
 // card.mode is the richer form of the same declaration on primitives that own a whole loop (interaction, opponent,
 // preferred spaces, a bot that proves it): cardLoop() merges the two, card.loop winning field by field.
-import { isObj, isList, prop } from '../kernel/guards.js';
+import { isObj, isList, isStr, list, objects, prop } from '../kernel/guards.js';
+import { checkFields } from '../kernel/params.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
@@ -56,6 +57,7 @@ import { isObj, isList, prop } from '../kernel/guards.js';
  */
 /** @typedef {{ use: string, path: string, loop: Loop }} LoopPrimitive */
 /** @typedef {LoopEnd & { use: string, path: string }} PlacedEnd */
+/** A loop instance of a document. @typedef {{ use: string, index: number, path: string, loop: Loop, card: Record<string, any>, config: Record<string, unknown>, inst: Record<string, unknown> }} LoopInstance */
 
 export const LOOP_VERSION = 'loop/0.1';
 
@@ -267,4 +269,120 @@ export function winProviders(registry, { caps, exclude = [], score = () => 0 }) 
     out.push({ id: card.id, score: score(card), end: /** @type {LoopEnd} */ (loop.win) });
   }
   return out.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+}
+
+// ---------- the game's win in a document: one reading for the loop check and the composition check ----------
+
+/** Every effect object (an object with a string `do`) inside a value. @param {unknown} v @param {Array<Record<string, unknown>>} [out] */
+export function effectsIn(v, out = []) {
+  if (Array.isArray(v)) for (const x of v) effectsIn(x, out);
+  else if (isObj(v)) { if (isStr(v.do)) out.push(v); for (const x of Object.values(v)) if (typeof x === 'object') effectsIn(x, out); }
+  return out;
+}
+
+/** The loop instances of a document (systems and generators whose card declares a loop that exists for their config). @param {unknown} doc @param {RegistryLike} registry @returns {LoopInstance[]} */
+export function loopInstances(doc, registry) {
+  /** @type {LoopInstance[]} */
+  const out = [];
+  /** @param {unknown} s @param {string} path */
+  const visit = (s, path) => {
+    const use = prop(s, 'use'); if (!isStr(use) || !isObj(s)) return;
+    const card = registry.get(use)?.card; const loop = cardLoop(card);
+    if (!card || !loop) return;
+    /** @type {Record<string, unknown>} */
+    let config = {};
+    try { config = { ...checkFields(card.params || {}, {}, '', [], null), ...(isObj(s.with) ? s.with : {}) }; } catch { config = isObj(s.with) ? { ...s.with } : {}; }
+    if (!loopExists(card, config)) return; // a mode that does not apply to this instance: no loop here
+    out.push({ use, index: out.length, path, loop, card, config, inst: s });
+  };
+  // Systems, then the generators of every space (a generator can carry a loop: a crawl, a course run to a goal), as loopOf reads them.
+  list(prop(doc, 'systems')).forEach((s, i) => visit(s, `systems[${i}]`));
+  list(prop(doc, 'spaces')).forEach((sp, i) => list(prop(sp, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)));
+  return out;
+}
+
+/** The instance a loop's params are set on: its card.mode.via host's (the first system using it), else its own. @param {unknown} doc @param {LoopInstance} l @returns {unknown} */
+export const hostOf = (doc, l) => (l.loop.via ? list(prop(doc, 'systems')).find(s => prop(s, 'use') === l.loop.via) : l.inst);
+
+/**
+ * The loop that owns the game's win. A game is won one way (build-steps.js askWins): of the loops declaring a
+ * game-ending win, the planner's core order decides first (`core`: the decided win first, presets.js loopCore); among
+ * loops that order does not separate (none core, or no core known), the one whose win the document wires to a won
+ * ending owns it: the other declared wins are ways to win this document does not use. With none wired, the first
+ * declaring one owns it (and its unwired win is reported). @param {unknown} doc @param {RegistryLike} registry
+ * @param {LoopInstance[]} loops @param {Iterable<string> | null} core @returns {LoopInstance | null}
+ */
+export function winOwner(doc, registry, loops, core) {
+  const order = core ? [...core] : [];
+  const wins = loops.filter(l => endsGame(l.loop.win));
+  const wired = new Set(wins.filter(l => !unwired(doc, l, /** @type {LoopEnd} */ (l.loop.win), 'won', registry)));
+  // Then a win that exists in the instance's config (its `applies`) before one that does not (a course without a goal).
+  const applies = new Set(wins.filter(l => appliesTo(l.loop.win?.applies, l.config)));
+  return wins.sort((a, b) => rank(order, a.use) - rank(order, b.use) || Number(wired.has(b)) - Number(wired.has(a)) || Number(applies.has(b)) - Number(applies.has(a)) || a.index - b.index)[0] || null;
+}
+/** @param {string[]} order @param {string} id */
+const rank = (order, id) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+
+/** Does an effect end the game with this outcome (directly, or through the plot ending it names)? @param {Record<string, unknown>} e @param {Map<unknown, Record<string, unknown>>} endings @param {'won' | 'lost'} outcome */
+function endsWith(e, endings, outcome) {
+  if (e.do !== 'end_game') return false;
+  if (isStr(e.outcome)) return e.outcome === outcome;
+  if (isStr(e.ending)) return (endings.get(e.ending)?.outcome ?? 'won') === outcome;
+  return outcome === 'won';
+}
+
+/**
+ * The events a document's primitives emit typed (declared `name:*` in card.provides.events): KERNEL_API rt.emitTyped
+ * emits `name` and `name:<subject>` together, so `name:<subject>` counts the same events as `name`, narrowed to one subject.
+ * @param {unknown} doc @param {RegistryLike} registry @returns {Set<string>}
+ */
+export function typedEvents(doc, registry) {
+  const uses = [...list(prop(doc, 'systems')), ...list(prop(doc, 'spaces')).flatMap(sp => [sp, ...list(prop(sp, 'generators'))])].map(s => prop(s, 'use')).filter(isStr);
+  return new Set(uses.flatMap(u => list(registry.get(String(u))?.card.provides?.events)).filter(isStr).filter(e => e.endsWith(':*')).map(e => e.slice(0, -2)));
+}
+
+/**
+ * Is an ending's `when` trigger this loop end's `when` template filled in: every key the template fixes (the count or
+ * var it tests) equal, every placeholder ('$target': a number the content picks) present? An event count the template
+ * fixes (the kernel's `count` predicate) is also filled by the typed count of that event (`name:<subject>`) when the
+ * event is emitted typed (`typed`, typedEvents): the same quantity narrowed to one subject.
+ * @param {Record<string, unknown>} template @param {Record<string, unknown>} when @param {Set<string>} [typed]
+ */
+export const fills = (template, when, typed = new Set()) => Object.entries(template).every(([k, v]) => {
+  if (isStr(v) && v.startsWith('$')) return when[k] !== undefined;
+  const w = when[k];
+  if (k === 'count' && isStr(v) && typed.has(v) && isStr(w) && w.length > v.length + 1 && w.startsWith(`${v}:`)) return true;
+  return JSON.stringify(w) === JSON.stringify(v);
+});
+
+/** The primitive that evaluates plot.endings `when` triggers: a loop that reads them and declares no win of its own. @param {unknown} card */
+export const evaluatesEndings = card => Boolean(card) && list(prop(card, 'reads')).includes('plot.endings') && Boolean(cardLoop(card)) && !cardLoop(card)?.win && !list(prop(prop(card, 'requires'), 'capabilities')).length;
+
+/**
+ * Is a declared loop end wired to an ending of `outcome` in the document? -> null when wired, else why not.
+ * @param {unknown} doc @param {LoopInstance} l @param {LoopEnd} end @param {'won' | 'lost'} outcome @param {RegistryLike} registry @returns {string | null}
+ */
+export function unwired(doc, l, end, outcome, registry) {
+  if (!appliesTo(end.applies, l.config)) return `its ${outcome === 'won' ? 'win' : 'lose'} applies only when ${end.applies?.param}${end.applies?.field ? `.${end.applies.field}` : ''} is ${JSON.stringify(end.applies?.is)}`;
+  const endings = new Map(objects(prop(prop(doc, 'plot'), 'endings')).map(e => [e.id, e]));
+  const systems = list(prop(doc, 'systems'));
+  const w = prop(hostOf(doc, l), 'with');
+  const wired = (/** @type {unknown} */ v) => effectsIn(v).some(e => endsWith(e, endings, outcome));
+  if (isStr(end.param)) {
+    const [p, field] = end.param.split('.');
+    const v = prop(w, p);
+    if (!field && wired(v)) return null;
+    if (field && objects(v).some(x => wired(x[field]))) return null;
+  }
+  if (isStr(end.end) && prop(w, end.end) === true) return null;
+  if (isObj(end.when)) {
+    const typed = typedEvents(doc, registry);
+    const has = [...endings.values()].some(e => isObj(e.when) && (e.outcome ?? 'won') === outcome && fills(/** @type {Record<string, unknown>} */ (end.when), e.when, typed));
+    const evaluator = systems.some(s => evaluatesEndings(registry.get(String(prop(s, 'use')))?.card));
+    if (has && evaluator) return null;
+    if (has) return `its ending's \`when\` trigger has no evaluator in the document (a loop that reads plot.endings)`;
+  }
+  if (isStr(end.ending) && [...endings.values()].some(e => (e.outcome ?? 'won') === outcome)) return null;
+  const how = [isStr(end.param) && `an end_game effect in ${l.loop.via ? `${l.loop.via} ` : ''}with.${end.param}`, isStr(end.end) && `with.${end.end} = true`, isObj(end.when) && 'a plot ending with its `when` and the evaluator', isStr(end.ending) && 'a plot ending'].filter(Boolean).join(' or ');
+  return `nothing wires it to a ${outcome} ending (${how || 'no wiring declared'})`;
 }
