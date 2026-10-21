@@ -109,7 +109,8 @@ export async function verify(doc, registry, logic, opts = {}) {
 export { solve } from './solve.js';
 export { verifyPlot, staticPlot, beatStructure, solverProblems } from './plot.js';
 export { verifySpatial, movementEnvelope } from './spatial.js';
-export { playtest, replayPlay } from './playtest.js';
+export { playtest, replayPlay, progressTimeline } from './playtest.js';
+export { quality, QUALITY_CODES, QUALITY_THRESHOLDS } from './quality.js';
 export { checkInvariants, stepChecker, findNonFinite } from './invariants.js';
 export { strategies, register as registerStrategy, select as selectStrategies } from './strategies/index.js';
 export { runArc, arcScore, levelScore, AGENTS as ARC_AGENTS } from './arc.js';

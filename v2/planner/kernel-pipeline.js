@@ -18,14 +18,31 @@ import { tweakDocument, reviseDocument, applyOps, guardRevision } from './doc-re
 import { repairDocument, describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
 import { catalogHash } from './catalog.js';
+import { quality as measureQuality } from '../verify/quality.js';
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze({
   detailConcurrency: 3, maxDetailTasks: 0, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
-  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1,
+  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250,
 });
 
 const ms = t => Math.round(performance.now() - t);
+
+/**
+ * The quality report for a verification that already passed the publish gate (v2/verify/quality.js). It never
+ * blocks: it reuses the gate's playtest, is bounded by `budgetMs`, and a failure is recorded as { error }.
+ * Sets v.quality so summarizeVerify keeps it. Returns null when quality is off (budgetMs 0) or there is no document.
+ */
+export function qualityReport(v, registry, logic, { mechanics = null, budgetMs = PIPELINE_CONFIG.qualityMs } = {}) {
+  if (!v?.doc || !budgetMs) return null;
+  const t = performance.now();
+  let q;
+  try { q = measureQuality(v.doc, registry, logic, { playtest: v.playtestRun || null, mechanics, budgetMs }); }
+  catch (error) { q = { error: String(error?.message || error).slice(0, 200), findings: [] }; }
+  q.ms = ms(t);
+  v.quality = q;
+  return q;
+}
 const gapNote = g => ({ capability: g.description, why: g.why, kind: g.kind === 'capability' ? 'capability' : 'unsupported', mechanic: g.mechanic, importance: g.importance });
 
 /**
@@ -85,8 +102,12 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.gateMs = ms(t);
     checkpoint('gate', { viable: Boolean(base.viable), viability: base.viability || null, playtest: base.playtest || null, problems: (base.problems || []).slice(0, 20) });
     if (!base.viable) throw Object.assign(Error(`No playable game yet: ${base.viability}`), { status: 422, code: 'not_playable' });
+    // Quality is measured only once the gate passed, and never changes what publishes.
+    t = performance.now();
+    const quality = qualityReport(base, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
+    timings.qualityMs = quality ? ms(t) : null;
     timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
 
@@ -114,7 +135,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         detail.tasks.push(entry);
         if (!result.ok) { detail.rejected.push({ task: task.id, reason: result.reason }); ctx.stage('detail_rejected', { task: task.id, reason: result.reason }); return; }
         current = result.doc; baseVerify = result.verify; detail.accepted++;
-        await ctx.publish({ doc: current, stage: `detail:${task.zone}`, report: { ...common, added: result.added, verified: true, verification: summarizeVerify(result.verify), detail: entry, timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ task: task.id }) });
+        const tq = performance.now(), quality = qualityReport(result.verify, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
+        entry.qualityMs = quality ? ms(tq) : null;
+        await ctx.publish({ doc: current, stage: `detail:${task.zone}`, report: { ...common, added: result.added, verified: true, verification: summarizeVerify(result.verify), quality, detail: entry, timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ task: task.id }) });
       }));
     };
     const queue = [...tasks];
@@ -193,10 +216,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       ...(notApplied && !(unsupported || []).length ? [guard.diff
         ? { capability: job.change, why: `Changed ${guard.changes.join(', ')}, but the checker isn't sure that fully does what you asked.`, kind: 'partial' }
         : { capability: job.change, why: 'Nothing in this game changed for that request: no primitive here has a setting for it yet.', kind: 'unsupported' }] : [])];
+    // Selected mechanics carry forward from the version revised, so every version's quality can check coverage.
+    const selection = previous.report?.selection ?? null;
+    t = performance.now();
+    const quality = qualityReport(v, registry, logic, { mechanics: selection?.mechanics ?? null, budgetMs: cfg.qualityMs });
+    timings.qualityMs = quality ? ms(t) : null;
     timings.totalMs = ms(t0);
     return ctx.publish({
       doc: v.doc, stage: `revision: ${job.change}`,
-      report: { kind: 'kernel', change: job.change, path, ops: opsApplied.slice(0, 20), changes: guard.changes, diffLines: guard.lines, revisionCheck: guard.revisionCheck, gaps, verified: true, verification: summarizeVerify(v), hot: path === 'tweak' ? 'params' : 'reload', timings },
+      report: { kind: 'kernel', change: job.change, path, ops: opsApplied.slice(0, 20), changes: guard.changes, diffLines: guard.lines, revisionCheck: guard.revisionCheck, gaps, verified: true, verification: summarizeVerify(v), quality, ...(selection ? { selection } : {}), hot: path === 'tweak' ? 'params' : 'reload', timings },
       provenance: { ...previous.provenance, pipeline: KERNEL_PIPELINE_VERSION, base: job.base, change: job.change, revisePath: path, models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } },
     });
   }
@@ -210,7 +238,8 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
 export function summarizeVerify(v) {
   if (!v) return null;
   return { ok: v.ok, source: v.source, completable: v.completable, exhaustive: v.exhaustive, ms: v.ms, preflightMs: v.preflight?.ms ?? null, warnings: (v.preflight?.warnings || []).length,
-    endings: v.solve ? Object.keys(v.solve.endings || {}) : null, beatsNeverFired: v.solve?.beatsNeverFired?.slice(0, 10) ?? null, states: v.solve?.states ?? null, problems: (v.problems || []).slice(0, 5) };
+    endings: v.solve ? Object.keys(v.solve.endings || {}) : null, beatsNeverFired: v.solve?.beatsNeverFired?.slice(0, 10) ?? null, states: v.solve?.states ?? null, problems: (v.problems || []).slice(0, 5),
+    playtest: v.playtest ?? null, quality: v.quality ?? null };
 }
 
 export { decomposeOffline };
