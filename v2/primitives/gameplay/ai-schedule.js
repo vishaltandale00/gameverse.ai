@@ -29,9 +29,8 @@ const BAKER = { plot: { characters: [{ id: 'baker', name: 'Bea' }] } };
 export function slotAt(schedule, h) {
   return schedule.findIndex(s => (s.from <= s.to ? h >= s.from && h < s.to : h >= s.from || h < s.to));
 }
-/** A 2-element `at` on a 3D surface space means ground (x, z); everything else passes through. */
+/** A slot's `at` point: 2 elements on a 3D surface space mean ground (x, z). */
 export function toPoint(api, at) {
-  if (!Array.isArray(at)) return at;
   if (at.length === 2 && can(api, 'groundAt') && api.kind !== 'test') return r6([at[0], api.groundAt(at[0], at[1]).y, at[1]]);
   return r6(v3(at));
 }

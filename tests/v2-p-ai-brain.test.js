@@ -56,8 +56,8 @@ test('hearing, memory, group alert and the aggro leash', () => {
 });
 
 test('patrol ping-pongs, wander stays near home, both replay deterministically', () => {
-  const guard = { id: 'guard', kind: 'npc', components: { ai: { brain: [{ do: 'patrol', route: [[4, 4, 0], [10, 4, 0]] }], speed: 3 } } };
-  const cow = { id: 'cow', kind: 'creature', components: { ai: { brain: [{ do: 'wander', range: 4, pause: 0.2 }], speed: 2 } } };
+  const guard = { id: 'guard', kind: 'npc', components: { ai: { brain: [{ do: 'patrol', route: [{ at: [4, 4, 0] }, { at: [10, 4, 0] }] }], speed: 3 } } };
+  const cow = { id: 'cow', kind: 'creature', components: { ai: { brain: [{ do: 'wander', range: 4, pause: [0.2, 0.2] }], speed: 2 } } };
   const make = () => { const { rt } = compile(doc({ archetypes: [guard, cow] }), { primitives: P }); rt.spawn('guard', { at: [4, 4, 0] }); rt.spawn('cow', { at: [15, 15, 0] }); return rt; };
   const a = make(), b = make();
   const xs = new Set();
@@ -72,9 +72,9 @@ test('patrol: a point the movement cannot reach is reported and passed over; the
   // [12, 4] is walled in: the shared AI locomotion stays blocked from it, and so does a move.* controller's path.
   const solid = [];
   for (let x = 11; x <= 13; x++) for (let y = 3; y <= 5; y++) if (x !== 12 || y !== 4) solid.push([x, y, 0]);
-  const route = [[4, 4, 0], [12, 4, 0], [4, 12, 0]];
+  const route = [{ at: [4, 4, 0] }, { at: [12, 4, 0] }, { at: [4, 12, 0] }];
   for (const systems of [[], [{ use: 'gameplay.move.walk' }]]) {
-    const guard = { id: 'guard', kind: 'npc', components: { ai: { brain: [{ do: 'patrol', route, pause: 0.1 }], speed: 4 }, ...(systems.length ? { move: {} } : {}) } };
+    const guard = { id: 'guard', kind: 'npc', components: { ai: { brain: [{ do: 'patrol', route, pause: [0.1, 0.1] }], speed: 4 }, ...(systems.length ? { move: {} } : {}) } };
     const { rt } = compile(doc({ archetypes: [guard], solid, systems }), { primitives: [...P, ...catalogue().registry.ids().filter(id => id === 'gameplay.move.walk').map(id => catalogue().registry.get(id))] });
     const g = rt.spawn('guard', { at: [4, 4, 0] }), failed = [];
     rt.on('move_failed', d => { if (d.who === g.id) failed.push({ ...d, t: rt.state.time }); });
@@ -82,12 +82,12 @@ test('patrol: a point the movement cannot reach is reported and passed over; the
     let near = null;
     for (let i = 0; i < 1500; i++) {
       rt.step();
-      const at = dist(g.at, route[0]) < 0.6 ? 'a' : dist(g.at, route[2]) < 0.6 ? 'c' : null;
+      const at = dist(g.at, route[0].at) < 0.6 ? 'a' : dist(g.at, route[2].at) < 0.6 ? 'c' : null;
       if (at && at !== near) visits[at]++;
       near = at ?? near;
     }
     const label = systems.length ? 'move.walk' : 'ai locomotion';
-    assert.ok(failed.length >= 1 && failed.every(d => d.by === 'ai' && JSON.stringify(d.at) === JSON.stringify(route[1])), `${label}: the unreachable point is reported (${JSON.stringify(failed.slice(0, 2))})`);
+    assert.ok(failed.length >= 1 && failed.every(d => d.by === 'ai' && JSON.stringify(d.at) === JSON.stringify(route[1].at)), `${label}: the unreachable point is reported (${JSON.stringify(failed.slice(0, 2))})`);
     assert.ok(visits.c >= 2 && visits.a >= 2, `${label}: still patrols the reachable points (${JSON.stringify(visits)})`);
   }
 });

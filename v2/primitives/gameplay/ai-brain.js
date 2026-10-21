@@ -30,7 +30,7 @@ const GRID = { screen: [[0, -1, 0], [-1, 0, 0], [0, 1, 0], [1, 0, 0]], world: [[
 const rev = d => (d < 0 ? d : (d + 2) % 4);
 
 const n = (d, extra = {}) => ({ type: 'number', ...(d === undefined ? {} : { default: d }), ...extra });
-const at = { type: 'json', effect: 'a position in the space (array) or node id' };
+const at = { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'a position in the space' };
 const BEHAVIOR = {
   do: { type: 'string', options: KINDS, required: true, effect: 'behavior kind' },
   when: { type: 'predicate', effect: 'run this behavior while it holds (context.self = agent; near/zone default to who:self)' },
@@ -40,9 +40,9 @@ const BEHAVIOR = {
   run: { type: 'boolean', effect: 'use the run multiplier' },
   distance: n(undefined, { min: 0, effect: 'follow/chase stop distance' }),
   radius: n(undefined, { min: 0, effect: 'guard radius' }),
-  at, route: { type: 'list', min: 1, of: { type: 'json' }, effect: 'patrol waypoints (positions or zone ids); a point the movement reports unreachable (move_failed) is passed over after the pause, to the next point' },
+  at, route: { type: 'list', min: 1, of: { type: 'object', fields: { at, zone: { type: 'ref', to: 'zone', effect: 'a zone (its point; a graph space\'s node)' } } }, effect: 'patrol waypoints, each a position (at) or a zone; a point the movement reports unreachable (move_failed) is passed over after the pause, to the next point' },
   loop: { type: 'boolean', effect: 'patrol loops instead of ping-pong' },
-  pause: { type: 'json', effect: 'seconds (or [min,max]) to wait at wander/patrol points' },
+  pause: { type: 'list', of: { type: 'number', min: 0 }, min: 2, max: 2, unit: 's', effect: '[min, max] seconds to wait at wander/patrol points' },
   height: n(undefined, { min: 0, effect: 'flyer hover height above the target' }),
   burst: n(undefined, { min: 0, effect: 'ambush speed multiplier for burstSec' }), burstSec: n(undefined, { min: 0 }),
   leash: n(undefined, { min: 0, effect: 'override the agent leash for this behavior' }),
@@ -66,7 +66,7 @@ export const AI_COMPONENT = {
   perception: { type: 'object', fields: PERCEPTION },
   speed: n(undefined, { min: 0, effect: 'walk speed, space units/s' }), run: n(undefined, { min: 1, effect: 'run multiplier' }),
   faction: { type: 'string' }, leash: n(undefined, { min: 0 }), alert: n(undefined, { min: 0, effect: 'group alert radius' }),
-  pack: { type: 'object', fields: { size: { type: 'json' }, alert: n(undefined, { min: 0 }) } },
+  pack: { type: 'object', fields: { size: { type: 'list', of: { type: 'integer', min: 1 }, min: 2, max: 2, effect: '[min, max] members' }, alert: n(undefined, { min: 0 }) } },
   home: at, plane: { type: 'string', options: ['auto', 'xy', 'xz', 'xyz'] }, fly: { type: 'boolean' },
   drive: { type: 'string', options: ['self', 'intent'], effect: "'intent' = only write intents (a move.* primitive executes them)" },
   crowd: { type: 'boolean', effect: 'pedestrian handled by gameplay.ai.crowd' },
@@ -77,7 +77,7 @@ export const AI_COMPONENT = {
  * A rule example's ai component: one behavior of kind `kind`, every other field of the strict form unset (null).
  * @param {string} kind
  */
-const aiExample = kind => ({ 'components.ai': { brain: [{ do: kind, target: null, range: null, speed: null, run: null, distance: null, radius: null, loop: null, height: null, burst: null, burstSec: null, leash: null, activity: null, personality: null, aim: null, ahead: null, partner: null, within: null, grid: null, frightSpeed: null, homeSpeed: null, once: null, fov: null, stop: null }], perception: null, speed: null, run: null, faction: null, leash: null, alert: null, pack: null, plane: null, fly: null, drive: null, crowd: null, climbs: null, medium: null, burnsInSun: null } });
+const aiExample = kind => ({ 'components.ai': { brain: [{ do: kind, target: null, range: null, speed: null, run: null, distance: null, radius: null, loop: null, height: null, burst: null, burstSec: null, leash: null, activity: null, personality: null, aim: null, ahead: null, partner: null, within: null, grid: null, frightSpeed: null, homeSpeed: null, once: null, fov: null, stop: null }], perception: null, speed: null, run: null, faction: null, leash: null, alert: null, pack: null, home: null, plane: null, fly: null, drive: null, crowd: null, climbs: null, medium: null, burnsInSun: null } });
 
 /** The archetype component this primitive owns. */
 const AI = { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' };
@@ -149,6 +149,9 @@ export default {
     rules: {
       ai_target_rule: { fields: ['content.archetypes[].components.ai.brain[].personality', 'content.archetypes[].components.ai.brain[].aim'], message: 'a target-tile behavior has a personality or an aim', example: aiExample('target-tile') },
       ai_challenge_then: { fields: ['content.archetypes[].components.ai.brain[].then'], message: 'a sight-challenge behavior has then effects (what reaching its target does)', example: aiExample('sight-challenge') },
+      ai_route_point: { fields: ['content.archetypes[].components.ai.brain[].route[].at', 'content.archetypes[].components.ai.brain[].route[].zone'], message: 'a patrol waypoint is a position (at) or a zone',
+        // A document of its own: route waypoints are deeper than the forms ask.
+        example: { doc: { spaces: [{ id: 'yard', use: 'engine.space.grid', with: { size: [8, 8] } }], systems: [{ use: ID }], content: { archetypes: [{ id: 'guard', name: 'Guard', components: { ai: { brain: [{ do: 'patrol', route: [{ at: [1, 1] }, {}] }] } } }] }, player: null, plot: {}, graphics: [] } } },
       ai_schedule_tiers: { fields: ['modeSchedule.table', 'modeSchedule.tierBy.above'], message: 'with tierBy, modeSchedule.table has one row per tier: tierBy.above thresholds + 1 rows' },
     },
   },
@@ -235,6 +238,7 @@ function validateAi(ai, path, errors, ctx) {
     if (!b || typeof b !== 'object') return;
     const bp = `${path}.brain[${j}]`;
     if (b.do === 'target-tile' && !b.personality && !b.aim) errors.push({ code: 'ai_target_rule', path: bp, message: 'target-tile needs a personality or an aim', hint: Object.keys(PERSONALITIES).join(', ') });
+    (Array.isArray(b.route) ? b.route : []).forEach((p, k) => { if (p && typeof p === 'object' && p.at == null && p.zone == null) errors.push({ code: 'ai_route_point', path: `${bp}.route[${k}]`, message: 'a waypoint needs at or zone' }); });
     if (b.do === 'sight-challenge' && !Array.isArray(b.then)) errors.push({ code: 'ai_challenge_then', path: `${bp}.then`, message: 'sight-challenge needs `then` effects' });
   });
 }
@@ -383,7 +387,7 @@ function act(rt, e, a, config) {
   const leash = b.leash ?? c.ai.leash ?? config.leash;
   const home = a.home;
   const fromHome = () => (continuous(e) && Array.isArray(home) ? len(planar(api, e.at, sub(e.at, home), plane)) : distTo(rt, e, home));
-  const pauseFor = () => { const p = b.pause ?? [0.5, 2]; return Array.isArray(p) ? between(rt, p[0], p[1]) : p; };
+  const pauseFor = () => { const [lo, hi] = b.pause ?? [0.5, 2]; return between(rt, lo, hi); };
   switch (b.do) {
     case 'sit': idle(e, a, t && continuous(e) ? sub(t.at, e.at) : null); return;
     case 'wander': {
@@ -515,7 +519,7 @@ function goHome(rt, e, a, post, speed, api, plane, t) {
 function patrolRoute(rt, e, a, b, api, plane) {
   if (a.route) return a.route;
   if (Array.isArray(b.route) && b.route.length) {
-    a.route = b.route.map(p => (typeof p === 'string' && continuous(e) ? zonePoint(rt, e.space, p) ?? a.home : Array.isArray(p) ? v3(p) : p));
+    a.route = b.route.map(p => (Array.isArray(p?.at) ? v3(p.at) : continuous(e) ? zonePoint(rt, e.space, p?.zone) ?? a.home : p?.zone ?? a.home));
   } else if (continuous(e)) {
     const range = b.range ?? 6, axis = norm(planar(api, e.at, [1, 0, 0], plane));
     a.route = [r6(add(a.home, mul(axis, -range / 2))), r6(add(a.home, mul(axis, range / 2)))];
