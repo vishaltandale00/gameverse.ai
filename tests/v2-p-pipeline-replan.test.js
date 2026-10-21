@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { diagnose, replan } from '../v2/planner/replan.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { testCatalogue, fakeWriter, broken, picky, buildAnswer } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, broken, picky, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
 
 /** A juggling loop that works: toss is a player verb, every toss is the loop's progress, enough tosses win. */
 const clubs = {
@@ -42,12 +42,14 @@ const memoryCtx = () => {
 
 /** The scripted spec model: decomposes, maps the juggling mechanic onto the catalogue, and fills the outline forms. */
 function scripted({ title = 'Torch Show' } = {}) {
+  const decompose = decomposer(planFrom({ title: 'The Torch Show', premise: 'Juggle for a crowd. Do not drop anything.', tone: 'bright', views: ['ui'], acts: 1, zones: 2,
+    mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', from: '', importance: 'core' }, { id: 'titles', verb: 'insist', description: 'insists that the title starts with The', from: '', importance: 'core' }],
+    spaces: [{ role: 'stage', kind: 'none', description: 'a stage' }], movement: 'none',
+    core: { loop: 'juggle', interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } }));
   return fakeWriter([(req) => {
     const name = String(req.schema?.name || '');
-    if (name === 'decomposition') return JSON.stringify({ title: 'The Torch Show', premise: 'Juggle for a crowd. Do not drop anything.', tone: 'bright', references: [], views: ['ui'], acts: 1, zones: 2,
-      mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', from: '', importance: 'core' }, { id: 'titles', verb: 'insist', description: 'insists that the title starts with The', from: '', importance: 'core' }],
-      spaces: [{ role: 'stage', kind: 'none', description: 'a stage' }], movement: 'none',
-      core: { loop: 'juggle', interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } });
+    const decomposed = decompose(req);
+    if (decomposed) return decomposed;
     const built = buildAnswer(req, { picks: { juggle: ['gameplay.test.broken'], titles: ['gameplay.test.picky'] } });
     if (built) return built;
     // A field-level re-ask: the title field gets fixed.

@@ -114,10 +114,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
     ctx.stage('decomposing', { model: spec?.model || 'offline' });
     let t = performance.now();
-    const decomposition = await decomposeIdea({ writer: spec, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts });
+    const decomposition = await decomposeIdea({ writer: spec, escalate: writers.code || null, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts });
     timings.decomposeMs = ms(t);
     checkpoint('decomposition', decomposition);
-    ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
+    ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, ...(decomposition.calls ? { calls: decomposition.calls.length } : {}), references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
     t = performance.now();
     const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec, attempts: cfg.modelAttempts });
     const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt });

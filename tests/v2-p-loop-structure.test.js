@@ -16,7 +16,7 @@ import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { testCatalogue, fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
 
 const real = id => PRIMITIVES.find(p => p.id === id);
 const hp = e => e.components.vigor.hp ?? e.components.vigor.max;
@@ -258,13 +258,16 @@ const memoryCtx = () => {
 /** The scripted spec model: decomposes the idea, maps its one core mechanic onto `mapped`, and fills the small forms. */
 const scripted = (name, mapped) => {
   const c = COLLECTIONS[name];
+  // The iterative decomposition's forms; 'text' is the graph's view (the old 'map' was never a decomposition view).
+  const decompose = decomposer(planFrom({ title: 'The Test Game', premise: `${c.description}.`, tone: 'brisk', views: ['text'], acts: 1, zones: 2, movement: 'none',
+    mechanics: [{ id: 'core', verb: c.description.split(' ')[0], description: c.description, from: '', importance: 'core' }], spaces: [{ role: 'field', kind: 'locations', description: 'a field' }],
+    core: { loop: 'core', lose: '', theme: 'test', narrative: false, mashup: [], ...c.core } }));
   return fakeWriter([(req) => {
     const schema = String(req.schema?.name || '');
     const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: mapped } }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives
     if (built) return built;
-    if (schema === 'decomposition') return JSON.stringify({ title: 'The Test Game', premise: `${c.description}.`, tone: 'brisk', references: [], views: ['map'], acts: 1, zones: 2, movement: 'none',
-      mechanics: [{ id: 'core', verb: c.description.split(' ')[0], description: c.description, from: '', importance: 'core' }], spaces: [{ role: 'field', kind: 'locations', description: 'a field' }],
-      core: { loop: 'core', lose: '', theme: 'test', narrative: false, mashup: [], ...c.core } });
+    const decomposed = decompose(req);
+    if (decomposed) return decomposed;
     if (schema === 'mechanic_map') return JSON.stringify({ mappings: [{ mechanic: 'core', primitives: mapped, covered: true, why: '' }] });
     if (schema === 'mapping_check') return JSON.stringify({ checks: [] });
     if (schema.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.keys(req.schema.schema.properties).map(k => [k, null])));

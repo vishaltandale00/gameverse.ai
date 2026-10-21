@@ -5,9 +5,9 @@
 // and structures, not primitive ids), so a mechanic no primitive covers shows
 // up as a gap instead of being silently bent into something that exists.
 import { parseReply } from './writer.js';
-import { coreSchema, normalizeCore, normalizeMashup, undecidedCore, isAvatar } from './play-spec.js';
+import { coreSchema, normalizeCore, normalizeMashup, undecidedCore, isAvatar, conceptMashupProblem, INTERACTIONS, OPPONENTS, RELATIONS } from './play-spec.js';
 import { fieldForm } from './outline-form.js';
-import { obj, list, objects, isStr, messageOf, prop } from '../kernel/guards.js';
+import { obj, list, objects, isStr, isObj, messageOf, prop } from '../kernel/guards.js';
 
 /** @typedef {import('./types.js').Writer} Writer */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -30,9 +30,10 @@ import { obj, list, objects, isStr, messageOf, prop } from '../kernel/guards.js'
  * @property {string} movement  ground | air | water | track | none (MOVEMENT)
  * @property {number} acts
  * @property {number} zones
- * @property {import('./play-spec.js').Core} [core]  the play spec (with a registry)
+ * @property {Concept[]} concepts  the idea's source concepts (decomposeIdea step 1); a mechanic's `from` is a concept id
+ * @property {import('./play-spec.js').Core} [core]  the play spec (decomposeIdea always writes one; normalize() adds an undecided one with a registry)
  */
-/** decomposeIdea()'s result: the decomposition plus where it came from. @typedef {Decomposition & { source: string, ms: number, error?: string, attempts?: number }} DecompositionResult */
+/** decomposeIdea()'s result: the decomposition plus where it came from and its model calls. @typedef {Decomposition & { source: string, ms: number, error?: string, calls?: DecomposeCall[] }} DecompositionResult */
 
 export const DECOMPOSITION_VERSION = 'decompose/0.2';
 /** @type {readonly unknown[]} */
@@ -77,33 +78,312 @@ export function decompositionSchema(registry = null) {
   return { ...DECOMPOSITION_SCHEMA, required: [...DECOMPOSITION_SCHEMA.required, 'core'], properties: { ...DECOMPOSITION_SCHEMA.properties, core: coreSchema() } };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// The iterative decomposition: small strict forms, each followed by a deterministic check, every enum built from the
+// ids the steps before it produced. A failing check re-asks only the field it names (fieldForm); a form the default
+// model fails `attempts` times is asked once of the escalation writer (outline.js's rule); a step still failing fails
+// the decomposition (422 decomposition_failed) with the step and every finding.
+//   1. concepts: the source concepts (games, genres, themes) the idea names or implies, and whether each brings its
+//      own loop or only theme/content;
+//   2. mechanics, per concept and in parallel: each concept's own loop mechanic (exactly one when it brings a loop)
+//      and its other mechanics, from = that concept;
+//   3. the play spec: interaction, opponent, the core loop (an enum of the loop mechanics), win and lose as sentences,
+//      and the mashup (relation and mechanic id enums) spanning concepts, checked by conceptMashupProblem;
+//   4. the rest: title/premise/tone, spaces/views(/movement for an avatar), and acts/zones only for a narrative.
+// ---------------------------------------------------------------------------------------------------------------
+
+export const CONCEPT_KINDS = ['game', 'genre', 'theme', 'setting', 'character', 'other'];
+/** Kinds that bring theme, setting or cast to an idea, never a loop of their own. */
+const CONTENT_KINDS = ['theme', 'setting', 'character'];
+export const BRINGS = ['loop', 'content'];
+/** A mechanic's role in its concept: its own core loop (one per loop-bringing concept), or how much the idea needs it. */
+export const ROLES = ['loop', 'core', 'supporting', 'flavor'];
+// The decomposition's own limits (normalize keeps at most 8 references and 16 mechanics): checked, never truncated.
+const MAX_CONCEPTS = 8, MAX_MECHANICS = 16;
+
+/** @typedef {{ id: string, name: string, quote: string, kind: string, brings: 'loop' | 'content', keeps: string[] }} Concept */
+/** @typedef {{ id: string, verb: string, description: string, from: string, role: string }} ConceptMechanic */
+/** @typedef {{ loop: string, interaction: string, opponent: string, win: string, lose: string, theme: string, narrative: boolean | null, mashup: import('./play-spec.js').Mashup[] }} SpecDraft */
+/** A failing check: the form field it names (re-asked alone) and why. @typedef {{ field: string, message: string }} StepProblem */
+/** One model call. @typedef {{ step: string, concept?: string, fields?: string[], model: string | null, ms: number, chars: number, escalated?: boolean, problems?: string[], error?: string }} DecomposeCall */
+/** @typedef {{ name: string, schema: Record<string, any> }} StepSchema */
+
+const PREAMBLE = `You decompose a player's game idea into what it is made of, one small step at a time; the earlier steps are given. Example names are illustrations only; decompose THIS idea.`;
+const STEP_CONCEPTS = `Step: the idea's source concepts. List every game, genre, theme, setting or character the idea names or clearly implies, each as its own concept: an idea that joins two games has two concepts, and "X in a haunted library" has X and the haunted library. id: a lowercase slug. name: as the idea names it. quote: the words of the idea that name or imply it, verbatim. kind: game, genre, theme, setting, character or other. brings: "loop" when the idea plays that concept's own core loop (how a round of it is played out and won: a chess match, a creature battle, a race), "content" when it only brings theme, setting, cast or look (themes, settings and characters always bring content). keeps: what the idea takes from it.`;
+const STEP_MECHANICS = `Step: the mechanics ONE concept brings to this idea, as short verb-led phrases that make sense in any game ("catch wild creatures and keep a party", "turn-based battles between party members", "drive vehicles"). Only this concept's own mechanics (every one has from = this concept's id); the other concepts give theirs separately. A concept that brings a loop has exactly one mechanic with role "loop": its own core loop as played in this idea (how a round of it is played out and won), then its other defining mechanics the idea keeps (role core, supporting or flavor). A concept that brings only content has no loop mechanic: only the mechanics its content needs, often none ([]). Don't invent mechanics the idea doesn't need. id: a lowercase slug, unique in the game.`;
+const STEP_SPEC = `Step: the play spec, in the idea's own terms. interaction: how the player plays (avatar-realtime: steers a character in real time; avatar-grid: a character stepping cell by cell; pieces-turns: moves pieces in turns; cursor-board: picks cells or pieces on a board; menu: picks options). opponent: who plays against the player. loop: the loop mechanic the game is built around (the primary concept's). win and lose: each a sentence in the game's own terms saying how the player wins and how the player loses ("checkmate the rival's king", "your king is checkmated"), never an id; lose is '' only when the game cannot be lost. theme: a few words. narrative: true only when the idea has a story told in acts. mashup: when two or more concepts bring their own loop, one entry per joined concept relating mechanics ACROSS concepts: first the primary concept's mechanic it joins into, then the joined concept's own mechanics, its loop first; relation nested (its loop is entered from the other, e.g. a creature battle deciding a chess capture), union (both loops run in one space) or skin (only its content and cast fill the other's slots, e.g. creatures as the chess pieces). A concept that brings only content joins as skin or not at all. [] for an idea with one loop and nothing to skin.`;
+/** The SYSTEM rules for the rest (spaces, views, movement, acts and zones, title), one source for both prompts. @param {string[]} keys */
+const rules = keys => SYSTEM.split('\n').filter(l => keys.some(k => l.startsWith(`- ${k}`))).join('\n');
+
+/** Step 1's form. @returns {StepSchema} */
+export function conceptsSchema() {
+  return { name: 'idea_concepts', schema: { type: 'object', additionalProperties: false, required: ['concepts'], properties: {
+    concepts: { type: 'array', description: 'every game, genre, theme, setting or character the idea names or clearly implies, each its own concept', items: { type: 'object', additionalProperties: false, required: ['id', 'name', 'quote', 'kind', 'brings', 'keeps'], properties: {
+      id: { type: 'string', description: 'a lowercase slug' }, name: str, quote: { type: 'string', description: 'the words of the idea that name or imply it, verbatim' },
+      kind: { type: 'string', enum: CONCEPT_KINDS }, brings: { type: 'string', enum: BRINGS, description: 'loop: the idea plays its own core loop; content: only its theme, setting, cast or look' },
+      keeps: { type: 'array', items: str, description: 'what the idea takes from it' } } } } } } };
+}
+
+/** Step 2's form, for one concept: from is that concept's id; a concept that brings only content has no loop role. @param {Concept} concept @returns {StepSchema} */
+export function mechanicsSchema(concept) {
+  return { name: 'concept_mechanics', schema: { type: 'object', additionalProperties: false, required: ['mechanics'], properties: {
+    mechanics: { type: 'array', description: `the mechanics ${concept.id} brings to the idea${concept.brings === 'loop' ? ', exactly one with role loop' : ' (no loop: it brings only content)'}`, items: { type: 'object', additionalProperties: false, required: ['id', 'verb', 'description', 'from', 'role'], properties: {
+      id: { type: 'string', description: 'a lowercase slug, unique in the game' }, verb: str, description: str, from: { type: 'string', enum: [concept.id] },
+      role: { type: 'string', enum: concept.brings === 'loop' ? ROLES : ROLES.slice(1), description: 'loop: this concept\'s own core loop; core, supporting, flavor: how much the idea needs it' } } } } } } };
+}
+
+/** Step 3's form: the play spec with enums of the loop mechanics (loop) and of every mechanic (mashup). @param {string[]} loops @param {string[]} ids @returns {StepSchema} */
+export function playSpecSchema(loops, ids) {
+  const core = coreSchema(), p = core.properties, items = p.mashup.items;
+  return { name: 'play_spec', schema: { ...core, properties: { ...p,
+    loop: { ...p.loop, enum: loops, description: 'the loop mechanic the game is built around' },
+    win: { type: 'string', description: "how the player wins, as a sentence in the game's own terms, never an id" },
+    lose: { type: 'string', description: "how the player loses, as a sentence in the game's own terms, different from win ('' only when the game cannot be lost)" },
+    mashup: { ...p.mashup, items: { ...items, properties: { ...items.properties, mechanics: { ...items.properties.mechanics, items: { type: 'string', enum: ids } } } } } } } };
+}
+
+/** Step 4's forms: title, premise and tone; spaces and views (movement only with an avatar); acts and zones (narrative only). @param {boolean} avatar */
+export function restSchemas(avatar) {
+  return {
+    about: { name: 'idea_about', schema: { type: 'object', additionalProperties: false, required: ['title', 'premise', 'tone'], properties: { title: str, premise: str, tone: str } } },
+    where: { name: 'idea_spaces', schema: { type: 'object', additionalProperties: false, required: ['spaces', 'views', ...(avatar ? ['movement'] : [])], properties: {
+      spaces: DECOMPOSITION_SCHEMA.properties.spaces, views: DECOMPOSITION_SCHEMA.properties.views, ...(avatar ? { movement: DECOMPOSITION_SCHEMA.properties.movement } : {}) } } },
+    story: { name: 'idea_story', schema: { type: 'object', additionalProperties: false, required: ['acts', 'zones'], properties: { acts: { type: 'integer' }, zones: { type: 'integer' } } } },
+  };
+}
+
+/** Lowercase words without diacritics (Pokémon = pokemon). @param {unknown} text @returns {string[]} */
+const wordsOf = text => String(text || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().match(/[a-z0-9]+/g) || [];
+/** Words that join or frame an idea and name no concept. */
+const STOP = new Set('a an the of in on at to for and or but with without into onto by from as is are be it its this that these those which where who what when while you your game games gaming style like version edition meets plus vs versus set'.split(' '));
+/** The words of a text that can name a concept. @param {unknown} text */
+const contentWords = text => wordsOf(text).filter(w => w.length > 1 && !STOP.has(w));
+/** The words that join concepts in an idea ("chess but with pokemon", "Pac-Man in a haunted library", "A × B"). */
+const JOINS = /\s*(?:×|\+|&|\/|\bx\b|\bmeets\b|\bcrossed with\b|\bmixed with\b|\bbut with\b|\bbut\b|\bwith\b|\bin the style of\b|\bplus\b|\bvs\b\.?|\bversus\b|\bset in\b|\bin (?:a|an|the)\b)\s*/i;
+
 /**
- * Decompose with a writer (strict schema). A failing call is asked again, up to `attempts` calls; when every one
- * fails the decomposition fails with what each attempt reported (a 422 naming the stage), never an offline guess in
- * its place. Without a writer the offline decomposition is the explicit offline mode.
- * @param {{ writer?: Writer | null, prompt: string, answers?: Answer[], registry?: RegistryLike | null, attempts?: number }} options
+ * The parts of an idea its joining words separate, each with the words that can name a concept (parts naming none are
+ * left out). "chess but with pokemon" has two parts; "a farming game" one. @param {string} prompt @returns {Array<{ text: string, words: string[] }>}
+ */
+export const ideaParts = prompt => prompt.split(JOINS).map(text => ({ text: text.trim(), words: contentWords(text) })).filter(p => p.words.length);
+
+/**
+ * Step 1's check: concepts exist (at most MAX_CONCEPTS) with unique ids; themes, settings and characters bring no loop;
+ * at least one concept brings a loop; and every part of the idea its joining words separate is named (name or quote) by
+ * a concept of its own (a matching: one concept cannot stand for two parts), so an idea naming two games yields ≥ 2.
+ * @param {Concept[]} concepts @param {string} prompt @returns {StepProblem[]}
+ */
+export function conceptProblems(concepts, prompt) {
+  /** @type {string[]} */
+  const why = [];
+  if (!concepts.length) why.push('no concept: list the games, genres, themes or settings the idea names or implies');
+  if (concepts.length > MAX_CONCEPTS) why.push(`${concepts.length} concepts: at most ${MAX_CONCEPTS}`);
+  const dup = concepts.map(c => c.id).filter((id, i, a) => a.indexOf(id) !== i);
+  if (dup.length) why.push(`ids ${[...new Set(dup)].join(', ')} are used twice: each concept has its own id`);
+  for (const c of concepts) if (c.brings === 'loop' && CONTENT_KINDS.includes(c.kind)) why.push(`${c.id} is a ${c.kind} but brings a loop: a ${c.kind} brings content only`);
+  if (concepts.length && !concepts.some(c => c.brings === 'loop')) why.push('no concept brings a loop: the concept whose game the idea plays brings its loop');
+  const parts = ideaParts(prompt);
+  if (parts.length >= 2 && concepts.length) {
+    const names = concepts.map(c => new Set(contentWords(`${c.name} ${c.quote}`)));
+    /** @type {number[]} part index -> concept index */
+    const match = parts.map(() => -1);
+    /** Kuhn's augmenting path over concepts. @param {number} ci @param {Set<number>} seen @returns {boolean} */
+    const assign = (ci, seen) => {
+      for (let pi = 0; pi < parts.length; pi++) {
+        if (seen.has(pi) || !parts[pi].words.some(w => names[ci].has(w))) continue;
+        seen.add(pi);
+        if (match[pi] < 0 || assign(match[pi], seen)) { match[pi] = ci; return true; }
+      }
+      return false;
+    };
+    concepts.forEach((_, ci) => assign(ci, new Set()));
+    const unnamed = parts.filter((_, pi) => match[pi] < 0).map(p => `'${p.text}'`);
+    if (unnamed.length) why.push(`the idea joins ${parts.map(p => `'${p.text}'`).join(' and ')}, but ${unnamed.join(' and ')} ${unnamed.length === 1 ? 'is' : 'are'} named by no concept of its own (name or quote): give each game, genre or theme the idea joins its own concept`);
+  }
+  return why.map(message => ({ field: 'concepts', message }));
+}
+
+/**
+ * Step 2's check for one concept: every mechanic is from this concept with a known role; a concept that brings a loop
+ * has exactly one loop mechanic, one that brings content none; ids are unique (within the concept and against `taken`,
+ * the other concepts' ids); at most `budget` mechanics (the shape's 16 shared across concepts).
+ * @param {ConceptMechanic[]} mechanics @param {Concept} concept @param {number} budget @param {Map<string, string>} [taken] id -> concept
+ * @returns {StepProblem[]}
+ */
+export function mechanicProblems(mechanics, concept, budget, taken = new Map()) {
+  /** @type {string[]} */
+  const why = [];
+  const foreign = mechanics.filter(m => m.from !== concept.id);
+  if (foreign.length) why.push(`${foreign.map(m => `${m.id} (from '${m.from}')`).join(', ')} ${foreign.length === 1 ? 'is' : 'are'} not ${concept.id}'s: this form asks only for ${concept.id}'s own mechanics, each with from '${concept.id}'`);
+  const unroled = mechanics.filter(m => !ROLES.includes(m.role));
+  if (unroled.length) why.push(`${unroled.map(m => m.id).join(', ')} ha${unroled.length === 1 ? 's' : 've'} no role (${ROLES.join(', ')})`);
+  const loops = mechanics.filter(m => m.role === 'loop');
+  if (concept.brings === 'loop' && loops.length !== 1) why.push(`${concept.id} brings its own loop, so exactly one of its mechanics has role loop (its core loop as played in this idea); it has ${loops.length}${loops.length ? ` (${loops.map(m => m.id).join(', ')})` : ''}`);
+  if (concept.brings === 'content' && loops.length) why.push(`${concept.id} brings only content, so it has no loop mechanic (${loops.map(m => m.id).join(', ')})`);
+  const dup = mechanics.map(m => m.id).filter((id, i, a) => a.indexOf(id) !== i);
+  if (dup.length) why.push(`ids ${[...new Set(dup)].join(', ')} are used twice`);
+  const clash = mechanics.filter(m => taken.has(m.id));
+  if (clash.length) why.push(`${clash.map(m => `${m.id} is already ${taken.get(m.id)}'s`).join(', ')}: give ${concept.id}'s own mechanics, with ids of their own`);
+  const blank = mechanics.filter(m => !m.description.trim());
+  if (blank.length) why.push(`${blank.map(m => m.id).join(', ')} ha${blank.length === 1 ? 's' : 've'} no description`);
+  if (mechanics.length > budget) why.push(`${mechanics.length} mechanics: at most ${budget} for this concept (the game keeps ${MAX_MECHANICS} across its concepts)`);
+  return why.map(message => ({ field: 'mechanics', message }));
+}
+
+/**
+ * Is a win/lose text written in words rather than as an id? Not empty, and not an id-like token (one token without
+ * spaces, such as a slug, or a mechanic or concept id). null when it is. @param {string} text @param {Set<string>} ids @returns {string | null}
+ */
+export function notASentence(text, ids) {
+  const t = text.trim();
+  if (!t) return 'empty';
+  if (!/\s/.test(t) || ids.has(slug(t))) return `'${t.slice(0, 60)}' is an id-like token`;
+  return null;
+}
+
+/**
+ * Step 3's check: the loop is a loop mechanic; interaction, opponent and narrative are set; win and lose are sentences
+ * in the game's terms and differ (lose may be '' when the game cannot be lost); every mashup entry has a known relation
+ * and passes the concept-level mashup check (play-spec.js conceptMashupProblem).
+ * @param {SpecDraft} spec @param {{ concepts: Concept[], mechanics: ConceptMechanic[] }} so @returns {StepProblem[]}
+ */
+export function specProblems(spec, { concepts, mechanics }) {
+  /** @type {StepProblem[]} */
+  const out = [];
+  const loops = mechanics.filter(m => m.role === 'loop').map(m => m.id);
+  const ids = new Set([...mechanics.map(m => m.id), ...concepts.map(c => c.id)]);
+  if (!loops.includes(spec.loop)) out.push({ field: 'loop', message: `'${spec.loop.slice(0, 40)}' is not a loop mechanic (${loops.join(', ')})` });
+  if (!INTERACTIONS.includes(spec.interaction)) out.push({ field: 'interaction', message: `'${spec.interaction.slice(0, 40)}' is not one of ${INTERACTIONS.join(', ')}` });
+  if (!OPPONENTS.includes(spec.opponent)) out.push({ field: 'opponent', message: `'${spec.opponent.slice(0, 40)}' is not one of ${OPPONENTS.join(', ')}` });
+  if (spec.narrative === null) out.push({ field: 'narrative', message: 'true or false' });
+  const win = notASentence(spec.win, ids);
+  if (win) out.push({ field: 'win', message: `${win}: say how the player wins as a sentence in the game's own terms` });
+  const lose = spec.lose.trim() ? notASentence(spec.lose, ids) : null;
+  if (lose) out.push({ field: 'lose', message: `${lose}: say how the player loses as a sentence in the game's own terms ('' only when the game cannot be lost)` });
+  else if (spec.lose.trim() && wordsOf(spec.lose).join(' ') === wordsOf(spec.win).join(' ')) out.push({ field: 'lose', message: `lose is the same as win ('${spec.win.slice(0, 60)}'): say how the player loses ('' only when the game cannot be lost)` });
+  const bad = spec.mashup.filter(x => !RELATIONS.includes(x.relation));
+  const mashup = bad.length ? { message: `${bad.map(x => `'${x.relation}'`).join(', ')} ${bad.length === 1 ? 'is' : 'are'} not a relation (${RELATIONS.join(', ')})` } : conceptMashupProblem({ concepts, mechanics, mashup: spec.mashup });
+  if (mashup) out.push({ field: 'mashup', message: mashup.message });
+  return out;
+}
+
+/** Step 1's reply, narrowed. @param {unknown} v @returns {{ concepts: Concept[] }} */
+const narrowConcepts = v => ({ concepts: objects(prop(v, 'concepts')).map(c => ({ id: slug(c.id || c.name), name: String(c.name || c.id || '').slice(0, 80), quote: String(c.quote || '').slice(0, 120),
+  kind: isStr(c.kind) && CONCEPT_KINDS.includes(c.kind) ? String(c.kind) : 'other', brings: c.brings === 'loop' ? /** @type {const} */ ('loop') : /** @type {const} */ ('content'), keeps: list(c.keeps).map(String).slice(0, 8) })) });
+/** Step 2's reply, narrowed. @param {unknown} v @returns {{ mechanics: ConceptMechanic[] }} */
+const narrowMechanics = v => ({ mechanics: objects(prop(v, 'mechanics')).map(m => ({ id: slug(m.id || m.verb || m.description), verb: String(m.verb || '').slice(0, 60), description: String(m.description || m.verb || '').slice(0, 240), from: String(m.from || ''), role: String(m.role || '') })) });
+/** Step 3's reply, narrowed (relations kept as written: the check reports an unknown one, nothing drops it). @param {unknown} v @returns {SpecDraft} */
+const narrowSpec = v => {
+  const d = obj(v);
+  return { loop: isStr(d.loop) && d.loop ? slug(d.loop) : '', interaction: String(d.interaction || ''), opponent: String(d.opponent || ''), win: String(d.win || '').slice(0, 200), lose: String(d.lose || '').slice(0, 200), theme: String(d.theme || '').slice(0, 120),
+    narrative: typeof d.narrative === 'boolean' ? d.narrative : null,
+    mashup: objects(d.mashup).slice(0, 4).map(m => ({ relation: String(m.relation || ''), mechanics: list(m.mechanics).filter(isStr).map(slug).slice(0, 6), why: String(m.why || '').slice(0, 160) })) };
+};
+
+/**
+ * One step: its form, then its check; a failing check re-asks only the fields it names (fieldForm over the step's own
+ * schema), up to `attempts` calls of the default writer, then once of the escalation writer (effort low, that form
+ * only). `start` begins with a field re-ask of a value a later check rejected. Still failing: 422 decomposition_failed.
+ * @template {Record<string, unknown>} T
+ * @param {{ writer: Writer, escalate: Writer | null, attempts: number, calls: DecomposeCall[], step: string, concept?: string, system: string, user: string,
+ *   schema: StepSchema, narrow: (value: unknown) => T, check: (value: T) => StepProblem[], start?: { value: T, problems: StepProblem[] } }} args
+ * @returns {Promise<T>}
+ */
+async function askStep({ writer, escalate, attempts, calls, step, concept, system, user, schema, narrow, check, start }) {
+  /** @type {T | null} */
+  let value = start ? start.value : null;
+  let problems = start ? start.problems : [];
+  /** @type {string[]} */
+  const failed = [];
+  const own = Math.max(1, attempts);
+  for (let i = 0; i < own + (escalate ? 1 : 0); i++) {
+    const w = i >= own && escalate ? escalate : writer;
+    const fields = value && problems.length ? fieldForm(schema, [...new Set(problems.map(p => p.field))]) : null;
+    const current = value;
+    const ask = fields && current
+      ? `${user}\n\nYour answer failed these checks:\n${problems.map(p => `- ${p.field}: ${p.message}`).join('\n')}\nFix ONLY these fields. Current values: ${JSON.stringify(Object.fromEntries(fields.slots.map(s => [s.path, current[s.path]])))}`
+      : failed.length ? `${user}\n\nYour previous reply failed (${failed[failed.length - 1]}). Reply with one JSON object.` : user;
+    const form = fields ? fields.schema : schema;
+    const t0 = performance.now();
+    /** @type {DecomposeCall} */
+    const call = { step, ...(concept ? { concept } : {}), ...(fields ? { fields: fields.slots.map(s => s.path) } : {}), model: null, ms: 0, chars: system.length + ask.length + JSON.stringify(form.schema).length, ...(w === escalate ? { escalated: true } : {}) };
+    calls.push(call);
+    try {
+      const reply = await w.complete({ system, user: ask, schema: form, ...(w === escalate ? { effort: 'low' } : {}) });
+      call.model = reply.model || w.model; call.ms = Math.round(performance.now() - t0);
+      const parsed = parseReply(reply.text);
+      value = narrow(fields && current ? fields.apply(current, parsed) : parsed);
+      problems = check(value);
+      if (!problems.length) return value;
+      call.problems = problems.map(p => `${p.field}: ${p.message}`.slice(0, 300));
+      failed.push(call.problems.join('; '));
+    } catch (error) {
+      call.ms = Math.round(performance.now() - t0);
+      call.error = String(messageOf(error) || error).slice(0, 160);
+      failed.push(call.error);
+    }
+  }
+  throw Object.assign(Error(`The idea could not be decomposed: step ${step}${concept ? ` (${concept})` : ''} failed its check after ${failed.length} call(s): ${failed.join(' | ')}`),
+    { status: 422, code: 'decomposition_failed', step, ...(concept ? { concept } : {}), attempts: failed, problems: problems.map(p => `${p.field}: ${p.message}`) });
+}
+
+/**
+ * Decompose an idea, iteratively (the steps above). Without a writer the offline decomposition is the explicit offline
+ * mode. `escalate` is the writer a form the default model fails `attempts` times is asked of, once.
+ * @param {{ writer?: Writer | null, escalate?: Writer | null, prompt: string, answers?: Answer[], registry?: RegistryLike | null, attempts?: number }} options
  * @returns {Promise<DecompositionResult>}
  */
-export async function decomposeIdea({ writer = null, prompt, answers = [], registry = null, attempts = 2 }) {
+export async function decomposeIdea({ writer = null, escalate = null, prompt, answers = [], registry = null, attempts = 2 }) {
   const started = performance.now();
-  const user = `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
-  if (writer) {
-    /** @type {string[]} */
-    const failed = [];
-    for (let i = 0; i < Math.max(1, attempts); i++) {
-      try {
-        const ask = failed.length ? `${user}\n\nYour previous reply failed (${failed[failed.length - 1]}). Reply with the decomposition as one JSON object.` : user;
-        const reply = await writer.complete({ system: registry ? `${SYSTEM}\n${CORE}` : SYSTEM, user: ask, schema: { name: 'decomposition', schema: registry ? decompositionSchema(registry) : DECOMPOSITION_SCHEMA } });
-        const d = normalize(parseReply(reply.text), prompt, registry);
-        if (!d.mechanics.some(m => m.importance === 'core')) { failed.push('no core mechanic: the core loop is the idea\'s core mechanics'); continue; }
-        // The play spec names the core mechanic the game is built around; one that names none is asked again for that field only.
-        if (d.core && !d.mechanics.some(m => m.importance === 'core' && m.id === d.core?.loop)) d.core = { ...d.core, loop: await askLoop({ writer, decomposition: d, attempts }) };
-        return { ...d, source: reply.model, ms: Math.round(performance.now() - started), ...(failed.length ? { attempts: failed.length + 1 } : {}) };
-      } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
-    }
-    throw Object.assign(Error(`The idea could not be decomposed after ${failed.length} attempt(s): ${failed.join('; ')}`), { status: 422, code: 'decomposition_failed', attempts: failed });
+  if (!writer) return { ...decomposeOffline(prompt, answers, registry), ms: Math.round(performance.now() - started) };
+  const idea = `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
+  /** @type {DecomposeCall[]} */
+  const calls = [];
+  const base = { writer, escalate, attempts, calls };
+
+  // 1. Concepts.
+  const { concepts } = await askStep({ ...base, step: 'concepts', system: `${PREAMBLE}\n${STEP_CONCEPTS}`, user: idea, schema: conceptsSchema(), narrow: narrowConcepts, check: v => conceptProblems(v.concepts, prompt) });
+  const conceptList = concepts.map(c => `- ${c.id} (${c.kind}, brings ${c.brings}): ${c.name}${c.keeps.length ? `; keeps ${c.keeps.join(', ')}` : ''}`).join('\n');
+
+  // 2. Each concept's mechanics, in parallel; then ids unique across concepts (a clash re-asks the later concept).
+  const budget = Math.max(1, Math.floor(MAX_MECHANICS / concepts.length));
+  const askMechanics = (/** @type {Concept} */ c, /** @type {Map<string, string>} */ taken, /** @type {{ value: { mechanics: ConceptMechanic[] }, problems: StepProblem[] } | undefined} */ start) => askStep({ ...base, step: 'mechanics', concept: c.id, start,
+    system: `${PREAMBLE}\n${STEP_MECHANICS}`, user: `${idea}\nConcepts:\n${conceptList}\n\nConcept: ${c.id} (${c.name}; brings ${c.brings}). Its mechanics in this idea.`,
+    schema: mechanicsSchema(c), narrow: narrowMechanics, check: v => mechanicProblems(v.mechanics, c, budget, taken) });
+  const own = await Promise.all(concepts.map(c => askMechanics(c, new Map(), undefined)));
+  /** @type {Map<string, string>} */
+  const taken = new Map();
+  for (let i = 0; i < concepts.length; i++) {
+    const c = concepts[i];
+    const clash = mechanicProblems(own[i].mechanics, c, budget, taken);
+    if (clash.length) own[i] = await askMechanics(c, new Map(taken), { value: own[i], problems: clash });
+    for (const m of own[i].mechanics) taken.set(m.id, c.id);
   }
-  return { ...decomposeOffline(prompt, answers, registry), ms: Math.round(performance.now() - started) };
+  // Each concept's loop first, then its others, concepts in the idea's order.
+  const mechanics = concepts.flatMap((_, i) => [...own[i].mechanics].sort((a, b) => Number(b.role === 'loop') - Number(a.role === 'loop')));
+  const mechanicList = mechanics.map(m => `- ${m.id} [${m.from}, ${m.role}]: ${m.description}`).join('\n');
+
+  // 3. The play spec, with enums of the ids above; its mashup is checked across concepts.
+  const spec = await askStep({ ...base, step: 'play_spec', system: `${PREAMBLE}\n${STEP_SPEC}`, user: `${idea}\nConcepts:\n${conceptList}\nMechanics (id [concept, role]: description):\n${mechanicList}`,
+    schema: playSpecSchema(mechanics.filter(m => m.role === 'loop').map(m => m.id), mechanics.map(m => m.id)), narrow: narrowSpec, check: v => specProblems(v, { concepts, mechanics }) });
+
+  // 4. The rest, as small forms in parallel given the above.
+  const so = `${idea}\nConcepts:\n${conceptList}\nMechanics:\n${mechanicList}\nPlay spec: ${JSON.stringify(spec)}`;
+  const forms = restSchemas(isAvatar(spec.interaction));
+  const nonEmpty = (/** @type {Record<string, unknown>} */ v, /** @type {string[]} */ keys) => keys.filter(k => !String(v[k] || '').trim()).map(field => ({ field, message: 'empty' }));
+  const [about, where, story] = await Promise.all([
+    askStep({ ...base, step: 'about', system: `${PREAMBLE}\n${rules(['title'])}`, user: so, schema: forms.about, narrow: obj, check: v => nonEmpty(v, ['title', 'premise']) }),
+    askStep({ ...base, step: 'spaces', system: `${PREAMBLE}\n${rules(['spaces', 'views', ...(isAvatar(spec.interaction) ? ['movement'] : [])])}`, user: so, schema: forms.where, narrow: obj, check: v => [
+      ...(!objects(v.spaces).length || objects(v.spaces).length > 4 || objects(v.spaces).some(s => !SPACE_KINDS.includes(s.kind)) ? [{ field: 'spaces', message: `1-4 spaces, each of kind ${SPACE_KINDS.join(', ')}` }] : []),
+      ...(!list(v.views).length || list(v.views).some(x => !VIEWS.includes(x)) ? [{ field: 'views', message: `1 or more of ${VIEWS.join(', ')}, the main camera first` }] : []),
+      ...(isAvatar(spec.interaction) && !(isStr(v.movement) && MOVEMENT.includes(v.movement)) ? [{ field: 'movement', message: `one of ${MOVEMENT.join(', ')}` }] : [])] }),
+    spec.narrative ? askStep({ ...base, step: 'story', system: `${PREAMBLE}\n${rules(['acts and zones'])}`, user: so, schema: forms.story, narrow: obj, check: v => [
+      ...(clampInt(v.acts, 1, 6, 0) !== v.acts ? [{ field: 'acts', message: 'an integer from 1 to 6' }] : []), ...(clampInt(v.zones, 2, 12, 0) !== v.zones ? [{ field: 'zones', message: 'an integer from 2 to 12' }] : [])] }) : Promise.resolve({}),
+  ]);
+
+  const d = normalize({ ...story, ...where, ...about, concepts, references: concepts.map(c => ({ name: c.name, kind: c.kind, keeps: c.keeps })),
+    mechanics: mechanics.map(m => ({ ...m, importance: m.role === 'loop' ? 'core' : m.role })), core: spec }, prompt, registry);
+  return { ...d, source: calls.find(c => c.model)?.model || writer.model, ms: Math.round(performance.now() - started), calls };
 }
 
 /** @param {unknown} s */
@@ -132,6 +412,7 @@ export function normalize(input, prompt = '', registry = null) {
     title: String(d.title || titleFrom(prompt)).slice(0, 80),
     premise: String(d.premise || prompt).slice(0, 600),
     tone: String(d.tone || '').slice(0, 80),
+    concepts: objects(d.concepts).slice(0, MAX_CONCEPTS).map(c => ({ id: slug(c.id || c.name), name: String(c.name || c.id || '').slice(0, 80), quote: String(c.quote || '').slice(0, 120), kind: String(c.kind || 'other'), brings: c.brings === 'loop' ? /** @type {const} */ ('loop') : /** @type {const} */ ('content'), keeps: list(c.keeps).map(String).slice(0, 8) })),
     references: objects(d.references).slice(0, 8).map(r => ({ name: String(r.name || '').slice(0, 80), kind: String(r.kind || 'other'), keeps: list(r.keeps).map(String).slice(0, 8) })),
     mechanics: mechanics.slice(0, 16),
     spaces: objects(d.spaces).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? String(s.kind) : 'locations', description: String(s.description || '').slice(0, 200) })),
@@ -140,8 +421,8 @@ export function normalize(input, prompt = '', registry = null) {
     acts: clampInt(d.acts, 1, 6, 3), zones: clampInt(d.zones, 2, 12, 5),
   };
   // The play spec: the model's (narrowed); without one (the offline mode) the collection decides what it would have said.
-  if (registry) {
-    out.core = normalizeCore(d.core) || undecidedCore(out);
+  if (registry || isObj(d.core)) {
+    out.core =normalizeCore(d.core) || undecidedCore(out);
     out.core.mashup = linkMashup(out.core.mashup, mechanics);
     // No avatar, no avatar movement: the medium follows the interaction (an undecided one decides nothing here).
     if (out.core.interaction && !isAvatar(out.core.interaction)) out.movement = 'none';
@@ -187,28 +468,6 @@ export async function askMashup({ writer, decomposition, registry, problem, rech
     } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
   }
   throw Object.assign(Error(`The play spec is incomplete: core.mashup was asked again ${failed.length} time(s) and still fails: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
-}
-
-/**
- * core.loop, asked again on its own: the core mechanic ids are the only choices. Up to `attempts` calls; an answer
- * outside them is never replaced by a guess (422 play_spec_incomplete).
- * @param {{ writer: Writer, decomposition: Decomposition, attempts?: number }} options @returns {Promise<string>}
- */
-export async function askLoop({ writer, decomposition, attempts = 2 }) {
-  const ids = decomposition.mechanics.filter(m => m.importance === 'core').map(m => m.id);
-  const schema = { name: 'core_loop', schema: { type: 'object', additionalProperties: false, required: ['loop'], properties: { loop: { type: 'string', enum: ids, description: 'the core mechanic the game is built around: the loop the player repeats' } } } };
-  const user = `Idea: ${decomposition.title}. ${decomposition.premise}\nCore mechanics (id: description):\n${decomposition.mechanics.filter(m => m.importance === 'core').map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nWhich one is the loop the game is built around? Reply with its id.`;
-  /** @type {string[]} */
-  const failed = [];
-  for (let i = 0; i < Math.max(1, attempts); i++) {
-    try {
-      const reply = await writer.complete({ system: SYSTEM, user, schema });
-      const loop = prop(parseReply(reply.text), 'loop');
-      if (typeof loop === 'string' && ids.includes(loop)) return loop;
-      failed.push(`'${String(loop).slice(0, 40)}' is not a core mechanic id`);
-    } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
-  }
-  throw Object.assign(Error(`The play spec is incomplete: core.loop was asked ${failed.length} time(s) and names no core mechanic: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
 }
 
 /** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */

@@ -10,7 +10,7 @@ import { mashupProblem } from '../v2/planner/play-spec.js';
 import { selectPrimitives, declaredFit, servesInteraction } from '../v2/planner/select.js';
 import { replan, gapRequest } from '../v2/planner/replan.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
 
 const live = JSON.parse(readFileSync(new URL('./fixtures/v2-live/chess-pokemon-failed.json', import.meta.url), 'utf8'));
 const { registry } = buildCatalogue();
@@ -53,15 +53,18 @@ test('the live decomposition left core.mashup empty; the post-check finds two id
   assert.equal(mashupProblem({ ...d, mechanics: d.mechanics.map(m => ({ ...m, from: 'Chess' })) }, mappedOf, registry), null);
 });
 
-test('the decomposition asks for a mashup entry per joined idea, by mechanic id', async () => {
-  const writer = fakeWriter([JSON.stringify(live.decomposition)]);
+test('the decomposition asks for a mashup entry per joined concept, its mechanics an enum of the mechanic ids', async () => {
+  const plan = planFrom(live.decomposition, { pok_mon: { name: 'Pokémon', quote: 'pokemon' } });
+  const answer = decomposer(plan);
+  const writer = fakeWriter([req => answer(req)]);
   await decomposeIdea({ writer, prompt: live.prompt, registry });
-  const req = writer.calls[0];
-  assert.match(req.system, /IS a mashup: give one entry per joined idea/);
-  const mashup = req.schema.schema.properties.core.properties.mashup;
+  const req = writer.calls.find(c => c.schema.name === 'play_spec');
+  assert.match(req.system, /one entry per joined concept relating mechanics ACROSS concepts/);
+  const mashup = req.schema.schema.properties.mashup;
   assert.match(mashup.description, /one entry per joined idea/);
   assert.deepEqual(mashup.items.properties.relation.enum, ['nested', 'union', 'skin']);
-  assert.match(mashup.items.properties.mechanics.description, /mechanics\[\]\.id/);
+  assert.deepEqual(mashup.items.properties.mechanics.items.enum, live.decomposition.mechanics.map(m => m.id));
+  assert.deepEqual(req.schema.schema.properties.loop.enum, ['turn_based_piece_movement']);
 });
 
 test('selection: piece movement fits pieces-turns (the turns loop, never offered avatar steps) and the mashup is re-asked as one field', async () => {
