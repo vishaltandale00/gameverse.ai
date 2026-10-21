@@ -433,12 +433,26 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     const plan = planWorld(registry, s, { view: decomposition.views?.[0], have, intent, exclude: generators.filter(g => g.space === s.id).map(g => g.id) });
     for (const id of plan.generators) generators.push({ id, space: s.id, auto: true });
   }
-  return {
+  const selection = {
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
     systems, generators, graphics: [], spaces, bind, gaps, provider, completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
+  // Static composition screen (cards as types): a space the chosen mechanics cannot work in (grid movement in a
+  // voxel world) is excluded and selection runs again; it stops once no new space is rejected.
+  const check = await compositionCheck();
+  if (check) {
+    const result = check(/** @type {any} */ (selection), registry, { resolve: true });
+    const use = new Map(spaces.map((sp, i) => [sp.id || `space${i}`, sp.use]));
+    const reject = [...new Set((result.failures || []).filter(f => f.space !== undefined && (f.adaptable || f.check === 'adapter')).map(f => use.get(/** @type {string} */ (f.space))).filter(/** @returns {x is string} */ x => typeof x === 'string' && !excludeSpaces.includes(x)))];
+    if (reject.length) {
+      log(`composition: excluding ${reject.join(', ')}`);
+      const again = await selectPrimitives({ decomposition, registry, decisions, writer, log, excludeSpaces: [...excludeSpaces, ...reject] });
+      if (again.spaces.length) return again;
+    }
+  }
+  return selection;
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
 /** @param {string} id */

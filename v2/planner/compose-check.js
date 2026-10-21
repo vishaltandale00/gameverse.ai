@@ -559,17 +559,18 @@ export function checkComposition(input, registry, opts = {}) {
           if (count < min) fail({ check: 'mode', code: 'mode_participants_missing', unit: u.use, message: `'${u.use}' needs ${min} participant(s) in with.${p}, has ${count}`, adaptable: false });
         }
       }
-      // space: the bound space, or the capabilities it lacks through an adapter.
-      const want = (isList(md.space) ? md.space : typeof md.space === 'string' ? [md.space] : []).filter((/** @type {unknown} */ x) => typeof x === 'string');
-      if (want.length && s && !want.includes(s.use)) {
-        const target = want.find((/** @type {string} */ id) => registry.has(id));
-        if (!target) hole('mode', { card: u.use, field: 'card.mode.space', code: 'mode_space_unregistered', message: `mode.space names no registered space (${want.join(', ')})` });
-        else for (const cap of [...capsOf(registry, target)].filter(x => !s.caps.has(x))) {
-          const a = adapterFor(x => x.provides.capabilities, cap, s);
-          if (a && propose(a, u.space, `adapts ${cap} for ${u.use}'s mode space`)) continue;
-          need(u.space, 'capabilities', cap, u.use);
-          fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' plays on ${short(target)}; ${short(s.use)} lacks ${cap}`, adaptable: true });
-        }
+      // space: mode.space lists the spaces the mode is proven on (ids) and the capabilities it needs (lists).
+      // Only the capabilities are requirements: another space that has them plays the mode; what it lacks is
+      // provided by an adapter or reported. An id-only declaration never rejects a space.
+      const decl = isList(md.space) ? md.space : typeof md.space === 'string' ? [md.space] : [];
+      const ids = decl.filter((/** @type {unknown} */ x) => typeof x === 'string');
+      const needCaps = [...new Set(decl.filter((/** @type {unknown} */ x) => isList(x)).flat().filter((/** @type {unknown} */ x) => typeof x === 'string'))];
+      if (ids.length && !ids.some((/** @type {string} */ id) => registry.has(id))) hole('mode', { card: u.use, field: 'card.mode.space', code: 'mode_space_unregistered', message: `mode.space names no registered space (${ids.join(', ')})` });
+      if (s && !ids.includes(s.use)) for (const cap of needCaps.filter(x => !s.caps.has(x))) {
+        const a = adapterFor(x => x.provides.capabilities, cap, s);
+        if (a && propose(a, u.space, `adapts ${cap} for ${u.use}'s mode`)) continue;
+        need(u.space, 'capabilities', cap, u.use);
+        fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' needs ${cap}, which ${short(s.use)} lacks`, adaptable: true });
       }
       // bot: a registered strategy.
       if (md.bot !== undefined && md.bot !== null && !(typeof md.bot === 'string' && strategyIds.has(md.bot)))
