@@ -11,7 +11,7 @@ import { selectPrimitives, locomotionCompleteness, checkMapping, baseLocomotion 
 import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { detailForm, detailTasks, acceptPatch, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
+import { detailForm, detailTasks, mergeDetail, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
 import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner/doc-revise.js';
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
@@ -76,7 +76,7 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
     assert.deepEqual(strictProblems(form.schema.schema), [], prompt);
     assert.ok(depthOf(form.schema.schema) <= 10, 'within the strict nesting limit');
     // Every selected primitive has a slot, including those the skeleton could not configure without content.
-    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].sort(), 'one slot per chosen primitive, no others');
+    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].map(id => id.replace(/\./g, "__")).sort(), 'one slot per chosen primitive, no others');
     assert.ok(form.schema.schema.properties.archetypes.items.properties.components.properties, 'archetypes have component slots');
   }
   // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.
@@ -120,7 +120,8 @@ test('decode: JSON text fields become values; strict ones never become strings; 
 
 test('writeOutline with a replayed form: the model fills content, populate problems go back, the result is the model\'s game', async () => {
   const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground' };
-  const sel = await selectPrimitives({ decomposition: d, registry });
+  // A fixed selection (the offline lexical one is not the point here): melee combat with an inventory and a story.
+  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   const needsEnemies = form.contracts.some(c => c.need === 'archetypes' && c.component === 'health');
@@ -133,16 +134,64 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   const full = { ...base, archetypes: [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: comps.health ? { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } : null, other_json: comps.health ? null : '{"health":{"max":4}}' } }],
     spawns: zones.slice(1).map((z, i) => ({ id: `ghouls_${i}`, archetype: 'ghoul', zone: z.id, min: 2, max: 2, respawnSec: 0, when_json: null })) };
   const writer = fakeWriter([hollow, full]);
-  const r = await writeOutline({ writer, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false });
+  const r = await writeOutline({ forms: 'single', writer, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false });
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
   assert.equal(r.doc.title, 'Ironhold');
   assert.equal(writer.calls[0].schema.name, 'game_outline');
   if (needsEnemies) {
     assert.ok(writer.calls.length >= 2, 'the hollow first form is sent back');
+    assert.ok(r.rounds[2].content < r.rounds[1].content, 'the filled form has fewer content problems');
     assert.match(writer.calls[1].user, /\[content_missing\] content\.archetypes \(form: archetypes\)/);
     const c = census(r.doc, registry, logic, { boot: 0 });
     assert.ok(c.archetypesPlaced >= 1 && c.spawnRulesNonPlayer >= 2);
   }
+});
+
+test('small forms: asked in parallel, only the failing form is re-asked, and a form failed twice escalates', async () => {
+  const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground' };
+  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
+  const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
+  const form = outlineForm({ registry, skeleton: sk, selection: sel });
+  assert.ok(form.groups.length >= 4 && form.groups.every(g => strictProblems(g.schema.schema).length === 0), 'each small form is strict');
+  const space = sk.spaces[0];
+  const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
+  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
+  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
+  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } };
+  const frame = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, player: { archetype: 'hero', zone: zones[0].id }, endings: [] };
+  const items = [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }];
+  const reply = (cast, story = { acts: [] }) => req => {
+    const name = req.schema.name;
+    return JSON.stringify(name.endsWith('_frame') ? frame : name.endsWith('_systems') ? { systems: {}, extra_systems: [] } : name.endsWith('_cast') ? cast : story);
+  };
+  // The cast is hollow twice: the frame, params and story are asked once, the cast three times (the third escalated).
+  const hollow = { archetypes: [], spawns: [], items, characters: [] };
+  const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items, characters: [] };
+  const writer = fakeWriter([reply(hollow)]), escalate = fakeWriter([reply(full)], { model: 'stronger' });
+  const r = await writeOutline({ writer, escalate, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false, maxRounds: 3 });
+  assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
+  const asked = writer.calls.map(c => c.schema.name.replace('game_outline_', ''));
+  assert.deepEqual(asked.filter(n => n === 'frame').length, 1, 'the frame is written once');
+  assert.ok(asked.filter(n => n === 'cast').length === 2, `the cast is re-asked: ${asked.join(' ')}`);
+  assert.match(writer.calls.find((c, i) => i > 3 && c.schema.name.endsWith('_cast')).user, /\[content_missing\] content\.archetypes/, 'with only its problems');
+  assert.equal(escalate.calls.length, 1, 'the third try of the same form goes to the stronger writer');
+  assert.equal(escalate.calls[0].effort, 'low');
+  assert.ok(r.doc.content.archetypes.some(a => a.id === 'ghoul'));
+  assert.ok(r.rounds.at(-1).groups.some(g => g.startsWith('cast*')), 'the round records the escalated form');
+});
+
+test('content packs: the preset ships valid species, moves, types and cards; the model only themes them', async () => {
+  const d = normalize({ title: 'Pokemon chess', premise: 'chess with creatures', mechanics: [{ id: 'turns', verb: 'move', description: 'move pieces in turns', importance: 'core' }, { id: 'battle', verb: 'battle', description: 'captures are creature battles', importance: 'core' }], views: ['board'], acts: 2, zones: 4,
+    core: { mode: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, secondary: [{ mode: 'creature-battle', relation: 'nested', why: '' }] } }, 'chess with pokemon', registry);
+  const sel = await selectPrimitives({ decomposition: d, registry });
+  const p = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3 });
+  assert.ok(p.structure.packs.includes('content.species') && p.structure.packs.includes('content.moves'), JSON.stringify(p.structure));
+  const doc = /** @type {any} */ (p.doc);
+  assert.ok(doc.content.species.length >= 4 && doc.content.species.every(s => Object.values(s.base).every(v => v >= 1 && v <= 255)));
+  const form = outlineForm({ registry, skeleton: doc, selection: sel });
+  const g = form.groups.find(x => x.id === 'section_content_species');
+  assert.ok(g, form.groups.map(x => x.id).join(' '));
+  assert.equal(g.schema.schema.properties.section_content_species.type, 'array', 'species are a strict list, not JSON text');
 });
 
 test('selection completeness: base locomotion follows the view and the medium (the clock dungeon walks, the Tetris platformer jumps)', () => {
@@ -232,8 +281,11 @@ test('detail: the per-zone form adds spawns to the spawner and residents with th
   assert.equal(clean.spawns[0].archetype, `${task.zone}_moth_swarm`, 'new archetype ids are namespaced and spawns follow them');
   assert.equal(clean.spawns[1].archetype, 'mossling', 'existing archetypes keep their ids');
   assert.equal(clean.plot.characters[0].home, task.zone);
-  const r = await acceptPatch({ current: lantern, patch, task, registry, logic, budgetMs: 300 });
-  assert.ok(r.ok, `${r.reason} ${JSON.stringify(r.errors?.slice(0, 2))}`);
+  // Merge + repair (acceptPatch's checks before verification; verifying this full-scale game takes minutes in the strategies stage).
+  const merged = mergeDetail(lantern, clean, registry);
+  assert.deepEqual(merged.added.spawns, clean.spawns.map(x => x.id));
+  const r = repairDocument(merged.doc, { registry, logic, rounds: 4 });
+  assert.ok(r.ok, JSON.stringify(r.errors.slice(0, 2)));
   const rules = r.doc.systems.find(s => s.use === 'engine.spawner').with.rules.filter(x => x.zone === task.zone);
   assert.ok(rules.some(x => x.archetype === `${task.zone}_moth_swarm`));
   // Offline detail gives each zone its own mix of the game's pickups and enemies.

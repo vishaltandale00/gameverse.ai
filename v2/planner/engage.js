@@ -111,9 +111,10 @@ function beside(start, k) {
  * engageDocument(doc, registry, logic) -> { doc, applied: [{use, part, what}], skipped: [...], ok, errors, version }
  * The input is not modified. When the engaged document would not preflight, the input is returned unchanged
  * (ok false, with the errors), so this step can never break a playable document.
- * @param {Doc} input @param {RegistryLike} registry @param {LogicLike} logic @returns {EngageResult}
+ * force: return the engaged document even when it does not preflight yet (a caller that repairs it next).
+ * @param {Doc} input @param {RegistryLike} registry @param {LogicLike} logic @param {{ force?: boolean }} [options] @returns {EngageResult}
  */
-export function engageDocument(input, registry, logic) {
+export function engageDocument(input, registry, logic, { force = false } = {}) {
   const doc = clone(input);
   /** @type {EngageStep[]} */ const applied = [];
   /** @type {EngageSkip[]} */ const skipped = [];
@@ -275,6 +276,7 @@ export function engageDocument(input, registry, logic) {
 
   if (!applied.length) return { doc: input, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
   const pre = preflight(doc, registry, logic);
+  if (!pre.ok && force) return { doc, applied, skipped, ok: false, errors: pre.errors.slice(0, 20), version: ENGAGE_VERSION };
   if (!pre.ok) return { doc: input, applied: [], skipped: [...skipped, ...applied.map(a => ({ ...a, why: 'reverted: the engaged document failed preflight' }))], ok: false, errors: pre.errors.slice(0, 20), version: ENGAGE_VERSION };
   return { doc, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
 }

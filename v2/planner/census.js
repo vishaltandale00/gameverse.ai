@@ -244,7 +244,7 @@ export function census(doc, registry, logic = null, { boot = 30 } = {}) {
 }
 
 /** The idea's primary view: the first decomposed view that is not a pure UI overlay. @param {{ views?: string[] } | null | undefined} decomposition @returns {string | null} */
-export const primaryView = decomposition => (decomposition?.views || []).find(v => v !== 'ui') || (decomposition?.views || [])[0] || null;
+export const primaryView = decomposition => (decomposition?.views || [])[0] || null;
 
 /**
  * Whether a document is still the kind of game the decomposition asked for (the genre and view survive

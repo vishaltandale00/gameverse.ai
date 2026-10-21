@@ -12,7 +12,9 @@ import { random, seedFrom } from '../kernel/rng.js';
 import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
-import { outlineForm, formPath } from './outline-form.js';
+import { outlineForm, formPath, groupOfPath } from './outline-form.js';
+import { preset, coreOf, zoneStart, wireCore } from './presets.js';
+import { isAvatar, modeOf } from './modes.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
@@ -43,7 +45,7 @@ import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.j
 /**
  * One entry of writeOutline's round log.
  * @typedef {{ kind: string, ok?: boolean, errors?: number, error?: string, codes?: string[], fixes?: number, form?: boolean, worldAdded?: string[], placed?: number,
- *   viable?: boolean, staticErrors?: number, content?: number, removed?: unknown[], ms?: number }} OutlineRound
+ *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number }} OutlineRound
  */
 /** A problem as repair feedback reads it (preflight, boot, verification, content). @typedef {{ code: string, path?: string, message: string, hint?: unknown }} ProblemLike */
 /** @typedef {import('./content.js').ContentProblem} ContentProblem */
@@ -68,7 +70,7 @@ import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.j
 /**
  * writeOutline's result: `doc` is a Doc exactly when `ok`.
  * @typedef {{ source: string | null, rounds: OutlineRound[], firstPassOk: boolean | null, modelMs: number, removed: Array<Removed | Removal>, errors: ProblemLike[],
- *   verification?: Verification, isolated?: boolean, fellBack?: boolean, content?: ContentProblem[], contentComplete?: boolean } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
+ *   verification?: Verification, isolated?: boolean, fellBack?: boolean, content?: ContentProblem[], contentComplete?: boolean, structure?: unknown } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
  */
 
 export const OUTLINE_VERSION = 'outline/0.1';
@@ -78,145 +80,11 @@ const STOP = new Set('a an the of in on with and or to for from by as at is are 
 const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 
 /**
- * Zone fields a space understands. Cards describe their zone shape in `card.zones` (e.g. "Zone = {id, rect:[x0,y0,x1,y1)...}");
- * without one, capabilities decide (graph-like spaces link zones by exits; positional ones bound them).
- * @param {{ zones?: unknown, views?: string[] }} card @param {string[]} caps @param {Record<string, unknown>} config @returns {ZoneShape}
+ * The procedural skeleton: the preset the play spec and the chosen cards compose (presets.js). Without a play spec
+ * it is the story preset (zones visited in act order, gated progression, a finale), as before.
  */
-function zoneShape(card, caps, config) {
-  const text = typeof card.zones === 'string' ? card.zones : '';
-  const extent = [config.size, config.bounds].find(/** @returns {v is number[]} */ (/** @type {unknown} */ v) => Array.isArray(v) && v.length >= 2 && v.every(Number.isFinite)) || null;
-  if (text) return { exits: /exits/.test(text), rect: /rect/.test(text), range: /range/.test(text), bounds: /bounds/.test(text), slot: /slot/.test(text), extent, length: Number(config.length) || 0 };
-  return { exits: caps.includes('navigate') && !caps.includes('overlap'), rect: !caps.includes('navigate') || caps.includes('overlap'), bounds: (card.views || []).some(v => v === '1p' || v === '3p'), extent };
-}
-/** Lay n zones side by side across the space's extent (or 16-unit cells when it has none). @param {OutlineZone} z @param {number} i @param {number} n @param {ZoneShape} shape */
-function placeZone(z, i, n, shape) {
-  const [W, H] = shape.extent || [16 * n, 16];
-  if (shape.rect) { const w = Math.max(1, Math.floor(W / n)); z.rect = [i * w, 0, i === n - 1 ? W : (i + 1) * w, H]; }
-  if (shape.range) { const L = shape.length || 40 * n, w = L / n; z.range = [+(i * w).toFixed(2), +((i + 1) * w).toFixed(2)]; }
-  if (shape.bounds) z.bounds = { min: [i * 64, 0, 0], max: [i * 64 + 64, 64, 64] };
-}
-
-/**
- * The procedural skeleton: spaces from the selection with a zone graph, systems and graphics
- * bound as selected, a storyboard visiting every zone in act order, gated progression with key
- * items when the catalogue offers an item vocabulary and the space supports gated exits, and an ending.
- * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} args
- * @returns {ProceduralOutline}
- */
-export function proceduralOutline({ decomposition, selection, registry, logic, seed, prompt = '' }) {
-  const state = { rng: seed >>> 0 || 1 };
-  const rand = () => random(state);
-  const vocab = vocabIndex(registry);
-  const hasItems = Boolean(vocab.effects.give_item && vocab.predicates.item);
-  const hasStory = selection.systems.some(id => (registry.get(id)?.card.reads || []).includes('plot.storyboard'));
-  const words = [...new Set((`${decomposition.title} ${decomposition.premise} ${prompt}`.match(/[A-Za-z]{4,}/g) || []).filter(w => !STOP.has(w.toLowerCase())))];
-  const cap = (/** @type {string} */ w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
-  const usedNames = new Set();
-  const placeName = (/** @type {number} */ i) => {
-    for (let k = 0; k < 8; k++) {
-      const n = `${words.length ? cap(words[Math.floor(rand() * words.length)]) + ' ' : ''}${PLACES[Math.floor(rand() * PLACES.length)]}`;
-      if (!usedNames.has(n)) { usedNames.add(n); return n; }
-    }
-    return `Place ${i + 1}`;
-  };
-  /** @type {OutlineSpace[]} */
-  const spaces = selection.spaces.map((s, si) => {
-    const card = registry.get(s.use)?.card || {};
-    const shape = zoneShape(card, s.caps, { ...defaultsOf(card), ...(s.with || {}) });
-    const n = si === 0 ? decomposition.zones : 2;
-    /** @type {string[]} */
-    const ids = [];
-    const zones = Array.from({ length: n }, (_, i) => {
-      const name = placeName(i + si * 10);
-      let id = slug(name); while (ids.includes(id)) id += '_b'; ids.push(id);
-      /** @type {OutlineZone} */
-      const z = { id, name, description: `${name}${decomposition.tone ? `, ${decomposition.tone}` : ''}.` };
-      placeZone(z, i, n, shape);
-      return z;
-    });
-    if (shape.exits) zones.forEach((z, i) => {
-      z.exits = [];
-      if (i > 0) z.exits.push({ to: zones[i - 1].id });
-      if (i < zones.length - 1) z.exits.push({ to: zones[i + 1].id });
-      if (i > 1 && i % 3 === 0) { z.exits.push({ to: zones[i - 2].id }); zones[i - 2].exits?.push({ to: z.id }); }
-    });
-    const generators = selection.generators.filter(g => g.space === s.id).map(g => ({ use: g.id }));
-    return { id: s.id, use: s.use, ...(Object.keys(s.with || {}).length ? { with: s.with } : {}), zones, ...(generators.length ? { generators } : {}), _shape: shape };
-  });
-  const primary = spaces[0];
-  /** @type {Array<{ id: string, name: string }>} */
-  const items = [];
-  /** @type {OutlineAct[]} */
-  const acts = [];
-  const actCount = Math.max(1, Math.min(decomposition.acts, primary.zones.length - 1));
-  const perAct = Math.ceil((primary.zones.length - 1) / actCount);
-  const guide = decomposition.references.find(r => r.kind === 'character')?.name || 'Guide';
-  const characters = [{ id: slug(guide), name: guide, role: 'guide' }];
-  if (hasStory) {
-    acts.push({ id: 'act_1', title: 'Arrival', beats: [{ id: 'arrival', title: decomposition.title, do: [{ do: 'say', character: characters[0].id, text: decomposition.premise.slice(0, 220) }] }] });
-    primary.zones.slice(1).forEach((z, i) => {
-      const a = Math.min(actCount - 1, Math.floor(i / perAct));
-      acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-      /** @type {OutlineBeat} */
-      const beat = { id: `reach_${z.id}`, title: z.name, when: { zone: z.id }, do: [{ do: 'say', character: characters[0].id, text: `${z.name}. Keep going.` }] };
-      // Key items gate the next act's first exit on spaces with gated exits.
-      const lastOfAct = (i + 1) % perAct === 0 && i + 1 < primary.zones.length - 1;
-      if (hasItems && primary._shape?.exits && lastOfAct) {
-        const key = `${z.id}_key`, next = primary.zones[i + 2];
-        items.push({ id: key, name: `${z.name} key` });
-        beat.do.push({ do: 'give_item', item: key });
-        const exit = z.exits?.find(x => x.to === next.id); if (exit) exit.gate = { item: key };
-      }
-      acts[a].beats.push(beat);
-    });
-    for (let a = 0; a < actCount; a++) acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-    const last = acts[acts.length - 1], finalZone = primary.zones[primary.zones.length - 1];
-    // A second space (one primary can't host a chosen primitive) is visited before the end.
-    for (const extra of spaces.slice(1)) {
-      last.beats.push({ id: `enter_${extra.id}`, after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, when: { zone: finalZone.id }, do: [{ do: 'teleport', space: extra.id, zone: extra.zones[0].id }] });
-      for (const b of last.beats) if (b.after === undefined) delete b.after;
-    }
-    const endZone = spaces.length > 1 ? spaces[spaces.length - 1].zones[0] : finalZone;
-    last.beats.push({ id: 'finale', title: 'Finale', after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, ...(spaces.length > 1 ? {} : { when: { zone: endZone.id } }), do: [{ do: 'end_game', ending: 'victory' }] });
-    for (const b of last.beats) if (b.after === undefined) delete b.after;
-  }
-  const primaryShape = /** @type {ZoneShape} */ (primary._shape);
-  for (const s of spaces) delete s._shape;
-  // A draft for repair (views is { primary, alternates }, as documents write it).
-  /** @type {Omit<Doc, 'views' | 'graphics'> & { views: { primary: string, alternates: string[] }, graphics?: Instance[] }} */
-  const doc = {
-    schema: DOC_SCHEMA, id: slug(decomposition.title, '-'), title: decomposition.title, logline: decomposition.premise.split(/(?<=\.)\s/)[0].slice(0, 160), seed,
-    views: { primary: decomposition.views[0] || registry.get(primary.use)?.card.views?.[0] || 'any', alternates: decomposition.views.slice(1) },
-    spaces,
-    systems: selection.systems.map(id => ({ use: id, ...(selection.bind[id] ? { space: selection.bind[id] } : {}) })),
-    graphics: selection.graphics.map(g => ({ use: g.id, ...(g.space ? { space: g.space } : {}) })),
-    plot: { premise: decomposition.premise, characters, ...(hasStory ? { storyboard: { acts }, endings: [{ id: 'victory', title: 'Victory', text: `${decomposition.title}: the end.`, outcome: 'won' }] } : {}) },
-    content: { ...(items.length ? { items } : {}), archetypes: [{ id: 'hero', components: { name: 'You' } }] },
-    player: { archetype: 'hero', space: primary.id, at: primaryShape.exits ? primary.zones[0].id : zoneStart(primary.zones[0]) },
-  };
-  if (!doc.graphics?.length) delete doc.graphics;
-  // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
-  const scaffolded = configureGenerators(doc, registry);
-  const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
-  const repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true });
-  // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
-  const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
-  const rest = { errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems } };
-  return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: true, ...rest } : { doc: repaired.doc, ok: false, ...rest };
-}
-/**
- * A start position inside a zone (bounds, rect or range), else null. Zones of a model draft are unchecked: a shape
- * that is not a list of coordinates is skipped.
- * @param {unknown} z @returns {number[] | null}
- */
-const zoneStart = z => {
-  const min = prop(prop(z, 'bounds'), 'min'), rect = prop(z, 'rect'), range = prop(z, 'range');
-  const nums = (/** @type {unknown[]} */ v) => v.map(Number);
-  if (isList(min)) { const m = nums(min); return [m[0] + 1, m[1] + 1, m[2] + 1]; }
-  if (isList(rect)) { const r = nums(rect); return [r[0] + Math.min(1, (r[2] - r[0]) / 2), r[1] + Math.min(1, (r[3] - r[1]) / 2)]; }
-  if (isList(range)) return [Number(range[0]) + 0.5, 0, 0];
-  return null;
-};
+/** @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec @returns {ProceduralOutline} */
+export function proceduralOutline(spec) { return /** @type {ProceduralOutline} */ (/** @type {unknown} */ (preset(spec))); }
 
 /**
  * Player agency, checked empirically: the skeleton is booted headless and must offer the player
@@ -229,6 +97,9 @@ const zoneStart = z => {
 export async function ensureAgency({ decomposition, selection, registry, logic, seed, prompt = '', decisions = null, tries = 4 }) {
   /** @type {Array<{ spaces: string[], added?: string, options: number | null, ok: boolean }>} */
   const attempts = [];
+  // Agency is an avatar's question: without one, the player acts through the mode (moves, cards, cells), whose options
+  // exist once the model has written its content. Nothing to add here, and no reason to change the space.
+  if (decomposition.core && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
   let current = selection;
   /** @type {string[]} */
   let excluded = [];
@@ -301,20 +172,6 @@ export function fewShot(registry, { maxChars = 9000 } = {}) {
 }
 
 /**
- * Primitives bound to a core mechanic: never isolated or dropped; their errors go back to the model.
- * @param {{ mechanics?: Array<{ importance?: string, primitives?: string[] }>, systems?: string[] } | null | undefined} selection
- * @param {RegistryLike | null} [registry] @returns {Set<string>}
- */
-export function coreOf(selection, registry = null) {
-  /** @type {Set<string>} */
-  const ids = new Set();
-  for (const m of selection?.mechanics || []) if (m.importance === 'core') for (const id of m.primitives || []) if (!isSpace(id)) ids.add(id);
-  // A core primitive's requirements are core too (removing melee's health would remove melee).
-  if (registry) for (let grew = true; grew;) { grew = false; for (const id of [...ids]) for (const r of registry.get(id)?.card.requires?.primitives || []) { const s = [...(selection?.systems || [])].find(x => x === r || x.startsWith(r + '.')); if (s && !ids.has(s)) { ids.add(s); grew = true; } } }
-  return ids;
-}
-
-/**
  * @param {RegistryLike} registry @param {LogicLike} logic @param {Selection} selection
  * @param {{ systems?: string[], contracts?: MergedContract[] } | null} [form] the outline form (outline-form.js) @returns {string}
  */
@@ -324,7 +181,7 @@ export function outlineSystem(registry, logic, selection, form = null) {
   return `You write game outlines for a kernel where every game is JSON composed of primitives (document schema ${DOC_SCHEMA}). There are no genre engines: mechanics come only from primitives in the catalogue below, and a primitive with no content is a hollow game.
 
 You fill a FORM (a JSON object matching the given schema exactly). The spaces, views and chosen primitives are fixed by the selection; you write everything that makes this idea a real, full game:
-- spaces.<id>.zones: named zones, each different from the others in what is there (terrain, hazards, residents, enemies, treasures). Exits/gates only where the schema has them.
+- spaces.<id>.zones (only where the schema has them: a board or a card table has none): named zones, each different from the others in what is there (terrain, hazards, residents, enemies, treasures). Exits/gates only where the schema has them. On a space without zones, spawns name cells (at_json).
 - systems.<primitive id>.with: each chosen primitive's params, tuned to the idea (null = the card's default). Primitives that keep data in their params (racers, waves, crops, stages, shops, bosses, areas...) need that data here.
 - archetypes: EVERY kind of entity the game needs (enemies with health and behavior, creatures, pickups, props, vehicles, rivals), each with the components its role needs. An archetype with only a name is hollow.
 - spawns: where those entities appear: each zone gets its own mix (count = min..max alive).
@@ -396,11 +253,12 @@ const isDocShape = x => isObj(x) && (Array.isArray(x.spaces) || x.schema === DOC
  * offline mode. Primitives of core mechanics are never isolated.
  * @param {{ writer?: Writer | null, prompt: string, answers?: Array<{ question?: unknown, answer?: unknown }>, decomposition: Decomposition, selection: Selection,
  *   registry: RegistryLike, logic: LogicLike, seed: number, maxRounds?: number, verify?: boolean, verifyBudgetMs?: number, playtestMs?: number,
- *   protect?: Set<string> | null }} args
+ *   protect?: Set<string> | null, forms?: 'split' | 'single', escalate?: Writer | null }} args
  * @returns {Promise<OutlineResult>}
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null }) {
-  const keep = protect || coreOf(selection, registry);
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null, forms = 'split', escalate = null }) {
+  // The core: mechanics' gameplay/plot primitives and the play spec's mode (and the primitive its params live on).
+  const keep = protect || coreOf({ ...selection, mode: decomposition.core ? modeOf(registry, decomposition.core.mode) : null }, registry);
   /** @param {Doc} doc @returns {Promise<Gate & { problems: VerifyProblem[], v: Verification }>} */
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
@@ -437,26 +295,82 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   let best = null;
   /** @type {ProblemLike[] | null} */
   let lastProblems = null;
+  // Small forms (forms 'split'): every group is its own short strict call, all of a wave in parallel; a repair round
+  // re-asks only the groups its problems point at, with only those problems. A group the spec model fails twice is
+  // retried once on the escalation writer (effort low). forms 'single' asks the whole form in one call.
+  /** @type {Record<string, unknown>} */
+  let merged = {};
+  /** @type {Record<string, number>} */
+  const failures = {};
+  /** @type {Array<{ group: string, ms: number, model: string | null, escalated?: boolean, error?: string }>} */
+  let calls = [];
+  const groups = forms === 'split' ? form.groups : [];
+  /** Ids the other parts use, so a small form keeps references consistent. */
+  const known = () => JSON.stringify({ zones: list(prop(merged, 'spaces')).length ? null : undefined, archetypes: list(prop(merged, 'archetypes')).map(a => prop(a, 'id')), items: list(prop(merged, 'items')).map(a => prop(a, 'id')), characters: list(prop(merged, 'characters')).map(a => prop(a, 'id')),
+    zonesByScaffold: scaffold.spaces.map(sp => ({ space: sp.id, zones: (sp.zones || []).map(z => z.id) })) });
+  /** @param {import('./outline-form.js').FormGroup} g @param {ProblemLike[]} problems */
+  const askGroup = async (g, problems) => {
+    const t0 = performance.now();
+    const w = (failures[g.id] || 0) >= 2 && escalate ? escalate : writer;
+    const current = Object.fromEntries(g.keys.map(k => [k, prop(merged, k)]).filter(([, v]) => v !== undefined));
+    // Sections a content pack already fills: the model themes them (names, flavour, which ones), keeping the numbers valid.
+    const pack = g.keys.filter(k => k.startsWith('section_')).map(k => { const [root, key] = k.slice(8).split('_'); return prop(prop(scaffold, root), key); }).find(v => v !== undefined);
+    const ask = `${base}
+
+Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are written separately; keep zone ids from the scaffold and use these ids where you refer to other parts: ${known()}).${pack !== undefined ? `\nA mechanically valid default is provided; keep its ids and numbers valid, theme its names and flavour to the idea, and add or drop entries only as the idea needs:\n${JSON.stringify(pack).slice(0, 6000)}` : ''}${problems.length ? `\n\nYour previous answer for this part failed checks (fix each one):\n${describeProblems(problems, null)}\nPrevious answer:\n${JSON.stringify(current).slice(0, 12000)}` : ''}`;
+    try {
+      const reply = await /** @type {Writer} */ (w).complete({ system, user: ask, schema: g.schema, ...(w === escalate ? { effort: 'low' } : {}) });
+      const part = parseReply(reply.text);
+      model = reply.model;
+      if (isObj(part)) for (const k of g.keys) if (part[k] !== undefined) merged[k] = part[k];
+      calls.push({ group: g.id, ms: reply.ms ?? Math.round(performance.now() - t0), model: reply.model || null, ...(w === escalate ? { escalated: true } : {}) });
+      return { ok: true, value: part };
+    } catch (error) {
+      calls.push({ group: g.id, ms: Math.round(performance.now() - t0), model: null, error: String(prop(error, 'message') || error).slice(0, 120) });
+      return { ok: false, error };
+    }
+  };
+  /** @type {Map<string, ProblemLike[]>} */
+  let pending = new Map();
   for (let round = 0; round <= maxRounds; round++) {
     /** @type {unknown} */
     let value;
     const t = performance.now();
-    try {
-      const reply = await writer.complete({ system, user, schema: form.schema });
-      modelMs += reply.ms ?? Math.round(performance.now() - t); model = reply.model;
-      value = parseReply(reply.text);
-    } catch (error) {
-      const message = String(prop(error, 'message') || error), code = prop(error, 'code');
-      rounds.push({ kind: round ? 'model_repair' : 'model', ok: false, error: message.slice(0, 160), ms: Math.round(performance.now() - t) });
-      lastProblems = [{ code: typeof code === 'string' && code ? code : 'model_failed', path: '$', message: message.slice(0, 200) }];
-      if (code !== 'model_output_not_json') break;
-      user = `${base}\n\nYour previous reply was not one JSON object (${message.slice(0, 120)}). Reply with the form as one JSON object.`;
-      continue;
+    calls = [];
+    if (groups.length) {
+      // Round 0 asks every group (wave 1 in parallel, then wave 2); later rounds only the groups with problems.
+      const todo = round === 0 ? groups : groups.filter(g => pending.has(g.id));
+      for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [])));
+      const ms = calls.reduce((m, c) => Math.max(m, c.ms), 0);
+      modelMs += ms;
+      // A writer that answers with a whole document (older prompts and fakes) is a draft as is.
+      const docShaped = calls.length && isDocShape(merged) ? merged : null;
+      if (!calls.some(c => !c.error) && round === 0) {
+        rounds.push({ kind: 'model', ok: false, error: calls[0]?.error || 'no answer', ms: Math.round(performance.now() - t) });
+        lastProblems = [{ code: 'model_failed', path: '$', message: String(calls[0]?.error || 'no answer') }];
+        break;
+      }
+      value = docShaped || merged;
+    } else {
+      try {
+        const reply = await writer.complete({ system, user, schema: form.schema });
+        modelMs += reply.ms ?? Math.round(performance.now() - t); model = reply.model;
+        value = parseReply(reply.text);
+      } catch (error) {
+        const message = String(prop(error, 'message') || error), code = prop(error, 'code');
+        rounds.push({ kind: round ? 'model_repair' : 'model', ok: false, error: message.slice(0, 160), ms: Math.round(performance.now() - t) });
+        lastProblems = [{ code: typeof code === 'string' && code ? code : 'model_failed', path: '$', message: message.slice(0, 200) }];
+        if (code !== 'model_output_not_json') break;
+        user = `${base}\n\nYour previous reply was not one JSON object (${message.slice(0, 120)}). Reply with the form as one JSON object.`;
+        continue;
+      }
     }
     // A reply in the document's own shape (older prompts, some writers) is a draft as is; otherwise it is the form.
-    const draft = isDocShape(value) ? value : form.toDoc(value);
+    const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
     keepPlayer(draft, skeleton.doc);
+    // The core loop's wiring is code's: whatever the model wrote, the mode applies and its win/lose end the game.
+    Object.assign(draft, wireCore(draft, decomposition, registry).doc);
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
     for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
@@ -489,7 +403,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     const fixes = repaired.fixes.length;
     if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
     /** @type {OutlineRound} */
-    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
     rounds.push(entry);
     last = repaired;
     /** @type {ProblemLike[]} */
@@ -505,15 +419,32 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       entry.staticErrors = staticErrors.length;
       const content = populateProblems(playable, registry);
       entry.content = content.length;
+      // Completion is a quality signal, not the gate: a game the playtest agent cannot finish goes back to the model with
+      // what the agent saw (no ending reached, events that never happened, a stuck opponent...).
+      const play = /** @type {any} */ (g.v)?.playtest;
+      const unfinished = verify && g.viable && play && !play.winnable ? [{ code: 'playtest_not_completed', path: 'plot.endings', message: `the playtest agent explored ${play.explored ?? '?'} states and reached no winning ending`,
+        hint: `what it found: ${[...new Set((/** @type {any} */ (g.v)?.problems || []).filter((/** @type {any} */ p) => ['playtest', 'strategy', 'plot', 'spatial'].includes(p.stage)).map((/** @type {any} */ p) => `${p.code}${p.message ? ` (${String(p.message).slice(0, 80)})` : ''}`))].slice(0, 6).join('; ') || 'no goal progress'}; make the core loop winnable: reachable targets, an opponent that acts, legal moves, a win wired to an ending` }] : [];
+      entry.completed = play ? Boolean(play.winnable) : null;
       if (g.viable) {
-        const score = content.length + staticErrors.length * 2;
+        const score = content.length + staticErrors.length * 2 + unfinished.length * 3;
         if (!best || score < best.score) best = { score, doc: playable, removed: repaired.removed, verification: g.v, content, round };
         if (!score) break;
       }
-      problems = g.viable ? [...staticNew, ...content] : [...(g.problems || []), ...staticNew];
-    } else problems = repaired.errors;
+      problems = g.viable ? [...staticNew, ...unfinished, ...content] : [...(g.problems || []), ...staticNew];
+    } else problems = [...repaired.errors, ...populateProblems(repaired.doc, registry).slice(0, 8)];
     lastProblems = problems;
     if (round === maxRounds) break;
+    if (groups.length) {
+      // Field-level repair: each problem goes to the small form that owns its slot; unplaced problems to the cast and params.
+      pending = new Map();
+      for (const pr of problems) {
+        const g = groupOfPath(groups, formPath(pr.path || '', repaired.doc)) || null;
+        const ids = g ? [g.id] : ['cast', 'systems'];
+        for (const id of ids) if (groups.some(x => x.id === id)) pending.set(id, [...(pending.get(id) || []), pr]);
+      }
+      for (const id of pending.keys()) failures[id] = (failures[id] || 0) + 1;
+      continue;
+    }
     user = `${base}
 
 Your previous outline failed ${repaired.ok ? (entry.viable === false ? 'verification' : 'the content and plot checks') : 'preflight'} with these problems (stable codes; fix each one in the form):
@@ -522,7 +453,7 @@ Previous outline (your form):
 ${JSON.stringify(value).slice(0, 30000)}
 Return the corrected complete form.`;
   }
-  if (best) return { doc: best.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
+  if (best) return { doc: best.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
   // The model's last draft is often one non-core primitive away from running: isolate it (reported as a gap), but
   // never a core mechanic's primitive, and keep it only if it passes the same gate.
   if (last?.doc) {
@@ -532,7 +463,7 @@ Return the corrected complete form.`;
       /** @type {Gate} */
       const g = verify ? await gate(isolated.doc) : { viable: true };
       rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
-      if (g.viable) return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
+      if (g.viable) return { doc: isolated.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
       lastProblems = g.problems || null;
     } else rounds.push({ kind: 'isolate', ok: false });
   }
@@ -558,4 +489,4 @@ function keepPlayer(draft, skeleton) {
   }
 }
 
-export { seedFrom, isSpace };
+export { seedFrom, isSpace, coreOf };

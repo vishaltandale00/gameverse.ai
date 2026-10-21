@@ -12,12 +12,13 @@ import { seedFrom } from '../kernel/rng.js';
 import { preflight } from '../kernel/document.js';
 import { decomposeIdea, decomposeOffline } from './decompose.js';
 import { selectPrimitives } from './select.js';
-import { writeOutline, ensureAgency, coreOf } from './outline.js';
+import { writeOutline, ensureAgency, coreOf, proceduralOutline } from './outline.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
 import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale } from './doc-revise.js';
 import { contentGrowth } from './revision-check.js';
+import { modeOf } from './modes.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
 import { coreLoopProblems } from './core-loop.js';
@@ -40,7 +41,7 @@ import { obj, prop, str } from '../kernel/guards.js';
 /** New primitives for a gap (the experiments sandbox). Its document is the service's output, checked by the caller's next stage. @typedef {{ fill(request: { doc: unknown, request: string, gap: unknown }): Promise<{ ok: boolean, doc?: unknown, experiment: Record<string, unknown>, problems?: unknown[] }> }} GapService */
 /**
  * @typedef {{ detailConcurrency: number, maxDetailTasks: number, playtestMs: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
- *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number }} PipelineConfig
+ *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, presetFirst: boolean, presetPlaytestMs: number }} PipelineConfig
  */
 /** Stage durations: null when not measured (AGENTS.md). @typedef {Record<string, number | null>} Timings */
 /** @typedef {{ code: string, path?: string, message: string }} PatchProblem */
@@ -52,7 +53,7 @@ import { obj, prop, str } from '../kernel/guards.js';
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze(/** @type {PipelineConfig} */ ({
   detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
-  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250,
+  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, presetFirst: true, presetPlaytestMs: 300,
 }));
 
 const ms = (/** @type {number} */ t) => Math.round(performance.now() - t);
@@ -106,7 +107,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
     ctx.stage('decomposing', { model: spec?.model || 'offline' });
     let t = performance.now();
-    const decomposition = await decomposeIdea({ writer: spec, prompt, answers: job.answers || [] });
+    const decomposition = await decomposeIdea({ writer: spec, prompt, answers: job.answers || [], registry });
     timings.decomposeMs = ms(t);
     checkpoint('decomposition', decomposition);
     ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
@@ -119,9 +120,32 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.selectMs = ms(t);
     checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, completeness: selection.completeness || null, agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider || 'lexical', spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description), agency: agency.agency, agencyAttempts: agency.attempts });
+    const protect = coreOf({ ...selection, mode: decomposition.core ? modeOf(registry, decomposition.core.mode) : null }, registry);
+    // The preset first: the game's structure with its content packs (code only) boots and publishes in about a second;
+    // the themed outline replaces it when the model's small forms are in. Without a model the outline is the preset.
+    /** @type {{ doc: Doc, ms: number } | null} */
+    let presetVersion = null;
+    if (spec && cfg.presetFirst) {
+      const tp = performance.now();
+      const pre = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
+      if (pre.ok) {
+        const pfp = firstPlayable(engageDocument(pre.doc, registry, logic).doc, registry, logic, { seed, protect });
+        if (pfp.ok && pfp.doc) {
+          const pv = await verifyDocument(pfp.doc, registry, logic, { budgetMs: 300, playtestMs: cfg.presetPlaytestMs });
+          if (pv.viable && !coreLoopProblems(pfp.doc, selection.mechanics, registry).length) {
+            timings.presetMs = ms(tp); timings.requestToFirstPlayableMs = ms(t0);
+            await ctx.store.updateMeta(job.gameId, { title: pfp.doc.title, kind: 'kernel' });
+            await ctx.publish({ doc: pfp.doc, stage: 'first_playable', report: { kind: 'kernel', decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps: selection.gaps.map(gapNote), summary: pfp.doc.logline || decomposition.premise, verified: true, verification: summarizeVerify(pv), outline: { source: 'preset', structure: /** @type {any} */ (pre).structure ?? null }, timings: { ...timings } }, provenance: { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), seed, prompt: job.prompt, outlineSource: 'preset' } });
+            ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, source: 'preset' });
+            presetVersion = { doc: pfp.doc, ms: timings.requestToFirstPlayableMs };
+          }
+        }
+      }
+      if (!presetVersion) timings.presetMs = ms(tp);
+    }
     ctx.stage('outlining', { model: spec?.model || 'procedural' });
     t = performance.now();
-    const outline = await writeOutline({ writer: spec, prompt, answers: job.answers || [], decomposition, selection, registry, logic, seed, maxRounds: cfg.outlineRepairRounds });
+    const outline = await writeOutline({ writer: spec, prompt, answers: job.answers || [], decomposition, selection, registry, logic, seed, maxRounds: cfg.outlineRepairRounds, escalate: writers.code || null });
     timings.outlineMs = ms(t); timings.outlineModelMs = spec ? outline.modelMs : null;
     checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated), errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], content: (outline.content || []).map(p => `${p.code} ${p.path}: ${p.message}`).slice(0, 20), doc: outline.doc });
     ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) });
@@ -132,7 +156,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
     const engaged = engageDocument(outline.doc, registry, logic);
     checkpoint('engage', { ok: engaged.ok, applied: engaged.applied, skipped: engaged.skipped, errors: engaged.errors });
-    const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: coreOf(selection, registry) });
+    const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect });
     timings.firstPlayableBuildMs = ms(t);
     if (!fp.ok) checkpoint('firstPlayable', { ok: false, ms: fp.ms, errors: (fp.errors || []).slice(0, 20), problems: (fp.problems || []).slice(0, 20), removed: fp.removed || [] });
     if (!fp.ok) throw Object.assign(Error(`The first playable would not start: ${[...fp.errors, ...fp.problems].slice(0, 3).map(e => e.message || e.code).join('; ')}`), { status: 422 });
@@ -157,9 +181,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     t = performance.now();
     const quality = qualityReport(base, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
-    timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
-    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
+    if (presetVersion) timings.requestToThemedMs = ms(t0); else timings.requestToFirstPlayableMs = ms(t0);
+    await ctx.publish({ doc: current, stage: presetVersion ? 'themed' : 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, structure: /** @type {any} */ (outline).structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    ctx.stage(presetVersion ? 'themed' : 'first_playable', { ms: presetVersion ? timings.requestToThemedMs : timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
 
     // Layer 3: detail patches in parallel; merges are serialized in completion order.
@@ -229,7 +253,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     }
     timings.totalMs = ms(t0);
     ctx.stage('complete', { timings, detail: { proposed: detail.proposed, accepted: detail.accepted, rejected: detail.rejected }, gaps: filled });
-    return { doc: latest, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, base };
+    return { doc: latest, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, structure: /** @type {any} */ (outline).structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, base };
   }
 
   /** @param {JobSpec} job @param {JobContext} ctx */

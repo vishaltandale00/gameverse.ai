@@ -40,7 +40,11 @@ import { isObj, isList, list, strings, obj as asObject, prop } from '../kernel/g
 /** Component slots: the archetype components schema and each component's codec. @typedef {{ schema: ObjectSchema, codecs: Record<string, Codec> }} ComponentSlots */
 /**
  * The outline form: the strict schema, the converter of a filled form (model output) into a draft document, and what it was built from.
- * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], version: string }} OutlineForm
+ * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], groups: FormGroup[], version: string }} OutlineForm
+ */
+/**
+ * One small part of the form, asked for on its own (in parallel with the others; `wave` 2 waits for wave 1's ids).
+ * @typedef {{ id: string, keys: string[], wave: number, schema: ReplySchema }} FormGroup
  */
 
 export const FORM_VERSION = 'outline-form/0.1';
@@ -85,12 +89,12 @@ export function specSchema(spec, depth = 0) {
  */
 export function objectSchema(fields, depth = 0, description) {
   const entries = Object.entries(fields || {});
-  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || i < KEEP) : entries;
+  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || (f?.type === 'list' && (f.min || 0) > 0) || i < KEEP) : entries;
   /** @type {Record<string, JsonSchema>} */
   const props = {};
   /** @type {Record<string, Codec>} */
   const codecs = {};
-  for (const [k, f] of keep) { const s = specSchema(f || {}, depth); props[k] = f?.required || typeof s.codec === 'string' && s.codec !== 'raw' ? s.schema : nul(s.schema); codecs[k] = s.codec; }
+  for (const [k, f] of keep) { const s = specSchema(f || {}, depth); props[k] = f?.required || (f?.type === 'list' && (f.min || 0) > 0) || (typeof s.codec === 'string' && s.codec !== 'raw') ? s.schema : nul(s.schema); codecs[k] = s.codec; }
   const more = entries.length > keep.length;
   if (more) props.more_json = nul(str(`other fields as one JSON object: ${entries.filter(e => !keep.includes(e)).map(([k]) => k).join(', ').slice(0, 300)}`));
   return { schema: obj(props, description), codec: { fields: codecs, more } };
@@ -188,7 +192,8 @@ export function outlineForm({ registry, skeleton, selection = null }) {
       id: str('lowercase slug, unique'), name: str(), description: str('one line: what is here that no other zone has (terrain, hazards, who and what you meet)'),
       ...(exits ? { exits: arr(obj({ to: str('zone id in this space'), gate_json: nul(str(`predicate that must hold to pass (${JSON_HINT}), e.g. {"item":"brass_key"}`)) })) } : {}),
     });
-    spaceProps[s.id] = obj({ zones: arr(zone, `${(s.zones || []).length} or more zones, each distinct`) }, `space ${s.id} (${s.use})`);
+    // A space the preset gave no zones (a board, a card table) has none to name: places exist only where the structure needs them.
+    if ((s.zones || []).length) spaceProps[s.id] = obj({ zones: arr(zone, `${(s.zones || []).length} or more zones, each distinct`) }, `space ${s.id} (${s.use})`);
     layout.push({ id: s.id, exits, count: (s.zones || []).length });
   }
   props.spaces = obj(spaceProps, 'every space of the game, by id');
@@ -201,7 +206,7 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   for (const id of systems) {
     const card = /** @type {RegisteredPrimitive} */ (registry.get(id)).card;
     const slot = paramsSlot(card, { skip: spawnParams(card) });
-    sysProps[id] = obj({ with: slot.schema }, String(card.intent || '').slice(0, 300));
+    sysProps[formKey(id)] = obj({ with: slot.schema }, `${id}: ${String(card.intent || '').slice(0, 300)}`);
     sysCodecs[id] = slot.codec;
   }
   props.systems = obj(sysProps, 'every chosen primitive with its params; null means the default');
@@ -213,21 +218,52 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   Object.assign(props, content);
   // Sections a chosen card's content contract requires are required here too (never an empty "[]").
   const sectionNeeds = new Map(contractsFor(registry, systems).filter(c => c.at).map(c => [c.at, c]));
+  /** @type {Record<string, Codec>} */
+  const sectionCodecs = {};
   for (const sec of sections) {
     const c = sectionNeeds.get(sec);
+    // A card that declares this section's shape (card.data) makes it a strict slot; otherwise JSON text.
+    const declared = used.map(id => /** @type {Record<string, Spec> | undefined} */ (registry.get(id)?.card.data)?.[sec]).find(Boolean);
+    if (declared) { const d = specSchema({ ...declared, ...(c ? { min: Math.max(declared.min || 0, c.min || 1) } : {}) }, 1); props[`section_${sec.replace('.', '_')}`] = d.schema; sectionCodecs[sec] = d.codec; continue; }
     props[`section_${sec.replace('.', '_')}`] = str(c
       ? `${sec} as JSON text. REQUIRED by ${c.uses.join(', ')}: at least ${c.min || 1} entries in the shape the system prompt documents for ${sec}${c.why ? ` (${c.why})` : ''}; never "[]"`
       : `${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
   }
-  props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
+  if (skeleton.plot?.storyboard) props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
   props.endings = arr(obj({ id: str(), title: str(), text: str(), outcome: { type: 'string', enum: ['won', 'lost', 'neutral'] } }));
   props.player = obj({ archetype: str('the player archetype id (an archetypes entry of kind player)'), zone: str('start zone id') });
 
   const schema = { name: 'game_outline', schema: obj(props) };
-  const toDoc = (/** @type {unknown} */ form) => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout });
-  return { schema, toDoc, contracts, systems, sections, version: FORM_VERSION };
+  const toDoc = (/** @type {unknown} */ form) => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout, sectionCodecs });
+  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props), version: FORM_VERSION };
 }
 
+// The small forms the outline is asked in: each a strict schema of a few top-level slots. The world frame, the
+// primitives' params, the cast (archetypes, their spawns, items, characters) and each content section are
+// independent (wave 1, in parallel); the story refers to the cast and places (wave 2).
+const GROUPS = [
+  { id: 'frame', keys: ['title', 'logline', 'premise', 'spaces', 'player', 'endings'], wave: 1 },
+  { id: 'systems', keys: ['systems', 'extra_systems'], wave: 1 },
+  { id: 'cast', keys: ['archetypes', 'spawns', 'items', 'characters'], wave: 1 },
+  { id: 'story', keys: ['acts', 'dialogue', 'quests'], wave: 2 },
+];
+/** The form split into small strict forms (sections get one each). @param {Record<string, JsonSchema>} props @returns {FormGroup[]} */
+export function formGroups(props) {
+  /** @type {FormGroup[]} */
+  const out = [];
+  const pick = (/** @type {string[]} */ keys) => Object.fromEntries(keys.filter(k => props[k]).map(k => [k, props[k]]));
+  for (const g of GROUPS) { const p = pick(g.keys); if (Object.keys(p).length) out.push({ id: g.id, keys: Object.keys(p), wave: g.wave, schema: { name: `game_outline_${g.id}`, schema: obj(p) } }); }
+  for (const k of Object.keys(props)) if (k.startsWith('section_')) out.push({ id: k, keys: [k], wave: 1, schema: { name: `game_outline_${k}`.slice(0, 64), schema: obj({ [k]: props[k] }) } });
+  return out;
+}
+/** The group a form path belongs to (its top-level slot), or null. @param {FormGroup[]} groups @param {string} path */
+export function groupOfPath(groups, path) {
+  const top = String(path || '').split(/[.[]/)[0];
+  return groups.find(g => g.keys.includes(top)) || null;
+}
+
+/** A primitive id as a form property name (strict schemas want plain names: dots become double underscores). @param {string} id */
+export const formKey = id => id.replace(/\./g, '__');
 /** @param {unknown} v */
 const parseJson = v => decode(v, 'json');
 /** @param {unknown} v @returns {unknown[]} */
@@ -245,7 +281,7 @@ export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, 
   const props = {};
   const comps = componentSlots(registry, used);
   props.archetypes = arr(obj({ id: str('lowercase slug'), kind: { type: 'string', enum: ARCH_KINDS }, name: str(), components: comps.schema }), 'every kind of entity: enemies, creatures, pickups, props, vehicles, NPC bodies; give each the components its role needs');
-  if (spawner) props.spawns = arr(obj({ id: str('rule id'), archetype: str('archetype id'), ...(zone ? {} : { zone: str('zone id where they appear') }), min: { type: 'integer' }, max: { type: 'integer' }, respawnSec: nul({ type: 'number', description: '0 = never respawn' }), when_json: nul(str(`predicate that must hold (${JSON_HINT})`)) }), zone ? `what appears in ${zone}: its own enemies, pickups and props` : 'what appears where: every enemy, pickup and prop archetype placed in the zones it belongs to');
+  if (spawner) props.spawns = arr(obj({ id: str('rule id'), archetype: str('archetype id'), ...(zone ? {} : { zone: nul(str('zone id where they appear (null on a space without zones)')), at_json: nul(str('where exactly, as JSON: a point [x, y] or a list of points (cells on a board); null to scatter them in the zone')) }), min: { type: 'integer' }, max: { type: 'integer' }, respawnSec: nul({ type: 'number', description: '0 = never respawn' }), when_json: nul(str(`predicate that must hold (${JSON_HINT})`)) }), zone ? `what appears in ${zone}: its own enemies, pickups and props` : 'what appears where: every enemy, pickup and prop archetype placed in the zones it belongs to');
   props.items = arr(obj({ id: str('lowercase slug'), name: str(), kind: { type: 'string', enum: ITEM_KINDS }, desc: str(), value: nul({ type: 'number' }), more_json: nul(str('other item fields as a JSON object (weapon, use, creature, stats...)')) }));
   props.characters = arr(obj({ id: str('lowercase slug'), name: str(), role: str(), bio: str(), ...(zone ? {} : { home: nul(str('zone id')) }), archetype: nul(str('archetype id for their body, if any')), dialogue: arr(str('dialogue id')) }));
   if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: str('character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(str('character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
@@ -307,7 +343,8 @@ export function contentFromForm(f, { comps, zone = null }) {
   const rules = listOf(f.spawns).filter(isObj).map((r, i) => {
     const lo = typeof r.min === 'number' && Number.isInteger(r.min) ? Math.max(0, r.min) : 1, hi = typeof r.max === 'number' && Number.isInteger(r.max) ? Math.max(lo, r.max) : lo;
     const when = decode(r.when_json, 'strict'), rz = zone || (r.zone ? slug(r.zone) : null);
-    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(rz ? { zone: rz } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(typeof r.respawnSec === 'number' && Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
+    const at = decode(r.at_json, 'strict');
+    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(rz ? { zone: rz } : {}), ...(Array.isArray(at) && at.length ? { at } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(typeof r.respawnSec === 'number' && Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
   }).filter((r, i, a) => a.findIndex(x => x.id === r.id) === i);
   return { archetypes, items, characters, dialogue, quests, rules };
 }
@@ -351,10 +388,10 @@ const zoneStart = z => {
 /**
  * A filled form -> a game document in the kernel's shape (references are checked later by preflight and repair).
  * @param {unknown} form the model's filled form
- * @param {{ registry: RegistryLike, skeleton: Doc, systems: string[], sysCodecs: Record<string, FieldsCodec>, comps: ComponentSlots, sections: string[], spawner: string | undefined, layout: SpaceLayout[] }} frame
+ * @param {{ registry: RegistryLike, skeleton: Doc, systems: string[], sysCodecs: Record<string, FieldsCodec>, comps: ComponentSlots, sections: string[], spawner: string | undefined, layout: SpaceLayout[], sectionCodecs?: Record<string, Codec> }} frame
  * @returns {Record<string, unknown>} a draft document (unchecked)
  */
-export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout }) {
+export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout, sectionCodecs = {} }) {
   /** @type {Record<string, unknown>} */
   const f = isObj(form) ? form : {};
   const title = typeof f.title === 'string' && f.title.trim() ? f.title.trim() : skeleton.title;
@@ -383,7 +420,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   };
   const skelSys = new Map((skeleton.systems || []).map(s => [s.use, s]));
   for (const id of systems) {
-    const slot = prop(f.systems, id), codec = sysCodecs[id];
+    const slot = prop(f.systems, formKey(id)) ?? prop(f.systems, id), codec = sysCodecs[id];
     const decoded = decode(prop(slot, 'with'), codec), w = isObj(decoded) ? decoded : {};
     const tune = prop(prop(slot, 'with'), 'tune_json');
     if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id)?.card.params?.[k]) w[k] = v; }
@@ -391,6 +428,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     const base = skelSys.get(id) || {};
     // Spawn-rule params keep what the scaffold had (start spawns are re-derived by engage); the form's spawns are added below.
     for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
+    // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
+    for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
     out.systems.push({ use: id, ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
   }
   for (const x of listOf(f.extra_systems)) if (isObj(x) && typeof x.use === 'string' && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {
@@ -410,7 +449,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   if (content.dialogue) out.plot.dialogue = content.dialogue;
   if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {
-    const v = parseJson(f[`section_${sec.replace('.', '_')}`]);
+    const raw = f[`section_${sec.replace('.', '_')}`], v = sectionCodecs[sec] ? decode(raw, sectionCodecs[sec]) : parseJson(raw);
     if (v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length)) continue;
     const [root, key] = sec.split('.');
     const target = root === 'plot' ? out.plot : root === 'content' ? out.content : null; // sections are plot.* or content.*
@@ -448,7 +487,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
 export function formPath(path, doc) {
   const p = String(path || '');
   let m;
-  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = prop(listOf(prop(doc, 'systems'))[+m[1]], 'use'); return use ? `systems["${use}"]${m[2]}` : p; }
+  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = prop(listOf(prop(doc, 'systems'))[+m[1]], 'use'); return use ? `systems.${formKey(String(use))}${m[2]}` : p; }
   if ((m = /^spaces\[(\d+)\]\.zones(.*)$/.exec(p))) { const id = prop(listOf(prop(doc, 'spaces'))[+m[1]], 'id'); return id ? `spaces["${id}"].zones${m[2]}` : p; }
   return p.replace(/^content\.archetypes/, 'archetypes').replace(/^content\.items/, 'items').replace(/^plot\.quests/, 'quests').replace(/^plot\.characters/, 'characters')
     .replace(/^plot\.storyboard\.acts/, 'acts').replace(/^plot\.endings/, 'endings').replace(/^plot\.dialogue\.([a-z0-9_-]+)/, 'dialogue[id=$1]').replace(/^(plot|content)\.([a-zA-Z]+)/, 'section_$1_$2');
