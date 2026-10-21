@@ -27,7 +27,7 @@
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { checkComposition, capsOf } from './compose-check.js';
 import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds, keepMashupAdapters } from './adapters.js';
-import { cardLoop, endsGame, composeLoop } from './loop.js';
+import { cardLoop, endsGame, composeLoop, loopServes } from './loop.js';
 import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, playerChanges, LOOP_CODES } from './loop-check.js';
 import { preset, coreOf, declaredOutcomes, skinSections, innerOf } from './presets.js';
 import { mashupSides } from './play-spec.js';
@@ -305,7 +305,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
     // An inner loop is played its own way (entered from the outer loop): the spec's interaction does not bind it.
     if (need.kind !== 'inner' && !servesInteraction(card, interaction)) return false;
     const loop = cardLoop(card);
-    if (need.kind !== 'inner' && interaction && loop?.interaction && loop.interaction !== interaction && (endsGame(loop.win) || endsGame(loop.lose))) return false;
+    if (need.kind !== 'inner' && !loopServes(loop, interaction) && (endsGame(loop?.win) || endsGame(loop?.lose))) return false;
     return fits(card);
   }).map(card => ({ card, rank: (mechanic ? declaredFit(mechanic, card, { interaction }) ?? 0 : 0) + (sentence ? relevance({ verb: '', description: sentence }, card) : 0) }))
     .sort((a, b) => b.rank - a.rank || a.card.id.localeCompare(b.card.id));
@@ -319,7 +319,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   const mechanicsWith = (/** @type {string} */ id) => (need.kind === 'driver' ? c.mechanics : joinLoop(c, [id], need.join ?? c.loop));
   for (const { card, rank } of pool) {
     if (candidates.length >= MAX_CANDIDATES) break;
-    const b = formBundle({ registry, seed: card.id, systems: c.systems, space: c.space.use, adapters: c.adapters, composes: c.composes, resolve: c.resolve });
+    const b = formBundle({ registry, seed: card.id, systems: c.systems, space: c.space.use, adapters: c.adapters, composes: c.composes, resolve: c.resolve, interaction: need.kind === 'inner' ? null : interaction });
     if (!b.ok) { rejected.push({ id: card.id, why: b.why }); continue; }
     const r = c.resolve(b.members, b.variant);
     if (r.gaps.length) { missingAdapter ??= r.gaps[0]; rejected.push({ id: card.id, why: `needs an adapter no registered primitive provides: ${r.gaps.map(a => a.id).join(', ')}` }); continue; }

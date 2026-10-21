@@ -181,7 +181,7 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
     return { option, why: a.why };
   };
   /** The validity checks on the selection's space (the build's: retrieval.js collectionChecks). */
-  const checksOf = () => { const space = sel.spaces[0]; return collectionChecks({ registry, space: { id: space?.id || 'world', use: space?.use || '' }, variants: [{ with: space?.with || {} }], documented }); };
+  const checksOf = () => { const space = sel.spaces[0]; return collectionChecks({ registry, space: { id: space?.id || 'world', use: space?.use || '' }, variants: [{ with: space?.with || {} }], documented, interaction: decomposition.core?.interaction || null }); };
   /**
    * The adapter instances and bindings the re-planned collection resolves (bindings to the selection's own spaces stay),
    * with the instances realising the mashup relations and the bindings onto their regions kept (keepMashupAdapters).

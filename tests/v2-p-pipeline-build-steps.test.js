@@ -9,7 +9,7 @@ import { preset } from '../v2/planner/presets.js';
 import { diagnose, replan } from '../v2/planner/replan.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
-import { cardLoop, endsGame } from '../v2/planner/loop.js';
+import { cardLoop, endsGame, loopServes } from '../v2/planner/loop.js';
 import { readsOf, drivesOf, loopProblems, LOOP_CODES } from '../v2/planner/loop-check.js';
 import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
@@ -47,7 +47,7 @@ const assertStrict = w => {
 const assertPlayedThisWay = (sel, interaction) => {
   for (const s of loopStepsOf(sel)) for (const c of s.candidates) {
     const loop = cardLoop(card(c.id));
-    assert.ok(!loop?.interaction || loop.interaction === interaction || !(endsGame(loop.win) || endsGame(loop.lose)), `${s.kind}: ${c.id} is played as ${loop?.interaction}`);
+    assert.ok(loopServes(loop, interaction) || !(endsGame(loop?.win) || endsGame(loop?.lose)), `${s.kind}: ${c.id} is played as ${loop?.interactions.join(', ')}`);
   }
 };
 /** The preset added no gameplay or plot primitive that declares a win or drives AI: those are selection's. */

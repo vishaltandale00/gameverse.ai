@@ -215,7 +215,8 @@ export function structureOf(decomposition, selection, registry) {
   const drop = (/** @type {string} */ id, /** @type {string} */ why) => { systems = systems.filter(x => x !== id); removed.push({ use: id, why }); };
   // A loop played through another primitive (card.mode.via) brings it.
   for (const id of core) add(cardLoop(registry.get(id)?.card)?.via, `${id} plays through it`);
-  const declared = core.map(id => cardLoop(registry.get(id)?.card)?.interaction).filter(/** @returns {x is string} */ x => typeof x === 'string');
+  // Each core loop is played in the spec's interaction when it serves it, else in the interactions it declares.
+  const declared = core.flatMap(id => { const l = cardLoop(registry.get(id)?.card); return !l ? [] : spec?.interaction && l.interactions.includes(spec.interaction) ? [spec.interaction] : l.interactions; });
   // Undecided by the spec: an avatar when a core loop declares avatar interaction or the collection moves a body (base locomotion).
   const avatar = spec?.interaction ? isAvatar(spec.interaction) : declared.some(isAvatar) || systems.some(id => registry.get(id)?.card.locomotion === 'base');
   const narrative = typeof spec?.narrative === 'boolean' ? spec.narrative : core.some(id => readsStory(registry, id));

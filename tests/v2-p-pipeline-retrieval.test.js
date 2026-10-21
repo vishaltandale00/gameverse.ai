@@ -186,3 +186,25 @@ test('(e) three unrelated specs: every valid option is offered, each valid on th
     assertValid(b, name);
   }
 });
+
+// (f) A loop declares the set of interactions it serves (card.mode.interaction a list). The live record
+// pac-man-in-a-haunted-mvi1ntkm/failed-1: played avatar-realtime, "collect all the pellets" was never offered the
+// collect primitive (gameplay.collectible declared only avatar-grid), and the build failed.
+const chase = interaction => ideaSpec({ premise: 'Collect all the pellets in a haunted library maze while ghosts chase you.', ref: 'maze chase', views: ['td'], kind: 'tiles-topdown', movement: 'ground',
+  core: { loop: 'maze_chase', interaction, opponent: 'hazards', win: 'collect all the scattered pellets in the maze', lose: 'caught by a ghost', theme: 'haunted library', narrative: false, mashup: [] },
+  mechanics: [['maze_chase', 'core', 'navigate a maze while avoiding enemies'], ['collect_pellets', 'core', 'collect pellets scattered throughout the maze for points'], ['evade_enemies', 'core', 'avoid being caught by enemies that chase the player']] });
+
+test('(f) the collect primitive is offered for a collect mechanic played avatar-realtime and avatar-grid; a cursor-board loop is not', async () => {
+  for (const interaction of ['avatar-realtime', 'avatar-grid']) {
+    const b = await buildSelection({ decomposition: chase(interaction), registry, writer: firstWriter() });
+    const s = b.steps.find(x => x.kind === 'mechanic' && x.mechanic === 'collect_pellets');
+    assert.equal(s.context, interaction);
+    assert.ok(universe(interaction).includes('gameplay.collectible'), `${interaction}: collectible serves it`);
+    const offered = s.outcome === 'covered' ? [s.primitive] : [...s.candidates.map(c => c.id), ...s.rejected.map(r => r.id)];
+    assert.ok(offered.includes('gameplay.collectible'), `${interaction}: ${JSON.stringify(s).slice(0, 400)}`);
+    // A loop played only on a cursor board (a match-three board) is another game here: never offered.
+    for (const x of b.steps.filter(x => x.kind === 'mechanic')) assert.ok(!(x.candidates || []).some(c => c.id === 'gameplay.match'), `${interaction}/${x.mechanic} offers gameplay.match`);
+  }
+  assert.equal(servesContext(registry.get('gameplay.match').card, 'avatar-realtime'), false);
+  assert.equal(servesContext(registry.get('gameplay.match').card, 'cursor-board'), true);
+});

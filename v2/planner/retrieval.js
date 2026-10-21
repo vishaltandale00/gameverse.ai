@@ -20,7 +20,7 @@
 // Nothing here names a primitive, a genre or a game.
 import { resolveAdapters } from './adapters.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
-import { cardLoop } from './loop.js';
+import { cardLoop, loopServes } from './loop.js';
 import { declaredFit, servesInteraction, relevance, tokens, vocabIndex } from './select.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
 import { mashupSides } from './play-spec.js';
@@ -80,9 +80,10 @@ export const adapterLine = a => `${a.id} (provides ${[...a.card.adapts.provides.
  * (the space, the systems on their bound spaces, the adapter instances), keeping its capability, service, requirement
  * and conflict errors. Memoized per call site. The composition is never checked in the compact form where an adapter
  * without an id lends the host what it could project: the document never gets that.
- * @param {{ registry: RegistryLike, space: { id: string, use: string }, variants: Array<{ with: Record<string, unknown> }>, documented?: (section: string) => boolean }} options
+ * `interaction` is the play spec's (compose-check: the input a loop serving it needs is the one for it).
+ * @param {{ registry: RegistryLike, space: { id: string, use: string }, variants: Array<{ with: Record<string, unknown> }>, documented?: (section: string) => boolean, interaction?: string | null }} options
  */
-export function collectionChecks({ registry, space, variants, documented }) {
+export function collectionChecks({ registry, space, variants, documented, interaction = null }) {
   const logic = logicOf(registry);
   /** @type {Map<string, Evaluation>} */
   const memo = new Map();
@@ -91,7 +92,7 @@ export function collectionChecks({ registry, space, variants, documented }) {
     const key = `${v}|${[...new Set(ids)].sort().join(',')}`;
     const hit = memo.get(key); if (hit) return hit;
     const sp = { id: space.id, use: space.use, with: variants[v]?.with || {} };
-    const r = resolveAdapters({ spaces: [sp], systems: ids }, registry, { ...(documented ? { documented } : {}) });
+    const r = resolveAdapters({ spaces: [sp], systems: ids }, registry, { ...(documented ? { documented } : {}), ...(interaction ? { interaction } : {}) });
     /** @type {Map<string, string>} */
     const problems = new Map();
     for (const f of r.result.failures) problems.set(`${f.check}:${f.code}:${f.unit}:${f.need ? `${f.need.kind}:${f.need.item}` : ''}`, `${f.check}: ${f.message}`);
@@ -162,23 +163,27 @@ export function joinedMechanic(d, m) {
 
 /**
  * The interaction a mechanic's options must serve: the play spec's interaction; for a joined concept's mechanic, the
- * interaction its concept's loop primitive declares (card.loop / card.mode interaction), once that is mapped; null
- * (unconstrained) for the joined concept's loop mechanic itself or before its loop is mapped.
+ * interaction its concept's loop primitive is played in (card.loop / card.mode interactions): the play spec's when that
+ * loop serves it, else the first it declares, once that is mapped; null (unconstrained) for the joined concept's loop
+ * mechanic itself or before its loop is mapped.
  * @param {RegistryLike} registry @param {Spec} d @param {Mechanic} m @param {Mapping} mapping @returns {string | null}
  */
 export function interactionContext(registry, d, m, mapping) {
-  if (!joinedMechanic(d, m)) return d.core?.interaction || null;
+  const played = d.core?.interaction || null;
+  if (!joinedMechanic(d, m)) return played;
   const loop = conceptLoopOf(d, m.from);
   if (!loop || loop === m.id) return null;
-  for (const id of mapping[loop]?.primitives || []) { const i = cardLoop(cardOf(registry, id))?.interaction; if (isStr(i) && i !== 'any') return i; }
+  for (const id of mapping[loop]?.primitives || []) {
+    const l = cardLoop(cardOf(registry, id));
+    if (!l?.interactions.length) continue;
+    return played && l.interactions.includes(played) ? played : l.interactions[0];
+  }
   return null;
 }
 
-/** Does a card's declared loop serve an interaction context: no avatar locomotion for non-avatar play, the inputs it lists, and a loop declared for no other interaction. @param {Card | null} card @param {string | null} ctx */
+/** Does a card's declared loop serve an interaction context: no avatar locomotion for non-avatar play, the inputs it lists, and a loop whose declared interactions include it (or that declares none). @param {Card | null} card @param {string | null} ctx */
 export function servesContext(card, ctx) {
-  if (!servesInteraction(card, ctx)) return false;
-  const i = cardLoop(card)?.interaction;
-  return !ctx || !isStr(i) || i === 'any' || i === ctx;
+  return servesInteraction(card, ctx) && loopServes(cardLoop(card), ctx);
 }
 
 /**
@@ -290,7 +295,7 @@ export function validOptions({ registry, decomposition, mechanic: m, mapping, st
   /** @type {Array<{ id: string, why: string }>} */
   const rejected = [];
   for (const f of fits) {
-    const b = formBundle({ registry, seed: f.id, systems, space, adapters, composes: state.composes, resolve: state.resolve });
+    const b = formBundle({ registry, seed: f.id, systems, space, adapters, composes: state.composes, resolve: state.resolve, interaction: context });
     if (!b.ok) { rejected.push({ id: f.id, why: b.why }); continue; }
     const size = b.members.length + b.adapters.length;
     ranked.push({ id: f.id, score: +(f.score - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters, related: f.related, rel: f.rel });

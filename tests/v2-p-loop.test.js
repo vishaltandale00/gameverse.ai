@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, loopOf, composeLoop, winProviders, endsGame } from '../v2/planner/loop.js';
+import { cardLoop, loopOf, composeLoop, winProviders, endsGame, loopServes } from '../v2/planner/loop.js';
 
 const { registry } = buildCatalogue();
 const cards = registry.cards();
@@ -42,6 +42,23 @@ test('card.mode is the richer form: cardLoop merges it under card.loop, field by
   assert.equal(endsGame(battle.win), false);
   const coins = cardLoop(registry.get('gameplay.collectible').card);
   assert.deepEqual(coins.win.applies, { param: 'counters', field: 'clearsLevel', is: true }, 'the counter the win needs');
+});
+
+test('a loop declares the set of interactions it serves: cardLoop reads a string or a list, loopServes tests membership', () => {
+  const coins = cardLoop(registry.get('gameplay.collectible').card);
+  assert.deepEqual(coins.interactions, ['avatar-grid', 'avatar-realtime'], 'counting pickups does not care how the avatar moves');
+  assert.equal(coins.interaction, 'avatar-grid', 'the first entry, for display');
+  for (const i of ['avatar-grid', 'avatar-realtime']) assert.equal(loopServes(coins, i), true, i);
+  assert.equal(loopServes(coins, 'cursor-board'), false);
+  const board = cardLoop(registry.get('gameplay.match').card);
+  assert.deepEqual(board.interactions, ['cursor-board']);
+  assert.equal(loopServes(board, 'avatar-realtime'), false);
+  const listed = cardLoop({ mode: { interaction: ['menu', 'pieces-turns', 'menu', ''] } });
+  assert.deepEqual(listed.interactions, ['menu', 'pieces-turns'], 'a list, deduplicated');
+  const wrapper = cardLoop(registry.get('gameplay.stage.sequence').card);
+  assert.deepEqual(wrapper.interactions, [], "'any': a wrapper takes the interaction of the loop it wraps");
+  assert.equal(loopServes(wrapper, 'cursor-board'), true);
+  assert.equal(loopServes(board, null), true, 'an undecided interaction constrains nothing');
 });
 
 test('loopOf: a document\'s core collection, its progress events and the wins and losses that apply to its config', () => {

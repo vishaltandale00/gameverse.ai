@@ -45,8 +45,11 @@ import { isObj, isList, prop } from '../kernel/guards.js';
 /**
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
- *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null,
+ *   interactions: string[], interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null,
  *   targets: string | null, involves: Record<string, Record<string, string>> }} Loop
+ * `interactions`: the set of interactions the loop is played in (card.loop / card.mode interaction: a string or a list);
+ * empty when it declares none or 'any' (a wrapper takes the interaction of the loop it wraps). `interaction` is its first
+ * entry, for display only: compare a loop's interaction with loopServes / interactions.includes, never by equality.
  * `targets`: the service through which the loop tells each of its AI-controlled participants where to go next (its
  * next checkpoint, the ball): kernel/types.d.ts TargetService; a driver with card.drives.targets steers them by it.
  */
@@ -77,14 +80,14 @@ export function cardLoop(card) {
     return { ...d, ...(side === 'win' && isObj(mode?.applies) ? { applies: /** @type {any} */ (mode.applies) } : {}) };
   };
   const needs = isObj(own?.needs) ? own.needs : isObj(mode?.needs) ? mode.needs : {};
-  const interaction = typeof own?.interaction === 'string' ? own.interaction : typeof mode?.interaction === 'string' && mode.interaction !== 'any' ? mode.interaction : null;
+  const interactions = interactionsOf(own?.interaction ?? mode?.interaction);
   const asList = (/** @type {unknown} */ v) => (isList(v) ? v : typeof v === 'string' ? [v] : null);
   const space = asList(own?.space) || asList(mode?.space) || [];
   return {
     verbs: strs(own?.verbs), progress: [...new Set([...strs(own?.progress), ...strs(mode?.progress)])],
     win: end('win'), lose: end('lose'),
     needs: { content: strs(prop(needs, 'content')), participants: prop(needs, 'participants') ?? null },
-    interaction, opponent: typeof (own?.opponent ?? mode?.opponent) === 'string' ? String(own?.opponent ?? mode?.opponent) : null,
+    interactions, interaction: interactions[0] ?? null, opponent: typeof (own?.opponent ?? mode?.opponent) === 'string' ? String(own?.opponent ?? mode?.opponent) : null,
     space: /** @type {Array<string | string[]>} */ (space.filter(x => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')))),
     via: typeof mode?.via === 'string' ? mode.via : null, bot: typeof mode?.bot === 'string' ? mode.bot : null, wraps: Boolean(mode?.wraps),
     outcome: outcomeOf(own?.outcome),
@@ -92,6 +95,20 @@ export function cardLoop(card) {
     involves: involvesOf(own?.involves),
   };
 }
+
+/**
+ * The interactions a card.loop / card.mode interaction declares: a string or a list of them, 'any' (a wrapper)
+ * and anything that is not a non-empty string left out. @param {unknown} v @returns {string[]}
+ */
+export const interactionsOf = v => [...new Set((isList(v) ? v : [v]).filter(/** @returns {x is string} */ x => typeof x === 'string' && x.length > 0 && x !== 'any'))];
+
+/**
+ * Does a loop serve an interaction? True when its declared set includes it, or when it declares none ('any': a
+ * wrapper serves the interaction of the loop it wraps; or no declaration), and for no interaction (undecided). Use
+ * `loop.interactions.includes(i)` where only a loop declared for the interaction will do.
+ * @param {Loop | null | undefined} loop @param {string | null | undefined} interaction
+ */
+export const loopServes = (loop, interaction) => !loop || !interaction || !loop.interactions.length || loop.interactions.includes(interaction);
 
 /**
  * A loop's declared event participants (card.loop.involves): event -> role -> data field; entries that are not a

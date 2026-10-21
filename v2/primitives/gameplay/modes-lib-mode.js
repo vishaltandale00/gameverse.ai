@@ -4,8 +4,10 @@
 //
 // card.mode = {
 //   loop:        short mode id ('tactics', 'race', 'falling-blocks'...);
-//   interaction: 'avatar-realtime' | 'avatar-grid' | 'pieces-turns' | 'cursor-board' | 'menu'
+//   interaction: the interaction the loop is played in, or the list of every one its code serves:
+//                'avatar-realtime' | 'avatar-grid' | 'pieces-turns' | 'cursor-board' | 'menu'
 //                ('any' only for wrapper modes, which take the interaction of the mode they wrap);
+//                planner/loop.js cardLoop reads it as a set (loop.interactions), loopServes tests it;
 //   opponent:    'none' | 'ai-rival' | 'ai-side' | 'hazards' | 'clock';
 //   space:       preferred spaces, in order: space primitive ids, or capability lists any space providing them satisfies;
 //   needs: {
@@ -50,7 +52,8 @@ export function modesIn(doc, registry) {
 export function modeShapeErrors(id, mode, knownBots = null) {
   const e = [];
   if (!mode.loop || typeof mode.loop !== 'string') e.push(`${id}: mode.loop`);
-  if (!INTERACTIONS.includes(mode.interaction) && !(mode.wraps && mode.interaction === 'any')) e.push(`${id}: mode.interaction '${mode.interaction}'`);
+  const played = Array.isArray(mode.interaction) ? mode.interaction : [mode.interaction];
+  if (!(mode.wraps && mode.interaction === 'any') && (!played.length || new Set(played).size !== played.length || played.some(x => !INTERACTIONS.includes(x)))) e.push(`${id}: mode.interaction '${played.join(', ')}'`);
   if (!OPPONENTS.includes(mode.opponent)) e.push(`${id}: mode.opponent '${mode.opponent}'`);
   if (!Array.isArray(mode.space)) e.push(`${id}: mode.space must be a list`);
   if (!Array.isArray(mode.needs?.content) || !('participants' in (mode.needs || {}))) e.push(`${id}: mode.needs { content, participants }`);

@@ -14,6 +14,9 @@ import { replayMacros } from '../v2/verify/strategies/turn-board.js';
 import { replayRace } from '../v2/verify/strategies/race.js';
 import { modeCatalogue } from '../v2/planner/catalog.js';
 import { modeShapeErrors, modesIn, modeApplies } from '../v2/primitives/gameplay/modes-lib-mode.js';
+import { interactionsOf } from '../v2/planner/loop.js';
+import { fitsInteraction } from '../v2/planner/select.js';
+import { checkComposition } from '../v2/planner/compose-check.js';
 
 const { registry, logic } = catalog();
 const ctxOf = doc => {
@@ -111,6 +114,17 @@ const DOCS = {
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
+// The interactions a mode is played in (card.mode.interaction, one or a set): a mode declared for more than one has a
+// minimal document here for each other one, played that way (its locomotion fits it: select.js fitsInteraction).
+const withMove = (doc, move) => ({ ...doc, systems: doc.systems.map(s => (/^gameplay\.move\./.test(s.use) ? { use: move } : s)) });
+const PLAYED_AS = {
+  collect: { 'avatar-realtime': () => withMove(DOCS.collect(), 'gameplay.move.walk') },
+  story: { 'avatar-grid': () => base('shrine', [{ id: 'g', use: 'engine.space.grid', with: { size: [12, 6] }, zones: [{ id: 'home', rect: [0, 0, 4, 6] }, { id: 'shrine', rect: [8, 0, 12, 6] }] }],
+    [{ use: 'gameplay.move.grid' }, { use: 'plot.storyboard', with: { sequentialActs: false } }, { use: 'plot.ending' }], { archetypes: [{ id: 'hero', components: {} }] },
+    { plot: { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b_shrine', when: { zone: 'shrine' }, do: [{ do: 'set_var', var: 'prayed', value: 1 }] }] }] }, endings: [{ id: 'blessed', title: 'Blessed', when: { beat: 'b_shrine' }, outcome: 'won', epilogue: '.' }] },
+      player: { archetype: 'hero', space: 'g', at: [1, 1] } }) },
+};
+const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loop];
 // Fast settings per bot (a few seeds, shallow searches).
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
@@ -120,9 +134,9 @@ const OPTS = {
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
 const strip = runs => runs.map(({ budget, ...x }) => x);
 
-/** Play a mode's minimal document with the bot its card names: chosen by select, wins, replays. */
-function playMode(loop) {
-  const ctx = ctxOf(DOCS[loop]()), modes = modesIn(ctx.doc, registry), mine = modes.find(m => m.mode.loop === loop);
+/** Play a mode's minimal document (or `make`, one played another way) with the bot its card names: chosen by select, wins, replays. */
+function playMode(loop, make = DOCS[loop]) {
+  const ctx = ctxOf(make()), modes = modesIn(ctx.doc, registry), mine = modes.find(m => m.mode.loop === loop);
   assert.ok(mine, `the ${loop} document declares the mode`);
   const chosen = select(ctx).chosen.map(c => c.s.id);
   assert.ok(chosen.includes(mine.mode.bot) && chosen.every(id => modes.some(m => m.mode.bot === id)), `select() picks the bots of the document's modes (${chosen})`);
@@ -198,3 +212,24 @@ test('mode story: the plot solver reaches a winning ending that replays', () => 
   assert.ok(runs[0].path.length > 0);
   assert.equal(runs[0].reused, false, 'no plot stage ran: the bot searched itself');
 });
+
+test('modes: every interaction a mode declares is one it is played in here, with locomotion and an input serving it', () => {
+  const inputs = registry.ids('engine').filter(id => id.startsWith('engine.input.'));
+  for (const m of modeCatalogue(registry)) {
+    const played = interactionsOf(m.interaction);
+    assert.ok(played.length || (m.wraps && m.interaction === 'any'), `${m.card}: declares the interactions it is played in`);
+    assert.deepEqual(Object.keys(PLAYED_AS[m.mode] || {}).filter(i => !played.includes(i)), [], `${m.card}: a document played in an interaction it does not declare`);
+    assert.equal(new Set(played.map(i => docFor(m.mode, i))).size, played.length, `${m.card}: one minimal document per declared interaction (${played.join(', ')})`);
+    for (const i of played) {
+      const doc = docFor(m.mode, i)();
+      assert.ok(inputs.some(id => (registry.get(id).card.interactions || []).includes(i)), `${m.card}: an input serves ${i}`);
+      for (const s of doc.systems) assert.ok(fitsInteraction(registry.get(s.use)?.card, i), `${m.card} ${i}: ${s.use} moves another way`);
+      const r = checkComposition({ spaces: doc.spaces, systems: doc.systems.map(s => s.use) }, registry, { interaction: i });
+      assert.ok(!r.failures.some(f => /^mode_input/.test(f.code)), `${m.card} ${i}: ${JSON.stringify(r.failures)}`);
+    }
+  }
+});
+
+// The documents played another way than the mode's own one (above): the mode's bot wins them too.
+for (const [loop, ways] of Object.entries(PLAYED_AS)) for (const [interaction, make] of Object.entries(ways))
+  test(`mode ${loop} played ${interaction}: its bot reaches the win`, () => { playMode(loop, make); });

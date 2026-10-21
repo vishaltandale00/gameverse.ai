@@ -5,8 +5,9 @@
 //   - companions the seed's declarations name, when the seed (with its closure) still fails a check: providers of the
 //     services it requires (provides.services), declarers of the sections it reads, engages from or its loop needs
 //     (card.reads, card.engage config sources, card.loop needs.content; card.defines/data/dataShapes), generators of the
-//     world content it needs on the space (card.needs.content, card.spaces), the input whose card.interactions has its
-//     loop's interaction, and the owners of the effects its engagement runs (card.engage *.enter);
+//     world content it needs on the space (card.needs.content, card.spaces), the input whose card.interactions has the
+//     interaction its loop is played in (the play spec's when the loop serves it, else one its loop declares), and
+//     the owners of the effects its engagement runs (card.engage *.enter);
 //   - the adapter instances resolveAdapters (adapters.js) projects the bundle onto the chosen space with (card.adapts).
 // The smallest composing companion set wins (fewest primitives, then declaration order); a bundle never exceeds
 // MAX_BUNDLE primitives. Nothing here names a primitive, a genre or a game.
@@ -65,10 +66,12 @@ const sectionsOf = c => new Set([...(c?.defines || []).map(d => d.at).filter(isS
 
 /**
  * Companions the declarations of `ids` name (see the header), in declaration order, without those in `exclude`.
+ * `interaction` is the one the collection is played in (the play spec's; null when undecided).
  * @param {RegistryLike} registry @param {string[]} ids @param {string} space the bound space primitive @param {Iterable<string>} exclude
+ * @param {string | null} [interaction]
  * @returns {Companion[]}
  */
-export function companionsOf(registry, ids, space, exclude) {
+export function companionsOf(registry, ids, space, exclude, interaction = null) {
   const skip = new Set(exclude);
   /** @type {Map<string, string[]>} */
   const found = new Map();
@@ -88,9 +91,10 @@ export function companionsOf(registry, ids, space, exclude) {
       for (const p of all) if (p !== id && sectionsOf(cardOf(registry, p)).has(section)) add(p, `declares ${section} for ${id}`);
     for (const item of needs.filter(x => !x.includes('.')))
       for (const g of all.filter(isGenerator)) { const gc = cardOf(registry, g); if ((gc?.spaces || []).includes(space) && (gc?.provides?.content || []).includes(item)) add(g, `generates ${item} on ${space} for ${id}`); }
-    const interaction = loop?.interaction;
-    if (isStr(interaction) && interaction !== 'none' && interaction !== 'any')
-      for (const p of all) if (p.startsWith('engine.input.') && (cardOf(registry, p)?.interactions || []).includes(interaction)) add(p, `input for ${id}'s ${interaction} interaction`);
+    // The input for the interaction the loop is played in: the collection's when the loop serves it, else any it declares.
+    const declared = /** @type {string[]} */ (loop?.interactions || []).filter(x => x !== 'none');
+    const played = interaction && declared.includes(interaction) ? [interaction] : declared;
+    for (const i of played) for (const p of all) if (p.startsWith('engine.input.') && (cardOf(registry, p)?.interactions || []).includes(i)) add(p, `input for ${id}'s ${i} interaction`);
     for (const eff of [...(c.engage?.player?.enter || []), ...(c.engage?.actors?.enter || [])]) {
       const owner = isStr(eff?.do) ? effects[eff.do] : undefined;
       if (owner) add(owner, `owns ${eff.do}, which ${id} engages with`);
@@ -127,10 +131,10 @@ export function adapterWhy(registry, inst, space, bind) {
  * @param {{ registry: RegistryLike, seed: string, systems: string[], space: string, adapters: AdapterInstance[],
  *   composes: (ids: string[]) => Composes,
  *   resolve: (ids: string[], variant: number) => { adapters: AdapterInstance[], bind: Record<string, string>, gaps: unknown[] },
- *   limit?: number }} options
+ *   limit?: number, interaction?: string | null }} options
  * @returns {Bundle | { ok: false, why: string }}
  */
-export function formBundle({ registry, seed, systems, space, adapters, composes, resolve, limit = MAX_BUNDLE }) {
+export function formBundle({ registry, seed, systems, space, adapters, composes, resolve, limit = MAX_BUNDLE, interaction = null }) {
   if (systems.includes(seed)) { const r = composes([seed]); return r.ok ? { ok: true, members: [seed], extra: [], adapters: [], variant: r.variant } : r; }
   const closure = requiredBy(registry, [seed], systems);
   if (1 + closure.length > limit) return { ok: false, why: `its smallest bundle (${[seed, ...closure.map(c => c.id)].join(' + ')}) exceeds ${limit} primitives` };
@@ -139,7 +143,7 @@ export function formBundle({ registry, seed, systems, space, adapters, composes,
   let c = composes([seed, ...closure.map(x => x.id)]);
   if (!c.ok) {
     const first = c.why;
-    const pool = companionsOf(registry, [seed, ...closure.map(x => x.id)], space, [...systems, seed, ...closure.map(x => x.id)]);
+    const pool = companionsOf(registry, [seed, ...closure.map(x => x.id)], space, [...systems, seed, ...closure.map(x => x.id)], interaction);
     /** @type {{ extra: Companion[], variant: number } | null} */
     let found = null;
     for (let k = 1; !found && k <= limit - 1 - closure.length && k <= pool.length; k++) for (const set of subsets(pool, k)) {

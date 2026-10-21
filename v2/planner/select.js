@@ -7,7 +7,7 @@
 // when available; otherwise the lexical ranking decides.
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
-import { cardLoop, endsGame } from './loop.js';
+import { cardLoop, endsGame, loopServes } from './loop.js';
 import { isAvatar, mashupProblem, mashupSides, unplayedLoops } from './play-spec.js';
 import { askMashup } from './decompose.js';
 import { resolveAdapters, keepMashupAdapters } from './adapters.js';
@@ -173,13 +173,13 @@ const nameTokens = names => tokens(names.join(' ').replace(/[:_*.]/g, ' '));
 export function declaredFit(mechanic, card, { interaction = null, joined = false, verbs = [] } = {}) {
   const loop = cardLoop(card);
   if (!loop || (!loop.verbs.length && !loop.progress.length) || !servesInteraction(card, interaction)) return null;
-  const other = Boolean(interaction && loop.interaction && loop.interaction !== interaction);
+  const other = !loopServes(loop, interaction);
   if (other && endsGame(loop.win) && !joined) return null;
   const direct = [...new Set(tokens(`${mechanic.verb} ${mechanic.description}`))];
   const hits = (/** @type {string[]} */ words) => { const w = new Set(words); return direct.filter(t => w.has(t) || neighbours(t).some(n => w.has(n))).length; };
   const own = nameTokens(loop.verbs), was = new Set(nameTokens(verbs));
   const declared = hits(own) * 2 + hits(nameTokens(loop.progress)) + Math.min(2, own.filter(t => was.has(t)).length * 2)
-    + (interaction && loop.interaction === interaction ? 3 : other ? -1 : 0)
+    + (interaction && loop.interactions.includes(interaction) ? 3 : other ? -1 : 0)
     + (interaction && card.engage ? (isAvatar(interaction) ? (card.engage.player ? 1 : 0) : (card.engage.join ? 1 : 0)) : 0);
   const score = declared + relevance(mechanic, card);
   return score > 0 ? +score.toFixed(3) : null;
@@ -208,7 +208,7 @@ export function fitInteraction({ mechanics, interaction, registry, cards, joined
     for (const id of off) {
       const card = registry.get(id)?.card;
       const was = cardLoop(card)?.verbs || [];
-      const playedHere = (/** @type {any} */ c) => cardLoop(c)?.interaction === interaction && (!was.length || sharesVerbs(c, was));
+      const playedHere = (/** @type {any} */ c) => Boolean(cardLoop(c)?.interactions.includes(interaction)) && (!was.length || sharesVerbs(c, was));
       const kept = m.primitives.find(x => playedHere(registry.get(x)?.card));
       const found = kept ? null : cards.filter(c => /^(gameplay|plot)\./.test(c.id) && playedHere(c))
         .map(c => ({ id: c.id, score: declaredFit(m, c, { interaction, joined: joined(m.id), verbs: was }) }))
@@ -462,7 +462,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // it cannot host become adapter gaps below rather than pulling the game into another space. A declared space that
   // does not show the idea's views, or a loop the spec does not say is played that way, is not forced.
   const wantViews = decomposition.views || [];
-  const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(l => l && playedAs && l.interaction === playedAs);
+  const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(l => l && playedAs && l.interactions.includes(playedAs));
   const modeSpace = coreLoops.map(l => (l?.space || []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
     && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)))).find(Boolean);
   const prefer = [...chosen].filter(isSpace);
