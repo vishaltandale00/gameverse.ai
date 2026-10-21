@@ -13,9 +13,7 @@ import { pickForm, pickSystem, offeredTemplates, templateLoops } from '../v2/pla
 const { registry } = buildCatalogue();
 
 /** Loops a card declares (card.mode.loop) that no template carries yet. Remove an entry when its template lands. */
-const PENDING = new Set([
-  'story',
-]);
+const PENDING = new Set([]);
 
 const modeCards = registry.cards().filter(c => c.mode);
 /** Every loop the registry's cards declare as their own (wrappers excluded): loop id -> card ids. */

@@ -5,16 +5,16 @@
 // renderer for graph and none spaces, and a readable overlay elsewhere.
 // Endings are left to graphics.ui.menu's results screen when it is present.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, fill, setText, setClass, pulse, later, charName, itemName, zoneName, docZone, titleCase } from './ui-lib.js';
+import { uiHost, fill, setText, setClass, pulse, later, charName, itemName, docZone, zoneName, titleCase, tellsOf, tellWords } from './ui-lib.js';
 import { portraitColor } from './ui-portrait.js';
 import { moveFocus } from './ui-input.js';
 import * as S from './ui-sources.js';
 
 /** Button label for an option: graph moves read as "Go to <zone>". */
+// What a person reads for an option: the text its primitive writes for people (KERNEL_API §2 rt.options `text`);
+// `label` is the solvers' unique key (ids), shown only for an option whose primitive writes no text.
 export function optionLabel(doc, o) {
-  const to = o.actions?.go;
-  if (to && docZone(doc, to)) return `Go to ${zoneName(doc, to)}`;
-  return o.label;
+  return o.text || o.label;
 }
 
 export default {
@@ -73,8 +73,8 @@ export default {
     rt.on('gate_blocked', e => push('note', e.hint || 'Something bars the way.'));
     rt.on('beat', e => { const b = doc().plot?.storyboard?.acts?.flatMap(a => a.beats || []).find(x => x.id === e.beat); if (b?.title) push('beat', b.title); });
     rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); push('act', a?.title || titleCase(e.act)); });
-    rt.on('quest_started', e => push('note', 'New task: ', el('b', { text: doc().plot?.quests?.find(q => q.id === e.quest)?.title || titleCase(e.quest) })));
-    rt.on('journal_added', e => push('note', 'Noted: ', el('b', { text: e.title || titleCase(e.entry) })));
+    // What the document's primitives declare they tell a person (card.tells): clues, conclusions, tasks, notes.
+    for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => { const w = tellWords(doc(), t, e); push('note', w.title ? `${w.label}: ` : w.label, ...(w.title ? [el('b', { text: w.title })] : []), ...(w.detail ? [` ${w.detail}`] : [])); });
     rt.on('content_added', e => push('note', `The world grows: ${e.zones} new places, ${e.beats} new story beats.`));
     rt.on('game_end', e => {
       const end = doc().plot?.endings?.find(x => x.id === (e.ending ?? rt.state.ending));

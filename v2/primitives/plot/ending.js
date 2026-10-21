@@ -21,6 +21,11 @@ export default {
     },
     provides: { events: ['ending_reached', 'ending_reached:*'] },
     reads: ['plot.endings'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.endings': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', required: true }, title: { type: 'string' }, when: { type: 'predicate' }, epilogue: { type: 'string' },
+      cutscene: { type: 'ref', to: 'cutscene' }, do: { type: 'effects' }, outcome: { type: 'string', options: OUTCOMES },
+    } } } },
     // The configuration under which endings reached only through end_game (no `when`) are valid: a loop's lose wired
     // by its effects next to a win evaluated here (planner/presets.js wireLoop).
     untriggered: { param: 'requireWhen', is: false },

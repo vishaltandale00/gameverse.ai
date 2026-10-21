@@ -113,9 +113,9 @@ export function defaultGraphics(doc, registry) {
   add('graphics.ui.menu', { select: players.length > 1 && acts.has('select_character') ? [{ id: 'character', kind: 'character', action: 'select_character' }] : [] });
   if (!textual) add('graphics.ui.hud', defaultHud(doc));
   if (!textual && ['plot.dialogue', 'plot.barks', 'plot.storyboard', 'plot.cutscene', 'plot.events.random'].some(id => uses(doc, id))) add('graphics.ui.dialogue', {});
-  if (uses(doc, 'plot.quest') || uses(doc, 'plot.journal')) {
+  if (uses(doc, 'plot.quest') || uses(doc, 'plot.journal') || uses(doc, 'plot.investigation')) {
     const tags = new Set((doc.plot?.entries || []).map(e => e.tag || 'lore'));
-    const tabs = [uses(doc, 'plot.quest') && 'quests', [...tags].some(t => !/note|bestiary/.test(t)) && 'lore', tags.has('bestiary') || (uses(doc, 'gameplay.combat') && (doc.content?.archetypes || []).some(a => a.kind === 'enemy' || a.kind === 'boss')) ? 'bestiary' : null, uses(doc, 'plot.character') && 'characters', [...tags].some(t => /note/.test(t)) && 'notes'].filter(Boolean);
+    const tabs = [uses(doc, 'plot.quest') && 'quests', uses(doc, 'plot.investigation') && 'clues', [...tags].some(t => !/note|bestiary/.test(t)) && 'lore', tags.has('bestiary') || (uses(doc, 'gameplay.combat') && (doc.content?.archetypes || []).some(a => a.kind === 'enemy' || a.kind === 'boss')) ? 'bestiary' : null, uses(doc, 'plot.character') && 'characters', [...tags].some(t => /note/.test(t)) && 'notes'].filter(Boolean);
     add('graphics.ui.journal', { tabs: tabs.length ? tabs : ['quests'] });
   }
   if (!textual && zones.length >= 3) add('graphics.ui.map', { fog: uses(doc, 'engine.zones') || zones.length > 6, fastTravel: acts.has('fast_travel') });
