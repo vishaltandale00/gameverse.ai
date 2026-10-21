@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { viability } from '../v2/planner/verify-adapter.js';
 
-const play = (over = {}) => ({ winnable: false, explored: 40, timeline: { marksTotal: 0 }, ...over });
+const play = (over = {}) => ({ winnable: false, explored: 40, timeline: { score: { start: 4, high: 4 } }, idle: { score: 4 }, ...over });
 const bot = (over = {}) => ({ id: 'turn-board', reason: "mode 'tactics' (gameplay.turns)", ok: true, proven: ['won 3/3'], metrics: {}, ...over });
 const code = v => v.viability?.split(':')[0] ?? null;
 
@@ -17,8 +17,9 @@ test('a game whose mode bot wins publishes', () => {
   assert.deepEqual(viability(play(), [], { ran: [bot()] }), { viable: true, viability: null });
 });
 
-test('progress without a win publishes (no time-to-finish rule)', () => {
-  assert.equal(viability(play({ timeline: { marksTotal: 3 } }), [], { ran: [bot({ proven: [] })] }).viable, true);
+test('progress without a win publishes (no time-to-finish rule); what idling reaches is not progress', () => {
+  assert.equal(viability(play({ timeline: { score: { start: 4, high: 7 } } }), [], { ran: [bot({ proven: [] })] }).viable, true);
+  assert.equal(viability(play({ timeline: { score: { start: 0, high: 4 } } }), [], { ran: [bot({ proven: [] })] }).viable, false);
 });
 
 test('a world the player cannot act in is blocked', () => {

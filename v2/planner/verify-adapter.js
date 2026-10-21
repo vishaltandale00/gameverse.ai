@@ -73,7 +73,7 @@ const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event
 /** @type {Set<string | undefined>} */
 const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
 /** A strategy run as v2/verify reports it. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string }} BotRun */
-/** @param {unknown} v @returns {v is { marksTotal?: number }} */
+/** @param {unknown} v @returns {v is { score?: { high?: unknown } }} */
 const isTimeline = v => typeof v === 'object' && v !== null;
 /**
  * @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems]
@@ -88,13 +88,16 @@ export function viability(play, problems = [], strategies) {
 
 /** @param {unknown} play @param {VerifyProblem[]} problems @param {{ ran?: BotRun[] } | null} strategies @returns {string[]} */
 function unplayable(play, problems, strategies) {
-  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: unknown } | null} */ (isObjLike(play) ? play : null);
+  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: unknown, idle?: unknown } | null} */ (isObjLike(play) ? play : null);
   if (!pt) return ['not_played: the playtest agent did not play the game'];
   const stuck = problems.find(p => p.code === 'stuck_state');
   if (stuck || (typeof pt.explored === 'number' && pt.explored <= 1)) return [`cannot_act: ${stuck?.message || 'no input moves the game past its first state'}`];
   const bots = (strategies?.ran || []).filter(r => String(r.reason || '').startsWith('mode '));
   if (!bots.length) return ['no_mode_bot: nothing in the game declares its core loop (card.mode), so no bot can prove it plays'];
-  const progressed = Boolean(pt.winnable) || (isTimeline(pt.timeline) && (pt.timeline.marksTotal ?? 0) > 0);
+  // Progress is objective score play reaches beyond what doing nothing reaches (an intro beat is not progress).
+  const high = isTimeline(pt.timeline) ? Number(/** @type {{ score?: { high?: unknown } }} */ (pt.timeline).score?.high ?? NaN) : NaN;
+  const idle = Number(/** @type {{ idle?: { score?: unknown } }} */ (pt).idle?.score ?? 0);
+  const progressed = Boolean(pt.winnable) || (Number.isFinite(high) && high > idle);
   /** @type {string[]} */
   const out = [];
   for (const b of bots) {
