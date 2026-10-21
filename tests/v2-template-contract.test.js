@@ -131,11 +131,14 @@ test('contract controls: a steering frame that turns the kart away from the scre
   assert.ok(r.problems.some(p => p.code === 'direction_mismatch' && /right/.test(p.message)), JSON.stringify(r.problems).slice(0, 600));
 });
 
-test('contract controls: a loop verb no control issues fails controls_missing', async () => {
-  // till as a chosen value with no UI primitive to choose it: no key (a choice) and no control.
+test('contract controls: a loop verb no control issues fails, statically, before anything simulates', async () => {
+  // till as a chosen value with no UI primitive to choose it: no key (a choice) and no control. The composition check
+  // judges the document a person plays with the controls' own reading (v2/verify/controls.js uncontrolledVerbs), so the
+  // static composition stage names the verb; the controls stage (controls_missing) is the same reading after the gate.
   const cat = buildCatalogue([], PRIMITIVES.filter(p => p.id !== 'graphics.ui.choices').map(p => (p.id === 'gameplay.farming' ? { ...p, card: { ...p.card, actionSpace: { till: { type: 'choice', of: 'a cell' } } } } : p)));
   const r = await checkTemplate(farm, cat, { through: 'controls' });
-  assert.ok(r.problems.some(p => p.code === 'controls_missing' && p.verb === 'till'), JSON.stringify(r.problems).slice(0, 600));
+  assert.ok(r.problems.some(p => p.code === 'composition_failed' && p.cause === 'mode' && /'till \(choice\)'/.test(p.message)), JSON.stringify(r.problems).slice(0, 600));
+  assert.equal(r.evidence.gate, null, 'nothing simulated');
 });
 
 test('contract features: a loop verb that does nothing when pressed fails feature_inert, naming the primitive and verb', async () => {

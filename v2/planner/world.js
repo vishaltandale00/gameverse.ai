@@ -22,6 +22,9 @@ import { movementEnvelope } from '../primitives/gameplay/move-lib-envelope.js';
 import { defaultsOf, isGenerator } from './catalog.js';
 import { relevance, LEXICAL_ACCEPT } from './select.js';
 import { isList, isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
+import { OUTLINE_AUTHORS, linkedZones, spaceContent } from './space-content.js';
+
+export { OUTLINE_AUTHORS };
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -93,8 +96,6 @@ export const targets = (registry, id, use) => (registry.get(id)?.card.spaces || 
 const requiredParams = card => Object.entries(card.params || {}).filter(([, s]) => s.required && s.default === undefined).map(([k]) => k);
 /** A generator the planner can configure on its own: a scaffold hook, or no required params. @param {RegistryLike} registry @param {string} id */
 export const configurable = (registry, id) => { const p = generator(registry, id); return Boolean(p) && (typeof p?.scaffold === 'function' || !requiredParams(/** @type {GeneratorPrimitive} */ (p).card).length); };
-/** Content kinds the outline itself authors in every space it writes (zones with their exits). @type {string[]} */
-export const OUTLINE_AUTHORS = ['zones'];
 
 /** @typedef {{ id: string, covers: string[], rank: number[], score: number }} Ranked */
 /**
@@ -189,17 +190,14 @@ export function spacesNeedingWorld(doc, registry) {
 }
 
 // ---------- what a space has ----------
-/** @param {unknown} zones */
-const linkedZones = zones => list(zones).filter(z => { const exits = prop(z, 'exits'); return Array.isArray(exits) && exits.length; }).length;
 /**
- * Content a document space has, statically: what its generators declare, plus what the document authors
- * ('zones': a single zone or zones joined by exits). With a booted world, authored cells and entities count too.
+ * Content a document space has: statically, the one reading the composition check makes of the declarations
+ * (space-content.js spaceContent: what the space carries, its contentParams set, its authored zones, what its
+ * generators and bound systems provide); with a booted world, measured cells and entities count too.
  * @param {Doc} doc @param {RegistryLike} registry @param {SpaceLike} space @param {Runtime | null} [rt] @returns {string[]}
  */
 export function worldContent(doc, registry, space, rt = null) {
-  const have = new Set(objects(space.generators).flatMap(g => contentOfGenerator(registry, g.use)));
-  const zones = list(space.zones);
-  if (zones.length === 1 || linkedZones(zones)) have.add('zones');
+  const have = new Set(spaceContent(registry, doc, space));
   if (rt) { const c = contentOf(rt, str(space.id)); if ((c?.cells ?? 0) > 0) have.add('cells'); if ((c?.entities ?? 0) > 0) have.add('entities'); }
   return [...have];
 }
@@ -272,9 +270,11 @@ export function worldProblems(rt, doc, registry) {
   const out = extentProblems(doc, registry);
   for (const { space, index } of spacesNeedingWorld(doc, registry)) {
     const c = contentOf(rt, space.id); if (!c) continue;
-    const have = worldContent(doc, registry, space, rt), unmet = needSetFor(registry, space, { have, intent: intentOf(doc) }).filter(k => !have.includes(k));
+    // The need set judged is the composition check's: the first one the space meets, else needs.content (never chosen
+    // from the idea's words).
+    const have = worldContent(doc, registry, space, rt), unmet = needSetFor(registry, space, { have }).filter(k => !have.includes(k));
     if (!unmet.length) continue;
-    const plan = planWorld(registry, space, { view: primaryView(doc), have, intent: intentOf(doc) });
+    const plan = planWorld(registry, space, { view: primaryView(doc), have });
     const hint = plan.generators.length ? `add ${plan.generators.join(' + ')} in spaces[${index}].generators (it builds ${unmet.join(', ')})` : `no registered generator targets ${space.use} with ${unmet.join(', ')}: author that content`;
     if (isEmpty(c)) out.push({ code: 'world_empty', path: `spaces[${index}]`, severity: 'error', stage: 'world', space: space.id, missing: unmet,
       message: `space '${space.id}' (${space.use}) is empty: it needs ${unmet.join(' and ')} and nothing builds it, so the player moves through a void`, hint });

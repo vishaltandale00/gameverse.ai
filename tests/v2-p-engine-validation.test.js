@@ -177,7 +177,7 @@ for (const id of ENGINE) for (const name of hostsOf(id)) {
     const fp = firstPlayable(doc, registry, logic, { seed: 7 });
     assert.ok(fp.ok, JSON.stringify(fp.errors));
     assert.deepEqual(fp.removed.map(r => `${r.use}: ${r.why}`), [], 'first playable isolated a primitive');
-    const v = await verifyDocument(fp.doc, registry, logic, { budgetMs: 200, maxStates: 500, playtestMs: 150 });
+    const v = await verifyDocument(fp.doc, registry, logic, { playable: true, budget: { plotStates: 500 } });
     // These are engine test worlds, not games (no win by design): they must not crash; the game gate is tested elsewhere.
     const crash = viability(v.playtest, v.problems);
     assert.equal(crash.viable, true, crash.viability);

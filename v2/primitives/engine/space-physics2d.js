@@ -56,6 +56,8 @@ export default {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'joints', 'dynamics', 'bounds', 'wrap'],
       capabilityMethods: { joints: ['addJoint', 'removeJoint', 'joints', 'setMotor', 'jointAngle'], ...BOUNDS_CAPS },
       events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'contact', 'contact_end', 'impact', 'out_of_bounds', 'out_of_bounds:*', 'zone_added', 'zone_removed', 'zone_moved'],
+      // Its structures can be written in its own params (static geometry): a document with walls has them.
+      contentParams: { structures: ['walls'] },
     },
     at: 'At = [x, y] metres, y up: the body centre of mass. components.body = {size, vel, angle, angVel, shape:{kind:circle,r}|{kind:box,w,h}|{kind:poly,points}|{kind:seg,a,b,r}, type:dynamic|static|kinematic (static:true alias), density=1, restitution=0.2, friction=0.5, sensor, bullet, gravityScale=1, damping, angularDamping=0.05, fixedRotation, category=1, mask=0xffff}; the space fills mass and sleeping.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1) metres, spawn?, tags?, rules?}; membership by body centre',

@@ -66,8 +66,10 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
   const early = [2, 30, 60].map(n => { rt.restore(start); for (let i = 0; i < n && rt.state.status === 'playing'; i++) rt.step({}); return rt.state.status === 'playing' ? rt.snapshot() : null; }).filter(Boolean);
   rt.restore(start);
   // The start and the first second are always tried; the states play reached fill the rest, spread over their order (a
-  // spread over all of them would skip the first second whenever play reached many).
-  const reached = states.filter(Boolean), room = Math.max(0, maxStates - 1 - early.length), picked = [start, ...early];
+  // spread over all of them would skip the first second whenever play reached many). Only states a person can still
+  // act in: a finished game (won, lost, neutral) takes no input, so a press from one can show nothing (the explorer's
+  // sample keeps the states its play ended in).
+  const reached = states.filter(s => s?.status === 'playing'), room = Math.max(0, maxStates - 1 - early.length), picked = [start, ...early];
   for (let i = 0; i < Math.min(room, reached.length); i++) picked.push(reached[Math.floor((i * reached.length) / Math.min(room, reached.length))]);
   const moves = (rt.controls.controls.map?.axes?.move || []).length ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [];
   for (const f of featuresOf(doc, registry)) {

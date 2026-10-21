@@ -27,8 +27,13 @@ export default {
     intent: 'Journal, codex and lore entries from plot.entries, learned by add_entry (or automatically when an entry\'s when holds); `known` and `entries` (count per tag) feed gates and endings.',
     views: ['any'],
     params: {},
+    // What a person is told when these events fire (a story log, a toast): `label`, then the title of the document entry
+    // the event names (`entry`: the section and the event field holding its id), then the entry's `detail` field when set.
+    tells: { journal_added: { label: 'Noted', entry: { at: 'plot.entries', by: 'entry' } } },
     provides: { events: ['journal_added', 'journal_added:*'], services: ['journal'] },
     reads: ['plot.entries'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.entries': { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string', required: true }, tag: { type: 'string' }, when: { type: 'predicate' } } } } },
     defines: [{ kind: 'entry', at: 'plot.entries' }],
   },
   logic(logic) {

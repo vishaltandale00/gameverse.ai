@@ -124,7 +124,9 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const change = String(prop(body, 'change') || '').trim();
       if (!change || change.length > 1000) throw Object.assign(Error('Describe the change in 1–1000 characters.'), { status: 400 });
       await store.updateMeta(m[1], { status: 'generating' });
-      const job = jobs.submit({ gameId: m[1], prompt: str(meta.prompt), change, base: num(meta.latest), kind: 'revise' });
+      // No base: the change applies to the game's latest version when the job runs (a job still running for this game,
+      // or queued before this one, publishes first: jobs.js runs one game's jobs in order).
+      const job = jobs.submit({ gameId: m[1], prompt: str(meta.prompt), change, kind: 'revise' });
       return { gameId: m[1], jobId: job.id };
     }],
     // A mechanic no primitive covers, written as a new primitive and gated in the experiments sandbox.

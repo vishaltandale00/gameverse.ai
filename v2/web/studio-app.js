@@ -419,8 +419,9 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
+  let loaded = false;
   if (!player || !$('#game')) { const fromBuild = Boolean($('#ct-canvas')); const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record, { powerOn: fromBuild }); toast('Your game is ready. Play!'); }
-  else if (player.update(record)) { shownVersion = e.version; toast(String(record.stage).startsWith('detail:') ? `New detail in ${record.stage.slice(7)}.` : `Version ${e.version} loaded.`); }
+  else if ((loaded = player.update(record))) { shownVersion = e.version; toast(loaded === 'extended' ? `New detail in ${String(record.stage).replace(/^detail:/, '')}.` : `Version ${e.version} loaded: restarted from its start with the change.`); }
   else { const { meta } = await api(`/api/v2/games/${e.gameId}`); player?.dispose(); await playView(meta, record); toast(`Version ${e.version} loaded (restarted).`); }
   renderSheet(record);
 });

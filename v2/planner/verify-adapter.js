@@ -170,7 +170,12 @@ export async function verifyDocument(doc, registry, logic, { playable = false, b
   // ones a person gets.
   const pre = preflight(hostDocument(doc, registry), registry, logic);
   const summary = { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms };
-  if (!pre.ok) return { ok: false, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems: [], doc: null, ms: Math.round(performance.now() - started) };
+  // The document a person plays does not preflight: not viable, naming why (the host's additions are checked here too).
+  if (!pre.ok) {
+    const problems = pre.errors.map(e => ({ code: e.code, path: e.path, message: e.message, ...(e.hint ? { hint: e.hint } : {}), severity: 'error', stage: 'preflight' }));
+    return { ok: false, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems, doc: null, viable: false,
+      viability: `preflight_failed: the document a person plays (the host's input and UI added) does not preflight: ${problems.slice(0, 3).map(p => `${p.code} ${p.path}: ${p.message}`).join('; ')}`, ms: Math.round(performance.now() - started) };
+  }
   // source is set by every return below.
   const out = { ok: pre.ok, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems: /** @type {VerifyProblem[]} */ ([]), doc: pre.doc };
   // An empty world can be "completable" (zones are rects, the solver walks the map's solid edges): flag it.
