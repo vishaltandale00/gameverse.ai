@@ -39,7 +39,7 @@ export default {
       koSec: { type: 'number', default: 1.83, min: 0, max: 30, unit: 's', effect: 'KO slow-down before the round ends' },
       roundEndSec: { type: 'number', default: 2.83, min: 0, max: 30, unit: 's' },
       respawnSec: { type: 'number', default: 2, min: 0, max: 30, unit: 's', effect: 'stock mode respawn delay' },
-      spawns: { type: 'list', of: { type: 'json' }, default: [], effect: 'positions for fighters at round start (by fighter order)' },
+      spawns: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, default: [], effect: 'positions in space coordinates for fighters at round start (by fighter order)' },
       onRoundStart: { type: 'effects', default: [], effect: 'run per fighter at each round start (actor = fighter), e.g. heal/revive' },
       onRespawn: { type: 'effects', default: [], effect: 'stock mode: run for a fighter that respawns (actor = fighter)' },
       scoring: { type: 'object', default: { var: 'score', win: 1000, perSecond: 50, health: 1000, perfect: 5000 }, fields: { var: { type: 'string', default: 'score' }, win: { type: 'number', default: 1000 }, perSecond: { type: 'number', default: 50 }, health: { type: 'number', default: 1000 }, perfect: { type: 'number', default: 5000 } }, effect: 'points to the first fighter for won rounds' },
@@ -53,11 +53,17 @@ export default {
     },
     requires: {},
     reads: [],
+    rules: {
+      rounds_time_over: { fields: ['timeOver', 'stocks'], message: "timeOver 'stocks' needs stock mode (stocks > 0)" },
+      rounds_max: { fields: ['maxRounds', 'bestOf'], message: 'maxRounds is 0 (bestOf + 2) or at least the rounds needed to win, ceil(bestOf / 2)' },
+      rounds_timing: { fields: ['fightCallSec', 'introSec'], message: 'fightCallSec is at most introSec: the FIGHT call comes within the intro' },
+    },
     // As an encounter's inner loop: the match waits (autoStart off) and the encounter starts it.
     engage: { encounter: { start: [{ do: 'start_match' }], config: { autoStart: false } } },
   },
   logic(logic) {
     logic.predicate('round', {
+      codes: [{ code: 'round_phase', fields: ['round'], message: `round is true, a phase (${PHASES.join(', ')}) or won, lost, draw`, example: { round: 'overtime' } }],
       check: (p, path, errors) => { if (typeof p.round === 'string' && !PHASES.includes(p.round) && !['won', 'lost', 'draw'].includes(p.round)) errors.push(err('round_phase', path, `round must be a phase (${PHASES.join('|')}) or won|lost|draw`)); },
       test: (p, rt) => {
         const s = rt.state.prim[ID]; if (!s) return false;
