@@ -330,3 +330,18 @@ test('knockback: weak grounded hits only flinch; replay; bad config', () => {
   assert.ok(codes(kbDoc({ bounds: { min: [10, 10], max: [0, 20] } })).includes('knockback_bounds_invalid'));
   assert.ok(codes(kbDoc({ kb: [1, 2] })).includes('param_range'));
 });
+
+// ---------- cell spaces ----------
+test('melee: a sweep on the grid reaches the cell on every side (cell anchors are cell centres)', () => {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const rt = make({ schema: 'gameverse.v2.game/0.2', id: 'sweep', title: 'Sweep', seed: 2,
+      spaces: [{ id: 'g', use: 'engine.space.grid', with: { size: [9, 9] } }],
+      systems: [{ use: 'gameplay.combat.health', with: { iframes: 0 } }, { use: 'gameplay.combat.melee' }, { use: 'engine.spawner', with: { intervalSec: 0, rules: [{ id: 'foe', archetype: 'dummy', at: [4 + dx, 4 + dy], unique: true, activation: 'always', respawnSec: 0 }] } }],
+      content: { archetypes: [{ id: 'hero', components: { health: { max: 10 }, melee: { moves: { w1: { name: 'Sweep', damage: 2, reach: 1.2, arc: 360, startup: 2, active: 4, recovery: 4, units: 'world' } } } } }, { id: 'dummy', kind: 'enemy', components: { health: { max: 9 } } }] },
+      player: { archetype: 'hero', at: [4, 4] } });
+    run(rt, 2);
+    const foe = rt.query('health').find(e => e.archetype === 'dummy');
+    rt.step({ actions: { attack: true } }); run(rt, 12);
+    assert.equal(foe.components.health.hp, 7, `the foe at ${dx},${dy} was hit`);
+  }
+});
