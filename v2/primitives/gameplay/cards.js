@@ -336,23 +336,27 @@ export default {
     }, ID);
 
     rt.options(rt => {
-      const s = st(), o = s.owners.player; if (!o || s.over || turns().current()?.side !== unitSide('player')) return s.reward ? [...s.reward.map(c => ({ label: `pick ${c}`, actions: { pick_card: c } })), { label: 'skip reward', actions: { pick_card: 'skip' } }] : [];
-      const D = defs(), foes = opponentsOf('player'), out = [];
+      // label: the solvers' unique key; text: what a person reads (the document's card and enemy names).
+      const s = st(), o = s.owners.player, D = defs(), named = id => D.get(id)?.name || id, foeName = id => rt.entity(id)?.components.name ?? id;
+      if (!o || s.over || turns().current()?.side !== unitSide('player')) return s.reward ? [...s.reward.map(c => ({ label: `pick ${c}`, text: `Take ${named(c)}`, actions: { pick_card: c } })), { label: 'skip reward', text: 'Skip the reward', actions: { pick_card: 'skip' } }] : [];
+      const foes = opponentsOf('player'), out = [];
       // The targets playCard and attackWith accept: the opposing fighters, their minions, and, while a taunt minion
       // stands, only the taunts for an attack.
       const enemyOwners = Object.keys(s.owners).filter(id => unitSide(id) !== unitSide('player'));
       const minions = enemyOwners.flatMap(id => s.owners[id].board.map(m => m.uid));
       const taunts = enemyOwners.flatMap(id => s.owners[id].board.filter(m => m.keywords.includes('taunt')).map(m => m.uid));
+      const minionName = uid => { for (const id of enemyOwners) { const m = s.owners[id].board.find(x => x.uid === uid); if (m) return named(m.card); } return null; };
+      const targetName = t => (t === 'hero' ? 'the enemy hero' : minionName(t) ?? foeName(t));
       for (const c of o.hand) {
         const d = D.get(c.card); if (!d || (d.cost === -1 ? 0 : d.cost ?? 0) > o.energy || d.unplayable || d.type === 'curse' || d.type === 'status') continue;
         if (d.type === 'minion' && o.board.length >= config.boardSize) continue;
         const kind = d.target ?? (d.type === 'attack' ? 'enemy' : 'none');
         const targets = kind === 'enemy' ? foes : kind === 'minion' ? minions : kind === 'any' ? [...foes, ...minions] : null;
-        if (targets) for (const t of targets) out.push({ label: `play ${c.card} ${c.uid} on ${t}`, actions: { play_card: { uid: c.uid, target: t } } });
-        else out.push({ label: `play ${c.card} ${c.uid}`, actions: { play_card: { uid: c.uid } } });
+        if (targets) for (const t of targets) out.push({ label: `play ${c.card} ${c.uid} on ${t}`, text: `Play ${named(c.card)} on ${targetName(t)}`, actions: { play_card: { uid: c.uid, target: t } } });
+        else out.push({ label: `play ${c.card} ${c.uid}`, text: `Play ${named(c.card)}`, actions: { play_card: { uid: c.uid } } });
       }
       const attackable = taunts.length ? taunts : [...(enemyOwners.length ? ['hero'] : []), ...minions];
-      for (const m of o.board) if (!m.sick && !m.attacked && m.power > 0) for (const t of attackable) out.push({ label: `attack with ${m.card} ${m.uid} on ${t}`, actions: { attack_with: { uid: m.uid, target: t } } });
+      for (const m of o.board) if (!m.sick && !m.attacked && m.power > 0) for (const t of attackable) out.push({ label: `attack with ${m.card} ${m.uid} on ${t}`, text: `Attack ${targetName(t)} with ${named(m.card)}`, actions: { attack_with: { uid: m.uid, target: t } } });
       return out;
     });
 

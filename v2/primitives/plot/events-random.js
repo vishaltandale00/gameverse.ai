@@ -92,7 +92,7 @@ export default {
       const pick = weightedPick(rt, eligible().map(e => ({ e, weight: e.weight ?? 1 })));
       if (pick) trigger(pick.e.id);
     }, ID);
-    rt.options(rt => { const e = events(rt).get(st(rt).pending); return e ? open(e).map(({ c, index }) => ({ label: `event ${e.id}.${index}: ${c.text}`, actions: { event_choice: { index } } })) : []; });
+    rt.options(rt => { const e = events(rt).get(st(rt).pending); return e ? open(e).map(({ c, index }) => ({ label: `event ${e.id}.${index}: ${c.text}`, text: c.text, actions: { event_choice: { index } } })) : []; });
   },
 };
 

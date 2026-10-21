@@ -41,6 +41,9 @@ export default {
       autoDeduce: { type: 'boolean', default: false, effect: 'every deduction resolves as soon as its clues are known' },
       maxWrong: { type: 'integer', default: 0, min: 0, max: 100, effect: 'the case fails (investigation_failed) on this many wrong deductions (0 = never)' },
     },
+    // What a person is told when these events fire (a story log, a toast): `label`, then the title of the document entry
+    // the event names (`entry`: the section and the event field holding its id), then the entry's `detail` field when set.
+    tells: { clue_found: { label: 'Clue', entry: { at: 'plot.clues', by: 'clue' }, detail: 'text' }, deduced: { label: 'Concluded', entry: { at: 'plot.deductions', by: 'deduction' }, detail: 'conclusion' }, investigation_failed: { label: 'Too many wrong theories: the case is lost' } },
     provides: { events: ['clue_found', 'clue_found:*', 'deduced', 'deduced:*', 'investigation_failed'], vars: ['clues.found'], services: ['investigation'], actions: ['deduce'] },
     reads: ['plot.clues', 'plot.deductions'],
     defines: [{ kind: 'clue', at: 'plot.clues' }, { kind: 'deduction', at: 'plot.deductions' }],
@@ -90,6 +93,6 @@ export default {
       for (const c of idx(rt).clues.values()) if (c.when && !s.found[c.id] && rt.test(c.when)) find(rt, c.id);
       for (const d of idx(rt).deductions.values()) if ((d.auto || config.autoDeduce) && ready(d)) deduce(d.id);
     }, ID);
-    rt.options(rt => [...idx(rt).deductions.values()].filter(d => !d.auto && !config.autoDeduce && ready(d)).map(d => ({ label: `deduce ${d.id}`, actions: { deduce: d.id } })));
+    rt.options(rt => [...idx(rt).deductions.values()].filter(d => !d.auto && !config.autoDeduce && ready(d)).map(d => ({ label: `deduce ${d.id}`, text: `Conclude: ${d.title || d.id}`, actions: { deduce: d.id } })));
   },
 };
