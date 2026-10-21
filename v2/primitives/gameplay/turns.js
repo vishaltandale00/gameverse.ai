@@ -94,7 +94,7 @@ export default {
       onRoundLimit: { type: 'effects', default: [], effect: 'when maxRounds is reached' },
     },
     provides: {
-      events: ['turns_start', 'turns_over', 'round_start', 'round_end', 'turn_start', 'turn_start:*', 'turn_end', 'phase_start', 'phase_start:*', 'unit_moved', 'turn_action', 'turn_action:*', 'attack_hit', 'attack_miss', 'attack_crit', 'overwatch_set', 'overwatch_shot', 'unit_downed', 'unit_revived', 'unit_fallen', 'unit_fallen:*', 'side_defeated', 'side_defeated:*', 'turn_invalid', 'intent_submitted'],
+      events: ['turns_start', 'turns_over', 'unit_selected', 'round_start', 'round_end', 'turn_start', 'turn_start:*', 'turn_end', 'phase_start', 'phase_start:*', 'unit_moved', 'turn_action', 'turn_action:*', 'attack_hit', 'attack_miss', 'attack_crit', 'overwatch_set', 'overwatch_shot', 'unit_downed', 'unit_revived', 'unit_fallen', 'unit_fallen:*', 'side_defeated', 'side_defeated:*', 'turn_invalid', 'intent_submitted'],
       vars: ['turns.round', 'turns.ap', 'turns.active'],
       services: ['turns'],
       actions: ['turn_act', 'turn_move', 'end_turn', 'next_phase', 'select_unit'],
@@ -561,7 +561,7 @@ export default {
     rt.action('turn_move', (v, rt) => { const s = st(), id = playerUnit(s, v); if (id) act(s, id, { action: 'move', target: Array.isArray(v) ? v : v.to }); });
     rt.action('end_turn', (v, rt) => { const s = st(); if (s.current && (config.order === 'simultaneous' || control(s.current.side) === 'player')) endTurn(s); });
     rt.action('next_phase', (v, rt) => { const s = st(); if (s.current && control(s.current.side ?? 'player') === 'player') nextPhase(s); });
-    rt.action('select_unit', (v, rt) => { const s = st(); if (s.units[v] && s.current && s.units[v].side === s.current.side && control(s.current.side) === 'player') s.selected = v; });
+    rt.action('select_unit', (v, rt) => { const s = st(); if (s.units[v] && s.current && s.units[v].side === s.current.side && control(s.current.side) === 'player') { s.selected = v; rt.emit('unit_selected', { unit: v, side: s.current.side }); } });
 
     rt.system('rules', rt => {
       const s = st();

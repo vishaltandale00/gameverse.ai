@@ -24,7 +24,8 @@ export function respawn(rt, who) {
 export default {
   id: 'gameplay.checkpoint',
   card: {
-    loop: { verbs: ['fast_travel'], progress: ['checkpoint_set'] },
+    // fast_travel exists only when the instance turns it on (fastTravelBetween).
+    loop: { verbs: ['fast_travel'], verbsOf: config => (config.fastTravelBetween ? ['fast_travel'] : []), progress: ['checkpoint_set'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { fast_travel: { type: 'choice', of: 'an active checkpoint' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

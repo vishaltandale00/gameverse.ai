@@ -27,7 +27,8 @@ import { loopInstances, winOwner, readsOf } from './loop-check.js';
 /** v2/verify's playtest result (the archive sample keeps snapshots). @typedef {{ winnable?: boolean, win?: unknown, losses?: unknown, idle?: unknown, explored?: unknown, framesSimulated?: number, timeline?: unknown, sample?: Array<{ key?: unknown, frames?: unknown, score?: unknown }>, progress?: WinProgress | null, [k: string]: unknown }} PlaytestRun */
 /** How far idling and play moved the win quantity toward the win (verify/playtest.js). @typedef {{ quantity: string, target?: number | null, idle: number | null, high: number | null }} WinProgress */
 /** The quantity a document's core loop's win reads (verify/objective.js winMeasure). @typedef {{ use: string, event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number }} WinQuantity */
-/** v2/verify's verify() report, as far as this adapter reads it. @typedef {SolveLike & { ok?: boolean, plot?: SolveLike | null, solve?: SolveLike | null, problems?: VerifyProblem[], playtest?: PlaytestRun | null, strategies?: { ran?: BotRun[] } | null, timings?: Record<string, number> }} VerifyReport */
+/** The feature checks' report (verify/features.js): one row per primitive the document mixes in. @typedef {{ version: string, table: Array<Record<string, unknown>>, problems: VerifyProblem[] }} FeatureReport */
+/** v2/verify's verify() report, as far as this adapter reads it. @typedef {SolveLike & { ok?: boolean, features?: FeatureReport | null, plot?: SolveLike | null, solve?: SolveLike | null, problems?: VerifyProblem[], playtest?: PlaytestRun | null, strategies?: { ran?: BotRun[] } | null, timings?: Record<string, number> }} VerifyReport */
 /** @typedef {{ verify?: (doc: Doc, registry: RegistryLike, logic: LogicLike, opts: Record<string, unknown>) => Promise<VerifyReport | null | undefined> }} VerifyModule */
 /** @typedef {{ completable: boolean | null | undefined, exhaustive: unknown, endings: Record<string, unknown>, beatsNeverFired: string[], states: number | null }} SolveSummary */
 /**
@@ -43,7 +44,7 @@ import { loopInstances, winOwner, readsOf } from './loop-check.js';
  *   problems: VerifyProblem[], ms: number,
  *   solve?: SolveSummary | ReturnType<typeof solve> | null,
  *   playtest?: { winnable: unknown, win: unknown, losses: unknown, idle: unknown, explored: unknown, framesSimulated: number | null, timeline: unknown, sample: Array<{ key: unknown, frames: unknown, score: unknown }>, progress: WinProgress | null } | null,
- *   viable?: boolean, viability?: string | null, timings?: Record<string, number> | null,
+ *   viable?: boolean, viability?: string | null, timings?: Record<string, number> | null, features?: FeatureReport | null,
  *   playtestRun?: PlaytestRun, quality?: unknown,
  * }} VerificationFields
  */
@@ -108,6 +109,8 @@ function unplayable(play, problems, strategies, loop) {
   /** @type {string[]} */
   const out = [];
   for (const b of strategies?.ran || []) if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);
+  // A feature the document mixes in that does not exist, has no control or does nothing when pressed (verify/features.js).
+  for (const p of problems) if (p.stage === 'features' && p.severity === 'error') out.push(`${p.code}: ${p.message}`);
   // The core loop happens: an event the primitives declare as their loop's progress fires from play (more than idling fires it).
   const fired = pt.eventsFired || {}, idle = pt.idle?.counts || {};
   const played = (/** @type {string} */ e) => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0));
@@ -184,7 +187,7 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
         playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })), progress: pt.progress ?? null } : null,
         ...(playtestMs ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
-        problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
+        problems, timings: r?.timings || null, features: r?.features ?? null, ms: Math.round(performance.now() - started) };
       // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.
       if (pt) Object.defineProperty(result, 'playtestRun', { value: pt, enumerable: false });
       return result;

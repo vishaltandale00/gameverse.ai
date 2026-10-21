@@ -23,10 +23,44 @@ const TECH_WINDOW = 9;
 
 const MOVE_FIELDS = { id: { type: 'string', required: true } };
 
+/**
+ * The compiled moveset of one melee component in a document: { moves, specials, phys } (a fighter preset, the wielded
+ * weapon's moves, the listed or inline moves). Pure: the runtime and the card's verbsOf read it the same way.
+ */
+export function movesetOf(c, doc, config) {
+  const lib = new Map((config.moves || []).map(m => [m.id, m]));
+  const record = (id, m) => base(id, m.name, m.kind || 'action', m.strength || 'light', m);
+  const out = { moves: {}, specials: [], phys: null };
+  if (c.fighter) { const f = compileFighter(c.fighter); Object.assign(out.moves, f.moves); out.specials = f.specials; out.phys = f.phys; }
+  if (c.weapon) { const item = doc?.content?.items?.find(i => i.id === c.weapon); if (item?.weapon) Object.assign(out.moves, compileWeapon(item, { pogo: config.pogo })); }
+  if (Array.isArray(c.moves)) for (const id of c.moves) { if (lib.has(id)) out.moves[id] = record(id, lib.get(id)); }
+  else if (c.moves) for (const [id, m] of Object.entries(c.moves)) out.moves[id] = record(id, m);
+  return out;
+}
+
+/**
+ * The press verbs the player's moveset gives (the presses that resolve to a move, as the runtime's move selection
+ * resolves them), plus block (raising the guard, any moveset): what card.loop.verbsOf offers for one document.
+ */
+export function playerPresses(config, doc) {
+  const hero = (doc?.content?.archetypes || []).find(a => a.id === doc?.player?.archetype), c = hero?.components?.melee;
+  if (!c) return [];
+  const { moves, specials } = movesetOf(c, doc, config), bound = press => Object.entries(c.bind || {}).some(([k, id]) => (k === press || k.endsWith(`_${press}`)) && moves[id]);
+  const out = [];
+  if (moves.w1 || moves['5A'] || moves['2A'] || moves.jA || bound('light')) out.push('attack');
+  if (moves.heavy || moves['5B'] || moves['2B'] || moves.jB || bound('heavy')) out.push('heavy');
+  if (specials.length || bound('special')) out.push('special');
+  if (moves.super || bound('super')) out.push('super');
+  if (moves.throw || bound('throw')) out.push('throw');
+  out.push('block');
+  return out;
+}
+
 export default {
   id: KEY,
   card: {
-    loop: { verbs: ['attack', 'heavy', 'special', 'super', 'throw', 'block'], progress: ['hit', 'combo', 'parried', 'staggered'] },
+    // The player's presses come from its moveset (playerPresses): no heavy key without a heavy move.
+    loop: { verbs: ['attack', 'heavy', 'special', 'super', 'throw', 'block'], verbsOf: (config, doc) => playerPresses(config, doc), progress: ['hit', 'combo', 'parried', 'staggered', 'guard_up'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc"], "min": 1, "placed": 3, "zones": 2, "why": "melee needs opponents with health to hit, placed where the player meets them", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},
@@ -63,7 +97,7 @@ export default {
       friendlyFire: { type: 'boolean', default: false },
       moves: { type: 'list', default: [], of: { type: 'object', fields: MOVE_FIELDS, open: true }, effect: 'move library: frame-data records any archetype can list in components.melee.moves' },
     },
-    provides: { events: ['attack_started', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
+    provides: { events: ['attack_started', 'guard_up', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
     defines: [{ kind: 'move', in: 'moves' }],
@@ -105,8 +139,6 @@ export default {
     const scaleOf = m => (m.units === 'fighter' ? config.fighterScale : 1);
     const bufferF = msFrames(config.bufferMs), comboF = msFrames(config.comboWindowMs), parryF = msFrames(config.parry.window), staggerF = frames(config.parry.stagger);
     rt.caches.meleeCombatFrames = frames(config.combatSec);
-    const lib = new Map(config.moves.map(m => [m.id, m]));
-    const record = (id, m) => base(id, m.name, m.kind || 'action', m.strength || 'light', m);
 
     /** Compiled moveset for an entity: { moves, specials, phys }. Cached per archetype+weapon+doc. */
     const setOf = e => {
@@ -115,11 +147,7 @@ export default {
       const cache = (rt.caches.meleeSets ??= { doc: null, map: new Map() });
       if (cache.doc !== rt.doc) { cache.doc = rt.doc; cache.map = new Map(); }
       if (cache.map.has(key)) return cache.map.get(key);
-      const out = { moves: {}, specials: [], phys: null };
-      if (c.fighter) { const f = compileFighter(c.fighter); Object.assign(out.moves, f.moves); out.specials = f.specials; out.phys = f.phys; }
-      if (c.weapon) { const item = rt.doc.content?.items?.find(i => i.id === c.weapon); if (item?.weapon) Object.assign(out.moves, compileWeapon(item, { pogo: config.pogo })); }
-      if (Array.isArray(c.moves)) for (const id of c.moves) { if (lib.has(id)) out.moves[id] = record(id, lib.get(id)); }
-      else if (c.moves) for (const [id, m] of Object.entries(c.moves)) out.moves[id] = record(id, m);
+      const out = movesetOf(c, rt.doc, config);
       cache.map.set(key, out);
       return out;
     };
@@ -147,7 +175,7 @@ export default {
     const press = (e, kind, value) => {
       const m = st(e);
       m.buffer = { press: kind, value: value === true ? null : value, dir: dirOf(e), at: rt.state.frame };
-      if (kind === 'block') m.blockAt = rt.state.frame;
+      if (kind === 'block') { m.blockAt = rt.state.frame; rt.emit('guard_up', { who: e.id }); } // the guard goes up (held(block) keeps it)
     };
     for (const a of ['attack', 'heavy', 'special', 'super', 'throw', 'block']) rt.action(a, (v, rt) => { const p = rt.player(); if (p?.components.melee) press(p, a === 'attack' ? 'light' : a, v); });
 

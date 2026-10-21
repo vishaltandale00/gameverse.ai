@@ -10,6 +10,10 @@
 //   composition  the static composition check (card declarations only) finds no failure
 //   loop         the loop check finds no problem
 //   gate         the publish gate (verifyDocument with the playtest agents' budget) finds it viable
+//   controls     the document a person plays (the host's input and UI added) gives a control for every verb its loops
+//                declare, and each direction pressed through the controls moves the player the way the view shows it
+//   features     every primitive the document mixes in exists, is controllable and works when its controls are pressed
+//                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
 //                on every world seed in SEEDS through the real controls, and replays to the same runs
 //
@@ -24,6 +28,11 @@ import { tuneTarget } from '../planner/templates.js';
 import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
+import { uncontrolledVerbs } from '../verify/controls.js';
+import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
+import { FEATURE_CODES } from '../verify/features.js';
+import { loopVerbs, verbInstances } from '../primitives/engine/runtime-lib-controls.js';
+import { cardLoop } from '../planner/loop.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
@@ -49,6 +58,8 @@ export const CODES = Object.freeze({
   composition: Object.freeze(['composition_failed']),
   loop: Object.freeze(['loop_problem']),
   gate: Object.freeze(['gate_not_viable']),
+  controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
+  features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
   bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
 });
 export const STAGES = Object.freeze(Object.keys(CODES));
@@ -130,7 +141,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const evidence = { contract: CONTRACT_VERSION, seeds: [...SEEDS], stages: {}, gate: null, bots: [], ms: 0 };
   const problems = [];
   const t = /** @type {any} */ (template);
-  let checked = null, bare = null;
+  let checked = null, bare = null, gateFeatures = null;
   const run = {
     format: () => formatProblems(t),
     tune: () => tuneProblems(t, registry),
@@ -147,7 +158,25 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
     gate: async () => {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };
+      gateFeatures = v.features ?? null;
       return v.viable ? [] : [problem('gate_not_viable', `${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`, { cause: v.viability ?? null })];
+    },
+    // The document a person plays gives a control for every verb its loops declare (in each interaction they are played
+    // in), and pressing each direction moves the player the way the view the host mounts shows it (verify/directions.js).
+    controls: () => {
+      const host = checked.doc, verbs = loopVerbs(host, registry);
+      const interactions = [...new Set(verbInstances(host).flatMap(i => cardLoop(registry.get(i.use)?.card)?.interactions || []))];
+      const out = [];
+      for (const i of interactions.length ? interactions : [null]) for (const v of uncontrolledVerbs(host, registry, verbs, i)) out.push(problem('controls_missing', `no control a person has issues '${v}'${i ? ` in ${i}` : ''}`, { verb: v.split(' ')[0] }));
+      const d = directionProblems(host, registry, playContext(checked, registry, logic).make, SEEDS[0]);
+      evidence.directions = d.evidence;
+      return [...out, ...d.problems.map(p => problem(p.code, p.message))];
+    },
+    // Every primitive the document mixes in exists, is controllable and works (verify/features.js, run by the gate).
+    features: () => {
+      evidence.features = gateFeatures?.table ?? null;
+      if (!gateFeatures) return [problem('feature_missing', 'the gate ran no feature checks')];
+      return gateFeatures.problems.filter(p => p.severity !== 'warning').map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.verb ? { verb: p.verb } : {}) }));
     },
     bots: () => botProblems(checked, registry, logic, evidence),
   };

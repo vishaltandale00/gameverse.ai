@@ -16,7 +16,7 @@
 import { createWorld } from '../kernel/world.js';
 import { preflight } from '../kernel/document.js';
 import { compile, sample, deviceOf, hostView, AXIS_KEYS } from '../primitives/engine/runtime-lib-input.js';
-import { uiControls, choiceVerbs } from '../primitives/engine/runtime-lib-controls.js';
+import { uiControls, choiceVerbs, verbControl, verbInstances } from '../primitives/engine/runtime-lib-controls.js';
 import { hostDocument } from '../web/host-doc.js';
 
 const INPUT = 'engine.input.actions';
@@ -146,4 +146,24 @@ export function controlledMaker(doc, registry, logic) {
  */
 export function hostPreflight(doc, registry, logic) {
   return preflight(hostDocument(doc, registry), registry, logic);
+}
+
+/**
+ * The verbs of `verbs` no control issues in a host document (preflighted or not): a key bound to the verb (every value
+ * of a closed set; its axis sources for an axis) by engine.input.actions when its card serves `interaction`, or a
+ * mounted UI primitive whose card.controls issues it and whose card.interactions include `interaction` (any, when
+ * `interaction` is null). -> ['verb (kind)']
+ */
+export function uncontrolledVerbs(host, registry, verbs, interaction = null) {
+  const c = controlsOf(host, registry), inst = verbInstances(host), out = [];
+  const serves = id => interaction === null || (registry.get(id)?.card?.interactions || []).includes(interaction);
+  const sends = (verb, value) => Object.values(c.map?.buttons || {}).some(l => l.some(b => b.verb === verb && same(b.value, value)));
+  for (const verb of verbs) {
+    const kind = verbControl(registry, inst, verb);
+    const keyed = serves(INPUT) && (kind.kind === 'axis' ? (c.map?.axes?.[verb] || []).length > 0
+      : kind.kind === 'values' ? kind.options.every(o => sends(verb, o)) : kind.kind === 'press' ? sends(verb, true) : false);
+    const ui = c.uiFor(verb);
+    if (!keyed && !(ui && serves(ui))) out.push(`${verb} (${kind.kind})`);
+  }
+  return out;
 }

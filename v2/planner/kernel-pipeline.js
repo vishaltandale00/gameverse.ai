@@ -528,7 +528,7 @@ export function summarizeVerify(v) {
   if (!v) return null;
   return { ok: v.ok, source: v.source, completable: v.completable, exhaustive: v.exhaustive, ms: v.ms, preflightMs: v.preflight?.ms ?? null, warnings: (v.preflight?.warnings || []).length,
     endings: v.solve ? Object.keys(v.solve.endings || {}) : null, beatsNeverFired: v.solve?.beatsNeverFired?.slice(0, 10) ?? null, states: v.solve?.states ?? null, problems: (v.problems || []).slice(0, 5),
-    playtest: v.playtest ?? null, quality: v.quality ?? null };
+    playtest: v.playtest ?? null, quality: v.quality ?? null, features: v.features?.table ?? null };
 }
 
 export { decomposeOffline };

@@ -39,7 +39,8 @@ function envelope(config) {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['up', 'down', 'left', 'right', 'move', 'run', 'travel'], progress: ['stepped', 'arrived'] },
+    // Lane movement (Pac-Man) has one speed: running is a step-mode verb (runtime-lib-controls.js instanceVerbs).
+    loop: { verbs: ['up', 'down', 'left', 'right', 'move', 'run', 'travel'], verbsOf: config => ['up', 'down', 'left', 'right', 'move', ...(config.mode === 'lane' ? [] : ['run']), 'travel'], progress: ['stepped', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Grid-locked movement. lane mode: Pac-Man style continuous movement along cell lanes, with buffered turns, a cornering window, instant reversal and stopping at walls. step mode: one-cell hops with walk/run timing, turn-in-place, queued hops and one-way ledges (Pokémon overworld, Crossy Road). Cell tags add ledges, one-way cells, class-only doors and speed zones.',
     views: ['td', 'board', 'iso'],

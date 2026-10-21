@@ -15,6 +15,7 @@ import { checkInvariants } from './invariants.js';
 import { select } from './strategies/index.js';
 import { maker } from './drive.js';
 import { controlledMaker } from './controls.js';
+import { featureChecks } from './features.js';
 import { hostDocument } from '../web/host-doc.js';
 import { winMeasure } from './objective.js';
 import { now, usedPrimitives, problem } from './util.js';
@@ -72,6 +73,7 @@ export async function verify(doc, registry, logic, opts = {}) {
   const problems = [];
 
   // Every stage verifies the document a person plays: the host's default input and UI added (v2/web/host-doc.js).
+  const reachedStates = [];
   const pre = await time('preflight', () => preflight(hostDocument(doc, registry), registry, logic));
   const report = { ok: false, seed: seed ?? null, preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, plot: null, spatial: null, playtest: null, strategies: null, invariants: null, problems, timings, exhaustive: {} };
   for (const e of pre.errors) problems.push(problem(e.code, e.path, e.message, { hint: e.hint, severity: 'error', stage: 'preflight' }));
@@ -101,7 +103,7 @@ export async function verify(doc, registry, logic, opts = {}) {
       const wm = winMeasure(opts.playtest?.win ?? null), reached = { high: wm ? 0 : null };
       // The bots play through the controls a person has (controls.js): every step they take is device input sampled
       // through the document's bindings, or an action a mounted UI primitive issues.
-      const make = wm ? measured(controlledMaker(nd, registry, logic), wm, reached) : controlledMaker(nd, registry, logic), probe = make(seed);
+      const make = recording(wm ? measured(controlledMaker(nd, registry, logic), wm, reached) : controlledMaker(nd, registry, logic), reachedStates), probe = make(seed);
       const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
       const ran = [], tb = now();
@@ -124,6 +126,12 @@ export async function verify(doc, registry, logic, opts = {}) {
     }));
     if (botBudget !== null) reservedSpent += now() - ts;
   }
+  // Feature checks (features.js): every primitive the document mixes in exists, is controllable and works when its
+  // controls are pressed from states the bots' and the explorer's play reached.
+  if (opts.features !== false && opts.strategies !== false) {
+    report.features = await time('features', () => guard('features', () => featureChecks(nd, registry, controlledMaker(nd, registry, logic), { seed, states: [...(report.playtest?.sample || []).map(c => c.snap), ...reachedStates], ...(opts.features || {}) })));
+    if (report.features) tag(report.features.problems.map(p => ({ severity: 'error', hint: 'every primitive the game mixes in must work through its controls', ...p })), 'features');
+  }
   if (opts.invariants !== false) {
     report.invariants = await time('invariants', () => guard('invariants', () => checkInvariants(nd, registry, logic, { seed, budgetMs: left(), ...(opts.invariants || {}) })));
     if (report.invariants) tag(report.invariants.problems, 'invariants');
@@ -135,6 +143,19 @@ export async function verify(doc, registry, logic, opts = {}) {
   report.ok = !problems.some(p => p.severity === 'error');
   timings.total = Math.round(now() - t0);
   return report;
+}
+
+/**
+ * A maker whose runtimes record a snapshot of the state every `every` steps of play (into `out`, at most `max`):
+ * states the bots' play reached, for the feature checks.
+ */
+function recording(make, out, { every = 90, max = 240 } = {}) {
+  return seed => {
+    const rt = make(seed), step = rt.step.bind(rt);
+    let n = 0;
+    rt.step = input => { const r = step(input); if (++n % every === 0 && out.length < max && rt.state.status === 'playing') out.push(rt.snapshot()); return r; };
+    return rt;
+  };
 }
 
 /**

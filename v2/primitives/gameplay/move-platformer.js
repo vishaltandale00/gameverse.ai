@@ -14,7 +14,7 @@
 import {
   clamp, approach, round6, mv, bodyOf, state, spaceApi, frameOf, intent, motor, claim, ownedBy, registerBase, isBaseFor,
   driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset, hasAbility, wallBeside,
-  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
+  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.platformer';
@@ -92,7 +92,11 @@ const num = (min, max, unit, effect) => ({ type: 'number', min, max, unit, effec
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'], progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
+    loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'], // The verbs one instance offers (runtime-lib-controls.js instanceVerbs): an auto-runner is not steered; dash, glide,
+      // crouch and grab exist when their ability is on or the document can grant it (grantableAbilities).
+      verbsOf: (config, doc) => { const c = platformerConfig(config), has = a => c.abilities[a] || grantableAbilities(doc).has(a);
+        return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : true)); },
+      progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],

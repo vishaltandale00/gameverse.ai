@@ -41,10 +41,24 @@ export function verbControl(registry, instances, verb) {
   return kinds.sort((a, b) => rank.indexOf(a.kind) - rank.indexOf(b.kind))[0] ?? { kind: 'press' };
 }
 
-/** The player verbs a document's loops are played with (card.loop.verbs of every instance), in document order. */
+const defaultsOf = card => Object.fromEntries(Object.entries(card?.params || {}).filter(([, s]) => s && typeof s === 'object' && 'default' in s).map(([k, s]) => [k, s.default]));
+/**
+ * The loop verbs one instance offers: card.loop.verbsOf(config, doc) when the card declares that its verbs depend on
+ * the instance (an auto-runner is not steered; an ability no one can grant gives no verb; a moveset without heavy
+ * moves gives no heavy attack), else card.loop.verbs. config gets the card's defaults.
+ * @param {any} card @param {any} inst @param {any} doc @returns {string[]}
+ */
+export function instanceVerbs(card, inst, doc) {
+  const loop = card?.loop; if (!loop) return [];
+  const all = Array.isArray(loop.verbs) ? loop.verbs : [];
+  if (typeof loop.verbsOf !== 'function') return all;
+  const own = loop.verbsOf({ ...defaultsOf(card), ...(inst?.with || {}) }, doc) || [];
+  return all.filter(v => own.includes(v));
+}
+/** The player verbs a document's loops are played with (instanceVerbs of every instance), in document order. */
 export function loopVerbs(doc, registry) {
   const out = [];
-  for (const inst of verbInstances(doc)) for (const v of registry?.get(inst.use)?.card?.loop?.verbs || []) if (!out.includes(v)) out.push(v);
+  for (const inst of verbInstances(doc)) for (const v of instanceVerbs(registry?.get(inst.use)?.card, inst, doc)) if (!out.includes(v)) out.push(v);
   return out;
 }
 
@@ -73,4 +87,26 @@ export function choiceVerbs(doc, registry) {
 export function unclaimedChoices(doc, registry) {
   const { verbs } = uiControls(doc, registry);
   return choiceVerbs(doc, registry).filter(v => !verbs.has(v));
+}
+
+/**
+ * The values a person can choose for a choice verb now, as action records: the actions of the options the game offers
+ * for it, or, for a verb whose choice `selects` a field (select a unit), the distinct values of that field in the
+ * options of the verbs whose choice `pick`s it (the units that have a move or an action).
+ * @param {any} rt @param {string} verb @param {number} [max] @returns {Array<{ actions: Record<string, unknown>, steps?: number }>}
+ */
+export function choiceValues(rt, verb, max = 3) {
+  const options = rt.availableOptions();
+  const own = options.filter(o => o.actions?.[verb] !== undefined).slice(0, max).map(o => ({ actions: o.actions, ...(o.steps ? { steps: o.steps } : {}) }));
+  if (own.length) return own;
+  const specs = {};
+  for (const inst of verbInstances(rt.doc)) Object.assign(specs, Object.fromEntries(Object.entries(actionSpaceOf(rt.registry?.get(inst.use)?.card, inst)).filter(([v]) => !(v in specs))));
+  const field = specs[verb]?.selects; if (typeof field !== 'string') return [];
+  const out = [], seen = new Set();
+  for (const o of options) for (const [v, x] of Object.entries(o.actions || {})) {
+    if (specs[v]?.pick !== field || !x || typeof x !== 'object' || x[field] === undefined) continue;
+    const k = JSON.stringify(x[field]); if (seen.has(k) || out.length >= max) continue;
+    seen.add(k); out.push({ actions: { [verb]: structuredClone(x[field]) } });
+  }
+  return out;
 }

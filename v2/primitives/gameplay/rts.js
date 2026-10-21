@@ -57,7 +57,7 @@ export default {
       onVictory: { type: 'effects', default: [] }, onDefeat: { type: 'effects', default: [] },
     },
     provides: {
-      events: ['selected', 'order_given', 'unit_attack', 'unit_produced', 'unit_produced:*', 'production_queued', 'building_complete', 'building_complete:*', 'gathered', 'deposited', 'node_depleted', 'faction_defeated', 'rts_invalid', 'spotted'],
+      events: ['selected', 'order_given', 'rally_set', 'unit_attack', 'unit_produced', 'unit_produced:*', 'production_queued', 'building_complete', 'building_complete:*', 'gathered', 'deposited', 'node_depleted', 'faction_defeated', 'rts_invalid', 'spotted'],
       vars: ['rts.*', 'rts.selected'],
       services: ['rts'],
       actions: ['select', 'order', 'produce', 'rally'],
@@ -378,7 +378,7 @@ export default {
     });
     rt.action('order', v => { const s = st(); const ids = v.who ? [].concat(v.who) : s.sel; order(s, ids.filter(id => factionOf(rt.entity(id)) === playerFaction()), v); });
     rt.action('produce', v => { const s = st(); const b = rt.entity(v.building); if (factionOf(b) === playerFaction()) produce(s, v.building, v.archetype); });
-    rt.action('rally', v => { const s = st(); if (factionOf(rt.entity(v.building)) === playerFaction()) s.rally[v.building] = { at: v.at, node: v.node }; });
+    rt.action('rally', v => { const s = st(); if (factionOf(rt.entity(v.building)) === playerFaction()) { s.rally[v.building] = { at: v.at, node: v.node }; rt.emit('rally_set', { building: v.building, at: v.at, node: v.node ?? null }); } });
 
     rt.system('ai', rt => { const s = st(); for (const f of config.factions) if (f.control === 'ai' && !s.defeated[f.id]) stepAI(s, f.id); }, ID);
     rt.system('movement', rt => { const s = st(); for (const e of units()) stepUnit(s, e); stepProduction(s); }, ID);
@@ -396,6 +396,10 @@ export default {
       const idle = mine.filter(e => R(e).worker && !s.orders[e.id]);
       if (idle.length) out.push({ label: `rts gather ${idle.length} idle`, actions: { order: { kind: 'gather', who: idle.map(e => e.id) } } });
       for (const b of mine) for (const p of R(b).produces || []) if (afford(s, fac, p.cost)) out.push({ label: `rts ${b.id} produce ${p.archetype}`, actions: { produce: { building: b.id, archetype: p.archetype } } });
+      // A building that trains workers and has no rally point can send them to gather at a resource node it sees.
+      const nodes = sortedEntities(rt).filter(e => R(e)?.node && visible(fac, e.at, e.space));
+      const trainsWorkers = b => (R(b).produces || []).some(p => rt.archetype(p.archetype)?.components?.rts?.worker);
+      for (const b of mine) if (trainsWorkers(b) && !s.rally[b.id]) for (const n of nodes) out.push({ label: `rts ${b.id} rally ${n.id}`, actions: { rally: { building: b.id, node: n.id, at: structuredClone(n.at) } } });
       const army = mine.filter(e => R(e).attack && !R(e).worker && !isBuilding(e) && !s.orders[e.id]);
       const target = units().find(e => factionOf(e) && factionOf(e) !== fac && visible(fac, e.at, e.space));
       if (army.length && target) out.push({ label: `rts attack ${target.id}`, actions: { order: { kind: 'attack_move', at: structuredClone(target.at), who: army.map(e => e.id) } } });

@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { controlsOf, controlledMaker, hostPreflight, ControlsMissing } from '../v2/verify/controls.js';
-import { verbControl, verbInstances, loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
+import { controlsOf, controlledMaker, hostPreflight, ControlsMissing, uncontrolledVerbs } from '../v2/verify/controls.js';
+import { verbInstances, loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
 import { compile, sample } from '../v2/primitives/engine/runtime-lib-input.js';
 import { touchButtons } from '../v2/primitives/engine/input-actions.js';
 import { cardLoop } from '../v2/planner/loop.js';
@@ -16,36 +16,18 @@ import { INTERACTIONS } from '../v2/primitives/gameplay/modes-lib-mode.js';
 const { registry, logic } = await liveCatalogue();
 const ANY = ['side', 'td', '3p', '1p', 'iso', 'board'];
 
-/**
- * The verbs of `verbs` no control serving `interaction` issues in a host document: a key (engine.input.actions, whose
- * card serves the interaction) bound to the verb (every value of a closed set; its axis sources for an axis), or a
- * mounted UI primitive whose card.controls issues it and whose card.interactions include the interaction.
- */
-export function uncontrolled(host, verbs, interaction) {
-  const c = controlsOf(host, registry), inst = verbInstances(host), out = [];
-  const inputServes = (registry.get('engine.input.actions').card.interactions || []).includes(interaction);
-  for (const verb of verbs) {
-    const kind = verbControl(registry, inst, verb);
-    const keyed = inputServes && (kind.kind === 'axis' ? (c.map?.axes?.[verb] || []).length > 0
-      : kind.kind === 'values' ? kind.options.every(o => Object.values(c.map?.buttons || {}).some(l => l.some(b => b.verb === verb && JSON.stringify(b.value) === JSON.stringify(o))))
-        : kind.kind === 'press' ? Object.values(c.map?.buttons || {}).some(l => l.some(b => b.verb === verb && b.value === true)) : false);
-    const ui = c.uiFor(verb);
-    const byUi = Boolean(ui) && (registry.get(ui).card.interactions || []).includes(interaction);
-    if (!keyed && !byUi) out.push(`${verb} (${kind.kind})`);
-  }
-  return out;
-}
+const uncontrolled = (host, verbs, interaction) => uncontrolledVerbs(host, registry, verbs, interaction);
 
 test('controls conformance: every loop card × interaction × view: each of its verbs has a control (controls_missing otherwise)', () => {
   const failures = [];
   let checked = 0;
   for (const card of registry.cards()) {
     const loop = cardLoop(card);
-    if (!loop?.verbs.length) continue;
+    if (!loop?.verbs.length) continue; // the verbs the instance offers with its card's defaults (instanceVerbs)
     const views = (card.views || ['any']).includes('any') ? ANY : card.views.filter(v => ANY.includes(v));
     for (const interaction of loop.interactions.length ? loop.interactions : INTERACTIONS) for (const view of views.length ? views : ANY) {
       const host = hostDocument({ schema: 'gameverse.v2.game/0.2', id: 'c', title: 'c', views: { primary: view }, spaces: [], systems: [{ use: card.id, with: {} }] }, registry);
-      const missing = uncontrolled(host, loop.verbs, interaction);
+      const missing = uncontrolled(host, loopVerbs(host, registry), interaction);
       checked++;
       if (missing.length) failures.push(`controls_missing: ${card.id} × ${interaction} × ${view}: ${missing.join(', ')}`);
     }

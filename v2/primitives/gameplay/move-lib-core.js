@@ -552,6 +552,27 @@ export function ownerKey(instance) { return `${instance.use}#${instance.key}`; }
 
 // ---------------------------------------------------------------- abilities
 
+/**
+ * The movement abilities a document can ever give the player, read from its data (the sources hasAbility reads at
+ * runtime): the player archetype's components.move.abilities, doc.player.abilities, the flags `ability.<name>` its
+ * effects set, the abilities its unlock_ability effects unlock, and what gameplay.progression.abilities grants.
+ * A verb gated by an ability the document never gives is no control of that game. @param {any} doc @returns {Set<string>}
+ */
+export function grantableAbilities(doc) {
+  const out = new Set(doc?.player?.abilities || []);
+  const hero = (doc?.content?.archetypes || []).find(a => a.id === doc?.player?.archetype);
+  for (const [k, v] of Object.entries(hero?.components?.move?.abilities || {})) if (v) out.add(k);
+  const walk = x => {
+    if (Array.isArray(x)) { x.forEach(walk); return; }
+    if (!x || typeof x !== 'object') return;
+    if (x.do === 'unlock_ability' && typeof x.ability === 'string') out.add(x.ability);
+    if (x.do === 'set_flag' && typeof x.flag === 'string' && x.flag.startsWith('ability.')) out.add(x.flag.slice(8));
+    Object.values(x).forEach(walk);
+  };
+  walk(doc);
+  for (const s of doc?.systems || []) if (s.use === 'gameplay.progression.abilities') for (const a of s.with?.abilities || []) for (const g of [a.id, ...(a.grants || [])]) out.add(g);
+  return out;
+}
 function grantsIndex(rt) {
   const c = rt.caches;
   if (c.moveGrantsDoc !== rt.doc) {

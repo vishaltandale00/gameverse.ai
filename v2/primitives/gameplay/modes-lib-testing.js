@@ -17,6 +17,8 @@ export const waterSpace = {
       water: { type: 'list', default: [], of: { type: 'json' }, effect: '[x0, z0, x1, z1, depth]' },
       ramps: { type: 'list', default: [], of: { type: 'json' }, effect: '[x0, z0, x1, z1, height] raised ground' },
     },
+    // A y-up 3D world (ground at groundY): the frame vehicles steer in (runtime-lib-frame.js).
+    frame: { up: 1, handed: 'right' },
     provides: testSpace.card.provides,
   },
   install(rt, config, instance) {
