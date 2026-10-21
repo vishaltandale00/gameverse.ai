@@ -46,12 +46,16 @@ const RANK = { error: 0, warning: 1, info: 2 };
 /**
  * verify(doc, registry, logic, opts) → report
  * opts: { seed, budgetMs, plot: {...solver opts} | false, spatial: {...} | false, playtest: {...} | false,
- *         strategies: { only?: [ids], [id]: {...run opts} } | false, invariants: {...} | false }
+ *         strategies: { only?: [ids], budgetMs?: reserved for the bots, [id]: {...run opts} } | false, invariants: {...} | false }
  */
 export async function verify(doc, registry, logic, opts = {}) {
   const t0 = now(), timings = {};
   const total = opts.budgetMs ?? 4000, seed = opts.seed;
-  const left = () => Math.max(50, total - (now() - t0));
+  // The bots' own budget (opts.strategies.budgetMs), when given, is reserved: it is not taken from the shared pool the
+  // other stages split, and their time does not count against it. The bots the loops name are the gate's players.
+  const botBudget = Number.isFinite(opts.strategies?.budgetMs) ? opts.strategies.budgetMs : null;
+  let reservedSpent = 0;
+  const left = () => Math.max(50, total - (now() - t0 - reservedSpent));
   const time = async (name, fn) => { const t = now(); try { return await fn(); } finally { timings[name] = Math.round(now() - t); } };
   const problems = [];
 
@@ -77,13 +81,14 @@ export async function verify(doc, registry, logic, opts = {}) {
     if (report.playtest) tag(report.playtest.problems, 'playtest');
   }
   if (opts.strategies !== false) {
+    const ts = now();
     report.strategies = await time('strategies', () => guard('strategies', () => {
       const make = maker(nd, registry, logic), probe = make(seed);
       const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
-      const ran = [];
+      const ran = [], tb = now();
       chosen.forEach(({ s, reason }, i) => {
-        const share = left() * 0.6 / (chosen.length - i);
+        const share = (botBudget !== null ? Math.max(50, botBudget - (now() - tb)) : left() * 0.6) / (chosen.length - i);
         try {
           const r = s.run(ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
           ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget });
@@ -92,6 +97,7 @@ export async function verify(doc, registry, logic, opts = {}) {
       });
       return { ran, skipped };
     }));
+    if (botBudget !== null) reservedSpent += now() - ts;
   }
   if (opts.invariants !== false) {
     report.invariants = await time('invariants', () => guard('invariants', () => checkInvariants(nd, registry, logic, { seed, budgetMs: left(), ...(opts.invariants || {}) })));

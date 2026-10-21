@@ -54,6 +54,8 @@ export interface Provides {
   actions?: string[];
   /** Generators: the kinds of world content they produce (terrain, rooms, course...). Composition checker field. */
   content?: string[];
+  /** Spaces: world content the document gives in the space's own params (arena2d structures in `solids`): content kind -> params, any non-empty one carries it. */
+  contentParams?: Record<string, string[]>;
 }
 export interface Requires {
   capabilities?: string[];

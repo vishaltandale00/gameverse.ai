@@ -166,7 +166,9 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
     try {
       // The playtest steers by, and reports progress on, the quantity the core loop's win reads.
       const win = winQuantity(pre.doc, registry);
-      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs || win ? { playtest: { ...(playtestMs ? { budgetMs: playtestMs } : {}), ...(win ? { win } : {}) } } : {}) });
+      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs || win ? { playtest: { ...(playtestMs ? { budgetMs: playtestMs } : {}), ...(win ? { win } : {}) } } : {}),
+        // The playtest agents (§6.3) include the bots the loops name: they get the playtest agents' budget of their own.
+        ...(playtestMs ? { strategies: { budgetMs: playtestMs } } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
       const problems = [...world, ...(r?.problems || [])];

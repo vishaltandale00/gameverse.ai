@@ -42,6 +42,8 @@ export default {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'boxes', 'ledges', 'scroll', 'wrap'],
       capabilityMethods: { boxes: ['boxesOf', 'setPose', 'setBoxes', 'boxHits'], ledges: ['ledgeNear'], scroll: ['scroll', 'setScroll'], ...BOUNDS_CAPS },
       events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'out_of_bounds', 'out_of_bounds:*', 'blasted', 'scrolled_out', 'landed', 'culled', 'zone_added'],
+      // Its structures can be written in its own params (walls, stages, barriers): a document with solids or platforms has them.
+      contentParams: { structures: ['solids', 'platforms'] },
     },
     at: 'At = [x, y] arena units, y up: the centre of the body box (components.body.size). Box sets are local [x, y, w, h] relative to the centre with x measured forward (mirrored when body.facing < 0): body.poses = {pose: {hurt, hit, push}}, body.pose, or body.boxes overriding the pose; default hurt = push = the body box, no hit boxes.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1), spawn?, tags?, rules?}',

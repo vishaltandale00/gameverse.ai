@@ -352,6 +352,17 @@ export function compositionSpaces(input, registry) {
 }
 
 /**
+ * Whether a space carries world content `item` in its own params (card.provides.contentParams): in a document, when
+ * one of those params is non-empty; in a selection, the document will write them (as the outline writes zones).
+ * @param {Card} card @param {SpaceUnit} space @param {string} item @param {boolean} isDoc
+ */
+function inParams(card, space, item, isDoc) {
+  const params = card.provides.contentParams?.[item];
+  if (!isList(params) || !params.length) return false;
+  return !isDoc || params.some(p => { const v = space.with?.[p]; return isList(v) ? v.length > 0 : isObj(v) ? Object.keys(v).length > 0 : v != null; });
+}
+
+/**
  * checkComposition(doc | selection, registry, opts?) -> CompositionResult. Pure and static: card declarations only.
  * @param {Doc | Selection} input
  * @param {RegistryLike} registry
@@ -479,6 +490,7 @@ export function checkComposition(input, registry, opts = {}) {
        */
       const coverOf = item => {
         if ((sc.provides.content || []).includes(item) || (s.given || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course; a region has it from its host)
+        if (inParams(sc, s, item, isDoc)) return { how: 'have' };
         if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
         if (here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); })) return { how: 'have' };
         const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
@@ -552,7 +564,10 @@ export function checkComposition(input, registry, opts = {}) {
     const docLike = isDoc ? /** @type {Record<string, any>} */ (input) : null;
     const form = opts.content || null;
     const sectionValue = (/** @type {string} */ path) => {
-      const at = (/** @type {unknown} */ root) => path.split('.').reduce((/** @type {any} */ o, k) => (isObj(o) ? o[k] : undefined), root);
+      // A path through a list reads every entry ('spaces.zones': the zones of every space).
+      /** @param {any} o @param {string} k @returns {unknown} */
+      const step = (o, k) => (isList(o) ? o.flatMap(x => { /** @type {unknown} */ const v = step(x, k); return v === undefined ? [] : isList(v) ? v : [v]; }) : isObj(o) ? o[k] : undefined);
+      const at = (/** @type {unknown} */ root) => path.split('.').reduce(step, root);
       return docLike ? at(docLike) : form ? (path in form ? form[path] : at(form)) : undefined;
     };
     const nonEmpty = (/** @type {unknown} */ v) => isList(v) ? v.length > 0 : isObj(v) ? Object.keys(v).length > 0 : false;
@@ -572,7 +587,7 @@ export function checkComposition(input, registry, opts = {}) {
         if (!item.includes('.')) {
           if (!s) continue;
           const sc = cardOf(registry, s.use);
-          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
+          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || (sc ? inParams(sc, s, item, isDoc) : false) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
           if (has) continue;
           const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
           if (gen && propose(gen, u.space, `generates ${item} for ${u.use}'s mode`)) continue;
