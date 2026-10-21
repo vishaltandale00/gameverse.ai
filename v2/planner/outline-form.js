@@ -94,7 +94,7 @@ function paramsSlot(card, { skip = [] } = {}) {
 }
 
 /** Component slots for archetypes: every component a chosen primitive owns (card.components), strict. */
-function componentSlots(registry, ids) {
+export function componentSlots(registry, ids) {
   const props = {}, codecs = {};
   for (const id of ids) for (const [k, spec] of Object.entries(registry.get(id)?.card.components || {})) {
     if (props[k]) continue;
@@ -105,8 +105,8 @@ function componentSlots(registry, ids) {
   return { schema: obj(props, 'components keyed by owning primitive; null = this archetype has none of it'), codecs };
 }
 
-const ITEM_KINDS = ['material', 'tool', 'weapon', 'armor', 'food', 'potion', 'key', 'quest', 'currency', 'charm', 'ammo', 'block', 'prop', 'misc'];
-const ARCH_KINDS = ['player', 'npc', 'creature', 'enemy', 'boss', 'vehicle', 'prop', 'projectile', 'pickup', 'mount'];
+export const ITEM_KINDS = ['material', 'tool', 'weapon', 'armor', 'food', 'potion', 'key', 'quest', 'currency', 'charm', 'ammo', 'block', 'prop', 'misc'];
+export const ARCH_KINDS = ['player', 'npc', 'creature', 'enemy', 'boss', 'vehicle', 'prop', 'projectile', 'pickup', 'mount'];
 const KERNEL_SECTIONS = new Set(['plot.characters', 'plot.storyboard', 'plot.endings', 'plot.quests', 'plot.dialogue', 'content.items', 'content.archetypes', 'content.models']);
 
 /** Spawn-rule list params (card.defines spawn_rule) are filled from the form's spawns, not written per instance. */
@@ -156,18 +156,8 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   props.extra_systems = arr(obj({ use: { type: 'string', enum: extras.length ? extras : ['none'] }, with_json: nul(str(JSON_HINT)) }), 'other catalogue primitives this idea needs (usually none)');
 
   // Content.
-  const comps = componentSlots(registry, used);
-  props.archetypes = arr(obj({ id: str('lowercase slug'), kind: { type: 'string', enum: ARCH_KINDS }, name: str(), components: comps.schema }), 'every kind of entity: enemies, creatures, pickups, props, vehicles, NPC bodies; give each the components its role needs');
-  if (spawner) props.spawns = arr(obj({ id: str('rule id'), archetype: str('archetype id'), zone: str('zone id where they appear'), min: { type: 'integer' }, max: { type: 'integer' }, respawnSec: nul({ type: 'number', description: '0 = never respawn' }), when_json: nul(str(`predicate that must hold (${JSON_HINT})`)) }), 'what appears where: every enemy, pickup and prop archetype placed in the zones it belongs to');
-  props.items = arr(obj({ id: str('lowercase slug'), name: str(), kind: { type: 'string', enum: ITEM_KINDS }, desc: str(), value: nul({ type: 'number' }), more_json: nul(str('other item fields as a JSON object (weapon, use, creature, stats...)')) }));
-  props.characters = arr(obj({ id: str('lowercase slug'), name: str(), role: str(), bio: str(), home: nul(str('zone id')), archetype: nul(str('archetype id for their body, if any')), dialogue: arr(str('dialogue id')) }));
-  if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: str('character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(str('character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
-  if (hasQuests) {
-    const kinds = Object.keys(OBJECTIVES);
-    props.quests = arr(obj({ id: str('lowercase slug'), title: str(), kind: { type: 'string', enum: ['main', 'side', 'contract', 'bounty', 'challenge'] }, giver: nul(str('character id')), zone: nul(str('zone id')), summary: str(), autoStart: { type: 'boolean' },
-      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(str()), item: nul(str()), character: nul(str()), archetype: nul(str()), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(OBJECTIVES[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
-      rewards_json: nul(str('{"xp"?, "money"?, "items"?: [{"item","count"}]} as JSON')) }), 'quests the quest primitive runs; objectives use the goal kinds');
-  }
+  const { props: content, comps } = contentProps({ registry, used, hasQuests, hasDialogue, spawner });
+  Object.assign(props, content);
   for (const sec of sections) props[`section_${sec.replace('.', '_')}`] = str(`${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
   props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
   props.endings = arr(obj({ id: str(), title: str(), text: str(), outcome: { type: 'string', enum: ['won', 'lost', 'neutral'] } }));
@@ -180,6 +170,70 @@ export function outlineForm({ registry, skeleton, selection = null }) {
 
 const parseJson = v => decode(v, 'json');
 const listOf = v => (Array.isArray(v) ? v : []);
+
+/**
+ * Form slots for content (shared by the outline and the per-zone detail form): archetypes with the component slots
+ * of every primitive in `used`, spawns (when a spawner exists; `zone` fixes their zone), items, characters, and
+ * dialogue / quests when a primitive reads them. -> { props, comps }
+ */
+export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, zone = null }) {
+  const props = {};
+  const comps = componentSlots(registry, used);
+  props.archetypes = arr(obj({ id: str('lowercase slug'), kind: { type: 'string', enum: ARCH_KINDS }, name: str(), components: comps.schema }), 'every kind of entity: enemies, creatures, pickups, props, vehicles, NPC bodies; give each the components its role needs');
+  if (spawner) props.spawns = arr(obj({ id: str('rule id'), archetype: str('archetype id'), ...(zone ? {} : { zone: str('zone id where they appear') }), min: { type: 'integer' }, max: { type: 'integer' }, respawnSec: nul({ type: 'number', description: '0 = never respawn' }), when_json: nul(str(`predicate that must hold (${JSON_HINT})`)) }), zone ? `what appears in ${zone}: its own enemies, pickups and props` : 'what appears where: every enemy, pickup and prop archetype placed in the zones it belongs to');
+  props.items = arr(obj({ id: str('lowercase slug'), name: str(), kind: { type: 'string', enum: ITEM_KINDS }, desc: str(), value: nul({ type: 'number' }), more_json: nul(str('other item fields as a JSON object (weapon, use, creature, stats...)')) }));
+  props.characters = arr(obj({ id: str('lowercase slug'), name: str(), role: str(), bio: str(), ...(zone ? {} : { home: nul(str('zone id')) }), archetype: nul(str('archetype id for their body, if any')), dialogue: arr(str('dialogue id')) }));
+  if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: str('character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(str('character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
+  if (hasQuests) {
+    const kinds = Object.keys(OBJECTIVES);
+    props.quests = arr(obj({ id: str('lowercase slug'), title: str(), kind: { type: 'string', enum: ['main', 'side', 'contract', 'bounty', 'challenge'] }, giver: nul(str('character id')), ...(zone ? {} : { zone: nul(str('zone id')) }), summary: str(), autoStart: { type: 'boolean' },
+      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(str()), item: nul(str()), character: nul(str()), archetype: nul(str()), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(OBJECTIVES[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
+      rewards_json: nul(str('{"xp"?, "money"?, "items"?: [{"item","count"}]} as JSON')) }), 'quests the quest primitive runs; objectives use the goal kinds');
+  }
+  return { props, comps };
+}
+
+/** Content from a filled form (see contentProps): document-shaped lists, plus spawn rules for the spawner. */
+export function contentFromForm(f, { comps, zone = null }) {
+  const archetypes = listOf(f.archetypes).filter(isObj).map(a => {
+    const components = {};
+    for (const [k, c] of Object.entries(comps.codecs)) { const v = decode(a.components?.[k], c); if (v !== undefined && !(isObj(v) && !Object.keys(v).length && typeof c !== 'string')) components[k] = v; }
+    const other = parseJson(a.components?.other_json); if (isObj(other)) for (const [k, v] of Object.entries(other)) if (components[k] === undefined) components[k] = v;
+    if (a.name && components.name === undefined) components.name = String(a.name);
+    return { id: slug(a.id || a.name), kind: ARCH_KINDS.includes(a.kind) ? a.kind : 'prop', components };
+  });
+  const items = listOf(f.items).filter(isObj).map(i => { const more = parseJson(i.more_json); return { ...(isObj(more) ? more : {}), id: slug(i.id || i.name), name: String(i.name || i.id), kind: ITEM_KINDS.includes(i.kind) ? i.kind : 'misc', ...(i.desc ? { desc: String(i.desc) } : {}), ...(Number.isFinite(i.value) ? { value: i.value } : {}) }; });
+  const characters = listOf(f.characters).filter(isObj).map(c => { const home = zone || (c.home ? slug(c.home) : null); return { id: slug(c.id || c.name), name: String(c.name || c.id), role: String(c.role || ''), ...(c.bio ? { bio: String(c.bio) } : {}), ...(home ? { home } : {}), ...(c.archetype ? { archetype: slug(c.archetype) } : {}), ...(listOf(c.dialogue).length ? { dialogue: listOf(c.dialogue).filter(x => typeof x === 'string').map(id => ({ id })) } : {}) }; });
+  let dialogue;
+  if (Array.isArray(f.dialogue)) {
+    dialogue = {};
+    for (const d of f.dialogue.filter(isObj)) {
+      const nodes = {};
+      for (const n of listOf(d.nodes).filter(isObj)) {
+        const node = { ...(n.who ? { who: n.who } : {}), say: String(n.say || '') };
+        if (n.next) node.next = n.next; if (n.end) node.end = true;
+        const doFx = decode(n.do_json, 'effects'); if (doFx?.length) node.do = doFx;
+        const choices = listOf(n.choices).filter(isObj).map(c => ({ text: String(c.text || ''), ...(c.next ? { next: c.next } : {}), ...(decode(c.do_json, 'effects') ? { do: decode(c.do_json, 'effects') } : {}) }));
+        if (choices.length) node.choices = choices;
+        if (!node.next && !node.choices && !node.end) node.end = true;
+        nodes[String(n.id || `n${Object.keys(nodes).length + 1}`)] = node;
+      }
+      if (Object.keys(nodes).length) dialogue[slug(d.id)] = { speaker: d.speaker || 'player', start: nodes[d.start] ? d.start : Object.keys(nodes)[0], nodes };
+    }
+  }
+  const quests = Array.isArray(f.quests) ? f.quests.filter(isObj).map(q => {
+    const rewards = parseJson(q.rewards_json), qz = zone || (q.zone ? slug(q.zone) : null);
+    return { id: slug(q.id || q.title), title: String(q.title || q.id), kind: q.kind || 'main', ...(q.giver ? { giver: slug(q.giver) } : {}), ...(qz ? { zone: qz } : {}), summary: String(q.summary || ''), ...(q.autoStart ? { autoStart: true } : {}),
+      objectives: listOf(q.objectives).filter(isObj).map(o => { const more = parseJson(o.more_json); const out = { ...(isObj(more) ? more : {}), id: slug(o.id || o.kind), kind: o.kind, text: String(o.text || '') }; for (const k of ['zone', 'item', 'character', 'archetype']) if (o[k]) out[k] = o[k]; if (Number.isInteger(o.count)) out.count = o.count; return out; }),
+      ...(isObj(rewards) ? { rewards } : {}) };
+  }) : undefined;
+  const rules = listOf(f.spawns).filter(isObj).map((r, i) => {
+    const lo = Number.isInteger(r.min) ? Math.max(0, r.min) : 1, hi = Number.isInteger(r.max) ? Math.max(lo, r.max) : lo;
+    const when = decode(r.when_json, 'strict'), rz = zone || (r.zone ? slug(r.zone) : null);
+    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(rz ? { zone: rz } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
+  }).filter((r, i, a) => a.findIndex(x => x.id === r.id) === i);
+  return { archetypes, items, characters, dialogue, quests, rules };
+}
 
 /** Zone geometry for shapes the model does not write (rects, ranges, bounds): laid out by index like the skeleton. */
 function geometry(skeletonSpace, zones) {
@@ -239,44 +293,18 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   for (const x of listOf(f.extra_systems)) if (isObj(x) && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {
     const w = parseJson(x.with_json); out.systems.push({ use: x.use, ...(isObj(w) ? { with: w } : {}) });
   }
-  // Archetypes and their components.
-  const archetypes = listOf(f.archetypes).filter(isObj).map(a => {
-    const components = {};
-    for (const [k, c] of Object.entries(comps.codecs)) { const v = decode(a.components?.[k], c); if (v !== undefined && !(isObj(v) && !Object.keys(v).length && typeof c !== 'string')) components[k] = v; }
-    const other = parseJson(a.components?.other_json); if (isObj(other)) for (const [k, v] of Object.entries(other)) if (components[k] === undefined) components[k] = v;
-    if (a.name && components.name === undefined) components.name = String(a.name);
-    return { id: slug(a.id || a.name), kind: ARCH_KINDS.includes(a.kind) ? a.kind : 'prop', components };
-  });
+  const content = contentFromForm(f, { comps });
+  const archetypes = content.archetypes;
   const pid = slug(f.player?.archetype || '');
   let playerArch = archetypes.find(a => a.id === pid) || archetypes.find(a => a.kind === 'player');
   if (!playerArch) { playerArch = structuredClone((skeleton.content?.archetypes || []).find(a => a.id === skeleton.player?.archetype) || { id: 'hero', components: { name: 'You' } }); playerArch.kind ??= 'player'; archetypes.push(playerArch); }
   out.content.archetypes = archetypes;
-  const items = listOf(f.items).filter(isObj).map(i => { const more = parseJson(i.more_json); return { ...(isObj(more) ? more : {}), id: slug(i.id || i.name), name: String(i.name || i.id), kind: ITEM_KINDS.includes(i.kind) ? i.kind : 'misc', ...(i.desc ? { desc: String(i.desc) } : {}), ...(Number.isFinite(i.value) ? { value: i.value } : {}) }; });
+  const items = content.items;
   for (const it of skeleton.content?.items || []) if (!items.some(x => x.id === it.id)) items.push(structuredClone(it));
   if (items.length) out.content.items = items;
-  out.plot.characters = listOf(f.characters).filter(isObj).map(c => ({ id: slug(c.id || c.name), name: String(c.name || c.id), role: String(c.role || ''), ...(c.bio ? { bio: String(c.bio) } : {}), ...(c.home ? { home: slug(c.home) } : {}), ...(c.archetype ? { archetype: slug(c.archetype) } : {}), ...(listOf(c.dialogue).length ? { dialogue: listOf(c.dialogue).filter(x => typeof x === 'string').map(id => ({ id })) } : {}) }));
-  if (Array.isArray(f.dialogue)) {
-    out.plot.dialogue = {};
-    for (const d of f.dialogue.filter(isObj)) {
-      const nodes = {};
-      for (const n of listOf(d.nodes).filter(isObj)) {
-        const node = { ...(n.who ? { who: n.who } : {}), say: String(n.say || '') };
-        if (n.next) node.next = n.next; if (n.end) node.end = true;
-        const doFx = parseJson(n.do_json); if (Array.isArray(doFx) && doFx.length) node.do = doFx;
-        const choices = listOf(n.choices).filter(isObj).map(c => ({ text: String(c.text || ''), ...(c.next ? { next: c.next } : {}), ...(Array.isArray(parseJson(c.do_json)) ? { do: parseJson(c.do_json) } : {}) }));
-        if (choices.length) node.choices = choices;
-        if (!node.next && !node.choices && !node.end) node.end = true;
-        nodes[String(n.id || `n${Object.keys(nodes).length + 1}`)] = node;
-      }
-      if (Object.keys(nodes).length) out.plot.dialogue[slug(d.id)] = { speaker: d.speaker || 'player', start: nodes[d.start] ? d.start : Object.keys(nodes)[0], nodes };
-    }
-  }
-  if (Array.isArray(f.quests)) out.plot.quests = f.quests.filter(isObj).map(q => {
-    const rewards = parseJson(q.rewards_json);
-    return { id: slug(q.id || q.title), title: String(q.title || q.id), kind: q.kind || 'main', ...(q.giver ? { giver: slug(q.giver) } : {}), ...(q.zone ? { zone: slug(q.zone) } : {}), summary: String(q.summary || ''), ...(q.autoStart ? { autoStart: true } : {}),
-      objectives: listOf(q.objectives).filter(isObj).map(o => { const more = parseJson(o.more_json); const out = { ...(isObj(more) ? more : {}), id: slug(o.id || o.kind), kind: o.kind, text: String(o.text || '') }; for (const k of ['zone', 'item', 'character', 'archetype']) if (o[k]) out[k] = o[k]; if (Number.isInteger(o.count)) out.count = o.count; return out; }),
-      ...(isObj(rewards) ? { rewards } : {}) };
-  });
+  out.plot.characters = content.characters;
+  if (content.dialogue) out.plot.dialogue = content.dialogue;
+  if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {
     const v = parseJson(f[`section_${sec.replace('.', '_')}`]);
     if (v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length)) continue;
@@ -296,15 +324,11 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const endings = listOf(f.endings).filter(isObj).map(e => ({ id: slug(e.id || e.title), title: String(e.title || e.id), text: String(e.text || ''), outcome: ['won', 'lost', 'neutral'].includes(e.outcome) ? e.outcome : 'won' }));
   if (endings.length) out.plot.endings = endings; else if (skeleton.plot?.endings) out.plot.endings = structuredClone(skeleton.plot.endings);
   // Spawns -> the spawner's rules.
-  const rules = listOf(f.spawns).filter(isObj).map((r, i) => {
-    const lo = Number.isInteger(r.min) ? Math.max(0, r.min) : 1, hi = Number.isInteger(r.max) ? Math.max(lo, r.max) : lo;
-    const when = parseJson(r.when_json);
-    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(r.zone ? { zone: slug(r.zone) } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
-  });
+  const rules = content.rules;
   if (rules.length && spawner) {
     let sp = out.systems.find(s => s.use === spawner);
     if (!sp) { sp = { use: spawner, with: {} }; out.systems.unshift(sp); }
-    sp.with = { ...(sp.with || {}), rules: [...listOf(sp.with?.rules), ...rules.filter((r, i, a) => a.findIndex(x => x.id === r.id) === i)] };
+    sp.with = { ...(sp.with || {}), rules: [...listOf(sp.with?.rules), ...rules] };
   }
   // The player: its archetype, in its start zone (zone id in exit spaces, a point in positional ones).
   const space = out.spaces.find(s => s.id === skeleton.player?.space) || out.spaces[0];
