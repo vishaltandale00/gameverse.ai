@@ -40,7 +40,7 @@ const flag = name => process.argv.includes(`--${name}`);
 const pct = (xs, p) => { const s = xs.filter(x => x != null).sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : null; };
 const rate = (xs) => { const v = xs.filter(x => x != null); return v.length ? +(v.filter(Boolean).length / v.length).toFixed(3) : null; };
 
-function memoryCtx(gameId) {
+export function memoryCtx(gameId) {
   const versions = [], stages = [], t0 = performance.now();
   return {
     versions, stages,
