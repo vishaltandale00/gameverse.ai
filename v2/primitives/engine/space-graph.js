@@ -10,6 +10,12 @@ export default {
     // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
     frame: null,
     needs: { content: ['zones'] },
+    // The fields of this space's zones (each a place): its exits name zones and may be gated by a predicate. Composition
+    // renames the references they hold with the zones (planner/compose.js).
+    zoneFields: {
+      name: { type: 'string' }, description: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } },
+      exits: { type: 'list', of: { type: 'object', fields: { to: { type: 'ref', to: 'zone', required: true }, gate: { type: 'predicate' } } } },
+    },
     params: {},
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },
     reads: [],
@@ -84,6 +90,6 @@ export default {
     };
     rt.defineSpace(instance.id, api);
     rt.action('go', (to, rt) => { const p = rt.player(); if (p?.space === instance.id) api.move(p, to, rt); });
-    rt.options(rt => { const p = rt.player(); return p?.space === instance.id ? api.neighbors(p.at).map(to => ({ label: `go ${to}`, actions: { go: to } })) : []; });
+    rt.options(rt => { const p = rt.player(); return p?.space === instance.id ? api.neighbors(p.at).map(to => ({ label: `go ${to}`, text: `Go to ${zones().get(to)?.name || to}`, actions: { go: to } })) : []; });
   },
 };

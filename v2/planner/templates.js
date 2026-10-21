@@ -16,6 +16,7 @@ import { Logic } from '../kernel/logic.js';
 import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, prefixOf } from './compose.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 import { rulesOn } from '../kernel/rules.js';
+import { sectionShape, NAME_PATTERN } from '../kernel/sections.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -60,17 +61,14 @@ export const PLAYED_RELATIONS = Object.freeze(['nested', 'union']);
 export const READING_RELATIONS = Object.freeze(['none', ...PLAYED_RELATIONS]);
 /** How much the idea needs a mechanic it names: neither is ever dropped (an extension that cannot be built fails the build). */
 export const IMPORTANCE = Object.freeze(['core', 'extra']);
-/** A themed name: 1-40 characters, starting with a non-space. The form's pattern and the check are this one rule. */
-export const NAME_PATTERN = '^\\S.{0,39}$';
-const NAME_RE = new RegExp(NAME_PATTERN, 'u');
+/** A themed name: the kernel's name rule (kernel/sections.js NAME_PATTERN), re-exported for the forms' callers. */
+export { NAME_PATTERN };
 /** Free text the model must write (title, premise, logline, a concept's name): at least one non-space character. */
 export const TEXT_PATTERN = '\\S';
 const TEXT_RE = new RegExp(TEXT_PATTERN, 'u');
 
 /** @param {string} description @returns {Record<string, unknown>} */
 const text = description => ({ type: 'string', pattern: TEXT_PATTERN, description });
-/** @param {string} description @returns {Record<string, unknown>} */
-const nameSlot = description => ({ type: 'string', pattern: NAME_PATTERN, description });
 /** @param {readonly string[]} values @param {string} description @returns {Record<string, unknown>} */
 const choice = (values, description) => ({ type: 'string', enum: [...values], description });
 
@@ -523,74 +521,116 @@ export function composeTemplates(pick, { templates, registry, logic = logicOf(re
 // 3. Content forms, derived from the composed document.
 // ---------------------------------------------------------------------------------------------------------------
 
-/** @typedef {{ form: string, at: string, label: string, entries: Array<Record<string, any>> }} NamedSection */
+/**
+ * One display-text field of an entry: its path inside the entry, its form key, the template's text and the declared
+ * spec (a string the cards declare `display: true`). @typedef {{ key: string, path: Array<string | number>, text: string, spec: ParamSchema }} TextSlot
+ */
+/** An entry of a section and its display-text fields. @typedef {{ id: string, key: string, slots: TextSlot[] }} TextEntry */
+/** A section of the document with display text: its form key, where it is, its entries. @typedef {{ form: string, at: string, label: string, entries: TextEntry[] }} TextSection */
+
+/** A form property name from an id or a path token (strict schemas want plain names). @param {string | number} s */
+const keyOf = s => String(s).replace(/[^A-Za-z0-9_]/g, '_');
 
 /**
- * The document's sections of named entries: every content.* list of { id, … } and every space's zones. Ids are
- * fixed by code; the model only names the entries.
- * @param {Record<string, any>} doc @returns {NamedSection[]}
+ * The display text of a value under its declared shape: every string the shape declares `display: true` that the
+ * value has, with its path (through object fields, map values and list elements).
+ * @param {unknown} spec @param {unknown} value @param {Array<string | number>} [path] @returns {Array<{ path: Array<string | number>, text: string, spec: ParamSchema }>}
  */
-export function namedSections(doc) {
-  const named = (/** @type {unknown} */ v) => Array.isArray(v) && v.length > 0 && v.every(e => isObj(e) && isStr(e.id) && e.id.length > 0);
-  /** @type {NamedSection[]} */
+export function displayText(spec, value, path = []) {
+  if (!isObj(spec) || value === undefined || value === null) return [];
+  const s = /** @type {ParamSchema} */ (spec);
+  if (s.type === 'string') return s.display && isStr(value) ? [{ path, text: value, spec: s }] : [];
+  if (s.type === 'list') return Array.isArray(value) ? value.flatMap((v, i) => displayText(s.of, v, [...path, i])) : [];
+  if (s.type === 'object' && isObj(value)) {
+    const fields = isObj(s.fields) ? s.fields : {};
+    return Object.entries(value).flatMap(([k, v]) => (k in fields ? displayText(fields[k], v, [...path, k]) : s.values ? displayText(s.values, v, [...path, k]) : []));
+  }
+  return [];
+}
+
+/** Every primitive a document instantiates (systems, spaces, generators, graphics). @param {Record<string, any>} doc */
+const usesIn = doc => [...instancesIn(doc).map(i => String(i.use)), ...(Array.isArray(doc.graphics) ? doc.graphics.map((/** @type {any} */ g) => String(g.use)) : [])];
+
+/**
+ * The document's sections with display text (ARCHITECTURE §5: the content forms theme the text a person reads): every
+ * content.* and plot.* section of entries (a list of { id } or an id-keyed object) and every space's zones, each entry
+ * with the strings its declared shape marks display text (kernel/sections.js sectionShape: the kernel's base, the used
+ * cards' card.data and card.components). Ids and structure are fixed by code; the forms only rewrite that text.
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @returns {TextSection[]}
+ */
+export function textSections(doc, registry) {
+  const uses = usesIn(doc);
+  /** @type {TextSection[]} */
   const out = [];
-  for (const [k, v] of Object.entries(isObj(doc.content) ? doc.content : {})) if (named(v)) out.push({ form: `content_${k}`.slice(0, 64), at: `content.${k}`, label: k, entries: objects(v) });
-  (Array.isArray(doc.spaces) ? doc.spaces : []).forEach((/** @type {Record<string, any>} */ s, /** @type {number} */ i) => {
-    if (named(s.zones)) out.push({ form: `zones_${s.id}`.slice(0, 64), at: `spaces[${i}].zones`, label: `zones of the space '${s.id}'`, entries: s.zones });
-  });
+  /** @param {string} form @param {string} at @param {string} label @param {string} shapeOf @param {unknown} v */
+  const section = (form, at, label, shapeOf, v) => {
+    const shape = sectionShape(registry, uses, shapeOf).shape;
+    if (!shape) return;
+    const pairs = Array.isArray(v) ? objects(v).filter(e => isStr(e.id) && e.id).map(e => /** @type {[string, unknown, unknown]} */ ([String(e.id), e, shape.of])) : isObj(v) ? Object.entries(v).map(([id, e]) => /** @type {[string, unknown, unknown]} */ ([id, e, shape.values ?? null])) : [];
+    const entries = pairs.map(([id, e, entry]) => ({ id, key: keyOf(id), slots: displayText(entry, e).map(t => ({ ...t, key: t.path.map(keyOf).join('__') })) })).filter(e => e.slots.length > 0);
+    if (entries.length) out.push({ form: form.slice(0, 64), at, label, entries });
+  };
+  for (const root of ['content', 'plot']) for (const [k, v] of Object.entries(isObj(doc[root]) ? doc[root] : {})) if (/^[A-Za-z0-9_]+$/.test(k)) section(`${root}_${k}`, `${root}.${k}`, `${root}.${k}`, `${root}.${k}`, v);
+  (Array.isArray(doc.spaces) ? doc.spaces : []).forEach((/** @type {Record<string, any>} */ s, /** @type {number} */ i) => section(`zones_${keyOf(s.id)}`, `spaces[${i}].zones`, `zones of the space '${s.id}'`, 'zones', s.zones));
   return out;
 }
 
-/** @param {Record<string, any>} doc @param {string} at @returns {Array<Record<string, any>>} */
-const entriesAt = (doc, at) => objects(valueAt(doc, at));
-
-/** One content form for a named section: a name slot per entry id, nothing else. @param {NamedSection} section */
-export function namesForm(section) {
-  const ids = section.entries.map(e => String(e.id));
-  /** @type {ReplySchema} */
-  const schema = { name: section.form, schema: sectionSchema(section) };
-  /** @param {unknown} v @returns {Record<string, string>} */
-  const narrow = v => Object.fromEntries(ids.map(id => [id, String(prop(v, id) ?? '')]));
-  /** @param {Record<string, string>} v @returns {FormProblem[]} */
-  const check = v => ids.filter(id => !NAME_RE.test(v[id])).map(id => ({ code: 'name_invalid', field: id, message: `a name of 1-40 characters that starts with a non-space, not '${v[id].slice(0, 60)}'` }));
-  /** @param {Record<string, any>} doc @param {Record<string, string>} v */
-  const apply = (doc, v) => { for (const e of entriesAt(doc, section.at)) if (isStr(e.id) && v[e.id] !== undefined) e.name = v[e.id]; };
-  return { schema, narrow, check, apply };
+/** The entry objects at a section path (list entries by id, or an id-keyed object's values), by id. @param {Record<string, any>} doc @param {string} at @returns {Map<string, Record<string, any>>} */
+function entriesById(doc, at) {
+  const v = valueAt(doc, at);
+  return new Map(Array.isArray(v) ? objects(v).filter(e => isStr(e.id)).map(e => [String(e.id), e]) : isObj(v) ? Object.entries(v).filter(([, e]) => isObj(e)).map(([id, e]) => [id, /** @type {Record<string, any>} */ (e)]) : []);
 }
-/** A section's name slots: one per entry id. @param {NamedSection} section */
-const sectionSchema = section => strictObj(Object.fromEntries(section.entries.map(e => [String(e.id), nameSlot(`themed name of the ${section.label} entry '${e.id}' (template name: ${String(e.name ?? e.id)}); 1-40 characters`)])));
 
 /**
- * The named sections one template contributed to a composed document: each section's entries whose ids that
- * template's part defines (compose.js definedIds, as the composition named them).
- * @param {Record<string, any>} doc @param {ComposedPart} part @returns {NamedSection[]}
+ * The text sections one template contributed to a composed document: the entries whose ids that template's own
+ * document has in that section (prefixed as the composition prefixed a joined template's ids).
+ * @param {Record<string, any>} doc @param {ComposedPart} part @param {number} index the part's place in the composition (0: the primary) @param {RegistryLike} registry @returns {TextSection[]}
  */
-export function partSections(doc, part) {
-  const zones = new Set(part.ids.get('zones') || []);
-  return namedSections(doc).map(s => {
-    const own = s.at.startsWith('spaces[') ? zones : new Set(part.ids.get(s.at) || []);
-    return { ...s, entries: s.entries.filter(e => own.has(String(e.id))) };
+export function partSections(doc, part, index, registry) {
+  const prefix = index === 0 ? '' : prefixOf(part.template.id);
+  const own = textSections(part.template.doc, registry);
+  const zones = new Set(own.filter(o => o.at.startsWith('spaces[')).flatMap(o => o.entries.map(e => `${prefix}${e.id}`)));
+  return textSections(doc, registry).map(s => {
+    const ids = s.at.startsWith('spaces[') ? zones : new Set((own.find(o => o.at === s.at)?.entries ?? []).map(e => `${prefix}${e.id}`));
+    return { ...s, entries: s.entries.filter(e => ids.has(e.id)) };
   }).filter(s => s.entries.length > 0);
 }
 
 /**
- * One names form per template of the composition (its concept named together, in its own theme): a slot per named
- * entry it contributed, grouped by section ({ <section form>: { <id>: name } }); null when it contributed none.
- * A failing name is re-asked alone (field '<section form>.<id>').
- * @param {Record<string, any>} doc @param {ComposedPart} part
+ * One content form per template of the composition (its concept themed together, in its own theme): a slot per
+ * display-text field of every entry it contributed, grouped by section and entry ({ <section form>: { <entry>:
+ * { <field>: text } } }); null when it contributed none. A slot allows what its declaration allows (its pattern, else
+ * any text with a non-space). A failing field is re-asked alone (field '<section form>.<entry>.<field>').
+ * @param {Record<string, any>} doc @param {ComposedPart} part @param {number} index @param {RegistryLike} registry
  */
-export function conceptForm(doc, part) {
-  const sections = partSections(doc, part);
+export function conceptForm(doc, part, index, registry) {
+  const sections = partSections(doc, part, index, registry);
   if (!sections.length) return null;
+  const pattern = (/** @type {TextSlot} */ t) => (isStr(t.spec.pattern) ? t.spec.pattern : TEXT_PATTERN);
+  const slotSchema = (/** @type {TextSection} */ s, /** @type {TextEntry} */ e, /** @type {TextSlot} */ t) => ({ type: 'string', pattern: pattern(t), description: `themed ${t.path.join('.')} of the ${s.label} entry '${e.id}' (template text: ${JSON.stringify(t.text).slice(0, 160)})` });
   /** @type {ReplySchema} */
-  const schema = { name: `names_${part.template.id}`.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 64), schema: strictObj(Object.fromEntries(sections.map(s => [s.form, sectionSchema(s)]))) };
-  /** @param {unknown} v @returns {Record<string, Record<string, string>>} */
-  const narrow = v => Object.fromEntries(sections.map(s => [s.form, Object.fromEntries(s.entries.map(e => [String(e.id), String(prop(prop(v, s.form), String(e.id)) ?? '')]))]));
-  /** @param {Record<string, Record<string, string>>} v @returns {FormProblem[]} */
-  const check = v => sections.flatMap(s => s.entries.map(e => String(e.id)).filter(id => !NAME_RE.test(v[s.form][id]))
-    .map(id => ({ code: 'name_invalid', field: `${s.form}.${id}`, message: `a name of 1-40 characters that starts with a non-space, not '${v[s.form][id].slice(0, 60)}'` })));
-  /** @param {Record<string, any>} d @param {Record<string, Record<string, string>>} v */
-  const apply = (d, v) => { for (const s of sections) for (const e of entriesAt(d, s.at)) if (isStr(e.id) && v[s.form][e.id] !== undefined) e.name = v[s.form][e.id]; };
+  const schema = { name: `names_${part.template.id}`.replace(/[^A-Za-z0-9_]/g, '_').slice(0, 64), schema: strictObj(Object.fromEntries(sections.map(s => [s.form, strictObj(Object.fromEntries(s.entries.map(e => [e.key, strictObj(Object.fromEntries(e.slots.map(t => [t.key, slotSchema(s, e, t)])))])))]))) };
+  /** @param {unknown} v @returns {Record<string, Record<string, Record<string, string>>>} */
+  const narrow = v => Object.fromEntries(sections.map(s => [s.form, Object.fromEntries(s.entries.map(e => [e.key, Object.fromEntries(e.slots.map(t => [t.key, String(prop(prop(prop(v, s.form), e.key), t.key) ?? '')]))]))]));
+  /** @param {Record<string, Record<string, Record<string, string>>>} v @returns {FormProblem[]} */
+  const check = v => sections.flatMap(s => s.entries.flatMap(e => e.slots.filter(t => !new RegExp(pattern(t), 'u').test(v[s.form][e.key][t.key]))
+    .map(t => ({ code: 'text_invalid', field: `${s.form}.${e.key}.${t.key}`, message: `text matching ${pattern(t)}, not '${v[s.form][e.key][t.key].slice(0, 60)}'` }))));
+  /** @param {Record<string, any>} d @param {Record<string, Record<string, Record<string, string>>>} v */
+  const apply = (d, v) => {
+    for (const s of sections) {
+      const byId = entriesById(d, s.at);
+      for (const e of s.entries) {
+        const entry = byId.get(e.id);
+        if (!entry) continue;
+        for (const t of e.slots) {
+          /** @type {any} */
+          let at = entry;
+          for (const k of t.path.slice(0, -1)) at = at?.[k];
+          if (at && typeof at === 'object') at[/** @type {string | number} */ (t.path[t.path.length - 1])] = v[s.form][e.key][t.key];
+        }
+      }
+    }
+  };
   return { schema, narrow, check, apply, sections, template: part.template };
 }
 
@@ -664,7 +704,7 @@ export function frameTuneForm(template, doc, { registry, logic }) {
  */
 export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock, parts = [{ template, ids: definedIds(doc, registry) }], onto = doc, extra = [] }) {
   const tc = performance.now();
-  const named = parts.map(part => conceptForm(doc, part)).filter(/** @returns {f is NonNullable<typeof f>} */ f => f !== null);
+  const named = parts.map((part, i) => conceptForm(doc, part, i, registry)).filter(/** @returns {f is NonNullable<typeof f>} */ f => f !== null);
   const frame = frameTuneForm(template, doc, { registry, logic });
   clock.codeMs += performance.now() - tc;
   const composed = parts.length > 1 ? `\nIt composes the verified templates ${parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}.` : '';
@@ -677,7 +717,7 @@ Write only what the form asks, in the game's theme. Ids and structure are fixed.
   // Every form of the round runs side by side.
   const [frameAnswer, answers, extras] = await Promise.all([
     askForm({ ...base, user: `Write the logline of '${pick.title}' and set its tuning (each slot names its current value).`, schema: frame.schema, narrow: frame.narrow, check: frame.check, what: 'The frame_tune form' }),
-    Promise.all(named.map(f => askForm({ ...base, user: `Name every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
+    Promise.all(named.map(f => askForm({ ...base, user: `Rewrite the text a person reads (names, titles, lines, descriptions) of every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}. Keep each one's role in the game.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
     Promise.all(extra.map(f => askForm({ ...base, user: `'${pick.title}' also has "${f.mechanic}", given by ${f.use} (${f.intent}). Set its params for the idea (null keeps a param as the primitive declares it).`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
   ]);
   const ta = performance.now();

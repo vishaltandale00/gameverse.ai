@@ -22,6 +22,18 @@ Controls: a verb whose action takes a value declares it in `card.actionSpace` (e
 whose verbs depend on the instance declares `card.loop.verbsOf(config, doc)`; a space declares `card.frame`; a renderer
 or camera declares `card.projection` per view; a UI primitive declares `card.interactions` and `card.controls`.
 
+**Codes and examples.** Every code a `validate` emits is declared in `card.rules` (`{ code: { fields, message,
+example? } }`); every code a vocabulary kind's `check` emits beyond the kernel's is declared with its registration
+(`logic.effect(kind, { codes: [{ code, fields, example }] })`). The catalogue conformance (`tests/v2-schema-sampler.test.js`,
+`node v2/tools/sample-schemas.mjs <id>`) proves each one reachable: form-written fields by samples of the forms; any other
+by its declared example, preflighted to exactly that code. An example is either values the forms allow
+(`{ <param>: v, 'content.<x>': entries, 'components.<name>': v }`) or a document fragment `{ doc, at? }` for logic-written
+fields, fields deeper than the forms, open maps and cross-instance rules: each top-level section the fragment names
+(`systems`, `spaces`, `content`, `plot`, `player`...) REPLACES that section of the card's host document (the sampler's:
+a template using the card, else the first template the card and what it requires can be added to), the others are
+kept; `at`, when given, is the path the code must be reported at. A vocabulary kind's example is the predicate or
+effect itself (preflighted in a probe instance) or such a fragment.
+
 **Checks it must pass:**
 - its own test meeting KERNEL_API.md §8: preflight a document using it; exercise it through `rt.step`, effects and
   events; deterministic replay; preflight rejects a bad config with its declared codes; its instances in

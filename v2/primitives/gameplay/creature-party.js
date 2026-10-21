@@ -147,9 +147,9 @@ export default {
     rt.options(rt => {
       const o = own('player'), out = [];
       // Every pair of party slots (slot 0 is the lead that battles first), each creature to the box, each boxed one back.
-      for (let a = 0; a < o.party.length; a++) for (let b = a + 1; b < o.party.length; b++) if (canSwap(o, a, b)) out.push({ label: `swap ${name(o.party[a])} and ${name(o.party[b])}`, actions: { party_swap: [a, b] } });
-      o.party.forEach((c, i) => { if (canDeposit(o, i)) out.push({ label: `deposit ${name(c)}`, actions: { deposit: i } }); });
-      o.box.forEach((c, i) => { if (canWithdraw(o, i)) out.push({ label: `withdraw ${name(c)}`, actions: { withdraw: i } }); });
+      for (let a = 0; a < o.party.length; a++) for (let b = a + 1; b < o.party.length; b++) if (canSwap(o, a, b)) out.push({ label: `swap ${name(o.party[a])} and ${name(o.party[b])}`, text: `Swap ${name(o.party[a])} and ${name(o.party[b])}`, actions: { party_swap: [a, b] } });
+      o.party.forEach((c, i) => { if (canDeposit(o, i)) out.push({ label: `deposit ${name(c)}`, text: `Send ${name(c)} to storage`, actions: { deposit: i } }); });
+      o.box.forEach((c, i) => { if (canWithdraw(o, i)) out.push({ label: `withdraw ${name(c)}`, text: `Bring ${name(c)} back from storage`, actions: { withdraw: i } }); });
       return out;
     });
   },

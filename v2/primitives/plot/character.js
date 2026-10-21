@@ -61,7 +61,7 @@ export default {
     content: [
       {"need": "section", "at": "plot.characters", "min": 2, "why": "people the player meets, each with a role, a home zone and (with dialogue) their lines", "example": {"id": "keeper", "name": "Old Maren", "role": "lighthouse keeper", "home": "lighthouse", "bio": "Kept the light for forty years.", "dialogue": [{"id": "keeper_intro"}]}},
     ],
-    intent: 'Named people and creatures from plot.characters: spawned as entities (id = character id) with their archetype, model, home zone and schedule; the player talks to one in range with `talk`, which marks them met, emits talked:<id> and opens their first matching dialogue.',
+    intent: 'Named people and creatures from plot.characters: spawned as entities (id = character id) with their archetype, model, home zone and schedule; the player talks to one in range with `talk`, which marks them met, emits talked:<id> and opens their first matching dialogue; walking out of talk range ends a conversation opened by talking.',
     views: ['any'],
     params: {
       spawnAtStart: { type: 'boolean', default: true, effect: 'spawn every character (except the player character and spawn:false entries) when the game starts' },
@@ -71,6 +71,15 @@ export default {
     },
     provides: { events: ['talked', 'talked:*', 'met', 'met:*', 'character_alive', 'character_alive:*'], services: ['character'], actions: ['talk'] },
     reads: ['plot.characters'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', required: true }, name: { type: 'string', required: true }, role: { type: 'string' }, bio: { type: 'string' },
+      archetype: { type: 'ref', to: 'archetype' }, model: { type: 'ref', to: 'model' }, home: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' },
+      faction: { type: 'ref', to: 'faction' }, shop: { type: 'ref', to: 'shop' }, tags: { type: 'list', of: { type: 'string' } },
+      dialogue: { type: 'list', of: { type: 'object', fields: { id: { type: 'ref', to: 'dialogue', required: true }, when: { type: 'predicate' } } }, effect: 'the first entry whose when holds opens when the player talks' },
+      schedule: { type: 'list', of: { type: 'object', fields: { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' }, doing: { type: 'string' } } } },
+      at: { type: 'json', effect: 'a position, or a zone of a graph space' }, spawn: { type: 'boolean' }, player: { type: 'boolean' }, components: { type: 'object', open: true },
+    } } } },
   },
   logic(logic) {
     logic.predicate('met', { refs: p => [['character', p.met]], test: (p, rt) => Boolean(st(rt).met[p.met]) });
@@ -136,7 +145,8 @@ export default {
       if (!s.met[id]) { s.met[id] = true; rt.emitTyped('met', id, { character: id }); }
       // Dialogue first, so its node conditions see the world as the player walked up to it; then talked:<id>.
       const dlg = api.dialogueFor(id), dialogue = service(rt, 'dialogue');
-      if (dlg && dialogue) dialogue.start(dlg, { with: id });
+      // The conversation talking opened is the player's with this character: it lasts while they stay in talk range.
+      if (dlg && dialogue && dialogue.start(dlg, { with: id }) === true) s.talking = { character: id, dialogue: dlg };
       rt.emitTyped('talked', id, { who: p.id, character: id, dialogue: dlg ?? null });
       return true;
     };
@@ -159,10 +169,20 @@ export default {
     };
     rt.provide('character', api);
     rt.action('talk', (value, rt) => { if (typeof value === 'string' && !service(rt, 'dialogue')?.active() && !service(rt, 'cutscene')?.playing()) talk(value); });
-    rt.options(rt => (service(rt, 'dialogue')?.active() || service(rt, 'cutscene')?.playing() ? [] : api.inRange().map(id => ({ label: `talk ${id}`, actions: { talk: id } }))));
+    rt.options(rt => (service(rt, 'dialogue')?.active() || service(rt, 'cutscene')?.playing() ? [] : api.inRange().map(id => ({ label: `talk ${id}`, text: `Talk to ${characters(rt).get(id)?.name || id}`, actions: { talk: id } }))));
     // Killed in combat: health primitives report deaths by entity id.
     const dead = data => { const id = data?.id ?? data?.who; if (id && characters(rt).has(id) && !isPlayerCharacter(characters(rt).get(id), rt.doc)) st(rt).dead[id] = true; };
     rt.on('died', dead);
+    // A conversation opened by talking ends when the player walks out of talk range of the character (or it dies): a
+    // person who leaves is not still mid-sentence with someone elsewhere, unable to talk to whoever is in front of them.
+    // Conversations effects open (start_dialogue: a call, a narrator) are not tied to anyone's range.
+    rt.on('dialogue_end', data => { const s = st(rt); if (s.talking?.dialogue === data?.dialogue) s.talking = null; });
+    rt.system('plot', rt => {
+      const s = st(rt), t = s.talking; if (!t) return;
+      const dialogue = service(rt, 'dialogue'), open = dialogue?.view?.();
+      if (!open?.active || open.dialogue !== t.dialogue || open.with !== t.character) { s.talking = null; return; }
+      if (!api.inRange().includes(t.character)) { s.talking = null; dialogue.end(); }
+    }, ID);
     if (config.spawnAtStart && !rt.state.frame) for (const c of characters(rt).values()) if (!st(rt).dead[c.id]) spawnCharacter(rt, c, config);
   },
   extend(rt, config, added) {
