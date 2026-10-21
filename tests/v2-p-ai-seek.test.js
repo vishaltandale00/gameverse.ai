@@ -11,6 +11,7 @@ import { loopProblems, LOOP_CODES, drivesOf } from '../v2/planner/loop-check.js'
 import { cardLoop } from '../v2/planner/loop.js';
 import { repairLoop } from '../v2/planner/presets.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
+import { zonePoint } from '../v2/primitives/gameplay/ai-lib.js';
 
 const { registry, logic } = buildCatalogue();
 const base = (zones, archetypes, systems, player, size) => ({
@@ -85,6 +86,15 @@ test('race on a looped track (the space the race declares first): the driven riv
   assert.equal(rt.store('gameplay.race:race').racers[rival.id].lap, 2);
   assert.equal(rt.state.counts[`race_finished:${rival.id}`], 1);
   assert.equal(rt.state.counts.wrong_way ?? 0, 0, 'never driven the wrong way');
+});
+
+test('a track segment without lanes spans the cross-section: driven participants aim for its middle lane, not the edge', () => {
+  const doc = { schema: 'gameverse.v2.game/0.2', id: 'lanes', title: 'Lanes', seed: 7,
+    spaces: [{ id: 'world', use: 'engine.space.track', with: { lanes: 5, length: 60, loop: true }, zones: [{ id: 'whole', range: [20, 24] }, { id: 'inside', range: [30, 34], lanes: [0, 1] }] }],
+    systems: [], content: { archetypes: [{ id: 'hero', components: {} }] }, player: { archetype: 'hero', at: [1, 2, 0.5] } };
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  assert.deepEqual(zonePoint(rt, 'world', 'whole'), [22, 2, 0]);
+  assert.deepEqual(zonePoint(rt, 'world', 'inside'), [32, 0.5, 0]);
 });
 
 test('ball sport: the other team nothing drives fails the loop check and the repair adds no driver; with the target driver its striker goes for the ball', () => {

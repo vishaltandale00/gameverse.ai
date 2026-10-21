@@ -1,33 +1,52 @@
-// Checkpoint race: a ring circuit of eight checkpoint zones around an infield wall, the player drives a car against three rivals steered to
-// their next checkpoint by the race's target service, three laps after a countdown. Finishing first wins.
+// Kart race: a looped circuit (engine.space.track, the space the race declares first; drawn by graphics.render.track as a
+// bending road behind the player's kart) with eight checkpoint segments, cones marking its edges, the player and three
+// rivals each driving a kart. The rivals are steered to their next checkpoint by the race's target service (ai.seek
+// writes their movement intents, the kart each sits in carries them out). Three laps after a countdown; finishing
+// first wins.
 const won = [{ do: 'end_game', outcome: 'won' }], lost = [{ do: 'end_game', outcome: 'lost' }];
-const RIVALS = [['rival_1', [6, 21]], ['rival_2', [6, 27]], ['rival_3', [4, 24]]];
+const LENGTH = 200, LANES = 5;
+const CHECKPOINTS = [['start_line', 'Start line'], ['first_bend', 'First bend'], ['back_straight', 'Back straight'], ['hairpin', 'Hairpin'],
+  ['chicane', 'Chicane'], ['long_sweep', 'Long sweep'], ['final_bend', 'Final bend'], ['home_straight', 'Home straight']];
+// The starting grid: [driver, lane, progress]; the player's kart starts on the line beside them.
+const RIVALS = [['rival_1', 1, 4], ['rival_2', 3, 4], ['rival_3', 0, 1]];
+const PLAYER = [2, 2, 0.5];
+const kartAt = (lane, p) => [p, lane, 0.3];
 
 export default {
   id: 'race',
-  concept: 'Racing: drive laps of a circuit through its checkpoints against rival racers; finish first.',
+  concept: 'Racing: drive a kart for laps of a circuit through its checkpoints against rival racers; finish first.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'race', title: 'Race', seed: 9,
-    // A ring road around an infield wall; eight checkpoints keep every leg on the ring.
-    spaces: [{ id: 'circuit', use: 'engine.space.arena2d', with: { size: [80, 48], solids: [[18, 16, 62, 32]] },
-      zones: [['start_line', 'Start line', [2, 16, 14, 32]], ['north_west', 'North-west bend', [2, 34, 16, 46]], ['north_straight', 'North straight', [34, 34, 46, 46]],
-        ['north_east', 'North-east bend', [64, 34, 78, 46]], ['east_straight', 'East straight', [64, 16, 78, 32]], ['south_east', 'South-east bend', [64, 2, 78, 14]],
-        ['south_straight', 'South straight', [34, 2, 46, 14]], ['south_west', 'South-west bend', [2, 2, 16, 14]]].map(([id, name, rect]) => ({ id, name, rect })) }],
+    views: { primary: '3p' },
+    spaces: [{ id: 'circuit', use: 'engine.space.track', with: { lanes: LANES, laneWidth: 1, length: LENGTH, loop: true },
+      zones: CHECKPOINTS.map(([id, name], i) => ({ id, name, range: [i * LENGTH / CHECKPOINTS.length, i * LENGTH / CHECKPOINTS.length + 6] })),
+      // The course: cones on the outer lanes, every chunk leaving the racing line free (origin: lane j is the centre of
+      // a cone's cell, whose generator anchors entities at cell + size / 2).
+      generators: [{ use: 'engine.generate.chunks', with: { chunks: [
+        { id: 'gate', spacing: 3, rows: ['X...X'] }, { id: 'left_cones', spacing: 3, rows: ['X....', 'X....'] }, { id: 'right_cones', spacing: 3, rows: ['....X', '....X'] },
+      ], legend: { '.': {}, X: { archetype: 'cone', blocks: true } }, axis: 'x', cross: 'y', origin: [0, -0.3, 0], firstAt: 14, gap: { base: 12, min: 8 } } }] }],
     systems: [
       { use: 'gameplay.vehicle.core' }, { use: 'gameplay.vehicle.car', with: { plane: 'xy' } },
-      { use: 'gameplay.race', with: { laps: 3, checkpoints: ['start_line', 'north_west', 'north_straight', 'north_east', 'east_straight', 'south_east', 'south_straight', 'south_west'], racers: RIVALS.map(([id]) => id), countdown: 3, timeLimit: 0, onWin: won, onLose: lost } },
-      { use: 'gameplay.ai.seek', with: { speed: 12 } },
-      { use: 'engine.spawner', with: { intervalSec: 0, rules: [{ id: 'car', archetype: 'car', at: [8, 24], unique: true, activation: 'always', respawnSec: 0 },
-        ...RIVALS.map(([id, at]) => ({ id, archetype: 'rival', at, unique: true, activation: 'always', respawnSec: 0 }))] } },
+      { use: 'gameplay.race', with: { laps: 3, checkpoints: CHECKPOINTS.map(([id]) => id), racers: RIVALS.map(([id]) => id), countdown: 3, timeLimit: 0, onWin: won, onLose: lost } },
+      { use: 'gameplay.ai.seek', with: { speed: 16 } },
+      // Every racer sits in its own kart from the first step.
+      { use: 'engine.spawner', with: { intervalSec: 0, rules: [
+        { id: 'kart', archetype: 'kart', at: kartAt(PLAYER[1], PLAYER[0]), unique: true, activation: 'always', respawnSec: 0, onSpawn: [{ do: 'enter_vehicle', vehicle: 'kart', force: true }] },
+        ...RIVALS.flatMap(([id, lane, p]) => [
+          { id, archetype: 'rival', at: [p, lane, 0.5], unique: true, activation: 'always', respawnSec: 0 },
+          { id: `${id}_kart`, archetype: 'kart', at: kartAt(lane, p), unique: true, activation: 'always', respawnSec: 0, onSpawn: [{ do: 'enter_vehicle', who: id, vehicle: `${id}_kart`, force: true }] },
+        ]),
+      ] } },
     ],
     content: {
       archetypes: [
-        { id: 'hero', name: 'Driver', components: { body: { size: [0.8, 0.8, 1] } } },
-        { id: 'rival', name: 'Rival', components: { body: { size: [1.2, 1.2, 1] } } },
-        { id: 'car', name: 'Car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: { maxSpeed: 40, accel: 12, grip: 1, steer: 40 }, body: { size: [1.6, 1, 1] } } },
+        { id: 'hero', name: 'Driver', components: { body: { size: [0.8, 0.6, 1] } } },
+        { id: 'rival', name: 'Rival', components: { body: { size: [0.8, 0.6, 1] } } },
+        { id: 'kart', name: 'Kart', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: { preset: 'kart', maxSpeed: 72, accel: 16, grip: 1.2, steer: 24 }, body: { size: [1.4, 0.8, 0.6] } } },
+        { id: 'cone', name: 'Cone', kind: 'prop', components: { body: { size: [0.6, 0.6, 0.6], solid: true, obstacle: true } } },
       ],
     },
-    player: { archetype: 'hero', at: [7, 24] },
+    player: { archetype: 'hero', at: PLAYER },
   },
   tune: ['gameplay.race.laps', 'gameplay.ai.seek.speed'],
 };

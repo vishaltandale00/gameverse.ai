@@ -5,25 +5,21 @@
 // makes the most race progress (checkpoints passed) and ends nearest the next
 // checkpoint, searching two choices deep. Entering a vehicle is taken when
 // one is offered (vehicle-only races need it). It must finish first.
-import { applyOption, hold, optionLabels, posOf, DIRS8 } from '../drive.js';
+import { applyOption, hold, optionLabels, DIRS8 } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { multiSeed, problem, pathOf } from './common.js';
 
 const RACE = 'gameplay.race';
 
-/** The player's race state and the point of its next checkpoint ({ key, cp, target, done }). */
+/** The player's race state and its next checkpoint zone ({ s, r, cp, done }). */
 export function raceView(rt, doc, config) {
   const s = rt.state.prim[`${RACE}:${config.id ?? 'race'}`], r = s?.racers?.player;
   const cp = config.checkpoints[r ? r.next : 1 % config.checkpoints.length];
-  const zone = (doc.spaces || []).flatMap(sp => sp.zones || []).find(z => z.id === cp);
-  const target = Array.isArray(zone?.rect) ? [(zone.rect[0] + zone.rect[2]) / 2, (zone.rect[1] + zone.rect[3]) / 2] : Array.isArray(zone?.range) ? [(zone.range[0] + zone.range[1]) / 2] : null;
-  return { s, r, cp, target, done: Boolean(r?.finished) };
+  return { s, r, cp, done: Boolean(r?.finished) };
 }
 
-const dist2 = (a, b) => { let d = 0; for (let i = 0; i < b.length; i++) d += ((a?.[i] ?? 0) - b[i]) ** 2; return Math.sqrt(d); };
-
-/** Race score: checkpoints passed (laps included) dominate; then closeness to the next checkpoint. */
+/** Race score: checkpoints passed (laps included) dominate; then closeness to the next checkpoint, measured by the space. */
 export function raceScore(rt, doc, config) {
   if (rt.state.status === 'won') return 1e9 - rt.state.frame;
   if (rt.state.status === 'lost') return -1e9;
@@ -31,8 +27,9 @@ export function raceScore(rt, doc, config) {
   if (!v.r) return -1e6;
   if (v.r.finished) return (v.r.place === 1 ? 1e8 : 1e7) - rt.state.frame;
   const passed = v.r.lap * N + ((v.r.next - 1 + N) % N);
-  const p = rt.player(), api = p?.space && rt.space(p.space);
-  const d = v.target ? dist2(posOf(rt, p), v.target) : (api?.nearest?.(p, v.cp, rt) ?? 0);
+  // Closeness as the space measures it (the position capability's nearest: the race's own wrong-way measure), so a
+  // looped track is measured the short way round, never across the lap's raw coordinates.
+  const p = rt.player(), d = rt.space(p.space).nearest(p, v.cp, rt);
   return passed * 1e4 - d;
 }
 

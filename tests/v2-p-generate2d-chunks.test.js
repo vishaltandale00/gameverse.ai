@@ -94,3 +94,24 @@ test('chunks: preflight rejects bad configs with stable codes', () => {
   for (const c of ['chunk_rows_ragged', 'chunk_char_unknown', 'chunk_duplicate', 'chunk_axis_invalid', 'chunk_legend_invalid']) assert.ok(codes(bad).includes(c), c);
   assert.ok(codes(doc({ density: 9 })).includes('param_range'));
 });
+
+test('chunks: on a looped track the course is the circuit, laid out whole up to the wrap and kept for every lap', () => {
+  const legend = { '.': {}, X: { archetype: 'barrier', blocks: true }, o: { archetype: 'coin' } };
+  const d = { schema: 'gameverse.v2.game/0.2', id: 'circuit', title: 'Circuit', seed: 5,
+    spaces: [{ id: 'run', use: 'engine.space.track', with: { lanes: 3, length: 120, loop: true },
+      generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'a', rows: ['o.o', '.X.'] }, { id: 'b', rows: ['X..', '..X'] }], legend, axis: 'x', cross: 'y', origin: [0, 0, 0.5], firstAt: 10, ahead: 30, behind: 8, gap: { base: 4, min: 2 } } }] }],
+    content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }, { id: 'barrier', components: {} }] },
+    player: { archetype: 'hero', at: [0, 1, 0.5] } };
+  assert.ok(preflight(structuredClone(d), new Registry(ALL), buildLogic(new Registry(ALL), Logic)).ok);
+  const { rt } = compile(d, { primitives: ALL });
+  rt.step({});
+  const course = () => Object.values(rt.state.entities).filter(e => e.archetype !== 'hero').map(e => `${e.archetype}@${e.at.join(',')}`).sort();
+  const laid = course(), placed = rt.state.counts.chunk_placed;
+  assert.ok(placed > 8 && rt.store(KEY).nextAt >= 110, `the whole circuit at once (${placed} chunks, to ${rt.store(KEY).nextAt})`);
+  assert.ok(Object.values(rt.state.entities).every(e => e.at[0] >= 0 && e.at[0] < 120), 'every piece on the circuit');
+  // Two laps: nothing is culled behind, nothing new is placed, the same course every lap.
+  for (let i = 0; i < 480; i++) { const p = rt.player(); rt.space('run').setPos(p, [p.at[0] + 0.5, 1, 0.5], rt); rt.step({}); if (i === 230) assert.deepEqual(course(), laid, 'near the end of lap one the first chunks are still there'); }
+  assert.equal(rt.space('run').laps(rt.player()), 2);
+  assert.deepEqual(course(), laid);
+  assert.equal(rt.state.counts.chunk_placed, placed);
+});

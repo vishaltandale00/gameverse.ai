@@ -72,7 +72,7 @@ import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 import { OUTLINE_AUTHORS } from './world.js';
-import { cardLoop } from './loop.js';
+import { cardLoop, loopSpaceFits } from './loop.js';
 import { list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -620,9 +620,8 @@ export function checkComposition(input, registry, opts = {}) {
       }
       // space: the bound space, or the capabilities it lacks through an adapter. An alternative is a space id or a
       // capability list any space providing them satisfies (card.mode.space).
-      const alts = (isList(md.space) ? md.space : typeof md.space === 'string' ? [md.space] : []).filter((/** @type {unknown} */ x) => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')));
-      const fits = (/** @type {string | string[]} */ a) => !s ? true : typeof a === 'string' ? a === s.use : a.every(c => s.caps.has(c));
-      if (alts.length && s && !alts.some(fits)) {
+      const alts = /** @type {Array<string | string[]>} */ (md.space);
+      if (s && !loopSpaceFits(/** @type {any} */ (md), s.use, s.caps)) {
         const ids = /** @type {string[]} */ (alts.filter(a => typeof a === 'string'));
         const target = ids.find(id => registry.has(id));
         const capList = /** @type {string[][]} */ (alts.filter(a => isList(a)))[0];

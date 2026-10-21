@@ -191,3 +191,10 @@ test('every vector preset and backdrop pattern draws on a canvas', () => {
   const layers = normalizeLayers(BACKDROPS.map((pattern, i) => ({ pattern, depth: i / BACKDROPS.length, color: '#334455' })));
   assert.equal(layers.length, BACKDROPS.length);
 });
+
+test('track curves on a looped track repeat every lap (whole cycles per lap); open tracks keep their own waves', () => {
+  const c = curves(3, { period: 320 });
+  for (const z of [0, 17, 151.5, 300]) { assert.ok(Math.abs(c.curve(z) - c.curve(z + 320)) < 1e-9); assert.ok(Math.abs(c.hill(z) - c.hill(z + 640)) < 1e-9); }
+  assert.notEqual(c.curve(40), c.curve(41), 'it still bends');
+  assert.equal(curves(3).curve(40), curves(3, { period: 0 }).curve(40));
+});

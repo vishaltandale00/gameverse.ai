@@ -10,7 +10,8 @@
 // line through it (a cross position per progress step, shifting at most
 // `maxShift` cells per step, never through a `blocks` char); impassable chunks
 // are dropped from the pool with a problem, and an empty pool falls back to a
-// plain gap. Runtime choice uses rt.random(), so courses replay exactly.
+// plain gap. Runtime choice uses rt.random(), so courses replay exactly. On an axis the space wraps (a looped
+// track) the course is the circuit: laid out whole up to the wrap and kept for every lap.
 import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.chunks';
@@ -72,7 +73,7 @@ export default {
       cross: { type: 'string', options: ['x', 'y', 'z'], default: 'y', effect: 'axis of the other picture dimension' },
       origin: { type: 'list', of: { type: 'number' }, default: [0, 0, 0], effect: 'space position of progress 0, cross 0' },
       firstAt: { type: 'number', default: 10, scale: 'world', effect: 'progress of the first chunk' },
-      end: { type: 'number', min: 0, scale: 'world', effect: 'progress where the course ends: no chunk starts at or beyond it (default: endless)' },
+      end: { type: 'number', min: 0, scale: 'world', effect: 'progress where the course ends: no chunk starts at or beyond it (default: endless; on an axis the space wraps, where it wraps)' },
       speed: { type: 'object', default: {}, fields: { start: { type: 'number', min: 0, default: 10 }, max: { type: 'number', min: 0, default: 22 }, rampSeconds: { type: 'number', min: 1, default: 90 } }, effect: 'speed curve (units/s) that sets tiers' },
       tierBy: { type: 'string', options: ['time', 'distance'], default: 'time' },
       tierDistance: { type: 'list', of: { type: 'number' }, default: [300, 900], min: 2, max: 2, effect: 'distance thresholds for tiers 2 and 3' },
@@ -176,9 +177,15 @@ export default {
       s.nextAt = start + length; s.lastChunk = chunk.id; s.chunkN++; s.log.push(chunk.id); if (s.log.length > 8) s.log.shift();
       rt.emitTyped('chunk_placed', chunk.id, { at: start, length, tier, n: s.chunkN });
     };
+    // A progress axis the space wraps (a looped track) is a circuit: the course runs to where the axis wraps (or `end`,
+    // when sooner), is laid out whole and kept, so every lap drives the same course; nothing behind is culled, because
+    // behind is also ahead.
+    const period = typeof space.api.bounds === 'function' && space.api.bounds().wrap?.[ax] && space.size?.[ax] > 0 ? space.size[ax] : 0;
+    const end = period ? Math.min(config.end ?? period, period) : config.end;
     const stream = () => {
       const p = progressOf(); if (p === null) return;
-      for (let guard = 0; st().nextAt < p + config.ahead && (config.end === undefined || st().nextAt + (st().chunkN ? join : 0) < config.end) && guard < 64; guard++) spawnChunk();
+      for (let guard = 0; (period || st().nextAt < p + config.ahead) && (end === undefined || st().nextAt + (st().chunkN ? join : 0) < end) && guard < 64; guard++) spawnChunk();
+      if (period) return;
       const s = st(), cut = p - config.behind;
       if (s.placed.length && s.placed[0].p < cut) { const keep = []; for (const e of s.placed) { if (e.p < cut) rt.despawn(e.id); else keep.push(e); } s.placed = keep; }
       if (config.clearBehind && s.cells.length && s.cells[0].p < cut) { const writer = cellWriter(rt, space), keep = []; for (const c of s.cells) { if (c.p < cut) writer.set(c.at, null); else keep.push(c); } writer.flush(); s.cells = keep; }

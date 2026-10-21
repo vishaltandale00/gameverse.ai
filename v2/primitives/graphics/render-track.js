@@ -5,7 +5,10 @@
 // track stays straight), with striped ground, ballast bed, sleepers and rails
 // per lane, fogged roadside scenery (buildings and lamps, trees, rocks or
 // pylons by theme), 3D-box obstacles (barriers, gates, trains), billboarded
-// characters and pickups, speed lines and atmospheric fog.
+// characters and pickups, vehicles as 3D boxes, speed lines and atmospheric fog. On a looped track (a circuit) the
+// camera's progress is unwrapped across the start line, everything within view is drawn the short way round (a rival
+// just past the line is ahead of a player about to cross it), and the bends, hills and scenery repeat every lap, so
+// the course is the same circuit each time round.
 import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER, checkBinding } from './flat-stage.js';
 import { drawEntity, lookOf } from './flat-models.js';
@@ -14,6 +17,7 @@ import { TAU, mix, clamp, lerp, rgba, hash, seedOf, roundRect, col, isHex } from
 
 const FAR = 95, SEG = 2.5, BACK = 5.2;
 const OBSTACLE = /obstacle|barrier|wall|train|car|truck|block|gate|crate|hurdle|fence|cone/;
+const VEHICLE_COLORS = ['#d83a2a', '#2a7ad8', '#2aa84a', '#e8b020', '#9a3ad8', '#e86a20'];
 
 /** Track projection: pure, for tests. opts: { w, h, zc, camX, camH, curve, hill } → proj(X, Y, Z) → [sx, sy, k] | null. */
 export function trackView({ w, h, zc, camX = 0, camH = 2.7, curve = () => 0, hill = () => 0 }) {
@@ -27,13 +31,24 @@ export function trackView({ w, h, zc, camX = 0, camH = 2.7, curve = () => 0, hil
   };
   return { proj, zc, F, horizon, heading: cd, camX, camH };
 }
-export function curves(seed, { curvature = 1, hills = 1 } = {}) {
+/**
+ * Seeded bends and hills along the track. `period` > 0 (a looped track's length): each wave's frequency is snapped to a
+ * whole number of cycles per lap (distinct ones), so the shape repeats exactly every lap.
+ */
+export function curves(seed, { curvature = 1, hills = 1, period = 0 } = {}) {
   const a = hash(seed) * 6, b = hash(seed + 1) * 6;
+  const pair = (r1, r2) => {
+    if (!(period > 0)) return [1 / r1, 1 / r2];
+    const k1 = Math.max(1, Math.round(period / (TAU * r1))), k2 = Math.max(k1 + 1, Math.round(period / (TAU * r2)));
+    return [TAU * k1 / period, TAU * k2 / period];
+  };
+  const [c1, c2] = pair(130, 53), [h1, h2] = pair(95, 41);
   return {
-    curve: z => curvature * (9 * Math.sin(z / 130 + a) + 4.5 * Math.sin(z / 53 + 1.3 + b)),
-    hill: z => hills * (2.4 * Math.sin(z / 95 + 0.4 + b) + 1.1 * Math.sin(z / 41 + a)),
+    curve: z => curvature * (9 * Math.sin(z * c1 + a) + 4.5 * Math.sin(z * c2 + 1.3 + b)),
+    hill: z => hills * (2.4 * Math.sin(z * h1 + 0.4 + b) + 1.1 * Math.sin(z * h2 + a)),
   };
 }
+const mod = (a, n) => ((a % n) + n) % n;
 
 export default {
   id: 'graphics.render.track',
@@ -60,8 +75,10 @@ export default {
     const H = hubOf(rt), space = bindSpace(rt, instance, ['track']), S = H.stage(space, 'track');
     ensureJuice(rt);
     const apiOf = () => { try { return rt.space(space); } catch { return null; } };
-    const C = curves(seedOf(rt.doc.id || 'track'), config);
-    const cam = { x: null, h: null };
+    const trackOf = () => { const a = apiOf(); return a?.config.loop && a.config.length > 0 ? a.config.length : 0; };
+    const C = curves(seedOf(rt.doc.id || 'track'), { ...config, period: trackOf() });
+    // cam.lap: whole laps added to the leader's progress so the camera runs on across the start line (looped tracks).
+    const cam = { x: null, h: null, last: null, lap: 0 };
     let view = null;
     const themeName = () => (config.scenery !== 'auto' ? config.scenery : (() => { const t = themeFor(rt.doc); return ['city', 'factory'].includes(t) ? 'city' : ['forest', 'jungle', 'meadow'].includes(t) ? 'forest' : ['desert'].includes(t) ? 'desert' : ['space'].includes(t) ? 'space' : ['snow'].includes(t) ? 'snow' : 'city'; })());
     S.renderer = {
@@ -70,7 +87,10 @@ export default {
         const api = apiOf(); if (!api) return null;
         const LW = api.config.laneWidth || 1, mid = (api.config.lanes - 1) / 2;
         const leader = rt.entity(api.config.leader || 'player') || F.player;
-        const lp = leader ? (F.byId.get(leader.id)?.pos || leader.at) : [0, mid, 0.5];
+        const lp0 = leader ? (F.byId.get(leader.id)?.pos || leader.at) : [0, mid, 0.5], L = trackOf();
+        if (L && cam.last !== null) cam.lap += lp0[0] - cam.last < -L / 2 ? L : lp0[0] - cam.last > L / 2 ? -L : 0;
+        cam.last = lp0[0];
+        const lp = [lp0[0] + cam.lap, ...lp0.slice(1)];
         const zc = lp[0] - BACK;
         const targetX = (lp[1] - mid) * LW * 0.55;
         cam.x = cam.x == null ? targetX : lerp(cam.x, targetX, 0.12);
@@ -78,9 +98,11 @@ export default {
         cam.h = cam.h == null ? H0 : lerp(cam.h, H0, 0.15);
         view = trackView({ w: F.w, h: F.h, zc, camX: cam.x, camH: cam.h, ...C });
         view.LW = LW; view.mid = mid;
+        // A progress on the circuit as seen from the camera: the copy ahead of it, within one lap.
+        view.along = L ? z => zc + mod(z - zc, L) : z => z;
         const P = view.proj;
         const sx = shake?.[0] || 0, sy = shake?.[1] || 0;
-        const toScreen = p => { const q = P((p[1] - mid) * LW, p[2] ?? 0, p[0]); return q ? [q[0] + sx, q[1] + sy] : [-9999, -9999]; };
+        const toScreen = p => { const q = P((p[1] - mid) * LW, p[2] ?? 0, view.along(p[0])); return q ? [q[0] + sx, q[1] + sy] : [-9999, -9999]; };
         const lq = P((lp[1] - mid) * LW, 0, lp[0]);
         return { toScreen, unit: lq ? lq[2] : 40 };
       },
@@ -138,25 +160,30 @@ export default {
       // Drawables far to near: roadside dressing, entities, obstacles.
       const items = [];
       if (scen !== 'none') {
-        const step = 13;
+        // On a circuit the roadside repeats every lap: a whole number of slots per lap, each dressed by its slot index.
+        const Lp = trackOf(), slots = Lp ? Math.max(1, Math.round(Lp / 13)) : 0, step = Lp ? Lp / slots : 13;
         for (let i = Math.floor((v.zc + FAR) / step); i * step > v.zc - step; i--) for (const sgn of [-1, 1]) {
-          const r = hash(i * 2 + (sgn > 0 ? 1 : 0)), Z = i * step + r * 4, x0 = sgn * (HW + 3.2 + r * 2.5);
-          if (scen === 'city' || scen === 'snow') { const bw = 3 + r * 4, bh = 5 + hash(i * 7 + sgn) * 10; items.push({ z: Z + 6, draw: () => building(g, v, sgn > 0 ? x0 : x0 - bw, sgn > 0 ? x0 + bw : x0, bh, Z, Z + 10, ground, haze, night) }); if (hash(i * 11 + sgn) > 0.45) items.push({ z: Z, draw: () => lamp(g, v, sgn * (HW + 1.3), Z, haze, night) }); }
-          else for (let k = 0; k < 3; k++) { const zz = Z + k * 4, xx = x0 + sgn * k * 1.4; items.push({ z: zz, draw: () => prop(g, v, scen, xx, zz, haze, hash(i * 5 + k)) }); }
+          const n = slots ? mod(i, slots) : i;
+          const r = hash(n * 2 + (sgn > 0 ? 1 : 0)), Z = i * step + r * 4, x0 = sgn * (HW + 3.2 + r * 2.5);
+          if (scen === 'city' || scen === 'snow') { const bw = 3 + r * 4, bh = 5 + hash(n * 7 + sgn) * 10; items.push({ z: Z + 6, draw: () => building(g, v, sgn > 0 ? x0 : x0 - bw, sgn > 0 ? x0 + bw : x0, bh, Z, Z + 10, ground, haze, night) }); if (hash(n * 11 + sgn) > 0.45) items.push({ z: Z, draw: () => lamp(g, v, sgn * (HW + 1.3), Z, haze, night) }); }
+          else for (let k = 0; k < 3; k++) { const zz = Z + k * 4, xx = x0 + sgn * k * 1.4; items.push({ z: zz, draw: () => prop(g, v, scen, xx, zz, haze, hash(n * 5 + k)) }); }
         }
       }
       for (const it of F.entities) {
         const e = it.e, size = e.components?.body?.size || [1, 0.8, 1], L = lookOf(H, e, 'track');
-        const z = it.pos[0], X = (it.pos[1] - M) * LW, base = Math.max(0, (it.pos[2] ?? size[2] / 2) - size[2] / 2);
+        const z = v.along(it.pos[0]), X = (it.pos[1] - M) * LW, base = Math.max(0, (it.pos[2] ?? size[2] / 2) - size[2] / 2);
         if (z - v.zc > FAR || z + size[0] / 2 < v.zc + 0.6) continue;
         const text = `${e.archetype} ${(rt.archetype(e.archetype)?.tags || []).join(' ')}`.toLowerCase();
-        if ((L.role === 'hazard' || L.role === 'prop') && OBSTACLE.test(text) || (L.role === 'hazard' && size[2] >= 0.6)) items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, text, F.t) });
+        // Vehicles (karts, cars, carts) are bodies on the road: a vehicle box in their own colour, the driver drawn on top.
+        if (L.role === 'vehicle') items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, text, F.t, VEHICLE_COLORS[seedOf(e.id) % VEHICLE_COLORS.length]) });
+        else if ((L.role === 'hazard' || L.role === 'prop') && OBSTACLE.test(text) || (L.role === 'hazard' && size[2] >= 0.6)) items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, text, F.t) });
         else items.push({ z, draw: () => { const q = v.proj(X, base, z); if (!q) return; const hpx = Math.max(4, size[2] * q[2]); drawEntity(F, it, { x: q[0], y: q[1], w: Math.max(4, size[1] * LW * q[2] * 0.9), h: hpx, view: 'track', unit: q[2], alpha: clamp((FAR * 0.9 - (z - v.zc)) / 10, 0, 1) }); } });
       }
       items.sort((a, b) => b.z - a.z);
       for (const it of items) it.draw();
       // Speed lines when the leader is fast.
-      const lead = rt.entity(api.config.leader || 'player'), sp = Math.abs(lead?.components?.body?.vel?.[0] || 0);
+      // The leader's speed, or the speed of the vehicle it sits in.
+      const leader = rt.entity(api.config.leader || 'player'), lead = rt.entity(leader?.components?.seat?.vehicle) || leader, sp = Math.abs(lead?.components?.body?.vel?.[0] || 0);
       const k = clamp((sp - 8) / 20, 0, 1);
       if (config.speedLines && k > 0.05 && !F.reduced) {
         const vp = v.proj(0, 1, v.zc + FAR) || [F.w / 2, v.horizon];
@@ -192,10 +219,10 @@ export default {
       else if (scen === 'space') { const h = (3 + r * 3) * k; g.strokeStyle = fog('#7a80c0', haze, dz); g.lineWidth = Math.max(1, k * 0.1); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(a[0], a[1] - h); g.stroke(); g.fillStyle = rgba('#7af0ff', 0.6 + 0.4 * Math.sin(Z)); g.beginPath(); g.arc(a[0], a[1] - h, Math.max(1, k * 0.15), 0, TAU); g.fill(); }
       else { const s = (0.4 + r * 0.8) * k; g.fillStyle = fog('#8a8a90', haze, dz); g.beginPath(); g.ellipse(a[0], a[1] - s * 0.4, s, s * 0.6, 0, 0, TAU); g.fill(); }
     }
-    function obstacle(g, v, e, X, base, z, size, haze, text, t) {
+    function obstacle(g, v, e, X, base, z, size, haze, text, t, paint = null) {
       const L = v.LW, w = size[1] * L * 0.5, dz = z - v.zc, front = z - size[0] / 2, back = z + size[0] / 2;
-      if (/train|car|truck/.test(text)) {
-        const c = /train/.test(text) ? '#3a6a8a' : '#d83a2a', colors = { front: mix(c, '#ffffff', 0.08), side: mix(c, '#000000', 0.25), top: mix(c, '#ffffff', 0.25) };
+      if (paint || /train|car|truck/.test(text)) {
+        const c = paint || (/train/.test(text) ? '#3a6a8a' : '#d83a2a'), colors = { front: mix(c, '#ffffff', 0.08), side: mix(c, '#000000', 0.25), top: mix(c, '#ffffff', 0.25) };
         box(g, v, X - w, X + w, base, base + size[2], front, back, colors, haze, (a, b, cc, d, dzz) => {
           const P = (u, ww) => [lerp(lerp(a[0], b[0], u), lerp(d[0], cc[0], u), ww), lerp(lerp(a[1], b[1], u), lerp(d[1], cc[1], u), ww)];
           const poly = (pts, fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.fill(); };
