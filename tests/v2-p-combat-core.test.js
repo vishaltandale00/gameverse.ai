@@ -89,7 +89,7 @@ const healthDoc = (h = {}) => base([
     { id: 'ghost', kind: 'enemy', components: { health: { max: 10, respawn: { mode: 'home', sec: 2 } }, touch: { damage: 7, type: 'phys' } } },
     { id: 'rock', kind: 'enemy', components: { health: { max: 4, splitOnDeath: { into: 'pebble', count: 2, spread: 90 } }, body: { vel: [3, 0, 0] } } },
     { id: 'pebble', kind: 'enemy', components: { health: { max: 1 } } },
-    { id: 'shade', kind: 'enemy', components: { health: { max: 5, respawn: 'spawn' } } },
+    { id: 'shade', kind: 'enemy', components: { health: { max: 5, respawn: { mode: 'spawn' } } } },
   ],
 });
 

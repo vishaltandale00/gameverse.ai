@@ -67,9 +67,9 @@ export default {
     defines: [{ kind: 'boss', in: 'bosses' }],
     rules: {
       boss_phase_order: { fields: ['bosses[].phases[].at'], message: 'phases are listed from the highest hp fraction to the lowest (a phase with a when condition may break the order)',
-        example: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 0.5 }, { at: 1 }] }] } },
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 0.5 }, { at: 1 }] }] } }] } } },
       boss_pattern_unknown: { fields: ['bosses[].phases[].pattern', 'bosses[].archetype'], message: "each pattern id names an attack of the boss archetype (components.attacks ids, components.melee moves) or a gameplay.combat.melee move",
-        example: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 1, pattern: ['no_such_attack'] }] }] } },
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 1, pattern: ['no_such_attack'] }] }] } }] } } },
       boss_health_missing: { fields: ['bosses[].archetype', 'bosses[].hp'], message: 'the boss archetype has a health component, or the boss gives hp',
         example: { bosses: [{ id: 'key', archetype: 'key', name: null, entity: null, start: null, sightRange: null, hp: null, phaseInvulnSec: null, cancelBullets: null, timeLimit: null, gate: null, required: null, lockArena: null, tire: null, enrage: null }] } },
     },

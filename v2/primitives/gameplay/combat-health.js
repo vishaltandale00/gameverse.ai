@@ -111,7 +111,6 @@ const health = {
     const types = new Set(config.types);
     const init = e => {
       const h = e?.components?.health; if (!h || h.hp !== undefined) return;
-      if (typeof h !== 'object') { e.components.health = { max: Number(h) || 1 }; return init(e); }
       h.max ??= 1; h.hp = h.start ?? h.max; h.dead = false; h.invulnerable = h.invulnerable ?? 0; h.stun = 0; h.regenT = 0; h.push = null;
       if (isPos(e.at)) h.home ??= e.at.slice();
     };
@@ -216,7 +215,7 @@ const health = {
         const h = e.components.health;
         if (h.splitOnDeath) split(e);
         if (e.id === 'player') { if (!rt.hasService('death') && config.playerDeath === 'lose') rt.run([{ do: 'end_game', outcome: 'lost' }]); return; }
-        const rule = typeof h.respawn === 'string' ? { mode: h.respawn } : { ...config.respawn, ...(h.respawn || {}) };
+        const rule = { ...config.respawn, ...(h.respawn || {}) };
         const mode = rule.mode ?? 'none', sec = rule.sec ?? config.respawn.sec;
         if (mode === 'home') {
           h.dead = false; h.state = 'returning'; h.respawnAt = rt.state.frame + Math.max(1, frames(sec));

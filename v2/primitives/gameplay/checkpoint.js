@@ -7,7 +7,7 @@ import { restoreAll, runIf, whoKey, pos, boxOf, boxesTouch, isVec, dist } from '
 
 const KEY = 'gameplay.checkpoint';
 const AUTO_ID = /^e\d+$/;
-export const checkpointId = e => (typeof e.components.checkpoint === 'object' && e.components.checkpoint.id) || (AUTO_ID.test(e.id) ? e.archetype : e.id);
+export const checkpointId = e => e.components.checkpoint?.id || (AUTO_ID.test(e.id) ? e.archetype : e.id);
 const st = rt => { const s = rt.store(KEY); s.point ??= {}; s.active ??= {}; s.start ??= {}; return s; };
 
 /** Return an entity to its checkpoint (or its start); returns whether it moved. */

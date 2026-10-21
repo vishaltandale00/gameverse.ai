@@ -1,6 +1,6 @@
 // Collectibles and counters: coins, shards, pages, maze pellets and power
 // pellets, timed bonus prizes. A pickup is an entity with a `collectible`
-// component ("counter" | { counter, value?, points?, item?, fx?, magnet? }) or a
+// component ({ counter, value?, points?, item?, fx?, magnet? }; card.components) or a
 // cell holding a counter's `block`. Touch collects (entities that also carry an
 // `interact` component are collected by using them instead). Each counter keeps
 // a var, per-zone tallies, a total (given or counted at start), and can clear the
@@ -11,7 +11,7 @@ import { give } from './inventory.js';
 import { addScore, boxOf, boxesTouch, center, isVec, len, sub, pull, entityByRef, whoKey, cellPoint } from './items-lib.js';
 
 const KEY = 'gameplay.collectible';
-const counterOf = e => { const c = e.components.collectible; return typeof c === 'string' ? { counter: c } : c || null; };
+const counterOf = e => e.components.collectible || null;
 
 export default {
   id: 'gameplay.collectible',
@@ -174,7 +174,7 @@ export default {
         const base = config.magnet + (who.id === 'player' ? rt.state.vars['stat.magnet'] ?? 0 : 0);
         for (const e of Object.values(rt.state.entities)) {
           const k = counterOf(e); if (!k || e === who || e.space !== who.space || !isVec(e.at) || !rt.entity(e.id)) continue;
-          const reach = typeof k.magnet === 'number' ? k.magnet : k.magnet === false ? 0 : base;
+          const reach = typeof k.magnet === 'number' ? k.magnet : base;
           if (reach > 0 && !e.components.interact) { const d = len(sub(center(rt, e), wc)); if (d <= reach) pull(rt, e, wc, config.magnetSpeed * rt.dt); }
           if (e.components.interact) continue;
           if (boxesTouch(wb, boxOf(rt, e)) || len(sub(center(rt, e), wc)) <= config.radius) collect(e, who.id);

@@ -10,7 +10,7 @@ import { boxOf, boxesTouch, isVec } from './items-lib.js';
 
 const KEY = 'gameplay.goal';
 /** A goal entity's id: components.goal.id, else its archetype. */
-export const goalId = e => (typeof e.components.goal === 'object' && e.components.goal?.id) || e.archetype;
+export const goalId = e => e.components.goal?.id || e.archetype;
 
 export default {
   id: KEY,
