@@ -31,7 +31,7 @@ export default {
     intent: 'Pixel-art sprites built from content.models part lists (kind pixel): every named animation generated procedurally from the parts, shaded and outlined, with optional ground shadows.',
     views: ['side', 'td', 'iso', 'board'],
     params: {
-      outline: { type: 'string', default: 'auto', pattern: `^(auto|none|${HEX_COLOR.slice(1, -1)})$`, effect: "outline color: a hex, 'auto' (a dark of the sprite's own color) or 'none'" },
+      outline: { type: 'string', default: 'auto', pattern: `^(auto|none|${HEX_COLOR.slice(1, -1)})$`, example: '#202030', effect: "outline color: a hex, 'auto' (a dark of the sprite's own color) or 'none'" },
       shadow: { type: 'boolean', default: true, effect: 'soft ground shadow under every entity' },
       shading: { type: 'boolean', default: true, effect: 'top-left light ramp on each part' },
       outlineWidth: { type: 'integer', default: 1, min: 1, max: 2, unit: 'px', effect: "outline rings around each sprite (an art look's outline width)" },

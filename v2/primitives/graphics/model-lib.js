@@ -14,8 +14,10 @@ export const HEX6_COLOR = '^#[0-9a-fA-F]{6}$';
 const HEX_RE = new RegExp(HEX_COLOR, 'u');
 /** True for a value HEX_COLOR allows. @param {unknown} s */
 export const isHexColor = s => typeof s === 'string' && HEX_RE.test(s);
-/** A hex color param or field. @param {Record<string, unknown>} [extra] */
-export const color = (extra = {}) => ({ type: 'string', pattern: HEX_COLOR, ...extra });
+/** A hex color param or field (its example is the sampler's witness of the pattern). @param {Record<string, unknown>} [extra] */
+export const color = (extra = {}) => ({ type: 'string', pattern: HEX_COLOR, example: '#336699', ...extra });
+/** A #rrggbb color param or field. @param {Record<string, unknown>} [extra] */
+export const color6 = (extra = {}) => ({ type: 'string', pattern: HEX6_COLOR, example: '#336699', ...extra });
 
 /** Lowpoly part shapes (model-lowpoly.js draws exactly these). */
 export const LOWPOLY_SHAPES = ['box', 'cyl', 'sphere', 'cone', 'cap'];

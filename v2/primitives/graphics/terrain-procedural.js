@@ -8,7 +8,7 @@
 import { joinStage, presentationOnly } from './three-stage.js';
 import { quadtreePatches, splatSample, buildPatch, scatterPoints } from './three-terrain.js';
 import { colorOf, hash3 } from './three-util.js';
-import { HEX6_COLOR } from './model-lib.js';
+import { color6 } from './model-lib.js';
 
 const DEFAULTS = { lodLevels: 4, patch: 64, resolution: 32, splat: [], grass: { density: 0.6, height: 0.45, windSway: 0.3, radius: 42 }, water: null, fog: null, budgetMs: 3 };
 
@@ -225,7 +225,7 @@ export default {
         biome: { type: 'string' }, material: { type: 'string' },
         slope: { type: 'list', of: { type: 'number', min: 0, max: 90 }, min: 2, max: 2, unit: 'deg' },
         height: { type: 'list', of: { type: 'number' }, min: 2, max: 2, unit: 'm' },
-        color: { type: 'string', required: true, pattern: HEX6_COLOR }, roughness: { type: 'number', min: 0, max: 1, default: 0.9 },
+        color: color6({ required: true }), roughness: { type: 'number', min: 0, max: 1, default: 0.9 },
       } } },
       grass: { type: 'object', default: {}, effect: 'instanced grass near the camera', fields: {
         density: { type: 'number', default: 0.6, min: 0, max: 4, unit: '/m²' }, height: { type: 'number', default: 0.45, min: 0.05, max: 3, unit: 'm' },
