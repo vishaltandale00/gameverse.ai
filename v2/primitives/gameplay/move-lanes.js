@@ -16,6 +16,18 @@ const ID = 'gameplay.move.lanes';
 export const LANES = { switchTime: 0.15, jumpH: 1.35, air: 0.62, slide: 0.62, drop: 16, chase: 7, tripSec: 0.45, tripSlow: 0.72, jumpBuffer: 0.14, stand: 1.7, slideH: 0.6, bumpInvuln: 0.7, clearHeight: 2.7 };
 const num = (min, max, d, unit, effect) => ({ type: 'number', min, max, default: d, unit, effect });
 const AXIS = { x: 0, y: 1, z: 2 };
+/**
+ * Forward (F, sign fs) and lateral (L) axes. 'auto' runs along +z in 3D and +y in 2D, except along the space's
+ * up axis (its gravity): a track space is [progress, lane, height] with gravity on z, so there it runs +x
+ * and switches lanes along y. The lateral axis is the one that is neither forward nor up.
+ */
+function laneAxes(forward, dims, up) {
+  const auto = !forward || forward === 'auto';
+  const spec = auto ? (dims === 3 ? (up === 2 ? '+x' : '+z') : (up === 1 ? '+x' : '+y')) : forward;
+  const F = AXIS[spec[1]], fs = spec[0] === '-' ? -1 : 1;
+  const L = dims === 3 ? [0, 1, 2].find(i => i !== F && i !== (up ?? 1)) ?? (F === 0 ? 2 : 0) : (F === 0 ? 1 : 0);
+  return { F, fs, L };
+}
 
 function envelope(config) {
   const g = (8 * config.jumpHeight) / (config.airTime ** 2);
@@ -41,7 +53,7 @@ export default {
       rampSec: num(1, 3600, 60, 's', 'time to reach maxSpeed'),
       tripSec: num(0, 5, LANES.tripSec, 's', 'stumble duration'), tripSlow: num(0, 1, LANES.tripSlow, '', 'speed fraction while stumbling'),
       chaseSec: num(0, 60, LANES.chase, 's', 'how long the chaser stays close after a stumble'),
-      forward: { type: 'string', options: ['auto', '+x', '-x', '+y', '-y', '+z', '-z'], default: 'auto', effect: 'run direction; auto: +z in 3D, +y in 2D' },
+      forward: { type: 'string', options: ['auto', '+x', '-x', '+y', '-y', '+z', '-z'], default: 'auto', effect: 'run direction; auto: +z in 3D, +y in 2D, or +x when that axis is the space\'s up (track: progress x, lanes y, height z)' },
       blockers: { type: 'list', of: { type: 'string' }, default: [], effect: 'archetype ids that block a lane switch (trains, walls)' },
       onCaught: { type: 'effects', default: [], effect: 'effects when the chaser catches you (an `caught` event is always emitted)' },
       ...COMMON_PARAMS, npcs: { ...COMMON_PARAMS.npcs, default: false }, ...MACRO_PARAMS,
@@ -59,8 +71,7 @@ export default {
    */
   travel(rt, path, config) {
     const e = rt.player(); if (!e || !Array.isArray(path) || !path.length) return false;
-    const dims = e.at.length, fwd = config.forward && config.forward !== 'auto' ? config.forward : dims === 3 ? '+z' : '+y';
-    const F = AXIS[fwd[1]], fs = fwd[0] === '-' ? -1 : 1, L = dims === 3 ? (F === 0 ? 2 : 0) : (F === 0 ? 1 : 0), half = (config.laneWidth ?? 1) / 2;
+    const dims = e.at.length, { F, fs, L } = laneAxes(config.forward, dims, frameOf(spaceApi(rt, e), e).up), half = (config.laneWidth ?? 1) / 2;
     let ok = true;
     for (const wp of path.slice(1)) {
       e.components.moveTo = { at: wp.slice(), run: true };
@@ -95,9 +106,7 @@ export default {
         if (!ownedBy(rt, e, owner)) continue;
         const api = spaceApi(rt, e); if (!api || !Array.isArray(e.at)) continue;
         const fr = frameOf(api, e), dims = e.at.length;
-        const fwdSpec = c.forward === 'auto' ? (dims === 3 ? '+z' : '+y') : c.forward;
-        const F = AXIS[fwdSpec[1]], fs = fwdSpec[0] === '-' ? -1 : 1;
-        const L = dims === 3 ? (F === 0 ? 2 : 0) : (F === 0 ? 1 : 0);
+        const { F, fs, L } = laneAxes(c.forward, dims, fr.up);
         const U = fr.up !== null && fr.up !== F && fr.up !== L ? fr.up : null;
         const b = bodyOf(e), s = state(e, 'lanes'), ctl = controls(rt, e), dt = rt.dt, now = rt.state.time;
         if (s.origin == null) { s.lane = Math.round(mid); s.x = s.lane - mid; s.y = 0; s.vy = 0; s.air = false; s.slideT = 0; s.jumpQ = 0; s.chaseT = 0; s.tripT = 0; s.dist = 0; s.from = s.lane; s.origin = round6(e.at[L] - s.x * c.laneWidth); }
