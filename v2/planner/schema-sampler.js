@@ -19,7 +19,7 @@
 import { preflight } from '../kernel/document.js';
 import { rulesOf, KERNEL_CODES } from '../kernel/rules.js';
 import { sectionShape, ID_PATTERN } from '../kernel/sections.js';
-import { strictSpec, decode, answerProblems } from './outline-form.js';
+import { strictSpec, decode, answerProblems, WITNESS } from './outline-form.js';
 import { docRefs } from './content.js';
 import { instancesWithPaths } from './templates.js';
 import { requiredBy } from './bundles.js';
@@ -63,7 +63,9 @@ export function formValues(s, limit = 16, depth = 0) {
     return [...new Set([a, b, round((a + b) / 2), ...(lo === null ? [-1e6] : []), ...(hi === null ? [1e6] : []), 0, 1].filter(v => (lo === null || v >= lo) && (hi === null || v <= hi)).map(round))];
   }
   if (s.type === 'string') {
-    if (typeof s.pattern === 'string') { const re = new RegExp(s.pattern, 'u'); return ['sampled', 'x', 'a_b-1'].filter(v => re.test(v)).slice(0, 2); }
+    // A pattern's samples: the field's declared example (outline-form WITNESS: the declaration's `example`), else
+    // plain words the pattern may allow.
+    if (typeof s.pattern === 'string') { const re = new RegExp(s.pattern, 'u'); const w = /** @type {Record<symbol, unknown>} */ (s)[WITNESS]; return [...(isStr(w) ? [w] : []), 'sampled', 'x', 'a_b-1'].filter(v => re.test(v)).slice(0, 2); }
     return ['', 'sampled'];
   }
   if (s.type === 'array') {
@@ -368,7 +370,10 @@ export function sampleExamples({ corpus, registry, logic }) {
       const host = owner === 'kernel' || !registry.has(owner) ? { host: 'kernel', doc: first } : hostFor(owner, corpus, registry, logic);
       for (const c of Array.isArray(def.codes) ? def.codes : []) {
         if (!host.host) { findings.push({ code: 'card_unhosted', use: owner, form: 'example', field: `${kind}.${c.code}`, value: '', path: '', message: /** @type {any} */ (host).why }); continue; }
-        if (isObj(c.example) && isFragment(c.example)) prove(/** @type {any} */ (host).doc, { req: true }, c.code, owner, `${type} ${kind}`, /** @type {any} */ (c.example).doc);
+        // A kind's example: the predicate/effect, or { doc, example? }: the fragment merged into the host (each named
+        // section replacing the host's), the probe carrying the predicate/effect when it is given.
+        const ce = /** @type {any} */ (c.example);
+        if (isObj(ce) && isObj(ce.doc) && Object.keys(ce).every(k => k === 'doc' || k === 'example' || k === 'at')) prove(/** @type {any} */ (host).doc, ce.example === undefined ? { req: true } : type === 'predicate' ? { req: true, when: ce.example } : { req: true, do: [ce.example] }, c.code, owner, `${type} ${kind}`, ce.doc);
         else prove(/** @type {any} */ (host).doc, type === 'predicate' ? { req: true, when: c.example } : { req: true, do: [c.example] }, c.code, owner, `${type} ${kind}`);
       }
     }
