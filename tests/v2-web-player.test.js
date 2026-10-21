@@ -16,6 +16,8 @@ import * as labDocs from '../v2/primitives/graphics/ui-lab-docs.js';
 import { docBindings, openKeys, MODAL_KEYS } from '../v2/primitives/graphics/ui-input.js';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { hostPreflight } from '../v2/verify/controls.js';
+import { PRIMITIVE_EXPERIMENT_SCHEMA } from '../v2/experiments/primitive-host.js';
+import { withExperiment } from '../v2/experiments/primitive.js';
 
 const B = installBrowser();
 test.after(() => B.restore());
@@ -165,6 +167,30 @@ test('host: a mount that fails (checks, install or the first step) releases ever
   const doc2 = structuredClone(templateById('race').doc); doc2.graphics = [{ use: 'graphics.ui.menu', with: { title: false } }]; doc2.systems.push({ use: 'gameplay.test.step-boom', with: {} });
   assert.throws(() => mountGame(B.container, { doc: doc2, version: 1 }, { now: B.now, primitives: [step] }), /step boom/);
   assert.deepEqual(B.held(), [], 'a first step that throws releases the mounted game');
+});
+
+test('host: a document experiment runs in a Worker box that belongs to its world: replaced on a hot-load, terminated on unload', async () => {
+  const code = `export default {
+  label: 'Ticker',
+  init(snapshot, rng, config) { return { n: 0 }; },
+  step(state) { return { state: { n: state.n + 1 }, ops: [] }; },
+};`;
+  const experiment = { schema: PRIMITIVE_EXPERIMENT_SCHEMA, id: 'pexp-ticker', kind: 'primitive', label: 'Ticker', request: 'a ticker',
+    card: { id: 'gameplay.exp.ticker', intent: 'Counts frames in a sandboxed module (host test fixture).', params: {} }, code, instance: { with: {} } };
+  const doc = withExperiment(structuredClone(maze.doc), experiment);
+  const g = mount(doc);
+  await start(g); frames(10);
+  const first = B.workers().filter(w => !w.terminated);
+  assert.equal(first.length, 1, 'the experiment runs in one Worker');
+  assert.equal(g.update({ doc: structuredClone(doc), version: 2 }), true);
+  frames(10);
+  assert.ok(first[0].terminated, 'the replaced world\'s Worker is terminated');
+  assert.equal(B.workers().filter(w => !w.terminated).length, 1, 'the new world runs its own');
+  const bad = structuredClone(doc); bad.systems.push({ use: 'gameplay.no-such-primitive', with: {} });
+  assert.equal(g.update({ doc: bad, version: 3 }), false);
+  assert.equal(B.workers().filter(w => !w.terminated).length, 1, 'a failed hot-load starts no Worker');
+  g.dispose();
+  assert.deepEqual(B.held(), [], 'unloading terminates it');
 });
 
 test('host: keys bound to the game are prevented while focus is in the game, never while typing; mounting does not steal a text field', async () => {
