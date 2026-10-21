@@ -248,6 +248,7 @@ details[open] .sheet-grid { animation: rise .3s var(--ease) both; }
 .checks > div { position: relative; padding-left: 16px; }
 .checks > div::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .8; }
 .checks code { font-size: 12px; color: var(--chalk); }
+.checks > .checks-head { margin: 6px 0 0; font-size: 13px; font-weight: 650; color: var(--muted); }
 .ok { color: var(--pass); } .warn { color: var(--signal); } .bad { color: var(--fail); } .muted { color: var(--muted); }
 .versions { gap: 6px; }
 .versions button { width: 100%; text-align: left; min-height: 40px; font-size: 14px; background: transparent; overflow-wrap: anywhere; }
