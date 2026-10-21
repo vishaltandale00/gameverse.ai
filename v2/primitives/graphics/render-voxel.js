@@ -5,6 +5,7 @@
 // chunk and its neighbours ahead of streaming; distant rings use
 // downsampled LOD meshes; three.js frustum culling plus distance unloading
 // keep draw calls bounded. Entities in the space are drawn as rigged actors.
+import { syncZones } from './three-zones.js';
 import { joinStage, presentationOnly } from './three-stage.js';
 import { padVolume, meshVolume, downsample } from './three-voxel-mesh.js';
 import { skyFromTops } from './three-voxel-sky.js';
@@ -40,7 +41,7 @@ export default {
     views: ['1p', '3p', 'iso'],
     // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
     // the document's loops show (card.loop.shows).
-    draws: ['entities', 'cells'],
+    draws: ['entities', 'cells', 'zones'],
     params: {
       meshBudgetMs: { type: 'number', default: 4, min: 1, max: 16, unit: 'ms', effect: 'chunk meshing time allowed per frame (higher streams faster, may drop frames)' },
       ao: { type: 'boolean', default: true, effect: 'per-vertex ambient occlusion' },
@@ -249,8 +250,10 @@ export default {
       syncActors(stage, spaceId, actorsRoot, { drawDistance: stage.settings.drawDistance });
     }, 'graphics.render.voxel');
 
+    const zoneState = {};
     stage.hook('world', () => {
       if (stage.activeSpace !== spaceId) return;
+      syncZones(rt, THREE, root, spaceId, (x, z) => stage.groundAt(spaceId, x, z)?.y ?? 0, zoneState); // the zones the loops name
       if (!info && !setup()) return;
       const pal = paletteFor(stage);
       // A new palette or hot-loaded content (new blocks/colors) re-resolves materials and re-meshes.

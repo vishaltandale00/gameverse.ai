@@ -118,3 +118,32 @@ test('sides: the player\'s side and the other side are drawn apart, in every tem
   }
   assert.ok(n >= 3, `templates with sides checked: ${n}`);
 });
+
+// A person can see the game as the host mounts it: no renderer layer fails (flat-stage swallows a throwing layer, so a
+// failure would only show as something missing), the renderer serves the document's view, the player is on screen and
+// large enough to read, and the camera keeps the player in view after it crosses the space.
+const MIN_BODY_PX = 12;
+for (const t of TEMPLATES) {
+  test(`${t.id}: the view the host mounts shows the player, readable, wherever it goes`, async () => {
+    const { rendererOf } = await import('../v2/primitives/graphics/presentation.js');
+    const host = hostDocument(t.doc, registry);
+    const view = host.views?.primary;
+    for (const s of host.spaces) {
+      const r = rendererOf(host, registry, s), views = r ? registry.get(r.use).card.views || [] : [];
+      if (r && view) assert.ok(views.includes(view) || views.includes('any') || (r.use === 'graphics.render.dom' && ['ui', 'text'].includes(view)), `${r.use} draws ${views.join(', ')}, not the document's view '${view}'`);
+    }
+    const m = play(t.doc, 60), H = m.rt.caches.flat;
+    assert.deepEqual([...(H?.errors || [])], [], 'no renderer layer failed');
+    const inView = (F, what) => { const s = F.toScreen(F.playerPos); assert.ok(s[0] >= 0 && s[0] <= F.w && s[1] >= 0 && s[1] <= F.h, `${what}: the player is drawn at ${s.map(Math.round)}, outside the ${Math.round(F.w)}x${Math.round(F.h)} view`); };
+    const F = H?.lastFrame, p = m.rt.player();
+    if (!F?.playerPos || !p || !Array.isArray(p.at)) return; // no avatar in a drawn world (boards, menus, cards)
+    inView(F, 'at the start');
+    const size = p.components?.body?.size || [1, 1];
+    assert.ok(F.unit * Math.max(size[0], size[1] ?? size[0]) >= MIN_BODY_PX, `the player is ${(F.unit * Math.max(size[0], size[1] ?? size[0])).toFixed(1)} px across (at least ${MIN_BODY_PX})`);
+    const api = m.rt.space(p.space), sz = Array.isArray(api.size) ? api.size : null;
+    if (!sz || api.kind === 'track') return; // the track's camera rides behind the player by construction
+    api.setPos(p, [Math.max(1, sz[0] - 2), Math.max(1, (sz[1] ?? 2) - 2), ...(p.at.length > 2 ? [p.at[2]] : [])], m.rt);
+    m.frame(60);
+    inView(H.lastFrame, 'after crossing the space');
+  });
+}

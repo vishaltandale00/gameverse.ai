@@ -93,9 +93,8 @@ export function hudGoals(doc, registry) {
   const ends = [...(owner ? [{ end: 'win', l: owner, e: owner.loop.win }] : []), ...loops.filter(l => l.loop.lose && endsGame(l.loop.lose) && readsOf(l.loop.lose)).map(l => ({ end: 'lose', l, e: l.loop.lose }))];
   for (const { end, l, e } of ends) {
     if (e.once) continue;
-    const declared = typeof e.shown === 'function' ? e.shown(l.config, doc) : e.shown;
     let list;
-    if (declared) list = Array.isArray(declared) ? declared : [declared];
+    if (e.shown !== undefined) list = (Array.isArray(e.shown) ? e.shown : [e.shown]).flatMap(q => shownEntries(q, l.config));
     else {
       const rd = readsOf(e);
       if (rd.var) { const t = end === 'win' && win?.var === rd.var ? win.target : undefined; list = [{ var: rd.var, ...(t !== undefined ? { max: t } : {}) }]; }
@@ -112,6 +111,21 @@ export function hudGoals(doc, registry) {
     }
   }
   return out;
+}
+const NUM = ['gt', 'gte', 'lt', 'lte', 'eq'];
+/** Does an instance config meet a shown entry's `applies` ({ param, gt|gte|lt|lte|eq }: a number its param must compare to). */
+const applies = (a, config) => !a || NUM.every(k => a[k] === undefined || ({ gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, eq: (x, y) => x === y })[k](Number(config[a.param]), a[k]));
+/**
+ * The entries a declared `shown` stands for on an instance: itself, or one per entry of a list param (`each: { param,
+ * where? }`, the entry's fields matching `where`) with `$id` in its strings replaced by that entry's id. Data only.
+ */
+function shownEntries(q, config) {
+  if (!q || typeof q !== 'object' || !applies(q.applies, config)) return [];
+  const { each, applies: _, ...rest } = q;
+  if (!each) return [rest];
+  const sub = (v, id) => (typeof v === 'string' ? v.replaceAll('$id', id) : v);
+  return (Array.isArray(config[each.param]) ? config[each.param] : []).filter(x => x && Object.entries(each.where || {}).every(([k, v]) => x[k] === v))
+    .map(x => Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, sub(v, String(x.id))])));
 }
 /** Does a UI card's `displays` cover a goal (ui-battle shows every side's units' health). */
 const displays = (card, g) => (card?.displays || []).some(d => (d.component && d.component === g.component && (d.of ?? g.of) === g.of) || (d.var && d.var === g.var) || (d.count && d.count === g.count));

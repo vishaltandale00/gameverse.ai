@@ -20,7 +20,7 @@ const tmp = mkdtempSync(join(os.tmpdir(), 'gv-templates-'));
 test.after(() => rmSync(tmp, { recursive: true, force: true }));
 
 test('contract: stages in order, every code stable and owned by one stage', () => {
-  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'gate', 'controls', 'features', 'bots']);
+  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'presentation', 'gate', 'controls', 'features', 'bots']);
   const all = Object.values(CODES).flat();
   assert.equal(new Set(all).size, all.length, 'no code belongs to two stages');
   assert.deepEqual(SEEDS, [1, 2, 3]);

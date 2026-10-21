@@ -20,8 +20,10 @@
 //                    gives them; effects; events its code runs on; movement: the player's body touching or passing });
 //                    every loop end declares it, checked against the code (tests/v2-p-loop-reads.test.js);
 //             shown  what a person watches for this end when it is not the read itself (a measurement var, an event
-//                    every participant emits): { var, max?, label? } | { count } | { bar: 'boss' } | a list | (config, doc) =>
-//                    a list; max a number, a var or { param } of the instance (graphics/ui-defaults.js hudGoals);
+//                    every participant emits): { var, max?, label? } | { count } | { bar: 'boss' } | a list; max a number,
+//                    a var or { param } of the instance; `applies: { param, gt|gte|lt|lte|eq }` limits it to instances
+//                    whose param compares so; `each: { param, where? }` repeats it per entry of a list param with `$id`
+//                    the entry's id (data only: cards are cloned; graphics/ui-defaults.js hudGoals);
 //             once   the end happens at the first occurrence of what it reads (a finish, a top-out): no quantity to watch;
 //   lose?:    the same, for defeat;
 //   outcome?: how this loop's result maps onto the participants of an encounter that runs it as an inner loop
