@@ -3,10 +3,13 @@
 // promising or novel cell and plays a few macros from it: the options the
 // primitives expose, or generic input macros (held axes and verbs) when there
 // are none. Progress is the document's own objective (objective.js) plus a
-// pull toward the zones the plot points at. Every macro is checked against
-// the runtime invariants; any win is replayed from a fresh world to prove it.
+// pull toward the zones the plot points at, and the quantity the core loop's
+// win reads (opts.win: winMeasure), which the search steers by and reports as
+// `progress` (how far idling and play moved it toward the win). Every macro is
+// checked against the runtime invariants; any win is replayed from a fresh
+// world to prove it.
 import { maker, hold, applyOption, optionLabels, inputMacros, posOf } from './drive.js';
-import { objective, plotZones, PROGRESS_EVENTS } from './objective.js';
+import { objective, plotZones, PROGRESS_EVENTS, winMeasure, WIN_WEIGHT } from './objective.js';
 import { stepChecker } from './invariants.js';
 import { withTravel } from './macros.js';
 import { prng, problem, budget as makeBudget, walkJson } from './util.js';
@@ -102,7 +105,7 @@ export function progressTimeline(make, seed, path, { goal, isProgress, quantum =
 
 /**
  * playtest(doc, registry, logic, opts) → report
- * opts: { seed, budgetMs, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline }
+ * opts: { seed, budgetMs, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline, win }
  * Besides the verdict it returns `timeline` (progressTimeline of the winning path, else of the best-scoring
  * archived path; null when that path is empty), `verbsUsed` (verbs the search pressed, by count) and
  * `sample`: a few archive cells { key, frames, score, path, snap } spread over the search, for quality
@@ -118,7 +121,9 @@ export function playtest(doc, registry, logic, opts = {}) {
     const probe = make(seed), p = probe.player();
     if (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function') { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
   }
-  const goal = objective(doc, registry, logic);
+  const goal = objective(doc, registry, logic, { win: opts.win ?? null });
+  // The win quantity (null without one): progress toward the win is what play moves it beyond what idling does.
+  const wm = winMeasure(opts.win);
   const targets = [...plotZones(doc).keys()];
   const rand = prng(`playtest:${seed ?? doc.seed ?? doc.id}`);
   const problems = [], fired = {};
@@ -126,8 +131,9 @@ export function playtest(doc, registry, logic, opts = {}) {
   const verbs = {};
   const record = (rt, before = {}) => { const c = rt.state.counts; for (const k in c) { const d = c[k] - (before[k] || 0); if (d > 0) fired[k] = (fired[k] || 0) + d; } };
   const used = actions => { for (const [v, val] of Object.entries(actions || {})) if (val !== undefined && val !== null && val !== false) verbs[v] = (verbs[v] || 0) + 1; };
-  const score = rt => {
+  const score = (rt, carry = null) => {
     let v = goal.score(rt);
+    if (wm && carry) v += WIN_WEIGHT * wm.advance(rt, carry);
     const p = rt.player();
     if (p?.space && targets.length) {
       const api = rt.space(p.space);
@@ -141,11 +147,20 @@ export function playtest(doc, registry, logic, opts = {}) {
   // 1. Idle: what happens if the player does nothing?
   const idle = make(seed);
   const idleFrames = Math.round(idleSeconds / DT);
-  try { hold(idle, {}, idleFrames, b); record(idle); }
+  let idleCarry = wm ? wm.start(idle) : null;
+  try {
+    // In stretches, so the win quantity sees what idling removes along the way.
+    for (let f = 0; f < idleFrames && idle.state.status === 'playing'; f += 30) {
+      const token = wm?.track(idle); hold(idle, {}, Math.min(30, idleFrames - f), b);
+      if (wm) idleCarry = wm.carry(idleCarry, token, idle);
+    }
+    record(idle);
+  }
   catch (error) { problems.push(problem('runtime_error', 'systems', `idle run threw at frame ${idle.state.frame}: ${error?.message || error}`)); }
   // The objective score doing nothing reaches (intro beats, ambient events): progress is only what play adds to it.
-  let idleScore = null;
+  let idleScore = null, idleAdvance = null;
   try { idleScore = round(goal.score(idle)); } catch {}
+  try { if (wm) idleAdvance = round(wm.advance(idle, idleCarry)); } catch {}
   const idleCounts = { ...idle.state.counts };
   if (idle.state.status === 'won') problems.push(problem('trivially_won', 'plot.endings', `the game is won after ${idle.state.time.toFixed(1)} s with no input`, { hint: 'endings must require player action' }));
   if (idle.state.status === 'lost' && idle.state.time < 2) problems.push(problem('instant_loss', 'systems', `the game is lost after ${idle.state.time.toFixed(2)} s with no input`, { hint: 'give the player a grace period: spawn hazards away from the start' }));
@@ -153,9 +168,12 @@ export function playtest(doc, registry, logic, opts = {}) {
   // 2. Search.
   const start = make(seed);
   const checker = stepChecker(limits);
-  const startScore = score(start);
+  const startCarry = wm ? wm.start(start) : null;
+  const startScore = score(start, startCarry);
   const startKey = cellKeyOf(start, startScore, quantum);
-  const archive = new Map([[startKey, { key: startKey, snap: start.snapshot(), path: [], frames: 0, visits: 0, score: startScore }]]);
+  const archive = new Map([[startKey, { key: startKey, snap: start.snapshot(), path: [], frames: 0, visits: 0, score: startScore, carry: startCarry }]]);
+  /** The furthest play moved the win quantity toward the win. */
+  let advanceHigh = wm ? 0 : null;
   const rt = start;
   let win = null, rounds = 0, broke = false;
   const losses = {};
@@ -172,12 +190,13 @@ export function playtest(doc, registry, logic, opts = {}) {
     cell.visits++;
     rt.restore(cell.snap);
     const path = cell.path.slice();
-    let frames = cell.frames;
+    let frames = cell.frames, carry = cell.carry;
     const n = 1 + rand.int(4);
     for (let k = 0; k < n; k++) {
       const options = rt.availableOptions();
       let rec;
       const f0 = rt.state.frame, c0 = { ...rt.state.counts };
+      const token = wm?.track(rt);
       try {
         if (options.length && (opts.optionsOnly || rand() < 0.75)) { const labels = optionLabels(options), j = rand.int(options.length); rec = { o: labels[j] }; used(options[j].actions); applyOption(rt, options[j]); }
         else { const macros = opts.macros || inputMacros(rt); const m = macros[rand.int(macros.length)], len = 4 + rand.int(32); rec = { i: m.input, n: len, label: m.label }; used(m.input.actions); hold(rt, m.input, len); hold(rt, {}, 1); }
@@ -188,12 +207,13 @@ export function playtest(doc, registry, logic, opts = {}) {
       b.step(rt.state.frame - f0); frames += rt.state.frame - f0;
       record(rt, c0);
       path.push(rec);
+      if (wm) { carry = wm.carry(carry, token, rt); advanceHigh = Math.max(/** @type {number} */ (advanceHigh), wm.advance(rt, carry)); }
       const bad = checker.check(rt);
       if (bad) { problems.push({ ...bad, repro: path.slice() }); broke = true; break; }
       if (rt.state.status === 'won') { if (!win || frames < win.frames) win = { frames, path: path.slice(), ending: rt.state.ending }; broke = !opts.keepSearching; break; }
       if (rt.state.status === 'lost') { const why = rt.state.ending || rt.state.events.at(-1)?.name || 'lost'; losses[why] = (losses[why] || 0) + 1; break; }
-      const sc = score(rt), key = cellKeyOf(rt, sc, quantum), old = archive.get(key);
-      if (!old || frames < old.frames) archive.set(key, { key, snap: rt.snapshot(), path: path.slice(), frames, visits: old?.visits || 0, score: sc });
+      const sc = score(rt, carry), key = cellKeyOf(rt, sc, quantum), old = archive.get(key);
+      if (!old || frames < old.frames) archive.set(key, { key, snap: rt.snapshot(), path: path.slice(), frames, visits: old?.visits || 0, score: sc, carry });
     }
   }
 
@@ -231,5 +251,7 @@ export function playtest(doc, registry, logic, opts = {}) {
     idle: { status: idle.state.status, seconds: +idle.state.time.toFixed(2), score: idleScore, counts: idleCounts },
     explored: archive.size, rounds, framesSimulated: b.usedSteps, bestScore: best.score, travel: travel ? 'steer' : null,
     losses, eventsFired: fired, verbsUsed: verbs, timeline, sample, exhaustive: false, budget: b.report(), problems,
+    // How far idling and play moved the win quantity toward the win (null: the document declares none).
+    progress: wm ? { quantity: wm.label, target: wm.target, idle: idleAdvance, high: round(advanceHigh ?? 0) } : null,
   };
 }

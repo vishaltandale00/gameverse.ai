@@ -9,7 +9,8 @@ import { solve } from '../verify/solve.js';
 import { loopEvents } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
-import { prop } from '../kernel/guards.js';
+import { isObj, objects, prop } from '../kernel/guards.js';
+import { loopInstances, winOwner, readsOf } from './loop-check.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -22,7 +23,9 @@ import { prop } from '../kernel/guards.js';
  */
 /** Something carrying verification problems: a Verification, a StaticPlot. @typedef {{ problems?: VerifyProblem[] } | null | undefined} WithProblems */
 /** A solver result as v2/verify reports it (plot layer or solve.js). @typedef {{ completable?: boolean | null, exhaustive?: unknown, endings?: Record<string, unknown>, beatsNeverFired?: string[], states?: number | null, [k: string]: unknown }} SolveLike */
-/** v2/verify's playtest result (the archive sample keeps snapshots). @typedef {{ winnable?: boolean, win?: unknown, losses?: unknown, idle?: unknown, explored?: unknown, framesSimulated?: number, timeline?: unknown, sample?: Array<{ key?: unknown, frames?: unknown, score?: unknown }>, [k: string]: unknown }} PlaytestRun */
+/** v2/verify's playtest result (the archive sample keeps snapshots). @typedef {{ winnable?: boolean, win?: unknown, losses?: unknown, idle?: unknown, explored?: unknown, framesSimulated?: number, timeline?: unknown, sample?: Array<{ key?: unknown, frames?: unknown, score?: unknown }>, progress?: WinProgress | null, [k: string]: unknown }} PlaytestRun */
+/** How far idling and play moved the win quantity toward the win (verify/playtest.js). @typedef {{ quantity: string, target?: number | null, idle: number | null, high: number | null }} WinProgress */
+/** The quantity a document's core loop's win reads (verify/objective.js winMeasure). @typedef {{ use: string, event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number }} WinQuantity */
 /** v2/verify's verify() report, as far as this adapter reads it. @typedef {SolveLike & { ok?: boolean, plot?: SolveLike | null, solve?: SolveLike | null, problems?: VerifyProblem[], playtest?: PlaytestRun | null, strategies?: { ran?: BotRun[] } | null, timings?: Record<string, number> }} VerifyReport */
 /** @typedef {{ verify?: (doc: Doc, registry: RegistryLike, logic: LogicLike, opts: Record<string, unknown>) => Promise<VerifyReport | null | undefined> }} VerifyModule */
 /** @typedef {{ completable: boolean | null | undefined, exhaustive: unknown, endings: Record<string, unknown>, beatsNeverFired: string[], states: number | null }} SolveSummary */
@@ -38,7 +41,7 @@ import { prop } from '../kernel/guards.js';
  *   preflight: { ok: boolean, errors: Problem[], warnings: Problem[], ms: number | undefined },
  *   problems: VerifyProblem[], ms: number,
  *   solve?: SolveSummary | ReturnType<typeof solve> | null,
- *   playtest?: { winnable: unknown, win: unknown, losses: unknown, idle: unknown, explored: unknown, framesSimulated: number | null, timeline: unknown, sample: Array<{ key: unknown, frames: unknown, score: unknown }> } | null,
+ *   playtest?: { winnable: unknown, win: unknown, losses: unknown, idle: unknown, explored: unknown, framesSimulated: number | null, timeline: unknown, sample: Array<{ key: unknown, frames: unknown, score: unknown }>, progress: WinProgress | null } | null,
  *   viable?: boolean, viability?: string | null, timings?: Record<string, number> | null,
  *   playtestRun?: PlaytestRun, quality?: unknown,
  * }} VerificationFields
@@ -68,8 +71,10 @@ async function verifyModule() {
 // The publish gate (ARCHITECTURE.md §1.5, §6.2): the game runs and is viable. A playtest agent plays it headless;
 // any thrown step, NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks
 // publishing. When the playbots' report is given, the game must also be playable: the player can act, the loop its
-// primitives declare (card.loop.progress) happens from play, and play makes progress beyond what idling reaches.
-// Bots the cards name are stronger players when present, never a requirement. No time-to-finish requirement.
+// primitives declare (card.loop.progress) happens from play, and play makes progress toward the win: a win (the
+// explorer's or a bot's), or the quantity the core loop's win reads (card.loop.win.reads: winQuantity) moved toward
+// the win by play beyond what idling moves it. Bots the cards name are stronger players when present, never a
+// requirement. No time-to-finish requirement; the solver's softlock report is not used.
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss']);
 // Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
 /** @type {Set<string | undefined>} */
@@ -89,7 +94,7 @@ export function viability(play, problems = [], strategies, loop = []) {
 
 /** @param {unknown} play @param {VerifyProblem[]} problems @param {{ ran?: BotRun[] } | null} strategies @param {string[]} loop @returns {string[]} */
 function unplayable(play, problems, strategies, loop) {
-  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: { score?: { high?: unknown } } | null, idle?: { score?: unknown, counts?: Record<string, number> }, eventsFired?: Record<string, number> } | null} */ (isObjLike(play) ? play : null);
+  const pt = /** @type {{ winnable?: unknown, explored?: unknown, idle?: { score?: unknown, counts?: Record<string, number> }, eventsFired?: Record<string, number>, progress?: unknown } | null} */ (isObjLike(play) ? play : null);
   if (!pt) return ['not_played: the playtest agent did not play the game'];
   const stuck = problems.find(p => p.code === 'stuck_state');
   if (stuck) return [`cannot_act: ${stuck.message}`];
@@ -107,14 +112,39 @@ function unplayable(play, problems, strategies, loop) {
   const played = (/** @type {string} */ e) => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0));
   if (!loop.length) out.push('loop_undeclared: no primitive in the game declares its loop (card.loop.progress), so nothing defines what playing it is');
   else if (!loop.some(played)) out.push(`loop_absent: none of the loop's events (${loop.slice(0, 6).join(', ')}) happened from play`);
-  // Progress is objective score play reaches beyond what doing nothing reaches (an intro beat is not progress).
-  const high = Number(pt.timeline?.score?.high ?? NaN), idleScore = Number(pt.idle?.score ?? 0);
-  const won = Boolean(pt.winnable) || (strategies?.ran || []).some(b => (b.proven || []).length);
-  if (!won && !(Number.isFinite(high) && high > idleScore)) out.push('no_progress: play makes no progress toward a win beyond what idling reaches');
+  // Progress toward the win: a win, or play moving the quantity the core loop's win reads toward it beyond what idling
+  // moves it (an intro beat, ambient events or a rising general score are not progress).
+  if (!won0) {
+    const pr = isObjLike(pt.progress) ? /** @type {WinProgress} */ (pt.progress) : null;
+    const high = Number(pr?.high ?? NaN), still = Number.isFinite(Number(pr?.idle)) ? Number(pr?.idle) : 0;
+    if (!pr) out.push('no_progress: no win was seen and the core loop\'s win declares no quantity to measure (card.loop.win.reads)');
+    else if (!(Number.isFinite(high) && high > still)) out.push(`no_progress: no win was seen and the win quantity (${pr.quantity}${Number.isFinite(pr.target) ? `, target ${pr.target}` : ''}) never moved toward the win beyond idling (idle ${still}, play ${Number.isFinite(high) ? high : 0})`);
+  }
   return out;
 }
 /** @param {unknown} v @returns {v is Record<string, unknown>} */
 const isObjLike = v => typeof v === 'object' && v !== null;
+
+/**
+ * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
+ * winOwner; `core` orders the loops as the planner does), with the comparison and target of the won plot ending that
+ * tests it, when one does. null when no loop declares a game-ending win with reads.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {WinQuantity | null}
+ */
+export function winQuantity(doc, registry, core = null) {
+  const owner = winOwner(loopInstances(doc, registry), core);
+  const reads = owner ? readsOf(owner.loop.win) : null;
+  if (!owner || !reads) return null;
+  /** @type {WinQuantity} */
+  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event } : { use: owner.use, var: /** @type {string} */ (reads.var) };
+  for (const e of objects(prop(prop(doc, 'plot'), 'endings'))) {
+    const w = e.when;
+    if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;
+    const cmp = ['gte', 'gt', 'lte', 'lt', 'eq'].find(k => typeof w[k] === 'number');
+    if (cmp) return { ...out, cmp, target: Number(w[cmp]) };
+  }
+  return out;
+}
 
 /**
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic
@@ -134,14 +164,16 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
   const m = await verifyModule();
   if (typeof m.verify === 'function') {
     try {
-      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs ? { playtest: { budgetMs: playtestMs } } : {}) });
+      // The playtest steers by, and reports progress on, the quantity the core loop's win reads.
+      const win = winQuantity(pre.doc, registry);
+      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs || win ? { playtest: { ...(playtestMs ? { budgetMs: playtestMs } : {}), ...(win ? { win } : {}) } } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
       const problems = [...world, ...(r?.problems || [])];
       const pt = r?.playtest;
       /** @type {Verification} */
       const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
-        playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })) } : null,
+        playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })), progress: pt.progress ?? null } : null,
         ...(playtestMs ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
