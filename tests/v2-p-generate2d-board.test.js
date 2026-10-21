@@ -46,6 +46,22 @@ test('grid.board tactics: symmetric terrain, every open cell joined, deploy stri
   assert.ok(rt.test({ zone: 'deploy_1', who: 'player' }));
 });
 
+test('grid.board tactics ground: every open cell is the ground block, all joined to the deploy strips, at every density', () => {
+  for (const density of [0, 0.4, 0.8]) for (let seed = 1; seed <= 3; seed++) {
+    const rt = make({ kind: 'tactics', size: [12, 10], terrain: [{ block: 'rock', blocks: true }], ground: 'plains', density, symmetry: 'none', teams: 1 }, [12, 10], { seed });
+    const api = rt.space('b'), seen = api.reachable([0, 0], rt, {});
+    assert.deepEqual(rt.store(KEY).problems, [], `density ${density} seed ${seed}`);
+    let ground = 0;
+    for (let y = 0; y < 10; y++) for (let x = 0; x < 12; x++) {
+      const c = api.getCell([x, y]);
+      assert.ok(c === 'rock' || c === 'plains', `${x},${y}: ${c}`);
+      if (c === 'plains') { ground++; assert.ok(seen.has(`${x},${y}`), `ground ${x},${y} joins the strip`); }
+      if (y < 2) assert.equal(c, 'plains', 'the deploy strip is ground');
+    }
+    assert.ok(ground >= 24, `density ${density}: the deploy strip alone is 24 ground cells (${ground})`);
+  }
+});
+
 test('grid.board lanes: each lane alone joins the bases', () => {
   const rt = make({ kind: 'lanes', size: [30, 30], lanes: 3 }, [30, 30]);
   const st = rt.store(KEY);
@@ -82,5 +98,6 @@ test('grid.board: preflight rejects bad configs with stable codes', () => {
   const r = new Registry(ALL), logic = buildLogic(r, Logic), codes = d => preflight(d, r, logic).errors.map(e => e.code);
   assert.ok(codes(doc({ kind: 'match', fill: [{ piece: 'red' }, { piece: 'blue' }] }, [8, 8])).includes('board_pieces_few'));
   assert.ok(codes(doc({ kind: 'tactics', terrain: [] }, [8, 8])).includes('board_terrain_open'));
+  assert.ok(codes(doc({ kind: 'tactics', terrain: [{ block: 'rock', blocks: true }], ground: 'rock' }, [8, 8])).includes('board_ground_blocks'));
   assert.ok(codes(doc({ kind: 'chess' }, [8, 8])).includes('param_option'));
 });

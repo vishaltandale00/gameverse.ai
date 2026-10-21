@@ -63,7 +63,7 @@ function survey(rt, config, aim, skip) {
   const bag = rt.service('inventory').bag('player');
   const seeds = config.crops.reduce((n, c) => n + (bag[c.seed ?? c.item] || 0), 0);
   const jobs = {}, seen = new Map([[keyOf(here), here]]), q = [here];
-  let freeLand = 0;
+  let freeLand = 0, soil = 0;
   for (let h = 0; h < q.length; h++) {
     const s = q[h];
     for (const verb of Object.keys(DONE)) {
@@ -79,11 +79,13 @@ function survey(rt, config, aim, skip) {
     }
     const t = aim.plant && v3(s).map((v, i) => v + aim.plant[i]);
     if (t && api.getCell(t) === config.farmland && !plots.has(keyOf(t))) freeLand++;
+    const u = aim.till && v3(s).map((v, i) => v + aim.till[i]);
+    if (u && config.tillable.includes(api.getCell(u)) && !plots.has(keyOf(u))) soil++;
     for (const n of stepsFrom(api, p, s, rt)) { const nk = keyOf(n); if (!seen.has(nk)) { seen.set(nk, s); q.push(n); } }
   }
   // Tilling is worth it only while the bag holds more seeds than there is free farmland to plant them in.
   if (jobs.till && seeds <= freeLand) delete jobs.till;
-  return { jobs, seen, seeds, plots };
+  return { jobs, seen, seeds, plots, freeLand, soil };
 }
 /** First step on the BFS tree from here toward `goal` (the parent map the survey built). */
 function firstStep(seen, here, goal) {
@@ -114,10 +116,11 @@ export default {
         for (let f = 0; f < settleFrames && velOf(p).some(v => Math.abs(v) > 1e-6); f++) hold(rt, {}, 1, b);
         const aim = Object.fromEntries(Object.keys(DONE).map(v => [v, aimOf(rt, v)]).filter(([, t]) => t).map(([v, t]) => [v, t.map((x, i) => x - (v3(playerCell(rt))[i]))]));
         if (!Object.keys(aim).length) { stuck = 'no farming verb targets a cell from where the farmer stands'; break; }
-        const { jobs, seen, seeds: held, plots } = survey(rt, config, aim, skip);
+        const { jobs, seen, seeds: held, plots, freeLand, soil } = survey(rt, config, aim, skip);
         const verb = ['water', 'harvest', 'plant', 'till'].find(v => jobs[v]);
         if (!verb) {
           if (!plots.size && !held) { stuck = 'no seeds left and nothing growing'; break; }
+          if (!plots.size && !freeLand && !soil) { stuck = 'no tillable soil or free farmland within the farmer\'s reach'; break; }
           hold(rt, {}, waitFrames, b); continue; // everything tended: wait for the day to turn
         }
         const { stand, target } = jobs[verb], here = playerCell(rt);
