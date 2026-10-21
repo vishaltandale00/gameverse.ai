@@ -7,6 +7,7 @@
 // volley patterns (single, lanes, spread, laser, missile, ring, spiral, burst)
 // with tiers. The shmup weapon set (shot, spread, laser, homing; WEAPON_DPS) is a
 // preset. Other primitives fire through the `projectiles` service.
+import { itemsData } from './items-lib.js';
 import { boxOf, frames, v3, add, sub, mul, len, norm, dot, posOf, facingOf, spaceOf, statOf, hostile, teamOf, resolveWho, combat, service, overlapping, like, round, err, archetypes } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.projectile';
@@ -38,7 +39,7 @@ const WEAPON = {
   span: { type: 'number', default: 30, min: 0, max: 360, unit: 'deg', effect: 'spread fan width' },
   spin: { type: 'number', default: 12, min: -360, max: 360, unit: 'deg', effect: 'spiral rotation per volley' },
   burstGap: { type: 'number', default: 0.1, min: 0, max: 5, unit: 's' },
-  lanes: { type: 'json', effect: 'lane offsets per tier, e.g. [[0],[-4,4],[-6,0,6]]' },
+  lanes: { type: 'list', of: { type: 'list', of: { type: 'number' } }, effect: 'lane offsets per tier, e.g. [[0],[-4,4],[-6,0,6]]' },
   laneGap: { type: 'number', default: 1, min: 0, max: 100, effect: 'multiplier on lane offsets' },
   pierce: { type: 'integer', default: 0, min: -1, max: 1000, effect: 'extra targets a shot passes through; -1 = unlimited' },
   bounce: { type: 'integer', default: 0, min: 0, max: 100, effect: 'terrain bounces before the shot stops' },
@@ -87,7 +88,21 @@ export default {
     provides: { events: ['hit', 'weapon_used', 'fired', 'projectile_hit', 'blast', 'empty', 'reloaded', 'cancelled', 'clash', 'expired'], services: ['projectiles'], actions: ['fire'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
+    data: itemsData(['ranged', 'weapon']),
+    // Shapes of the archetype components this primitive owns (components.projectile is a live shot's, written at runtime).
+    components: { ranged: { type: 'object', fields: {
+      weapon: { type: 'string', effect: 'a weapons id or a content.items id with a ranged block' },
+      tier: { type: 'integer', min: 1, max: 10, effect: 'weapon tier (default 1)' },
+      ammo: { type: 'object', values: { type: 'integer', min: 0 }, effect: 'weapon id -> rounds held' },
+    }, effect: 'what it can shoot' } },
     defines: [{ kind: 'weapon', in: 'weapons' }],
+    rules: {
+      projectile_ammo_invalid: { fields: ['weapons[].ammo.from', 'weapons[].ammo.item', 'weapons[].ammo.events'], message: "ammo from 'item' names its item; ammo from 'event' lists at least one event",
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.projectile', with: { weapons: [{ id: 'bow', ammo: { from: 'item' } }] } }] } } },
+      projectile_tier_invalid: { fields: ['weapons[].tiers', 'weapons[].maxTier'], message: 'a weapon without a preset has at most maxTier tier entries',
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.projectile', with: { weapons: [{ id: 'bow', tiers: [{}, {}], maxTier: 1 }] } }] } } },
+      projectile_weapon_unknown: { fields: ['playerWeapon', 'content.archetypes[].components.ranged.weapon'], message: 'names a weapons id or a content.items id with a ranged block' },
+    },
     actionSpace: { fire: { type: 'enum', options: [true] } },
   },
   logic(logic) {
@@ -101,11 +116,10 @@ export default {
     config.weapons.forEach((w, i) => {
       if (w.ammo?.from === 'item' && !w.ammo.item) errors.push(err('projectile_ammo_invalid', `with.weapons[${i}].ammo.item`, 'ammo from item needs ammo.item'));
       if (w.ammo?.from === 'event' && !w.ammo.events?.length) errors.push(err('projectile_ammo_invalid', `with.weapons[${i}].ammo.events`, 'ammo from event needs at least one event'));
-      if (w.lanes !== undefined && !(Array.isArray(w.lanes) && w.lanes.every(l => Array.isArray(l) && l.every(Number.isFinite)))) errors.push(err('projectile_lanes_invalid', `with.weapons[${i}].lanes`, 'lanes must be a list of offset lists per tier'));
       if (w.tiers.length > w.maxTier && !w.preset) errors.push(err('projectile_tier_invalid', `with.weapons[${i}].tiers`, `more tier entries than maxTier ${w.maxTier}`));
     });
     if (config.playerWeapon && !known(config.playerWeapon)) errors.push(err('projectile_weapon_unknown', 'with.playerWeapon', `unknown weapon '${config.playerWeapon}'`));
-    archetypes(doc).forEach((a, i) => { const w = a.components?.ranged?.weapon; if (w !== undefined && !known(w)) errors.push(err('projectile_weapon_unknown', `content.archetypes[${i}].components.ranged.weapon`, `unknown weapon '${w}'`, `weapons: ${[...ids].join(', ') || 'none'}`)); });
+    archetypes(doc).forEach((a, i) => { const w = a.components?.ranged && typeof a.components.ranged === 'object' ? a.components.ranged.weapon : undefined; if (w !== undefined && !known(w)) errors.push(err('projectile_weapon_unknown', `content.archetypes[${i}].components.ranged.weapon`, `unknown weapon '${w}'`, `weapons: ${[...ids].join(', ') || 'none'}`)); });
     return errors;
   },
   install(rt, config) {

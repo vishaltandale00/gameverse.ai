@@ -139,7 +139,8 @@ test('projectile: deterministic replay and bad configs', () => {
   const bad = rangedDoc({ weapons: [{ id: 'w1', ammo: { from: 'item' } }, { id: 'w2', ammo: { from: 'event' } }, { id: 'w3', lanes: [[0], 'x'] }, { id: 'w4', tiers: [{}, {}], maxTier: 1 }], with: { playerWeapon: 'nothing' } });
   bad.content.archetypes.push({ id: 'gunner', components: { ranged: { weapon: 'phaser' } } });
   const c = codes(bad);
-  for (const code of ['projectile_ammo_invalid', 'projectile_lanes_invalid', 'projectile_tier_invalid', 'projectile_weapon_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  for (const code of ['projectile_ammo_invalid', 'projectile_tier_invalid', 'projectile_weapon_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  assert.ok(c.includes('param_type'), 'lanes is a declared list of offset lists: a non-list lane is param_type (was projectile_lanes_invalid)');
   assert.ok(codes(rangedDoc({ weapons: [{ id: 'w5', pattern: 'zigzag' }] })).includes('param_option'));
 });
 

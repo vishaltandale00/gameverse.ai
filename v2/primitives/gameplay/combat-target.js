@@ -24,6 +24,7 @@ export default {
     provides: { events: ['locked', 'unlocked', 'target_switched'], vars: ['target'], services: ['target'], actions: ['lock', 'cycle'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['raycast'] },
     actionSpace: { cycle: { type: 'enum', options: [-1, 1] } },
+    rules: { target_break_invalid: { fields: ['breakDist', 'range'], message: 'breakDist is at least range' } },
   },
   logic(logic) {
     logic.predicate('locked', { test: (p, rt, c) => { const e = resolveWho(rt, p.locked === true ? undefined : p.locked ?? p.who, c); const t = e && rt.service('target').of(e); return p.target ? t === p.target || rt.entity(t)?.archetype === p.target : Boolean(t); } });

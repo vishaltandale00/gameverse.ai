@@ -11,6 +11,7 @@
 //   res.<pool>             per-second gain (+) or drain (-) of that pool
 // Runtime: rt.store(KEY)[entityId] = { active: {id: {left, stacks, tick, absorbed}}, mods };
 // components.status mirrors the frozen shape {statusId: secondsLeft}. Immunities: components.immune [ids|tags].
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { frames, resolveWho, targetsOf, targetRefs, statOf, combat, service, intercept, round, err } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.status';
@@ -31,6 +32,21 @@ export default {
     requires: { primitives: ['gameplay.combat.health'] },
     reads: ['content.statuses'],
     defines: [{ kind: 'status', at: 'content.statuses' }],
+    // The section it owns, whole.
+    data: { 'content.statuses': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' },
+      duration: { type: 'number', min: 0.01, max: 1e6, unit: 's', required: true, effect: 'seconds it lasts (apply_status sec overrides)' },
+      stacks: { type: 'integer', min: 1, effect: 'most stacks it holds (default 1)' },
+      refresh: { type: 'string', options: REFRESH, effect: 'reapplying: reset the time, extend it, keep it, or take the longer' },
+      tick: { type: 'object', fields: { dps: { type: 'number', required: true, effect: 'damage per second per stack (negative heals)' }, every: { type: 'number', min: 0.05, max: 10, unit: 's' }, type: { type: 'string', effect: 'a damage type of gameplay.combat.health' } }, effect: 'damage over time' },
+      mods: { type: 'object', values: { type: 'number' }, effect: 'stat -> modifier per stack (stat.stun, stat.fright, hp.max, res.<pool>...)' },
+      tags: { type: 'list', of: { type: 'string' }, effect: 'tags clear_status and immunities match' },
+      shield: { type: 'object', fields: { hits: { type: 'integer', min: 1 }, amount: { type: 'number', min: 0 } }, effect: 'absorbs hits or an amount of damage, then ends' },
+      onApply: { type: 'effects', effect: 'effects when applied (self = the bearer)' }, onEnd: { type: 'effects', effect: 'effects when it ends' },
+      persistOnDeath: { type: 'boolean' },
+    } } } },
+    rules: { status_type_unknown: { fields: ['content.statuses[].tick.type'], message: "a tick's damage type is one of gameplay.combat.health's types",
+      example: { 'content.statuses': [{ id: 'frightened', name: null, duration: 6, stacks: null, refresh: null, tick: { dps: 1, every: null, type: 'acid' }, tags: null, shield: null, persistOnDeath: null }] } } },
   },
   logic(logic) {
     logic.predicate('status', {
@@ -55,14 +71,7 @@ export default {
   validate(config, doc, ctx) {
     const errors = [], types = new Set(doc.systems?.find(s => s.use === 'gameplay.combat.health')?.with?.types || ['phys', 'fire', 'ice', 'shock', 'poison', 'void']);
     (doc.content?.statuses || []).forEach((s, i) => {
-      const path = `content.statuses[${i}]`;
-      if (!(Number.isFinite(s.duration) && s.duration > 0)) errors.push(err('status_duration_invalid', `${path}.duration`, 'duration must be a positive number of seconds'));
-      if (s.stacks !== undefined && !(Number.isInteger(s.stacks) && s.stacks >= 1)) errors.push(err('status_stacks_invalid', `${path}.stacks`, 'stacks must be an integer >= 1'));
-      if (s.refresh && !REFRESH.includes(s.refresh)) errors.push(err('status_refresh_invalid', `${path}.refresh`, `refresh must be ${REFRESH.join('|')}`));
-      if (s.tick && !(Number.isFinite(s.tick.dps))) errors.push(err('status_tick_invalid', `${path}.tick.dps`, 'tick.dps must be a number'));
-      if (s.tick?.type && !types.has(s.tick.type)) errors.push(err('status_type_unknown', `${path}.tick.type`, `unknown damage type '${s.tick.type}'`));
-      for (const [k, v] of Object.entries(s.mods || {})) if (!Number.isFinite(v)) errors.push(err('status_mod_invalid', `${path}.mods.${k}`, 'modifier must be a number'));
-      for (const k of ['onApply', 'onEnd']) (s[k] || []).forEach((e, j) => ctx?.checkEffect(e, `${path}.${k}[${j}]`, errors));
+      if (s?.tick && typeof s.tick === 'object' && s.tick.type && !types.has(s.tick.type)) errors.push(err('status_type_unknown', `content.statuses[${i}].tick.type`, `unknown damage type '${s.tick.type}'`));
     });
     return errors;
   },

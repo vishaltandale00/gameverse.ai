@@ -241,7 +241,11 @@ test('status: deterministic replay and bad configs', () => {
   const bad = statusDoc();
   bad.content.statuses.push({ id: 'broken', duration: 0, stacks: 0.5, refresh: 'sometimes', tick: { dps: 'x', type: 'acid' }, mods: { 'stat.x': 'big' } });
   const c = codes(bad);
-  for (const code of ['status_duration_invalid', 'status_stacks_invalid', 'status_refresh_invalid', 'status_tick_invalid', 'status_type_unknown', 'status_mod_invalid']) assert.ok(c.includes(code), `${code} in ${c}`);
+  assert.ok(c.includes('status_type_unknown'), `status_type_unknown in ${c}`);
+  // duration, stacks, refresh, tick.dps and mods are content.statuses' declared shape (card.data), reported at their
+  // paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where status_*_invalid were.
+  const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), st = `content.statuses[${bad.content.statuses.length - 1}]`;
+  for (const x of [`param_range@${st}.duration`, `param_type@${st}.stacks`, `param_option@${st}.refresh`, `param_type@${st}.tick.dps`, `param_type@${st}.mods.stat.x`]) assert.ok(at.includes(x), `${x} in ${at}`);
   const ref = statusDoc(); ref.systems.push({ use: 'gameplay.combat.melee', with: { moves: [] } });
   ref.content.statuses[0].onEnd = [{ do: 'apply_status', status: 'nope' }];
   assert.ok(codes(ref).includes('ref_unknown'));
