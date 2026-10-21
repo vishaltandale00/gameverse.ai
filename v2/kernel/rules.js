@@ -10,8 +10,9 @@
 // are allowed. Forms show the rules on the fields they ask for, repair re-asks those fields, and preflight reports a
 // code a validate emits that its card does not declare (rule_undeclared): a rule enforced in code but not declared is
 // a defect. Codes the kernel's own schema checks emit (KERNEL_CODES) are declared by the shapes they check (params,
-// components, data, references, vocabulary), never by card.rules.
-import { isObj } from './guards.js';
+// components, data, references, vocabulary), never by card.rules. A vocabulary kind's check (logic.predicate/effect)
+// declares the codes it emits beyond the kernel's with its registration: { codes: [{ code, fields, example }] }.
+import { isObj, prop } from './guards.js';
 
 /** A declared rule. @typedef {{ fields: string[], message: string }} Rule */
 
@@ -20,7 +21,7 @@ import { isObj } from './guards.js';
  * logic vocabulary's checks): a validate that re-checks a declared shape through those functions passes them on.
  */
 export const KERNEL_CODES = Object.freeze(['param_type', 'param_range', 'param_option', 'param_unknown', 'param_missing', 'param_reserved', 'param_pattern', 'schema_invalid',
-  'ref_unknown', 'id_invalid', 'id_duplicate', 'predicate_unknown', 'predicate_invalid', 'effect_unknown', 'event_ref_type', 'validator_crashed']);
+  'ref_unknown', 'id_invalid', 'id_duplicate', 'predicate_unknown', 'predicate_invalid', 'effect_unknown', 'effect_invalid', 'event_ref_type', 'validator_crashed']);
 const KERNEL = new Set(KERNEL_CODES);
 /** A problem code: a lowercase snake_case word. */
 export const CODE_PATTERN = /^[a-z][a-z0-9_]{1,63}$/;
@@ -60,4 +61,29 @@ export function ruleShapeProblems(card, id = '') {
     if (!isObj(r) || typeof r.message !== 'string' || !r.message.trim()) out.push({ code: 'rules_invalid', path: at(`.${code}.message`), message: 'message says which values the rule allows' });
   }
   return out;
+}
+
+/** The codes a vocabulary kind declares with its registration (logic.predicate/effect(kind, { codes })). @param {unknown} def @returns {string[]} */
+export const kindCodes = def => (isObj(def) && Array.isArray(def.codes) ? def.codes.map(c => String(prop(c, 'code'))) : []);
+/** True when a kind's check may emit the code: the kind declares it, or the kernel's vocabulary checks own it. @param {unknown} def @param {string} code */
+export const kindDeclares = (def, code) => KERNEL.has(code) || kindCodes(def).includes(code);
+
+/**
+ * What is wrong with a kind's declared codes: not a list of { code, fields, example }, a kernel code, a code that is not
+ * snake_case. -> [{ code: 'rules_invalid', path, message }]
+ * @param {unknown} def @param {string} at
+ */
+export function kindCodeProblems(def, at) {
+  if (!isObj(def) || def.codes === undefined) return [];
+  if (!Array.isArray(def.codes)) return [{ code: 'rules_invalid', path: `${at}.codes`, message: 'codes is a list of { code, fields, example }' }];
+  return def.codes.flatMap((c, i) => {
+    const out = [];
+    const code = prop(c, 'code');
+    if (typeof code !== 'string' || !CODE_PATTERN.test(code)) out.push({ code: 'rules_invalid', path: `${at}.codes[${i}].code`, message: `${JSON.stringify(code)} is not a snake_case problem code` });
+    else if (KERNEL.has(code)) out.push({ code: 'rules_invalid', path: `${at}.codes[${i}].code`, message: `'${code}' is a kernel code` });
+    const fields = prop(c, 'fields');
+    if (!Array.isArray(fields) || !fields.length || !fields.every(f => typeof f === 'string' && f)) out.push({ code: 'rules_invalid', path: `${at}.codes[${i}].fields`, message: 'fields lists the fields of the predicate or effect the code constrains' });
+    if (!isObj(prop(c, 'example'))) out.push({ code: 'rules_invalid', path: `${at}.codes[${i}].example`, message: 'example is the predicate or effect whose check emits exactly this code' });
+    return out;
+  });
 }
