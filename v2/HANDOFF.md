@@ -1,60 +1,79 @@
-# v2 handoff, 2026-10-20 (night)
+# v2 handoff, 2026-10-21
 
-Read this first, then `v2/KERNEL_API.md` (the frozen contract), `v2/ARCHITECTURE.md` and `v2/PRIMITIVE_CATALOG.md`.
+Read this first, then `v2/ARCHITECTURE.md`, `v2/KERNEL_API.md` and the approved generation design below.
 
-**First goal for the next session:** the user must be able to type an idea into the studio and play the result. Get that one path working end to end before any other work. Restart the server whenever the user asks, and don't run anything else at the same time.
+## The state, honestly
 
-## State
+**Generated games are still broken.** The user generated a farming game, Pokémon chess, Mario Kart, Pac-Man and a 3D Zelda dungeon; every one came out unplayable or not the game asked for. The unit and integration suites are green, but they do not prove generation works. Nobody ran the user's ideas through the live pipeline and confirmed the results were playable. Do that before claiming anything works.
 
-- **Branch:** `claude/handoff-task-distribution-0a6108`. It is pushed to `claude/v2-kernel` and is PR [#31](https://github.com/vishaltandale00/gameverse.ai/pull/31), which supersedes #28–#30 (those are closed).
-- **Kernel:** `v2/kernel/` follows `KERNEL_API.md`.
-  - Primitives declare their own reference kinds and services.
-  - The kernel owns the spatial vocabulary: zone, near, cell, teleport, move_to.
-  - Modal input, deferred work, `rt.canRun`/`canTest`/`has`, ambient providers, and one owner per vocabulary kind.
-  - Preflight never throws, and validator paths are anchored to the document root.
-  - Tests use `kernel/testing.js`: a reference test space plus `spaceConformance`.
-- **Primitives:** 180, all registered with no vocabulary collisions. They come from these workstreams:
-  - spaces2d, generate2d, runtime, story, move, items, combat, ai, modes, puzzle;
-  - graphics: flat, ui and audio, three;
-  - verification: `v2/verify`.
-- **Tests:** `node --test tests/v2-kernel*.test.js tests/v2-p-*.test.js` takes about 15 s with the navigation cache. The last full run passed 860 of 862.
-  - The Hollow Lantern "talk to bosses" check fails because boss characters won't talk.
-  - The 3D isometric camera test has had a fix applied but hasn't been rerun.
-- **Studio:** `/v2` runs the kernel pipeline in `v2/planner/kernel-pipeline.js`: decompose, select, outline, first playable, detail, revise. Games made with the old kits are refused as legacy, so create new games.
-- **Run:** `npm ci --ignore-scripts` (needs `@anthropic-ai/sdk`), then `PORT=4181 node scripts/serve.mjs` and open `http://localhost:4181/v2`. The OpenAI key is loaded automatically from the main checkout's `.env.local`.
+Branch: `claude/subagent-architecture-handoff-c2cd3b` (worktree `affectionate-hamilton-eb23af`). Not pushed. It is stacked on `claude/v2-kernel` (PR #31); the user wanted a new stacked PR for this work.
 
-## Blocking bugs, in order
+Run: `npm ci --ignore-scripts`, then `PORT=4181 node scripts/serve.mjs`, then open `http://localhost:4181/v2`. Port 4181 is the user's; restart only when asked. Never play-test in the user's browser; never let a test page make sound.
 
-1. **Creating a game crashes the server (V8 heap out of memory).**
-   - It happens synchronously, right after the model's first outline draft returns, inside `writeOutline` in `v2/planner/outline.js`. The heap is flat at about 23 MB, then reaches 3 GB within seconds while the event loop is blocked.
-   - Suspects:
-     - `repairDocument` running on the model draft (`v2/planner/repair.js`), for example unbounded list or stub synthesis;
-     - `staticPlot` or `verifyDocument` not honouring their budgets.
-   - The quickest diagnosis is to log each call after `parseReply` in `writeOutline`.
-   - Also run jobs in a `Worker` with `resourceLimits` and a timeout (`v2/server/jobs.js`), so one runaway job never takes the server down.
-2. **Model mapping quality.** It sometimes omits a central primitive; for example, the Tetris platformer got `move.grid` instead of `move.platformer`. Tighten the mapping prompt in `select.js` `mapWithCatalogue`, or add a pass that checks the core loop.
-3. **Boss characters won't talk** in the Hollow Lantern story test, which checks every character can be talked to.
+## Approved design (Fable consult): modes as declared, composable presets
 
-## Fixed this session, not yet verified end to end
+1. **The idea becomes a play spec.** The decomposition gets `core: { mode, interaction, opponent, win, lose, theme }`. For mashups: a primary mode plus secondaries, each with a relation (nested, union or skin).
+2. **Modes live on cards.** `card.mode = { loop, interaction, opponent, space, needs, win, lose, bot }`. **DONE** on 14 loop primitives, with a bot per mode that wins its own test (`tests/v2-p-modes-bots.test.js`).
+3. **Deterministic presets build the structure.** Space, world, systems, participants, win wiring and input come from presets, and an avatar exists only for avatar interaction. **NOT DONE.** `outline.js proceduralOutline` is still the adventure skeleton (hero, side-by-side zones, reach-zone beats), and it is still what the model is handed.
+4. **The model fills content only,** in small strict forms, in parallel, and repair fixes fields, not documents. **PARTIAL.** The strict form (`outline-form.js`) and content contracts (`content.js`) are merged; the speed work is on the unmerged branch.
+5. **Each mode's bot proves its game.** Bots exist, but the publish gate does not use them.
+6. **Static composition check.** `compose-check.js` is merged, and strict TypeScript over kernel, planner and server passes (`npm run typecheck`). **Adapters are only specified**: `card.adapts` and the "needs adapter" verdict exist, but no adapter has been written and nothing builds one. For a mashup engine, mismatches must be resolved by adapters (or by choosing fitting primitives), never by swapping the idea's world.
 
-- **Whole-catalogue selection** (`v2/planner/select.js` `mapWithCatalogue`): the model sees every card and maps each mechanic to primitive ids. It replaces word overlap, which wrongly declared that "collect rings" and "falling Tetris pieces" had no primitive. Checked with the real model on the Sonic runner, the Tetris platformer and Pokémon × Street Fighter: correct primitives, no false gaps.
+## Known defects, in order
 
-## Unmerged
+1. **The adventure skeleton is still the base of every outline.** Replace it with presets (step 3).
+2. **Unplayable games are published.** The gate (`verify-adapter.js viability` plus `core-loop.js`) blocks only crashes, missing core primitives and an unwired win. A game the playtest agent cannot move in (the farming game explored 2 states) still ships. The user wants broken games blocked; they only rejected "must finish within 20 seconds".
+3. **Degraded fallbacks ship.** When the model's drafts fail, `writeOutline` isolates primitives or falls back to the skeleton, and the result publishes.
+4. **gpt-4.1-mini fails on the big form** (bad references, effect ids, spawn effects, quests). The user chose speed: keep mini, but make the forms small and repair at field level (step 4). gpt-6-luna succeeded on chess, but took 264 s.
+5. **The last commit `66952732` is WIP and unverified.** It re-picks a different world when the composition check fails, which is anti-mashup. Rework it into adapter resolution, or revert it.
+6. **Movement selection.** Grid movement was chosen for a voxel farm. Movement must follow the idea and the world (cards declare `locomotion` and `medium`).
 
-- **3D spaces and generators:** branch `worktree-agent-af591cfc70052b953` (voxel, mesh3d, terrain/biomes/caves/ores/roads/city/structures/scatter/water). The agent was stopped just before a final hot-load test. Merge it and run `tests/v2-p-worlds3d-*`.
-- **Pipeline agent:** its later uncommitted work in `worktree-agent-aa3916f77e7e1aa56` (4 files). Everything committed up to `baedc263` is merged.
+## Unmerged work
 
-## Still to do after the studio works
+- `v2-generation-quality`: 6 commits past HEAD, unreviewed and untested here.
+  - preset-first generation;
+  - small parallel forms;
+  - content packs;
+  - field-level repair;
+  - escalation;
+  - strict section shapes;
+  - the mode primitive treated as core;
+  - no story slot without narrative.
 
-- Retire `v2/kits` and `v2/engine`, rebuilding the kit games as documents (`v2/research/KIT_DECOMPOSITION.md` maps every kit mechanic to its primitive).
-- Regenerate `PRIMITIVE_CATALOG.md` from the cards.
-- `player.js` should mount `withDefaultGraphics` and offer the `view.pause`, `restart` and `load` API the UI requested (`v2/kernel/requests/ui.md`).
-- Open kernel requests are in `v2/kernel/requests/*.md`.
+  Review it against the defects above before merging.
+- `v2-game-gate`: a strict "is it a game" gate (world substance, core-loop coverage). It was held because the user wanted crash-only at the time; reconsider it for defect 2.
 
-## User feedback to honor
+## Merged this session (main pieces)
 
-- Build general primitives, never one-off patches or per-genre engines.
-- Get something working and testable first, and allocate time so the user can test.
-- When they ask for a server restart, do only that. Keep the server up.
-- Don't chase side investigations while they're waiting.
-- Ports: only use 4181 for this branch; other agents' servers were on 4187/4188.
+- **Crash fixes:**
+  - the OOM in `falling.pieces place`;
+  - the action-value fuzz conformance test;
+  - jobs run in supervised child processes, and failure records are kept.
+- **Graphics and studio:**
+  - default renderers per space;
+  - host polish: input defaults, focus, pause and time scale;
+  - games unload completely (`view.onDispose`);
+  - the studio redesign;
+  - quality report slice 1 (non-blocking).
+- **World generation:**
+  - declared generator targets and content;
+  - every space kind gets a world;
+  - extents fit their space;
+  - `scaleWorld`.
+- **Engine validation:** all 26 engine primitives pass.
+- **Content and form:**
+  - content contracts and the strict outline form;
+  - the form asks for every selected primitive.
+- **Modes and checks:**
+  - card modes and bots;
+  - the composition checker;
+  - strict TypeScript.
+- **Revisions:** guards report and never refuse (`reviewChange`), and edits never leave holes in lists.
+
+## User rules
+
+- Build general primitives and declarations, never per-game patches, never genre engines. Mashups are the point.
+- Verify with the project's playtest agent and with real runs of the user's ideas before saying something works.
+- Don't invent policies the user didn't ask for.
+- No benchmarks or side work while the app is broken.
+- Keep messages short and keep the server up.
