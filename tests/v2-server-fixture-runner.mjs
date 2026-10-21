@@ -5,13 +5,15 @@
 //   "alloc ..." / "bigalloc ..."  allocate without bound, in small or 40 MB pieces (the heap limit must stop it);
 //   "publish-loop"   publishes a version, then spins (that version must stay playable);
 //   "throw ..."      a plain pipeline error;
-//   anything else    the real kernel pipeline with no models (fake/offline writers).
+//   anything else    the real kernel pipeline with the scripted spec writer for "collect coins in a maze" (no live models).
+import { mazeWriter } from './v2-p-pipeline-fixtures.js';
+
 const spin = () => { for (;;) {} };
 
 export async function createJobRunner({ env, repoRoot, config }) {
   let real = null;
   const services = async () => {
-    if (!real) { const { buildServices } = await import('../v2/server/job-runner.mjs'); real = buildServices({ env, repoRoot, config, writers: { spec: null, code: null }, decisions: null, experiments: null, log: false }).ready; }
+    if (!real) { const { buildServices } = await import('../v2/server/job-runner.mjs'); real = buildServices({ env, repoRoot, config, writers: { spec: mazeWriter(), code: null }, decisions: null, experiments: null, log: false }).ready; }
     return real;
   };
   return {

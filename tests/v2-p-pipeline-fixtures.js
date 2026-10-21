@@ -167,3 +167,26 @@ export function planFrom(d, concepts = {}) {
     story: { acts: d.acts ?? 2, zones: d.zones ?? 4 },
   };
 }
+
+/**
+ * A scripted spec model for the one-line idea "collect coins in a maze" on the real catalogue (no network): it writes the
+ * play spec and answers the build's questions (grid space, grid movement, the first win/lose/driver/coverage on offer
+ * unless `steps` says otherwise), so a job that runs with no live model still builds a game. It writes no story and no
+ * content: any other request gets "{}".
+ */
+export function mazeWriter({ steps = { lose: ['gameplay.death'] } } = {}) {
+  const decompose = decomposer(planFrom({ title: 'Coin Maze', premise: 'Collect all the coins in a maze.', tone: 'brisk', views: ['td'], movement: 'ground',
+    mechanics: [{ id: 'collect', verb: 'collect', description: 'navigate a maze collecting coins', from: '', importance: 'core' }], spaces: [{ role: 'level', kind: 'tiles-topdown', description: '' }], acts: 1, zones: 3,
+    core: { loop: 'collect', interaction: 'avatar-grid', opponent: 'hazards', win: 'collect all the coins', lose: '', theme: 'maze', narrative: false, mashup: [] } }));
+  // The outline's small forms: the scaffold's zones named, coins scattered over every zone (the collect win counts them).
+  const outline = req => {
+    const name = String(req.schema?.name || '');
+    const zones = req.schema?.schema?.properties?.spaces?.properties?.level?.properties?.zones?.items?.properties?.id?.enum
+      ?? req.schema?.schema?.properties?.spawns?.items?.properties?.zone?.anyOf?.[0]?.enum;
+    if (name.endsWith('_frame') && zones) return JSON.stringify({ title: 'Coin Maze', logline: 'Collect every coin.', premise: 'A maze scattered with coins. Collect them all.', spaces: { level: { zones: zones.map(id => ({ id, name: id.replace(/_/g, ' '), description: `the ${id}` })) } }, player: { archetype: 'hero', zone: zones[0] }, endings: [{ id: 'victory', title: 'Every coin', text: 'The maze is clear.', outcome: 'won' }] });
+    if (name.endsWith('_cast') && zones) return JSON.stringify({ archetypes: [{ id: 'coin', kind: 'pickup', name: 'Coin', components: { collectible: 'coins', other_json: null } }],
+      spawns: zones.map((zone, i) => ({ id: `coins_${i}`, archetype: 'coin', zone, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items: [], characters: [] });
+    return null;
+  };
+  return fakeWriter([req => decompose(req) ?? buildAnswer(req, { space: ['engine.space.grid'], picks: { collect: ['gameplay.move.grid'] }, steps }) ?? outline(req) ?? '{}']);
+}

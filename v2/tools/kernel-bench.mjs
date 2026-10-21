@@ -54,13 +54,14 @@ export function memoryCtx(gameId) {
   };
 }
 
-/** Run the benchmark in-process. Returns the full report (also used by tests with --offline semantics). */
-export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = true, env = process.env, label = null, config = {} } = {}) {
+/** Run the benchmark in-process (`writers`: scripted writers instead of none or live ones). Returns the full report (also used by tests with --offline semantics). */
+export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = true, env = process.env, label = null, config = {}, writers: scripted = null } = {}) {
   const started = Date.now();
   const repo = fileURLToPath(new URL('../../', import.meta.url));
   const base = await loadCatalogue();
   const openaiKey = offline ? null : loadOpenAIKey(env, repo);
-  const writers = offline ? { spec: null, code: null } : await createWriters(env, { openaiKey });
+  // `writers` scripts the spec model of an offline run (tests): offline means no live call, and without any writer nothing is picked.
+  const writers = scripted || (offline ? { spec: null, code: null } : await createWriters(env, { openaiKey }));
   const decisions = offline ? null : createDecisions(env, { openaiKey });
   const catalogue = async doc => (doc?.experiments?.length ? catalogueForDoc(doc) : base);
   const pipeline = createKernelPipeline({ catalogue, writers, decisions, config });
