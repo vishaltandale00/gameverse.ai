@@ -37,6 +37,7 @@ const IDEAS = {
   'slide-merge': { idea: '2048 with planets', game: '2048', themes: [['planets', 'theme']] },
   'falling-blocks': { idea: 'Tetris with books on a library shelf', game: 'Tetris', themes: [['books on a library shelf', 'theme']] },
   'creature-battle': { idea: 'Pokémon battles between kitchen appliances', game: 'Pokémon', themes: [['kitchen appliances', 'theme']] },
+  story: { idea: 'A Monkey Island style adventure in a haunted lighthouse town', game: 'Monkey Island', themes: [['haunted lighthouse town', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 
