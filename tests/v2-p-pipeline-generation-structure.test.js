@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize, decompositionSchema } from '../v2/planner/decompose.js';
 import { selectPrimitives } from '../v2/planner/select.js';
+import { adapterStepsOnSelection, makeAsk } from '../v2/planner/build-steps.js';
 import { ensureAgency, writeOutline } from '../v2/planner/outline.js';
 import { preset, structureOf } from '../v2/planner/presets.js';
 import { kindViewPreserved } from '../v2/planner/census.js';
@@ -81,8 +82,22 @@ test('chess × Pokémon, a card battler and a match-3: no avatar, no zones, no s
   }
 });
 
-test('chess × creatures: the nested relation adds the nested adapter for the battle loop, and the document preflights', async () => {
-  const { p } = await plan(CHESS);
+// The same idea with its concepts told apart (mechanic.from) and its loop named, as decompose.js now writes it: the nested
+// entry joins the creature clash (its own concept's loop) into the chess loop.
+const CHESS_X = { ...structuredClone(CHESS), concepts: [{ id: 'chess', name: 'chess', quote: 'chess', kind: 'game', keeps: [], loop: 'm0' }, { id: 'pokemon', name: 'pokemon', quote: 'pokemon', kind: 'game', keeps: [], loop: 'm1' }],
+  mechanics: CHESS.mechanics.map(m => ({ ...m, from: m.id === 'm1' ? 'pokemon' : 'chess' })),
+  core: { ...CHESS.core, loop: 'm0', mashup: [{ relation: 'nested', mechanics: ['m0', 'm1'], why: 'a capture is decided by a creature battle' }] } };
+/** The selection with the build's adapter steps run over it (build-steps.js adapterSteps; a scripted model picks the trigger). */
+async function planNested(d) {
+  const sel = await selectPrimitives({ decomposition: d, registry });
+  const writer = fakeWriter([req => JSON.stringify({ pick: req.schema.schema.properties.pick.enum.find(x => x === 'attack_hit' || x === 'gameplay.creature.battle') || 'none', why: 'scripted', spec: '' })]);
+  const steps = await adapterStepsOnSelection({ registry, decomposition: d, selection: sel, ask: makeAsk({ writer }) });
+  const a = await ensureAgency({ decomposition: d, selection: sel, registry, logic, seed: 7 });
+  return { sel: a.selection, steps, p: preset({ decomposition: d, selection: a.selection, registry, logic, seed: 7 }) };
+}
+
+test('chess × creatures: the nested step adds the nested adapter for the battle loop, and the document preflights', async () => {
+  const { p, steps } = await planNested(CHESS_X);
   const doc = /** @type {any} */ (p.doc);
   assert.ok(doc.systems.some(s => s.use === 'gameplay.turns'));
   assert.equal(p.structure.win.use, 'gameplay.turns', 'checkmate (the turns victory) owns the win, not the battle');
@@ -90,13 +105,13 @@ test('chess × creatures: the nested relation adds the nested adapter for the ba
   const nested = doc.systems.find(s => registry.get(s.use)?.card.adapts?.relation === 'nested');
   assert.ok(nested, `the nested adapter joins: ${doc.systems.map(s => s.use).join(' ')}`);
   assert.ok(nested.with.inner.includes('gameplay.creature.battle') && !nested.with.inner.includes('gameplay.turns'), JSON.stringify(nested.with));
-  assert.ok(p.structure.added.some(a => a.use === nested.use && /nested/.test(a.why)));
+  assert.ok(steps.steps.some(s => s.kind === 'nested' && s.outcome === 'added'), 'the build step added it, not the preset');
   assert.ok(p.ok, JSON.stringify(p.errors.slice(0, 3)));
   assert.ok(preflight(doc, registry, logic).ok, JSON.stringify(preflight(doc, registry, logic).errors.slice(0, 3)));
   // Through the outline with a fake model that themes the scaffold: the adapter stays and the model's document preflights.
-  const { sel } = await plan(CHESS);
+  const { sel } = await planNested(CHESS_X);
   const themed = { ...structuredClone(doc), title: 'Pocket Gambit', systems: doc.systems.filter(s => s.use !== nested.use) };
-  const o = await writeOutline({ forms: 'single', writer: fakeWriter([JSON.stringify(themed)]), prompt: CHESS.title, decomposition: CHESS, selection: sel, registry, logic, seed: 7, verify: false, maxRounds: 0 });
+  const o = await writeOutline({ forms: 'single', writer: fakeWriter([JSON.stringify(themed)]), prompt: CHESS_X.title, decomposition: CHESS_X, selection: sel, registry, logic, seed: 7, verify: false, maxRounds: 0 });
   assert.ok(o.ok, JSON.stringify(o.errors?.slice(0, 3)));
   assert.equal(o.doc.title, 'Pocket Gambit');
   assert.ok(o.doc.systems.some(s => s.use === nested.use), 'the collection is code\'s: a draft that drops the adapter gets it back');

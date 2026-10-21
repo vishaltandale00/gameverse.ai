@@ -49,6 +49,8 @@ export default {
     actionSpace: { mg_press: { kind: 'impulse', params: {} } },
     requires: {},
     defines: [{ kind: 'minigame', in: 'games' }],
+    // As an encounter's inner loop: the encounter starts its first game.
+    engage: { encounter: { start: [{ do: 'start_minigame', game: '$first:with.games' }] } },
     reads: [],
   },
   logic(logic) {
