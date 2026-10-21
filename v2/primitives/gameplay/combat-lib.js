@@ -175,6 +175,13 @@ export function statOf(rt, e, key) {
   return v;
 }
 
+/**
+ * Whether touching e defeats it instead of hurting the toucher (maze fright, edible foes): stat.fright or stat.edible
+ * above 0, from components.stats or the mods of its active statuses (combat-status). The one definition: contact
+ * resolution, AI fright behaviour and the playtest bots all read it, never a status name.
+ */
+export function touchDefeats(rt, e) { return statOf(rt, e, 'stat.fright') > 0 || statOf(rt, e, 'stat.edible') > 0; }
+
 /** who: 'player' | 'self' | 'target' | 'by' | 'source' | entity id. Context carries target/by. */
 export function resolveWho(rt, who, ctx = {}) {
   if (who === 'target') return rt.entity(ctx.target) || null;

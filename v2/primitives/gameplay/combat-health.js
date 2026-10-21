@@ -10,7 +10,7 @@
 // (revives at home after a delay), plus splitOnDeath (asteroid rocks).
 // Physics impacts (`impact {who, speed}` events) and contact damage from
 // components.touch also go through the pipeline.
-import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, hooks, overlapping, displace, round, err, archetypes, hasArchetype } from './combat-lib.js';
+import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, hooks, overlapping, displace, round, err, archetypes, hasArchetype, touchDefeats } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.health';
 const RESPAWN = ['none', 'home', 'spawn'];
@@ -257,11 +257,11 @@ const health = {
       for (const e of Object.values(rt.state.entities)) {
         const t = e.components.touch; if (!t || !tangible(e) || !e.space) continue;
         if (e.components.health.stun > 0 && e.components.health.stunKind === 'dazed') continue; // dazed bosses are harmless
-        if (!(t.damage > 0) && !(statOf(rt, e, 'stat.fright') > 0)) continue;
+        if (!(t.damage > 0) && !touchDefeats(rt, e)) continue;
         const bx = boxOf(rt, e), shape = { kind: 'aabb', at: bx.min, size: sub(bx.max, bx.min) };
         for (const id of overlapping(rt, e.space, shape, o => o.id !== e.id && o.components.health)) {
           const o = rt.entity(id); if (!o || !tangible(o) || !tangible(e)) continue;
-          if (statOf(rt, e, 'stat.fright') > 0 || statOf(rt, e, 'stat.edible') > 0) {
+          if (touchDefeats(rt, e)) {
             // Frightened or edible: whoever touches it defeats it (maze power pellets).
             if (hostile(rt, o, e, false) && o.id === 'player') api.kill(e, { by: o.id, source: 'contact' });
             continue;

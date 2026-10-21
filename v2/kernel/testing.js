@@ -168,6 +168,17 @@ export const CAPABILITY_METHODS = {
 /** Methods a space's capability needs: kernel list, else the card's provides.capabilityMethods. @param {Card | undefined} card @param {string} cap @returns {string[]} */
 export function capabilityMethods(card, cap) { return CAPABILITY_METHODS[cap] || card?.provides?.capabilityMethods?.[cap] || []; }
 
+/**
+ * The positions `e` can step to from `at` (navigate capability): the space's topology (`neighbors`, which ignores
+ * passability) filtered by what this walker may enter (`canMove`, which applies blocks, class rules, gates and
+ * one-way cells). Every search over a walker's moves uses this, never `neighbors` alone.
+ * @param {SpaceApi} api @param {Entity} e @param {unknown} at @param {Runtime} [rt] @returns {any[]}
+ */
+export function stepsFrom(api, e, at, rt) {
+  const ns = typeof api.neighbors === 'function' ? api.neighbors(at) || [] : [];
+  return typeof api.canMove === 'function' ? ns.filter(n => /** @type {NonNullable<SpaceApi['canMove']>} */ (api.canMove)({ ...e, at: /** @type {any} */ (at) }, n, rt)) : ns;
+}
+
 /** Axis-aligned box of an entity's body in its space, honoring api.anchor ('center' | 'min' | 'cell' | 'slot'). @param {Entity} entity @param {{ anchor?: string }} api */
 export function bodyBox(entity, api) {
   const at = Array.isArray(entity.at) ? entity.at : [0, 0, 0], size = entity.components?.body?.size || at.map(() => 1);

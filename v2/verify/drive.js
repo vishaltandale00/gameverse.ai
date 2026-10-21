@@ -3,6 +3,7 @@
 // observation helpers every strategy shares (positions, health, threats), all
 // read through documented component fields and space capabilities only.
 import { createWorld } from '../kernel/world.js';
+import { touchDefeats } from '../primitives/gameplay/combat-lib.js';
 
 /** A factory of fresh headless worlds for one normalized document. */
 export function maker(doc, registry, logic) {
@@ -87,17 +88,12 @@ export function vitality(rt) {
   return { hp, lives, alive: Boolean(p) && (hp === null || hp > 0) && rt.state.status !== 'lost' };
 }
 
-const VULNERABLE = ['frightened', 'vulnerable', 'stunned', 'fright'];
-/** Entities that threaten the player: an ai/attacks/hazard component, not currently vulnerable. */
+/** Entities that threaten the player: an ai/attacks/hazard component, unless touching it defeats it or it is dazed (harmless, combat-health). */
 export function threats(rt, e = rt.player()) {
-  return Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && (o.components.ai || o.components.attacks || o.components.hazard) && !isVulnerable(o));
+  return Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && (o.components.ai || o.components.attacks || o.components.hazard) && !isVulnerable(rt, o) && !(o.components.health?.stun > 0 && o.components.health.stunKind === 'dazed'));
 }
-export function isVulnerable(o) {
-  const s = o.components.status;
-  if (!s) return false;
-  if (Array.isArray(s)) return s.some(x => VULNERABLE.includes(x?.id ?? x));
-  return VULNERABLE.some(k => s[k]);
-}
+/** Prey: touching it defeats it (combat-lib touchDefeats, the one definition the runtime uses). */
+export function isVulnerable(rt, o) { return touchDefeats(rt, o); }
 /** Non-player entities with health in the player's space (opponents, targets). */
 export const foes = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && hpOf(o) !== null);
 /** Entities the player gains by touching: collectible/pickup components. */

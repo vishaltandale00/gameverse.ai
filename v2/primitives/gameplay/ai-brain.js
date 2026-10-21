@@ -10,6 +10,8 @@ import {
   objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, upAt, planar, distBetween, distTo, facingOf, sees,
   centerOf, clearLine, deltaTo, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
+import { touchDefeats } from './combat-lib.js';
+import { stepsFrom } from '../../kernel/testing.js';
 
 const ID = 'gameplay.ai.brain';
 export const KINDS = ['wander', 'patrol', 'chase', 'flee', 'follow', 'guard', 'flyer', 'circle', 'ambush', 'sit', 'work', 'target-tile', 'sight-challenge', 'goto'];
@@ -379,7 +381,7 @@ function act(rt, e, a, config) {
     case 'wander': {
       if (a.waitUntil > rt.state.time) { idle(e, a); return; }
       const range = b.range ?? 8;
-      if (!continuous(e)) { if (!a.goal || e.at === a.goal) { const ns = can(api, 'neighbors') ? api.neighbors(e.at) : []; a.goal = ns.length ? ns[Math.floor(rt.random() * ns.length)] : e.at; a.waitUntil = round6(rt.state.time + pauseFor()); } intendMove(e, a.goal, speed); return; }
+      if (!continuous(e)) { if (!a.goal || e.at === a.goal) { const ns = can(api, 'neighbors') ? stepsFrom(api, e, e.at, rt) : []; a.goal = ns.length ? ns[Math.floor(rt.random() * ns.length)] : e.at; a.waitUntil = round6(rt.state.time + pauseFor()); } intendMove(e, a.goal, speed); return; }
       if (!a.goal || len(sub(a.goal, e.at)) <= Math.max(0.15, speed * rt.dt * 2) || a.goalUntil < rt.state.time) {
         if (a.goal) { a.waitUntil = round6(rt.state.time + pauseFor()); a.goal = null; idle(e, a); return; }
         a.goal = randomPoint(rt, api, home, range, plane); a.goalUntil = round6(rt.state.time + range / Math.max(0.1, speed) * 2 + 1);
@@ -429,7 +431,7 @@ function act(rt, e, a, config) {
       const range = b.range ?? perceptionOf(e, config).sight ?? 10;
       if (distBetween(rt, e, t) >= range) { idle(e, a); return; }
       const sp = speed * (b.speed === undefined ? (c.ai.run ?? 1.6) : 1);
-      if (!continuous(e)) { const ns = (can(api, 'neighbors') ? api.neighbors(e.at) : []).sort((x, y) => api.distance(y, t.at) - api.distance(x, t.at) || (x < y ? -1 : 1)); if (ns[0] !== undefined) intendMove(e, ns[0], sp); return; }
+      if (!continuous(e)) { const ns = (can(api, 'neighbors') ? stepsFrom(api, e, e.at, rt) : []).sort((x, y) => api.distance(y, t.at) - api.distance(x, t.at) || (x < y ? -1 : 1)); if (ns[0] !== undefined) intendMove(e, ns[0], sp); return; }
       let away = norm(planar(api, e.at, sub(e.at, t.at), plane));
       if (len(away) < 1e-6) away = [1, 0, 0];
       intendSteer(e, fleeDir(api, e, away, plane), sp, { plane }); return;
@@ -501,7 +503,7 @@ function patrolRoute(rt, e, a, b, api, plane) {
     const range = b.range ?? 6, axis = norm(planar(api, e.at, [1, 0, 0], plane));
     a.route = [r6(add(a.home, mul(axis, -range / 2))), r6(add(a.home, mul(axis, range / 2)))];
   } else {
-    const ns = can(api, 'neighbors') ? api.neighbors(e.at) : [];
+    const ns = can(api, 'neighbors') ? stepsFrom(api, e, e.at, rt) : [];
     a.route = [e.at, ...(ns.length ? [ns[0]] : [])];
   }
   return a.route;
@@ -558,8 +560,8 @@ function targetFor(rt, e, a, b, mode, frightened, homing) {
 function targetTile(rt, e, a, b, api, config) {
   const ctx = { self: e.id }, EPS = 1e-6;
   const dirs = gridDirs(api, e, b);
-  // Fright: an explicit predicate, else the frozen status component (frightened/vulnerable seconds left).
-  const frightened = b.frightWhen ? rt.test(selfRelative(b.frightWhen), ctx) : FRIGHT.some(k => (e.components.status?.[k] ?? 0) > 0);
+  // Fright: an explicit predicate, else what makes touching it defeat it (combat-lib touchDefeats: stat.fright/edible).
+  const frightened = b.frightWhen ? rt.test(selfRelative(b.frightWhen), ctx) : touchDefeats(rt, e);
   const homing = b.homeWhen ? rt.test(selfRelative(b.homeWhen), ctx) : false;
   const mode = st(rt).mode?.mode ?? 'chase';
   // Reversals: on every mode change (when the schedule asks) and on entering fright.
@@ -611,7 +613,6 @@ function targetTile(rt, e, a, b, api, config) {
   }
   if (len(sub(pos, v3(e.at))) > 0) { api.setPos(e, r6(pos).slice(0, e.at.length), rt); a.face = dirs[a.dir] ?? a.face; }
 }
-const FRIGHT = ['frightened', 'vulnerable', 'fright'];
 /** U, L, D, R for this space: an explicit preset, else the space's own direction names, else screen axes. */
 function gridDirs(api, e, b) {
   if (b.grid) return GRID[b.grid];

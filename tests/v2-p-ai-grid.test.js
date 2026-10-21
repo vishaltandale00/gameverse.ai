@@ -42,7 +42,7 @@ test('wrap tunnels: a ghost crosses the seam, slowed by the tunnel rule', () => 
   assert.ok(Math.abs((x0 - g2.at[0]) - 2 * 6 / 60) < 0.02, `tunnel speed ${(x0 - g2.at[0]) * 10}`);
 });
 
-test('one-way cells: no upward turn out of a no-up tile unless frightened (status from the frozen status component)', () => {
+test('one-way cells: no upward turn out of a no-up tile unless frightened (stat.fright: touching it defeats it)', () => {
   // From (2,4) heading right toward a target straight up-left: up is barred, so the ghost keeps going.
   const { rt } = compile(doc({ aim: 'fixed', scatter: [2, 9] }), { primitives: P });
   const g = rt.spawn('ghost', { at: [2, 4] });
@@ -50,7 +50,7 @@ test('one-way cells: no upward turn out of a no-up tile unless frightened (statu
   const a = rt.state.prim['gameplay.ai.brain'].agents[g.id];
   assert.notEqual(a.dir, 0, 'did not turn up out of the no-up tile');
   const { rt: r2 } = compile(doc({ aim: 'fixed', scatter: [2, 9] }), { primitives: P });
-  const g2 = r2.spawn('ghost', { at: [2, 4], components: { status: { frightened: 5 } } });
+  const g2 = r2.spawn('ghost', { at: [2, 4], components: { stats: { 'stat.fright': 1 } } });
   run(r2, 30);
   assert.ok(r2.state.prim['gameplay.ai.brain'].agents[g2.id].dir >= 0, 'frightened ghosts wander (random turns)');
 });

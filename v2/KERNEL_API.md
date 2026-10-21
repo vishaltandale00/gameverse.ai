@@ -69,6 +69,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `body` | `size` (box extents), `vel`, `facing` (+1 or -1 in 2D, a vector in 3D), `grounded`, `layer`, `solid` (true: other bodies' `slide` treats this entity as an obstacle, e.g. closed doors, crates, trains), `oneWay` (solid from above only) |
 | `health` | `hp`, `max`, `invulnerable` (seconds left, 0 when vulnerable), `dead` |
 | `status` | `{statusId: secondsLeft}`, with `Infinity` not allowed: use a large number |
+| stats `stat.fright` / `stat.edible` | touching the entity defeats it instead of hurting the toucher (maze fright). Set by a status's `mods` (`content.statuses[].mods`) or `components.stats`; read only through `touchDefeats(rt, e)` (`gameplay/combat-lib.js`) by contact, AI and bots. A status's name has no behaviour of its own. |
 | `collectible` | `counter`, `value` |
 | `interact` | `id` (an interactable id), `kind`, `prompt`, `range?` |
 | `ai` | owned by `gameplay.ai.brain` (catalog §6.4) |
@@ -120,6 +121,8 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
   - Cells: `getCell(at, layer?)`.
   - Validators: `validate(config, doc, ctx, {path, id, use, space})`.
 - **Capability lists.** `bounds`, `wrap` and `dynamics` are kernel capabilities alongside those above. Space-specific ones (`joints`, `boxes`, `ledges`, `scroll`, `settle`, `cellRules`...) are documented in `card.provides.capabilityMethods`; conformance checks them.
+- **Topology and passability.** `navigate.neighbors(at)` is the space's topology only (adjacent cells, a graph's exits); whether a given walker may enter one is `canMove(entity, to, rt)`, which applies blocks, class rules (a door only hunters pass), gates and one-way cells. Every search over a walker's moves (AI, movement, bots) steps through `stepsFrom(api, entity, at, rt)` from `kernel/testing.js`, never `neighbors` alone.
+- **Cells of positions.** A position's cell is `api.cellOf({ at })` on spaces that expose it (it honours the anchor: the grid rounds to cell centres); code never floors coordinates itself where the space defines cells.
 - **Kernel-owned spatial vocabulary.** The predicates `zone`, `near` and `cell` and the effects `teleport` and `move_to` are registered by the kernel and dispatch through the subject's space. Spaces must not register them. `move_to` only records intent in `components.moveTo`; movement and AI primitives carry it out.
 - **Zone events.** Spaces emit `enter_zone` / `leave_zone` (typed: `enter_zone:<zone>`) as entities move, and keep `entity.zone` current.
 - **State.** Space state lives in `rt.state.spaces[id]`; cell spaces store generator params plus an edit log.
