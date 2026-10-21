@@ -21,7 +21,7 @@ export default {
   card: {
     intent: 'Generates a room-and-corridor dungeon with keys always placed before their locks, a boss room, loot in dead ends, and proves it solvable from the start.',
     views: ['td', '3p', 'iso', 'side'],
-    spaces: ['engine.space.tilemap', 'engine.space.grid'],
+    spaces: ['engine.space.tilemap', 'engine.space.grid', 'engine.space.mesh3d'],
     params: {
       rooms: { type: 'integer', min: 3, max: 80, default: 12, scale: 'world', per: 'area' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },
@@ -32,6 +32,10 @@ export default {
       area: { type: 'list', of: { type: 'number' }, min: 4, max: 4, scale: 'world', effect: '[x0,y0,x1,y1) on the plane, overrides zone' },
       plane: { type: 'string', options: ['xy', 'xz'], default: 'xy', effect: 'xz for 3D spaces (y = floor)' },
       floor: { type: 'number', default: 0, effect: 'height for the xz plane' },
+      cell: { type: 'number', min: 0.5, max: 512, default: 4, unit: 'm', scale: 'world', effect: '3D world models (mesh3d): metres per dungeon cell; walls become box colliders' },
+      wallHeight: { type: 'number', min: 1, max: 200, default: 6, unit: 'm', effect: '3D world models: wall and door height' },
+      guards: { type: 'ref', to: 'archetype', effect: 'spawned in every room but the start (guardsPerRoom each)' },
+      guardsPerRoom: { type: 'integer', min: 0, max: 8, default: 1 },
       roomSize: { type: 'list', of: { type: 'integer', min: 3 }, min: 2, max: 2, default: [5, 9], effect: 'room side range in cells' },
       corridor: { type: 'integer', min: 1, max: 4, default: 1, effect: 'corridor width in cells' },
       palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'stone' }, door: { type: 'string', default: 'locked_door' } } },
@@ -56,15 +60,28 @@ export default {
     if (!this.card.spaces.includes(space.use)) return null;
     const config = { ...(registry ? Object.fromEntries(Object.entries(registry.get(space.use)?.card.params || {}).filter(([, v]) => v.default !== undefined).map(([k, v]) => [k, v.default])) : {}), ...(space.with || {}) };
     if (space.use === 'engine.space.tilemap' && config.mode !== 'topdown') return null;
+    const archetypes = doc.content?.archetypes || [], add = { blocks: [], archetypes: [], items: [] };
+    const need = (id, name) => { if (!archetypes.some(a => a?.id === id) && !add.archetypes.some(a => a.id === id)) add.archetypes.push({ id, components: { name } }); };
+    const finish = out => { const content = Object.fromEntries(Object.entries(add).filter(([, v]) => v.length)); return { ...out, ...(Object.keys(content).length ? { content } : {}) }; };
+    need('chest', 'Chest');
+    // An adversary the document declares (an archetype other than the player's with ai or health) guards the rooms and the boss room.
+    const foe = archetypes.find(a => a?.id && a.id !== doc.player?.archetype && (a.components?.ai || a.components?.brain))?.id ?? archetypes.find(a => a?.id && a.id !== doc.player?.archetype && a.components?.health)?.id;
+    if (space.use === 'engine.space.mesh3d') {
+      // Rooms over the whole world: a slot grid of `cols` × `cols` slots of 12 cells, the cell sized so it spans the space.
+      const [W, D] = Array.isArray(config.size) ? config.size : [2048, 2048], zones = (space.zones || []).length;
+      const rooms = Math.max(9, Math.min(36, (zones || 4) * 4)), cols = Math.ceil(Math.sqrt(rooms)), cell = Math.floor((Math.min(W, D) / (cols * 12)) * 100) / 100;
+      const keys = rooms >= 9 ? ['dungeon_key_1', 'dungeon_key_2'] : [];
+      for (const [i, id] of keys.entries()) if (!(doc.content?.items || []).some(x => x?.id === id)) add.items.push({ id, name: `Dungeon key ${i + 1}` });
+      if (keys.length) { need('key', 'Key'); need('locked_door', 'Locked door'); }
+      return finish({ with: { plane: 'xz', rooms, roomSize: [5, 9], cell, wallHeight: +Math.max(4, Math.min(40, cell * 0.4)).toFixed(2), keys, ...(foe ? { guards: foe, guardsPerRoom: 1, boss: foe } : {}) } });
+    }
     const [W, H] = Array.isArray(config.size) ? config.size : [0, 0];
     let pick = null;
     for (const max of [9, 7, 5, 4]) { const slot = max + 3, cap = Math.floor(W / slot) * Math.floor(H / slot); if (cap >= 3) { pick = { roomSize: [Math.min(5, max), max], rooms: Math.min(12, cap) }; break; } }
     if (!pick) return null;
-    const blocks = doc.content?.blocks || [], add = { blocks: [], archetypes: [] };
+    const blocks = doc.content?.blocks || [];
     const wall = blocks.find(b => b?.id && b.solid !== false && !(b.tags || []).some(t => ['hazard', 'liquid', 'one_way', 'oneway'].includes(t)))?.id ?? (add.blocks.push({ id: 'stone', name: 'Stone', solid: true }), 'stone');
-    if (!(doc.content?.archetypes || []).some(a => a?.id === 'chest')) add.archetypes.push({ id: 'chest', components: { name: 'Chest' } });
-    const content = Object.fromEntries(Object.entries(add).filter(([, v]) => v.length));
-    return { with: { ...pick, palette: { wall } }, ...(Object.keys(content).length ? { content } : {}) };
+    return finish({ with: { ...pick, palette: { wall } } });
   },
   /** The area the dungeon fills on its plane: area, else its zone's rect, else the whole space (provides.extent: 'own'). */
   extentOf(raw, space) {
@@ -82,7 +99,9 @@ export default {
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [], sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
-    const area = config.area || zoneRect((sp?.zones || []).find(z => z.id === config.zone), config.plane) || (sp?.with?.size ? [0, 0, sp.with.size[0], sp.with.size[config.plane === 'xz' ? 2 : 1] ?? sp.with.size[1]] : null);
+    const mesh = sp?.use === 'engine.space.mesh3d', plane = mesh ? 'xz' : config.plane, size = mesh ? sp?.with?.size ?? [2048, 2048] : sp?.with?.size;
+    const metres = config.area || zoneRect((sp?.zones || []).find(z => z.id === config.zone), plane) || (size ? [0, 0, size[0], mesh ? size[1] : size[plane === 'xz' ? 2 : 1] ?? size[1]] : null);
+    const area = metres && mesh ? metres.map(v => v / config.cell) : metres;
     if (!area) errors.push(problem('dungeon_area_missing', 'zone', 'give area, a zone with a rect/bounds, or a space with a size'));
     else { const slot = config.roomSize[1] + 3, cap = Math.floor((area[2] - area[0]) / slot) * Math.floor((area[3] - area[1]) / slot); if (cap < config.rooms && !config.zone) errors.push(problem('dungeon_area_small', 'rooms', `the area fits ${cap} room slots; ${config.rooms} rooms requested`, { hint: 'enlarge the area or shrink roomSize' })); }
     if (config.keys.length > config.rooms - 2) errors.push(problem('dungeon_keys_many', 'keys', `${config.keys.length} keys need at least ${config.keys.length + 2} rooms`));
@@ -90,17 +109,40 @@ export default {
   },
   install(rt, raw, instance) {
     const config = withDefaults(this.card, raw), space = spaceOf(rt, instance), seed = drawSeed(rt);
-    const sz = space.size || [64, 64, 64];
-    const area = config.area || zoneRect(space.zone(config.zone), config.plane) || [0, 0, sz[0], config.plane === 'xz' ? sz[2] ?? sz[1] : sz[1]];
-    const carve = typeof space.api.setCell === 'function' || typeof space.api.bake === 'function';
-    const d = generateDungeon(config, area, seed, carve);
-    const at = (u, v) => planeAt(config.plane, u, v, config.floor);
+    // A 3D world model (mesh3d): plan on a grid of `cell`-metre cells over the xz plane; walls and doors become box objects.
+    const model3d = rt.caches[`worlds3d:model:${space.sid}`] || null, C = model3d ? config.cell : 1, plane = model3d ? 'xz' : config.plane;
+    const sz = model3d ? [space.api.size[0], 0, space.api.size[1]] : space.size || [64, 64, 64];
+    const metres = config.area || zoneRect(space.zone(config.zone), plane) || [0, 0, sz[0], plane === 'xz' ? sz[2] ?? sz[1] : sz[1]];
+    const area = model3d ? [Math.ceil(metres[0] / C), Math.ceil(metres[1] / C), Math.floor(metres[2] / C), Math.floor(metres[3] / C)] : metres;
+    const carve = !model3d && (typeof space.api.setCell === 'function' || typeof space.api.bake === 'function');
+    const d = generateDungeon(config, area, seed, carve || Boolean(model3d));
+    const at = model3d ? (u, v) => [(u + 0.5) * C, config.floor, (v + 0.5) * C] : (u, v) => planeAt(config.plane, u, v, config.floor);
     if (carve) { const w = cellWriter(rt, space); for (const c of d.cells) w.set(at(c[0], c[1]), c[2]); w.flush(); }
+    const doorIds = new Map();
+    if (model3d) {
+      const wall = new Set(d.cells.filter(c => c[2] === config.palette.wall).map(c => `${c[0]},${c[1]}`)), objs = [], key = instance.key.replace(/[^a-z0-9]+/gi, '_');
+      const box = (id, kind, u0, v0, nu, nv) => ({ id, kind, group: key, role: kind, shape: 'box', at: [(u0 + nu / 2) * C, 0, (v0 + nv / 2) * C], size: [nu * C, config.wallHeight, nv * C], rot: 0 });
+      // Horizontal runs of two or more wall cells, then the single cells left merged into vertical runs.
+      const rows = new Map(); for (const k of wall) { const [u, v] = k.split(',').map(Number); (rows.get(v) || rows.set(v, []).get(v)).push(u); }
+      const single = new Set();
+      for (const [v, us] of [...rows].sort((a, b) => a[0] - b[0])) {
+        us.sort((a, b) => a - b);
+        for (let i = 0; i < us.length;) { let j = i; while (j + 1 < us.length && us[j + 1] === us[j] + 1) j++; if (j > i) objs.push(box(`${key}~wall${objs.length}`, 'wall', us[i], v, j - i + 1, 1)); else single.add(`${us[i]},${v}`); i = j + 1; }
+      }
+      const cols = new Map(); for (const k of single) { const [u, v] = k.split(',').map(Number); (cols.get(u) || cols.set(u, []).get(u)).push(v); }
+      for (const [u, vs] of [...cols].sort((a, b) => a[0] - b[0])) { vs.sort((a, b) => a - b); for (let i = 0; i < vs.length;) { let j = i; while (j + 1 < vs.length && vs[j + 1] === vs[j] + 1) j++; objs.push(box(`${key}~wall${objs.length}`, 'wall', u, vs[i], 1, j - i + 1)); i = j + 1; } }
+      for (const l of d.locks) l.cells.forEach(([u, v], k) => { const id = `${l.id}~door${k}`; objs.push(box(id, 'door', u, v, 1, 1)); (doorIds.get(l.id) || doorIds.set(l.id, []).get(l.id)).push(id); });
+      model3d.contribute(`dungeon#${instance.key}`, 50, m => m.addObjects(objs.map(o => ({ ...o, at: [o.at[0], (m.surfaceY ? m.surfaceY(o.at[0], o.at[2]) : 0) + config.floor, o.at[2]] }))));
+    }
     const center = r => at(Math.floor((r.rect[0] + r.rect[2]) / 2), Math.floor((r.rect[1] + r.rect[3]) / 2));
     for (const k of d.keys) spawnAt(rt, space, config.archetypes.key, at(...k.at), { pickup: { item: k.item, count: 1, dungeon: instance.key } }, `${instance.key.replace(/[^a-z0-9]+/gi, '_')}_key_${k.lock}`.toLowerCase());
     for (const l of d.locks) spawnAt(rt, space, config.archetypes.lock, at(...l.at), { lock: { key: l.key, id: l.id, open: false } }, l.id);
     for (const c of d.chests) spawnAt(rt, space, config.archetypes.chest, at(...c.at), { loot: { table: config.loot ?? null }, chest: { room: c.room } });
     if (config.boss) spawnAt(rt, space, config.boss, center(d.rooms[d.boss]), { boss: { dungeon: instance.key } });
+    if (config.guards && config.guardsPerRoom) {
+      const g = stream(seed, 'guards');
+      d.rooms.forEach((rm, i) => { if (i === d.start) return; for (let n = 0; n < config.guardsPerRoom; n++) { const [x0, y0, x1, y1] = rm.rect; spawnAt(rt, space, config.guards, at(x0 + 1 + g.int(Math.max(1, x1 - x0 - 2)), y0 + 1 + g.int(Math.max(1, y1 - y0 - 2))), { guard: { room: rm.id, dungeon: instance.key } }); } });
+    }
     const st = () => rt.store(instance.key);
     // Locks: opened by the open_lock effect or (autoUnlock) when the player arrives holding the key.
     const items = () => vocabulary(rt, 'predicate', 'item') && vocabulary(rt, 'effect', 'give_item');
@@ -109,12 +151,13 @@ export default {
       const s = st(), l = s.locks.find(x => x.id === id); if (!l || s.opened.includes(id)) return;
       s.opened.push(id);
       if (carve) { const w = cellWriter(rt, space); for (const c of l.cells) w.set(at(c[0], c[1]), null); w.flush(); }
+      for (const door of doorIds.get(id) || []) space.api.removeObject?.(door, rt);
       const e = rt.entity(id); if (e) { e.components.lock.open = true; rt.despawn(id); }
       rt.emitTyped('unlocked', id, { key: l.key });
     };
     (rt.caches.dungeonLocks ??= new Map());
     for (const l of d.locks) rt.caches.dungeonLocks.set(l.id, open(l.id));
-    const near = (e, p, r = 1.5) => { const a = cellOfEntity(space, e); return Math.hypot(...[0, 1, 2].map(i => (a[i] ?? 0) - (p[i] ?? 0))) <= r; };
+    const near = model3d ? (e, p, r = 1.5) => Math.hypot(e.at[0] - p[0], e.at[2] - p[2]) <= r * C : (e, p, r = 1.5) => { const a = cellOfEntity(space, e); return Math.hypot(...[0, 1, 2].map(i => (a[i] ?? 0) - (p[i] ?? 0))) <= r; };
     rt.system('interaction', rt => {
       const p = rt.player(), s = st(); if (!p || p.space !== space.sid) return;
       if (config.autoPickup) for (const k of s.keys) if (!s.found.includes(k.item) && near(p, at(...k.at), 1)) {
@@ -127,9 +170,9 @@ export default {
     }, ID);
     if (config.placePlayer) rt.on('spawn', ev => { if (ev.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) placeOn(rt, space, p, center(d.rooms[d.start])); });
     const { cells, ...data } = d;
-    publish(rt, instance, space, ID, { ...data, opened: [], found: [], carved: carve, plane: config.plane }, { dungeon: {
+    publish(rt, instance, space, ID, { ...data, opened: [], found: [], carved: carve, built: Boolean(model3d), cell: C, plane }, { dungeon: {
       rooms: () => st().rooms, start: () => st().start, boss: () => st().boss, locks: () => st().locks, keys: () => st().keys,
-      roomAt: p => { const u = p[0], v = config.plane === 'xz' ? p[2] : p[1]; return st().rooms.findIndex(r => inRect(r.rect, Math.floor(u), Math.floor(v))); },
+      roomAt: p => { const u = p[0] / C, v = (plane === 'xz' ? p[2] : p[1]) / C; return st().rooms.findIndex(r => inRect(r.rect, Math.floor(u), Math.floor(v))); },
       isOpen: id => st().opened.includes(id), problems: () => st().problems,
     } });
   },

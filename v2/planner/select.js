@@ -7,7 +7,7 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
-import { planWorld, unfurnishable, spaceNeeds, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
+import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 
 export const SELECT_VERSION = 'select/0.1';
 export const LEXICAL_ACCEPT = 0.75;    // calibrated in tests/v2-p-pipeline-select.test.js
@@ -300,9 +300,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // are the outline's own; the outline's scaffold pass fills each generator's params.
   const movers = systems.filter(id => isMovement(registry, id));
   for (const s of spaces) {
-    if (!spaceNeeds(registry, s.use).length || !movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
+    if (!needSets(registry, s.use).length || !movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
     const have = [...OUTLINE_AUTHORS, ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
-    const plan = planWorld(registry, s, { view: decomposition.views?.[0], have, exclude: generators.filter(g => g.space === s.id).map(g => g.id) });
+    const intent = [decomposition.premise, ...(decomposition.mechanics || []).map(m => m.description)].filter(Boolean).join('. ');
+    const plan = planWorld(registry, s, { view: decomposition.views?.[0], have, intent, exclude: generators.filter(g => g.space === s.id).map(g => g.id) });
     for (const id of plan.generators) generators.push({ id, space: s.id, auto: true });
   }
   return {
