@@ -8,6 +8,7 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
+import { modeOf } from './modes.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
 
@@ -31,7 +32,7 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * project it (`signature` a one-line description; `adapter` compose-check's adapter card when it produced one).
  * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
  */
-/** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null }} LocomotionResult */
+/** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null, gap?: string }} LocomotionResult */
 /** @typedef {{ mechanic: string, added?: string, removed?: string, gap?: boolean, why: string }} MappingChange */
 /** @typedef {{ checked: string[], changes: MappingChange[], ms?: number | null, error?: string }} MappingCheck */
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
@@ -361,9 +362,18 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     if (input) chosen.add(input.id);
   }
 
+  // The play spec's mode declares the spaces its loop is made for. When one of them shows the idea's views (a card table
+  // for a ui-only card battle, a board for chess), it is the world: primitives it cannot host become adapter gaps below
+  // rather than pulling the game into another space. A mode space that does not show the idea's views (a 3D game
+  // whose mode lists tile spaces) is not forced.
+  const modeSpaces = /** @type {any[]} */ (decomposition.core?.mode ? modeOf(registry, decomposition.core.mode)?.space : null) || [];
+  const wantViews = decomposition.views || [];
+  const modeSpace = (Array.isArray(modeSpaces) ? modeSpaces : []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
+    && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)));
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
-  const { spaces, bind, unmet, excluded: excludedSpaces = [] } = chooseSpaces(registry, [...chosen], decomposition, prefer, excludeSpaces);
+  const lockOut = modeSpace ? registry.ids('engine').filter(id => isSpace(id) && id !== modeSpace) : [];
+  const { spaces, bind, unmet, excluded: excludedSpaces = [] } = chooseSpaces(registry, [...chosen], decomposition, prefer, [...new Set([...excludeSpaces, ...lockOut])]);
   // A primitive no chosen space can host stays the user's intent: a core mechanic's primitive becomes an adapter gap
   // (the gap layer writes the adapter that projects it onto the space, gated by tests and the playtest agent), never
   // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
@@ -391,6 +401,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   // Base locomotion follows the idea: the primary view and the avatar's medium (cards declare locomotion and medium).
   const loco = locomotionCompleteness({ decomposition, registry, chosen, space: spaces[0], mechanics });
+  if (loco.gap) gaps.push({ mechanic: 'movement', description: `needs movement: ${loco.gap}`, importance: 'core', kind: 'no_primitive', why: `${loco.gap}; the world is kept, not swapped` });
   // Mechanics the chosen space itself provides (travelling between its places) are not gaps: ask the decision
   // model once for every no-primitive gap, else fall back to lexical relevance against the space card.
   const noPrim = gaps.filter(g => g.kind === 'no_primitive');
@@ -461,16 +472,35 @@ const primaryOf = decomposition => (decomposition.views || []).find(v => v !== '
 const supportsView = (card, view) => !view || (card.views || []).includes(view) || (card.views || []).includes('any');
 
 /**
+ * How a movement card moves, from its own envelope declaration ('discrete' = cell by cell, else continuous); null when
+ * the card declares no envelope. @param {any} card @returns {string | null}
+ */
+export function movementStyle(card) {
+  try { const m = typeof card?.envelope === 'function' ? card.envelope({}, new Set(), {})?.mode : null; return typeof m === 'string' ? m : null; } catch { return null; }
+}
+/**
+ * Does a movement card match the play spec's interaction? avatar-grid steps cell by cell (a discrete envelope);
+ * any other avatar interaction (avatar-realtime) never does. Other interactions and unknown styles do not constrain.
+ * @param {any} card @param {string | null | undefined} interaction
+ */
+export function fitsInteraction(card, interaction) {
+  if (!interaction || !interaction.startsWith('avatar')) return true;
+  const style = movementStyle(card);
+  if (!style) return true;
+  return interaction === 'avatar-grid' ? style === 'discrete' : style !== 'discrete';
+}
+
+/**
  * Base locomotion cards that fit a space, a primary view and a medium, best first. Hard filters: base locomotion,
  * capabilities the space provides, the primary view. Preference: the wanted medium, then specialisation.
  * Cards declare `locomotion` and `medium` outside the kernel's CardInput fields (read through its index signature).
  * @param {RegistryLike} registry
- * @param {{ caps?: string[], view?: string | null, medium?: string | null, exclude?: string[] }} [options]
+ * @param {{ caps?: string[], view?: string | null, medium?: string | null, exclude?: string[], interaction?: string | null }} [options]
  * @returns {Array<{ id: string, medium: string | null, score: number }>}
  */
-export function baseLocomotion(registry, { caps = [], view = null, medium = null, exclude = [] } = {}) {
+export function baseLocomotion(registry, { caps = [], view = null, medium = null, exclude = [], interaction = null } = {}) {
   const have = new Set(caps);
-  return registry.cards('gameplay').filter(c => c.locomotion === 'base' && !exclude.includes(c.id) && (c.requires?.capabilities || []).every(x => have.has(x)) && supportsView(c, view))
+  return registry.cards('gameplay').filter(c => c.locomotion === 'base' && !exclude.includes(c.id) && fitsInteraction(c, interaction) && (c.requires?.capabilities || []).every(x => have.has(x)) && supportsView(c, view))
     // Specialisation breaks ties: a card that needs more of what this space provides (gravity for jumping) and is made
     // for fewer views fits it better than a general one (the side-view platformer over walking, on a side-view tilemap).
     .map(c => ({ id: c.id, medium: str(c.medium) || null, score: ((c.views || []).includes(/** @type {string} */ (view)) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) + (c.requires?.capabilities || []).length + 2 / Math.max(1, (c.views || []).length) }))
@@ -482,11 +512,12 @@ export function baseLocomotion(registry, { caps = [], view = null, medium = null
  * locomotion in the wrong medium (flying through a walking dungeon) is replaced by one in the right medium; an idea
  * whose avatar moves but has no base locomotion gets one. movement 'none' (cards, boards, falling pieces) adds nothing.
  * Mutates `chosen` and the mechanics' primitive lists; returns what it did.
- * @param {{ decomposition: { views?: string[], movement?: string }, registry: RegistryLike, chosen: Set<string>, space: SpaceChoice | undefined, mechanics?: SelectedMechanic[] }} options
+ * @param {{ decomposition: { views?: string[], movement?: string, core?: { interaction?: string } | null }, registry: RegistryLike, chosen: Set<string>, space: SpaceChoice | undefined, mechanics?: SelectedMechanic[] }} options
  * @returns {LocomotionResult}
  */
 export function locomotionCompleteness({ decomposition, registry, chosen, space, mechanics = [] }) {
   const view = primaryOf(decomposition), medium = decomposition.movement || null;
+  const interaction = decomposition.core?.interaction || null;
   /** @type {LocomotionResult} */
   const out = { view, medium, removed: [], added: null };
   // ids below come from `chosen`, which holds registered ids only.
@@ -494,12 +525,22 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
   if (!space) return out;
   const present = [...chosen].filter(id => registry.get(id)?.card.locomotion === 'base');
   const drop = (/** @type {string} */ id) => { chosen.delete(id); out.removed.push(id); for (const m of mechanics) if (Array.isArray(m.primitives)) m.primitives = m.primitives.filter(x => x !== id); };
-  for (const id of present) if (!supportsView(cardOf(id), view)) drop(id);
-  const left = present.filter(id => chosen.has(id));
+  for (const id of present) if (!supportsView(cardOf(id), view) || !fitsInteraction(cardOf(id), interaction)) drop(id);
+  let left = present.filter(id => chosen.has(id));
+  // Exactly one base locomotion: the best fit stays, the rest were guesses.
+  if (left.length > 1) {
+    const rank = baseLocomotion(registry, { caps: space.caps, view, medium, interaction }).map(c => c.id);
+    const at = (/** @type {string} */ id) => rank.includes(id) ? rank.indexOf(id) : Infinity;
+    const keep = [...left].sort((a, b) => at(a) - at(b) || a.localeCompare(b))[0];
+    for (const id of left) if (id !== keep) drop(id);
+    left = [keep];
+  }
+  // No avatar (cards, boards, falling pieces): nothing to add.
+  if (interaction && !interaction.startsWith('avatar')) return out;
   const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => cardOf(id).medium && cardOf(id).medium !== medium));
   if (medium === 'none' || (left.length && !wrongMedium)) return out;
-  const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left }).find(c => !medium || c.medium === medium || !c.medium);
-  if (!best) return out;
+  const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left, interaction }).find(c => !medium || c.medium === medium || !c.medium);
+  if (!best) { if (!left.length) out.gap = `no base movement fits ${space.id || 'the space'}${interaction ? ` for ${interaction}` : ''}${medium ? ` (${medium})` : ''}`; return out; }
   if (wrongMedium) for (const id of left) drop(id);
   chosen.add(best.id); out.added = best.id;
   const host = mechanics.find(m => m.importance === 'core' && /\b(move|walk|run|jump|explor|navigat|travel|climb|platform|roam|fly|swim|drive)\w*/i.test(`${m.verb} ${m.description}`)) || mechanics.find(m => m.importance === 'core');

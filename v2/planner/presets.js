@@ -247,13 +247,16 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     const config = { ...defaultsOf(p.card), ...w };
     try { return [...(p.capabilities ? p.capabilities(config) : p.card.provides?.capabilities || [])]; } catch { return [...(p.card.provides?.capabilities || [])]; }
   };
-  // The mode's preferred space leads when the selection's primary space does not fit any of its entries.
+  // The idea's space stays. A mode whose declared spaces do not fit it is reported (an adapter is needed), never swapped in.
   /** @type {Array<{ id: string, use: string, with?: Record<string, unknown>, role?: string, caps: string[] }>} */
   let selSpaces = selection.spaces.map(s => ({ ...s, caps: [...(s.caps || [])] }));
+  /** @type {Array<{ mechanic: string, description: string, importance: string, kind: 'adapter' | 'no_primitive' | 'capability', why: string, primitive?: string }>} */
+  const gaps = [];
+  if (decomposition.core?.problem) gaps.push({ mechanic: 'core', description: decomposition.core.problem, importance: 'core', kind: 'no_primitive', why: decomposition.core.problem });
   const prefs = Array.isArray(st.mode?.space) ? st.mode.space : [];
-  if (prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0]))) {
-    const use = prefs.find(e => typeof e === 'string' && registry.has(e));
-    if (typeof use === 'string') selSpaces = [{ id: selSpaces[0].id, use, role: selSpaces[0].role || 'world', caps: capsOf(use) }, ...selSpaces.slice(1).filter(s => s.use !== use)];
+  if (st.mode && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0]))) {
+    const description = `needs adapter: ${st.mode.id} on ${selSpaces[0].use}`;
+    gaps.push({ mechanic: st.mode.id, description, importance: 'core', kind: 'adapter', primitive: st.mode.use, why: `${st.mode.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
   }
   // A nested secondary mode that plays in another space (a battle screen) gets that space.
   /** @type {Array<{ mode: Mode, space: string }>} */
@@ -338,11 +341,21 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   }
   const primaryShape = /** @type {ZoneShape} */ (primary._shape);
   for (const s of spaces) delete s._shape;
-  // Primitives no space of this structure can host (the mode's space replaced the selection's) leave, reported: they
-  // were the selection's guesses for this space, not the loop (the mode's own primitives are kept whatever they need).
+  // Primitives no space of this game can host leave, reported: guesses leave as removals; a primitive a core mechanic
+  // relies on is never dropped silently, it stays out of the removals and becomes a gap.
   const loopIds = new Set([st.mode?.use, st.mode?.via, ...st.secondary.map(x => x.entry.use)].filter(Boolean));
   const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
-  for (const id of [...st.systems]) if (!loopIds.has(id) && !hosted(id)) { st.systems = st.systems.filter(x => x !== id); st.removed.push({ use: id, why: `needs ${(registry.get(id)?.card.requires?.capabilities || []).join(', ')}, which no space of this game provides` }); }
+  const coreMech = (/** @type {string} */ id) => (selection.mechanics || []).find(m => m.importance === 'core' && (m.primitives || []).includes(id));
+  for (const id of [...st.systems]) {
+    if (loopIds.has(id) || hosted(id)) continue;
+    const missing = (registry.get(id)?.card.requires?.capabilities || []).filter(c => !selSpaces.some(sp => sp.caps.includes(c)));
+    const why = `needs ${(registry.get(id)?.card.requires?.capabilities || []).join(', ')}, which no space of this game provides`;
+    const m = coreMech(id);
+    st.systems = st.systems.filter(x => x !== id);
+    if (m) gaps.push({ mechanic: m.id, description: `needs adapter: ${id} on ${selSpaces[0]?.use || 'the space'}${missing.length ? ` (${missing.join(', ')})` : ''}`, importance: 'core', kind: 'adapter', primitive: id, why });
+    else st.removed.push({ use: id, why });
+  }
+  for (const g of gaps) if (Array.isArray(selection.gaps) && !selection.gaps.some(x => x.description === g.description)) selection.gaps.push(/** @type {any} */ (g));
   /** @type {SystemInstance[]} */
   const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] && selSpaces.some(sp => sp.id === selection.bind[id]) ? { space: selection.bind[id] } : {}) }));
   // The mode applies (its config matches), nested modes point at their space, and the core loop's win/lose end the game.
@@ -393,6 +406,6 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
   const structure = { version: PRESETS_VERSION, packs: packed, mode: st.mode?.id || (decomposition.core ? STORY : null), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed, endings: endings.map(e => e.id), nested: nested.map(n => n.space) };
-  const rest = { errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure };
+  const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure };
   return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: /** @type {true} */ (true), ...rest } : { doc: /** @type {unknown} */ (repaired.doc), ok: /** @type {false} */ (false), ...rest };
 }
