@@ -5,11 +5,26 @@
 // block) and the `unbreakable` tag. Drops go to the bag or into the world as
 // pickups; tools wear through tool_used events; protected zones refuse.
 import { compare } from '../../kernel/logic.js';
+import { checkParam } from '../../kernel/params.js';
+import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 import { give, bag } from './inventory.js';
 import { item as itemDef, items as allItems, blocks, roll, lookCell, cellDist, cellKey, cellOf, isVec, api as spaceApi, center } from './items-lib.js';
 
 const KEY = 'gameplay.blocks.mine';
 export const UNBREAKABLE = 9999;
+/** The parts of content.blocks and content.items mining reads (over the kernel's base entries). */
+const BLOCKS = { type: 'list', of: { type: 'object', open: true, fields: {
+  hardness: { type: 'number', min: 0, effect: `seconds by hand per hardnessScale; ${UNBREAKABLE} or more is unbreakable` },
+  tool: { type: 'string', effect: 'the tool kind (content.items[].tool.kind) that harvests it' }, tier: { type: 'integer', min: 0, effect: 'the least tool tier that harvests it' },
+  tags: { type: 'list', of: { type: 'string' }, effect: "'unbreakable' makes it unbreakable" },
+  drops: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] dropped (default 1)' }, p: { type: 'number', min: 0, max: 1, effect: 'chance it drops (default always)' } } }, effect: 'what breaking it drops (default: the item whose block it is)' },
+} } };
+const ITEMS = { type: 'list', of: { type: 'object', open: true, fields: {
+  tool: { type: 'object', fields: { kind: { type: 'string' }, tier: { type: 'integer', min: 0, effect: 'its tier (0 = wood...)' } } },
+  block: { type: 'ref', to: 'block', effect: 'the block it places (and that drops it by default)' },
+} } };
+/** ITEMS as this validate re-checks it: other cards declare more fields of an item's tool (its durability...). */
+const ITEMS_OWN = { ...ITEMS, of: { ...ITEMS.of, fields: { ...ITEMS.of.fields, tool: { ...ITEMS.of.fields.tool, open: true } } } };
 
 /** The best tool in `who`'s bag (or equipped, with toolFrom 'equipped') for a block: {item, tier, kind} | null. */
 export function bestTool(rt, who, block, from = 'best') {
@@ -51,20 +66,16 @@ export default {
     provides: { events: ['block_mined', 'block_mined:*', 'mine_denied', 'mine_hit', 'tool_used'], actions: ['mine'] },
     requires: { capabilities: ['editCells', 'raycast'] },
     reads: ['content.blocks', 'content.items'],
+    data: { 'content.blocks': BLOCKS, 'content.items': ITEMS },
   },
   logic(logic) {
     logic.predicate('mined', { refs: p => [['block', p.mined]], test: (p, rt) => compare(rt.state.counts[`block_mined:${p.mined}`] ?? 0, p) });
   },
-  validate(config, doc) {
-    const errors = [], items = new Set((doc.content?.items || []).map(i => i.id));
-    (doc.content?.blocks || []).forEach((b, i) => {
-      if (b.hardness !== undefined && !(Number.isFinite(b.hardness) && b.hardness >= 0)) errors.push({ code: 'block_invalid', path: `content.blocks[${i}].hardness`, message: 'hardness must be a non-negative number' });
-      if (b.drops !== undefined && !Array.isArray(b.drops)) errors.push({ code: 'block_invalid', path: `content.blocks[${i}].drops`, message: 'drops must be a list' });
-      (Array.isArray(b.drops) ? b.drops : []).forEach((d, k) => {
-        if (!items.has(d.item)) errors.push({ code: 'ref_unknown', path: `content.blocks[${i}].drops[${k}].item`, message: `unknown item '${d.item}'` });
-        if (d.p !== undefined && !(d.p >= 0 && d.p <= 1)) errors.push({ code: 'block_invalid', path: `content.blocks[${i}].drops[${k}].p`, message: 'p must be in [0, 1]' });
-      });
-    });
+  validate(config, doc, ctx) {
+    const errors = [];
+    // The declared section shapes (card.data), checked as errors here only until preflight enforces declared shapes
+    // itself (kernel/document.js DECLARATIONS_ENFORCED): delete this validate with the flag.
+    if (!DECLARATIONS_ENFORCED) for (const [section, shape] of [['blocks', BLOCKS], ['items', ITEMS_OWN]]) { const v = doc.content?.[section]; if (v != null) checkParam(shape, v, `content.${section}`, errors, ctx); }
     return errors;
   },
   /** Solver key: which cell is being mined (progress is replayed by the option's steps). */

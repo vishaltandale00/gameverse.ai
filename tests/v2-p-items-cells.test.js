@@ -80,8 +80,10 @@ test('blocks.mine: replay and bad config codes', () => {
   assert.deepEqual(play(), play());
   const bad = world([{ use: 'gameplay.blocks.mine', with: { reach: 0, protect: ['moon'] } }]);
   bad.content.blocks[0].hardness = -1; bad.content.blocks[2].drops = [{ item: 'pearl', p: 3 }];
-  const c = codes(checkWith(bad));
-  for (const code of ['param_range', 'ref_unknown', 'block_invalid']) assert.ok(c.includes(code), code);
+  const r = checkWith(bad), c = codes(r);
+  for (const code of ['param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // Block hardness and drop chances are declared (card.data content.blocks): out of range is the kernel's param_range at them (was block_invalid).
+  for (const path of ['content.blocks[0].hardness', 'content.blocks[2].drops[0].p']) assert.ok(r.errors.some(e => e.code === 'param_range' && e.path === path), path);
   for (const x of gameInstances('gameplay.blocks.mine')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
