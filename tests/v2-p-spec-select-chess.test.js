@@ -59,9 +59,9 @@ test('the decomposition asks for a mashup entry per joined concept, its mechanic
   const writer = fakeWriter([req => answer(req)]);
   await decomposeIdea({ writer, prompt: live.prompt, registry });
   const req = writer.calls.find(c => c.schema.name === 'play_spec');
-  assert.match(req.system, /one entry per joined concept relating mechanics ACROSS concepts/);
+  assert.match(req.system, /exactly one entry per additional game or genre concept, relating mechanics ACROSS concepts/);
   const mashup = req.schema.schema.properties.mashup;
-  assert.match(mashup.description, /one entry per joined idea/);
+  assert.match(mashup.description, /exactly one entry per additional game or genre concept/);
   assert.deepEqual(mashup.items.properties.relation.enum, ['nested', 'union', 'skin']);
   assert.deepEqual(mashup.items.properties.mechanics.items.enum, live.decomposition.mechanics.map(m => m.id));
   assert.deepEqual(req.schema.schema.properties.loop.enum, ['turn_based_piece_movement']);

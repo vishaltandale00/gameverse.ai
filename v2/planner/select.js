@@ -8,7 +8,7 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { cardLoop, endsGame } from './loop.js';
-import { isAvatar, mashupProblem, mashupSides } from './play-spec.js';
+import { isAvatar, mashupProblem, mashupSides, unplayedLoops } from './play-spec.js';
 import { askMashup } from './decompose.js';
 import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
@@ -351,8 +351,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
   // primitives, source and score are set for every mechanic in the loop below (in this key order).
+  // A concept's loop the idea does not play (a skin relation marked it flavor) is never selected: no candidates, no pick.
+  const unplayed = unplayedLoops(decomposition);
   /** @type {SelectedMechanic[]} */
-  const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
+  const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: unplayed.has(m.id) ? [] : rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
   // The model maps onto the cards that serve the play spec's interaction (no avatar locomotion for pieces moved in turns).
   const playedAs = decomposition.core?.interaction || null;
   // With a model, the collection is built iteratively (build.js): the space first, then one mechanic at a time, each
@@ -375,6 +377,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   /** @type {Gap[]} */
   const gaps = [...(built?.gaps || [])];
   for (const m of mechanics) {
+    if (unplayed.has(m.id)) { m.source = 'unplayed'; continue; }
     const map = built?.mapping[m.id];
     if (map) {
       m.primitives = [...map.primitives]; m.candidates = map.candidates;

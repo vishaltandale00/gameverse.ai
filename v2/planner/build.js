@@ -36,7 +36,7 @@ import { resolveAdapters } from './adapters.js';
 import { spaceVariants, requirementsOf, satisfying, isSpace, isGenerator, isGraphics, dataShapes } from './catalog.js';
 import { contractsOf } from './content.js';
 import { cardLoop, endsGame } from './loop.js';
-import { isAvatar, mashupSides } from './play-spec.js';
+import { isAvatar, mashupSides, unplayedLoops } from './play-spec.js';
 import { declaredFit, servesInteraction, relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
@@ -100,12 +100,14 @@ export function loopMechanicOf(decomposition) {
 
 /**
  * The worklist: the core loop mechanic, the other core mechanics, then supporting, then flavour (each in the idea's order).
- * @param {{ mechanics: Mechanic[], core?: { mashup?: Array<{ mechanics: string[] }>, [k: string]: unknown } | null }} decomposition @returns {Mechanic[]}
+ * A concept's loop the idea does not play (a skin relation marked it flavor: play-spec.js unplayedLoops) is never built.
+ * @param {{ mechanics: Mechanic[], concepts?: Array<{ loop?: string }>, core?: { mashup?: Array<{ mechanics: string[] }>, [k: string]: unknown } | null }} decomposition @returns {Mechanic[]}
  */
 export function worklist(decomposition) {
   const loop = loopMechanicOf(decomposition);
+  const unplayed = unplayedLoops(decomposition);
   const rank = (/** @type {Mechanic} */ m) => (m.id === loop ? 0 : m.importance === 'core' ? 1 : m.importance === 'supporting' ? 2 : 3);
-  return decomposition.mechanics.map((m, i) => ({ m, i })).sort((a, b) => rank(a.m) - rank(b.m) || a.i - b.i).map(x => x.m);
+  return decomposition.mechanics.filter(m => !unplayed.has(m.id)).map((m, i) => ({ m, i })).sort((a, b) => rank(a.m) - rank(b.m) || a.i - b.i).map(x => x.m);
 }
 
 /** Does a space variant satisfy a loop's declared space entry (a space id, a capability, or a capability list)? @param {RegistryLike} registry @param {string | string[]} entry @param {string} use @param {Set<string>} caps */

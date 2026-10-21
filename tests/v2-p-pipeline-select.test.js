@@ -19,7 +19,7 @@ test('offline decomposition splits references and finds mechanics as verbs, dete
 
 test('a writer decomposes in small strict forms, step by step; a failing writer is asked again, then reported, never replaced offline', async () => {
   const plan = {
-    concepts: [{ id: 'dark_souls', name: 'Dark Souls', quote: 'Dark Souls', kind: 'game', brings: 'loop', keeps: ['stamina combat'] }, { id: 'pokemon', name: 'Pokémon', quote: 'Pokémon', kind: 'game', brings: 'loop', keeps: ['catching', 'party'] }],
+    concepts: [{ id: 'dark_souls', name: 'Dark Souls', quote: 'Dark Souls', kind: 'game', keeps: ['stamina combat'] }, { id: 'pokemon', name: 'Pokémon', quote: 'Pokémon', kind: 'game', keeps: ['catching', 'party'] }],
     mechanics: { dark_souls: [{ id: 'Stamina Combat', verb: 'fight', description: 'real-time melee combat with stamina', from: 'dark_souls', role: 'loop' }], pokemon: [{ id: 'catch', verb: 'catch', description: 'catch creatures and keep a party', from: 'pokemon', role: 'loop' }] },
     spec: { loop: 'stamina_combat', interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'defeat the last lord of cinder', lose: 'your whole party falls', theme: 'grim', narrative: false, mashup: [{ relation: 'union', mechanics: ['stamina_combat', 'catch'], why: 'weaken a creature in combat to catch it' }] },
     about: { title: 'Ashen Pact', premise: 'Catch creatures; survive brutal bosses.', tone: 'grim' },
