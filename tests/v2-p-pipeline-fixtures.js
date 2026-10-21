@@ -86,9 +86,11 @@ export function fakeDecisions(answer, provider = 'fake') {
 /**
  * Answers the iterative build's questions (v2/planner/build.js) from preferences, or null for any other request:
  * pick_space takes the first preferred space on offer (else the first offered), pick_primitive the first preferred
- * primitive the mechanic is offered (picks: mechanic id -> ids), else "none".
+ * primitive the mechanic is offered (picks: mechanic id -> ids), else "none". The loop steps (build-steps.js:
+ * pick_win, pick_lose, pick_driver, pick_coverage) take the first of `steps[kind]` on offer, else "none"; a kind
+ * `steps` does not list takes the best-ranked option (the first offered).
  */
-export function buildAnswer(req, { space = [], picks = {} } = {}) {
+export function buildAnswer(req, { space = [], picks = {}, steps = {} } = {}) {
   const name = String(req.schema?.name || '');
   const props = req.schema?.schema?.properties || {};
   if (name === 'pick_space') { const offered = props.space.enum; return JSON.stringify({ space: space.find(s => offered.includes(s)) || offered[0], why: 'scripted' }); }
@@ -96,6 +98,12 @@ export function buildAnswer(req, { space = [], picks = {} } = {}) {
     const mechanic = /\nMechanic (\S+) \(/.exec(req.user)?.[1];
     const offered = props.pick.enum;
     return JSON.stringify({ pick: (picks[mechanic] || []).find(id => offered.includes(id)) || 'none', why: 'scripted', spec: '' });
+  }
+  const step = /^pick_(win|lose|driver|coverage)$/.exec(name)?.[1];
+  if (step) {
+    const offered = props.pick.enum;
+    const want = steps[step];
+    return JSON.stringify({ pick: want ? want.find(id => offered.includes(id)) || 'none' : offered[0], why: 'scripted', spec: '' });
   }
   return null;
 }

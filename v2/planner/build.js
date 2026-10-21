@@ -23,6 +23,11 @@
 //        covered and skipped in the worklist (outcome 'covered');
 //      - a pick that fails a check is dropped and the model is asked again with the exact problem, over the candidates
 //        left; when none fits (or the model says none) the mechanic is a gap with the primitive or adapter signature.
+//   3. The loop steps (build-steps.js), after the mechanic steps: the win (when nothing in the collection declares one
+//      that can be wired), the lose (when the play spec has one and no core loop declares it), the drivers of AI
+//      opponents (loop_opponent_inert) and the coverage of what the win reads (loop_win_unaffected), each a small strict
+//      enum question over checked candidates, with the loop check of the partial collection after it. The preset never
+//      picks these itself.
 //   Every step is logged (mechanic, candidates, asks, checks, outcome) in the selection report.
 //
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
@@ -34,9 +39,9 @@ import { cardLoop, endsGame } from './loop.js';
 import { isAvatar, mashupSides } from './play-spec.js';
 import { declaredFit, servesInteraction, relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
-import { parseReply } from './writer.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
-import { str, isStr, isObj, prop, messageOf } from '../kernel/guards.js';
+import { makeAsk, loopSteps } from './build-steps.js';
+import { str, isStr, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -63,7 +68,7 @@ import { str, isStr, isObj, prop, messageOf } from '../kernel/guards.js';
 /**
  * One worklist step. A step whose bundle covers later mechanics lists them (covers); a covered mechanic's own step has
  * outcome 'covered', no question, and names the step that covered it (coveredBy).
- * @typedef {{ mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
+ * @typedef {{ kind: 'mechanic', mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
  *   checks: BuildChecks | null, outcome: 'added' | 'reused' | 'gap' | 'covered', primitive: string | null, collection: string[], ms: number,
  *   covers?: string[], coveredBy?: string }} BuildStep
  */
@@ -72,7 +77,7 @@ import { str, isStr, isObj, prop, messageOf } from '../kernel/guards.js';
  * buildSelection()'s result: what each mechanic maps to, the space, the collection (picks and their closures), adapter
  * instances and bindings, gaps, the recorded content contracts and the step log.
  * @typedef {{ version: string, loop: string | null, space: SpaceChoice, spaceStep: SpaceStep, mapping: Record<string, { primitives: string[], candidates: Array<{ id: string, score: number }>, why: string }>,
- *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, gaps: Gap[], contracts: string[], steps: BuildStep[], calls: number, ms: number }} BuildResult
+ *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
  */
 
 export const BUILD_VERSION = 'build/0.1';
@@ -200,29 +205,8 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   const documented = documentedBy(dataShapes);
   let calls = 0;
   const premise = `Game idea: ${decomposition.premise}\nPlayed as: ${interaction || 'undecided'}; opponent: ${decomposition.core?.opponent || 'none'}${decomposition.core?.win ? `; won by: ${decomposition.core.win}` : ''}`;
-
-  /**
-   * One strict enum question; a reply outside the enum is asked again (attempts), then selection fails.
-   * @param {{ name: string, system: string, user: string, field: string, options: string[], extra?: Record<string, Record<string, unknown>> }} q
-   * @returns {Promise<{ pick: string, why: string, reply: Record<string, unknown> }>}
-   */
-  const ask = async ({ name, system, user, field, options, extra = {} }) => {
-    const props = { [field]: { type: 'string', enum: options }, why: { type: 'string', description: 'one line' }, ...extra };
-    const schema = { name, schema: { type: 'object', additionalProperties: false, required: Object.keys(props), properties: props } };
-    /** @type {string[]} */
-    const failed = [];
-    for (let i = 0; i < Math.max(1, attempts); i++) {
-      calls++;
-      try {
-        const reply = await writer.complete({ system, user: failed.length ? `${user}\n\nYour previous reply failed (${failed[failed.length - 1]}): answer with one of the listed ids.` : user, schema });
-        const value = parseReply(reply.text);
-        const pick = str(prop(value, field));
-        if (options.includes(pick)) return { pick, why: str(prop(value, 'why')).slice(0, 200), reply: isObj(value) ? value : {} };
-        failed.push(`'${pick.slice(0, 60)}' is not one of ${options.join(', ').slice(0, 200)}`);
-      } catch (error) { failed.push(String(messageOf(error)).slice(0, 160)); log(`${name} failed: ${messageOf(error)}`); }
-    }
-    throw Object.assign(Error(`Building the collection failed at ${name} after ${failed.length} attempt(s): ${failed.join('; ')}`), { status: 422, code: 'selection_failed', attempts: failed });
-  };
+  // One strict enum question; a reply outside the enum is asked again (attempts), then selection fails.
+  const ask = makeAsk({ writer, attempts, log, count: () => { calls++; } });
 
   // 1. The primary space, before the first mechanic.
   const offeredSpaces = spaceCandidates(registry, decomposition, excludeSpaces);
@@ -255,7 +239,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   let baseline = keysOf(compose(systems, variant));
   /** @type {string[]} */
   const contracts = [];
-  /** @type {BuildStep[]} */
+  /** @type {Array<BuildStep | import('./build-steps.js').LoopStep>} */
   const steps = [];
   /** @type {Gap[]} */
   const gaps = [];
@@ -290,6 +274,29 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   };
   /** The adapters the whole collection plus `ids` resolves on a space configuration. @param {string[]} ids @param {number} v */
   const resolveWith = (ids, v) => resolveAdapters({ spaces: [spaceOn(v)], systems: [...systems, ...ids.filter(id => !systems.includes(id))] }, registry, { documented });
+  /**
+   * Add a picked option with its bundle: checked as a whole collection (conflicts, composition, no new failure or type
+   * hole) and its adapters resolved; on success the collection, its adapters and content contracts are updated.
+   * @param {{ id: string, variant: number, members: string[], adapters: Array<{ use: string }> }} cand
+   * @returns {{ ok: true, have: boolean, closure: string[], checks: BuildChecks } | { ok: false, why: string, adapter?: AdapterSpec }}
+   */
+  const tryAdd = cand => {
+    const have = systems.includes(cand.id) || cand.id === use;
+    const closure = have ? [] : cand.members.slice(1).filter(id => !systems.includes(id));
+    const next = have ? systems : [...systems, cand.id, ...closure];
+    const whole = compose(next, cand.variant);
+    const fresh = [...conflictsIn(registry, next), ...added(baseline, keysOf(whole))];
+    /** @type {ReturnType<typeof resolveAdapters> | null} */
+    const r = fresh.length ? null : resolveAdapters({ spaces: [spaceOn(cand.variant)], systems: next }, registry, { documented });
+    const why = fresh.length ? fresh.slice(0, 3).join('; ') : r && (r.gaps.length || r.verdict === 'incompatible-needs-adapter')
+      ? `needs an adapter no registered primitive provides: ${r.gaps.map(adapterLine).join('; ') || r.result.reason}` : '';
+    if (why) return { ok: false, why, ...(r?.gaps.length ? { adapter: r.gaps[0] } : {}) };
+    systems = next; variant = cand.variant; baseline = keysOf(whole);
+    adapters = r?.adapters || []; bind = r?.bind || {};
+    const own = [cand.id, ...closure].flatMap(id => contractsOf(registry, id).map(c => c.key));
+    for (const k of own) if (!contracts.includes(k)) contracts.push(k);
+    return { ok: true, have, closure, checks: { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: r?.verdict || whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} } };
+  };
 
   /** @typedef {{ id: string, score: number, related: number, rel: number }} Fit */
   /** @type {Map<string, Fit[]>} */
@@ -345,7 +352,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     const cover = covered.get(m.id);
     if (cover) {
       // An earlier step's bundle covers this mechanic: no question, logged as covered.
-      steps.push({ mechanic: m.id, importance: m.importance, candidates: [], rejected: [], asks: [], checks: null, outcome: 'covered', primitive: cover.primitive, coveredBy: cover.by, collection: [...systems], ms: Math.round(performance.now() - t0) });
+      steps.push({ kind: 'mechanic', mechanic: m.id, importance: m.importance, candidates: [], rejected: [], asks: [], checks: null, outcome: 'covered', primitive: cover.primitive, coveredBy: cover.by, collection: [...systems], ms: Math.round(performance.now() - t0) });
       continue;
     }
     // Candidates: each fitting card as a single card or the smallest bundle that composes with the collection (bundles.js),
@@ -371,7 +378,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     const host = registry.cards().find(c => c.id === use);
     if (host && candidates.length < MAX_CANDIDATES && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant, members: [use], extra: [], adapters: [], covers: [] });
     /** @type {BuildStep} */
-    const step = { mechanic: m.id, importance: m.importance, candidates, rejected: rejected.slice(0, 6), asks: [], checks: null, outcome: 'gap', primitive: null, collection: [], ms: 0 };
+    const step = { kind: 'mechanic', mechanic: m.id, importance: m.importance, candidates, rejected: rejected.slice(0, 6), asks: [], checks: null, outcome: 'gap', primitive: null, collection: [], ms: 0 };
     steps.push(step);
     /** @type {Gap | null} */
     let gap = null;
@@ -395,32 +402,18 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
         break;
       }
       const cand = /** @type {BuildCandidate} */ (open.find(c => c.id === a.pick));
-      // The pick with its bundle, checked as a whole collection, its adapters resolved (the space is already in it).
-      const have = systems.includes(a.pick) || a.pick === use;
-      const closure = have ? [] : cand.members.slice(1).filter(id => !systems.includes(id));
-      const next = have ? systems : [...systems, a.pick, ...closure];
-      const whole = compose(next, cand.variant);
-      const fresh = [...conflictsIn(registry, next), ...added(baseline, keysOf(whole))];
-      /** @type {ReturnType<typeof resolveAdapters> | null} */
-      const r = fresh.length ? null : resolveAdapters({ spaces: [spaceOn(cand.variant)], systems: next }, registry, { documented });
-      if (r?.gaps.length) lastAdapter = r.gaps[0];
-      const why = fresh.length ? fresh.slice(0, 3).join('; ') : r && (r.gaps.length || r.verdict === 'incompatible-needs-adapter')
-        ? `needs an adapter no registered primitive provides: ${r.gaps.map(adapterLine).join('; ') || r.result.reason}` : '';
-      if (why) {
-        asked.problem = why;
+      const t = tryAdd(cand);
+      if (!t.ok) {
+        if (t.adapter) lastAdapter = t.adapter;
+        asked.problem = t.why;
         open = open.filter(c => c.id !== a.pick);
-        problem = `Your pick ${cand.members.length > 1 ? cand.members.join(' + ') : a.pick} was dropped: ${why}. Pick another listed option, or "none".`;
-        log(`build ${m.id}: ${a.pick} dropped (${why})`);
+        problem = `Your pick ${cand.members.length > 1 ? cand.members.join(' + ') : a.pick} was dropped: ${t.why}. Pick another listed option, or "none".`;
+        log(`build ${m.id}: ${a.pick} dropped (${t.why})`);
         continue;
       }
       asked.ok = true;
-      const reused = have;
-      systems = next; variant = cand.variant; baseline = keysOf(whole);
-      adapters = r?.adapters || []; bind = r?.bind || {};
-      const own = [a.pick, ...closure].flatMap(id => contractsOf(registry, id).map(c => c.key));
-      for (const k of own) if (!contracts.includes(k)) contracts.push(k);
-      step.checks = { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: r?.verdict || whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} };
-      step.outcome = reused ? 'reused' : 'added'; step.primitive = a.pick;
+      step.checks = t.checks;
+      step.outcome = t.have ? 'reused' : 'added'; step.primitive = a.pick;
       // The mechanic maps to the pick and the companions it needs jointly (its requirements closure stays the pick's);
       // the later mechanics a companion covers map to that companion and are skipped in the worklist.
       const covering = new Set(cand.covers.map(x => x.by));
@@ -444,6 +437,25 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     }
     step.collection = [...systems];
     step.ms = Math.round(performance.now() - t0);
+  }
+  // 3. The loop steps (build-steps.js), once the core loop mechanic has its primitive: the win, the lose, the drivers
+  //    of AI opponents and what lets play change the win's reads, each one small strict question with the loop check
+  //    of the partial collection after it. Their picks join the core loop mechanic (the driver joins the collection
+  //    only); what none answers is a gap for the gap layer.
+  const loopId = loopMechanicOf(decomposition);
+  const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
+  if (loopMechanic && mapping[loopMechanic.id]?.primitives.length) {
+    const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems], adapters: [...adapters], bind: { ...bind },
+      mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic.id, composes, resolve: resolveWith });
+    const r = await loopSteps({ registry, decomposition, collection: collection(), ask, mechanic: loopMechanic, log,
+      commit: (kind, pick) => {
+        const t = tryAdd(pick);
+        if (!t.ok) return t.why;
+        if (kind !== 'driver') { const own = mapping[loopMechanic.id]; if (!own.primitives.includes(pick.id)) own.primitives.push(pick.id); }
+        return collection();
+      } });
+    steps.push(...r.steps);
+    gaps.push(...r.gaps);
   }
   const caps = [...(variants[variant]?.caps || [])];
   return {

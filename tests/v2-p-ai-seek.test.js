@@ -1,8 +1,8 @@
 // Drivers for loops that declare a target service (card.loop.targets / card.mode.targets): the real catalogue's race
 // and ball sport name where each AI participant goes next (the next checkpoint, the ball), and gameplay.ai.seek
-// (card.drives.targets) steers them there. Proven statically (the loop check fails without a driver; repairLoop adds
-// the one the declarations name and the check passes) and through the real runtime (rivals complete laps, the other
-// team goes for the ball).
+// (card.drives.targets) steers them there. Proven statically (the loop check fails without a driver and repairLoop adds
+// none: selection's driver step chooses it, build-steps.js; with it the check passes) and through the real runtime
+// (rivals complete laps, the other team goes for the ball).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compile } from '../v2/kernel/testing.js';
@@ -46,14 +46,18 @@ test('the race and the ball sport declare target services, and gameplay.ai.seek 
   assert.deepEqual([d?.control, d?.targets, d?.movement, d?.components, d?.loops], ['ai', true, true, [], []]);
 });
 
-test('race: rivals nothing drives fail the loop check; repairLoop adds the target driver; the rivals then complete their laps', () => {
+/** The document with the driver selection's driver step chose (build-steps.js), as the preset receives it. */
+const withSeek = doc => ({ ...doc, systems: [...doc.systems, { use: 'gameplay.ai.seek' }] });
+
+test('race: rivals nothing drives fail the loop check and the repair adds no driver; with the target driver the rivals complete their laps', () => {
   const doc = raceDoc();
   const core = ['gameplay.race'];
   assert.deepEqual(loopProblems(doc, registry, { logic, core, opponent: 'ai-rival' }).map(p => [p.code, p.primitive]), [[LOOP_CODES.inert, 'gameplay.race']]);
-  const fixed = repairLoop(doc, registry, { logic, core, opponent: 'ai-rival', idea: 'race rivals around the circuit' });
+  const unchosen = repairLoop(doc, registry, { logic, core, opponent: 'ai-rival', idea: 'race rivals around the circuit' });
+  assert.deepEqual(added(doc, unchosen.doc), [], 'the repair never picks a driver itself');
+  assert.deepEqual(unchosen.problems.map(p => p.code), [LOOP_CODES.inert], 'it reports the need for the driver step');
+  const fixed = repairLoop(withSeek(doc), registry, { logic, core, opponent: 'ai-rival', idea: 'race rivals around the circuit' });
   assert.deepEqual(fixed.problems, []);
-  assert.deepEqual(added(doc, fixed.doc), ['gameplay.ai.seek']);
-  assert.ok(fixed.fixes.some(f => /card\.drives\.targets/.test(f.what)), JSON.stringify(fixed.fixes));
 
   const { rt } = compile(fixed.doc, { primitives: PRIMITIVES });
   const rivals = () => Object.values(rt.state.entities).filter(e => /^rival/.test(e.archetype)).map(e => e.id).sort();
@@ -83,13 +87,13 @@ test('race on a looped track (the space the race declares first): the driven riv
   assert.equal(rt.state.counts.wrong_way ?? 0, 0, 'never driven the wrong way');
 });
 
-test('ball sport: the other team nothing drives fails the loop check; repairLoop adds the target driver; its striker goes for the ball', () => {
+test('ball sport: the other team nothing drives fails the loop check and the repair adds no driver; with the target driver its striker goes for the ball', () => {
   const doc = pitchDoc();
   const core = ['gameplay.sports'];
   assert.deepEqual(loopProblems(doc, registry, { logic, core, opponent: 'ai-side' }).map(p => [p.code, p.primitive]), [[LOOP_CODES.inert, 'gameplay.sports']]);
-  const fixed = repairLoop(doc, registry, { logic, core, opponent: 'ai-side', idea: 'play football against a rival team' });
+  assert.deepEqual(added(doc, repairLoop(doc, registry, { logic, core, opponent: 'ai-side' }).doc), []);
+  const fixed = repairLoop(withSeek(doc), registry, { logic, core, opponent: 'ai-side', idea: 'play football against a rival team' });
   assert.deepEqual(fixed.problems, []);
-  assert.deepEqual(added(doc, fixed.doc), ['gameplay.ai.seek']);
 
   const { rt } = compile(fixed.doc, { primitives: PRIMITIVES });
   const striker = () => Object.values(rt.state.entities).find(e => e.archetype === 'striker');

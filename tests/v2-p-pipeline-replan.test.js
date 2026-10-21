@@ -103,18 +103,19 @@ test('when the limits run out the build fails with every attempt and what is sti
   assert.equal(versions.length, 0, 'nothing publishes');
 });
 
-test('diagnose and replan: a missing win adds a primitive that declares one; a failing primitive gets the next untried one', () => {
+test('diagnose and replan: a failing primitive gets the next untried one; a missing win is never filled without the model (the win step asks it)', async () => {
   const { registry } = catalogue();
   const selection = { systems: ['gameplay.test.broken'], spaces: [{ id: 'w', use: 'engine.space.graph', with: {}, role: 'w', caps: [...registry.get('engine.space.graph').card.provides.capabilities] }], generators: [], graphics: [], bind: {}, gaps: [],
     mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', importance: 'core', primitives: ['gameplay.test.broken'], candidates: [], source: 'x', score: 1, from: '' }] };
   const ds = diagnose([{ code: 'install_threw', path: 'systems[0]', message: "'gameplay.test.broken' threw while installing: boom", primitive: 'gameplay.test.broken' }, { code: 'win_unwired', path: 'plot.endings', message: 'nothing in the game ends it with a win' }], { selection, registry });
   assert.deepEqual(ds.map(d => d.kind).sort(), ['primitive', 'win']);
   const tried = new Map();
-  const r = replan(selection, ds, { registry, decomposition: /** @type {any} */ ({ premise: '', core: null }), tried });
+  const r = await replan(selection, ds, { registry, decomposition: /** @type {any} */ ({ premise: '', core: null }), tried });
   assert.ok(r.actions.some(a => a.action === 'replace' && a.by === 'gameplay.test.clubs'));
   assert.ok(r.selection.systems.includes('gameplay.test.clubs') && !r.selection.systems.includes('gameplay.test.broken'));
+  assert.ok(!r.actions.some(a => a.action === 'add'), 'no win provider is picked without the model');
   // Nothing is chosen twice: a second re-plan for the same mechanic finds nothing left and says so.
-  const again = replan(r.selection, [{ kind: 'primitive', primitive: 'gameplay.test.clubs', mechanic: 'juggle', codes: ['x'], message: 'still failing' }], { registry, decomposition: /** @type {any} */ ({ premise: '' }), tried });
+  const again = await replan(r.selection, [{ kind: 'primitive', primitive: 'gameplay.test.clubs', mechanic: 'juggle', codes: ['x'], message: 'still failing' }], { registry, decomposition: /** @type {any} */ ({ premise: '' }), tried });
   assert.equal(again.actions.filter(a => a.action === 'replace').length, 0);
   assert.equal(again.unresolved.length, 1);
   assert.equal(selection.systems[0], 'gameplay.test.broken', 'the input selection is not mutated');

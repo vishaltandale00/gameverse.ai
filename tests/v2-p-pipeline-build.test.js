@@ -50,8 +50,12 @@ test('(a) the collection grows one mechanic at a time, with a composition check 
   const b = await buildSelection({ decomposition: spec(), registry, writer: w });
   assert.equal(b.space.use, 'engine.space.flatx');
   assert.equal(b.spaceStep.asked, true, 'several spaces show td: one small enum question');
-  assert.deepEqual(b.steps.map(s => s.mechanic), ['hop', 'glide', 'score', 'warp']);
-  assert.deepEqual(b.steps.map(s => s.collection), [
+  assert.deepEqual(b.steps.map(s => [s.kind, s.mechanic]), [['mechanic', 'hop'], ['mechanic', 'glide'], ['mechanic', 'score'], ['mechanic', 'warp'], ['win', 'hop']]);
+  // Nothing in the collection declares a win, and no catalogue win fits it: the win step is a gap, nothing is added.
+  const win = b.steps.find(s => s.kind === 'win');
+  assert.deepEqual([win.outcome, win.candidates, win.asks], ['gap', [], []]);
+  assert.match(b.gaps.find(g => g.kind === 'win').signature, /^win: a primitive whose loop declares a game-ending win/);
+  assert.deepEqual(b.steps.filter(s => s.kind === 'mechanic').map(s => s.collection), [
     ['gameplay.test.hop'],
     ['gameplay.test.hop', 'gameplay.test.float'],
     ['gameplay.test.hop', 'gameplay.test.float', 'gameplay.test.score', 'gameplay.inventory'],
@@ -121,7 +125,8 @@ test('selectPrimitives with a model builds iteratively, keeps the space it built
   const sel = await selectPrimitives({ decomposition: spec(), registry, writer: writer() });
   assert.equal(sel.provider, 'build');
   assert.deepEqual(sel.spaces.map(s => s.use), ['engine.space.flatx']);
-  assert.deepEqual(sel.build.steps.map(s => [s.mechanic, s.outcome]), [['hop', 'added'], ['glide', 'added'], ['score', 'added'], ['warp', 'gap']]);
+  assert.deepEqual(sel.build.steps.map(s => [s.kind, s.mechanic, s.outcome]), [['mechanic', 'hop', 'added'], ['mechanic', 'glide', 'added'], ['mechanic', 'score', 'added'], ['mechanic', 'warp', 'gap'], ['win', 'hop', 'gap']]);
+  assert.ok(sel.gaps.some(g => g.kind === 'win' && g.importance === 'core'), 'the missing win is a core gap, never silently filled');
   assert.deepEqual(sel.mechanics.find(m => m.id === 'glide').primitives, ['gameplay.test.float']);
   for (const id of ['gameplay.test.hop', 'gameplay.test.float', 'gameplay.test.score', 'gameplay.inventory']) assert.ok(sel.systems.includes(id), id);
   assert.ok(sel.gaps.some(g => g.mechanic === 'warp'));
@@ -156,16 +161,17 @@ test('(e) the same machinery builds a turn-based sides game, a real-time collect
     // The space fits how it is played and shows the idea's view; it was chosen before the first mechanic.
     assert.ok((registry.get(b.space.use).card.views || []).some(v => x.views.includes(v) || v === 'any'), `${name}: ${b.space.use}`);
     assert.deepEqual(spaceCandidates(registry, d).map(s => s.use).includes(b.space.use), true);
-    // One step per mechanic, the loop mechanic first, each offered only candidates that serve the play spec.
-    assert.deepEqual(b.steps.map(s => s.mechanic), worklist(d).map(m => m.id), name);
+    // One step per mechanic, the loop mechanic first, each offered only candidates that serve the play spec; then the loop steps.
+    assert.deepEqual(b.steps.filter(s => s.kind === 'mechanic').map(s => s.mechanic), worklist(d).map(m => m.id), name);
     assert.equal(b.steps[0].mechanic, x.mechanics[0][0]);
     for (const s of b.steps) {
-      assert.ok(s.candidates.length > 0 && s.candidates.length <= MAX_CANDIDATES, `${name}/${s.mechanic}: ${s.candidates.length}`);
+      assert.ok(s.candidates.length <= MAX_CANDIDATES && (s.kind !== 'mechanic' || s.candidates.length > 0), `${name}/${s.mechanic}: ${s.candidates.length}`);
       for (const c of s.candidates) if (c.id !== b.space.use) assert.ok(servesInteraction({ id: c.id, ...registry.get(c.id).card }, x.core.interaction), `${name}: ${c.id}`);
-      if (s.primitive) assert.ok(s.checks.compose, `${name}/${s.mechanic} checked`);
+      if (s.kind === 'mechanic' && s.primitive) assert.ok(s.checks.compose, `${name}/${s.mechanic} checked`);
     }
-    // Only small strict questions: the space (when more than one fits) and one per mechanic.
-    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive'].includes(c.schema.name)));
+    // Only small strict questions: the space (when more than one fits), one per mechanic and one per loop step asked.
+    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage'].includes(c.schema.name)));
+    assert.equal(w.calls.filter(c => /^pick_(win|lose|driver|coverage)$/.test(c.schema.name)).length, b.steps.filter(s => s.kind !== 'mechanic' && s.asks.length).length, name);
     assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, x.mechanics.length);
     assert.ok(b.systems.length > 0, name);
   }

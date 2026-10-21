@@ -103,17 +103,17 @@ test('a mashup the model still leaves out is never guessed: the spec fails after
   assert.deepEqual(d.core.mashup, []);
 });
 
-test('re-planning the live failure: piece movement stays with the turns loop, never falling pieces', () => {
+test('re-planning the live failure: piece movement stays with the turns loop, never falling pieces', async () => {
   const d = decomposition();
   const diagnosis = { kind: 'primitive', mechanic: 'turn_based_piece_movement', primitive: 'gameplay.move.grid', codes: ['core_degraded'], message: live.attempt.problems[0] };
-  const r = replan(selection(), [diagnosis], { registry, decomposition: d, tried: new Map() });
+  const r = await replan(selection(), [diagnosis], { registry, decomposition: d, tried: new Map() });
   const action = r.actions.find(a => a.action === 'replace');
   assert.equal(action.by, 'gameplay.turns', JSON.stringify(r.actions));
   assert.ok(!r.selection.systems.includes('gameplay.move.grid') && !r.selection.systems.includes('gameplay.falling.pieces'));
   assert.ok(!r.selection.mechanics.find(m => m.id === 'turn_based_piece_movement').primitives.includes('gameplay.move.grid'));
 });
 
-test('re-planning ranks replacements by declarations and the composition check: falling pieces never moves chess pieces', () => {
+test('re-planning ranks replacements by declarations and the composition check: falling pieces never moves chess pieces', async () => {
   const d = decomposition();
   const m = d.mechanics.find(x => x.id === 'turn_based_piece_movement');
   // Falling pieces' loop is played on a cursor board and owns its game: it does not fit pieces moved in turns.
@@ -124,12 +124,12 @@ test('re-planning ranks replacements by declarations and the composition check: 
   sel.systems = sel.systems.filter(id => id !== 'gameplay.turns');
   for (const x of sel.mechanics) x.primitives = x.primitives.filter(id => id !== 'gameplay.turns');
   const diagnosis = { kind: 'primitive', mechanic: 'turn_based_piece_movement', primitive: 'gameplay.move.grid', codes: ['core_degraded'], message: 'lost' };
-  const r = replan(sel, [diagnosis], { registry, decomposition: d, tried: new Map() });
+  const r = await replan(sel, [diagnosis], { registry, decomposition: d, tried: new Map() });
   const action = r.actions.find(a => a.action === 'replace');
   assert.equal(action?.by, 'gameplay.turns', JSON.stringify(r));
   // When nothing declared fits, the gap layer is asked for the primitive signature, never a word match.
   const tried = new Map([['turn_based_piece_movement', new Set(registry.ids().filter(id => id !== 'gameplay.falling.pieces'))]]);
-  const none = replan(sel, [diagnosis], { registry, decomposition: d, tried });
+  const none = await replan(sel, [diagnosis], { registry, decomposition: d, tried });
   assert.equal(none.actions.filter(a => a.action === 'replace').length, 0, JSON.stringify(none.actions));
   assert.equal(none.unresolved.length, 1);
   assert.match(none.unresolved[0].signature, /played as pieces-turns/);

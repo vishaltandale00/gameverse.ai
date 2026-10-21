@@ -21,7 +21,8 @@
 //                 primitive that drives them (card.drives, control 'ai': the loop itself, one that names the loop, one
 //                 that steers the participants of loops declaring a target service (drives.targets, card.loop.targets),
 //                 or one whose components they carry; for the play spec, a driving core loop or a component driver with
-//                 a placed carrier) -> loop_opponent_inert; and when such a loop declares a game-ending lose, what its drivers make
+//                 a placed carrier) -> loop_opponent_inert (pending content while no carrier is placed and a component
+//                 driver of the document declares its archetypes contract); and when such a loop declares a game-ending lose, what its drivers make
 //                 the opponents do (drives.actions/effects/events/movement, and the effects in their action data) must
 //                 be something that changes what the lose reads (lose.reads.by) -> loop_lose_unaffected_by_opponent.
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
@@ -357,7 +358,12 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       const by = endsGame(l.loop.lose) && isCore(l) ? readsOf(l.loop.lose)?.by : undefined;
       const lose = by && Object.keys(by).length ? by : null;
       const ds = driving(l, aiArch);
-      const need = /** @type {LoopNeed} */ ({ kind: 'driver', control: 'ai', loop: l.use, archetypes: [...aiArch].sort(), ...(lose ? { by: lose } : {}) });
+      // A driver acting by a component (whose behaviour can change the lose) while none of the loop's AI participants
+      // is placed yet: its carriers are content the model writes from its archetypes contract (whose declared example
+      // the structural repair puts on them), pending until a draft.
+      const carriers = !ds.length && !aiArch.size && drivers.some(d => (!lose || drivesBy(d.drives, lose, d.effects))
+        && d.drives.components.some(C => contractsOf(registry, d.use).some(c => c.need === 'archetypes' && c.component === C && c.example !== undefined)));
+      const need = /** @type {LoopNeed} */ ({ kind: 'driver', control: 'ai', loop: l.use, archetypes: [...aiArch].sort(), ...(lose ? { by: lose } : {}), ...(carriers ? { pending: 'archetypes' } : {}) });
       const does = lose ? ` and can change what its lose reads (${byText(lose)})` : '';
       if (!ds.length) push(LOOP_CODES.inert, l, l.path, `its loop has AI-controlled participants (${need.archetypes?.join(', ') || P}) and no primitive of the document drives them (card.drives control 'ai': this loop, one naming it, one steering by its target service, or one whose components they carry)`, `add a primitive that drives them${does} (card.drives), with its component on them`, need);
       else if (lose && !ds.some(d => drivesBy(d.drives, lose, d.effects))) push(LOOP_CODES.loseUnaffected, l, l.path, `its lose reads ${readsText(readsOf(l.loop.lose))}, changed by ${byText(lose)}, and nothing its AI participants' drivers (${ds.map(d => d.use).join(', ')}) make them do changes it`, `give the opponents an action whose effects change it (the card's declared example), or add a driver whose entities do (${byText(lose)})`, need);
