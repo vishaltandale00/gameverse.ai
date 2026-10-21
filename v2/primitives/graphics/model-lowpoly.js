@@ -8,6 +8,7 @@ import { joinStage, presentationOnly } from './three-stage.js';
 import { humanoidRig, PART_ALIASES } from './rig-humanoid.js';
 import { quadrupedRig, legFraction } from './rig-quadruped.js';
 import { customRig } from './three-rig.js';
+import { modelsData, docExample, LOWPOLY_SHAPES } from './model-lib.js';
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const mid = (a, b, t = 0.5) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -25,7 +26,7 @@ export function rigForSpec(spec, rigCfg = {}) {
     const length = spec.length || q.bodyLength / 0.62 || 1.6, height = spec.height || (q.legLength ? q.legLength / legFraction(q.legLength, q.bodyLength || 1.4) : 1.2);
     return quadrupedRig({ length, height, legLength: q.legLength ? legFraction(q.legLength, q.bodyLength || 1.4) : undefined, neck: /dragon|wyrm/.test(spec.species || '') ? 0.45 : /deer|stag|horse|camel|elk/.test(spec.species || '') ? 0.42 : 0.3 });
   }
-  if (spec.rig === 'custom' || (spec.bones && spec.parts?.length)) return customRig(spec.parts || [], { bones: typeof spec.bones === 'number' ? spec.bones : 8 });
+  if (spec.rig === 'custom' || (spec.boneCount && spec.parts?.length)) return customRig(spec.parts || [], { bones: spec.boneCount ?? 8 });
   return null;
 }
 
@@ -187,13 +188,22 @@ export default {
     },
     provides: {},
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'palette', 'parts', 'rig', 'boneCount', 'height', 'build', 'proportions', 'species', 'length', 'material', 'alpha', 'eyes', 'hair', 'sleeves', 'legs', 'horns', 'mane', 'wings', 'saddle']) },
+    rules: {
+      model_shape: { fields: ['content.models.*.parts[].shape', 'content.models.*.kind'], message: `every part of a lowpoly model names its shape: ${LOWPOLY_SHAPES.join(', ')}`,
+        example: docExample({ models: { crate: { kind: 'lowpoly', parts: [{ at: [0, 0.5, 0], size: [1, 1, 1] }] } } }) },
+      model_part: { fields: ['content.models.*.parts[].at', 'content.models.*.parts[].size', 'content.models.*.parts[].from'], message: 'a lowpoly part has at [x, y, z] and size [w, h, d], or from (and to) for a limb',
+        example: docExample({ models: { crate: { kind: 'lowpoly', parts: [{ shape: 'box', at: [0, 0.5, 0] }] } } }) },
+    },
   },
   validate(config, doc) {
     const errs = [];
+    // The part shapes (shape among LOWPOLY_SHAPES, at/size lists) are the card's; what a lowpoly part must have is this rule.
     for (const [id, m] of Object.entries(doc.content?.models || {})) {
-      if (m.kind !== 'lowpoly') continue;
-      (m.parts || []).forEach((p, i) => {
-        if (!['box', 'cyl', 'sphere', 'cone', 'cap'].includes(p.shape)) errs.push({ code: 'model_shape', path: `content.models.${id}.parts[${i}].shape`, message: `unknown shape '${p.shape}'`, hint: 'box | cyl | sphere | cone | cap' });
+      if (m?.kind !== 'lowpoly' || !Array.isArray(m.parts)) continue;
+      m.parts.forEach((p, i) => {
+        if (!p || typeof p !== 'object') return;
+        if (p.shape === undefined) errs.push({ code: 'model_shape', path: `content.models.${id}.parts[${i}].shape`, message: 'a lowpoly part needs a shape', hint: LOWPOLY_SHAPES.join(' | ') });
         if (!p.from && (!Array.isArray(p.at) || !Array.isArray(p.size))) errs.push({ code: 'model_part', path: `content.models.${id}.parts[${i}]`, message: 'a part needs at:[x,y,z] and size:[w,h,d] (or from/to)' });
       });
     }

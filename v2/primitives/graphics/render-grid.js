@@ -7,15 +7,16 @@
 // hover, selection, move and attack ranges (hub API for rules primitives);
 // clicks can send a verb with the cell.
 import { ensureJuice } from './flat-juice.js';
-import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
+import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, bindingRules } from './flat-stage.js';
 import { driveFit, driveTopDown } from './flat-follow.js';
-import { drawEntity } from './flat-models.js';
+import { drawEntity, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { drawVector, glow } from './flat-vector.js';
 import { wallLoops, roundedLoop } from './flat-maze.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
 import { normalizeTheme, themeFromBlock, paintTile } from './flat-tiles.js';
 import { blobMask } from './flat-autotile.js';
 import { TAU, rgba, mix, light, shade, col, isHex, neon, lerp, path as getPath, surface, ctx2d, easeOutBack, hash2 } from './flat-util.js';
+import { modelsData, MODEL_COMPONENT, color, blocksData } from './model-lib.js';
 
 const SQ3 = Math.sqrt(3);
 const PIECE_WORDS = [['gem', /gem|jewel|candy|crystal/], ['blob', /blob|slime|puyo|bean/], ['virus', /virus|germ/], ['capsule', /capsule|pill/], ['pellet', /pellet|dot|crumb/], ['power', /power|energizer/], ['coin', /coin/], ['star', /star/], ['heart', /heart/], ['bomb', /bomb/], ['crate', /crate|box/], ['rock', /rock|boulder/], ['block', /block|tile|brick|tetro|piece/], ['key', /key/]];
@@ -39,11 +40,11 @@ export default {
     params: {
       style: { type: 'string', default: 'board', options: ['board', 'tiles', 'neon', 'flat'], effect: 'wall and floor look family' },
       floor: { type: 'string', default: 'auto', options: ['auto', 'checker', 'plain', 'tiles', 'none'], effect: 'floor look (auto follows style)' },
-      wallColor: { type: 'string', default: '', effect: 'hex override for walls (neon: the glow color)' },
-      floorColor: { type: 'string', default: '', effect: 'hex override for the floor' },
+      wallColor: color({ effect: 'wall color override (neon: the glow color)' }),
+      floorColor: color({ effect: 'floor color override' }),
       lines: { type: 'boolean', default: true, effect: 'thin grid lines between floor cells' },
       wallHeight: { type: 'number', default: 0.28, min: 0, max: 1.5, unit: 'cells', effect: 'raised wall height (board style and iso prisms)' },
-      highlights: { type: 'list', default: [{ source: 'hover', range: 'cell' }], of: { type: 'object', fields: { source: { type: 'string', default: 'hover', options: ['hover', 'player', 'selected'] }, range: { type: 'string', default: 'cell', options: ['cell', 'move', 'attack', 'path'] }, color: { type: 'string' } } }, effect: 'overlays: hovered cell, the player\'s move/attack range, the selected entity' },
+      highlights: { type: 'list', default: [{ source: 'hover', range: 'cell' }], of: { type: 'object', fields: { source: { type: 'string', default: 'hover', options: ['hover', 'player', 'selected'] }, range: { type: 'string', default: 'cell', options: ['cell', 'move', 'attack', 'path'] }, color: color() } }, effect: 'overlays: hovered cell, the player\'s move/attack range, the selected entity' },
       moveRange: { type: 'string', default: 'components.move.range', effect: 'entity field holding move range (cells)' },
       attackRange: { type: 'string', default: 'components.attacks.range', effect: 'entity field holding attack range (cells)' },
       clickAction: { type: 'string', default: '', effect: 'verb sent with the clicked [col,row] (empty: clicks only select)' },
@@ -51,11 +52,12 @@ export default {
       follow: { type: 'boolean', default: false, effect: 'follow the player instead of fitting the board (big mazes follow automatically)' },
     },
     reads: ['content.blocks', 'content.models', 'content.archetypes'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }), 'content.blocks': blocksData(['color', 'tags', 'solid', 'tile']) },
+    components: { model: MODEL_COMPONENT },
+    rules: { ...bindingRules('graphics.render.grid', ['engine.space.grid']) },
   },
   validate(config, doc, ctx, info) {
-    const errs = checkBinding(doc, info, 'graphics.render.grid', ['engine.space.grid']);
-    for (const k of ['wallColor', 'floorColor']) if (config[k] && !isHex(config[k])) errs.push({ code: 'flat_color', path: `${info?.path || ''}.with.${k}`, message: `'${config[k]}' is not a hex color` });
-    return errs;
+    return checkBinding(doc, info, 'graphics.render.grid', ['engine.space.grid']);
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

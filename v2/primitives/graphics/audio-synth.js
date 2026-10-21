@@ -71,7 +71,7 @@ const musicFields = {
   bpm: { type: 'number', min: 40, max: 200, unit: 'bpm', effect: 'tempo' },
   key: { type: 'string', options: KEY_NAMES, effect: 'tonic' },
   instrument: { type: 'string', options: INSTRUMENT_NAMES, effect: 'voice for lead, bass, pad and arp layers' },
-  layers: { type: 'list', of: { type: 'string' }, default: DEFAULT_LAYERS, effect: 'stems: bass perc drums synth drone strings choir organ pad pluck lute bell whistle horn radio wind surf drip lead arp piano brass ...' },
+  layers: { type: 'list', of: { type: 'string' }, min: 1, default: DEFAULT_LAYERS, effect: 'stems: bass perc drums synth drone strings choir organ pad pluck lute bell whistle horn radio wind surf drip lead arp piano brass ...' },
   priority: { type: 'integer', default: 0, effect: 'higher wins among matching when entries' },
 };
 
@@ -92,6 +92,7 @@ export const card = {
     duck: { type: 'number', default: 0.3, min: 0, max: 1, effect: 'music level while paused (also lowpassed)' },
   },
   provides: { events: ['play_sound'] },
+  rules: { audio_cue_duplicate: { fields: ['cues[].event', 'cues[].when'], message: 'cues without a when name distinct events (merge them, or give one a when)' } },
 };
 
 // ------------------------------------------------------------------ pure helpers
@@ -201,13 +202,10 @@ export function musicPlan(entry, config = {}, doc = {}) {
 // ------------------------------------------------------------------ primitive
 function validate(config) {
   const errors = [];
-  (config.music || []).forEach((m, i) => {
-    if (Array.isArray(m?.layers) && m.layers.length === 0) errors.push({ code: 'audio_music_empty', message: `music[${i}] has no layers`, hint: 'name at least one layer, e.g. ["pad", "bass"]' });
-  });
   const seen = new Map();
   (config.cues || []).forEach((c, i) => {
     if (!c || c.when !== undefined || typeof c.event !== 'string') return;
-    if (seen.has(c.event)) errors.push({ code: 'audio_cue_duplicate', message: `cues[${i}] repeats event '${c.event}' from cues[${seen.get(c.event)}] without a when`, hint: 'merge them, or give one a when predicate' });
+    if (seen.has(c.event)) errors.push({ code: 'audio_cue_duplicate', path: `cues[${i}].event`, message: `cues[${i}] repeats event '${c.event}' from cues[${seen.get(c.event)}] without a when`, hint: 'merge them, or give one a when predicate' });
     else seen.set(c.event, i);
   });
   return errors;

@@ -8,6 +8,7 @@ import { synthesizeSpec } from './three-model-gen.js';
 import { paletteFor } from './material-palette.js';
 import { scatterPoints, splatSample } from './three-terrain.js';
 import { hash3 } from './three-util.js';
+import { modelsData } from './model-lib.js';
 
 /** LOD tier for a distance (pure; tested): 0 full, 1 far, -1 culled. */
 export const foliageLod = (d, lodDistance, cull) => d > cull ? -1 : d > lodDistance ? 1 : 0;
@@ -27,6 +28,7 @@ export default {
     provides: {},
     requires: { capabilities: ['surface'] },
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'palette', 'parts', 'size', 'rig', 'height', 'length', 'species', 'alpha', 'saddle']) },
   },
   install(rt, config, instance) {
     if (presentationOnly(rt)) return;

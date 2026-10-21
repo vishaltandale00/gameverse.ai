@@ -8,7 +8,7 @@ import { hubOf, bindAny, ORDER } from './flat-stage.js';
 import { PATTERNS, normalizeLayers, drawBackdrop } from './flat-backdrop.js';
 import { THEMES } from '../../art/scenery.js';
 import { FEATURES, DEPTHS } from '../../art/features.js';
-import { isHex } from './flat-util.js';
+import { color } from './model-lib.js';
 
 export default {
   id: 'graphics.background.parallax',
@@ -20,20 +20,14 @@ export default {
         zone: { type: 'ref', to: 'zone', effect: 'shown only while the player is in this zone (crossfades)' },
         depth: { type: 'number', default: 0.4, min: 0, max: 1, effect: '0 = infinitely far (static), 1 = moves with the world' },
         pattern: { type: 'string', default: 'hills', options: PATTERNS },
-        color: { type: 'string', default: '#2a2838', effect: 'silhouette (or sky) color' },
+        color: color({ default: '#2a2838', effect: 'silhouette (or sky) color' }),
         drift: { type: 'number', default: 0, min: -2, max: 2, effect: 'constant scroll, for clouds and currents' },
-        fogColor: { type: 'string', effect: 'haze toward the bottom of this layer' },
+        fogColor: color({ effect: 'haze toward the bottom of this layer' }),
         theme: { type: 'string', options: THEMES, effect: "scenery: the painted theme (default from the game's text)" },
         features: { type: 'list', of: { type: 'object', fields: { kind: { type: 'string', options: FEATURES, required: true }, density: { type: 'number', default: 0.5, min: 0, max: 1 }, depth: { type: 'string', options: DEPTHS, default: 'mid' } } }, effect: 'scenery: composed static and live features (forest, street with traffic, rain...)' },
       } }, effect: 'back-to-front layers' },
-      base: { type: 'string', default: '', effect: 'hex color behind all layers (default from the farthest layer)' },
+      base: color({ effect: 'color behind all layers (unset: from the farthest layer)' }),
     },
-  },
-  validate(config) {
-    const errs = [];
-    config.layers.forEach((l, i) => { for (const k of ['color', 'fogColor']) if (l[k] !== undefined && !isHex(l[k])) errs.push({ code: 'flat_color', path: `layers[${i}].${k}`, message: `'${l[k]}' is not a hex color` }); });
-    if (config.base && !isHex(config.base)) errs.push({ code: 'flat_color', path: 'base', message: `'${config.base}' is not a hex color` });
-    return errs;
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

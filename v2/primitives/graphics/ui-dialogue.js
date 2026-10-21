@@ -6,7 +6,8 @@
 // Player input goes out as view.act({ choose: { index } }) or view.act({ choose: 'next' }).
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, later, setText, setStyle, setClass, setHidden, fill, clamp, charName, docSystem } from './ui-lib.js';
-import { portrait, portraitColor } from './ui-portrait.js';
+import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
+import { modelsData } from './model-lib.js';
 import { glyph } from './ui-input.js';
 import { dialogueView, canAct } from './ui-sources.js';
 
@@ -91,6 +92,7 @@ export default {
       maxSubtitles: { type: 'integer', default: 3, min: 1, max: 6, effect: 'subtitle lines visible at once' },
     },
     reads: ['plot.characters', 'plot.dialogue', 'content.models'],
+    data: { 'content.models': modelsData(PORTRAIT_MODEL_FIELDS) },
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;

@@ -40,6 +40,7 @@ export default {
       label: { type: 'boolean', default: true, effect: 'current zone name under the map' },
       style: { type: 'string', default: 'auto', options: ['auto', ...THEMES] },
     },
+    rules: { ui_marker_duplicate: { fields: ['markers[].tag'], message: 'each marker tag is listed once' } },
   },
   validate(config) {
     const seen = new Set(), errors = [];

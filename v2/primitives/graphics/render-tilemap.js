@@ -5,14 +5,15 @@
 // autotiling, overhang shadows, live liquids, haze and hazards. Entities draw
 // through flat-models (sprites, rigs, generated art) with interpolation.
 import { ensureJuice } from './flat-juice.js';
-import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
+import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, bindingRules } from './flat-stage.js';
 import { buildChunk, chunkCache, drawHazard, drawLiquid, MARGIN } from './flat-chunks.js';
 import { normalizeTheme, themeFromBlock, patternFor } from './flat-tiles.js';
-import { drawEntity, lookOf } from './flat-models.js';
+import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { tileZoom } from './flat-camera.js';
 import { driveSide, driveTopDown, roomAt } from './flat-follow.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
 import { rgba, col, mix } from './flat-util.js';
+import { modelsData, MODEL_COMPONENT, blocksData } from './model-lib.js';
 
 const DRAW_ORDER = { prop: 0, goal: 1, hazard: 1, pickup: 2, npc: 3, mount: 3, vehicle: 3, enemy: 4, boss: 4, projectile: 5, player: 6 };
 
@@ -68,6 +69,9 @@ export default {
     },
     provides: {},
     reads: ['content.blocks', 'content.models', 'content.archetypes'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }), 'content.blocks': blocksData(['color', 'tags', 'solid', 'transparent', 'tile']) },
+    components: { model: MODEL_COMPONENT },
+    rules: { ...bindingRules('graphics.render.tilemap', ['engine.space.tilemap']) },
   },
   validate(config, doc, ctx, info) { return checkBinding(doc, info, 'graphics.render.tilemap', ['engine.space.tilemap']); },
   install(rt, config, instance) {

@@ -8,7 +8,8 @@
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, later, fill, setClass, setText, titleCase, zoneName, docSystem, fmtClock, fmtInt, isNum, clamp } from './ui-lib.js';
 import { glyph, moveFocus, docBindings } from './ui-input.js';
-import { portrait, portraitColor } from './ui-portrait.js';
+import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
+import { modelsData } from './model-lib.js';
 import { icon } from './ui-icons.js';
 import * as S from './ui-sources.js';
 import { uiControls, unclaimedChoices, loopVerbs } from '../engine/runtime-lib-controls.js';
@@ -97,15 +98,20 @@ const card = {
     banners: { type: 'boolean', default: true, effect: 'round, fight, KO and stage banners' },
     select: { type: 'list', default: [], of: { type: 'object', fields: {
       id: { type: 'string', required: true }, kind: { type: 'string', default: 'character', options: ['character', 'stage', 'custom'] },
-      title: { type: 'string' }, action: { type: 'string', required: true, effect: 'verb receiving the chosen id (select_character, select_stage...)' },
+      title: { type: 'string', display: true }, action: { type: 'string', required: true, effect: 'verb receiving the chosen id (select_character, select_stage...)' },
       from: { type: 'string', options: ['archetypes', 'characters', 'zones', 'stages'], effect: 'where options come from when none are listed' },
       tag: { type: 'string', effect: 'zones: only those with this tag' },
       on: { type: 'string', default: 'start', effect: "'start' (after the title) or an event name that opens it" },
-      options: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, name: { type: 'string' }, desc: { type: 'string' }, model: { type: 'string' } } } },
+      options: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true }, desc: { type: 'string', display: true }, model: { type: 'string', effect: 'a content.models, character or archetype id to portray' } } } },
     } }, effect: 'select screens' },
     vs: { type: 'boolean', default: true, effect: 'VS intro on match_start' },
   },
   reads: ['plot.endings', 'content.models'],
+  data: { 'content.models': modelsData(PORTRAIT_MODEL_FIELDS) },
+  rules: {
+    ui_select_duplicate: { fields: ['select[].id'], message: 'select ids are unique' },
+    ui_select_empty: { fields: ['select[].kind', 'select[].options'], message: 'a custom select lists its options' },
+  },
 };
 
 export default {

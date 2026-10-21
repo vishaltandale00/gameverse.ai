@@ -13,6 +13,7 @@ import { syncActors } from './three-actors.js';
 import { ensureDefaultCamera } from './three-camera.js';
 import { createObjectLayer } from './three-objects.js';
 import thirdPerson from './camera-third-person.js';
+import { blocksData } from './model-lib.js';
 
 const key3 = (x, y, z) => `${x},${y},${z}`;
 
@@ -50,6 +51,7 @@ export default {
     },
     provides: { services: ['camera'] },
     reads: ['content.blocks'],
+    data: { 'content.blocks': blocksData(['color', 'tags', 'transparent', 'light']) },
     requires: { capabilities: ['editCells'] },
   },
   install(rt, config, instance) {
