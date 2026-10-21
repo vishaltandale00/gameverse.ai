@@ -345,12 +345,14 @@ const supportsView = (card, view) => !view || (card.views || []).includes(view) 
 
 /**
  * Base locomotion cards that fit a space, a primary view and a medium, best first. Hard filters: base locomotion,
- * capabilities the space provides, the primary view. Preference: the wanted medium, then the fewest requirements.
+ * capabilities the space provides, the primary view. Preference: the wanted medium, then specialisation.
  */
 export function baseLocomotion(registry, { caps = [], view = null, medium = null, exclude = [] } = {}) {
   const have = new Set(caps);
   return registry.cards('gameplay').filter(c => c.locomotion === 'base' && !exclude.includes(c.id) && (c.requires?.capabilities || []).every(x => have.has(x)) && supportsView(c, view))
-    .map(c => ({ id: c.id, medium: c.medium || null, score: ((c.views || []).includes(view) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) - (c.requires?.capabilities || []).length * 0.1 }))
+    // Specialisation breaks ties: a card that needs more of what this space provides (gravity for jumping) and is made
+    // for fewer views fits it better than a general one (the side-view platformer over walking, on a side-view tilemap).
+    .map(c => ({ id: c.id, medium: c.medium || null, score: ((c.views || []).includes(view) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) + (c.requires?.capabilities || []).length + 2 / Math.max(1, (c.views || []).length) }))
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 }
 

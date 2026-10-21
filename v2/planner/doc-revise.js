@@ -14,6 +14,7 @@ import { tokens } from './select.js';
 import { parsePath } from './repair.js';
 import { contentDiff, changeSummary, shrunkLists, asksToRemove, checkRevision } from './revision-check.js';
 import { parseReply } from './writer.js';
+import { scaleWorld } from './world.js';
 
 export const REVISE_VERSION = 'doc-revise/0.1';
 
@@ -79,6 +80,44 @@ function setPath(doc, path, value) {
   o[keys.at(-1)] = value;
 }
 
+// "Bigger world", "a larger map", "make the city twice as big": requests about the size of the world itself.
+const WORLD_NOUN = /\b(world|map|maze|level|levels|island|city|dungeon|area|arena|track|course|board|land|realm|overworld|space)\b/;
+const GROW = /\b(bigger|larger|huge|vast|wider|expand\w*|grow|enlarge\w*|more room|twice as big|double)\b/, SHRINK = /\b(smaller|tiny|compact|shrink\w*|tighter|half)\b/;
+/** The scale factor a world-size request asks for, or null when the request is not about the world's size. */
+export function worldScaleRequest(request) {
+  const t = String(request || '').toLowerCase();
+  if (!WORLD_NOUN.test(t) || !(GROW.test(t) || SHRINK.test(t))) return null;
+  const times = t.match(/\b(\d+(?:\.\d+)?)\s*(?:x|×|times)\b/);
+  if (times) return Math.max(0.25, Math.min(4, Number(times[1])));
+  if (/\b(double|twice)\b/.test(t)) return 2;
+  if (/\bhalf\b/.test(t)) return 0.5;
+  if (/\b(huge|vast|much bigger|much larger|way bigger)\b/.test(t)) return 2;
+  return GROW.test(t) && !SHRINK.test(t) ? 1.5 : SHRINK.test(t) && !GROW.test(t) ? 0.67 : null;
+}
+
+/** Params of a space card marked scale: 'world' (its extent). */
+const worldParams = (registry, use) => Object.entries(registry.get(use)?.card.params || {}).filter(([, x]) => x.scale === 'world').map(([k]) => k);
+
+/**
+ * Model ops that only resize a space's world-scale param grow the container and leave the content as it was (a bigger
+ * empty void). They are replaced by scaleWorld with the factor they imply, so generators, zones and the start grow with it.
+ * -> { doc, ops (the rest, applied after), scaled: [{ space, factor }] }
+ */
+export function routeWorldScale(before, ops, registry) {
+  let doc = before; const rest = [], scaled = [];
+  for (const op of Array.isArray(ops) ? ops : []) {
+    const m = op?.op === 'set' && /^spaces\[([^\]]+)\]\.with\.([a-zA-Z]+)$/.exec(String(op.path || ''));
+    const space = m && (doc.spaces || []).find((x, i) => x.id === m[1] || String(i) === m[1]);
+    if (!space || !worldParams(registry, space.use).includes(m[2])) { rest.push(op); continue; }
+    const cur = space.with?.[m[2]] ?? registry.get(space.use).card.params[m[2]].default;
+    const a = Array.isArray(cur) ? cur.find(Number.isFinite) : cur, b = Array.isArray(op.value) ? op.value.find(Number.isFinite) : op.value;
+    const factor = Number.isFinite(a) && Number.isFinite(b) && a > 0 ? b / a : null;
+    if (!factor || factor === 1) { rest.push(op); continue; }
+    doc = scaleWorld(doc, registry, factor).doc; scaled.push({ space: space.id, factor: +factor.toFixed(3) });
+  }
+  return { doc, ops: rest, scaled };
+}
+
 const TWEAK_Q = 'Would changing this parameter in the stated direction carry out the request? Answer no if it is about a different thing than the request names.';
 
 /**
@@ -88,6 +127,13 @@ const TWEAK_Q = 'Would changing this parameter in the stated direction carry out
 export async function tweakDocument(input, request, { registry, decisions = null, limit = 4 } = {}) {
   const started = performance.now();
   const text = String(request || '').toLowerCase();
+  // A world-size request grows the content with the container (declared scale params, generators re-fitted): scaleWorld.
+  const factor = worldScaleRequest(text);
+  if (factor) {
+    const r = scaleWorld(input, registry, factor);
+    const ops = r.changes.map(c => ({ path: c.path, use: null, param: c.params.join(','), from: null, to: `×${factor}` }));
+    if (ops.length) return { doc: r.doc, ops, matched: true, scaled: { factor, unscaled: r.unscaled }, ms: Math.round(performance.now() - started), source: 'scaleWorld' };
+  }
   const direction = UP.test(text) && !DOWN.test(text) ? 1 : DOWN.test(text) && !UP.test(text) ? -1 : (/\b(harder|tougher)\b/.test(text) ? 1 : /\beasier\b/.test(text) ? -1 : 0);
   let candidates = tweakCandidates(input, text, registry).filter(c => c.schema.type === 'boolean' ? (ENABLE.test(text) || DISABLE.test(text)) && c.score >= 2 : direction !== 0 || /\b(to|=)\s+\d/.test(text));
   let source = 'rules';

@@ -371,6 +371,15 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           break;
         }
         case 'predicate_invalid': removals.push(keys); fix('removed invalid predicate'); break;
+        case 'character_unspawnable': {
+          // A character with no body: the body most other characters use (the game's NPC archetype), else no body.
+          const c = getAt(doc, keys); if (!c || typeof c !== 'object') break;
+          const counts = new Map();
+          for (const o of doc.plot?.characters || []) if (o?.archetype) counts.set(o.archetype, (counts.get(o.archetype) || 0) + 1);
+          const common = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+          if (common) { c.archetype = common; fix(`gave the character the common body '${common}'`); } else { c.spawn = false; fix('character has no body (spawn: false)'); }
+          break;
+        }
         case 'plot_missing': {
           doc.plot ??= {}; doc.plot.storyboard ??= {}; doc.plot.storyboard.acts = [{ id: 'act_1', title: 'Act 1', beats: [{ id: 'begin', title: 'Begin' }] }]; fix('added a minimal storyboard');
           break;
