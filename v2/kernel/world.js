@@ -17,7 +17,7 @@ import { random, seedFrom } from './rng.js';
 /** @typedef {import('./types.js').LogicLike} LogicLike */
 
 export const PHASES = ['input', 'ai', 'movement', 'physics', 'interaction', 'rules', 'plot', 'late'];
-export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added', 'space_changed'];
+export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added', 'space_changed', 'modal_open', 'modal_close'];
 export const DT = 1 / 60;
 
 /**

@@ -63,7 +63,7 @@ export default {
       onCaught: { type: 'effects', default: [], effect: 'effects when the chaser catches you (an `caught` event is always emitted)' },
       ...COMMON_PARAMS, npcs: { ...COMMON_PARAMS.npcs, default: false }, ...MACRO_PARAMS,
     },
-    provides: { events: ['lane_switch', 'jumped', 'landed', 'slide', 'stumble', 'caught'], vars: ['move.speed', 'move.distance'], actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] },
+    provides: { events: ['evaded', 'crashed', 'lane_switch', 'jumped', 'landed', 'slide', 'stumble', 'caught'], vars: ['move.speed', 'move.distance'], actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'editCells'] },
     envelope,

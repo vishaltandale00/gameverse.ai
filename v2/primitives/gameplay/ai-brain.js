@@ -131,7 +131,7 @@ export default {
         var: { type: 'string', default: 'ai.mode' }, reverse: { type: 'boolean', default: true, effect: 'target-tile agents reverse on every mode change' },
       }, effect: 'global mode clock (maze scatter/chase); publishes var ai.mode' },
     },
-    provides: { events: ['aggro', 'lost_target', 'alerted', 'leashed', 'ambush', 'spotted', 'challenge', 'challenge:*', 'ai_mode', 'ai_mode:*', 'arrived', 'arrived:*', 'move_failed'], vars: ['ai.mode'], services: ['ai.brain'] },
+    provides: { events: ['order_done', 'aggro', 'lost_target', 'alerted', 'leashed', 'ambush', 'spotted', 'challenge', 'challenge:*', 'ai_mode', 'ai_mode:*', 'arrived', 'arrived:*', 'move_failed'], vars: ['ai.mode'], services: ['ai.brain'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
   },

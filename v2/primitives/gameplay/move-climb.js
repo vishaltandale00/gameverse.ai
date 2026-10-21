@@ -39,7 +39,7 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required to climb (via unlock_ability grants); empty = always' },
       ...COMMON_PARAMS,
     },
-    provides: { events: ['climb_start', 'climb_end', 'ledge_grab', 'landed'], actions: ['climb', 'grab', 'jump'] },
+    provides: { events: ['jumped', 'evaded', 'climb_start', 'climb_end', 'ledge_grab', 'landed'], actions: ['climb', 'grab', 'jump'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'editCells', 'raycast', 'overlap'] },
     envelope,

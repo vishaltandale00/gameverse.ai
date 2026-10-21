@@ -15,7 +15,7 @@ export default {
   card: {
     loop: { verbs: ['place', 'select_item'], progress: ['block_placed', 'prop_placed'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { select_item: { type: 'choice', of: 'a placeable item the bag holds' } },
+    actionSpace: { select_item: { type: 'choice', of: 'a placeable item the bag holds', from: 'options', emits: ['item_selected'] } },
     intent: 'Place held block items into cells (or props from items with `place`), aimed at the looked-at face or an explicit cell; protected zones, occupancy and forbidNear checks; ghost preview; set_blocks for scripted edits.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     params: {
@@ -27,7 +27,9 @@ export default {
       allowInside: { type: 'boolean', default: false, effect: 'allow placing a cell that overlaps an entity' },
       preview: { type: 'boolean', default: true, effect: 'keep the target cell of the selected item in state for a ghost preview' },
     },
-    provides: { events: ['block_placed', 'block_placed:*', 'prop_placed', 'prop_placed:*', 'place_denied', 'blocks_set'], actions: ['place', 'select_item'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['place_denied'],
+    provides: { events: ['block_placed', 'block_placed:*', 'prop_placed', 'prop_placed:*', 'place_denied', 'blocks_set', 'item_selected'], actions: ['place', 'select_item'] },
     requires: { capabilities: ['editCells', 'raycast'] },
     reads: ['content.items', 'content.blocks'],
   },
@@ -103,8 +105,14 @@ export default {
       return true;
     }
     rt.action('place', (v, rt) => place('player', v));
-    rt.action('select_item', (id, rt) => { if (bag(rt, 'player')[id]) st().selected.player = id; });
+    // Selecting: any placeable item the bag holds other than the one held now becomes the held one.
+    const selectable = who => Object.keys(bag(rt, who)).sort().filter(id => placeable(id) && id !== heldItem(who));
+    rt.action('select_item', (id, rt) => { if (!selectable('player').includes(id)) return; st().selected.player = id; rt.emit('item_selected', { who: 'player', item: id }); });
     if (config.preview) rt.system('late', rt => { const p = rt.player(); if (!p) return; const id = heldItem('player'); const s = st(); if (id) s.ghost.player = { item: id, at: where(p, null) }; else delete s.ghost.player; }, KEY);
-    rt.options(rt => { const p = rt.player(); return p && heldItem('player') && where(p, null) ? [{ label: `place ${heldItem('player')}`, actions: { place: true } }] : []; });
+    rt.options(rt => {
+      const p = rt.player(); if (!p) return [];
+      return [...(heldItem('player') && where(p, null) ? [{ label: `place ${heldItem('player')}`, actions: { place: true } }] : []),
+        ...selectable('player').map(id => ({ label: `hold ${itemDef(rt, id)?.name ?? id}`, actions: { select_item: id } }))];
+    });
   },
 };

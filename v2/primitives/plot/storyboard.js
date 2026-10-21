@@ -13,7 +13,7 @@ export default {
     intent: 'Runs the story: acts made of beats that fire when their trigger predicate holds (after prerequisite beats) and apply effects such as dialogue, items, flags, quests and endings.',
     views: ['any'],
     params: { sequentialActs: { type: 'boolean', default: true, effect: 'beats in act N+1 wait until every non-optional beat in act N has fired' } },
-    provides: { events: ['beat', 'act_start', 'act_complete'] },
+    provides: { events: ['say', 'beat', 'act_start', 'act_complete'] },
     reads: ['plot.storyboard', 'plot.characters', 'plot.endings'],
   },
   logic(logic) {

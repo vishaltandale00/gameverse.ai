@@ -732,6 +732,9 @@ export function ensureShared(rt, macro = {}) {
   });
 }
 
+/** Whether a document gives `travel` anything to offer: the travel options list the zones of the spaces it declares. */
+export const travelZones = doc => (doc?.spaces || []).some(s => (s.zones || []).length > 0);
+
 /** Cheap point for a zone (no cell scans): at, spawn, rect/bounds centre, centre, polygon centroid. */
 function zoneCentre(z, e) {
   const dims = dimsOf(e), fill = q => { const out = e.at.slice(); q.forEach((v, i) => { if (v != null && i < dims) out[i] = v; }); return out; };

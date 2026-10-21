@@ -16,9 +16,9 @@ const parse = v => (typeof v === 'string' ? { recipe: v, count: 1 } : { recipe: 
 export default {
   id: 'gameplay.crafting',
   card: {
-    loop: { verbs: ['craft', 'combine'], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
+    loop: { verbs: ['craft', 'combine'], verbsOf: config => ['craft', ...(config.discover === 'experiment' ? ['combine'] : [])], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { craft: { type: 'choice', of: 'a craftable recipe' }, combine: { type: 'choice', of: 'items to combine' } },
+    actionSpace: { craft: { type: 'choice', of: 'a craftable recipe', from: 'options', emits: ['crafted', 'craft_started'] }, combine: { type: 'choice', of: 'items to combine', from: 'options', emits: ['crafted', 'craft_started', 'craft_failed'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.recipes", "min": 2, "why": "crafting needs recipes", "example": {"id": "torch", "inputs": [{"item": "stick", "count": 1}, {"item": "resin", "count": 1}], "output": {"item": "torch_item", "count": 2}}},
@@ -35,7 +35,9 @@ export default {
       discover: { type: 'string', default: 'known', options: ['known', 'learned', 'experiment'], effect: 'known: every recipe; learned: recipe.learned / flag / learn_recipe; experiment: also by combining matching inputs' },
       failItem: { type: 'ref', to: 'item', effect: 'experiment: combining inputs that match no recipe consumes them and yields this item (dubious food); unset = nothing happens' },
     },
-    provides: { events: ['crafted', 'crafted:*', 'craft_started', 'craft_failed', 'recipe_learned', 'recipe_learned:*'], actions: ['craft', 'combine', 'cancel_craft'], services: ['crafting'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['craft_failed'],
+    provides: { events: ['station_opened', 'craft_cancelled', 'crafted', 'crafted:*', 'craft_started', 'craft_failed', 'recipe_learned', 'recipe_learned:*'], actions: ['craft', 'combine', 'cancel_craft'], services: ['crafting'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.recipes', 'content.items', 'content.archetypes'],
     defines: [{ kind: 'station', in: 'stations' }],
@@ -156,7 +158,22 @@ export default {
       rt.emit('craft_cancelled', { who: 'player', recipe: job.recipe });
     });
     const craftable = who => { const at = stationsAt(who); return [...recipes().values()].filter(r => known(r.id) && stationOk(r, at) && plan(who, r, 1)).map(r => r.id).sort(); };
-    rt.options(rt => craftable('player').slice(0, 12).map(id => { const r = recipes().get(id); return { label: `craft ${id}`, actions: { craft: id }, steps: r.time > 0 ? Math.round(r.time / rt.dt) + 1 : 1 }; }));
+    // Experimenting (discover 'experiment'): the sets of held items a person can put together: the items each recipe
+    // workable here would take (known or not), and every pair of distinct held items (failItem makes a wrong pair
+    // something too).
+    const name = id => itemDef(rt, id)?.name ?? id;
+    function combinations(who) {
+      const at = stationsAt(who), out = [], seen = new Set();
+      const push = list => { const k = JSON.stringify(list); if (!seen.has(k)) { seen.add(k); out.push(list); } };
+      for (const r of [...recipes().values()].sort((a, b) => (a.id < b.id ? -1 : 1))) { if (!stationOk(r, at)) continue; const t = plan(who, r, 1); if (t) push(t.slice().sort((a, b) => (a.item < b.item ? -1 : 1))); }
+      const held = Object.keys(bag(rt, who)).sort();
+      for (let i = 0; i < held.length; i++) for (let j = i + 1; j < held.length; j++) push([{ item: held[i], count: 1 }, { item: held[j], count: 1 }]);
+      return out;
+    }
+    rt.options(rt => [
+      ...craftable('player').slice(0, 12).map(id => { const r = recipes().get(id); return { label: `craft ${id}`, actions: { craft: id }, steps: r.time > 0 ? Math.round(r.time / rt.dt) + 1 : 1 }; }),
+      ...(config.discover === 'experiment' ? combinations('player').map(list => ({ label: `combine ${list.map(x => `${x.count > 1 ? `${x.count} ` : ''}${name(x.item)}`).join(' + ')}`, actions: { combine: list } })) : []),
+    ]);
     rt.provide('crafting', {
       station: (who = 'player') => { const at = [...stationsAt(who)].sort()[0]; const s = config.stations.find(x => x.id === at); return s ? { id: s.id, name: s.name ?? s.id, tags: s.tags } : null; },
       craftable: (who = 'player') => craftable(who), known: () => [...recipes().keys()].filter(known), jobs: (who = 'player') => structuredClone(st().jobs[who] || []),

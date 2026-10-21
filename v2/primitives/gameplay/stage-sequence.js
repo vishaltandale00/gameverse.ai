@@ -54,7 +54,7 @@ export default {
     // exists only when the stages have one (runtime-lib-controls.js instanceVerbs).
     loop: { verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { select_stage: { type: 'choice', of: 'a stage' } },
+    actionSpace: { select_stage: { type: 'choice', of: 'a stage', from: 'options', emits: ['stage_selected'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "stages", "min": 3, "why": "a level sequence needs several stages, each with its own goal and parameters"},

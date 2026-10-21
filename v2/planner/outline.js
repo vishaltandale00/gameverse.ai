@@ -220,7 +220,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   /** @type {OutlineRound[]} */
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
   // The static loop check, before any model call: a structure whose declared loop cannot be played out and won is
-  // reported for the planner to re-plan (replan.js), never handed to the model to theme.
+  // reported (the build fails with it), never handed to the model to theme.
   const loopCore = skeleton.st?.core || [...core];
   // The play spec's opponent: an 'ai-*' opponent must be driven by a primitive (loop-check.js loop_opponent_inert).
   const loopOpponent = decomposition.core?.opponent ?? null;

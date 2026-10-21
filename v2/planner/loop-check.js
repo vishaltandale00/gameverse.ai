@@ -30,7 +30,7 @@
 //                 the opponents do (drives.actions/effects/events/movement, and the effects in their action data) must
 //                 be something that changes what the lose reads (lose.reads.by) -> loop_lose_unaffected_by_opponent.
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
-// structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
+// structural repair (presets.js repairLoop) and the build's loop steps (build-steps.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
 import { cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
 import { contractsOf, participantsOf } from './content.js';

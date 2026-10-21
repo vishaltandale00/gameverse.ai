@@ -46,7 +46,7 @@ export default {
       bounds: { type: 'boolean', default: true, effect: 'leaving the space bounds() window (if the space has the bounds capability) or its out_of_bounds/scrolled_out events counts as killType' },
       boundsMargin: { type: 'number', default: 0, min: 0, effect: 'how far outside bounds() an entity may be' },
     },
-    provides: { events: ['hazard_hit', 'hazard_hit:*', 'hazard_exit', 'fell', 'hazard_killed'] },
+    provides: { events: ['respawned', 'hazard_hit', 'hazard_hit:*', 'hazard_exit', 'fell', 'hazard_killed'] },
     requires: { capabilities: ['position'] },
     reads: ['content.blocks', 'content.archetypes'],
   },

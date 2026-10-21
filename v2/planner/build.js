@@ -188,7 +188,7 @@ export function closureOf(registry, id, have) {
 const conflictsIn = (registry, ids) => ids.flatMap(id => (cardOf(registry, id)?.conflicts || []).filter(c => c !== id && ids.includes(c)).map(c => `'${id}' conflicts with '${c}' (card.conflicts)`));
 
 /**
- * The primitive signature the gap layer writes when no catalogue primitive fits a mechanic (replan.js uses the same words).
+ * The primitive signature the gap layer writes when no catalogue primitive fits a mechanic.
  * @param {Mechanic} m @param {string | null} interaction @param {SpaceChoice} space @param {string} [spec]
  */
 const primitiveSignature = (m, interaction, space, spec = '') => `${m.id}: a primitive whose loop (card.loop) ${interaction ? `is played as ${interaction}, ` : ''}with verbs and progress events for "${m.description}", on ${space.use} (${space.caps.join(', ')})${spec ? `. Spec: ${spec}` : ''}`.slice(0, 600);

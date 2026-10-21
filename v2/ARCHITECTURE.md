@@ -145,7 +145,12 @@ One JSON document (`gameverse.v2.game/0.2`) references primitives by id and para
 The document's shape follows the templates and primitives chosen for the idea, never one default shape. A board
 game has a board, pieces, sides and turns, and no walking avatar.
 
-Games are **versioned**. Each change produces a new immutable version that is checked like a new game.
+Games are **versioned**. Each change produces a new immutable version that is checked like a new game: every
+version (create, a revision's tweak or ops, an experiment, a gap filled) passes one version gate
+(`v2/planner/version-gate.js`) on the document a person plays, and a version made from another is also held to it: no
+feature that worked stops working, and every bot its loops name that won the base still wins. A template game's
+revision stays within the ranges its template tunes. A running session that receives a new version restarts on it from
+its start (the state of another version is never carried into it).
 
 ## 5. Generation
 

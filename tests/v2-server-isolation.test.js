@@ -96,7 +96,7 @@ test('unbounded allocation hits the heap limit; queued jobs still run and the se
 });
 
 test('a normal job builds and publishes through the child process', async () => {
-  const { call, done } = service({ heapMb: 512, timeoutMs: 60000 }, { maxDetailTasks: 1, solveBudgetMs: 300 });
+  const { call, done } = service({ heapMb: 512, timeoutMs: 60000 }, { solveBudgetMs: 300 });
   // No live model: the runner's scripted spec writer plans the idea and answers the build's questions (nothing is picked without one).
   const { json: created } = await call('POST', '/api/v2/games', { prompt: 'collect coins in a maze' });
   const finished = await done(created.gameId);

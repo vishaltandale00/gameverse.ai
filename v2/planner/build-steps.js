@@ -1,5 +1,5 @@
 // @ts-check
-// The loop steps of the iterative build (build.js), after its mechanic steps, and of re-planning (replan.js): one
+// The loop steps of the iterative build (build.js), after its mechanic steps: one
 // mechanism that completes the core loop the mechanic steps built, never a pick made by the preset or the repair.
 //
 // After every step the static loop check (loop-check.js) runs on the partial collection: the preset's document of the
@@ -56,7 +56,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  * The collection a step reads: its space (the configuration it composes on), systems, adapter instances and bindings,
  * what each mechanic maps to and the core loop mechanic's id (where the win, lose and coverage picks go), the game's
  * win when several are declared (`win`: the primitive askWins picked; it owns the game's win), and the composition
- * checks bound to it (build.js composes / resolveWith; replan.js the same over a selection).
+ * checks bound to it (build.js composes / resolveWith).
  * @typedef {{ space: { id: string, use: string, with: Record<string, unknown>, role?: string, caps: string[] }, systems: string[], adapters: AdapterInstance[], bind: Record<string, string>,
  *   mechanics: StepMechanic[], loop: string | null, win?: string | null,
  *   composes: (ids: string[]) => Composes, resolve: (ids: string[], variant: number) => { adapters: AdapterInstance[], bind: Record<string, string>, gaps: AdapterSpec[] } }} StepCollection
@@ -373,7 +373,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
 
 /**
  * Run the loop steps on a collection until it needs nothing more the steps answer (each need asked once): win, lose,
- * driver, coverage. `commit` adds a pick to the caller's collection (build.js, replan.js) and returns the collection
+ * driver, coverage. `commit` adds a pick to the caller's collection (build.js) and returns the collection
  * after it, or why it could not (the step is then a gap with that problem). After each step the loop check of the
  * partial collection is recorded on it. `only` limits the kinds; `exclude` maps a kind to ids never offered; `asked`
  * holds the keys of needs asked before (the build's steps after each mechanic: build.js), never asked again.
@@ -479,7 +479,7 @@ export async function askWins({ registry, decomposition, collection: c, ask, dec
 //     steps.push(...m.steps); gaps.push(...m.gaps);
 // stepAdapters / stepBind are kept apart from tryAdd's (which replaces `adapters` and `bind` with resolveAdapters' output
 // on every pick) and joined into collection() and the BuildResult with adapters.js keepMashupAdapters; the BuildResult
-// carries the records (mashupAdapters). Re-planning (replan.js) calls it over a selection (adapterStepsOnSelection).
+// carries the records (mashupAdapters). adapterStepsOnSelection runs it over a selection.
 
 /** Add adapter instances (with the bindings onto their regions) to the caller's collection: the collection after it, or why not. @typedef {(instances: AdapterInstance[], bind: Record<string, string>) => StepCollection | string} Adopt */
 

@@ -40,7 +40,7 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required to swim; without it you sink (and may drown)' },
       ...COMMON_PARAMS,
     },
-    provides: { events: ['submerged', 'surfaced', 'swim_start', 'swim_end', 'drowning', 'move_hurt'], vars: ['move.breath'], actions: ['dive', 'ascend', 'jump'] },
+    provides: { events: ['jumped', 'evaded', 'submerged', 'surfaced', 'swim_start', 'swim_end', 'drowning', 'move_hurt'], vars: ['move.breath'], actions: ['dive', 'ascend', 'jump'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['editCells', 'surface', 'gravity', 'raycast'] },
     envelope,
