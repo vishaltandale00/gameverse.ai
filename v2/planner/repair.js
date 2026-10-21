@@ -12,6 +12,7 @@ import { REF_KINDS, checkFields } from '../kernel/params.js';
 import { defaultsOf, isSpace, isGenerator, isGraphics, satisfying, spaceVariants, requirementsOf } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
+import { referenceOf, idsAt, declaredAt, ZONES } from './content.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Instance} Instance */
@@ -544,7 +545,14 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
             if (e.code === 'param_unknown' || (e.code !== 'param_missing' && last !== 'id' && last !== 'kind' && typeof last === 'string' && getAt(doc, keys) !== undefined && !Array.isArray(grand))) { removals.push(keys); fix(`dropped malformed field (${e.code})`); }
             else if (Array.isArray(grand) && typeof parentKeys.at(-1) === 'number') { removals.push(parentKeys); fix(`dropped malformed entry (${e.code})`); }
           }
-          else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof last === 'string' && getAt(doc, keys) !== undefined && last !== 'id' && last !== 'kind') { removals.push(keys); fix(`dropped field (${e.code})`); }
+          // A reference field (its declared shape names where its ids come from) is re-pointed at the document's ids when a
+          // value is close to one; a required one is never dropped (that only turns "unknown id" into "missing field"):
+          // its error, with the allowed ids, goes to the model.
+          else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof last === 'string' && getAt(doc, keys) !== undefined && last !== 'id' && last !== 'kind') {
+            const declared = declaredAt(registry, keys);
+            if (repointRef(doc, registry, keys, declared)) fix(`re-pointed to the document's ids (${e.code})`);
+            else if (!required(declared)) { removals.push(keys); fix(`dropped field (${e.code})`); }
+          }
         }
       }
     }
@@ -601,7 +609,56 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
   // When ok, preflight accepted this draft (directly, or as the nested repair's result merged into it).
   return checked.ok
     ? { doc: /** @type {Doc} */ (doc), ok: true, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION }
-    : { doc, ok: false, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION };
+    : { doc, ok: false, checked, errors: withAllowed(doc, registry, checked.errors), fixes, removed, version: REPAIR_VERSION };
+}
+
+/** A declared field the document must fill (required, or a list with a minimum). @param {Record<string, unknown> | null | undefined} spec */
+const required = spec => Boolean(spec && (spec.required || (spec.type === 'list' && Number(spec.min) > 0)));
+
+/**
+ * Re-point a reference field (string or list of strings) at the document's ids: values close to an allowed id take it,
+ * list entries matching none are dropped while others remain. -> whether it changed anything.
+ * @param {Bag} doc @param {RegistryLike} registry @param {Key[]} keys @param {unknown} spec the field's declared shape
+ */
+function repointRef(doc, registry, keys, spec) {
+  const ref = referenceOf(registry, spec);
+  const allowed = ref ? idsAt(doc, ref) : [];
+  if (!allowed.length) return false;
+  const pick = (/** @type {unknown} */ v) => (typeof v !== 'string' ? null : allowed.includes(v) ? v : allowed.find(id => near(id, v)) ?? null);
+  const v = getAt(doc, keys);
+  if (typeof v === 'string') { const p = pick(v); if (p && p !== v) { setAt(doc, keys, p); return true; } return false; }
+  if (!Array.isArray(v)) return false;
+  const next = [...new Set(v.map(pick).filter(isStr))];
+  if (!next.length || JSON.stringify(next) === JSON.stringify(v)) return false;
+  setAt(doc, keys, next); return true;
+}
+
+/**
+ * The ids a field's declaration says its values come from, in this document: a data section's field (card.data),
+ * an instance param or an archetype component field; a list element refers through its list. -> { ref, ids } or null.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Key[]} keys
+ */
+function allowedAt(doc, registry, keys) {
+  for (const k of typeof keys.at(-1) === 'number' ? [keys, keys.slice(0, -1)] : [keys]) {
+    const spec = declaredAt(registry, k) ?? locate(doc, registry, k)?.schema ?? componentAt(registry, k)?.schema;
+    const ref = referenceOf(registry, spec);
+    const ids = ref ? [...new Set(idsAt(doc, ref))] : [];
+    if (ref && ids.length) return { ref, ids };
+  }
+  return null;
+}
+
+/**
+ * Errors on reference fields carry the allowed ids in their hint, so a repair round can pick instead of guessing.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Problem[]} errors @returns {Problem[]}
+ */
+export function withAllowed(doc, registry, errors) {
+  return errors.map(e => {
+    const a = e.path ? allowedAt(doc, registry, parsePath(e.path)) : null;
+    if (!a) return e;
+    const what = a.ref === ZONES ? 'zone ids' : `${a.ref} ids`;
+    return { ...e, hint: `${e.hint ? `${e.hint}; ` : ''}use only the document's ${what}: ${a.ids.slice(0, 40).join(', ')}` };
+  });
 }
 
 const PREDICATE_KEYS = new Set(['when', 'gate', 'if', 'requires', 'fail', 'condition', 'unless', 'not']);

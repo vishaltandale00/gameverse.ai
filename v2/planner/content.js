@@ -262,3 +262,62 @@ export function contractText(contracts) {
     return `- ${c.uses.join(', ')}: ${what}.${c.why ? ` ${c.why}.` : ''}${shape(c.example)}`;
   }).join('\n');
 }
+
+// ---------- references: where a declared field's values must come from ----------
+// A card declares a reference as { type: 'ref', to: kind } (the kind's collection: a base section or a card.defines
+// `at`), or as a string field (or a list of strings) whose declaration names the document section its values are
+// ids of ("type names from content.types", "a content.moves id"). Zones are the spaces' zone ids. The strict forms
+// offer these ids as enums and repair re-points or reports against them; nothing here names a primitive.
+/** The pseudo-section a zone reference draws from. */
+export const ZONES = 'zones';
+/** @type {Record<string, string>} */
+const KIND_AT = { character: 'plot.characters', quest: 'plot.quests', ending: 'plot.endings', dialogue: 'plot.dialogue', item: 'content.items', recipe: 'content.recipes', archetype: 'content.archetypes', block: 'content.blocks', model: 'content.models' };
+/** @param {unknown} effect @returns {string | null} the document section a declaration's text names */
+const namedSection = effect => /\b((?:content|plot)\.[a-zA-Z]+)\b/.exec(String(effect || ''))?.[1] || null;
+/** @param {unknown} spec */
+const free = spec => isObj(spec) && spec.type === 'string' && !(Array.isArray(spec.options) && spec.options.length);
+
+/** The document section holding ids of a reference kind, or null. @param {RegistryLike} registry @param {string} kind @returns {string | null} */
+export function sectionOfKind(registry, kind) {
+  if (KIND_AT[kind]) return KIND_AT[kind];
+  for (const id of registry.ids()) for (const d of registry.get(id)?.card.defines || []) if (d.kind === kind && d.at) return d.at;
+  return null;
+}
+
+/**
+ * The section (or ZONES) a declared field's values are ids of, or null when the field is free. A list of strings
+ * refers through its element's declaration or its own.
+ * @param {RegistryLike} registry @param {unknown} spec a param/field spec as a card declares it @returns {string | null}
+ */
+export function referenceOf(registry, spec) {
+  if (!isObj(spec)) return null;
+  if (spec.type === 'ref' && isStr(spec.to)) return spec.to === 'zone' ? ZONES : sectionOfKind(registry, spec.to);
+  if (free(spec)) return namedSection(spec.effect);
+  if (spec.type === 'list' && isObj(spec.of)) return referenceOf(registry, spec.of) || (free(spec.of) ? namedSection(spec.effect) : null);
+  return null;
+}
+
+/** The ids at a section of a (draft) document (list entries' ids or strings, or an id-keyed object's keys), or its zone ids. @param {unknown} doc @param {string} section @returns {string[]} */
+export function idsAt(doc, section) {
+  if (section === ZONES) return list(prop(doc, 'spaces')).flatMap(s => list(prop(s, 'zones')).map(z => prop(z, 'id'))).filter(isStr);
+  const v = at(doc, section);
+  if (Array.isArray(v)) return v.map(x => (isStr(x) ? x : prop(x, 'id'))).filter(isStr).filter(Boolean);
+  return isObj(v) ? Object.keys(v) : [];
+}
+
+/**
+ * The declared shape at a document data path (plot/content), from the card that declares the section (card.data),
+ * walked through list elements and object fields; null when no card declares it.
+ * @param {RegistryLike} registry @param {Array<string | number>} keys a parsed path @returns {Record<string, unknown> | null}
+ */
+export function declaredAt(registry, keys) {
+  if ((keys[0] !== 'plot' && keys[0] !== 'content') || typeof keys[1] !== 'string') return null;
+  const section = `${keys[0]}.${keys[1]}`;
+  /** @type {unknown} */
+  let spec = registry.cards().map(c => prop(c.data, section)).find(isObj);
+  for (const k of keys.slice(2)) {
+    if (!isObj(spec)) return null;
+    spec = typeof k === 'number' ? (spec.type === 'list' ? spec.of : null) : (spec.type === 'object' ? prop(spec.fields, k) : null);
+  }
+  return isObj(spec) ? spec : null;
+}
