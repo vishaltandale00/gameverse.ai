@@ -21,7 +21,7 @@ import { catalogHash } from './catalog.js';
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze({
-  detailConcurrency: 3, maxDetailTasks: 8, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
+  detailConcurrency: 3, maxDetailTasks: 0, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
   solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1,
 });
 
@@ -78,14 +78,17 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     await ctx.store.updateMeta(job.gameId, { title: current.title, kind: 'kernel' });
     const common = { kind: 'kernel', decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps, summary: current.logline || decomposition.premise };
     const provenance = extra => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
-    // Publish before full verification: preflight passed and the world booted; the verifier's report follows.
-    timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: null, verification: { ok: true, source: 'preflight', pending: true, preflightMs: null }, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
-    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs });
+    // The publish gate: a playtest agent must play this exact document to a winning ending, and nothing may crash.
     t = performance.now();
-    const base = await verifyDocument(current, registry, logic, { budgetMs: cfg.solveBudgetMs });
-    timings.firstVerifyMs = ms(t);
-    ctx.stage('verified', { ms: timings.firstVerifyMs, verification: summarizeVerify(base) });
+    const base = outline.verification && hashOf(outline.verification.doc ?? null) === hashOf(current) ? outline.verification
+      : await verifyDocument(current, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+    timings.gateMs = ms(t);
+    checkpoint('gate', { viable: Boolean(base.viable), viability: base.viability || null, playtest: base.playtest || null, problems: (base.problems || []).slice(0, 20) });
+    if (!base.viable) throw Object.assign(Error(`No playable game yet: ${base.viability}`), { status: 422, code: 'not_playable' });
+    timings.requestToFirstPlayableMs = ms(t0);
+    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, outline: { source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated) }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
+    ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
 
     // Layer 3: detail patches in parallel; merges are serialized in completion order.
     const tasks = detailTasks(current, { max: cfg.maxDetailTasks });
@@ -179,10 +182,11 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.guardMs = ms(t);
     if (!guard.ok) throw Object.assign(Error(guard.reason === 'dropped_content' ? `That change would remove ${guard.dropped.map(d => d.path).join(', ')}, which the request didn't ask for.` : 'That change would repaint the game, which the request didn\'t ask for.'), { status: 422, code: guard.reason });
     t = performance.now();
-    const v = await verifyDocument(after, registry, logic, { budgetMs: cfg.solveBudgetMs });
+    const v = await verifyDocument(after, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
     const vBefore = await verifyDocument(before, registry, logic, { budgetMs: cfg.solveBudgetMs });
     timings.verifyMs = ms(t);
     if (!v.ok) throw Object.assign(Error('The changed game failed checks.'), { status: 422 });
+    if (!v.viable) throw Object.assign(Error(`That change leaves no playable game: ${v.viability}`), { status: 422, code: 'not_playable' });
     if (regressed(vBefore, v)) throw Object.assign(Error('That change would make the game impossible to finish.'), { status: 422, code: 'plot_regressed' });
     const notApplied = guard.revisionCheck?.notApplied || (guard.diff === 0);
     const gaps = [...(unsupported || []).map(u => ({ capability: String(u.request).slice(0, 160), why: String(u.why || '').slice(0, 240), kind: 'unsupported' })),

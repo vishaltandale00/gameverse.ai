@@ -423,7 +423,8 @@ function follow(rt, e, api, fr, opts) {
   const wp = P.pts[P.i];
   if (P.best === null || dist < P.best - 0.02) { P.best = dist; P.stuck = 0; } else if (P.f !== rt.state.frame) P.stuck += rt.dt;
   P.f = rt.state.frame;
-  if (P.stuck > (opts.stuckSec ?? 2)) { P.pts = null; P.tries++; P.stuck = 0; P.best = null; if (P.tries > 3) return done('stuck'); }
+  // Stuck: drop the path and re-plan from here next frame (stand still this frame).
+  if (P.stuck > (opts.stuckSec ?? 2)) { P.pts = null; P.tries++; P.stuck = 0; P.best = null; return P.tries > 3 ? done('stuck') : out; }
   const raw = sub(v3(wp), v3(e.at));
   out.dir = norm(opts.free3d ? raw : project(fr, raw));
   out.wp = v3(wp);

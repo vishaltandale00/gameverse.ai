@@ -260,17 +260,18 @@ Write the outline document for this idea from the skeleton: an evocative title a
  * writeOutline({ writer?, prompt, answers, decomposition, selection, registry, logic, seed, maxRounds })
  *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms }], firstPassOk, modelMs, removed }
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 4000 }) {
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500 }) {
   let lastProblems = null;
   // The publish gate (verify-adapter viability): what fails it goes back to the model with the agent's reason first.
   const gate = async doc => {
     const v = await verifyDocument(doc, registry, logic, { budgetMs: verifyBudgetMs, playtestMs });
-    const problems = v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability, severity: 'error', hint: 'the player must be able to progress from the start to a winning ending' },
+    const problems = v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability, severity: 'error', hint: 'the game must run without crashing' },
       ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)];
     return { viable: Boolean(v.viable), problems, v };
   };
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
+  if (skeleton.ok) skeleton.doc = engageDocument(skeleton.doc, registry, logic).doc;
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
   if (!writer) return { doc: skeleton.doc, ok: skeleton.ok, source: 'procedural', rounds, firstPassOk: skeleton.ok, modelMs: 0, removed: skeleton.removed, errors: skeleton.errors };
   const fallbackSpace = { id: skeleton.doc.spaces?.[0]?.id, use: skeleton.doc.spaces?.[0]?.use, with: skeleton.doc.spaces?.[0]?.with || {} };
@@ -311,6 +312,8 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       const w = furnishWorld(repaired.doc, registry, logic, { seed });
       if (w.added.length) { repaired.doc = w.doc; worldAdded = w.added.map(a => a.use); }
       if (!skeleton.world?.problems?.length) worldLeft = w.problems;
+      // Wire the player and AI participants into the chosen mechanics (card.engage) before booting and playtesting.
+      repaired.doc = engageDocument(repaired.doc, registry, logic).doc;
       // Boot it (ms): a primitive that throws on install or on its first steps is isolated with what pointed at it;
       // when isolation cannot save the world, the error (naming the primitive, install or step) goes to the model.
       const fp = firstPlayable(repaired.doc, registry, logic, { seed, furnish: false });

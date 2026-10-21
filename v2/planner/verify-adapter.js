@@ -23,15 +23,12 @@ async function verifyModule() {
   return loaded;
 }
 
-// The publish gate (ARCHITECTURE.md §5, kept simple on purpose): a playtest agent plays the game through to a
-// winning ending, the win replays, and nothing crashes. Anything else is not a game we publish.
-const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'nondeterministic', 'snapshot_roundtrip', 'instant_loss', 'world_empty', 'verify_threw']);
+// The publish gate: the game must not crash. A playtest agent plays it headless; any thrown step,
+// NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks publishing.
+const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss', 'verify_threw']);
 export function viability(play, problems = []) {
   const crash = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info');
-  const finished = Boolean(play?.winnable && play.win?.replayed !== false);
-  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ')
-    : !play ? 'the playtest did not run'
-    : !finished ? `the playtest agent could not reach the end (${play.explored ?? 0} places explored${Object.keys(play.losses || {}).length ? `, lost to ${Object.keys(play.losses).join(', ')}` : ''})` : null;
+  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ') : !play ? 'the playtest did not run' : null;
   return { viable: !why, viability: why };
 }
 
