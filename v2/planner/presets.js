@@ -181,16 +181,19 @@ const joinedMechanics = (decomposition, relation) => (decomposition.core?.mashup
  * The primitives of the mechanics a nested mashup relation joins (the loops entered from the rest).
  * @param {Decomposition} decomposition @param {Selection} selection @returns {Set<string>}
  */
-const innerOf = (decomposition, selection) => new Set(joinedMechanics(decomposition, 'nested')
+export const innerOf = (decomposition, selection) => new Set(joinedMechanics(decomposition, 'nested')
   .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => /^(gameplay|plot)\./.test(id)));
 
 /**
- * The core collection in the order its loops own the game's win: the idea's order, the loops a nested mashup relation
- * enters from the rest last (they never own the game's win). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry
+ * The core collection in the order its loops own the game's win: the game's win selection picked among several
+ * (selection.win: build-steps.js askWins) first, then the idea's order, the loops a nested mashup relation enters from
+ * the rest last (they never own the game's win). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry
  */
 export function loopCore(decomposition, selection, registry) {
   const inner = innerOf(decomposition, selection);
-  return [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
+  const win = selection?.win?.use;
+  const core = [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
+  return win && (selection.systems || []).includes(win) ? [win, ...core.filter(id => id !== win)] : core;
 }
 
 /**

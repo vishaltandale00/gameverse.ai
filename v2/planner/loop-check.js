@@ -11,7 +11,9 @@
 //                 `when` template counts): an effect in its own action params owned by the primitive that owns the
 //                 component, a primitive with player verbs that requires that owner, or a player-driven provider of
 //                 the event or var the win counts; a win that declares no reads is an error (loop_win_reads_undeclared):
-//                 whether play can reach it is unknown;
+//                 whether play can reach it is unknown. A provider only content could drive is pending content when
+//                 a player-driven primitive declares what its reads.by names (playerChanges), else an error; a wired
+//                 lose whose reads nothing in the document produces -> loop_lose_unproduced;
 //   wiring        the win of the loop that owns the game's win is wired to a won ending (an end_game effect in its
 //                 declared param, its `end` boolean, a `when` ending with its evaluator in the document, or a won
 //                 story ending), and its declared lose (and the core loops' losses) to a lost one;
@@ -71,6 +73,7 @@ export const LOOP_CODES = Object.freeze({
   participants: 'loop_participants_missing', seat: 'loop_player_unseated', opponent: 'loop_opponent_missing', group: 'loop_group_empty',
   component: 'loop_component_missing', owner: 'loop_component_unowned', unaffected: 'loop_win_unaffected', win: 'loop_win_unwired',
   lose: 'loop_lose_unwired', reads: 'loop_win_reads_undeclared', inert: 'loop_opponent_inert', loseUnaffected: 'loop_lose_unaffected_by_opponent',
+  loseUnproduced: 'loop_lose_unproduced',
 });
 
 /** Does a play spec opponent (or a loop's declared opponent) mean AI-controlled participants ('ai-rival', 'ai-side')? @param {unknown} o */
@@ -387,8 +390,27 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
     } else if (reads.event || reads.var) {
       const what = reads.event ? 'event' : 'var', name = /** @type {string} */ (reads.event || reads.var);
       const signal = changesSignal(doc, registry, lg, what, name, used);
-      // A provider whose drive is content not written yet (the events its config listens to) is pending until a draft.
-      if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? ' (its providers are driven by nothing in the document yet)' : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(signal === 'idle' ? { pending: 'drive' } : {}) });
+      // A provider whose drive is content not written yet (the events its config listens to, the effects data runs) is
+      // pending until a draft, but only when the document declares a player-driven way to change it (what its reads.by
+      // names: playerChanges, or the player's own movement, which selection completes with a base locomotion for avatar
+      // play); otherwise no content can drive it and the collection lacks a primitive.
+      const hooked = signal === 'idle' && (!reads.by || Boolean(reads.by.movement) || [...used].some(id => playerChanges(registry, registry.get(String(id))?.card, /** @type {import('./loop.js').ReadsBy} */ (reads.by), { logic: lg, used })));
+      if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? hooked ? ' (its providers are driven by nothing in the document yet)' : ` (its providers are driven by nothing in the document, and no player-driven primitive of it declares what changes it: ${byText(reads.by || {})})` : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(hooked ? { pending: 'drive' } : {}) });
+    }
+  }
+  // Every game-ending lose that is wired (the owner's, the core loops'): something in the document produces what it
+  // reads (the component's owner runs, or a primitive provides the event or var); a lose nothing can produce never happens.
+  for (const l of loops) {
+    if (!endsGame(l.loop.lose) || !(l === owner || coreIds?.includes(l.use))) continue;
+    const r = readsOf(l.loop.lose);
+    if (!r) continue;
+    if (r.component) {
+      const owners = ownersOf(registry, r.component);
+      // (Once per component: the win's unowned component, reported above, is the same missing owner.)
+      if (!owners.some(o => used.has(o)) && !problems.some(p => p.code === LOOP_CODES.owner && p.need.component === r.component)) push(LOOP_CODES.loseUnproduced, l, 'systems', `its lose reads the "${r.component}" component, which no primitive of the document runs (owners: ${owners.join(', ') || 'none registered'})`, `add ${owners[0] || `a primitive that owns components.${r.component}`}`, { kind: 'owner', component: r.component, owners });
+    } else if (r.event || r.var) {
+      const what = r.event ? 'event' : 'var', name = /** @type {string} */ (r.event || r.var);
+      if (changesSignal(doc, registry, lg, what, name, used) === false) push(LOOP_CODES.loseUnproduced, l, l.path, `its lose counts the ${what} "${name}", which no primitive of the document produces`, `add a primitive that produces ${what} ${name}`, { kind: what, [what]: name });
     }
   }
   // The play spec's AI opponent plays against the player in the core loop: a core loop that declares AI participants
@@ -438,6 +460,34 @@ function pendingOf(l, end) {
 function seatOverride(doc, registry, id, C) {
   const rules = spawnRules(doc, registry).filter(r => prop(r, 'archetype') === id);
   return rules.length > 0 && rules.every(r => prop(prop(r, 'components'), C) !== undefined);
+}
+
+/** Does a card run effects written in its params (an effects param, or an effects field of a list param), its loop's win and lose wiring left out? @param {any} card */
+export function runsEffects(card) {
+  const loop = cardLoop(card);
+  const wiring = [loop?.win?.param, loop?.lose?.param].filter(isStr);
+  return Object.entries(card?.params || {}).some(([k, spec]) => (spec?.type === 'effects' && !wiring.includes(k))
+    || (spec?.type === 'list' && isObj(spec.of) && Object.entries(spec.of.fields || {}).some(([f, fs]) => prop(fs, 'type') === 'effects' && !wiring.includes(`${k}.${f}`))));
+}
+
+/**
+ * Does a card, played by the player, declare a way to change what a loop end reads (its reads.by)? It is player-driven
+ * (its own player verbs, or a space capability it needs while the collection moves the player's body) and provides
+ * one of the actions or events `by` names (any event for '*'), moves the player's body when `by` names movement, or
+ * runs effects from its params when `by` names an effect a primitive of `used` (or the card itself) owns.
+ * @param {RegistryLike} registry @param {any} card @param {import('./loop.js').ReadsBy} by @param {{ logic: LogicLike, used: Iterable<unknown> }} context
+ */
+export function playerChanges(registry, card, by, { logic, used }) {
+  if (!card) return false;
+  const ids = new Set([...used].map(String));
+  const verbs = cardLoop(card)?.verbs || [];
+  const moves = [...ids, card.id].some(id => { const c = registry.get(id)?.card; return isStr(c?.locomotion) && (cardLoop(c)?.verbs || []).length > 0; });
+  if (!verbs.length && !(moves && (card.requires?.capabilities || []).length)) return false;
+  const events = card.provides?.events || [];
+  if ((by.actions || []).some(a => (card.provides?.actions || []).includes(a))) return true;
+  if ((by.events || []).some(e => (e === '*' ? events.length > 0 : events.includes(e)))) return true;
+  if (by.movement && isStr(card.locomotion) && verbs.length) return true;
+  return (by.effects || []).some(e => { const o = logic.owners.effect.get(e); return isStr(o) && (o === card.id || ids.has(o)); }) && runsEffects(card);
 }
 
 /**
