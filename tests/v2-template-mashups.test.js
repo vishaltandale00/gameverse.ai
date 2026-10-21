@@ -252,9 +252,9 @@ function memoryCtx() {
   } };
 }
 const CHESS = { title: 'Pocket Gambit', premise: 'Chess where every capture is a creature battle between the two pieces. Win the battle to take the square.',
-  primary: { name: 'chess', kind: 'game', template: 'board' }, games: [{ name: 'Pokémon', kind: 'game', template: 'creature-battle', relation: 'nested' }], themes: [] };
+  primary: { name: 'chess', kind: 'game', template: 'board' }, games: [{ name: 'Pokémon', kind: 'game', template: 'creature-battle', relation: 'nested' }], themes: [], readings: [], mechanics: [] };
 const SONIC = { title: 'Sonic Racing', premise: 'Sonic races his rivals through a level of loops and pits.',
-  primary: { name: 'Sonic the Hedgehog', kind: 'game', template: 'platformer' }, games: [{ name: 'Racing', kind: 'genre', template: 'race', relation: 'union' }], themes: [] };
+  primary: { name: 'Sonic the Hedgehog', kind: 'game', template: 'platformer' }, games: [{ name: 'Racing', kind: 'genre', template: 'race', relation: 'union' }], themes: [], readings: [], mechanics: [] };
 
 test('create "chess but with pokemon": board primary, creature-battle nested, species skinned; publishes in at most 6 calls and 2 rounds', async () => {
   const t0 = performance.now();

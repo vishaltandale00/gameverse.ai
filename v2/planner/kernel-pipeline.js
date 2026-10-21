@@ -29,7 +29,10 @@ import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
-import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn } from './templates.js';
+import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
+import { EXTEND_VERSION, extendDocument, paramsForm, recordingWriter, unengaged } from './extend.js';
+import { cardLoop } from './loop.js';
+import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -108,10 +111,16 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
    * loop check -> first playable -> the publish gate -> publish. Templates are complete verified documents: a check
    * failing after composition is a template defect and the build fails with its problems (never repaired around,
    * never substituted). A pick naming a game or genre no template is routes the whole idea to the step path.
-   * Timings are measured (null when not): pickMs, contentMs, composeMs (code composing the pick into a document,
-   * content applied and checked, excluding model calls and the gate), gateMs, requestToFirstPlayableMs; modelCalls
-   * counts every call, modelRounds the sequential ones (the pick's calls, then the most calls any parallel content
-   * form made).
+   * Readings: a pick that names a concept the idea can mean two ways (templates.js `readings`) stops with a question
+   * (409 'needs_answer': the questions and the pick are kept as the checkpoint 'question'); the job that carries the
+   * answers and that pick (job.pick, held to the same checks) builds the reading chosen, asking nothing again.
+   * Extensions: the mechanics the pick names that the composed templates do not give are added onto the composed
+   * document (extend.js), each checked, their params written in the content round; a mechanic nothing covers fails the
+   * build naming it (422 'extension_missing') before any content is asked.
+   * Timings are measured (null when not): pickMs, extendMs, contentMs, composeMs (code composing the pick into a
+   * document, content applied and checked, excluding model calls, the extension steps and the gate), gateMs,
+   * requestToFirstPlayableMs; modelCalls counts every call, modelRounds the sequential ones (the pick's calls, the
+   * extension steps' questions, then the most calls any parallel content form made).
    * @param {JobSpec} job @param {JobContext} ctx
    * @param {{ registry: RegistryLike, logic: LogicLike, seed: number | string, prompt: string, t0: number, timings: Timings }} run
    * @returns {Promise<{ path: 'template', result: Record<string, unknown> } | { path: 'step', pick: { pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } }>}
@@ -124,23 +133,42 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const calls = [];
     const clock = { codeMs: 0 };
     ctx.stage('picking_templates', { model: writer.model, templates: templates.map(t => t.id) });
-    let t = performance.now();
-    const picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
-    timings.pickMs = ms(t);
-    clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
-    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls });
-    if (picked.stepPath.length) {
-      const why = `no template is ${picked.stepPath.map(n => `'${n}'`).join(', ')}: the step path builds the whole idea`;
-      ctx.stage('templates_picked', { ms: timings.pickMs, path: 'step', why, stepPath: picked.stepPath, calls: calls.length });
-      return { path: 'step', pick: { pick: picked.pick, stepPath: picked.stepPath, why, calls: calls.length } };
-    }
     const fail = (/** @type {string} */ code, /** @type {string} */ stage, /** @type {Array<{ code?: unknown, path?: unknown, message?: unknown }>} */ problems) => {
       checkpoint('templateFailure', { stage, code, problems: problems.slice(0, 20), calls });
       ctx.stage('not_buildable', { path: 'template', stage, code, missing: problems.slice(0, 8).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`) });
       return Object.assign(Error(`This isn't the game you asked for yet: the template path failed at ${stage}: ${problems.slice(0, 4).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`).join('; ')}`), { status: 422, code, report: { path: 'template', stage, problems, calls } });
     };
+    let t = performance.now();
+    // A job answering the pick's question carries that pick (kept by the job that asked): it is held to the pick's
+    // checks like a model answer, and never asked again.
+    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], calls: number }} */
+    let picked;
+    if (job.pick !== undefined) {
+      const pick = narrowPick(job.pick), checked = checkPick(pick, { templates, registry });
+      if (checked.problems.length) throw fail('pick_resume_invalid', 'pick', checked.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
+      picked = { pick, stepPath: checked.stepPath, calls: 0 };
+    } else picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
+    timings.pickMs = ms(t);
+    clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
+    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls });
+    // Never guess between readings: a concept the idea can mean two ways is the player's choice.
+    const read = chooseReading(picked.pick, job.answers || [], { templates, registry });
+    if (read.unanswered.length) {
+      const questions = read.questions.map(({ id, question, options }) => ({ id, question, options }));
+      checkpoint('question', { questions, pick: picked.pick });
+      ctx.stage('question', { questions });
+      throw Object.assign(Error(`Which game did you mean? ${read.unanswered.map(q => `${q.question} ${q.options.map(o => `"${o}"`).join(' or ')}`).join('; ')}`), { status: 409, code: 'needs_answer', report: { path: 'template', stage: 'reading', questions, pick: picked.pick, calls } });
+    }
+    if (!read.pick) throw fail('pick_reading_invalid', 'reading', read.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
+    const pick = read.pick;
+    const stepPath = checkPick(pick, { templates, registry }).stepPath;
+    if (stepPath.length) {
+      const why = `no template is ${stepPath.map(n => `'${n}'`).join(', ')}: the step path builds the whole idea`;
+      ctx.stage('templates_picked', { ms: timings.pickMs, path: 'step', why, stepPath, calls: calls.length });
+      return { path: 'step', pick: { pick, stepPath, why, calls: calls.length } };
+    }
     let tc = performance.now();
-    const composed = composeTemplates(picked.pick, { templates, registry, logic });
+    const composed = composeTemplates(pick, { templates, registry, logic });
     clock.codeMs += performance.now() - tc;
     if (!composed.doc || !composed.template) throw fail(composed.problems[0]?.code ?? 'template_composition_failed', 'composition', composed.problems);
     const template = composed.template;
@@ -154,14 +182,44 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     clock.codeMs += performance.now() - tc;
     if (!base.ok) throw fail(defect, 'preflight', base.errors);
     ctx.stage('templates_picked', { ms: timings.pickMs, path: 'template', templates: used, joins: composed.joins, themes: composed.themes.map(x => x.name), calls: calls.length });
+    // The idea's mechanics the templates do not give, added onto the composed document one by one, each checked.
     t = performance.now();
-    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick: picked.pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts });
+    const before = calls.length;
+    const interactions = [...new Set(templateLoops(composed.parts[0].template, registry).loops.flatMap(l => l.interactions))];
+    const ext = await extendDocument({ doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+      header: `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`,
+      gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail) });
+    timings.extendMs = pick.mechanics.length ? ms(t) : null;
+    const extensionCalls = calls.length - before;
+    checkpoint('extensions', { coverage: ext.coverage, added: ext.added });
+    if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}` })));
+    ({ registry, logic } = ext);
+    const extended = ext.doc;
+    const extUses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
+    /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
+    const paramForms = [];
+    for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
+    t = performance.now();
+    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
+      extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })) });
     timings.contentMs = ms(t);
     ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
     // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
-    // so nothing is engaged, furnished or isolated here.
+    // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
+    // declare (engage.js `only`), and the player must get their verbs.
     tc = performance.now();
-    const pre = preflight(content.doc, registry, logic);
+    /** @type {Record<string, any>} */
+    let played = content.doc;
+    if (extUses.size) {
+      const unfilled = unengaged(played, [...extUses], { registry, logic });
+      if (unfilled.length) throw fail('extension_unengaged', 'extension', unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })));
+      const engaged = engageDocument(/** @type {Doc} */ (played), registry, logic, { only: extUses });
+      if (!engaged.ok) throw fail('extension_unengaged', 'extension', engaged.errors);
+      played = engaged.doc;
+      const unusable = ext.added.filter(use => { const card = registry.get(use)?.card; return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(played).some(i => i.use === use && instanceVerbs(card, i, played).length > 0); });
+      if (unusable.length) throw fail('extension_unusable', 'extension', unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })));
+    }
+    const pre = preflight(played, registry, logic);
     if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
     const loop = loopProblems(pre.doc, registry, { logic });
     if (loop.length) throw fail(defect, 'loop', loop);
@@ -178,21 +236,21 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.qualityMs = quality ? ms(t) : null;
     timings.firstPlayableBuildMs = fp.ms;
     timings.requestToFirstPlayableMs = ms(t0);
-    const modelCalls = calls.length, modelRounds = picked.calls + content.rounds;
+    const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + content.rounds;
     const doc = fp.doc;
     await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
-    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick: picked.pick, themes: composed.themes, content: content.forms, calls, modelCalls, modelRounds,
-      summary: doc.logline || picked.pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), playtest: v.playtest, quality,
+    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, themes: composed.themes, mechanics: ext.coverage, extensionCalls, content: content.forms, calls, modelCalls, modelRounds,
+      summary: doc.logline || pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), features: v.features ?? null, playtest: v.playtest, quality,
       firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } };
     const provenance = { pipeline: KERNEL_PIPELINE_VERSION, templatePath: TEMPLATE_PATH_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null, code: escalate?.model || null },
-      seed, prompt: job.prompt, answers: job.answers || [], templates: used, pickHash: hashOf(picked.pick), outlineHash: hashOf(doc) };
+      seed, prompt: job.prompt, answers: job.answers || [], templates: used, extend: EXTEND_VERSION, pickHash: hashOf(pick), outlineHash: hashOf(doc) };
     checkpoint('gate', { viable: Boolean(v.viable), viability: v.viability || null, playtest: v.playtest || null, problems: (v.problems || []).slice(0, 20) });
     await ctx.publish({ doc, stage: 'first_playable', report, provenance });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: fp.ms, gateMs: timings.gateMs, path: 'template', modelCalls, modelRounds, pickMs: timings.pickMs, contentMs: timings.contentMs, composeMs: timings.composeMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(v) });
     timings.totalMs = ms(t0);
     ctx.stage('complete', { timings, path: 'template', modelCalls, modelRounds });
-    return { path: 'template', result: { doc, path: 'template', templates: used, pick: picked.pick, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
+    return { path: 'template', result: { doc, path: 'template', templates: used, pick, mechanics: ext.coverage, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
   }
 
   /** @param {JobSpec} job @param {JobContext} ctx */

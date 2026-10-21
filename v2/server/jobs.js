@@ -24,6 +24,8 @@ import { isList, isNum, isStr, obj, objects, str } from '../kernel/guards.js';
  * @property {number} [base] the version a revise starts from
  * @property {number} [seed]
  * @property {Answer[]} [answers]
+ * @property {unknown} [pick] a create job answering the template pick's question: the pick that asked it (from the asking job's
+ *   failure record; untyped until the pipeline checks it like a model answer, templates.js checkPick)
  * @property {string} [experimentId]
  * @property {number} [submittedAt]
  */
@@ -80,6 +82,7 @@ export function jobSpecOf(value) {
     ...(isNum(o.base) ? { base: o.base } : {}),
     ...(isNum(o.seed) ? { seed: o.seed } : {}),
     ...(isList(o.answers) ? { answers: objects(o.answers).map(a => ({ question: str(a.question), answer: str(a.answer) })) } : {}),
+    ...(o.pick !== undefined ? { pick: o.pick } : {}),
     ...(isStr(o.experimentId) ? { experimentId: o.experimentId } : {}),
     ...(isNum(o.submittedAt) ? { submittedAt: o.submittedAt } : {}),
     ...(isNum(o.queuedMs) ? { queuedMs: o.queuedMs } : {}),
