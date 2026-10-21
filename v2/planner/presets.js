@@ -350,6 +350,21 @@ export function wireCore(input, structure, registry) {
   return { doc, wired };
 }
 
+/** A content contract's section as a skin's target: content.archetypes for an archetypes contract, else its content section. @param {import('./content.js').Contract} c */
+const skinTarget = c => (c.need === 'archetypes' ? 'content.archetypes' : c.need === 'section' && /^content\./.test(String(c.at)) ? String(c.at) : null);
+/**
+ * What a skin relation would map, from declarations alone: `to` the first content contract section of the concept
+ * joined into (`owners`, in order: content.archetypes for an archetypes contract, else its content section), `from` the
+ * content sections the joined concept's primitives (`joined`) declare (section contracts) other than `to`. A joined
+ * concept that declares none brings no content (a theme, a setting): `from` is [] and there is nothing to skin.
+ * @param {RegistryLike} registry @param {string[]} owners @param {string[]} joined @returns {{ to: string | null, from: string[] }}
+ */
+export function skinSections(registry, owners, joined) {
+  const to = owners.flatMap(id => contractsOf(registry, id).map(skinTarget)).find(/** @returns {x is string} */ x => typeof x === 'string') ?? null;
+  const from = [...new Set(joined.flatMap(id => contractsOf(registry, id).map(c => (c.need === 'section' ? String(c.at) : ''))))].filter(at => /^content\.[A-Za-z0-9_]+$/.test(at) && at !== to);
+  return { to, from };
+}
+
 /**
  * A skin adapter's maps, from the composition (never the model): `to` is the core loop's content contract section
  * (the owner of the win first: content.archetypes for an archetypes contract, else its section), `from` the first
@@ -363,12 +378,11 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
   /** @type {any[]} */
   const insts = (doc.systems || []).filter((/** @type {any} */ s) => registry.get(s?.use)?.card.adapts?.relation === 'skin');
   if (!insts.length) return [];
-  const sectionOf = (/** @type {import('./content.js').Contract} */ c) => (c.need === 'archetypes' ? 'content.archetypes' : c.need === 'section' && /^content\./.test(String(c.at)) ? String(c.at) : null);
   const owners = [...new Set([st.win?.use, ...st.core].filter(/** @returns {x is string} */ x => typeof x === 'string'))];
-  const owner = owners.find(id => contractsOf(registry, id).some(sectionOf));
+  const owner = owners.find(id => contractsOf(registry, id).some(skinTarget));
   if (!owner) return [];
-  const target = /** @type {import('./content.js').Contract} */ (contractsOf(registry, owner).find(sectionOf));
-  const to = /** @type {string} */ (sectionOf(target));
+  const target = /** @type {import('./content.js').Contract} */ (contractsOf(registry, owner).find(skinTarget));
+  const to = /** @type {string} */ (skinTarget(target));
   const entries = (/** @type {string} */ path) => { const v = path.split('.').reduce((/** @type {any} */ o, k) => o?.[k], doc); return Array.isArray(v) ? v.length : isObj(v) ? Object.keys(v).length : 0; };
   const skinned = new Set(joinedMechanics(decomposition, 'skin')
     .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []));
@@ -928,6 +942,17 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const scaffolded = configureGenerators(doc, registry);
   // Adapter params are structure: a skin maps the source concept's content onto the core loop's contract section.
   const skins = configureSkins(doc, st, decomposition, selection, registry);
+  // A skin the build's steps required whose maps the composition cannot derive is a gap, never an unconfigured
+  // instance (repair would fill its section paths with placeholders): it leaves the document and the build fails with it.
+  /** @type {SystemInstance[]} */
+  const unskinned = skins.length ? [] : doc.systems.filter((/** @type {SystemInstance} */ s) => registry.get(s.use)?.card.adapts?.relation === 'skin' && !list(prop(s.with, 'maps')).length);
+  if (unskinned.length) {
+    doc.systems = doc.systems.filter((/** @type {SystemInstance} */ s) => !unskinned.includes(s));
+    const why = `no content section of the collection with entries maps onto a content contract of the core loop (${st.core.join(', ') || 'none'}): the skin's maps cannot be derived`;
+    const g = { mechanic: 'mashup', description: `needs: skin adapter ${unskinned.map(s => s.use).join(', ')}: ${why}`, importance: 'core', kind: /** @type {const} */ ('adapter'), why };
+    gaps.push(g);
+    if (Array.isArray(selection.gaps)) selection.gaps.push(/** @type {any} */ (g));
+  }
   // Participants are structure: the loop's sides (teams, factions) get their pieces seated on the space.
   const seated = placeParticipants(applySkins(doc, registry), registry);
   // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the

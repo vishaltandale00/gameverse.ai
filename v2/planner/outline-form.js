@@ -112,7 +112,8 @@ export function specSchema(spec, depth = 0, refs = null) {
  */
 export function objectSchema(fields, depth = 0, description, refs = null) {
   const entries = Object.entries(fields || {});
-  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || (f?.type === 'list' && (f.min || 0) > 0) || i < KEEP) : entries;
+  // A field with declared options stays a strict enum slot even in a wide object (never JSON text the model may fill freely).
+  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || (f?.type === 'list' && (f.min || 0) > 0) || (Array.isArray(f?.options) && f.options.length > 0) || i < KEEP) : entries;
   /** @type {Record<string, JsonSchema>} */
   const props = {};
   /** @type {Record<string, Codec>} */
@@ -599,21 +600,25 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     plot: { premise: String(f.premise || skeleton.plot?.premise || '') },
     content: {},
   };
-  const skelSys = new Map((skeleton.systems || []).map(s => [s.use, s]));
+  // The scaffold's instances of each primitive: an adapter may have several (two encounters, two regions), each its own.
+  /** @type {Map<string, Array<Partial<Instance>>>} */
+  const skelSys = new Map();
+  for (const s of skeleton.systems || []) skelSys.set(s.use, [...(skelSys.get(s.use) || []), s]);
   for (const id of systems) {
     const slot = prop(f.systems, formKey(id)) ?? prop(f.systems, id), codec = sysCodecs[id];
     // A primitive without a slot (an adapter the preset configured) takes nothing from the model's reply.
-    const decoded = codec ? decode(prop(slot, 'with'), codec) : undefined, w = isObj(decoded) ? decoded : {};
+    const decoded = codec ? decode(prop(slot, 'with'), codec) : undefined, given = isObj(decoded) ? decoded : {};
     const tune = prop(prop(slot, 'with'), 'tune_json');
-    if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id)?.card.params?.[k]) w[k] = v; }
-    /** @type {Partial<Instance>} */
-    const base = skelSys.get(id) || {};
-    // Spawn-rule params keep what the scaffold had (start spawns are re-derived by engage); the form's spawns are added below.
-    for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
-    // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
-    for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
-    // Instance fields are the scaffold's (an adapter's id names its region or encounter): the form never drops them.
-    out.systems.push({ use: id, ...(typeof base.id === 'string' ? { id: base.id } : {}), ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
+    if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (given[k] === undefined && registry.get(id)?.card.params?.[k]) given[k] = v; }
+    for (const base of skelSys.get(id) || [{}]) {
+      const w = structuredClone(given);
+      // Spawn-rule params keep what the scaffold had (start spawns are re-derived by engage); the form's spawns are added below.
+      for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
+      // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
+      for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
+      // Instance fields are the scaffold's (an adapter's id names its region or encounter): the form never drops them.
+      out.systems.push({ use: id, ...(typeof base.id === 'string' ? { id: base.id } : {}), ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
+    }
   }
   const content = contentFromForm(f, { comps });
   /** @type {Record<string, unknown>[]} */

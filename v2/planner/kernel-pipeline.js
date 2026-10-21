@@ -14,7 +14,7 @@ import { decomposeIdea, decomposeOffline } from './decompose.js';
 import { selectPrimitives } from './select.js';
 import { writeOutline, ensureAgency } from './outline.js';
 import { diagnose, replan, gapRequest, addedBy, experimentsOf, missingText } from './replan.js';
-import { applySkins } from './adapters.js';
+import { applySkins, mashupAdapterProblems } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
@@ -159,6 +159,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: keep, maxIsolations: 0 });
       if (!fp.ok) return { ok: /** @type {const} */ (false), stage: 'first_playable', problems: [...fp.errors, ...fp.problems], doc: engaged.doc, outline, engaged };
       const doc = experiments.length ? /** @type {Doc} */ ({ ...fp.doc, experiments }) : fp.doc;
+      // The mashup relations the build's adapter steps realised are in the document that would publish (every entry
+      // with a relation has its adapter instances), or the build fails with that gap.
+      const lost = mashupAdapterProblems(doc, decomposition, sel, registry);
+      if (lost.length) return { ok: /** @type {const} */ (false), stage: 'mashup', problems: lost, doc, outline, engaged };
       // The publish gate: a playtest agent plays this exact document; nothing may crash and the declared loop must happen.
       const tg = performance.now();
       const base = outline.verification && hashOf(outline.verification.doc ?? null) === hashOf(doc) ? outline.verification
@@ -174,13 +178,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const entry = { attempt: n, systems: [...selection.systems], stage: built.ok ? 'published' : built.stage, problems: built.ok ? [] : built.problems.slice(0, 8).map(p => `${prop(p, 'code')} ${prop(p, 'path') ?? ''}: ${String(prop(p, 'message') ?? '').slice(0, 160)}`) };
       attempts.push(entry);
       if (built.ok) break;
-      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry), opponent: decomposition.core?.opponent ?? null });
-      Object.assign(entry, { diagnoses: diagnoses.map(d => ({ kind: d.kind, mechanic: d.mechanic ?? null, primitive: d.primitive ?? null, codes: d.codes })) });
       const fail = (/** @type {string[]} */ missing) => {
         checkpoint('figure', { attempts, missing });
         ctx.stage('not_buildable', { attempts: attempts.length, missing });
         return Object.assign(Error(`This isn't the game you asked for yet. Tried ${attempts.length} time(s): ${attempts.map(a => `#${a.attempt} ${a.stage}${Array.isArray(a.actions) && a.actions.length ? ` → ${a.actions.map(x => prop(x, 'text')).join(', ')}` : ''}`).join('; ')}. Still missing: ${missing.slice(0, 4).join('; ')}`), { status: 422, code: 'not_buildable', report: { attempts, missing } });
       };
+      // A mashup relation the document lost is the pipeline's own gap: no re-planned pick restores an adapter instance.
+      if (built.stage === 'mashup') throw fail(built.problems.map(p => `gap (adapter): ${String(prop(p, 'message'))}`));
+      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry), opponent: decomposition.core?.opponent ?? null });
+      Object.assign(entry, { diagnoses: diagnoses.map(d => ({ kind: d.kind, mechanic: d.mechanic ?? null, primitive: d.primitive ?? null, codes: d.codes })) });
       if (n >= cfg.replanAttempts) throw fail(missingText(diagnoses));
       const plan = await replan(selection, diagnoses, { registry, decomposition, tried, writer: spec, attempts: cfg.modelAttempts });
       /** @type {Array<{ text: string } & Record<string, unknown>>} */

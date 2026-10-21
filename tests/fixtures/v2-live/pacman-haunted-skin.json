@@ -1,0 +1,170 @@
+{
+ "note": "live \"Pac-Man in a haunted library\" (v2-presets 5ed5399f, 2026-10-21, failed): the haunted library is a setting joined as skin; the build added engine.adapt.skin, whose maps repair filled with 'untitled', and the build died on it",
+ "prompt": "Pac-Man in a haunted library",
+ "seed": 795757736,
+ "decomposition": {
+  "version": "decompose/0.2",
+  "title": "Pac-Man: Haunting at the Library",
+  "premise": "Navigate a maze set in a haunted library, collecting books and scrolls while avoiding ghostly pursuers. Use supernatural power-ups to turn the tables and chase the ghosts away amid eerie, atmospheric visuals and sounds.",
+  "tone": "spooky, nostalgic, atmospheric, thrilling",
+  "concepts": [
+   {
+    "id": "pac_man",
+    "name": "Pac-Man",
+    "quote": "Pac-Man",
+    "kind": "game",
+    "keeps": [
+     "core gameplay loop of navigating mazes",
+     "eating pellets or points",
+     "avoiding or chasing ghosts"
+    ],
+    "loop": "navigate_maze"
+   },
+   {
+    "id": "haunted_library",
+    "name": "haunted library",
+    "quote": "haunted library",
+    "kind": "setting",
+    "keeps": [
+     "theme and environment",
+     "spooky, supernatural atmosphere",
+     "library-related visuals and objects"
+    ]
+   }
+  ],
+  "references": [
+   {
+    "name": "Pac-Man",
+    "kind": "game",
+    "keeps": [
+     "core gameplay loop of navigating mazes",
+     "eating pellets or points",
+     "avoiding or chasing ghosts"
+    ]
+   },
+   {
+    "name": "haunted library",
+    "kind": "setting",
+    "keeps": [
+     "theme and environment",
+     "spooky, supernatural atmosphere",
+     "library-related visuals and objects"
+    ]
+   }
+  ],
+  "mechanics": [
+   {
+    "id": "navigate_maze",
+    "verb": "navigate",
+    "description": "navigate a maze to collect items and avoid enemies",
+    "from": "pac_man",
+    "importance": "core"
+   },
+   {
+    "id": "eat_pellets",
+    "verb": "eat",
+    "description": "eat pellets scattered throughout the maze to score points",
+    "from": "pac_man",
+    "importance": "core"
+   },
+   {
+    "id": "avoid_ghosts",
+    "verb": "avoid",
+    "description": "avoid being caught by ghosts pursuing the player",
+    "from": "pac_man",
+    "importance": "core"
+   },
+   {
+    "id": "chase_ghosts",
+    "verb": "chase",
+    "description": "eat power pellets to become able to chase and temporarily eat ghosts",
+    "from": "pac_man",
+    "importance": "core"
+   },
+   {
+    "id": "emit_spooky_sounds",
+    "verb": "emit",
+    "description": "emit spooky ambient sounds and eerie noises that enhance the haunted atmosphere",
+    "from": "haunted_library",
+    "importance": "flavor"
+   },
+   {
+    "id": "use_library_objects",
+    "verb": "use",
+    "description": "incorporate library-related objects such as bookshelves, ladders, and scrolls as interactive elements in the environment",
+    "from": "haunted_library",
+    "importance": "flavor"
+   },
+   {
+    "id": "create_supernatural_effects",
+    "verb": "create",
+    "description": "create supernatural visual effects like glowing lights, floating pages, and ghostly shadows to enrich the spooky environment",
+    "from": "haunted_library",
+    "importance": "flavor"
+   }
+  ],
+  "spaces": [
+   {
+    "role": "primary",
+    "kind": "tiles-topdown",
+    "description": "The maze of the haunted library where the player navigates, collects items, and avoids ghosts."
+   }
+  ],
+  "views": [
+   "td",
+   "ui"
+  ],
+  "movement": "ground",
+  "core": {
+   "loop": "navigate_maze",
+   "interaction": "avatar-grid",
+   "opponent": "hazards",
+   "win": "collect all the books and scrolls in the haunted library maze",
+   "lose": "the ghost catches the player navigating the library maze",
+   "theme": "haunted library, spooky supernatural atmosphere",
+   "narrative": false,
+   "mashup": [
+    {
+     "relation": "skin",
+     "mechanics": [
+      "navigate_maze",
+      "emit_spooky_sounds",
+      "use_library_objects",
+      "create_supernatural_effects"
+     ],
+     "why": "the haunted library setting skins the primary maze navigation with thematic content and flavor mechanics, enriching the atmosphere without changing the core gam"
+    }
+   ]
+  }
+ },
+ "mapping": {
+  "navigate_maze": [
+   "gameplay.move.grid",
+   "gameplay.collectible",
+   "gameplay.death"
+  ],
+  "eat_pellets": [
+   "gameplay.combat.health"
+  ],
+  "avoid_ghosts": [
+   "gameplay.ai.brain"
+  ],
+  "chase_ghosts": [
+   "gameplay.powerup"
+  ],
+  "emit_spooky_sounds": [],
+  "use_library_objects": [
+   "gameplay.interact"
+  ],
+  "create_supernatural_effects": []
+ },
+ "space": "engine.space.grid",
+ "steps": {
+  "win": [
+   "gameplay.collectible"
+  ],
+  "lose": [
+   "gameplay.death"
+  ]
+ }
+}

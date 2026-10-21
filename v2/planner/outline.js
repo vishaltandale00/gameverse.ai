@@ -613,13 +613,25 @@ function valueAt(form, path) {
 }
 /**
  * The collection is code's: a draft that leaves out a primitive the structure chose (a core loop, an adapter that
- * realises a mashup relation, the win owner) gets the structure's instance back, with its configuration.
+ * realises a mashup relation, the win owner) gets the structure's instance back, with its configuration. Instances are
+ * matched by primitive and instance id: an adapter used twice (two encounters, two regions) keeps each instance.
  * @param {Record<string, unknown>} draft the model's draft (unchecked) @param {unknown} skeleton
  */
 function keepCollection(draft, skeleton) {
   if (!Array.isArray(draft.systems)) return;
-  const have = new Set(draft.systems.map(s => prop(s, 'use')));
-  for (const s of list(prop(skeleton, 'systems'))) if (!have.has(prop(s, 'use'))) draft.systems.push(structuredClone(s));
+  const key = (/** @type {unknown} */ s) => `${prop(s, 'use')}#${typeof prop(s, 'id') === 'string' ? prop(s, 'id') : ''}`;
+  const have = new Set(draft.systems.map(key)), uses = new Set(draft.systems.map(s => prop(s, 'use')));
+  // An instance the scaffold gave an id is matched by it (a draft instance of that primitive the model wrote without an
+  // id is that one: the id is the planner's); one without an id (a plain primitive) by its primitive.
+  for (const s of list(prop(skeleton, 'systems'))) {
+    const id = prop(s, 'id');
+    if (typeof id !== 'string') { if (!uses.has(prop(s, 'use'))) draft.systems.push(structuredClone(s)); continue; }
+    if (have.has(key(s))) continue;
+    const bare = draft.systems.find(x => isObj(x) && x.use === prop(s, 'use') && typeof x.id !== 'string');
+    if (bare) { bare.id = id; if (bare.space === undefined && prop(s, 'space') !== undefined) bare.space = prop(s, 'space'); }
+    else draft.systems.push(structuredClone(s));
+    have.add(key(s));
+  }
 }
 
 /**

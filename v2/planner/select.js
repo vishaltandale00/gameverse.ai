@@ -10,7 +10,7 @@ import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisf
 import { cardLoop, endsGame } from './loop.js';
 import { isAvatar, mashupProblem, mashupSides, unplayedLoops } from './play-spec.js';
 import { askMashup } from './decompose.js';
-import { resolveAdapters } from './adapters.js';
+import { resolveAdapters, keepMashupAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 import { str, messageOf } from '../kernel/guards.js';
 import { buildSelection } from './build.js';
@@ -43,7 +43,7 @@ import { checkComposition } from './compose-check.js';
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
 /**
  * The iterative build as the selection report keeps it: the space step, every mechanic step (candidates, asks, checks,
- * outcome), the content contracts recorded, model calls and time. @typedef {Omit<import('./build.js').BuildResult, 'mapping' | 'systems' | 'adapters' | 'bind' | 'gaps' | 'space'>} BuildReport
+ * outcome), the content contracts recorded, model calls and time. @typedef {Omit<import('./build.js').BuildResult, 'mapping' | 'systems' | 'adapters' | 'bind' | 'mashupAdapters' | 'gaps' | 'space'>} BuildReport
  */
 /** A space kind not offered because no registered generator can furnish what it needs. @typedef {{ use: string, missing: string[], why: string }} ExcludedSpace */
 /** A generator a mechanic named that targets none of the chosen spaces. @typedef {{ id: string, why: string }} DroppedGenerator */
@@ -64,6 +64,8 @@ import { checkComposition } from './compose-check.js';
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
  * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
+ * @property {import('./adapters.js').MashupRealisation[]} [mashupAdapters]  how the build's mashup adapter steps realised each
+ *   core.mashup entry (the instances among `adapters`): every later re-resolution of `adapters` keeps them (adapters.js keepMashupAdapters)
  * @property {number} ms
  */
 
@@ -474,22 +476,25 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
   /** @type {AdapterInstance[]} */
   const adapters = [...(built?.adapters || [])];
+  const mashupAdapters = structuredClone(built?.mashupAdapters || []);
   // Bindings to the chosen spaces (not to adapter regions): adapters are resolved from them, for the whole collection.
   const spaceIds = new Set(spaces.map(s => s.id));
   for (const u of unmet) {
     chosen.delete(u.id);
     // A registered adapter that projects what the space lacks keeps the primitive: its instances (with their config)
-    // replace the selection's and the primitive is bound to the adapter's region (adapters.js resolveAdapters, run on
-    // the whole collection so the adapters already chosen are resolved again with it).
+    // replace the ones resolved for what the spaces lack, and the primitive is bound to the adapter's region
+    // (adapters.js resolveAdapters, run on the whole collection so the adapters already chosen are resolved again with
+    // it). The instances realising the mashup relations (the build's adapter steps) and their bindings are kept.
     /** @type {import('./adapters.js').AdapterResolution | null} */
     let r = null;
     const own = Object.fromEntries(Object.entries(bind).filter(([, s]) => spaceIds.has(s)));
     try { r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind: own }, registry); } catch { r = null; }
     if (r?.verdict === 'compatible-via-adapter') {
       chosen.add(u.id);
+      const kept = keepMashupAdapters(r, { adapters, bind, mashupAdapters });
       for (const k of Object.keys(bind)) delete bind[k];
-      Object.assign(bind, own, r.bind);
-      adapters.splice(0, adapters.length, ...r.adapters);
+      Object.assign(bind, own, kept.bind);
+      adapters.splice(0, adapters.length, ...kept.adapters);
       continue;
     }
     // An adapter projects a primitive onto a space that lacks what it needs; when NO registered space provides it,
@@ -556,7 +561,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), ...(mashupAdapters.length ? { mashupAdapters } : {}), completeness: { locomotion: loco, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}),
     ...(built ? { build: { version: built.version, loop: built.loop, spaceStep: built.spaceStep, steps: built.steps, contracts: built.contracts, calls: built.calls, ms: built.ms } } : {}), ms: Math.round(performance.now() - started),
   };
 }
