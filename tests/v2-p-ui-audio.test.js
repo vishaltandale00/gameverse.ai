@@ -264,7 +264,8 @@ test('(e) preflight rejects bad configs with stable codes', () => {
   assert.ok(codes({ cues: [{ event: 'hit', voice: 'kazoo' }] }).includes('param_option'));
   assert.ok(codes({ cues: [{ voice: 'blip' }] }).includes('param_missing'));
   assert.ok(codes({ cues: [{ event: 'hit', pitch: 9 }] }).includes('param_range'));
-  assert.ok(codes({ music: [{ zone: 'a', layers: [] }] }).includes('audio_music_empty'));
+  // A music entry's layers are declared min: 1: the kernel's param_range reports an empty list (was audio_music_empty).
+  assert.ok(codes({ music: [{ zone: 'a', layers: [] }] }).includes('param_range'));
   assert.ok(codes({ music: [{ zone: 'nowhere' }] }).includes('ref_unknown'));
   assert.ok(codes({ music: [{ mode: 'hypermode' }] }).includes('param_option'));
   assert.ok(codes({ cues: [{ event: 'hit' }, { event: 'hit', voice: 'bell' }] }).includes('audio_cue_duplicate'));

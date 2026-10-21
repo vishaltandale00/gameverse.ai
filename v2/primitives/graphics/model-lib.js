@@ -115,6 +115,24 @@ export function modelsData(fields, { states } = {}) {
  */
 export const docExample = (content, more = {}) => ({ doc: { systems: [], player: { archetype: 'probe' }, content: { archetypes: [{ id: 'probe', name: 'Probe' }], ...content }, ...more } });
 
+/** The fields of a content.items entry the UI cards read (ui-inventory.js, ui-icons.js, ui-hud.js). */
+const ITEM_FIELDS = {
+  kind: { type: 'string', effect: 'weapon, tool, armor, charm, potion, food, key, quest, material, block, ammo, currency...: sorts and picks the icon' },
+  icon: { type: 'string', effect: 'an icon name (ui-icons.js)' },
+  color: { type: 'string', effect: 'the icon color' },
+  desc: { type: 'string', display: true, effect: 'the description a person reads' },
+  rarity: { type: 'string', effect: 'common, uncommon, rare, epic or legendary: the slot frame color' },
+  tags: { type: 'list', of: { type: 'string' } },
+  block: { type: 'ref', to: 'block', effect: 'the content.blocks id it places' },
+};
+/** The card.data declaration of content.items for a card reading `fields` (names of ITEM_FIELDS). @param {string[]} fields */
+export function itemsData(fields) {
+  /** @type {Record<string, unknown>} */
+  const picked = {};
+  for (const f of fields) { const spec = /** @type {Record<string, unknown>} */ (ITEM_FIELDS)[f]; if (!spec) throw new Error(`itemsData: no item field '${f}'`); picked[f] = spec; }
+  return { type: 'list', of: { type: 'object', open: true, fields: picked } };
+}
+
 /** The fields of a content.blocks entry the graphics cards read (material-palette.js, flat-tiles.js, render-tilemap.js). */
 const BLOCK_FIELDS = {
   color: { type: 'string', effect: 'a #hex color (else one is derived from the id)' },
