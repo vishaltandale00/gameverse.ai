@@ -459,7 +459,9 @@ Return the corrected complete form.`;
   if (last?.doc) {
     const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true, protect: keep });
     const fp = isolated.ok ? firstPlayable(isolated.doc, registry, logic, { seed, furnish: false, protect: keep }) : null;
-    if (isolated.ok && fp?.ok) {
+    const loss = isolated.ok && fp?.ok ? coreLossProblems(fp.doc ?? isolated.doc, [...(last.removed || []), ...isolated.removed, ...(fp.removed || [])], selection?.mechanics, keep, last.errors) : [];
+    if (loss.length) { rounds.push({ kind: 'isolate', ok: false }); lastProblems = loss; }
+    else if (isolated.ok && fp?.ok) {
       /** @type {Gate} */
       const g = verify ? await gate(isolated.doc) : { viable: true };
       rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
@@ -468,6 +470,11 @@ Return the corrected complete form.`;
     } else rounds.push({ kind: 'isolate', ok: false });
   }
   // No substitution: the procedural skeleton is a scaffold, never the shipped game. Nothing playable came out.
+  // What the last draft could not keep of the core is named (mechanic, primitive, failing fields), not just the raw errors.
+  if (last?.doc && !lastProblems?.some(p => prop(p, 'code') === 'core_degraded')) {
+    const loss = coreLossProblems(last.doc, last.removed || [], selection?.mechanics, keep, last.errors);
+    if (loss.length) lastProblems = [...loss, ...(lastProblems || last.errors || [])];
+  }
   return { doc: last?.doc || skeleton.doc, ok: false, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || [], errors: lastProblems?.length ? lastProblems : (last?.errors || [{ code: 'no_draft', path: '$', message: 'the model returned no usable outline' }]) };
 }
 
@@ -487,6 +494,30 @@ function keepPlayer(draft, skeleton) {
     if (arch && isObj(content) && (content.archetypes === undefined || Array.isArray(content.archetypes))) (content.archetypes = isList(content.archetypes) ? content.archetypes : /** @type {unknown[]} */ ([])).push(structuredClone(arch));
     else if (arch && !draft.content) draft.content = { archetypes: [structuredClone(arch)] };
   }
+}
+
+/**
+ * What a degraded result (isolated primitives, a fallback structure) lost of the idea: one problem per core primitive
+ * (a core mechanic's, or the play mode's) that was removed or is not in the document, naming the mechanic, the primitive
+ * and the failing fields (the errors that pointed at it). Empty when the core is intact. The game is the idea: a version
+ * missing any of these is never published.
+ * @param {unknown} doc @param {Array<{ use?: unknown, why?: unknown }>} removed @param {unknown} mechanics selection.mechanics
+ * @param {Set<string>} keep coreOf(...) @param {Array<{ path?: string, message?: string }>} failing the errors left on the draft
+ * @returns {Array<{ code: string, path: string, message: string }>}
+ */
+export function coreLossProblems(doc, removed, mechanics, keep, failing = []) {
+  const have = new Set([...list(prop(doc, 'systems')), ...list(prop(doc, 'spaces'))].map(x => String(prop(x, 'use'))));
+  const gone = new Map(removed.filter(r => r.use && keep.has(String(r.use))).map(r => [String(r.use), r.why ? String(r.why) : ""]));
+  /** @type {Array<{ code: string, path: string, message: string }>} */
+  const out = [];
+  for (const id of keep) {
+    if (have.has(id) && !gone.has(id)) continue;
+    const mech = list(mechanics).find(m => list(prop(m, 'primitives')).includes(id));
+    const fields = failing.filter(e => `${e.path ?? ''} ${e.message ?? ''}`.includes(id)).map(e => `${e.path}: ${e.message}`).slice(0, 3);
+    const why = [gone.get(id), ...fields].filter(Boolean).join('; ');
+    out.push({ code: 'core_degraded', path: 'systems', message: `${mech ? `core mechanic "${prop(mech, 'description') ?? prop(mech, 'id')}"` : 'the play mode'} lost primitive ${id} (${gone.has(id) ? 'removed' : 'missing from the document'}${why ? `: ${why}` : ''}); the game is the idea, so it is not published without it` });
+  }
+  return out;
 }
 
 export { seedFrom, isSpace, coreOf };

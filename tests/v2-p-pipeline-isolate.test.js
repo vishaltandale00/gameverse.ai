@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { preflight } from '../v2/kernel/document.js';
 import { firstPlayable, tracingRegistry } from '../v2/planner/first-playable.js';
-import { writeOutline } from '../v2/planner/outline.js';
+import { writeOutline, coreLossProblems } from '../v2/planner/outline.js';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { createWorld } from '../v2/kernel/world.js';
 import { testCatalogue, fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
@@ -90,4 +90,18 @@ test('when the thrower cannot be removed (the space), the error names it, says i
   assert.match(writer.calls[1].user, /\[install_threw\] spaces\[0\]: 'engine\.space\.boom' threw while installing: kaboom/);
   assert.ok(o.ok && o.source === 'fake-writer');
   assert.equal(o.doc.spaces[0].use, 'engine.space.graph');
+});
+
+test('a degraded result that lost a core primitive is named (mechanic, primitive, failing fields) and never intact-core', () => {
+  const mechanics = [{ id: 'm1', description: 'shatter the glass', importance: 'core', primitives: ['gameplay.test.fragile'] }];
+  const keep = new Set(['gameplay.test.fragile']);
+  const intact = doc(['gameplay.test.fragile'], []);
+  assert.deepEqual(coreLossProblems(intact, [], mechanics, keep), []);
+  const dropped = doc([], []);
+  const [p] = coreLossProblems(dropped, [], mechanics, keep, [{ path: 'systems[0]', message: 'gameplay.test.fragile.rate must be a number' }]);
+  assert.equal(p.code, 'core_degraded');
+  assert.match(p.message, /core mechanic "shatter the glass" lost primitive gameplay\.test\.fragile/);
+  assert.match(p.message, /systems\[0\]: gameplay\.test\.fragile\.rate must be a number/);
+  const isolated = coreLossProblems(intact, [{ use: 'gameplay.test.fragile', why: 'threw while installing' }], mechanics, keep);
+  assert.match(isolated[0].message, /removed: threw while installing/);
 });
