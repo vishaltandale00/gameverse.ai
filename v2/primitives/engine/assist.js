@@ -6,6 +6,9 @@
 // options from play (after three deaths in a row, offer or apply help); the
 // `assist` action lets a menu change options the document leaves unlocked.
 const ID = 'engine.assist';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const DEFAULT_OPTIONS = { invincible: false, damage_taken: 1, damage_dealt: 1, game_speed: 1, infinite_stamina: false, aim_assist: 0, skip_combat: false, hints: true, timing_window: 1 };
 const DEFAULT_PRESETS = {
   story: { damage_taken: 0.25, damage_dealt: 2, aim_assist: 0.6, timing_window: 1.6 },
@@ -35,10 +38,10 @@ export default {
     provides: { events: ['assist_changed', 'assist_changed:*', 'difficulty_changed', 'assist_offered'], vars: ['assist.*', 'assist.difficulty'], actions: ['assist'], services: ['assist'] },
     requires: {},
     rules: {
-      assist_option_type: { fields: ['options', 'presets'], message: "every option's value is a number or a boolean, and a preset sets an option to a value of the option's type", example: { options: { hints: 'yes' } } },
+      assist_option_type: { fields: ['options', 'presets'], message: "every option's value is a number or a boolean, and a preset sets an option to a value of the option's type", example: only({ options: { hints: 'yes' } }) },
       assist_option_unknown: { fields: ['presets', 'locked', 'rules[].set'], message: 'presets, locked and rules[].set name options of options' },
       assist_preset_unknown: { fields: ['difficulty', 'rules[].preset'], message: 'difficulty and rules[].preset name a preset of presets (the built-in story, easy, normal, hard when presets is not set)' },
-      assist_range_invalid: { fields: ['ranges'], message: 'a range is [min, max] with min ≤ max', example: { ranges: { damage_taken: [4, 0] } } },
+      assist_range_invalid: { fields: ['ranges'], message: 'a range is [min, max] with min ≤ max', example: only({ ranges: { damage_taken: [4, 0] } }) },
     },
   },
   logic(logic) {

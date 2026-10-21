@@ -8,6 +8,9 @@
 import { isVec, round } from './runtime-lib.js';
 
 const ID = 'engine.replay';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const clean = input => {
   const out = {};
   for (const k of ['actions', 'held', 'axes']) if (input?.[k] && Object.keys(input[k]).length) out[k] = input[k];
@@ -38,8 +41,8 @@ export default {
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'ghost', in: 'ghosts' }],
     rules: {
-      replay_ghost_archetype: { fields: ['ghosts[].archetype', 'ghostArchetype'], message: 'every ghost has an archetype: its own, or ghostArchetype', example: { ghosts: [{ id: 'past', points: [[0, 0]] }] } },
-      replay_points_invalid: { fields: ['ghosts[].points'], message: "every point is a position in the space's coordinates (never null)", example: { ghostArchetype: 'ball', ghosts: [{ id: 'past', points: [[0, 0], null] }] } },
+      replay_ghost_archetype: { fields: ['ghosts[].archetype', 'ghostArchetype'], message: 'every ghost has an archetype: its own, or ghostArchetype', example: only({ ghosts: [{ id: 'past', points: [[0, 0]] }] }) },
+      replay_points_invalid: { fields: ['ghosts[].points'], message: "every point is a position in the space's coordinates (never null)", example: only({ ghostArchetype: 'ball', ghosts: [{ id: 'past', points: [[0, 0], null] }] }) },
     },
   },
   logic(logic) {

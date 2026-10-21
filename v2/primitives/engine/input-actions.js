@@ -10,6 +10,9 @@ import { compile, conflicts, expand, sample, glyph, keyName, deviceOf, PAD_ORDER
 import { ID_PATTERN } from '../../kernel/sections.js';
 
 const ID = 'engine.input.actions';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const EMPTY = () => ({ actions: {}, held: {}, axes: { move: [0, 0], look: [0, 0] } });
 
 export default {
@@ -37,9 +40,9 @@ export default {
     rules: {
       input_verb_invalid: { fields: ['verbs'], message: 'verbs are distinct' },
       input_verb_unknown: { fields: ['bindings', 'shareKeys'], message: 'bindings and shareKeys name verbs of verbs' },
-      input_binding_invalid: { fields: ['bindings'], message: "a verb's binding is a list of key names, or a map of values to key-name lists", example: { bindings: { side: { jump: 'space' } } } },
-      input_key_unknown: { fields: ['bindings'], message: 'key names: letters, digits, f1-f12, space shift ctrl alt tab enter esc backspace up down left right minus equal comma period slash semicolon quote backquote bracketleft bracketright, lmb rmb mmb wheel mouse, pad_a pad_b pad_x pad_y lb rb lt rt select start lstick rstick lstick_press rstick_press dpad dpad_up dpad_down dpad_left dpad_right, wasd arrows, digit ranges like 1-9', example: { bindings: { side: { jump: ['warp_key'] } } } },
-      input_binding_conflict: { fields: ['bindings', 'shareKeys'], message: 'a key of a view is bound to one verb, unless a shareKeys group lists every verb it is bound to', example: { bindings: { td: { jump: ['w'], move: ['wasd'] } } } },
+      input_binding_invalid: { fields: ['bindings'], message: "a verb's binding is a list of key names, or a map of values to key-name lists", example: only({ bindings: { side: { menu: 'esc' } } }) },
+      input_key_unknown: { fields: ['bindings'], message: 'key names: letters, digits, f1-f12, space shift ctrl alt tab enter esc backspace up down left right minus equal comma period slash semicolon quote backquote bracketleft bracketright, lmb rmb mmb wheel mouse, pad_a pad_b pad_x pad_y lb rb lt rt select start lstick rstick lstick_press rstick_press dpad dpad_up dpad_down dpad_left dpad_right, wasd arrows, digit ranges like 1-9', example: only({ bindings: { side: { menu: ['warp_key'] } } }) },
+      input_binding_conflict: { fields: ['bindings', 'shareKeys'], message: 'a key of a view is bound to one verb, unless a shareKeys group lists every verb it is bound to', example: only({ bindings: { td: { menu: ['esc'], look: ['esc'] } } }) },
     },
   },
   validate(config, doc = {}, ctx = null, info = {}) {

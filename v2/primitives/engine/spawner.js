@@ -12,6 +12,9 @@ import { ENTITY_KINDS } from '../../kernel/params.js';
 import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick } from './runtime-lib.js';
 
 const ID = 'engine.spawner';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const pair = (effect, dflt) => ({ type: 'list', of: { type: 'integer', min: 0 }, min: 1, max: 2, default: dflt, effect });
 
 export default {
@@ -63,16 +66,16 @@ export default {
     reads: [],
     defines: [{ kind: 'spawn_rule', in: 'rules' }, { kind: 'spawn_group', in: 'groups' }],
     rules: {
-      spawn_range: { fields: ['rules[].count', 'rules[].groupSize', 'rules[].unique'], message: 'a [min, max] pair has min ≤ max; a unique rule keeps one entity (count at most 1)' },
-      spawn_at_invalid: { fields: ['rules[].at'], message: 'at is a point (a list of numbers), a list of points, or a location id (a string)', example: { rules: [{ id: 'balls', archetype: 'ball', at: true }] } },
-      spawn_release_invalid: { fields: ['rules[].release', 'rules[].telegraph'], message: 'a release has counter, globalOn, idleSec or when; globalOn comes with globalLimits; held spawns are not telegraphed' },
+      spawn_range: { fields: ['rules[].count', 'rules[].groupSize', 'rules[].unique'], message: 'a [min, max] pair has min ≤ max; a unique rule keeps one entity (count at most 1)', example: only({ rules: [{ id: 'balls', archetype: 'ball', count: [3, 1] }] }) },
+      spawn_at_invalid: { fields: ['rules[].at'], message: 'at is a point (a list of numbers), a list of points, or a location id (a string)', example: only({ rules: [{ id: 'balls', archetype: 'ball', at: true }] }) },
+      spawn_release_invalid: { fields: ['rules[].release', 'rules[].telegraph'], message: 'a release has counter, globalOn, idleSec or when; globalOn comes with globalLimits; held spawns are not telegraphed', example: only({ rules: [{ id: 'balls', archetype: 'ball', release: {} }] }) },
     },
   },
   logic(logic) {
     const codes = (kind, fields, message, example) => [{ code: 'spawn_effect_invalid', fields, message, example: { do: kind, ...example } }];
     const where = (e, path, errors) => { if (e.count !== undefined && !(Number.isInteger(e.count) && e.count >= 1 && e.count <= 100)) errors.push({ code: 'spawn_effect_invalid', path, message: 'count must be an integer in [1, 100]' }); };
     logic.effect('spawn', {
-      codes: codes('spawn', ['archetype', 'count'], 'spawn names an archetype; count is an integer in [1, 100]', { count: 2 }),
+      codes: codes('spawn', ['archetype', 'count'], 'spawn names an archetype; count is an integer in [1, 100]', { archetype: 'ball', count: 200 }),
       refs: e => [['archetype', e.archetype], ...(e.zone ? [['zone', e.zone]] : [])],
       check: (e, path, errors) => { if (typeof e.archetype !== 'string') errors.push({ code: 'spawn_effect_invalid', path, message: 'spawn needs an archetype' }); where(e, path, errors); },
       run: (e, rt, c) => rt.service('spawner').spawn(e, c),
@@ -83,10 +86,11 @@ export default {
       check: (e, path, errors) => { if (e.who === undefined && e.archetype === undefined && e.rule === undefined) errors.push({ code: 'spawn_effect_invalid', path, message: 'despawn needs who, archetype or rule' }); },
       run: (e, rt, c) => rt.service('spawner').despawn(e, c),
     });
+    const ruleRef = e => (typeof e.rule === 'string' ? [['spawn_rule', e.rule]] : []);
     const rule = (e, path, errors) => { if (typeof e.rule !== 'string') errors.push({ code: 'spawn_effect_invalid', path, message: `${e.do} needs a rule id` }); };
-    logic.effect('reset_spawner', { codes: codes('reset_spawner', ['rule'], 'rule is a spawn rule id', {}), refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').reset(e.rule) });
-    logic.effect('rehold', { codes: codes('rehold', ['rule'], 'rule is a spawn rule id', {}), refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').rehold(e.rule, { global: e.global }) });
-    logic.effect('release', { codes: codes('release', ['rule'], 'rule is a spawn rule id', {}), refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').release(e.rule) });
+    logic.effect('reset_spawner', { codes: codes('reset_spawner', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').reset(e.rule) });
+    logic.effect('rehold', { codes: codes('rehold', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').rehold(e.rule, { global: e.global }) });
+    logic.effect('release', { codes: codes('release', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').release(e.rule) });
     logic.predicate('held', { test: (p, rt, c) => Boolean(rt.resolve(p.held, c)?.components.spawner?.held) });
   },
   validate(config) {

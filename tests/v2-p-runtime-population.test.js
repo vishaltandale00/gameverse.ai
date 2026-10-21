@@ -172,7 +172,7 @@ test('preflight rejects bad spawner and portal configs with stable codes', () =>
   ]);
   bad.plot = { storyboard: { acts: [] } };
   const c = codes(bad);
-  for (const code of ['spawn_rule_duplicate', 'spawn_range', 'spawn_group_unknown', 'spawn_release_invalid', 'ref_unknown', 'portal_duplicate', 'portal_endpoint', 'portal_gate_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['id_duplicate', 'spawn_range', 'spawn_release_invalid', 'ref_unknown', 'portal_endpoint', 'portal_gate_invalid']) assert.ok(c.includes(code), code);
 });
 
 test('every engine.spawner/portal instance in v2/games has valid params', () => {

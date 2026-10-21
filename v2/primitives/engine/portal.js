@@ -11,6 +11,9 @@
 import { frames, inRegion, isVec, checkFx } from './runtime-lib.js';
 
 const ID = 'engine.portal';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const TRANSITION_SEC = { cut: 0, fade: 0.5, elevator: 1.5, load: 1 };
 const end = { space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json', effect: 'position in the space\'s coordinates' } };
 
@@ -45,17 +48,17 @@ export default {
     defines: [{ kind: 'portal', in: 'portals' }],
     rules: {
       portal_endpoint: { fields: ['portals[].from', 'portals[].to', 'portals[].oneWay'], message: 'from has at or zone; to has at, zone or space; a zone given with a space is a zone of that space; a two-way portal (oneWay false) has a to at or zone' },
-      portal_gate_invalid: { fields: ['portals[].gate'], message: 'gate is a plot.gate id (a string) or a predicate (an object)', example: { portals: [{ id: 'door', from: { at: [0, 0] }, to: { at: [1, 1] }, gate: 5 }] } },
+      portal_gate_invalid: { fields: ['portals[].gate'], message: 'gate is a plot.gate id (a string) or a predicate (an object)', example: only({ portals: [{ id: 'door', from: { at: [0, 0] }, to: { at: [1, 1] }, gate: 5 }] }) },
     },
   },
   logic(logic) {
     logic.effect('use_portal', {
-      refs: e => [['portal', e.portal]],
+      refs: e => (typeof e.portal === 'string' ? [['portal', e.portal]] : []),
       codes: [{ code: 'portal_effect_invalid', fields: ['portal'], message: 'portal is a portal id', example: { do: 'use_portal' } }],
       check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'use_portal needs a portal id' }); },
       run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) rt.service('portals').use(e.portal, who, { force: Boolean(e.force), reverse: Boolean(e.reverse) }); },
     });
-    const lock = locked => ({ refs: e => [['portal', e.portal]], codes: [{ code: 'portal_effect_invalid', fields: ['portal'], message: 'portal is a portal id', example: { do: locked ? 'lock_portal' : 'unlock_portal' } }], check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'needs a portal id' }); }, run: (e, rt) => { rt.store(ID).locked ??= {}; rt.store(ID).locked[e.portal] = locked; } });
+    const lock = locked => ({ refs: e => (typeof e.portal === 'string' ? [['portal', e.portal]] : []), codes: [{ code: 'portal_effect_invalid', fields: ['portal'], message: 'portal is a portal id', example: { do: locked ? 'lock_portal' : 'unlock_portal' } }], check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'needs a portal id' }); }, run: (e, rt) => { rt.store(ID).locked ??= {}; rt.store(ID).locked[e.portal] = locked; } });
     logic.effect('lock_portal', lock(true));
     logic.effect('unlock_portal', lock(false));
     logic.predicate('portal_open', { refs: p => [['portal', p.portal_open]], test: (p, rt, c) => rt.service('portals').usable(p.portal_open, rt.resolve(p.who, c)).ok });
