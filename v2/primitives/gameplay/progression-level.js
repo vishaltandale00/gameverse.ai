@@ -49,10 +49,16 @@ export default {
     },
     provides: { events: ['xp_gained', 'level_up', 'stat_changed'], vars: ['level', 'xp', 'xp.next', 'points', 'stat.*'], actions: ['allocate'] },
     reads: [],
+    defines: [{ kind: 'level_stat', in: 'stats' }],
+    rules: {
+      level_curve_table: { fields: ['curve.kind', 'curve.table'], message: 'a table curve lists the XP per level in curve.table' },
+      level_start: { fields: ['start', 'maxLevel'], message: 'start is at most maxLevel' },
+      level_trigger: { fields: ['onLevel[].level', 'onLevel[].every'], message: 'an onLevel entry has level or every', example: { doc: { systems: [{ use: ID, with: { onLevel: [{ do: [] }] } }] } } },
+    },
   },
   logic(logic) {
     logic.predicate('level', { test: (p, rt, c) => { const e = rt.resolve(p.level === true ? undefined : p.level, c); return compare(e ? recordOf(rt, e.id).level : 0, p); } });
-    logic.effect('give_xp', { check: (e, path, errs) => { if (!Number.isFinite(e.amount)) errs.push({ code: 'xp_amount', path: `${path}.amount`, message: 'give_xp needs a numeric amount' }); },
+    logic.effect('give_xp', { codes: [{ code: 'xp_amount', fields: ['amount'], message: 'amount is a number', example: { do: 'give_xp' } }], check: (e, path, errs) => { if (!Number.isFinite(e.amount)) errs.push({ code: 'xp_amount', path: `${path}.amount`, message: 'give_xp needs a numeric amount' }); },
       run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) gain(rt, who.id, e.amount, 'effect'); } });
     logic.effect('add_stat', { run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) addStat(rt, who.id, e.stat, e.delta ?? 1, Boolean(e.free)); } });
     logic.effect('set_level', { run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (!who) return; const r = recordOf(rt, who.id), cfg = rt.caches.levelCfg; r.level = Math.max(1, Math.min(cfg.maxLevel, e.level)); r.xp = 0; publish(rt, who.id); } });
@@ -60,9 +66,7 @@ export default {
   validate(config) {
     const errors = [];
     if (config.curve.kind === 'table' && !(config.curve.table?.length)) errors.push({ code: 'level_curve_table', path: 'curve.table', message: 'a table curve needs XP per level' });
-    if (config.start > config.maxLevel) errors.push({ code: 'param_range', path: 'start', message: 'start level above maxLevel' });
-    const ids = new Set();
-    config.stats.forEach((s, i) => { if (ids.has(s.id)) errors.push({ code: 'stat_duplicate', path: `stats[${i}].id`, message: `duplicate stat '${s.id}'` }); ids.add(s.id); });
+    if (config.start > config.maxLevel) errors.push({ code: 'level_start', path: 'start', message: 'start level above maxLevel' });
     config.onLevel.forEach((o, i) => { if (o.level === undefined && o.every === undefined) errors.push({ code: 'level_trigger', path: `onLevel[${i}]`, message: 'needs level or every' }); });
     return errors;
   },

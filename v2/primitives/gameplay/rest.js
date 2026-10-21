@@ -1,7 +1,7 @@
 // Rest: sleep, wait or meditate at beds, benches and campfires. Resting skips
 // time (through engine.time's skip_time when present, else the time.hour /
 // time.day vars), heals, refills pools, can reset ambient enemies and saves.
-// Entities with a `rest` component (true | { hours?, skipTo?, heal? }) rest the
+// Entities with a `rest` component ({ hours?, skipTo?, heal? }; {} for the defaults) rest the
 // player when used through gameplay.interact; the `rest` effect does it from plot.
 import { restoreAll, runIf, whoKey, hostile, dist } from './items-lib.js';
 
@@ -18,7 +18,7 @@ export default {
       healPerHour: { type: 'number', default: 0, min: 0, max: 10000, unit: 'hp/h', effect: 'healing per hour slept when healFull is false' },
       skipTo: { type: 'string', default: '', effect: "named time to wake at (a key of `times`); '' uses `hours`" },
       hours: { type: 'number', default: 8, min: 0, max: 240, unit: 'h', effect: 'hours slept when no skipTo applies' },
-      times: { type: 'object', open: true, default: { dawn: 6, morning: 8, noon: 12, dusk: 18, evening: 19, night: 21, midnight: 0 }, fields: {}, effect: 'named wake times → hour of day' },
+      times: { type: 'object', default: { dawn: 6, morning: 8, noon: 12, dusk: 18, evening: 19, night: 21, midnight: 0 }, values: { type: 'number', min: 0, max: 23.99, unit: 'h', effect: 'hour of day' }, effect: 'named wake times → hour of day' },
       safeRequired: { type: 'boolean', default: false, effect: 'refuse to rest while a hostile is within safeRadius' },
       safeRadius: { type: 'number', default: 12, min: 0, max: 500, unit: 'space units', effect: 'radius checked for hostiles (archetype kind enemy|boss or components.hostile)' },
       respawnsEnemies: { type: 'boolean', default: false, effect: 'resting emits respawn_enemies for spawners' },
@@ -27,12 +27,16 @@ export default {
     provides: { events: ['rested', 'rest_denied', 'respawn_enemies'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    components: { rest: { type: 'object', effect: 'using this entity (gameplay.interact) rests the player; {} rests with the params', fields: {
+      hours: { type: 'number', min: 0, max: 240, unit: 'h', effect: 'hours slept here' },
+      skipTo: { type: 'string', effect: 'named wake time here (a key of times)' },
+      heal: { type: 'boolean', effect: 'resting here heals fully (overrides healFull)' },
+    } } },
+    rules: { rest_skip_to: { fields: ['skipTo', 'times'], message: "skipTo is '' or a key of times" } },
   },
-  validate(config, doc, ctx, inst = {}) {
-    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
+  validate(config) {
     const errors = [];
-    if (config.skipTo && !(config.skipTo in config.times)) errors.push({ code: 'rest_invalid', path: P, message: `with.skipTo '${config.skipTo}' is not a key of times`, hint: Object.keys(config.times).join(', ') });
-    for (const [k, h] of Object.entries(config.times)) if (!(Number.isFinite(h) && h >= 0 && h < 24)) errors.push({ code: 'rest_invalid', path: P, message: `with.times.${k}: hours must be in [0, 24)` });
+    if (config.skipTo && !(config.skipTo in config.times)) errors.push({ code: 'rest_skip_to', path: 'with.skipTo', message: `skipTo '${config.skipTo}' is not a key of times`, hint: Object.keys(config.times).join(', ') });
     return errors;
   },
   logic(logic) {
@@ -70,8 +74,7 @@ export default {
     rt.caches.restRun = rest;
     rt.on('interacted', d => {
       const t = rt.entity(d.target), c = t?.components.rest; if (!c) return;
-      const o = typeof c === 'object' ? c : {};
-      rest(d.who, { hours: o.hours, skipTo: o.skipTo, heal: o.heal, at: t.id });
+      rest(d.who, { hours: c.hours, skipTo: c.skipTo, heal: c.heal, at: t.id });
     });
   },
 };
