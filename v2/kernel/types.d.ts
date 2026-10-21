@@ -41,6 +41,8 @@ export interface ParamSchema {
   open?: boolean;
   /** `object`: the shape of every value under a key `fields` does not name (a map with free keys: a legend's char -> entry). */
   values?: ParamSchema;
+  /** `object`: fields that depend on a discriminating field (`by`, a closed set): `of` maps each of its values to the fields that value adds. */
+  variants?: { by: string; of: Record<string, Params> };
   required?: boolean;
   /** What the param does, for the planner model (also the hint on param_missing). */
   effect?: string;

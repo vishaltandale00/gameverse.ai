@@ -33,8 +33,9 @@ import { isObj, isList, isStr, list, strings, obj as asObject, prop } from '../k
 /**
  * How a form value decodes back to document JSON: as is, JSON text (lenient, strict object/list, effects list),
  * a list of a codec, or an object of field codecs (more: a more_json catch-all; tune: a tune_json catch-all).
- * @typedef {'raw' | 'json' | 'strict' | 'effects' | { list: Codec } | FieldsCodec} Codec
+ * @typedef {'raw' | 'json' | 'strict' | 'effects' | { list: Codec } | FieldsCodec | VariantsCodec} Codec
  */
+/** An object with variants (card `variants`): the fields codec of each value of its discriminating field `by`. @typedef {{ variants: { by: string, of: Record<string, FieldsCodec> } }} VariantsCodec */
 /** @typedef {{ fields: Record<string, Codec>, more: boolean, tune?: boolean }} FieldsCodec */
 /** @typedef {{ id: string, exits: boolean, count: number }} SpaceLayout */
 /**
@@ -174,6 +175,7 @@ export function strictSpec(spec, depth, refs) {
     const inner = strictSpec(s.of, depth + 1, refs);
     return inner ? { schema: { ...arr(inner.schema, describe(s)), ...itemCounts(s) }, codec: { list: inner.codec } } : null;
   }
+  if (t === 'object' && isObj(s.fields) && !s.values && isObj(s.variants)) return variantsSpec(s, depth, refs);
   if (t === 'object' && isObj(s.fields) && !s.values) {
     /** @type {Record<string, JsonSchema>} */
     const props = {};
@@ -187,6 +189,29 @@ export function strictSpec(spec, depth, refs) {
     return Object.keys(props).length ? { schema: obj(props, describe(s)), codec: { fields: codecs, more: false } } : null;
   }
   return null;
+}
+
+/**
+ * The strict schema of an object with variants (`variants: { by, of: { <value>: fields } }`, KERNEL_API §1): one object
+ * branch per value of its discriminating field, holding the object's fields and that value's, the discriminator fixed to
+ * the value (anyOf). A variant without a strict shape (a required field no form can ask) is not offered; none offered: null.
+ * @param {Spec} s @param {number} depth @param {RefContext | null} refs @returns {{ schema: JsonSchema, codec: Codec } | null}
+ */
+function variantsSpec(s, depth, refs) {
+  const by = prop(s.variants, 'by'), of = prop(s.variants, 'of');
+  if (!isStr(by) || !isObj(of)) return null;
+  /** @type {JsonSchema[]} */
+  const branches = [];
+  /** @type {Record<string, FieldsCodec>} */
+  const codecs = {};
+  for (const [value, fields] of Object.entries(of)) {
+    if (!isObj(fields)) continue;
+    const own = { ...(isObj(s.fields) ? s.fields : {}), ...fields, [by]: { type: 'string', options: [value], required: true } };
+    const one = strictSpec({ ...s, variants: undefined, fields: own }, depth, refs);
+    if (!one || typeof one.codec !== 'object' || !('fields' in one.codec)) continue;
+    branches.push(one.schema); codecs[value] = one.codec;
+  }
+  return branches.length ? { schema: { anyOf: branches, ...(describe(s) ? { description: describe(s) } : {}) }, codec: { variants: { by, of: codecs } } } : null;
 }
 
 /**
@@ -223,6 +248,11 @@ export function decode(value, codec) {
     if (codec === 'effects') return Array.isArray(v) ? v : isObj(v) ? [v] : undefined;
     if (codec === 'strict') return v !== null && typeof v === 'object' ? v : undefined;
     return v === null ? undefined : v;
+  }
+  if (typeof codec === 'object' && 'variants' in codec) {
+    if (!isObj(value)) return undefined;
+    const own = codec.variants.of[String(value[codec.variants.by])];
+    return own ? decode(value, own) : undefined;
   }
   if (typeof codec === 'object' && 'list' in codec) return Array.isArray(value) ? value.map(v => decode(v, codec.list)).filter(v => v !== undefined) : undefined;
   if (typeof codec === 'object' && 'fields' in codec) {
