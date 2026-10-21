@@ -47,6 +47,9 @@ A cohesive engine, not a pile of patches. One architecture spans everything:
    - Incompatibility means "pick or write an adapter", never "swap the world" or "drop the mechanic".
    - Every game concept in an idea brings its own loop; how the idea uses it (nested, union, skin) is decided
      with both loops known.
+   - **Theme is not skin.** A theme or setting ("in a haunted library", "with shopping carts") has no content
+     section of its own: it needs no adapter and only themes the content forms. A skin maps one game concept's
+     content section onto another's contract (Pokémon species as chess pieces).
 4. **Typed and validated end to end. Cards are the type system and the only source of truth.**
    - Every primitive declares, as data, everything about it: params, components, content sections, references,
      closed value sets, ranges, required fields, cross-field rules, what it requires and provides, its loop,
@@ -55,6 +58,10 @@ A cohesive engine, not a pile of patches. One architecture spans everything:
      forms, field-level repair, preflight validation and the composition check. A form can never allow a value a
      validator rejects, because both come from the same schema. A rule enforced in code but not declared on the
      card is a defect.
+   - The kernel owns and declares the base shapes of the document sections (`kernel/sections.js`: archetypes,
+     items, zones…); each card declares the parts it reads (`card.data`) in the same dialect as its params.
+     There is no other source: no constants in forms, no free-JSON fields in any model form.
+   - A primitive's `validate` may only emit problem codes its card declares in `card.rules`.
    - Compositions are checked statically, from declarations alone, before any model call or simulation.
    - Code is strictly type-checked. Everything from outside (model output, stored versions, requests) is untyped
      until validated against the card-derived schemas.
@@ -107,7 +114,8 @@ Its card declares, as data:
 | Declaration | Meaning |
 |---|---|
 | `params` | typed parameters with ranges, closed value sets, references and defaults (defaults are tuning values for params the idea doesn't need to decide, never stand-ins for structure) |
-| `components`, `data`, `content` | the shapes of the components and document sections it reads and writes, with the same types, closed sets and references; the minimum content it needs to be meaningful |
+| `components`, `data`, `content` | the shapes of the components and document sections it reads and writes (over the kernel's base section shapes), with the same types, closed sets and references; the minimum content it needs to be meaningful |
+| `rules` | every problem code its `validate` can emit, with the fields and allowed values, for rules that cannot be plain data (cross-field rules) |
 | `requires` / `provides` / `conflicts` | capabilities, services, primitives, events, vars, actions |
 | `engage` | how the player and AI participants take part (seated in a vehicle, on a side, holding a deck) |
 | `loop` (and `mode`) | for primitives that can carry play: the interactions it serves (a set), player verbs, progress events, `win`/`lose` with what they `read` and what changes it, participants, encounter `outcome`, target services, the bot that plays it |
@@ -134,50 +142,62 @@ One JSON document (`gameverse.v2.game/0.2`) references primitives by id and para
 - plot: characters, story, quests, dialogue, endings — only when the idea has narrative or a chosen primitive declares it needs that section;
 - player — only when the interaction has an avatar.
 
-The document's shape follows the idea's primitive collection, not a template. A board game has a board, pieces,
-sides and turns, and no walking avatar.
+The document's shape follows the templates and primitives chosen for the idea, never one default shape. A board
+game has a board, pieces, sides and turns, and no walking avatar.
 
 Games are **versioned**. Each change produces a new immutable version that is checked like a new game.
 
 ## 5. Generation
 
-Every step is small, and its output is checked before the next step starts. Nothing is one-shot.
+Structure comes from templates and code; the model makes a few small choices and writes content. Every step's
+output is checked before the next starts.
+
+**A template** (`v2/templates/<id>.js`) is a verified document, not a plan:
+`{ id, concept, doc, tune }`. `concept` is the one line the model matches against; `doc` is a complete game
+document (spaces with generators, systems, input bindings, player when it has an avatar, content samples,
+endings); `tune` lists the only params the model may set. Everything else is derived from the cards already in
+`doc` and is never repeated in the template: interaction, opponent and bot from `card.mode`/`card.loop`, win and
+lose wiring, participants, content forms from the content contracts, nesting triggers from `card.loop.involves`,
+encounter outcomes from `card.loop.outcome`, skin maps. Each template is verified once in the suite
+(`tests/v2-templates.test.js`): preflight, the composition check, the loop check, its bot wins through the real
+controls, deterministic replay; and so is every declared nested pair. The kits (`v2/kits/*`) are harvested into
+templates: their samples become template content and their bots already live in `v2/verify/strategies`.
 
 ```
 idea
- → concepts and play spec (model, small strict forms): the concepts the idea names, interaction, opponent,
-     win/lose sentences, theme, narrative, and how the concepts relate (nested | union | skin)
- → templates (the fast path): each concept is matched to a declared template, a pre-verified composition of
-     primitives with its space, world, participants, controls, win/lose and content contracts. One small enum
-     pick per concept, over templates that fit the play spec. Templates for a mashup are composed through the
-     declared adapter for their relation (a race skinned with shopping carts is the race template plus a skin;
-     chess × Pokémon is the board template with the creature-battle template nested on capture). A template is
-     verified once in the test suite (it builds, preflights and its bot wins through its controls), so a
-     template-built game needs no structure checks beyond composing it.
- → selection, iterative (build.js), ONLY for what no template covers: the space first, then one mechanic at a
-     time from the core loop outward.
-     Each step offers only options code has proven valid: cards or minimal bundles (a primitive with its
-     required companions or adapter) that pass the composition check, the card-derived schemas and preflight
-     on the partial document, for the mechanic's interaction context. The model picks one or says none fits.
-     After every pick: requirements, composition check, adapters, loop check. Then the explicit steps: win,
-     lose, AI drivers, coverage (what lets play change what the win reads), the world (generator and size),
-     and the mashup adapters. "None fits" is a gap for the gap layer, never a silent substitute.
- → gap layer: writes a missing primitive or adapter (model-written code), gated by its tests and the playtest.
- → preset (deterministic, instant): builds and wires exactly what selection chose: spaces, world, systems,
-     participants and sides, win/lose wiring, input. It never picks a primitive itself.
- → content (model, small strict forms derived from card schemas, parallel where independent): themed cast,
-     species, pieces, places, story when narrative, filled into the chosen primitives' contracts
- → repair (field-level): only the failing fields go back to the model, with the allowed values; a form the
-     default model fails twice goes to a stronger model for that form only
+ → template pick (1 model call, strict form): title, premise, and the concepts the idea names, each with
+     kind (game | genre | theme | setting | character), template (enum of template ids, or 'none') and relation
+     (primary | nested | union | theme). Code checks: exactly one primary; nested only onto a primary whose
+     loop declares an entry event (card.loop.involves); a game or genre concept with 'none' goes to the
+     step path. The chosen templates' declarations ARE the play spec; nothing is asked twice.
+ → composition (code, instant): the primary template's document; theme: no adapter, the theme goes to the
+     content forms; nested: the inner template appended (prefixed ids) with engine.adapt.nested wired from
+     declarations, plus engine.adapt.skin when the inner concept's content maps onto an outer contract; union:
+     both on one space only if the composition check passes, else the build fails with the adapter needed.
+ → content (model, parallel strict forms, one per content contract section, derived from card schemas):
+     themed cast, pieces, species, places, tuning of the `tune` params; story only when a chosen primitive
+     declares it
+ → repair (field-level, parallel): only the failing fields go back, with the allowed values; a form the default
+     model fails twice goes to a stronger model for that form only
  → playtest gate (§6) → publish a version
 ```
 
+Target for an idea whose concepts all have templates: at most 6 model calls in 2 sequential rounds (pick, then
+content), structure in milliseconds, first playable in seconds. Measured per build with the pipeline's stage
+timings plus call and round counts.
+
+**The step path** is only for a game or genre concept no template covers. It runs time-boxed and its use is
+reported: iterative selection (`build.js`), the space first, then one mechanic at a time, offering only options
+code has proven valid by declarations (never by text overlap), with the composition and loop checks after every
+pick; "none fits" goes to the gap layer, which writes the missing primitive or adapter (model-written code, gated
+by its tests and the playtest; `V2_GAPS=auto`). What the step path builds well becomes a new template.
+
 What writes what:
-- **The model writes only:** its choices among checked options, the play spec, themed content, tuning, and
-  revision ops.
+- **The model writes only:** its choices among checked options (templates, relations), themed content, tuning
+  of declared `tune` params, revision ops, and gap-layer code.
 - **Code writes:** structure, wiring, worlds, participants, endings, input, every id and binding.
-- **A retry** diagnoses which step's output is wrong and redoes that step and what depends on it, keeping
-  everything else.
+- **A retry** redoes only the failing form's fields or the failing step, keeping everything else.
+- **No post-publish passes** add content the declarations didn't ask for.
 
 ## 6. Verification
 
@@ -190,7 +210,12 @@ What writes what:
    step offers survives the later stages; every interaction's controls can perform its loops' player actions.
    These are properties over the whole catalogue, so a defect class is found once, everywhere.
 3. **Playtest agents, before publishing:** each loop's bot plays the game headless **through its real controls**
-   (the input primitive and the host's input mapping, the same path a person uses). The gate requires:
+   (a headless input driver feeding the input primitive and the host's input mapping exactly as `v2/web/player.js`
+   does, the same path a person uses). `rt.options` are only hints for the bot; every option's actions must be
+   issuable through the controls, and a loop whose player verbs no control can issue fails (`controls_missing`).
+   Controls per interaction come from declarations: input primitives and UI primitives (`graphics.ui.*`) declare
+   the `interactions` they serve and the controls they give (pieces: select a unit, see legal targets, confirm,
+   end turn; menu: choose an option). The gate requires:
    - no crash, NaN state, runaway entities or event storms;
    - the player can act from the start of play;
    - the core loop actually happens (its declared events fire from play);
@@ -222,10 +247,13 @@ What is required:
 - **Don't invent policies, caps, gates or defaults** the user didn't ask for. Ask once if unsure.
 
 Not acceptable, ever:
-- fallbacks, defaults or templates standing in for a decision the idea or the declarations must make;
+- fallbacks or defaults standing in for a decision the idea or the declarations must make; one default
+  template stamped onto every idea;
 - dropping, isolating or swapping a primitive, a mechanic or the world to get past a check;
 - guessing from words in the idea; ranking by text overlap to cut options;
-- a validator rule not declared on the card; a form not derived from the card's schema;
+- a validator rule not declared on the card; a form not derived from the card's schema; a free-JSON field in a
+  model form;
+- many sequential model calls where a template or code decides; asking the model the same thing twice;
 - bots or checks that bypass the controls a person uses;
 - a later stage silently undoing what an earlier stage chose;
 - loosening a check, weakening a test or deleting a test to make something pass;

@@ -4,7 +4,8 @@ Also follow `AGENTS.md` (turnaround, timing and workstream rules).
 
 ## v2 game engine work
 
-Before touching v2, read `v2/ARCHITECTURE.md` in full, then `v2/HANDOFF.md` and `v2/KERNEL_API.md`. The
+Before touching v2, read `v2/ARCHITECTURE.md` in full, then `v2/HANDOFF.md` (current state and the required
+work, in order) and `v2/KERNEL_API.md`. The
 architecture is the specification: when code disagrees with it, change the code. Every rule below comes from it.
 
 ### What the user needs
@@ -37,8 +38,14 @@ fails saying exactly what is missing. Our own mismatches between stages must nev
   don't reliably become playable games.
 - **Integrate as you go.** Work isn't done until it's merged into the working branch, called from the live path,
   proven by the checks, and the server on port 4181 is restarted on it.
-- **Subagents:** small, checked pieces with disjoint files, each integrated and verified before the next. Never
-  leave long unsupervised agents running on the user's asks.
+- **Subagents are allowed and expected.** Use Haiku or Sonnet for searches, audits and mechanical work, Opus for
+  design-heavy implementation, and Fable for design consults. Rules:
+  - give each one a small, checked piece of work with disjoint files, in its own worktree;
+  - every brief cites `v2/ARCHITECTURE.md`, states the done criterion, and forbids fallbacks, workarounds,
+    per-game fixes, weakened tests, benchmarks and live model calls;
+  - read each result, check its diff against the architecture, run its checks, then merge it before starting work
+    that depends on it;
+  - stop agents whose work drifts; never leave agents running or worktrees and branches behind at the end.
 - **Repository hygiene:** remove worktrees and branches once merged; never leave work unmerged without saying
   where it is.
 - **Don't invent** policies, caps, gates or defaults. Ask once if a decision is genuinely the user's.
