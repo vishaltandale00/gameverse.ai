@@ -148,7 +148,7 @@ export function onEvents(rt, patterns, fn) {
   if (wild.length) rt.on('*', (ev, rt) => { if (wild.some(p => eventMatch(p, ev.name))) { const { name, ...data } = ev; fn(name, data, rt); } });
 }
 
-/** A world position for a zone: doc zone `at`, `center`, `rect` [x0,y0,x1,y1] or `box` [[min],[max]]. */
+/** A world position for a zone: doc zone `at`, `center`, `rect` [x0,y0,x1,y1], `box` [[min],[max]] or `range` [p0,p1) (with `lanes`). */
 export function zonePoint(rt, spaceId, zoneId) {
   const z = rt.doc.spaces?.find(s => s.id === spaceId)?.zones?.find(q => q.id === zoneId);
   if (!z) return null;
@@ -156,6 +156,8 @@ export function zonePoint(rt, spaceId, zoneId) {
   if (Array.isArray(z.center)) return v3(z.center);
   if (Array.isArray(z.rect)) return [Math.floor((z.rect[0] + z.rect[2] - 1) / 2), Math.floor((z.rect[1] + z.rect[3] - 1) / 2), 0];
   if (Array.isArray(z.box)) return mul(add(z.box[0], z.box[1]), 0.5);
+  // A segment of a progress axis (track zones: range [p0, p1), lanes [l0, l1]).
+  if (Array.isArray(z.range)) return [(z.range[0] + z.range[1]) / 2, Array.isArray(z.lanes) ? (z.lanes[0] + z.lanes[1]) / 2 : 0, 0];
   return null;
 }
 
@@ -200,7 +202,7 @@ export function seek(rt, e, goal, opts = {}) {
   if (!continuous(e)) return hop(rt, e, goal, speed, api, nav);
   const arrive = opts.arrive ?? Math.max(0.05, speed * rt.dt);
   const target = v3(goal);
-  if (len(sub(target, e.at)) <= arrive) { nav.path = null; return 'arrived'; }
+  if (len(deltaTo(api, e.at, target)) <= arrive) { nav.path = null; return 'arrived'; }
   const goalKey = r6(target).join(',');
   const stale = nav.goal !== goalKey || (rt.state.time - (nav.at ?? -1e9)) > (opts.repathSec ?? 0.75) || !nav.path;
   if (stale && can(api, 'path') && !opts.fly) {
@@ -218,7 +220,8 @@ export function seek(rt, e, goal, opts = {}) {
   } else if (stale) { nav.goal = goalKey; nav.at = rt.state.time; nav.path = [target]; nav.i = 0; }
   let budget = speed * rt.dt;
   for (let guard = 0; guard < 4 && budget > 1e-9 && nav.path; guard++) {
-    const wp = nav.path[nav.i] ?? target, to = sub(planar(api, e.at, sub(wp, e.at), opts.plane, opts.fly), [0, 0, 0]), d = len(to);
+    // Toward the waypoint the way the space measures it (deltaTo: the short way round a wrapping space).
+    const wp = nav.path[nav.i] ?? target, to = sub(planar(api, e.at, deltaTo(api, e.at, wp), opts.plane, opts.fly), [0, 0, 0]), d = len(to);
     if (d <= 1e-6) { if (nav.i < nav.path.length - 1) { nav.i++; continue; } break; }
     const step = Math.min(budget, d), moved = displace(rt, e, mul(norm(to), step), api);
     budget -= step;

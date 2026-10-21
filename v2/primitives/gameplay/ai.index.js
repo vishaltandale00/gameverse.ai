@@ -13,5 +13,6 @@ import traffic from './ai-traffic.js';
 import crowd from './ai-crowd.js';
 import flock from './ai-flock.js';
 import director from './ai-director.js';
+import seek from './ai-seek.js';
 
-export default [brain, attacks, schedule, motion, formation, versus, traffic, crowd, flock, director, level, abilities, tree, wanted];
+export default [brain, attacks, schedule, motion, formation, versus, traffic, crowd, flock, director, seek, level, abilities, tree, wanted];

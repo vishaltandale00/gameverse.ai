@@ -107,8 +107,9 @@ test('union across concepts: the joined race gets a region of the space kind it 
   assert.equal(region.with.kind, 'engine.space.track', 'the kind gameplay.race declares (card.mode.space)');
   assert.equal(region.space, 'level');
   assert.equal(p.doc.systems.find(s => s.use === 'gameplay.race').space, region.id, 'the joined loop runs in the region');
-  // The race's rivals are AI-controlled participants, and no catalogue primitive declares it drives them (card.drives):
-  // reported for re-planning (the gap layer writes one), never published as a race against rivals that stand still.
-  assert.deepEqual(p.loop.map(x => [x.code, x.need.loop]), [['loop_opponent_inert', 'gameplay.race']]);
+  // The race's rivals are AI-controlled participants: the driver that steers by the target service the race declares
+  // (card.drives.targets, card.mode.targets) joins, so they are never published standing still.
+  assert.deepEqual(p.loop, []);
+  assert.ok(p.doc.systems.some(s => s.use === 'gameplay.ai.seek'), JSON.stringify(p.doc.systems.map(s => s.use)));
   assert.ok(preflight(p.doc, registry, logic).ok);
 });

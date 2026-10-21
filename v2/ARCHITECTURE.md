@@ -80,8 +80,8 @@ Its card declares, as data:
 | `requires` / `provides` / `conflicts` | capabilities, services, primitives, events, vars, actions |
 | `reads`, `content` | document sections it plays with, and the minimum content it needs to be meaningful (enemies placed in zones, species, racers, pieces…) |
 | `engage` | how the player and AI participants take part (seated in a vehicle, on a side, holding a deck) |
-| `drives` | for AI primitives: that it acts for AI-controlled entities (`control: 'ai'`), which ones (entities carrying its `components`, the participants of the `loops` it names, else its own loop's), and what they do (`actions`, `effects`, `events`, `movement`), checked against the loops' losses |
-| `mode` | for loop-owning primitives: loop, interaction (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu), opponent, content needs, win/lose wiring, and the bot that proves it |
+| `drives` | for AI primitives: that it acts for AI-controlled entities (`control: 'ai'`), which ones (entities carrying its `components`, the participants of the `loops` it names, with `targets` those of every loop declaring a target service, else its own loop's), and what they do (`actions`, `effects`, `events`, `movement`), checked against the loops' losses |
+| `mode` | for loop-owning primitives: loop, interaction (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu), opponent, content needs, win/lose wiring, the bot that proves it, and `targets`: the service telling each AI participant where to go next (a race's next checkpoint, the ball) |
 | `spaces`, `provides.content`, `provides.extent` | for generators: which spaces they build, what world content they produce, what area they fill |
 | `needs.content` | for spaces: the world content they must have to be playable |
 | `locomotion`, `medium` | for movement: base or modifier, ground/air/water/track |

@@ -39,7 +39,7 @@ import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
 import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
-import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf, drivesOf, drivesBy, drivesOwn, driversIn } from './loop-check.js';
+import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf, drivesOf, drivesBy, drivesOwn, drivesLoop, driversIn } from './loop-check.js';
 import { spawnRules } from './census.js';
 import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
@@ -603,8 +603,9 @@ export const loopIdea = decomposition => [decomposition.core?.lose, decompositio
  * - a driver of the loop's own participants already in the document whose entities cannot change what the lose reads
  *   gets the declared example entry of its action list whose effects do (need.by.effects);
  * - else a catalogue primitive whose card.drives has the control, whose required capabilities the document's spaces
- *   provide and whose declared behaviour changes what the lose reads (need.by), in this order: one that names the
- *   loop (drives.loops), one whose components the opponents already carry, one whose component's declared example
+ *   provide and whose declared behaviour changes what the lose reads (need.by), in this order: one that serves the
+ *   loop by its declarations (names it in drives.loops, or steers by the target service the loop declares:
+ *   drives.targets, card.loop.targets), one whose components the opponents already carry, one whose component's declared example
  *   (its archetypes contract) goes on them: the loop's AI participants, or for the play spec's opponent the placed
  *   archetypes of the kind that example declares (none placed yet: the content the model writes from the contract).
  *   Ties: the idea's words (relevance), fewer required primitives, id.
@@ -653,12 +654,12 @@ function addDriver(doc, registry, n, idea) {
     const kinds = contract?.kinds?.length ? contract.kinds : [String(prop(contract?.example, 'kind'))];
     return { value, on: n.loop ? targets : targets.filter(a => kinds.includes(String(prop(arches.find(x => x.id === a), 'kind')))) };
   };
-  const satisfiesLoop = (/** @type {string} */ r) => n.loop === r || Boolean(n.loop?.startsWith(r + '.'));
+  const needLoop = n.loop ? cardLoop(registry.get(n.loop)?.card) : null;
   const ranked = registry.cards().map(c => ({ c, d: drivesOf(c) })).filter(({ c, d }) => d && d.control === n.control && !drivesOwn(d)
     && (c.requires?.capabilities || []).every(x => caps.has(x)) && (!by || drivesBy(d, by)))
     .map(({ c, d }) => {
       const dr = /** @type {import('./loop-check.js').Driving} */ (d);
-      const named = dr.loops.some(satisfiesLoop);
+      const named = Boolean(n.loop) && drivesLoop(dr, String(n.loop), needLoop);
       const carried = dr.components.find(C => targets.some(a => carries(a, C)));
       const ex = !named && !carried ? dr.components.map(C => ({ C, ex: exampleFor(c.id, C) })).find(x => x.ex && (x.ex.on.length || !n.loop)) : null;
       const rank = named ? 0 : carried ? 1 : ex ? 2 : -1;
@@ -671,7 +672,7 @@ function addDriver(doc, registry, n, idea) {
   if (!has(best.c.id)) systems.push({ use: best.c.id });
   for (const r of best.c.requires?.primitives || []) { const s = satisfying(registry, r); if (s && !systems.some(x => x?.use === s || (isStr(x?.use) && x.use.startsWith(r + '.')))) systems.push({ use: s }); }
   const why = n.loop ? `the ${n.loop} AI participants` : `the play spec's ${n.control} opponent`;
-  if (best.rank === 0) return `+${best.c.id}: it drives ${why} (card.drives.loops)`;
+  if (best.rank === 0) return `+${best.c.id}: it drives ${why} (${(drivesOf(best.c)?.loops || []).some(r => n.loop === r || Boolean(n.loop?.startsWith(r + '.'))) ? 'card.drives.loops' : `card.drives.targets: the ${n.loop} target service '${needLoop?.targets}'`})`;
   if (best.rank === 1) return `+${best.c.id}: it drives ${why}, which carry its component (card.drives.components)`;
   const { C, ex } = /** @type {{ C: string, ex: { value: unknown, on: string[] } }} */ (best.ex);
   for (const a of arches) if (ex.on.includes(String(a.id)) && prop(a.components, C) === undefined) { const comps = isObj(a.components) ? a.components : {}; comps[C] = structuredClone(ex.value); a.components = comps; }
