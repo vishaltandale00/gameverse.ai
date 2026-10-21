@@ -64,13 +64,13 @@ const MAX_ENUM = 64;       // reference fields with more ids than this stay free
 /** @param {unknown} s @returns {string} */
 const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_').slice(0, 48);
 /** @param {string} [description] @returns {JsonSchema} */
-const str = (description) => ({ type: 'string', ...(description ? { description } : {}) });
+export const str = (description) => ({ type: 'string', ...(description ? { description } : {}) });
 /** @param {JsonSchema} s @returns {JsonSchema} */
-const nul = s => ({ anyOf: [s, { type: 'null' }] });
+export const nul = s => ({ anyOf: [s, { type: 'null' }] });
 /** @param {Record<string, JsonSchema>} properties @param {string} [description] @returns {ObjectSchema} */
-const obj = (properties, description) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties, ...(description ? { description } : {}) });
+export const obj = (properties, description) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties, ...(description ? { description } : {}) });
 /** @param {JsonSchema} items @param {string} [description] @returns {JsonSchema} */
-const arr = (items, description) => ({ type: 'array', items, ...(description ? { description } : {}) });
+export const arr = (items, description) => ({ type: 'array', items, ...(description ? { description } : {}) });
 const JSON_HINT = 'JSON text (a JSON value encoded as a string), or null to leave it unset';
 /** @param {Spec} spec @returns {string | undefined} */
 const describe = spec => [spec.effect, spec.unit && `unit ${spec.unit}`, (spec.min !== undefined || spec.max !== undefined) && `range ${spec.min ?? ''}..${spec.max ?? ''}`, spec.default !== undefined && `default ${JSON.stringify(spec.default).slice(0, 60)}`].filter(Boolean).join('; ').slice(0, 200) || undefined;
@@ -91,7 +91,8 @@ export function specSchema(spec, depth = 0, refs = null) {
   const ids = refs && (plainString(spec) || (t === 'list' && plainString(spec.of))) ? refs.allowed(spec) : null;
   if (ids && t !== 'list') return { schema: idEnum(ids, d), codec: 'raw' };
   if (ids && t === 'list' && depth < MAX_DEPTH) return { schema: arr(idEnum(ids, describe(spec.of || {})), d), codec: { list: 'raw' } };
-  if (t === 'number' || t === 'integer') return { schema: { type: t, ...(d ? { description: d } : {}) }, codec: 'raw' };
+  // The card's range is the slot's range (minimum/maximum), so the form never allows a number preflight rejects.
+  if (t === 'number' || t === 'integer') return { schema: { type: t, ...(typeof spec.min === 'number' ? { minimum: spec.min } : {}), ...(typeof spec.max === 'number' ? { maximum: spec.max } : {}), ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'boolean') return { schema: { type: 'boolean', ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'string' && Array.isArray(spec.reserved) && spec.reserved.length) d = `${d ? d + '; ' : ''}never ${spec.reserved.join(', ')} (reserved)`;
   if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : str(d), codec: 'raw' };

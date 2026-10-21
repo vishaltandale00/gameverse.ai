@@ -16,7 +16,7 @@ import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { testCatalogue, fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, buildAnswer, decomposer, planFrom, stepPick } from './v2-p-pipeline-fixtures.js';
 
 const real = id => PRIMITIVES.find(p => p.id === id);
 const hp = e => e.components.vigor.hp ?? e.components.vigor.max;
@@ -419,6 +419,8 @@ const scripted = (name, mapped, replacements = []) => {
     mechanics: [{ id: 'core', verb: c.description.split(' ')[0], description: c.description, from: '', importance: 'core' }], spaces: [{ role: 'field', kind: 'locations', description: 'a field' }],
     core: { loop: 'core', lose: '', theme: 'test', narrative: false, mashup: [], ...c.core } }));
   return fakeWriter([(req) => {
+    // The template pick: no template is this idea, so the step path builds it (what this test exercises).
+    const picked = stepPick(req); if (picked) return picked;
     const schema = String(req.schema?.name || '');
     const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: [...mapped, ...replacements] } }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives (re-planning, the replacements it would pick)
     if (built) return built;

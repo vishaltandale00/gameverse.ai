@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { diagnose, replan } from '../v2/planner/replan.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { testCatalogue, fakeWriter, broken, picky, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, broken, picky, buildAnswer, decomposer, planFrom, stepPick } from './v2-p-pipeline-fixtures.js';
 
 /** A juggling loop that works: toss is a player verb, every toss is the loop's progress, enough tosses win. */
 const clubs = {
@@ -47,6 +47,8 @@ function scripted({ title = 'Torch Show' } = {}) {
     spaces: [{ role: 'stage', kind: 'none', description: 'a stage' }], movement: 'none',
     core: { loop: 'juggle', interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } }));
   return fakeWriter([(req) => {
+    // The template pick: no template is this idea, so the step path builds it (what this test exercises).
+    const picked = stepPick(req); if (picked) return picked;
     const name = String(req.schema?.name || '');
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
