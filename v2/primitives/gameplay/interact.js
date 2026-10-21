@@ -179,6 +179,7 @@ export default {
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { interact: { type: 'object', fields: {
       prompt: { type: 'string', display: true, effect: 'what the HUD shows: Open, Talk, Pull...' },
+      lockedPrompt: { type: 'string', display: true, effect: 'what the HUD shows while it is locked (when fails or a gate holds it)' },
       kind: { type: 'string', options: KINDS, effect: 'how it is used (default: from its other components)' },
       id: { type: 'string', effect: 'interactable id (used:<id> events)' },
       range: { type: 'number', min: 0, effect: 'reach (default the range param)' }, hold: { type: 'number', min: 0, unit: 's', effect: 'hold this long to use' },

@@ -19,7 +19,8 @@ export const ITEM = Object.freeze({
   stack: { type: 'integer', min: 1, effect: 'items per inventory stack' },
   // Open: several cards read parts of one tool (gameplay.blocks.mine reads its tier).
   tool: { type: 'object', open: true, fields: { kind: { type: 'string', effect: 'tool kind (tool:<kind> token)' }, durability: { type: 'number', min: 0 } }, effect: 'a tool' },
-  ingredient: { type: 'object', fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tokens tag recipe inputs match' } }, effect: 'a crafting ingredient' },
+  // Open: a crafting merge sums the ingredient field its merge.stat names (default effects: effect or resource -> amount).
+  ingredient: { type: 'object', open: true, fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tokens tag recipe inputs match' }, effects: { type: 'object', values: { type: 'number' }, effect: 'merge: effect or resource -> amount the output carries' } }, effect: 'a crafting ingredient' },
   weapon: { type: 'object', fields: {
     damage: { type: 'number', min: 0 }, reach: { type: 'number', min: 0 }, arc: { type: 'number', min: 0, max: 360, unit: 'deg' }, speed: { type: 'number', min: 0, effect: 'swing speed (1 = normal; below 0.2 counts as 0.2)' },
     combo: { type: 'integer', min: 1, effect: 'light hits in its combo' }, stamina: { type: 'number', min: 0 }, type: { type: 'string', effect: 'damage type' }, durability: { type: 'number', min: 0 },

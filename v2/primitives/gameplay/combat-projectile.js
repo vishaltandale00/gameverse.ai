@@ -129,7 +129,7 @@ export default {
       let w = defs.get(id);
       if (!w) { const item = rt.doc.content?.items?.find(i => i.id === id); if (!item?.ranged) return null;
         const r = item.ranged; w = { id, pattern: 'single', speed: r.speed ?? 20, gravity: r.gravity ?? 0, spread: r.spread ?? 0, damage: item.weapon?.damage ?? r.damage ?? 1, type: item.weapon?.type ?? r.type, draw: r.draw ?? 0, minPower: 0.3, rate: r.rate ?? 2, life: r.life ?? 4, radius: r.radius ?? 0.2,
-          ammo: r.ammo ? { from: 'item', item: r.ammo, count: 0, max: 9999, events: [] } : { from: 'unlimited' }, archetype: rt.archetype(r.projectile) ? r.projectile : undefined, tiers: [], maxTier: 1, unitScale: 1, count: 1, span: 30, spin: 12, burstGap: 0.1, laneGap: 1, pierce: 0, bounce: 0, plane: 'auto' }; }
+          ammo: r.ammo ? { from: 'item', item: r.ammo, count: 0, max: 9999, events: [] } : { from: 'unlimited' }, archetype: r.projectile, tiers: [], maxTier: 1, unitScale: 1, count: 1, span: 30, spin: 12, burstGap: 0.1, laneGap: 1, pierce: 0, bounce: 0, plane: 'auto' }; }
       const p = w.preset ? PRESETS[w.preset] : null, us = w.unitScale ?? 1;
       const out = { ...w, ...(p ? { ...p, speed: p.speed * us, radius: p.radius * us, laneGap: us } : {}) };
       if (p) for (const k of ['rate', 'life', 'damage', 'type', 'status', 'ammo', 'archetype', 'blast']) if (w[k] !== undefined && !(k in WEAPON && WEAPON[k].default === w[k])) out[k] = w[k];
