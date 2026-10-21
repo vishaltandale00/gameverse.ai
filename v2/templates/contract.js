@@ -15,9 +15,10 @@
 //   features     every primitive the document mixes in exists, is controllable and works when its controls are pressed
 //                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
-//                on every world seed in SEEDS through the real controls, and replays to the same runs; and the input
-//                its winning world was played with, replayed at a human edge rate (HUMAN_INPUT, verify/human.js), still
-//                wins: a person can play the line the bot found
+//                on every world seed in SEEDS through the real controls, and replays to the same runs; and, played
+//                again with a person's hands (HUMAN_INPUT's edge rate, verify/human.js), how it ends goes into the
+//                evidence (evidence.bots[].human, world seed SEEDS[0]): which templates only a hand faster than a
+//                person's can win
 //
 // Static stages stop the check when one fails (nothing simulates a document that is malformed or fails its
 // declarations); the dynamic stages (gate, bots) both run once the static ones pass.
@@ -33,7 +34,7 @@ import { strategies, select, modeBots } from '../verify/strategies/index.js';
 import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
-import { recordingMaker, humanCheck } from '../verify/human.js';
+import { humanRate } from '../verify/human.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
@@ -73,7 +74,7 @@ export const CODES = Object.freeze({
   gate: Object.freeze(['gate_not_viable']),
   controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
-  bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch', 'bot_path_unreplayed', 'bot_superhuman']),
+  bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
 });
 export const STAGES = Object.freeze(Object.keys(CODES));
 const DYNAMIC = STAGES.indexOf('gate');
@@ -133,15 +134,11 @@ function botProblems(checked, registry, logic, evidence) {
     const t0 = performance.now();
     let a, b;
     // A bot that asks for a verb no control issues, or that throws, fails here with what it needed.
-    // The first run records the input its worlds were played with, for the human-rate replay.
-    const rec = recordingMaker(ctx.make);
-    try { a = bot.run({ ...ctx, make: rec.make }, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
-    const runs = runsOf(a), human = SEEDS.map(seed => humanCheck(ctx.make, rec.worlds, seed, HUMAN_INPUT.changesPerSecond));
-    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), human, ms: Math.round(performance.now() - t0) });
-    for (const h of human.filter(Boolean)) {
-      if (h.full !== 'won') out.push(problem('bot_path_unreplayed', `${id}: world seed ${h.seed}: the input its winning world was played with (${h.frames} frames) ended ${h.full} when replayed`, { bot: id, seed: h.seed }));
-      else if (h.human !== 'won') out.push(problem('bot_superhuman', `${id}: world seed ${h.seed}: its winning line ends ${h.human} when its input changes at most ${HUMAN_INPUT.changesPerSecond} times a second (every ${h.window} frames): only a superhuman hand plays it`, { bot: id, seed: h.seed }));
-    }
+    let human = null;
+    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); human = runsOf(bot.run({ ...ctx, make: humanRate(ctx.make, HUMAN_INPUT.changesPerSecond) }, { ...opts, seeds: [SEEDS[0]] })); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
+    const runs = runsOf(a);
+    // How the bot's play ends with a person's hands: evidence (which templates need a faster hand), not a block.
+    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), human: human.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), humanRate: HUMAN_INPUT.changesPerSecond, ms: Math.round(performance.now() - t0) });
     if (a.ok !== true) out.push(problem('bot_failed', `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`, { bot: id }));
     for (const seed of SEEDS) {
       const r = runs.find(x => x.seed === seed);

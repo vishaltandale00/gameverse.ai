@@ -24,11 +24,15 @@ const keyOf = c => v3(c).join(',');
 const cellIn = (api, at) => (typeof api.cellOf === 'function' ? api.cellOf({ at }).split(',').map(Number) : at.map(v => Math.floor(v)));
 const playerCell = rt => { const p = rt.player(); return p ? v3(cellIn(rt.space(p.space), posOf(rt))) : null; };
 
-/** Press `verb` for real; kept only when it acted on cell `want` (else the state is restored). */
+/** Frames a press is watched for its effect: a person's press is down a few frames and the game may act on any of them. */
+const PRESS_FRAMES = 8;
+/** Press `verb` for real (down, then held while it is watched); kept only when it acted on cell `want` (else the state is restored). */
 function press(rt, verb, want) {
   const snap = rt.snapshot();
-  hold(rt, { actions: { [verb]: true } }, 1);
-  if (rt.state.events.some(e => e.name === DONE[verb] && Array.isArray(e.at) && keyOf(e.at) === keyOf(want))) return true;
+  for (let f = 0; f < PRESS_FRAMES && rt.state.status === 'playing'; f++) {
+    hold(rt, f === 0 ? { actions: { [verb]: true } } : { held: { [verb]: true } }, 1);
+    if (rt.state.events.some(e => e.name === DONE[verb] && Array.isArray(e.at) && keyOf(e.at) === keyOf(want))) return true;
+  }
   rt.restore(snap);
   return false;
 }
