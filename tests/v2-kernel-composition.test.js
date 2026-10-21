@@ -172,3 +172,64 @@ test('example documents are never incompatible on the checks preflight also make
     assert.ok(!r.verdict.startsWith('incompatible'), `${f}: ${r.reason}`);
   }
 });
+
+// card.mode (v2-card-modes) checked with stub cards until the real declarations land.
+const moded = (mode, extra = {}) => ({ id: 'gameplay.stub-mode', card: { intent: 'Stub mechanic with a mode.', params: {
+  onWin: { type: 'effects', default: [] }, onLose: { type: 'effects', default: [] }, sides: { type: 'list', of: { type: 'json' }, default: [] } },
+  provides: {}, requires: {}, mode, ...extra } });
+const INPUTS = { 'engine.input.actions': { interactions: ['realtime', 'turn', 'menu'] }, 'engine.input.motions': { interactions: ['realtime'] } };
+const withMode = (mode, more = [], overlay = {}) => withDeclarations(registry, { ...DECLARED, ...INPUTS, ...overlay }, [moded(mode), ...more]);
+const sel = (use, primitives = ['gameplay.stub-mode'], extra = {}) => ({ spaces: [{ id: 'world', use }], systems: primitives, ...extra });
+
+test('mode: a turn-based card mode on its space, with its content declared and a registered bot, composes', () => {
+  const reg = withMode({ interaction: 'turn', space: 'engine.space.none', needs: { content: ['content.cards'] }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'expectimax' });
+  const r = verdictOf(reg, sel('engine.space.none'));
+  assert.equal(r.checks.mode, 'ok', r.reason);
+  assert.equal(r.verdict, 'compatible', r.reason);
+  assert.ok(r.added.includes('engine.input.actions'), 'the input primitive that supports the interaction is added');
+  assert.ok(r.added.includes('gameplay.cards'), 'the card defining content.cards is added');
+  // The content form must actually hold the section.
+  const empty = verdictOf(reg, sel('engine.space.none'), { content: { 'content.cards': [] } });
+  assert.equal(empty.verdict, 'incompatible');
+  assert.ok(empty.failures.some(f => f.code === 'mode_section_empty'));
+  assert.equal(verdictOf(reg, sel('engine.space.none'), { content: { content: { cards: [{ id: 'zap' }] } } }).checks.mode, 'ok');
+});
+
+test('mode: unregistered bot, unmapped core mechanic and unsupported interaction are decided failures', () => {
+  const bot = verdictOf(withMode({ bot: 'telepathy' }), sel('engine.space.none'));
+  assert.ok(bot.failures.some(f => f.code === 'mode_bot_unregistered'), bot.reason);
+  const core = verdictOf(withMode({}), sel('engine.space.none', ['gameplay.stub-mode'], { mechanics: [{ id: 'duel', importance: 'core', primitives: [] }, { id: 'flavor', importance: 'flavor', primitives: [] }] }));
+  assert.equal(core.verdict, 'incompatible');
+  assert.deepEqual(core.failures.filter(f => f.code === 'core_mechanic_unmapped').map(f => f.unit), ['duel']);
+  const touch = verdictOf(withMode({ interaction: 'gesture' }), sel('engine.space.none'));
+  assert.ok(touch.failures.some(f => f.code === 'mode_input_mismatch'), touch.reason);
+  // Input cards that don't declare card.interactions are a type hole, not a pass.
+  if (!Array.isArray(registry.get('engine.input.actions').card.interactions)) {
+    const live = verdictOf(withDeclarations(registry, DECLARED, [moded({ interaction: 'turn' })]), sel('engine.space.none'));
+    assert.equal(live.checks.mode, 'undeclared');
+    assert.ok(live.holes.some(h => h.code === 'input_interactions_undeclared'));
+  }
+});
+
+test('mode: a mode designed for another space needs an adapter for what the chosen space lacks', () => {
+  const mode = { space: 'engine.space.track' };
+  const r = verdictOf(withMode(mode), sel('engine.space.mesh3d'));
+  assert.equal(r.verdict, 'incompatible-needs-adapter', r.reason);
+  const lacking = r.signature.card.adapts.provides.capabilities;
+  assert.ok(lacking.length && lacking.every(c => !registry.get('engine.space.mesh3d').card.provides.capabilities.includes(c)));
+  const adapter = { id: 'engine.adapt.mesh3d.track', card: { intent: 'Stub: track dynamics on mesh3d.', params: {}, provides: {}, requires: {},
+    adapts: { provides: { capabilities: lacking }, from: { spaces: ['engine.space.mesh3d'] }, projection: 'a spline course over the terrain' } } };
+  const via = verdictOf(withMode(mode, [adapter]), sel('engine.space.mesh3d'));
+  assert.equal(via.verdict, 'compatible-via-adapter', via.reason);
+  assert.deepEqual(via.adapters, ['engine.adapt.mesh3d.track']);
+  assert.equal(verdictOf(withMode(mode), sel('engine.space.track')).checks.mode, 'ok');
+});
+
+test('mode in a document: win must reach an ending and participants must be present', () => {
+  const reg = withMode({ win: { param: 'onWin' }, needs: { participants: { param: 'sides', min: 2 } } });
+  const doc = w => ({ schema: 'gameverse.v2.game/0.2', id: 'm', title: 'M', spaces: [{ id: 'world', use: 'engine.space.none' }], systems: [{ use: 'gameplay.stub-mode', with: w }], plot: { endings: [{ id: 'victory' }] } });
+  const bare = verdictOf(reg, doc({ sides: [{ id: 'a' }] }));
+  assert.deepEqual(bare.failures.map(f => f.code).sort(), ['mode_participants_missing', 'mode_win_unwired']);
+  const wired = verdictOf(reg, doc({ sides: [{ id: 'a' }, { id: 'b' }], onWin: [{ do: 'end_game', ending: 'victory' }] }));
+  assert.equal(wired.checks.mode, 'ok', wired.reason);
+});

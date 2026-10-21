@@ -27,7 +27,7 @@ const m = compositionMatrix(registry, { logic, documented });
 
 const VERDICTS = ['compatible', 'compatible-via-adapter', 'incompatible-needs-adapter', 'incompatible', 'undeclared'];
 const count = list => Object.fromEntries(VERDICTS.map(v => [v, list.filter(r => r.verdict === v).length]));
-const CHECKS = ['capabilities', 'services', 'primitives', 'conflicts', 'content', 'engage', 'data', 'adapter'];
+const CHECKS = ['capabilities', 'services', 'primitives', 'conflicts', 'content', 'engage', 'data', 'adapter', 'mode'];
 const STATES = ['ok', 'fail', 'needs-adapter', 'undeclared'];
 const checkCounts = list => Object.fromEntries(CHECKS.map(c => [c, Object.fromEntries(STATES.map(s => [s, list.filter(r => r.checks[c] === s).length]))]));
 /** One matrix cell: ok, via(adapter), A(missing...), X(reason), ? (holes). */
