@@ -38,7 +38,8 @@
 //              region space of that id (engine.adapt.projection): units bound to the id get the capabilities of
 //              the space kind its with[kind] names, configured by with[config], and the region has `content`
 //              from its host; the host itself gains nothing. Without an id (a compact selection that only asks
-//              whether an adapter exists) its adapts.provides count on the host as above.
+//              whether an adapter exists) its adapts.provides count on the host as above; never in a document,
+//              where an instance without an id defines no region and gives its host nothing (as preflight).
 //              adapts.relation = 'union' | 'nested' | 'skin' names the play-spec mashup relation it realises.
 //              Preflight (v2/kernel/document.js) applies the same rules. planner/adapters.js resolveAdapters
 //              turns an incompatible-needs-adapter verdict into adapter instances (or adapterSignature gaps).
@@ -402,7 +403,9 @@ export function checkComposition(input, registry, opts = {}) {
       if (!isList(c.adapts.provides?.capabilities) && !isList(c.adapts.provides?.content) && !isList(c.adapts.provides?.services)) { hole('adapter', { card: u.use, field: 'card.adapts.provides', code: 'adapter_malformed', message: 'card.adapts needs provides.{capabilities,content,services}' }); continue; }
       if (!adapterFits(c, s)) { fail({ check: 'adapter', code: 'adapter_from_mismatch', unit: u.use, space: u.space, message: `adapter '${u.use}' does not project from '${s.use}'`, hint: `adapts.from: ${JSON.stringify(c.adapts.from || {})}`, adaptable: false }); continue; }
       adapters.push(u.use);
-      if (c.adapts.subspace && typeof u.id === 'string' && spaces.get(u.id)?.projected === u.use) continue; // its region has them
+      // A sub-space adapter's region has them; in a document one without an id defines no region and lends its host
+      // nothing (preflight's rule: the host never gains what a projection could project).
+      if (c.adapts.subspace && (typeof u.id === 'string' ? spaces.get(u.id)?.projected === u.use : isDoc)) continue;
       for (const cap of c.adapts.provides.capabilities || []) s.caps.add(cap);
     }
     /** @param {(c: NonNullable<Card['adapts']>) => string[] | undefined} pick @param {string} item @param {SpaceUnit} space */
