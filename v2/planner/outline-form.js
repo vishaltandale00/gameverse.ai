@@ -201,7 +201,7 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   for (const id of systems) {
     const card = /** @type {RegisteredPrimitive} */ (registry.get(id)).card;
     const slot = paramsSlot(card, { skip: spawnParams(card) });
-    sysProps[id] = obj({ with: slot.schema }, String(card.intent || '').slice(0, 300));
+    sysProps[formKey(id)] = obj({ with: slot.schema }, `${id}: ${String(card.intent || '').slice(0, 300)}`);
     sysCodecs[id] = slot.codec;
   }
   props.systems = obj(sysProps, 'every chosen primitive with its params; null means the default');
@@ -228,6 +228,8 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   return { schema, toDoc, contracts, systems, sections, version: FORM_VERSION };
 }
 
+/** A primitive id as a form property name (strict schemas want plain names: dots become double underscores). @param {string} id */
+export const formKey = id => id.replace(/\./g, '__');
 /** @param {unknown} v */
 const parseJson = v => decode(v, 'json');
 /** @param {unknown} v @returns {unknown[]} */
@@ -383,7 +385,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   };
   const skelSys = new Map((skeleton.systems || []).map(s => [s.use, s]));
   for (const id of systems) {
-    const slot = prop(f.systems, id), codec = sysCodecs[id];
+    const slot = prop(f.systems, formKey(id)) ?? prop(f.systems, id), codec = sysCodecs[id];
     const decoded = decode(prop(slot, 'with'), codec), w = isObj(decoded) ? decoded : {};
     const tune = prop(prop(slot, 'with'), 'tune_json');
     if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id)?.card.params?.[k]) w[k] = v; }
@@ -450,7 +452,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
 export function formPath(path, doc) {
   const p = String(path || '');
   let m;
-  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = prop(listOf(prop(doc, 'systems'))[+m[1]], 'use'); return use ? `systems["${use}"]${m[2]}` : p; }
+  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = prop(listOf(prop(doc, 'systems'))[+m[1]], 'use'); return use ? `systems.${formKey(String(use))}${m[2]}` : p; }
   if ((m = /^spaces\[(\d+)\]\.zones(.*)$/.exec(p))) { const id = prop(listOf(prop(doc, 'spaces'))[+m[1]], 'id'); return id ? `spaces["${id}"].zones${m[2]}` : p; }
   return p.replace(/^content\.archetypes/, 'archetypes').replace(/^content\.items/, 'items').replace(/^plot\.quests/, 'quests').replace(/^plot\.characters/, 'characters')
     .replace(/^plot\.storyboard\.acts/, 'acts').replace(/^plot\.endings/, 'endings').replace(/^plot\.dialogue\.([a-z0-9_-]+)/, 'dialogue[id=$1]').replace(/^(plot|content)\.([a-zA-Z]+)/, 'section_$1_$2');

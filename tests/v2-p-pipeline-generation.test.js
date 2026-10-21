@@ -76,7 +76,7 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
     assert.deepEqual(strictProblems(form.schema.schema), [], prompt);
     assert.ok(depthOf(form.schema.schema) <= 10, 'within the strict nesting limit');
     // Every selected primitive has a slot, including those the skeleton could not configure without content.
-    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].sort(), 'one slot per chosen primitive, no others');
+    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].map(id => id.replace(/\./g, "__")).sort(), 'one slot per chosen primitive, no others');
     assert.ok(form.schema.schema.properties.archetypes.items.properties.components.properties, 'archetypes have component slots');
   }
   // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.

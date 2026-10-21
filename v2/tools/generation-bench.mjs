@@ -96,13 +96,15 @@ export async function playReport(doc, registry, logic, { playtestMs = 3000, budg
   const crashes = (v.problems || []).filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info');
   // The mode bots (verify strategies chosen by what the document provides): did one play the core loop to a win?
   let bots = [];
-  try { const r = await verify(v.doc || doc, registry, logic, { seed: doc.seed, budgetMs: budgetMs * 2, plot: false, spatial: false, playtest: false, invariants: false }); bots = (r.strategies?.ran || []).map(x => ({ id: x.id, ok: x.ok, proven: x.proven ?? null, metrics: x.metrics || null })); } catch { bots = []; }
-  const botWin = bots.find(b => b.ok && b.proven);
+  // A bot completes the game when one of its runs is won (the run's path is the trace).
+  const wonRun = m => [...(m?.runs || []), ...(m?.matches || [])].find(x => x?.won === true) || null;
+  try { const r = await verify(v.doc || doc, registry, logic, { seed: doc.seed, budgetMs: budgetMs * 2, plot: false, spatial: false, playtest: false, invariants: false }); bots = (r.strategies?.ran || []).map(x => { const w = wonRun(x.metrics); return { id: x.id, ok: x.ok, won: Boolean(w), trace: Array.isArray(w?.path) ? w.path.length : (w?.decisions ?? w?.moves ?? null), rate: x.metrics?.rate ?? null }; }); } catch { bots = []; }
+  const botWin = bots.find(b => b.won);
   const path = v.playtest?.win?.path;
   return {
     viable: Boolean(v.viable), completable: v.completable ?? null, crashes: crashes.length, crashCodes: [...new Set(crashes.map(p => p.code))],
     explored: v.playtest?.explored ?? null, winnable: v.playtest?.winnable ?? null, ending: v.playtest?.win?.ending ?? null, winSeconds: v.playtest?.win?.seconds ?? null,
-    completed: Boolean(v.playtest?.winnable || botWin), trace: Array.isArray(path) ? path.length : null, by: v.playtest?.winnable ? 'playtest' : botWin ? `bot:${botWin.id}` : null, bots,
+    completed: Boolean(v.playtest?.winnable || botWin), trace: Array.isArray(path) ? path.length : botWin?.trace ?? null, by: v.playtest?.winnable ? 'playtest' : botWin ? `bot:${botWin.id}` : null, bots,
     errors: (v.problems || []).filter(p => p.severity === 'error').map(p => p.code).slice(0, 12), ms: v.ms,
   };
 }
