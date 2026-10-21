@@ -20,7 +20,7 @@ export const CREATURE_DATA = Object.freeze({
   'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, required: true, effect: 'the name a person reads' }, type: { type: 'ref', to: 'creature_type', required: true }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
     power: { type: 'integer', min: 0, max: 250, required: true, effect: '0 for status moves' }, accuracy: { type: 'integer', min: 1, max: 100 }, pp: { type: 'integer', min: 1, max: 64, required: true }, priority: { type: 'integer', min: -7, max: 5 },
     effect: { type: 'object', fields: { kind: { type: 'string', options: EFFECT_KINDS, required: true }, status: { type: 'string', options: STATUSES }, stat: { type: 'string', options: STAGE_STATS }, stages: { type: 'integer', min: -6, max: 6 }, chance: { type: 'number', min: 0, max: 100 }, target: { type: 'string', options: ['self', 'foe'] }, min: { type: 'integer', min: 1, effect: 'multihit: fewest hits' }, max: { type: 'integer', min: 1, effect: 'multihit: most hits' } } } } } },
-  'content.types': { type: 'object', values: { type: 'object', values: { type: 'number', min: 0 }, effect: 'defending type -> damage multiplier (missing = 1)' }, effect: 'the type chart: attacking type -> { defending type -> multiplier }; every type is a key' },
+  'content.types': { type: 'object', values: { type: 'object', values: { type: 'number', min: 0 }, effect: 'defending type -> damage multiplier (missing = 1)' }, effect: 'the type chart: attacking type -> { defending type -> multiplier }; species and move types are its keys' },
 });
 
 /**
@@ -73,7 +73,6 @@ export default {
     defines: [{ kind: 'species', at: 'content.species' }, { kind: 'move', at: 'content.moves' }, { kind: 'creature_type', at: 'content.types' }],
     rules: {
       species_missing: { fields: ['content.species'], message: 'the document has content.species', example: { doc: { systems: [{ use: 'gameplay.creature.party' }], content: { archetypes: PLAYERS } } } },
-      type_unknown: { fields: ['content.types.*'], message: 'every defending type a chart row names is a type of the chart (a key of content.types)', example: creatureExample([{ use: 'gameplay.creature.party' }], { types: { fire: { ice: 2 } } }) },
       move_invalid: { fields: ['content.moves[].category', 'content.moves[].power', 'content.moves[].effect'], message: 'a physical or special move has power > 0; a status effect names its status, a stat effect its stat' },
     },
   },
@@ -90,9 +89,8 @@ export default {
     logic.predicate('dex', { refs: p => [['species', p.dex]], test: (p, rt) => { const d = svc(rt).dex(p.who || 'player'); return Boolean((p.state === 'seen' ? d.seen : d.caught)[p.dex]); } });
   },
   validate(config, doc) {
-    const errors = [], content = doc.content || {}, chart = content.types && typeof content.types === 'object' && !Array.isArray(content.types) ? content.types : {};
+    const errors = [], content = doc.content || {};
     if (!(Array.isArray(content.species) && content.species.length)) errors.push({ code: 'species_missing', path: 'content.species', message: 'creature party needs content.species' });
-    for (const [t, row] of Object.entries(chart)) for (const d of Object.keys(row && typeof row === 'object' ? row : {})) if (!(d in chart)) errors.push({ code: 'type_unknown', path: `content.types.${t}.${d}`, message: `type '${d}' is not a key of content.types` });
     (Array.isArray(content.moves) ? content.moves : []).forEach((m, i) => {
       const p = `content.moves[${i}]`;
       if ((m?.category === 'physical' || m?.category === 'special') && !(m.power > 0)) errors.push({ code: 'move_invalid', path: `${p}.power`, message: 'damaging moves need power > 0' });
