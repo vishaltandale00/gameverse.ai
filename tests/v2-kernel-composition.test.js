@@ -177,12 +177,12 @@ test('example documents are never incompatible on the checks preflight also make
 const moded = (mode, extra = {}) => ({ id: 'gameplay.stub-mode', card: { intent: 'Stub mechanic with a mode.', params: {
   onWin: { type: 'effects', default: [] }, onLose: { type: 'effects', default: [] }, sides: { type: 'list', of: { type: 'json' }, default: [] } },
   provides: {}, requires: {}, mode, ...extra } });
-const INPUTS = { 'engine.input.actions': { interactions: ['realtime', 'turn', 'menu'] }, 'engine.input.motions': { interactions: ['realtime'] } };
+const INPUTS = { 'engine.input.actions': { interactions: ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'] }, 'engine.input.motions': { interactions: ['avatar-realtime'] } };
 const withMode = (mode, more = [], overlay = {}) => withDeclarations(registry, { ...DECLARED, ...INPUTS, ...overlay }, [moded(mode), ...more]);
 const sel = (use, primitives = ['gameplay.stub-mode'], extra = {}) => ({ spaces: [{ id: 'world', use }], systems: primitives, ...extra });
 
 test('mode: a turn-based card mode on its space, with its content declared and a registered bot, composes', () => {
-  const reg = withMode({ interaction: 'turn', space: 'engine.space.none', needs: { content: ['content.cards'] }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'expectimax' });
+  const reg = withMode({ interaction: 'pieces-turns', space: 'engine.space.none', needs: { content: ['content.cards'] }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'expectimax' });
   const r = verdictOf(reg, sel('engine.space.none'));
   assert.equal(r.checks.mode, 'ok', r.reason);
   assert.equal(r.verdict, 'compatible', r.reason);

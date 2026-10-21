@@ -120,7 +120,7 @@ export const COMPOSE_CHECK_VERSION = 'compose-check/0.2';
 
 /** @type {Set<string>} Document sections the kernel itself indexes (BASE_DEFINES in kernel/document.js, plus beats). */
 const KERNEL_SECTIONS = new Set(['plot.characters', 'plot.quests', 'plot.endings', 'plot.dialogue', 'plot.storyboard',
-  'content.items', 'content.recipes', 'content.archetypes', 'content.blocks', 'content.models']);
+  'content.items', 'content.recipes', 'content.archetypes', 'content.blocks', 'content.models', 'spaces.zones']);
 /** @type {CheckName[]} */
 const CHECKS = ['capabilities', 'services', 'primitives', 'conflicts', 'content', 'engage', 'data', 'adapter', 'mode'];
 
@@ -262,6 +262,14 @@ function declarers(/** @type {RegistryLike} */ registry) {
   return m;
 }
 /** True when the section (or a parent section) has a declaring source. */
+/** A card param by path: 'onWin', or 'counters.onComplete' (a field of a list or object param's entries). */
+function paramSpec(/** @type {Record<string, any>} */ params, /** @type {string} */ path) {
+  const [head, ...rest] = path.split('.');
+  let spec = params?.[head];
+  for (const k of rest) { const fields = spec?.of?.fields || spec?.fields; spec = fields?.[k]; }
+  return spec || null;
+}
+
 function sectionDeclared(/** @type {RegistryLike} */ registry, /** @type {string} */ section, /** @type {((s: string) => boolean) | undefined} */ documented) {
   const parts = section.split('.');
   for (let i = parts.length; i >= 2; i--) {
@@ -569,9 +577,9 @@ export function checkComposition(input, registry, opts = {}) {
       // win/lose params exist; in a document, win is wired to an ending.
       for (const side of ['win', 'lose']) {
         const param = md[side]?.param;
-        if (param === undefined) continue;
-        if (typeof param !== 'string' || !c.params[param]) { hole('mode', { card: u.use, field: `card.mode.${side}.param`, code: 'mode_param_unknown', message: `mode.${side}.param '${String(param)}' is not a card param` }); continue; }
-        if (side !== 'win' || !docLike) continue;
+        if (param == null) continue;
+        if (typeof param !== 'string' || !paramSpec(c.params, param)) { hole('mode', { card: u.use, field: `card.mode.${side}.param`, code: 'mode_param_unknown', message: `mode.${side}.param '${String(param)}' is not a card param` }); continue; }
+        if (side !== 'win' || !docLike || param.includes('.')) continue;
         const value = inst?.with?.[param] ?? c.params[param].default;
         const endings = new Set((isList(docLike.plot?.endings) ? docLike.plot.endings : []).map((/** @type {any} */ e) => e?.id).filter((/** @type {unknown} */ x) => typeof x === 'string'));
         const text = JSON.stringify(value ?? null);
@@ -583,7 +591,8 @@ export function checkComposition(input, registry, opts = {}) {
         const pool = inputs.length ? inputs.map(i => i.use) : registry.ids('engine').filter(id => id.startsWith('engine.input.'));
         const declared = pool.filter(id => isList(cardOf(registry, id)?.interactions));
         const match = declared.find(id => /** @type {unknown[]} */ (cardOf(registry, id)?.interactions).includes(md.interaction));
-        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${md.interaction} interaction`)) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
+        // An input the host supplies when a document leaves it out (card.hostDefault) needs no instance.
+        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${md.interaction} interaction`) && !cardOf(registry, match)?.hostDefault) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
         const undeclared = pool.filter(id => !declared.includes(id));
         if (undeclared.length) for (const id of undeclared) hole('mode', { card: id, field: 'card.interactions', code: 'input_interactions_undeclared', message: 'input primitive does not declare the interactions it supports (card.interactions)' });
         else fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no input primitive supports the '${md.interaction}' interaction`, hint: `inputs: ${pool.join(', ') || 'none'}`, adaptable: false });

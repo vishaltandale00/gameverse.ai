@@ -199,8 +199,16 @@ export function dataShapes(registry, ids) {
  * loop-owning primitive, sorted by mode id: { mode, card, intent, interaction, opponent, space, needs,
  * win, lose, bot, via?, wraps?, applies? }. `card` is the primitive that owns the loop.
  */
+/** @param {RegistryLike} registry */
 export function modeCatalogue(registry) {
-  return registry.ids().map(id => ({ id, card: registry.get(id).card })).filter(x => x.card.mode)
-    .map(({ id, card }) => { const { loop, ...rest } = card.mode; return { mode: loop, card: id, intent: card.intent, ...structuredClone(rest) }; })
-    .sort((a, b) => (a.mode < b.mode ? -1 : a.mode > b.mode ? 1 : a.card < b.card ? -1 : 1));
+  /** @typedef {{ mode: string, card: string, intent: string, [k: string]: unknown }} ModeEntry */
+  /** @type {ModeEntry[]} */
+  const out = [];
+  for (const id of registry.ids()) {
+    const card = /** @type {{ intent: string, mode?: { loop: string, [k: string]: unknown } }} */ (/** @type {unknown} */ (registry.get(id)?.card));
+    if (!card?.mode) continue;
+    const { loop, ...rest } = card.mode;
+    out.push({ mode: loop, card: id, intent: card.intent, ...structuredClone(rest) });
+  }
+  return out.sort((/** @type {ModeEntry} */ a, /** @type {ModeEntry} */ b) => (a.mode < b.mode ? -1 : a.mode > b.mode ? 1 : a.card < b.card ? -1 : 1));
 }

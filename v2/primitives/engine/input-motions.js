@@ -44,6 +44,7 @@ const setOf = (name, sets) => sets[name] ?? (/^[1-9]$/.test(name) ? [Number(name
 export default {
   id: ID,
   card: {
+    interactions: ['avatar-realtime'],
     intent: 'Recognizes motion inputs (quarter circles, dragon punch, half circles, charge moves, double-tap dashes, custom sequences) for the player and any AI-driven entity, relative to facing, with buffers, leniency windows and priority, and emits motion:<id> events for gameplay to turn into special moves.',
     views: ['side', '3p', 'td', 'any'],
     params: {
