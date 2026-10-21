@@ -25,7 +25,7 @@ import { resolveAdapters } from './adapters.js';
 import { spaceVariants, requirementsOf, satisfying, isSpace, isGenerator, isGraphics, dataShapes } from './catalog.js';
 import { contractsOf } from './content.js';
 import { cardLoop, endsGame } from './loop.js';
-import { isAvatar } from './play-spec.js';
+import { isAvatar, mashupSides } from './play-spec.js';
 import { declaredFit, servesInteraction, relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
 import { parseReply } from './writer.js';
@@ -244,7 +244,9 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   // held to the primary interaction.
   const ideaOf = (/** @type {unknown} */ from) => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || []).join('_');
   const primaryIdea = ideaOf(decomposition.mechanics.find(m => m.id === loopMechanicOf(decomposition))?.from);
-  const joined = (/** @type {Mechanic} */ m) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(m.id)) || Boolean(primaryIdea && ideaOf(m.from) && ideaOf(m.from) !== primaryIdea);
+  // Only an entry across concepts joins an idea (select.js joinedBy): an entry within one concept relates nothing
+  // (mashup_within_concept, asked again after the build) and must not free its mechanics from the primary interaction.
+  const joined = (/** @type {Mechanic} */ m) => (decomposition.core?.mashup || []).some(x => { const s = mashupSides(x, decomposition.mechanics); return s.outer.length > 0 && s.inner.includes(m.id); }) || Boolean(primaryIdea && ideaOf(m.from) && ideaOf(m.from) !== primaryIdea);
   const pool = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id));
 
   /**
