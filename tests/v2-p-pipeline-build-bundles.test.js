@@ -155,6 +155,17 @@ test('(c) one bundle covering two mechanics marks both covered; the second is sk
   assertOffersCompose(b, registry, w, 'sail');
 });
 
+test('(c) a companion never covers a mechanic of another source concept: that mechanic is asked on its own', async () => {
+  const { registry } = catalogue();
+  const w = writer({ sail: ['gameplay.test.sail'], wind: ['gameplay.test.wind'] });
+  const d = spec([['sail', 'core', 'sail across open water'], ['wind', 'supporting', 'harness gusts for speed']]);
+  d.mechanics.find(m => m.id === 'wind').from = 'weather';
+  const b = await buildSelection({ decomposition: d, registry, writer: w });
+  assert.deepEqual(b.steps[0].candidates.find(c => c.id === 'gameplay.test.sail').covers, []);
+  assert.deepEqual(b.steps.map(s => [s.mechanic, s.outcome]), [['sail', 'added'], ['wind', 'reused']]);
+  assert.equal(offeredFor(w, 'wind').length, 1);
+});
+
 test('(d) bundles never exceed the size limit; a seed whose smallest bundle would is not offered, with why', () => {
   const { registry } = catalogue();
   const composes = () => ({ ok: true, variant: 0 });
