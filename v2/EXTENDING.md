@@ -90,7 +90,7 @@ live (a new check is added there, with its code), run over every discovered temp
 | loop | the loop check has no problem | `loop_problem` (cause: the loop code) |
 | gate | `verifyDocument` (on the host document: `v2/web/host-doc.js`) with the playtest budget finds it viable | `gate_not_viable` |
 | controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`) | `controls_missing` `projection_undeclared` `direction_mismatch` `direction_inert` |
-| features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence) | `feature_missing` `feature_content_empty` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |
+| features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence); every participant a loop declares (sides, teams, racers, fighters) is an entity of the world at the start of play (`v2/planner/content.js` `absentParticipants`) | `feature_missing` `feature_content_empty` `feature_participant_absent` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |
 | bots | every bot its loops name is the one the gate plays, wins with status `won` on world seeds 1-3 and replays | `bot_unnamed` `bot_selection_mismatch` `bot_failed` `bot_not_won` `replay_mismatch` |
 
 A failing static stage stops the check before anything simulates.
