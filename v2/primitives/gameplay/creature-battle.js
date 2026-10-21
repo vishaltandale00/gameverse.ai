@@ -321,7 +321,7 @@ export default {
   id: ID,
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running' } },
+    actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running', from: 'options', emits: ['battle_log'] } },
     loop: { shows: [], verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', once: true, reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
       lose: { param: 'onLose', shown: { var: 'party.alive', label: 'Party' }, reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
       // As an encounter: a won battle or a capture takes the foe out; a lost battle the player's side; running away leaves both.
@@ -356,8 +356,10 @@ export default {
       }, effect: 'the battle fought from the start of the game (with autoStart): a creature battler played on its own' },
       autoStart: { type: 'boolean', default: true, effect: 'start the opening battle at game start (otherwise battles start from start_battle)' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['battle_invalid'],
     provides: {
-      events: ['battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
+      events: ['battle_request', 'battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
       vars: ['battle.active', 'battle.turn'],
       actions: ['battle'],
       services: ['battle'],
@@ -404,8 +406,9 @@ export default {
     }
     function start(req) {
       const s = st(); if (s.battle) return;
-      const p = rt.player(), party = structuredClone(cs().party('player'));
-      if (!party.some(c => c.hp > 0)) { rt.emit('battle_invalid', { reason: 'no_creatures' }); return; }
+      const p = rt.player();
+      if (!cs().party('player').some(c => c.hp > 0)) { rt.emit('battle_invalid', { reason: 'no_creatures' }); return; }
+      const party = cs().lend('player', ID);
       const foe = req.foe.map(f => cs().create(f.species, f.level ?? 5));
       for (const f of foe) cs().seen('player', f.species);
       const b = {
@@ -471,18 +474,20 @@ export default {
     function menu(b) {
       const eng = E(), need = eng.needsInput(b); if (!need) return [];
       const party = b.player.party, me = party[b.player.active], out = [];
-      const add = (id, label, kind, v, extra = {}) => out.push({ id, label, kind, enabled: true, ...extra, action: { battle: v } });
-      if (need.kind === 'learn') { add('learn:keep', 'keep moves', 'learn', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => add(`learn:${i}`, `forget #${i} ${m.id}`, 'learn', { kind: 'learn', forget: i })); return out; }
-      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) add(`switch:${i}`, `send #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); }); return out; }
-      if (me.moves.some(m => m.pp > 0)) me.moves.forEach((m, i) => { const mv = moveOf(content(), m.id); add(`move:${i}`, `use ${m.id}`, 'move', { kind: 'move', index: i }, { enabled: m.pp > 0, pp: m.pp, ppMax: m.max, type: mv?.type ?? null, name: mv?.name ?? m.id }); });
-      else add('move:struggle', 'struggle', 'move', { kind: 'move', index: 0 }, { type: null });
-      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) add(`switch:${i}`, `switch to #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); });
+      // label: the solvers' unique key; text: what a person reads (the document's move, item and creature names).
+      const add = (id, label, text, kind, v, extra = {}) => out.push({ id, label, text, kind, enabled: true, ...extra, action: { battle: v } });
+      const moveName = id => moveOf(content(), id)?.name ?? id, itemName = it => it.name ?? it.id;
+      if (need.kind === 'learn') { add('learn:keep', 'keep moves', 'Keep the moves', 'learn', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => add(`learn:${i}`, `forget #${i} ${m.id}`, `Forget ${moveName(m.id)}`, 'learn', { kind: 'learn', forget: i })); return out; }
+      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) add(`switch:${i}`, `send #${i} ${c.name}`, `Send out ${c.name}`, 'switch', { kind: 'switch', index: i }); }); return out; }
+      if (me.moves.some(m => m.pp > 0)) me.moves.forEach((m, i) => { const mv = moveOf(content(), m.id); add(`move:${i}`, `use ${m.id}`, mv?.name ?? m.id, 'move', { kind: 'move', index: i }, { enabled: m.pp > 0, pp: m.pp, ppMax: m.max, type: mv?.type ?? null, name: mv?.name ?? m.id }); });
+      else add('move:struggle', 'struggle', 'Struggle', 'move', { kind: 'move', index: 0 }, { type: null });
+      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) add(`switch:${i}`, `switch to #${i} ${c.name}`, `Switch to ${c.name}`, 'switch', { kind: 'switch', index: i }); });
       for (const it of (content().items || []).filter(i => i.creature)) {
         if (hasInv() && !rt.test({ item: it.id, gte: 1 }, {})) continue;
-        if (it.creature.kind === 'ball') { if (b.kind === 'wild') add(`item:${it.id}`, `throw ${it.id}`, 'item', { kind: 'item', item: it.id }); continue; }
-        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) add(`item:${it.id}:${i}`, `${it.id} on #${i} ${c.name}`, 'item', { kind: 'item', item: it.id, target: i }); });
+        if (it.creature.kind === 'ball') { if (b.kind === 'wild') add(`item:${it.id}`, `throw ${it.id}`, `Throw ${itemName(it)}`, 'item', { kind: 'item', item: it.id }); continue; }
+        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) add(`item:${it.id}:${i}`, `${it.id} on #${i} ${c.name}`, `${itemName(it)} on ${c.name}`, 'item', { kind: 'item', item: it.id, target: i }); });
       }
-      if (b.kind === 'wild') add('run', 'run', 'run', { kind: 'run' });
+      if (b.kind === 'wild') add('run', 'run', 'Run', 'run', { kind: 'run' });
       return out;
     }
     const unitsOf = (b, side) => side.party.map((c, i) => {
@@ -506,7 +511,7 @@ export default {
     // Solver options: every enabled answer to what the battle needs now.
     rt.options(rt => {
       const b = st().battle; if (!b) return [];
-      return menu(b).filter(m => m.enabled).map(m => ({ label: m.label, actions: m.action }));
+      return menu(b).filter(m => m.enabled).map(m => ({ label: m.label, text: m.text, actions: m.action }));
     });
   },
 };

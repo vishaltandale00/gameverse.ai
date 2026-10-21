@@ -42,7 +42,7 @@ export default {
       grace: { type: 'integer', default: 3, min: 0, max: 100, unit: 'steps', effect: 'safe steps after a battle' },
       onEncounter: { type: 'effects', default: [], effect: 'extra effects when a wild encounter starts (the battle starts by itself)' },
     },
-    provides: { events: ['encounter', 'encounter:*', 'trainer_challenge', 'trainer_challenge:*', 'step'], vars: ['encounter.steps', 'encounter.repel'] },
+    provides: { events: ['encounter_request', 'encounter', 'encounter:*', 'trainer_challenge', 'trainer_challenge:*', 'step'], vars: ['encounter.steps', 'encounter.repel'] },
     requires: { primitives: ['gameplay.creature.battle'] },
     defines: [{ kind: 'trainer', in: 'trainers' }],
   },

@@ -76,7 +76,8 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   const tweaked = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'more inventory slots' }, ctx);
   assert.equal(tweaked.report.path, 'tweak');
   assert.equal(spec.calls.length, calls, 'no model call for a tweak');
-  assert.equal(tweaked.report.hot, 'params');
+  // Every new version restarts a running session on its own start (ARCHITECTURE §4: checked like a new game).
+  assert.equal(tweaked.report.hot, 'restart');
   const renamed = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'rename the game to Lamp of the Deep' }, ctx);
   assert.equal(renamed.report.path, 'model');
   assert.equal(renamed.doc.title, 'Lamp of the Deep');

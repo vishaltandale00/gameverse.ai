@@ -20,7 +20,7 @@ export default {
     presents: { lock: { role: 'prop', prop: 'door' } },
     loop: { verbs: ['take', 'store', 'take_all'], progress: ['opened', 'container_opened'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { take: { type: 'choice', of: 'an item in the open container' }, store: { type: 'choice', of: 'an item in the bag' } },
+    actionSpace: { take: { type: 'choice', of: 'an item in the open container', from: 'options', emits: ['item_transferred'] }, store: { type: 'choice', of: 'an item in the bag', from: 'options', emits: ['item_transferred'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "container", "min": 1, "placed": 1, "why": "containers are entities with a container component {slots, table?}", "example": {"id": "chest", "kind": "prop", "components": {"container": {"slots": 6}}}},
@@ -33,7 +33,9 @@ export default {
       autoTake: { type: 'boolean', default: false, effect: 'opening moves everything to the opener (forage, corpses); components.container.autoTake overrides' },
       closeRange: { type: 'number', default: 4, min: 0, max: 100, unit: 'space units', effect: 'an open container closes when the opener moves farther away' },
     },
-    provides: { events: ['opened', 'opened:*', 'container_opened', 'container_closed', 'container_locked', 'unlocked:*'], actions: ['take', 'store', 'take_all', 'close_container'], services: ['container'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['container_locked'],
+    provides: { events: ['unlocked', 'opened', 'opened:*', 'container_opened', 'container_closed', 'container_locked', 'unlocked:*'], actions: ['take', 'store', 'take_all', 'close_container'], services: ['container'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.archetypes', 'content.tables'],
   },
@@ -103,8 +105,11 @@ export default {
     }, KEY);
     rt.options(rt => {
       const id = st().open.player; if (!id) return [];
-      const items = Object.keys(bag(rt, id)).sort();
-      return [...(items.length ? [{ label: `take all from ${id}`, actions: { take_all: true } }] : []), { label: `close ${id}`, actions: { close_container: true } }];
+      const inside = bag(rt, id), items = Object.keys(inside).sort(), held = bag(rt, 'player');
+      return [...(items.length ? [{ label: `take all from ${id}`, actions: { take_all: true } }] : []),
+        ...items.map(item => ({ label: `take ${item}`, actions: { take: { item, count: inside[item] } } })),
+        ...Object.keys(held).sort().map(item => ({ label: `store ${item}`, actions: { store: { item, count: held[item] } } })),
+        { label: `close ${id}`, actions: { close_container: true } }];
     });
     rt.provide('container', { open: (who = 'player') => { const id = st().open[who]; return id ? { id, items: { ...bag(rt, id) } } : null; }, contents: id => ({ ...bag(rt, id) }) });
   },

@@ -37,13 +37,14 @@ const IDEAS = {
   'slide-merge': { idea: '2048 with planets', game: '2048', themes: [['planets', 'theme']] },
   'falling-blocks': { idea: 'Tetris with books on a library shelf', game: 'Tetris', themes: [['books on a library shelf', 'theme']] },
   'creature-battle': { idea: 'Pokémon battles between kitchen appliances', game: 'Pokémon', themes: [['kitchen appliances', 'theme']] },
+  story: { idea: 'A Monkey Island style adventure in a haunted lighthouse town', game: 'Monkey Island', themes: [['haunted lighthouse town', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 
 const pickOf = id => ({ title: `${IDEAS[id].game} Remix`, premise: `${IDEAS[id].idea}. Win the game.`,
-  primary: { name: IDEAS[id].game, kind: 'game', template: id }, games: [], themes: IDEAS[id].themes.map(([name, kind]) => ({ name, kind })) });
+  primary: { name: IDEAS[id].game, kind: 'game', template: id }, games: [], themes: IDEAS[id].themes.map(([name, kind]) => ({ name, kind })), readings: [], mechanics: [] });
 /** A pick from its parts (title and premise filled). */
-const pickWith = ({ primary, games = [], themes = [] }) => ({ title: 'T', premise: 'P.', primary, games, themes });
+const pickWith = ({ primary, games = [], themes = [], readings = [], mechanics = [] }) => ({ title: 'T', premise: 'P.', primary, games, themes, readings, mechanics });
 const game = (name, kind, template, relation) => ({ name, kind, template, ...(relation ? { relation } : {}) });
 const theme = id => IDEAS[id].themes[0][0];
 /** A slot's tune path (its description starts with it). */
@@ -103,11 +104,11 @@ function accepts(s, v) {
 }
 
 test('pickForm: one strict form; one primary object, other games and themes in their own lists, enums by kind, no free JSON', () => {
-  const f = pickForm(TEMPLATES);
+  const f = pickForm(TEMPLATES, registry);
   assert.equal(f.name, 'pick_templates');
   assert.deepEqual(strictProblems(f.schema), []);
   const p = f.schema.properties, ids = [...TEMPLATES.map(t => t.id), 'none'];
-  assert.deepEqual(Object.keys(p), ['title', 'premise', 'primary', 'games', 'themes']);
+  assert.deepEqual(Object.keys(p), ['title', 'premise', 'primary', 'games', 'themes', 'readings', 'mechanics']);
   assert.equal(p.primary.type, 'object', 'exactly one primary: an object, not a list');
   assert.deepEqual(Object.keys(p.primary.properties), ['name', 'kind', 'template']);
   assert.deepEqual(p.primary.properties.kind.enum, ['game', 'genre']);
@@ -134,7 +135,7 @@ function allowedConcepts(itemSchema) {
 }
 
 test('the pick form makes every structurally invalid pick inexpressible; every pick it allows passes the structural check', () => {
-  const f = pickForm(TEMPLATES), p = f.schema.properties, ctx = { templates: TEMPLATES, registry };
+  const f = pickForm(TEMPLATES, registry), p = f.schema.properties, ctx = { templates: TEMPLATES, registry };
   const ok = pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), themes: [{ name: 'library', kind: 'setting' }] });
   assert.ok(accepts(f.schema, ok));
   // Each structural mistake of the old flat concept list, written in the new form's terms: the form allows none of them.
@@ -175,7 +176,7 @@ test('the pick form makes every structurally invalid pick inexpressible; every p
 test('checkPick: the form\'s schema (pick_form) and the catalogue rules, each with a declared stable code; a none game goes to the step path', () => {
   const ctx = { templates: TEMPLATES, registry };
   const codes = pick => checkPick(pick, ctx).problems.map(p => `${p.code}@${p.field}`);
-  assert.deepEqual(Object.keys(PICK_RULES), ['pick_form', 'pick_nested_no_entry', 'pick_nested_no_outcome']);
+  assert.deepEqual(Object.keys(PICK_RULES), ['pick_form', 'pick_nested_no_entry', 'pick_nested_no_outcome', 'pick_reading_unknown', 'pick_reading_duplicate', 'pick_reading_invalid', 'pick_reading_no_primary', 'pick_reading_fails']);
   for (const id of Object.keys(IDEAS)) assert.deepEqual(codes(pickOf(id)), []);
   // A writer that does not enforce the schema is held to it: each finding names its field.
   assert.deepEqual(codes({ ...pickOf('race'), title: ' ', premise: '' }), ['pick_form@title', 'pick_form@premise']);
@@ -196,7 +197,7 @@ test('checkPick: the form\'s schema (pick_form) and the catalogue rules, each wi
 });
 
 test('"a Mario game but with Sonic as the character": one primary (the game, with its genre\'s template), Sonic a character theme', () => {
-  const f = pickForm(TEMPLATES), ctx = { templates: TEMPLATES, registry };
+  const f = pickForm(TEMPLATES, registry), ctx = { templates: TEMPLATES, registry };
   // The answer the live pick failed with (Mario game and platformer both primary; the game marked theme) cannot be written.
   assert.equal(accepts(f.schema, pickWith({ primary: [game('Mario game', 'game', 'none'), game('platformer', 'genre', 'none')], themes: [{ name: 'Sonic', kind: 'character' }] })), false);
   assert.equal(accepts(f.schema, pickWith({ primary: game('platformer', 'genre', 'none'), themes: [{ name: 'Mario game', kind: 'game' }, { name: 'Sonic', kind: 'character' }] })), false);

@@ -50,7 +50,7 @@ export default {
       unbreakable: { type: 'list', default: [], of: { type: 'string' }, effect: 'cell tokens blasts never carve' },
       litOn: { type: 'string', default: 'shot_end', effect: 'event that breaks every lit piece' },
     },
-    provides: { events: ['damaged', 'damaged:*', 'destroyed', 'destroyed:*', 'cracked', 'lit', 'lit:*', 'shards', 'explosion', 'cell_broken', 'cell_broken:*'], vars: ['destructible.left'] },
+    provides: { events: ['destructible_request', 'damaged', 'damaged:*', 'destroyed', 'destroyed:*', 'cracked', 'lit', 'lit:*', 'shards', 'explosion', 'cell_broken', 'cell_broken:*'], vars: ['destructible.left'] },
     requires: { capabilities: ['position'] },
     reads: [],
   },

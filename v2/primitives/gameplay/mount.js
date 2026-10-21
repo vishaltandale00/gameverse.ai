@@ -46,7 +46,9 @@ export default {
       fightMounted: { type: 'boolean', default: false, effect: 'whether combat may be used mounted; combat reads it through `mounted` and components.move.mountedCombat' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },
-    provides: { events: ['mounted', 'mounted:*', 'dismounted', 'mount_called', 'mount_call_failed', 'mount_arrived', 'bucked', 'gait', 'mount_exhausted'], actions: ['mount', 'call', 'sprint'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['mount_failed', 'mount_call_failed'],
+    provides: { events: ['evaded', 'mount_failed', 'mounted', 'mounted:*', 'dismounted', 'mount_called', 'mount_call_failed', 'mount_arrived', 'bucked', 'gait', 'mount_exhausted'], actions: ['mount', 'call', 'sprint'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind', 'distance'] },
     reads: ['content.archetypes'],

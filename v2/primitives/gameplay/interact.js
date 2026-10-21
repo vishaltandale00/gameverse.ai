@@ -194,7 +194,7 @@ export default {
       prompts: { type: 'boolean', default: true, effect: 'emit interact_focus/interact_blur as the focused interactable changes' },
       macroOptions: { type: 'integer', default: 8, min: 0, max: 64, effect: 'reachable-but-not-in-reach interactables offered to solvers as travel-then-interact options' },
     },
-    provides: { events: ['interacted', 'used', 'used:*', 'interact_denied', 'interact_focus', 'interact_blur', 'interact_hold', 'interact_cancelled', 'talked', 'talked:*', 'sat', 'stood', 'toggled', 'read', 'read:*', 'harvested', 'harvested:*'], actions: ['interact'], services: ['interact'] },
+    provides: { events: ['inventory_full', 'interacted', 'used', 'used:*', 'interact_denied', 'interact_focus', 'interact_blur', 'interact_hold', 'interact_cancelled', 'talked', 'talked:*', 'sat', 'stood', 'toggled', 'read', 'read:*', 'harvested', 'harvested:*'], actions: ['interact'], services: ['interact'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
   },

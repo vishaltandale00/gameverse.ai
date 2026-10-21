@@ -13,7 +13,7 @@ export default {
   card: {
     loop: { verbs: ['buy', 'sell', 'haggle'], progress: ['bought', 'sold'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { buy: { type: 'choice', of: 'an item the open shop sells' }, sell: { type: 'choice', of: 'an item in the bag' } },
+    actionSpace: { buy: { type: 'choice', of: 'an item the open shop sells', from: 'options', emits: ['bought'] }, sell: { type: 'choice', of: 'an item in the bag', from: 'options', emits: ['sold'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "shops", "min": 1, "why": "an economy needs somewhere to spend", "example": [{"id": "general_store", "stock": [{"item": "potion", "price": 20}]}]},
@@ -45,6 +45,8 @@ export default {
       haggleDiscount: { type: 'number', default: 0.15, min: 0, max: 0.9, effect: 'discount on success; the same rise on failure' },
       ownerOpens: { type: 'boolean', default: true, effect: 'talking to a shop owner (gameplay.interact) opens the shop' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['trade_denied', 'insufficient_funds'],
     provides: { events: ['bought', 'bought:*', 'sold', 'sold:*', 'paid', 'shop_opened', 'shop_closed', 'insufficient_funds', 'trade_denied', 'haggled', 'restocked'], vars: ['money.*'], actions: ['buy', 'sell', 'close_shop', 'haggle'], services: ['shop', 'economy'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],

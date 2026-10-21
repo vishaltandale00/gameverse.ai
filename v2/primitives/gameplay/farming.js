@@ -51,7 +51,7 @@ export default {
       rainWaters: { type: 'boolean', default: true, effect: "var weather = 'rain' waters every crop" },
       wither: { type: 'boolean', default: true, effect: 'crops die when the season leaves their seasons' },
     },
-    provides: { events: ['tilled', 'planted', 'planted:*', 'watered', 'ripened', 'ripened:*', 'harvested', 'harvested:*', 'withered', 'farm_denied'], actions: ['till', 'plant', 'water', 'harvest'], services: ['farming'] },
+    provides: { events: ['tool_used', 'tilled', 'planted', 'planted:*', 'watered', 'ripened', 'ripened:*', 'harvested', 'harvested:*', 'withered', 'farm_denied'], actions: ['till', 'plant', 'water', 'harvest'], services: ['farming'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.items', 'content.blocks'],
   },

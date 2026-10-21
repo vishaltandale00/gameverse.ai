@@ -17,7 +17,7 @@ export default {
   card: {
     loop: { verbs: ['event_choice'], progress: ['random_event_choice'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { event_choice: { type: 'choice', of: 'a choice of the pending event' } },
+    actionSpace: { event_choice: { type: 'choice', of: 'a choice of the pending event', from: 'options', emits: ['random_event_choice'] } },
     intent: 'Random text events with weighted draws, conditions, cooldowns and once-only events; choices with conditions and effects can chain into further events (FTL, Reigns, radiant encounters).',
     views: ['any'],
     params: {
@@ -92,7 +92,7 @@ export default {
       const pick = weightedPick(rt, eligible().map(e => ({ e, weight: e.weight ?? 1 })));
       if (pick) trigger(pick.e.id);
     }, ID);
-    rt.options(rt => { const e = events(rt).get(st(rt).pending); return e ? open(e).map(({ c, index }) => ({ label: `event ${e.id}.${index}: ${c.text}`, actions: { event_choice: { index } } })) : []; });
+    rt.options(rt => { const e = events(rt).get(st(rt).pending); return e ? open(e).map(({ c, index }) => ({ label: `event ${e.id}.${index}: ${c.text}`, text: c.text, actions: { event_choice: { index } } })) : []; });
   },
 };
 

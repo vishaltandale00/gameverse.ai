@@ -86,7 +86,7 @@ export default {
       playerWeapon: { type: 'string', effect: 'weapon or ranged item id the player starts with (components.ranged.weapon overrides)' },
       aim: { type: 'string', options: ['facing', 'look', 'move'], default: 'facing', effect: 'player aim direction source: facing, the look axis (twin-stick) or the move axis' },
     },
-    provides: { events: ['fired', 'projectile_hit', 'blast', 'empty', 'reloaded', 'cancelled', 'clash', 'expired'], services: ['projectiles'], actions: ['fire'] },
+    provides: { events: ['hit', 'weapon_used', 'fired', 'projectile_hit', 'blast', 'empty', 'reloaded', 'cancelled', 'clash', 'expired'], services: ['projectiles'], actions: ['fire'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
     defines: [{ kind: 'weapon', in: 'weapons' }],

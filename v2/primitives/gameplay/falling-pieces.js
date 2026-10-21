@@ -105,7 +105,7 @@ export default {
   card: {
     loop: { shows: ['cells'], verbs: VERBS, progress: ['piece_locked', 'lines_cleared'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { place: { type: 'choice', of: 'a placement of the falling piece (column, rotation)' } },
+    actionSpace: { place: { type: 'choice', of: 'a placement of the falling piece (column, rotation)', from: 'options', emits: ['piece_locked'] } },
     // Falling-blocks mode: clear lines before the stack tops out (the line target wins through an ending or a stage goal).
     mode: { loop: 'falling-blocks', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'falling.lines', gte: '$target' }, reads: { var: 'falling.lines', by: { actions: VERBS } } }, lose: { param: 'onTopOut', once: true, reads: { event: 'top_out', by: { actions: VERBS } } }, bot: 'placement' },
     intent: 'Falling pieces over a board in any editCells space: Tetris-guideline wells (SRS, 7-bag, hold, ghost, T-spins, combos), puyo pairs and capsules handed to gameplay.match, or blocks dropping into a platformer level / rising into a breakout wall as cells or entities.',
@@ -148,7 +148,7 @@ export default {
       onTopOut: { type: 'effects', default: DEFAULT_TOP_OUT, effect: 'run when a piece cannot spawn or locks out above the board' },
     },
     provides: {
-      events: ['piece_spawned', 'piece_moved', 'piece_rotated', 'piece_held', 'piece_locked', 'piece_locked:*', 'piece_blocked', 'piece_fizzled', 'lines_cleared', 'lines_cleared:*', 'tspin', 'perfect_clear', 'garbage_added', 'top_out', 'falling_level', 'score', 'move', 'row_cleared_entity', 'row_cleared_entity:*'],
+      events: ['falling_garbage_request', 'piece_spawned', 'piece_spawned:*', 'piece_moved', 'piece_rotated', 'piece_held', 'piece_locked', 'piece_locked:*', 'piece_blocked', 'piece_fizzled', 'lines_cleared', 'lines_cleared:*', 'tspin', 'perfect_clear', 'garbage_added', 'top_out', 'falling_level', 'score', 'move', 'row_cleared_entity', 'row_cleared_entity:*'],
       vars: ['falling.lines', 'falling.level', 'falling.pieces', 'falling.combo', 'score'],
       actions: ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold', 'place'],
       services: ['board'],

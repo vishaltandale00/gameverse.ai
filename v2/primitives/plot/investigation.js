@@ -24,7 +24,7 @@ export default {
   card: {
     loop: { verbs: ['deduce'], progress: ['clue_found', 'deduced'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { deduce: { type: 'choice', of: 'a deduction whose clues are found' } },
+    actionSpace: { deduce: { type: 'choice', of: 'a deduction whose clues are found', from: 'options', emits: ['deduced'] } },
     // Section shapes this primitive reads (the planner's strict content form uses them).
     data: {
       'plot.clues': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } }, when: { type: 'predicate', effect: 'found automatically when this holds; else given by add_clue effects' } } } },
@@ -41,6 +41,9 @@ export default {
       autoDeduce: { type: 'boolean', default: false, effect: 'every deduction resolves as soon as its clues are known' },
       maxWrong: { type: 'integer', default: 0, min: 0, max: 100, effect: 'the case fails (investigation_failed) on this many wrong deductions (0 = never)' },
     },
+    // What a person is told when these events fire (a story log, a toast): `label`, then the title of the document entry
+    // the event names (`entry`: the section and the event field holding its id), then the entry's `detail` field when set.
+    tells: { clue_found: { label: 'Clue', entry: { at: 'plot.clues', by: 'clue' }, detail: 'text' }, deduced: { label: 'Concluded', entry: { at: 'plot.deductions', by: 'deduction' }, detail: 'conclusion' }, investigation_failed: { label: 'Too many wrong theories: the case is lost' } },
     provides: { events: ['clue_found', 'clue_found:*', 'deduced', 'deduced:*', 'investigation_failed'], vars: ['clues.found'], services: ['investigation'], actions: ['deduce'] },
     reads: ['plot.clues', 'plot.deductions'],
     defines: [{ kind: 'clue', at: 'plot.clues' }, { kind: 'deduction', at: 'plot.deductions' }],
@@ -90,6 +93,6 @@ export default {
       for (const c of idx(rt).clues.values()) if (c.when && !s.found[c.id] && rt.test(c.when)) find(rt, c.id);
       for (const d of idx(rt).deductions.values()) if ((d.auto || config.autoDeduce) && ready(d)) deduce(d.id);
     }, ID);
-    rt.options(rt => [...idx(rt).deductions.values()].filter(d => !d.auto && !config.autoDeduce && ready(d)).map(d => ({ label: `deduce ${d.id}`, actions: { deduce: d.id } })));
+    rt.options(rt => [...idx(rt).deductions.values()].filter(d => !d.auto && !config.autoDeduce && ready(d)).map(d => ({ label: `deduce ${d.id}`, text: `Conclude: ${d.title || d.id}`, actions: { deduce: d.id } })));
   },
 };

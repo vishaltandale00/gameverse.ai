@@ -145,7 +145,12 @@ One JSON document (`gameverse.v2.game/0.2`) references primitives by id and para
 The document's shape follows the templates and primitives chosen for the idea, never one default shape. A board
 game has a board, pieces, sides and turns, and no walking avatar.
 
-Games are **versioned**. Each change produces a new immutable version that is checked like a new game.
+Games are **versioned**. Each change produces a new immutable version that is checked like a new game: every
+version (create, a revision's tweak or ops, an experiment, a gap filled) passes one version gate
+(`v2/planner/version-gate.js`) on the document a person plays, and a version made from another is also held to it: no
+feature that worked stops working, and every bot its loops name that won the base still wins. A template game's
+revision stays within the ranges its template tunes. A running session that receives a new version restarts on it from
+its start (the state of another version is never carried into it).
 
 ## 5. Generation
 
@@ -168,7 +173,10 @@ idea
  → template pick (1 model call, strict form whose shape makes structural mistakes inexpressible): title,
      premise, ONE primary (kind game | genre, template: enum of template ids or 'none'), other games
      (kind game | genre, template, relation nested | union) and themes (kind theme | setting | character, no
-     template). A named game and its genre are one concept. The templates are offered grouped by the loops
+     template), readings (a concept the idea can also mean another way: its other kind or relation; code turns each
+     into one question to the player and builds the reading chosen, never a guess) and mechanics (what the player can
+     do that the chosen templates' verbs do not give: a phrase, its declared verb, core | extra). A named game and its
+     genre are one concept. The templates are offered grouped by the loops
      their cards declare. Code checks what needs the registry: nested only onto a primary whose loop
      declares an entry event (card.loop.involves). A game or genre with 'none' goes to the step path. The
      chosen templates' declarations ARE the play spec; nothing is asked twice.
@@ -176,6 +184,9 @@ idea
      content forms; nested: the inner template appended (prefixed ids) with engine.adapt.nested wired from
      declarations, plus engine.adapt.skin when the inner concept's content maps onto an outer contract; union:
      both on one space only if the composition check passes, else the build fails with the adapter needed.
+ → extension (the step path's checked machinery, v2/planner/extend.js): each mechanic no composed primitive gives
+     the player is added onto the composed document, one small choice among options proven valid by declarations
+     with the checks after every pick, or written by the gap layer; otherwise the build fails naming it
  → content (model, parallel strict forms, one per content contract section, derived from card schemas):
      themed cast, pieces, species, places, tuning of the `tune` params; story only when a chosen primitive
      declares it

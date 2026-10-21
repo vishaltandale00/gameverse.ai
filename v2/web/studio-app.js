@@ -108,16 +108,38 @@ $('#create').addEventListener('submit', async e => {
   try {
     const { questions } = await api('/api/v2/questions', { prompt: pendingPrompt });
     if (!questions.length) return startBuild([]);
-    $('#questions').hidden = false;
-    $('#questions').innerHTML = `<p>A few choices shape the game. The first options are picked for you.</p>
-      ${questions.map((q, i) => `<fieldset><legend>${esc(q.question)}</legend><div class="chips">${q.options.map((o, j) => `<label><input type="radio" name="q${i}" value="${esc(o)}" ${j ? '' : 'checked'}><span>${esc(o)}</span></label>`).join('')}</div></fieldset>`).join('')}
-      <div class="actions"><button class="primary" id="build" type="button">Build it</button><button class="quiet" id="skip" type="button">Skip and build</button></div>`;
-    $('#build').onclick = () => startBuild(questions.map((q, i) => ({ question: q.question, answer: document.querySelector(`input[name=q${i}]:checked`)?.value })).filter(a => a.answer));
-    $('#skip').onclick = () => startBuild([]);
-    $('#build').focus();
+    askQuestions(questions, { intro: 'A few choices shape the game. The first options are picked for you.', skip: true, build: startBuild });
   } catch (error) { toast(error.message); }
   finally { $('#make').disabled = false; $('#make').textContent = 'Make it'; }
 });
+// The question panel: one radio group per question. `skip`: a "Skip and build" button (questions the idea leaves open);
+// without it every question must be answered (a build that stopped to ask which game the idea means).
+function askQuestions(questions, { intro, skip, build: done }) {
+  $('#questions').hidden = false;
+  $('#questions').innerHTML = `<p>${esc(intro)}</p>
+    ${questions.map((q, i) => `<fieldset><legend>${esc(q.question)}</legend><div class="chips">${q.options.map((o, j) => `<label><input type="radio" name="q${i}" value="${esc(o)}" ${j || !skip ? '' : 'checked'}><span>${esc(o)}</span></label>`).join('')}</div></fieldset>`).join('')}
+    <div class="actions"><button class="primary" id="build" type="button">Build it</button>${skip ? '<button class="quiet" id="skip" type="button">Skip and build</button>' : ''}</div>`;
+  $('#build').onclick = () => {
+    const answers = questions.map((q, i) => ({ question: q.question, answer: document.querySelector(`input[name=q${i}]:checked`)?.value })).filter(a => a.answer);
+    if (!skip && answers.length < questions.length) return toast('Pick one for each question.');
+    done(answers);
+  };
+  if (skip) $('#skip').onclick = () => done([]);
+  $('#build').focus();
+}
+// A build that stopped to ask which game the idea means (the template path's readings): its failure record keeps the
+// question; the answer resumes the same game.
+async function askReading(gameId, failure) {
+  const record = await api(`/api/v2/games/${gameId}/failures/${failure}`);
+  const questions = record.question?.questions || [];
+  if (!questions.length) return;
+  if (narrow.matches) drawer(true);
+  askQuestions(questions, { intro: 'Your idea can mean more than one game. Which did you mean?', skip: false, build: async answers => {
+    $('#questions').hidden = true;
+    try { await api(`/api/v2/games/${gameId}/answers`, { answers }); builds.delete(gameId); const b = build(gameId); b.log.unshift({ label: 'Answered', ms: 0 }); if (selected === gameId) select(gameId); }
+    catch (error) { toast(error.message); }
+  } });
+}
 async function startBuild(answers) {
   $('#questions').hidden = true;
   try {
@@ -397,15 +419,17 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
+  let loaded = false;
   if (!player || !$('#game')) { const fromBuild = Boolean($('#ct-canvas')); const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record, { powerOn: fromBuild }); toast('Your game is ready. Play!'); }
-  else if (player.update(record)) { shownVersion = e.version; toast(String(record.stage).startsWith('detail:') ? `New detail in ${record.stage.slice(7)}.` : `Version ${e.version} loaded.`); }
+  else if ((loaded = player.update(record))) { shownVersion = e.version; toast(loaded === 'extended' ? `New detail in ${String(record.stage).replace(/^detail:/, '')}.` : `Version ${e.version} loaded: restarted from its start with the change.`); }
   else { const { meta } = await api(`/api/v2/games/${e.gameId}`); player?.dispose(); await playView(meta, record); toast(`Version ${e.version} loaded (restarted).`); }
   renderSheet(record);
 });
 for (const type of ['job_done', 'job_failed']) events.addEventListener(type, ev => {
   const e = JSON.parse(ev.data), b = build(e.gameId);
   b.log.push({ label: type === 'job_done' ? 'Done' : `Failed: ${e.error}`, ms: e.ms }); b.done = true; b.failed = type === 'job_failed';
-  if (type === 'job_failed' && e.gameId === selected) toast(`That build failed: ${e.error}`);
+  if (type === 'job_failed' && e.code === 'needs_answer') { b.log.push({ label: 'Waiting for your answer', ms: e.ms }); askReading(e.gameId, e.failure).catch(error => toast(error.message)); }
+  else if (type === 'job_failed' && e.gameId === selected) toast(`That build failed: ${e.error}`);
   refreshLibrary(); if (e.gameId === selected) renderSheet();
 });
 

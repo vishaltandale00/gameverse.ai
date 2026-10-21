@@ -18,7 +18,9 @@ const rotate = (v, a) => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.s
 export default {
   id: ID,
   card: {
-    loop: { shows: ['entities'], verbs: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'], progress: ['launched', 'explosion', 'contact'] },
+    loop: { shows: ['entities'], verbs: ['aim', 'aim_left', 'aim_right', 'pull', 'fire', 'ability'],
+      // A cannon is aimed (its speed is fixed); a sling is pulled back, which sets both the direction and the power.
+      verbsOf: config => (config.mode === 'sling' ? ['aim_left', 'aim_right', 'pull', 'fire', 'ability'] : ['aim', 'aim_left', 'aim_right', 'fire', 'ability']), progress: ['launched', 'explosion', 'contact'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "shots", "min": 3, "why": "the shot queue is what the player fires"},
@@ -49,7 +51,7 @@ export default {
     },
     provides: { events: ['aimed', 'launched', 'launched:*', 'ability_used', 'ability_used:*', 'shot_end', 'shots_empty', 'explosion', 'contact', 'move'], vars: ['launcher.shots', 'launcher.aim', 'launcher.power'], actions: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'] },
     requires: { capabilities: ['position'] },
-    actionSpace: { aim: { type: 'number', min: -3.2, max: 3.2 }, power: { type: 'number', min: 0.2, max: 1 }, pull: { type: 'vector', min: -50, max: 50 } },
+    actionSpace: { aim: { type: 'number', min: -3.2, max: 3.2, from: 'options', emits: ['aimed', 'launched'] }, power: { type: 'number', min: 0.2, max: 1 }, pull: { type: 'vector', min: -50, max: 50, from: 'options', emits: ['aimed', 'launched'] } },
   },
   validate(config) {
     const errors = [];
@@ -138,13 +140,16 @@ export default {
         if (s.next >= queue.length) { s.phase = 'empty'; rt.emit('shots_empty', {}); rt.run(config.onEmpty, {}); }
       }
     }, ID);
-    // Solver options: a fan of aims (and, for slings, powers) per shot.
+    // The shots a person can choose: a fan of aims per shot (a cannon), or of pulls (a sling: the pull back from the
+    // pouch, opposite the launch direction, as long as the power needs), each fired.
     rt.options(rt => {
       const s = st(); if (s.phase !== 'aim') return [];
       const out = [], n = 9;
       for (let i = 0; i < n; i++) {
         const aim = config.aim[0] + (config.aim[1] - config.aim[0]) * i / (n - 1);
-        for (const power of config.mode === 'sling' ? [0.6, 0.8, 1] : [1]) out.push({ label: `fire aim ${aim.toFixed(2)} power ${power}`, actions: { aim, power, fire: true } });
+        if (config.mode !== 'sling') { out.push({ label: `fire aim ${aim.toFixed(2)}`, actions: { aim, fire: true } }); continue; }
+        const dir = rotate(config.forward, aim);
+        for (const power of [0.6, 0.8, 1]) out.push({ label: `pull aim ${aim.toFixed(2)} power ${power}`, actions: { pull: [-dir[0] * power * config.maxPull, -dir[1] * power * config.maxPull], fire: true } });
       }
       return out;
     });

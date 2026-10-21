@@ -24,6 +24,8 @@ import { isList, isNum, isStr, obj, objects, str } from '../kernel/guards.js';
  * @property {number} [base] the version a revise starts from
  * @property {number} [seed]
  * @property {Answer[]} [answers]
+ * @property {unknown} [pick] a create job answering the template pick's question: the pick that asked it (from the asking job's
+ *   failure record; untyped until the pipeline checks it like a model answer, templates.js checkPick)
  * @property {string} [experimentId]
  * @property {number} [submittedAt]
  */
@@ -80,6 +82,7 @@ export function jobSpecOf(value) {
     ...(isNum(o.base) ? { base: o.base } : {}),
     ...(isNum(o.seed) ? { seed: o.seed } : {}),
     ...(isList(o.answers) ? { answers: objects(o.answers).map(a => ({ question: str(a.question), answer: str(a.answer) })) } : {}),
+    ...(o.pick !== undefined ? { pick: o.pick } : {}),
     ...(isStr(o.experimentId) ? { experimentId: o.experimentId } : {}),
     ...(isNum(o.submittedAt) ? { submittedAt: o.submittedAt } : {}),
     ...(isNum(o.queuedMs) ? { queuedMs: o.queuedMs } : {}),
@@ -146,7 +149,11 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     } finally {
       job.checkpoints = {};
       running.delete(job.gameId);
-      const next = queue.shift(); if (next) run(next);
+      // The next queued job whose game has none running: one game's jobs run one at a time, in order, so each builds
+      // on the versions the one before it published (never two versions made from the same base, the later one
+      // silently dropping the earlier one's change).
+      const i = queue.findIndex(j => !running.has(j.gameId));
+      if (i >= 0) run(queue.splice(i, 1)[0]);
     }
   }
 
@@ -159,7 +166,8 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     submit(job) {
       /** @type {Job} */
       const full = { id: `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, stages: [], ...job, checkpoints: {}, submittedAt: Date.now() };
-      if (running.size < maxConcurrent) run(full); else { queue.push(full); broadcast({ type: 'queued', gameId: full.gameId, jobId: full.id, position: queue.length }); }
+      if (running.size < maxConcurrent && !running.has(full.gameId) && !queue.some(j => j.gameId === full.gameId)) run(full);
+      else { queue.push(full); broadcast({ type: 'queued', gameId: full.gameId, jobId: full.id, position: queue.length }); }
       return full;
     },
   };

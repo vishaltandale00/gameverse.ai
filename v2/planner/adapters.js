@@ -97,7 +97,7 @@ export function resolveAdapters(composition, registry, opts = {}) {
   const taken = new Set([...spaces.map(s => s.id), ...instanceIds(composition)]);
   for (const [sid, need] of lacking) {
     const space = spaces.find(s => s.id === sid); if (!space) continue;
-    const unit = { use: space.use, with: space.with, caps: new Set(space.caps), base: new Set(space.caps), zones: 0 };
+    const unit = { use: space.use, with: space.with, caps: new Set(space.caps), base: new Set(space.caps), zones: [] };
     const items = KINDS.flatMap(k => need[k].map(item => `${k}:${item}`));
     let open = new Set(items);
     const tried = new Set();

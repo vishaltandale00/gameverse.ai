@@ -13,7 +13,7 @@ export default {
   card: {
     loop: { verbs: ['party_swap', 'deposit', 'withdraw'], progress: ['creature_added', 'creature_level_up', 'creature_evolved'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { party_swap: { type: 'choice', of: 'two party slots' }, deposit: { type: 'choice', of: 'a party slot' }, withdraw: { type: 'choice', of: 'a box slot' } },
+    actionSpace: { party_swap: { type: 'choice', of: 'two party slots', from: 'options', emits: ['party_swapped'] }, deposit: { type: 'choice', of: 'a party slot', from: 'options', emits: ['creature_deposited'] }, withdraw: { type: 'choice', of: 'a box slot', from: 'options', emits: ['creature_withdrawn'] } },
     // Content pack: mechanically valid default content the planner starts from (the model themes it: names, flavour, which ones).
     pack: {
       'content.species': [{ id: 'ember_cub', name: 'Ember Cub', types: ['fire'], base: { hp: 45, atk: 52, def: 43, spa: 60, spd: 50, spe: 65 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'ember' }, { level: 7, move: 'growl' }, { level: 10, move: 'flame_burst' }] }, { id: 'cinder_hound', name: 'Cinder Hound', types: ['fire'], base: { hp: 60, atk: 70, def: 55, spa: 65, spd: 55, spe: 70 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'ember' }, { level: 7, move: 'flame_burst' }] }, { id: 'tide_pup', name: 'Tide Pup', types: ['water'], base: { hp: 50, atk: 48, def: 65, spa: 50, spd: 64, spe: 43 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'water_gun' }, { level: 7, move: 'growl' }, { level: 10, move: 'bubble_beam' }] }, { id: 'reef_turtle', name: 'Reef Turtle', types: ['water'], base: { hp: 70, atk: 60, def: 75, spa: 55, spd: 70, spe: 40 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'water_gun' }, { level: 7, move: 'bubble_beam' }] }, { id: 'sprout', name: 'Sprout', types: ['grass'], base: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'vine_whip' }, { level: 7, move: 'growl' }, { level: 10, move: 'leaf_blade' }] }, { id: 'thorn_stag', name: 'Thorn Stag', types: ['grass'], base: { hp: 65, atk: 72, def: 60, spa: 55, spd: 60, spe: 62 }, catchRate: 90, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 4, move: 'vine_whip' }, { level: 7, move: 'leaf_blade' }] }],
@@ -49,7 +49,7 @@ export default {
       evolveOnLevel: { type: 'boolean', default: true, effect: 'evolve as soon as the level is reached (battles evolve after the battle)' },
     },
     provides: {
-      events: ['creature_added', 'creature_added:*', 'creature_boxed', 'creature_released', 'creature_level_up', 'creature_learned', 'creature_learned:*', 'creature_learn_pending', 'creature_evolved', 'creature_evolved:*', 'dex_seen:*', 'dex_caught:*', 'party_full', 'party_healed'],
+      events: ['creature_added', 'creature_added:*', 'creature_boxed', 'creature_released', 'party_swapped', 'creature_deposited', 'creature_withdrawn', 'creature_level_up', 'creature_learned', 'creature_learned:*', 'creature_learn_pending', 'creature_evolved', 'creature_evolved:*', 'dex_seen:*', 'dex_caught:*', 'party_full', 'party_healed'],
       vars: ['party.size', 'party.alive', 'dex.seen', 'dex.caught'],
       services: ['creatures'],
       actions: ['party_swap', 'deposit', 'withdraw'],
@@ -98,8 +98,12 @@ export default {
         vars();
         return where;
       },
-      /** Replace an owner's party (a battle writes its copy back). */
-      setParty(who, list) { own(who).party = list; vars(); },
+      /** Lend an owner's party to a battle: a copy it plays with, while the party verbs wait for setParty. */
+      lend(who, by) { const o = own(who); o.lent = by; return structuredClone(o.party); },
+      /** Who the party is lent to, or null. */
+      lentTo: who => own(who).lent ?? null,
+      /** Replace an owner's party (a battle writes its copy back, ending the loan). */
+      setParty(who, list) { const o = own(who); o.party = list; delete o.lent; vars(); },
       healAll(who) { for (const c of own(who).party) healCreature(content(), c); rt.emit('party_healed', { who }); vars(); },
       /** Experience outside battle; new moves beyond four forget the oldest. */
       giveExp(who, slot, amount) {
@@ -119,8 +123,34 @@ export default {
     };
     rt.provide('creatures', api);
     if (!st().init) { st().init = true; for (const s of config.start) api.add('player', api.create(s.species, s.level), { caught: true }); vars(); }
-    rt.action('party_swap', v => { const p = own('player').party, [a, b] = Array.isArray(v) ? v : []; if (p[a] && p[b]) { [p[a], p[b]] = [p[b], p[a]]; vars(); } });
-    rt.action('deposit', v => { const o = own('player'), i = Number(v) || 0; if (o.party.length > 1 && o.party[i] && o.box.length < config.box) { o.box.push(...o.party.splice(i, 1)); vars(); } });
-    rt.action('withdraw', v => { const o = own('player'), i = Number(v) || 0; if (o.box[i] && o.party.length < config.size) { o.party.push(...o.box.splice(i, 1)); vars(); } });
+    // The player's party verbs, each with the values it can take now (the options a person chooses from).
+    const name = c => speciesOf(content(), c.species)?.name ?? c.species;
+    // A party lent to a battle is the battle's until it is written back: its verbs wait.
+    const canSwap = (o, a, b) => !o.lent && a !== b && Boolean(o.party[a] && o.party[b]);
+    const canDeposit = (o, i) => !o.lent && o.party.length > 1 && Boolean(o.party[i]) && o.box.length < config.box;
+    const canWithdraw = (o, i) => !o.lent && Boolean(o.box[i]) && o.party.length < config.size;
+    rt.action('party_swap', v => {
+      const o = own('player'), [a, b] = Array.isArray(v) ? v : []; if (!canSwap(o, a, b)) return;
+      [o.party[a], o.party[b]] = [o.party[b], o.party[a]]; vars();
+      rt.emit('party_swapped', { who: 'player', slots: [a, b], uids: [o.party[a].uid, o.party[b].uid] });
+    });
+    rt.action('deposit', v => {
+      const o = own('player'), i = Number(v); if (!Number.isInteger(i) || !canDeposit(o, i)) return;
+      const [c] = o.party.splice(i, 1); o.box.push(c); vars();
+      rt.emit('creature_deposited', { who: 'player', uid: c.uid, species: c.species, slot: i });
+    });
+    rt.action('withdraw', v => {
+      const o = own('player'), i = Number(v); if (!Number.isInteger(i) || !canWithdraw(o, i)) return;
+      const [c] = o.box.splice(i, 1); o.party.push(c); vars();
+      rt.emit('creature_withdrawn', { who: 'player', uid: c.uid, species: c.species, slot: i });
+    });
+    rt.options(rt => {
+      const o = own('player'), out = [];
+      // Every pair of party slots (slot 0 is the lead that battles first), each creature to the box, each boxed one back.
+      for (let a = 0; a < o.party.length; a++) for (let b = a + 1; b < o.party.length; b++) if (canSwap(o, a, b)) out.push({ label: `swap ${name(o.party[a])} and ${name(o.party[b])}`, text: `Swap ${name(o.party[a])} and ${name(o.party[b])}`, actions: { party_swap: [a, b] } });
+      o.party.forEach((c, i) => { if (canDeposit(o, i)) out.push({ label: `deposit ${name(c)}`, text: `Send ${name(c)} to storage`, actions: { deposit: i } }); });
+      o.box.forEach((c, i) => { if (canWithdraw(o, i)) out.push({ label: `withdraw ${name(c)}`, text: `Bring ${name(c)} back from storage`, actions: { withdraw: i } }); });
+      return out;
+    });
   },
 };

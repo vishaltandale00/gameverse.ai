@@ -39,7 +39,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'navigate', 'pathfind', 'reachable', 'occupancy', 'los', 'overlap', 'editCells', 'settle', 'cellRules', 'bounds', 'wrap'],
       capabilityMethods: { settle: ['settle', 'settled'], cellRules: ['ruleAt', 'passable', 'speedAt'], bounds: BOUNDS_CAPS.bounds, wrap: BOUNDS_CAPS.wrap },
-      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'blocked', 'moved', 'settled', 'zone_added'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'blocked', 'moved', 'settled', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     reads: ['content.blocks'],
     at: 'At = [col, row] (integers are cell centres; square/iso may hold fractional positions while lane-moving; the cell is the rounded position). Hex uses odd-r offset coordinates. cellCenter(cell) gives layout coordinates.',

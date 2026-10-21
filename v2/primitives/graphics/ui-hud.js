@@ -12,12 +12,15 @@ import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
 import { sideOf } from './allegiance.js';
+import { declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const pos = (d = 'top-left') => ({ type: 'string', default: d, options: POSITIONS, effect: 'screen anchor' });
 
 const card = {
   intent: 'Heads-up display bound declaratively to game state: meters for hp and resource pools, counters for vars or items (hearts as icons), score, lives, wanted stars, interact prompt, compass, clock, status icons, boss bar, combo popups, crosshair, tracked objective, notifications and zone titles.',
+  // Says why a press was refused: the denials the document's primitives declare (card.denials), as toasts.
+  feedback: { denials: true },
   views: ['any'],
   params: {
     style: { type: 'string', default: 'auto', options: ['auto', ...THEMES], effect: 'visual theme; auto follows the game look' },
@@ -320,6 +323,8 @@ export default {
     rt.on('ability_unlocked', e => toast({ kind: 'level', kicker: 'New ability', text: titleCase(e.ability ?? e.subject), iconName: 'bolt' }));
     rt.on('gate_blocked', e => { if ((e.who ?? 'player') === 'player' && e.hint) toast({ key: `gate:${e.gate}`, kind: 'warn', text: e.hint, iconName: 'lock' }); });
     rt.on('inventory_full', () => toast({ kind: 'warn', text: 'Inventory full', iconName: 'bag' }));
+    // Refusals: every event the document's primitives declare as a denial (card.denials) says why a press did nothing.
+    for (const ev of declaredDenials(rt.doc, rt.registry)) rt.on(ev, e => { if (deniesPlayer(rt, e)) toast({ key: `denied:${ev}`, kind: 'warn', kicker: titleCase(ev), text: titleCase(e.reason ?? '') || 'Not now', iconName: 'lock' }); });
     rt.on('saved', e => { if (!e.auto) toast({ kind: 'info', text: 'Game saved', iconName: 'book' }); });
 
     // Zone titles.

@@ -21,7 +21,7 @@ export default {
   card: {
     loop: { verbs: ['build', 'demolish'], progress: ['built', 'slot_filled'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { build: { type: 'choice', of: 'a piece and the cell it is anchored at' }, demolish: { type: 'choice', of: 'a built structure' } },
+    actionSpace: { build: { type: 'choice', of: 'a piece and the cell it is anchored at', pick: 'piece', from: 'options', emits: ['built'] }, demolish: { type: 'choice', of: 'a built structure', from: 'options', emits: ['demolished'] } },
     intent: 'Snap-together building: pieces (cell shapes of a block with an item cost) placed on a grid with rotation, only inside owned plots when ownership is on, demolish for a refund, and settlement slots that complete when built in.',
     views: ['1p', '3p', 'td', 'iso'],
     params: {
@@ -35,6 +35,8 @@ export default {
       slots: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, zone: { type: 'ref', to: 'zone', required: true }, piece: { type: 'string', effect: 'piece required (default any)' }, onFilled: { type: 'effects', default: [] } } }, effect: 'settlement slots filled by building in them' },
       refund: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'fraction of the cost returned on demolish' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['build_denied'],
     provides: { events: ['built', 'built:*', 'build_denied', 'demolished', 'slot_filled', 'slot_filled:*'], actions: ['build', 'demolish'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.blocks', 'content.items'],
@@ -73,19 +75,29 @@ export default {
       if (!config.ownership) return true;
       return cells.every(c => { const z = sp.zoneAt(c); const plot = config.plots.find(p => p.zone === z); return plot && rt.test(plot.when ?? { flag: `owns.${plot.zone}` }); });
     }
-    function build(who, v) {
+    // Cells outside the space's declared extent (api.size) cannot hold a piece.
+    const inside = (sp, c) => !Array.isArray(sp.size) || sp.size.every((n, i) => c[i] >= 0 && c[i] < n);
+    /** What building `v` would do now, without doing it: { piece, anchor, cells, cost } or { reason } (the denial). */
+    function plan(who, v) {
       const e = rt.entity(who), sp = e && rt.space(e.space), p = pieces.get(v?.piece);
-      const deny = reason => { rt.emit('build_denied', { who, piece: v?.piece ?? null, reason }); return false; };
-      if (!p) return deny('piece');
-      if (!Array.isArray(v.at)) return deny('anchor');
+      if (!p) return { reason: 'piece' };
+      if (!Array.isArray(v.at)) return { reason: 'anchor' };
       const anchor = add(snap(v.at), [0, p.lift ?? 0, 0]);
       const me = Array.isArray(e.at) ? v3(e.at) : null;
-      if (me && Math.hypot(...anchor.map((x, i) => x - me[i])) > config.reach) return deny('range');
+      if (me && Math.hypot(...anchor.map((x, i) => x - me[i])) > config.reach) return { reason: 'range' };
       const cells = p.cells.map(c => add(anchor, rotate(v3(c), v.rot ?? 0)));
-      if (cells.some(c => sp.getCell(c) != null)) return deny('occupied');
-      if (!plotOk(sp, cells)) return deny('plot');
+      if (!cells.every(c => inside(sp, c))) return { reason: 'bounds' };
+      if (cells.some(c => sp.getCell(c) != null)) return { reason: 'occupied' };
+      if (!plotOk(sp, cells)) return { reason: 'plot' };
       const cost = costOf(p);
-      if (cost.some(c => count(rt, who, c.item) < c.count)) return deny('cost');
+      if (cost.some(c => count(rt, who, c.item) < c.count)) return { reason: 'cost' };
+      return { piece: p, anchor, cells, cost };
+    }
+    function build(who, v) {
+      const e = rt.entity(who), sp = e && rt.space(e.space);
+      const deny = reason => { rt.emit('build_denied', { who, piece: v?.piece ?? null, reason }); return false; };
+      const pl = plan(who, v); if (pl.reason) return deny(pl.reason);
+      const { piece: p, anchor, cells, cost } = pl;
       const placed = [];
       for (const c of cells) { if (!sp.setCell(c, p.block, rt, who)) { for (const q of placed) sp.setCell(q, null, rt, who); return deny('bounds'); } placed.push(c); }
       for (const c of cost) take(rt, who, c.item, c.count);
@@ -111,6 +123,19 @@ export default {
     }
     rt.action('build', (v, rt) => build('player', v));
     rt.action('demolish', (id, rt) => demolish('player', id));
+    // The values a person chooses from: each piece at the free anchors two cells from the builder along the ground
+    // plane (x and z with y up; x and y on a plane), and each structure the builder owns.
+    rt.options(rt => {
+      const e = rt.player(); if (!e || !Array.isArray(e.at)) return [];
+      const flat = e.at.length < 3, here = v3(e.at), out = [];
+      const ring = flat ? [[2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0]] : [[2, 0, 0], [-2, 0, 0], [0, 0, 2], [0, 0, -2]];
+      for (const id of pieces.keys()) for (const d of ring) {
+        const at = add(here, d).map(Math.round), v = { piece: id, at };
+        if (!plan('player', v).reason) out.push({ label: `build ${id} at ${at.join(',')}`, actions: { build: v } });
+      }
+      for (const b of Object.values(st().built)) if (b.owner === 'player') out.push({ label: `demolish ${b.piece} ${b.id}`, actions: { demolish: b.id } });
+      return out;
+    });
     rt.provide('structures', { list: () => structuredClone(Object.values(st().built)), pieces: () => [...pieces.keys()], cost: id => costOf(pieces.get(id)) });
   },
 };

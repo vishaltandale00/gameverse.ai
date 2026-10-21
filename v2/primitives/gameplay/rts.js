@@ -23,7 +23,7 @@ export default {
     sides: { param: 'factions', control: 'player', component: 'rts', field: 'faction' },
     loop: { shows: ['entities', 'cells'], verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { select: { type: 'choice', of: 'units of the player faction', selects: 'who' }, order: { type: 'choice', of: 'an order for units (gather, move, attack-move) and its target', pick: 'who' }, produce: { type: 'choice', of: 'a building and what it trains' }, rally: { type: 'choice', of: 'a building and its rally point' } },
+    actionSpace: { select: { type: 'choice', of: 'units of the player faction', selects: 'who', emits: ['selected'] }, order: { type: 'choice', of: 'an order for units (gather, move, attack-move) and its target', pick: 'who', from: 'options', emits: ['order_given'] }, produce: { type: 'choice', of: 'a building and what it trains', from: 'options', emits: ['production_queued'] }, rally: { type: 'choice', of: 'a building and its rally point', from: 'options', emits: ['rally_set'] } },
     // Its AI-controlled factions play themselves (stepAI): they gather, produce and order attack-moves.
     drives: { control: 'ai', actions: ['order', 'produce'], events: ['order_given', 'unit_attack', 'unit_produced'], movement: true },
     // Shapes of the archetype component this primitive owns (the planner's schemas and repair read them).
@@ -60,6 +60,8 @@ export default {
       ai: { type: 'object', default: { attackAt: 6, workers: 6 }, fields: { attackAt: { type: 'integer', default: 6, min: 1, max: 500, effect: 'army size before attacking' }, workers: { type: 'integer', default: 6, min: 0, max: 200 } } },
       onVictory: { type: 'effects', default: [] }, onDefeat: { type: 'effects', default: [] },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['rts_invalid'],
     provides: {
       events: ['selected', 'order_given', 'rally_set', 'unit_attack', 'unit_produced', 'unit_produced:*', 'production_queued', 'building_complete', 'building_complete:*', 'gathered', 'deposited', 'node_depleted', 'faction_defeated', 'rts_invalid', 'spotted'],
       vars: ['rts.*', 'rts.selected'],

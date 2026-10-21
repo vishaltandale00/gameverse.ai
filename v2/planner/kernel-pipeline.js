@@ -18,9 +18,10 @@ import { applySkins, mashupAdapterProblems } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
-import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale } from './doc-revise.js';
+import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale, REVISE_VERSION } from './doc-revise.js';
+import { gateVersion, gateError, versionTemplate, tuneLimits, VERSION_GATE_VERSION } from './version-gate.js';
 import { contentGrowth } from './revision-check.js';
-import { repairDocument, describeErrors } from './repair.js';
+import { describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
 import { coreLoopProblems } from './core-loop.js';
 import { loopProblems } from './loop-check.js';
@@ -29,7 +30,10 @@ import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
-import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn } from './templates.js';
+import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
+import { EXTEND_VERSION, extendDocument, paramsForm, recordingWriter, unengaged } from './extend.js';
+import { cardLoop } from './loop.js';
+import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -108,10 +112,16 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
    * loop check -> first playable -> the publish gate -> publish. Templates are complete verified documents: a check
    * failing after composition is a template defect and the build fails with its problems (never repaired around,
    * never substituted). A pick naming a game or genre no template is routes the whole idea to the step path.
-   * Timings are measured (null when not): pickMs, contentMs, composeMs (code composing the pick into a document,
-   * content applied and checked, excluding model calls and the gate), gateMs, requestToFirstPlayableMs; modelCalls
-   * counts every call, modelRounds the sequential ones (the pick's calls, then the most calls any parallel content
-   * form made).
+   * Readings: a pick that names a concept the idea can mean two ways (templates.js `readings`) stops with a question
+   * (409 'needs_answer': the questions and the pick are kept as the checkpoint 'question'); the job that carries the
+   * answers and that pick (job.pick, held to the same checks) builds the reading chosen, asking nothing again.
+   * Extensions: the mechanics the pick names that the composed templates do not give are added onto the composed
+   * document (extend.js), each checked, their params written in the content round; a mechanic nothing covers fails the
+   * build naming it (422 'extension_missing') before any content is asked.
+   * Timings are measured (null when not): pickMs, extendMs, contentMs, composeMs (code composing the pick into a
+   * document, content applied and checked, excluding model calls, the extension steps and the gate), gateMs,
+   * requestToFirstPlayableMs; modelCalls counts every call, modelRounds the sequential ones (the pick's calls, the
+   * extension steps' questions, then the most calls any parallel content form made).
    * @param {JobSpec} job @param {JobContext} ctx
    * @param {{ registry: RegistryLike, logic: LogicLike, seed: number | string, prompt: string, t0: number, timings: Timings }} run
    * @returns {Promise<{ path: 'template', result: Record<string, unknown> } | { path: 'step', pick: { pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } }>}
@@ -124,23 +134,42 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const calls = [];
     const clock = { codeMs: 0 };
     ctx.stage('picking_templates', { model: writer.model, templates: templates.map(t => t.id) });
-    let t = performance.now();
-    const picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
-    timings.pickMs = ms(t);
-    clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
-    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls });
-    if (picked.stepPath.length) {
-      const why = `no template is ${picked.stepPath.map(n => `'${n}'`).join(', ')}: the step path builds the whole idea`;
-      ctx.stage('templates_picked', { ms: timings.pickMs, path: 'step', why, stepPath: picked.stepPath, calls: calls.length });
-      return { path: 'step', pick: { pick: picked.pick, stepPath: picked.stepPath, why, calls: calls.length } };
-    }
     const fail = (/** @type {string} */ code, /** @type {string} */ stage, /** @type {Array<{ code?: unknown, path?: unknown, message?: unknown }>} */ problems) => {
       checkpoint('templateFailure', { stage, code, problems: problems.slice(0, 20), calls });
       ctx.stage('not_buildable', { path: 'template', stage, code, missing: problems.slice(0, 8).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`) });
       return Object.assign(Error(`This isn't the game you asked for yet: the template path failed at ${stage}: ${problems.slice(0, 4).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`).join('; ')}`), { status: 422, code, report: { path: 'template', stage, problems, calls } });
     };
+    let t = performance.now();
+    // A job answering the pick's question carries that pick (kept by the job that asked): it is held to the pick's
+    // checks like a model answer, and never asked again.
+    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], calls: number }} */
+    let picked;
+    if (job.pick !== undefined) {
+      const pick = narrowPick(job.pick), checked = checkPick(pick, { templates, registry });
+      if (checked.problems.length) throw fail('pick_resume_invalid', 'pick', checked.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
+      picked = { pick, stepPath: checked.stepPath, calls: 0 };
+    } else picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
+    timings.pickMs = ms(t);
+    clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
+    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls });
+    // Never guess between readings: a concept the idea can mean two ways is the player's choice.
+    const read = chooseReading(picked.pick, job.answers || [], { templates, registry });
+    if (read.unanswered.length) {
+      const questions = read.questions.map(({ id, question, options }) => ({ id, question, options }));
+      checkpoint('question', { questions, pick: picked.pick });
+      ctx.stage('question', { questions });
+      throw Object.assign(Error(`Which game did you mean? ${read.unanswered.map(q => `${q.question} ${q.options.map(o => `"${o}"`).join(' or ')}`).join('; ')}`), { status: 409, code: 'needs_answer', report: { path: 'template', stage: 'reading', questions, pick: picked.pick, calls } });
+    }
+    if (!read.pick) throw fail('pick_reading_invalid', 'reading', read.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
+    const pick = read.pick;
+    const stepPath = checkPick(pick, { templates, registry }).stepPath;
+    if (stepPath.length) {
+      const why = `no template is ${stepPath.map(n => `'${n}'`).join(', ')}: the step path builds the whole idea`;
+      ctx.stage('templates_picked', { ms: timings.pickMs, path: 'step', why, stepPath, calls: calls.length });
+      return { path: 'step', pick: { pick, stepPath, why, calls: calls.length } };
+    }
     let tc = performance.now();
-    const composed = composeTemplates(picked.pick, { templates, registry, logic });
+    const composed = composeTemplates(pick, { templates, registry, logic });
     clock.codeMs += performance.now() - tc;
     if (!composed.doc || !composed.template) throw fail(composed.problems[0]?.code ?? 'template_composition_failed', 'composition', composed.problems);
     const template = composed.template;
@@ -154,14 +183,44 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     clock.codeMs += performance.now() - tc;
     if (!base.ok) throw fail(defect, 'preflight', base.errors);
     ctx.stage('templates_picked', { ms: timings.pickMs, path: 'template', templates: used, joins: composed.joins, themes: composed.themes.map(x => x.name), calls: calls.length });
+    // The idea's mechanics the templates do not give, added onto the composed document one by one, each checked.
     t = performance.now();
-    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick: picked.pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts });
+    const before = calls.length;
+    const interactions = [...new Set(templateLoops(composed.parts[0].template, registry).loops.flatMap(l => l.interactions))];
+    const ext = await extendDocument({ doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+      header: `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`,
+      gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail) });
+    timings.extendMs = pick.mechanics.length ? ms(t) : null;
+    const extensionCalls = calls.length - before;
+    checkpoint('extensions', { coverage: ext.coverage, added: ext.added });
+    if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}` })));
+    ({ registry, logic } = ext);
+    const extended = ext.doc;
+    const extUses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
+    /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
+    const paramForms = [];
+    for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
+    t = performance.now();
+    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
+      extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })) });
     timings.contentMs = ms(t);
     ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
     // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
-    // so nothing is engaged, furnished or isolated here.
+    // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
+    // declare (engage.js `only`), and the player must get their verbs.
     tc = performance.now();
-    const pre = preflight(content.doc, registry, logic);
+    /** @type {Record<string, any>} */
+    let played = content.doc;
+    if (extUses.size) {
+      const unfilled = unengaged(played, [...extUses], { registry, logic });
+      if (unfilled.length) throw fail('extension_unengaged', 'extension', unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })));
+      const engaged = engageDocument(/** @type {Doc} */ (played), registry, logic, { only: extUses });
+      if (!engaged.ok) throw fail('extension_unengaged', 'extension', engaged.errors);
+      played = engaged.doc;
+      const unusable = ext.added.filter(use => { const card = registry.get(use)?.card; return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(played).some(i => i.use === use && instanceVerbs(card, i, played).length > 0); });
+      if (unusable.length) throw fail('extension_unusable', 'extension', unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })));
+    }
+    const pre = preflight(played, registry, logic);
     if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
     const loop = loopProblems(pre.doc, registry, { logic });
     if (loop.length) throw fail(defect, 'loop', loop);
@@ -169,30 +228,32 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     clock.codeMs += performance.now() - tc;
     if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
     timings.composeMs = Math.round(clock.codeMs);
+    // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
     const tg = performance.now();
-    const v = await verifyDocument(fp.doc, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+    const gate = await gateVersion(fp.doc, { registry, logic, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs, template });
     timings.gateMs = ms(tg);
-    if (!v.viable) throw fail('not_playable', 'gate', [{ code: 'not_playable', path: '$', message: String(v.viability || 'not viable') }, ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)]);
+    if (!gate.ok || !gate.doc || !gate.verification) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems);
+    const v = gate.verification;
     t = performance.now();
     const quality = qualityReport(v, registry, logic, { budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
     timings.firstPlayableBuildMs = fp.ms;
     timings.requestToFirstPlayableMs = ms(t0);
-    const modelCalls = calls.length, modelRounds = picked.calls + content.rounds;
-    const doc = fp.doc;
+    const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + content.rounds;
+    const doc = gate.doc;
     await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
-    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick: picked.pick, themes: composed.themes, content: content.forms, calls, modelCalls, modelRounds,
-      summary: doc.logline || picked.pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), playtest: v.playtest, quality,
+    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, themes: composed.themes, mechanics: ext.coverage, extensionCalls, content: content.forms, calls, modelCalls, modelRounds,
+      summary: doc.logline || pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), features: v.features ?? null, playtest: v.playtest, quality,
       firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } };
     const provenance = { pipeline: KERNEL_PIPELINE_VERSION, templatePath: TEMPLATE_PATH_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null, code: escalate?.model || null },
-      seed, prompt: job.prompt, answers: job.answers || [], templates: used, pickHash: hashOf(picked.pick), outlineHash: hashOf(doc) };
+      seed, prompt: job.prompt, answers: job.answers || [], templates: used, extend: EXTEND_VERSION, pickHash: hashOf(pick), outlineHash: hashOf(doc) };
     checkpoint('gate', { viable: Boolean(v.viable), viability: v.viability || null, playtest: v.playtest || null, problems: (v.problems || []).slice(0, 20) });
     await ctx.publish({ doc, stage: 'first_playable', report, provenance });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: fp.ms, gateMs: timings.gateMs, path: 'template', modelCalls, modelRounds, pickMs: timings.pickMs, contentMs: timings.contentMs, composeMs: timings.composeMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(v) });
     timings.totalMs = ms(t0);
     ctx.stage('complete', { timings, path: 'template', modelCalls, modelRounds });
-    return { path: 'template', result: { doc, path: 'template', templates: used, pick: picked.pick, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
+    return { path: 'template', result: { doc, path: 'template', templates: used, pick, mechanics: ext.coverage, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
   }
 
   /** @param {JobSpec} job @param {JobContext} ctx */
@@ -267,12 +328,13 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       // with a relation has its adapter instances), or the build fails with that gap.
       const lost = mashupAdapterProblems(doc, decomposition, sel, registry);
       if (lost.length) return { ok: /** @type {const} */ (false), stage: 'mashup', problems: lost, doc, outline, engaged };
-      // The publish gate: a playtest agent plays this exact document; nothing may crash and the declared loop must happen.
+      // The version gate every new version passes (version-gate.js): the static checks, then a playtest agent plays
+      // this exact document through the controls; nothing may crash and the declared loop must happen.
       const tg = performance.now();
-      const base = outline.verification && hashOf(outline.verification.doc ?? null) === hashOf(doc) ? outline.verification
-        : await verifyDocument(doc, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+      const gate = await gateVersion(doc, { registry, logic, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
       timings.gateMs = ms(tg);
-      if (!base.viable) return { ok: /** @type {const} */ (false), stage: 'gate', problems: [{ code: 'not_playable', path: '$', message: String(base.viability || 'not viable') }, ...(base.problems || []).filter(p => p.severity === 'error').slice(0, 8)], doc, outline, base };
+      if (!gate.ok || !gate.verification) return { ok: /** @type {const} */ (false), stage: gate.stage ?? 'gate', problems: gate.problems, doc, outline, base: gate.verification };
+      const base = gate.verification;
       const core = coreLoopProblems(doc, sel.mechanics, registry);
       if (core.length) return { ok: /** @type {const} */ (false), stage: 'core_loop', problems: core, doc, outline, base };
       return { ok: /** @type {const} */ (true), doc, outline, engaged, fp, base };
@@ -414,8 +476,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         ctx.stage('gap', { mechanic: g.mechanic });
         try {
           const r = await gapService.fill({ doc: latest, request: g.description, gap: g });
-          if (r.ok) {
-            latest = r.doc; filled.push({ mechanic: g.mechanic, experiment: r.experiment.id, ms: ms(tg) });
+          // The gap's version passes the version gate like every other, held to the version it changes.
+          const gated = r.ok ? await (async () => {
+            const cat = await catalogue(r.doc);
+            const before = await gateVersion(latest, { ...cat, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+            return gateVersion(r.doc, { ...cat, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs, ...(before.ok && before.doc && before.verification ? { base: { doc: before.doc, verification: before.verification } } : {}) });
+          })() : null;
+          if (r.ok && gated && !gated.ok) filled.push({ mechanic: g.mechanic, ok: false, experiment: r.experiment.id, gate: { stage: gated.stage, problems: gated.problems.slice(0, 8) }, ms: ms(tg) });
+          else if (r.ok && gated?.doc) {
+            latest = gated.doc; filled.push({ mechanic: g.mechanic, experiment: r.experiment.id, ms: ms(tg) });
             await ctx.publish({ doc: latest, stage: `gap:${g.mechanic}`, report: { ...common, gaps: common.gaps.filter(x => x.mechanic !== g.mechanic), experiment: { id: r.experiment.id, label: r.experiment.label }, changes: [`experimental: ${r.experiment.label}`], timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ experiment: r.experiment.id }) });
           } else filled.push({ mechanic: g.mechanic, ok: false, problems: r.problems, ms: ms(tg) });
         } catch (error) { filled.push({ mechanic: g.mechanic, ok: false, error: errorText(error).slice(0, 160), ms: ms(tg) }); }
@@ -426,27 +495,42 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     return { doc: latest, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, base };
   }
 
-  /** @param {JobSpec} job @param {JobContext} ctx */
+  /**
+   * A revision: a new immutable version checked like a new game (ARCHITECTURE §4). The change applies to the version
+   * the job names, else to the game's latest version when the job runs (a change queued behind another builds on it).
+   * A parameter tweak (no model; on a template game within the ranges its template tunes them) else the model's ops,
+   * preflighted (a failing draft goes back to the model with the errors; nothing is repaired around, stubbed or
+   * dropped). Then the version gate (version-gate.js) on the document a person plays, against the base version
+   * verified with the same budgets: preflight, the template's tune ranges, composition, loop, controls, the publish
+   * gate with its feature checks, no feature that worked stops working, and every named bot that won the base still
+   * wins. A failing gate refuses the version (422) with its stage and problems. The version published is the revised
+   * document itself (the host adds its input and UI when it mounts it); its provenance names the base, the change and
+   * every op that turns the base into it.
+   * @param {JobSpec} job @param {JobContext} ctx
+   */
   async function revise(job, ctx) {
     /** @type {Timings} */
     const timings = {};
     const t0 = performance.now();
     // A stored version (from disk, or across the job process boundary): narrowed here. Its document is checked by
     // the revision stages and verified (preflight) below.
-    const previous = obj(await ctx.store.version(job.gameId, Number(job.base)));
+    const previous = obj(job.base !== undefined && job.base !== null ? await ctx.store.version(job.gameId, Number(job.base)) : await ctx.store.latest(job.gameId));
     if (!previous.doc) throw Object.assign(Error('That version is missing.'), { status: 404 });
+    const baseVersion = Number(previous.version ?? job.base);
     const { registry, logic } = await catalogue(previous.doc);
     // The stored document becomes a Doc through preflight (published versions are preflighted documents, so this is
     // the same document unless the catalogue changed since).
     const stored = preflight(previous.doc, registry, logic);
     if (!stored.ok) throw Object.assign(Error(`That version no longer passes checks: ${stored.errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422 });
     const before = stored.doc;
+    // The template the game was built from (its provenance names it): its tune ranges bound the change.
+    const template = versionTemplate(previous.provenance, /** @type {readonly Template[]} */ (TEMPLATES));
     // A revise job carries its change (api.mjs); a missing one is written to the models as empty.
     const change = str(job.change);
-    ctx.stage('revising', { change: job.change });
+    ctx.stage('revising', { change: job.change, base: baseVersion });
     // Layer 5 first: a parameter tweak with no model.
     let t = performance.now();
-    const tweak = await tweakDocument(before, job.change, { registry, decisions });
+    const tweak = await tweakDocument(before, job.change, { registry, decisions, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
     timings.tweakMs = ms(t);
     /** @type {Doc | null} */
     let after = null;
@@ -463,21 +547,28 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     if (tweak.matched) { after = tweak.doc; path = tweak.scaled ? 'scale' : 'tweak'; opsApplied = tweak.ops; ctx.stage('tweaked', { ms: timings.tweakMs, ops: tweak.ops.length, source: tweak.source }); }
     if (!after && spec) {
       t = performance.now();
-      let r = await reviseDocument({ writer: spec, doc: before, change, registry, logic });
-      modelMs = r.ms; unsupported = r.unsupported;
-      // Ops that only resize a space's extent become scaleWorld, so the generated content grows with the container.
-      let routed = routeWorldScale(before, r.ops, registry); if (routed.scaled.length) scaled = { factor: routed.scaled[0].factor, spaces: routed.scaled };
-      let applied = applyOps(routed.doc, routed.ops), repaired = repairDocument(applied.doc, { registry, logic, rounds: 4 });
-      for (let n = 0; !repaired.ok && n < cfg.reviseRepairs; n++) {
-        r = await reviseDocument({ writer: spec, doc: before, change, registry, logic, errors: describeErrors(repaired.errors), previous: r.ops });
+      /** @type {Awaited<ReturnType<typeof reviseDocument>> | null} */
+      let r = null;
+      /** @type {ReturnType<typeof preflight> | null} */
+      let checked = null;
+      let applied = applyOps(before, []);
+      // The model's ops, checked against the card-derived schemas; a failing draft goes back with its errors.
+      for (let n = 0; n <= cfg.reviseRepairs && !checked?.ok; n++) {
+        r = await reviseDocument({ writer: spec, doc: before, change, registry, logic, ...(checked ? { errors: describeErrors(checked.errors), previous: r?.ops } : {}) });
         modelMs = (modelMs ?? 0) + r.ms; unsupported = r.unsupported;
-        routed = routeWorldScale(before, r.ops, registry); if (routed.scaled.length) scaled = { factor: routed.scaled[0].factor, spaces: routed.scaled };
-        applied = applyOps(routed.doc, routed.ops); repaired = repairDocument(applied.doc, { registry, logic, rounds: 4 });
+        // Ops that only resize a space's extent become scaleWorld, so the generated content grows with the container.
+        const routed = routeWorldScale(before, r.ops, registry);
+        scaled = routed.scaled.length ? { factor: routed.scaled[0].factor, spaces: routed.scaled } : null;
+        applied = applyOps(routed.doc, routed.ops);
+        checked = preflight(applied.doc, registry, logic);
       }
       timings.reviseMs = ms(t); timings.reviseModelMs = modelMs;
-      if (!repaired.ok) ctx.checkpoint?.('revision', { base: job.base, change: job.change, path: 'model', ops: (r.ops || []).slice(0, 50), unsupported, errors: repaired.errors.slice(0, 20), timings: { ...timings }, doc: repaired.doc });
-      if (!repaired.ok) throw Object.assign(Error(`The change failed checks: ${repaired.errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422 });
-      after = repaired.doc; path = 'model'; opsApplied = applied.applied;
+      if (!checked?.ok) {
+        const errors = checked?.errors ?? [];
+        ctx.checkpoint?.('revision', { base: baseVersion, change: job.change, path: 'model', ops: (r?.ops || []).slice(0, 50), unsupported, errors: errors.slice(0, 20), timings: { ...timings }, doc: applied.doc });
+        throw Object.assign(Error(`The change failed checks: ${errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422, code: 'revision_invalid' });
+      }
+      after = checked.doc; path = 'model'; opsApplied = applied.applied;
       ctx.stage('revised', { ms: timings.reviseMs, ops: applied.applied.length, failed: applied.failed.length });
     }
     if (!after) {
@@ -486,11 +577,20 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       unsupported = [{ request: job.change, why: 'No parameter of this game matches that change, and no model is connected to write it.' }];
     }
     t = performance.now();
-    ctx.checkpoint?.('revision', { base: job.base, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
-    const v = await verifyDocument(after, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
-    const vBefore = await verifyDocument(before, registry, logic, { budgetMs: cfg.solveBudgetMs });
-    const guard = await reviewChange({ before, after, change, decisions, unsupported, verifyBefore: vBefore, verifyAfter: v });
-    timings.guardMs = ms(t); timings.verifyMs = timings.guardMs;
+    ctx.checkpoint?.('revision', { base: baseVersion, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
+    // The version gate, against the base verified with the same budgets (comparable baselines; made only once the
+    // static stages pass).
+    const budgets = { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs };
+    const gate = await gateVersion(after, { registry, logic, ...budgets, template, base: { doc: before, verify: () => verifyDocument(before, registry, logic, budgets), proof: prop(previous.report, 'proof') } });
+    timings.gateMs = ms(t); timings.botsMs = gate.ms.bots ?? null;
+    if (!gate.ok || !gate.doc || !gate.verification) {
+      ctx.checkpoint?.('versionGate', { stage: gate.stage, problems: gate.problems.slice(0, 20), ms: gate.ms, baseProof: gate.baseProof, proof: gate.proof });
+      throw gateError(gate, 'That change');
+    }
+    const v = gate.verification, published = gate.doc, vBefore = gate.baseVerification;
+    t = performance.now();
+    const guard = await reviewChange({ before, after: published, change, decisions, unsupported, verifyBefore: vBefore, verifyAfter: v });
+    timings.guardMs = ms(t); timings.verifyMs = timings.gateMs;
     if (guard.block) throw Object.assign(Error(guard.block.message), { status: 422, code: guard.block.code });
     // A world-size request is done only when the generated content grew (cells, entities, zones, rooms), not a container param.
     let growth = null;
@@ -498,7 +598,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     /** @type {Partial<import('./revision-check.js').RevisionCheck> | null} */
     let revisionCheck = guard.revisionCheck;
     if (scaled || worldScaleRequest(job.change)) {
-      growth = contentGrowth(before, after, registry, logic);
+      growth = contentGrowth(before, published, registry, logic);
       const wantGrow = (scaled?.factor ?? worldScaleRequest(job.change) ?? 1) > 1;
       if (wantGrow && !growth.grew) revisionCheck = { ...(revisionCheck || {}), notApplied: true, why: 'Only the world\'s container grew: nothing it generates (cells, rooms, zones, entities) got bigger.' };
     }
@@ -513,10 +613,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const quality = qualityReport(v, registry, logic, { mechanics: prop(selection, 'mechanics') ?? null, budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
     timings.totalMs = ms(t0);
+    // The named bots' proof of this version (when the gate played them), kept for the next revision of it.
+    const proof = gate.proof ?? null;
     return ctx.publish({
-      doc: v.doc, stage: `revision: ${job.change}`,
-      report: { kind: 'kernel', change: job.change, path, ...(growth ? { growth: { grew: growth.grew, what: growth.what, before: growth.before, after: growth.after } } : {}), ops: opsApplied.slice(0, 20), changes: guard.changes, notes: guard.notes || [], diffLines: guard.lines, revisionCheck, gaps, verified: true, verification: summarizeVerify(v), quality, ...(selection ? { selection } : {}), hot: path === 'tweak' ? 'params' : 'reload', timings },
-      provenance: { ...obj(previous.provenance), pipeline: KERNEL_PIPELINE_VERSION, base: job.base, change: job.change, revisePath: path, models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } },
+      doc: published, stage: `revision: ${job.change}`,
+      // hot 'restart': a new version is checked from its start, so a running session restarts on it (the state of
+      // another version is never carried into it: a revised start, such as lives or seed counts, applies at once).
+      report: { kind: 'kernel', change: job.change, base: baseVersion, path, ...(growth ? { growth: { grew: growth.grew, what: growth.what, before: growth.before, after: growth.after } } : {}), ops: opsApplied.slice(0, 20), changes: guard.changes, notes: guard.notes || [], diffLines: guard.lines, revisionCheck, gaps, verified: true, verification: summarizeVerify(v), features: v.features ?? null, gate: { version: VERSION_GATE_VERSION, ms: gate.ms }, ...(proof ? { proof } : {}), quality, ...(selection ? { selection } : {}), hot: 'restart', timings },
+      provenance: revisionProvenance(previous, { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), base: baseVersion, baseHash: hashOf(previous.doc), change: job.change, revisePath: path, ops: opsApplied, ...(scaled ? { scaled } : {}), gate: VERSION_GATE_VERSION, revise: REVISE_VERSION,
+        models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } }),
     });
   }
 
@@ -524,6 +629,18 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
   pipeline.version = KERNEL_PIPELINE_VERSION;
   pipeline.create = create; pipeline.revise = revise;
   return pipeline;
+}
+
+/**
+ * A revision's provenance: what made the game (the prompt, seed, answers, templates and models of its creation, carried
+ * from version to version) and how this version was made from its base (`extra`: the base, its hash, the change, every
+ * op, the catalogue and pipeline versions now). What described how the base itself was made (its document hash, the
+ * detail task, experiment or run that produced it) is the base's, never this version's.
+ * @param {Record<string, unknown>} previous the stored base version @param {Record<string, unknown>} extra
+ */
+export function revisionProvenance(previous, extra) {
+  const { outlineHash: _doc, task: _task, experiment: _experiment, runner: _runner, scaled: _scaled, ...origin } = obj(previous.provenance);
+  return { ...origin, ...extra };
 }
 
 /** @param {Verification | null | undefined} v */
