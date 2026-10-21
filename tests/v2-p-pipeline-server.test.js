@@ -8,7 +8,7 @@ import { createGameService } from '../v2/server/api.mjs';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { runBench } from '../v2/tools/kernel-bench.mjs';
-import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
 
 const tmp = () => mkdtempSync(join(os.tmpdir(), 'gv-pipeline-'));
 
@@ -23,9 +23,13 @@ function memoryCtx() {
 
 /** A stand-in spec model: answers each layer's request from the prompt it is given. */
 function scriptedModel() {
+  // The iterative decomposition's forms, from the decomposition the model wrote: the mystery brings the loop, the tides
+  // (named by the idea after "with") only their content.
+  const decompose = decomposer(planFrom({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: 'lighthouse mystery', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: 'tides', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
+    core: { loop: 'collect', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } }, { lighthouse_mystery: { kind: 'genre', quote: 'a lighthouse mystery', keeps: ['clues'] }, tides: { kind: 'other', quote: 'tides' } }));
   return fakeWriter([(req) => {
-    if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
-      core: { loop: 'collect', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } });
+    const decomposed = decompose(req);
+    if (decomposed) return decomposed;
     const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });
     if (built) return built;
     if (String(req.schema?.name || '').startsWith('game_outline')) {

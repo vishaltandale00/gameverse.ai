@@ -96,6 +96,38 @@ export function mashupSides(entry, mechanics) {
 }
 
 /**
+ * The decomposition's own mashup check (decompose.js, step 3), run before any primitive is mapped: the same rule as
+ * mashupProblem over the idea's concepts instead of mapped loops. Every entry names known mechanic ids and relates
+ * them ACROSS concepts (mechanic.from = concept id); nested and union need a loop on both sides, skin a loop on the
+ * side joined into (the inner side may bring only content); and when two or more concepts bring their own loop, every
+ * one of them is linked by an entry. null when the mashup is complete.
+ * @param {{ concepts: Array<{ id: string, brings: string }>, mechanics: Array<{ id: string, from: string }>, mashup: Mashup[] }} spec
+ * @returns {{ code: 'mashup_unknown_mechanic' | 'mashup_within_concept' | 'mashup_relation_loop' | 'mashup_missing', message: string } | null}
+ */
+export function conceptMashupProblem({ concepts, mechanics, mashup }) {
+  const fromOf = new Map(mechanics.map(m => [m.id, ideaKey(m.from)]));
+  const loops = new Set(concepts.filter(c => c.brings === 'loop').map(c => ideaKey(c.id)));
+  /** @type {Array<{ code: 'mashup_unknown_mechanic' | 'mashup_within_concept' | 'mashup_relation_loop' | 'mashup_missing', message: string }>} */
+  const found = [];
+  const label = (/** @type {Mashup} */ x) => `${x.relation} [${x.mechanics.join(', ')}]`;
+  for (const x of mashup) {
+    const unknown = x.mechanics.filter(id => !fromOf.has(id));
+    if (unknown.length) { found.push({ code: 'mashup_unknown_mechanic', message: `${label(x)} names ${unknown.join(', ')}, which are not mechanic ids` }); continue; }
+    const sides = mashupSides(x, mechanics);
+    if (!sides.outer.length) { found.push({ code: 'mashup_within_concept', message: `${label(x)} relates mechanics of one concept only (${fromOf.get(x.mechanics[0]) || 'none'}): an entry relates mechanics ACROSS concepts` }); continue; }
+    const outer = fromOf.get(sides.outer[0]) || '', inner = [...new Set(sides.inner.map(id => fromOf.get(id) || ''))];
+    const loopless = [!loops.has(outer) && outer, ...(x.relation === 'skin' ? [] : inner.filter(c => !loops.has(c)))].filter(Boolean);
+    if (loopless.length) found.push({ code: 'mashup_relation_loop', message: `${label(x)} needs a loop from ${loopless.join(', ')}, which bring${loopless.length === 1 ? 's' : ''} only content: ${x.relation === 'skin' ? 'skin joins content INTO a concept that brings its loop (put that concept\'s mechanic first)' : 'a concept that brings only content joins as skin, or not at all'}` });
+  }
+  if (loops.size >= 2) {
+    const linked = new Set(mashup.filter(x => mashupSides(x, mechanics).outer.length).flatMap(x => x.mechanics.map(id => fromOf.get(id) || '')));
+    const unlinked = [...loops].filter(c => !linked.has(c));
+    if (unlinked.length) found.push({ code: 'mashup_missing', message: `${[...loops].join(', ')} each bring their own loop, but no entry links ${unlinked.join(', ')}: give one entry per joined concept, first the primary concept's mechanic it joins into, then the joined concept's own mechanics, its loop first` });
+  }
+  return found.length ? { code: found[0].code, message: found.map(f => f.message).join('; ') } : null;
+}
+
+/**
  * What a mashup check found: the joined ideas whose loops each declare their own win, which of them no relation
  * across concepts links (mashup_missing), and the entries that relate mechanics within one concept only
  * (mashup_within_concept: rejected, the field is asked again).

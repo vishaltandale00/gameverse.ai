@@ -107,3 +107,55 @@ export const decomposition = (mechanics, extra = {}) => ({
   version: 'test', title: 'Test Game', premise: 'A test premise. Second sentence.', tone: 'brisk', references: [], views: [], spaces: [], acts: 2, zones: 4,
   mechanics: mechanics.map((m, i) => ({ id: `m${i}`, verb: m.split(' ')[0], description: m, from: '', importance: 'core' })), ...extra,
 });
+
+const DECOMPOSE_FORMS = { idea_concepts: 'concepts', concept_mechanics: 'mechanics', play_spec: 'spec', idea_about: 'about', idea_spaces: 'where', idea_story: 'story' };
+const DECOMPOSE_DEFAULTS = {
+  about: { title: 'Test Game', premise: 'A test premise. Second sentence.', tone: 'brisk' },
+  where: { spaces: [{ role: 'world', kind: 'locations', description: 'a world' }], views: ['text'], movement: 'ground' },
+  story: { acts: 2, zones: 4 },
+};
+
+/**
+ * Answers the iterative decomposition's small forms (v2/planner/decompose.js) from a plan, or returns null for any other
+ * request. plan: { concepts: Concept[], mechanics: { [conceptId]: mechanic[] }, spec, about?, where?, story? }. Any plan
+ * entry may be a function (req, n, concept) returning that form's whole reply object (or raw text), n counting that
+ * form's asks (its field re-asks included), to script re-asks. A field re-ask is answered from the same reply, per slot.
+ */
+export function decomposer(plan) {
+  const asked = new Map();
+  return req => {
+    const name = String(req.schema?.name || '');
+    const key = DECOMPOSE_FORMS[name.replace(/_fields$/, '')];
+    if (!key) return null;
+    const concept = key === 'mechanics' ? /\nConcept: (\S+) \(/.exec(req.user)?.[1] : undefined;
+    const tag = concept ? `${key}:${concept}` : key;
+    const n = asked.get(tag) || 0;
+    asked.set(tag, n + 1);
+    const given = plan[key] ?? DECOMPOSE_DEFAULTS[key];
+    let v = typeof given === 'function' ? given(req, n, concept)
+      : key === 'concepts' ? { concepts: given } : key === 'mechanics' ? { mechanics: given[concept] || [] } : given;
+    if (typeof v === 'string') return v;
+    // Step 1 names its references: unless the plan scripts them, one per concept, by its name.
+    if (key === 'concepts' && !v.references) v = { references: v.concepts.map(c => ({ name: c.name, concept: c.id })), ...v };
+    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, v[p.description.split(':')[0]]])));
+    return JSON.stringify(v);
+  };
+}
+
+/**
+ * A plan from a one-shot decomposition (the shape the model used to write in one call): one concept per mechanic.from
+ * ('' = one concept, 'idea'); the concept holding core.loop brings the loop, and core.loop's mechanic has role loop.
+ * `concepts` overrides fields of the derived concepts by id.
+ */
+export function planFrom(d, concepts = {}) {
+  const idOf = from => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || ['idea']).join('_');
+  const ids = [...new Set(d.mechanics.map(m => idOf(m.from)))];
+  return {
+    concepts: ids.map(id => ({ id, name: id.replace(/_/g, ' '), quote: '', kind: 'game', brings: d.mechanics.some(m => idOf(m.from) === id && m.id === d.core.loop) ? 'loop' : 'content', keeps: [], ...concepts[id] })),
+    mechanics: Object.fromEntries(ids.map(id => [id, d.mechanics.filter(m => idOf(m.from) === id).map(m => ({ id: m.id, verb: m.verb, description: m.description, from: id, role: m.id === d.core.loop ? 'loop' : m.importance }))])),
+    spec: { loop: d.core.loop, interaction: d.core.interaction, opponent: d.core.opponent, win: d.core.win, lose: d.core.lose ?? '', theme: d.core.theme ?? '', narrative: d.core.narrative ?? false, mashup: d.core.mashup ?? [] },
+    about: { title: d.title, premise: d.premise, tone: d.tone ?? '' },
+    where: { spaces: d.spaces, views: d.views, movement: d.movement ?? 'ground' },
+    story: { acts: d.acts ?? 2, zones: d.zones ?? 4 },
+  };
+}

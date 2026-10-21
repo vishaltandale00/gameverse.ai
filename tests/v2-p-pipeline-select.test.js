@@ -1,10 +1,10 @@
 // Idea decomposition and capability-aware primitive selection (ARCHITECTURE.md §4).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decomposeIdea, decomposeOffline, DECOMPOSITION_SCHEMA } from '../v2/planner/decompose.js';
+import { decomposeIdea, decomposeOffline } from '../v2/planner/decompose.js';
 import { selectPrimitives, chooseSpaces, rankCandidates, relevance, LEXICAL_ACCEPT, vocabIndex } from '../v2/planner/select.js';
 import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
-import { testCatalogue, fakeWriter, fakeDecisions, decomposition } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, fakeDecisions, decomposition, decomposer } from './v2-p-pipeline-fixtures.js';
 
 test('offline decomposition splits references and finds mechanics as verbs, deterministically', () => {
   const a = decomposeOffline('A lighthouse mystery × a fishing village: talk to the keeper and find the missing key');
@@ -17,25 +17,36 @@ test('offline decomposition splits references and finds mechanics as verbs, dete
   assert.equal(a.source, 'offline');
 });
 
-test('a writer decomposes with a strict schema; a failing writer is asked again, then reported, never replaced offline', async () => {
-  const reply = { title: 'Ashen Pact', premise: 'Catch creatures; survive brutal bosses.', tone: 'grim', references: [{ name: 'Dark Souls', kind: 'game', keeps: ['stamina combat'] }, { name: 'Pokémon', kind: 'game', keeps: ['catching', 'party'] }],
-    mechanics: [{ id: 'Stamina Combat', verb: 'fight', description: 'real-time melee combat with stamina', from: 'Dark Souls', importance: 'core' }, { id: 'catch', verb: 'catch', description: 'catch creatures and keep a party', from: 'Pokémon', importance: 'core' }],
-    spaces: [{ role: 'overworld', kind: 'continuous-3d', description: 'ruined kingdom' }], views: ['3p'], acts: 3, zones: 6 };
-  const writer = fakeWriter([reply]);
+test('a writer decomposes in small strict forms, step by step; a failing writer is asked again, then reported, never replaced offline', async () => {
+  const plan = {
+    concepts: [{ id: 'dark_souls', name: 'Dark Souls', quote: 'Dark Souls', kind: 'game', brings: 'loop', keeps: ['stamina combat'] }, { id: 'pokemon', name: 'Pokémon', quote: 'Pokémon', kind: 'game', brings: 'loop', keeps: ['catching', 'party'] }],
+    mechanics: { dark_souls: [{ id: 'Stamina Combat', verb: 'fight', description: 'real-time melee combat with stamina', from: 'dark_souls', role: 'loop' }], pokemon: [{ id: 'catch', verb: 'catch', description: 'catch creatures and keep a party', from: 'pokemon', role: 'loop' }] },
+    spec: { loop: 'stamina_combat', interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'defeat the last lord of cinder', lose: 'your whole party falls', theme: 'grim', narrative: false, mashup: [{ relation: 'union', mechanics: ['stamina_combat', 'catch'], why: 'weaken a creature in combat to catch it' }] },
+    about: { title: 'Ashen Pact', premise: 'Catch creatures; survive brutal bosses.', tone: 'grim' },
+    where: { spaces: [{ role: 'overworld', kind: 'continuous-3d', description: 'ruined kingdom' }], views: ['3p'], movement: 'ground' },
+  };
+  const answer = decomposer(plan);
+  const writer = fakeWriter([req => answer(req)]);
   const d = await decomposeIdea({ writer, prompt: 'Dark Souls Pokémon' });
-  assert.equal(writer.calls[0].schema.name, 'decomposition');
-  assert.equal(writer.calls[0].schema.schema, DECOMPOSITION_SCHEMA);
+  assert.deepEqual(writer.calls.map(c => c.schema.name), ['idea_concepts', 'concept_mechanics', 'concept_mechanics', 'play_spec', 'idea_about', 'idea_spaces']);
+  assert.ok(writer.calls.every(c => c.schema.schema.additionalProperties === false), 'every form is strict');
   assert.deepEqual(d.references.map(r => r.name), ['Dark Souls', 'Pokémon']);
+  assert.deepEqual(d.concepts.map(c => c.id), ['dark_souls', 'pokemon']);
   assert.equal(d.mechanics[0].id, 'stamina_combat', 'ids are normalized to slugs');
+  assert.equal(d.core.loop, 'stamina_combat');
   assert.equal(d.source, 'fake-writer');
+  assert.equal(d.calls.length, 6);
   const failing = fakeWriter(['not json at all']);
-  await assert.rejects(decomposeIdea({ writer: failing, prompt: 'a mystery' }), e => e.status === 422 && e.code === 'decomposition_failed' && /2 attempt/.test(e.message) && /JSON/.test(e.message));
+  await assert.rejects(decomposeIdea({ writer: failing, prompt: 'a mystery' }), e => e.status === 422 && e.code === 'decomposition_failed' && e.step === 'concepts' && /2 call/.test(e.message) && /JSON/.test(e.message));
   assert.equal(failing.calls.length, 2, 'asked again before failing');
   assert.match(failing.calls[1].user, /previous reply failed/);
-  // A second answer that is valid is used.
-  const once = await decomposeIdea({ writer: fakeWriter(['not json', reply]), prompt: 'Dark Souls Pokémon' });
+  // A second answer that is valid is used: only that step was asked again.
+  const again = decomposer(plan);
+  let first = true;
+  const once = await decomposeIdea({ writer: fakeWriter([req => (first ? (first = false, 'not json') : again(req))]), prompt: 'Dark Souls Pokémon' });
   assert.equal(once.source, 'fake-writer');
-  assert.equal(once.attempts, 2);
+  assert.deepEqual(once.calls.map(c => c.step), ['concepts', 'concepts', 'mechanics', 'mechanics', 'play_spec', 'about', 'spaces']);
+  assert.match(once.calls[0].error, /JSON/);
 });
 
 test('lexical relevance matches mechanics to cards and stays low for unrelated ones', () => {
