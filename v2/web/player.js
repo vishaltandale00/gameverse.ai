@@ -5,7 +5,7 @@
 // - Other versions (tweaks, revisions, experiments) build a world from the new document and start it from its
 //   first state: a version is checked like a new game from its start (ARCHITECTURE §4), so the state of another
 //   version is never carried into it and a revised start (lives, seed counts) applies at once. The running world is
-//   replaced only once the new one is built.
+//   replaced only once the new one is built and has run its first frame.
 // Experiment primitives a document carries run in sandboxed Workers (v2/experiments).
 //
 // Each world the host runs is a session: its runtime, its view, the per-frame draws its graphics
@@ -48,7 +48,7 @@ function catalogueFor(doc, extra) {
  *   paused           whether the simulation is held (by the game's UI, or by the host while the window is unfocused);
  *   setTimeScale(s)  wall-clock pacing of the fixed steps, s in [0, 1] (hit-stop, slow motion); 0 holds, inputs still queue;
  *   restart()        back to the world's first state;  load(snapshot) restore a saved state;
- *   continuing       true for a world built by a hot-load to carry on a game in play (no title screen);
+ *   continuing       true for a world a hot-load builds while a game is in play: its own first state, no title screen;
  *   now()            the host's display clock in ms (presentation; simulation never reads it);
  *   createRenderer   optional factory from the host (e.g. headless GL in tests); undefined in the studio.
  * Options: onState(state) after every display frame; primitives (instead of the promoted ones); now (the clock the
@@ -139,8 +139,9 @@ export function mountGame(container, record, { onState, primitives = null, now =
     get rt() { return cur?.rt ?? null; }, get version() { return version; },
     /**
      * Load a newer version: extend the running world for additive versions ('extended'); otherwise build the new world
-     * from its own first state and only then replace the running one ('restarted'). Returns false (the running game is
-     * untouched) when the version is not newer, fails checks, or its world cannot be built.
+     * from its own first state, run its first frame, and only then replace the running one ('restarted'). Returns false
+     * (the running game is untouched) when the version is not newer, fails checks, its world cannot be built, or its
+     * first frame throws.
      */
     update(next) {
       if (disposed || !(next.version > version)) return false;
@@ -158,8 +159,14 @@ export function mountGame(container, record, { onState, primitives = null, now =
       if (!ok.ok) return false;
       let s;
       try { s = session(cat, ok.doc, { continuing: true }); } catch (error) { console.warn('hot-load build failed', error); return false; }
-      const old = cur;
-      cur = s; pending.length = 0; reset();
+      // Its first frame runs at once, as on mount, before the running world is let go: a version whose first step or
+      // draw throws is refused (the old world, its input and its nodes are as they were).
+      const old = cur, queued = pending.splice(0);
+      cur = s; reset();
+      try { tick(now(), true); } catch (error) {
+        console.warn('hot-load first step failed', error);
+        cur = old; pending.length = 0; pending.push(...queued); reset(); close(s); return false;
+      }
       close(old);
       for (const n of [...container.childNodes]) if (!s.nodes.includes(n)) n.remove();
       version = next.version; return 'restarted';

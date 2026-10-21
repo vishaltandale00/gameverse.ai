@@ -152,7 +152,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 
 ## 6. Graphics and hosts
 
-Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input(), onDispose(fn), pause(on), paused, restart(), load(snapshot), setTimeScale(s), now(), continuing}`: `now()` is the display clock in ms; `onDispose(fn)` releases anything a primitive holds outside the container (listeners on window or document, timers, audio, GL, workers) when the host unloads or replaces the world; `continuing` is true for a world a hot-load builds to carry on a game in play. Frames are drawn inside `rt.read`. A renderer:
+Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input(), onDispose(fn), pause(on), paused, restart(), load(snapshot), setTimeScale(s), now(), continuing}`: `now()` is the display clock in ms; `onDispose(fn)` releases anything a primitive holds outside the container (listeners on window or document, timers, audio, GL, workers) when the host unloads or replaces the world; `continuing` is true for a world a hot-load builds while a game is in play: it starts from the new version's own first state (ARCHITECTURE §4) and shows no title screen. Frames are drawn inside `rt.read`. A renderer:
 - draws entities of the space it is bound to (`instance.space`, default first space), and only while the player is in that space;
 - interpolates with `alpha`;
 - never writes `rt.state`.

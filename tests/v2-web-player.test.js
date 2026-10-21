@@ -1,7 +1,8 @@
 // The browser host (v2/web/player.js mountGame) in a fake browser (tests/v2-web-host.js over the DOM stub):
 // - its own behaviour: held (UI pause) and away (blur, hidden page) hold the world; view.act forces a step, and
-//   steps one per action while held; restart and load; update() hot-loads (extend, or rebuild-and-restore) and
-//   leaves the running game untouched when the new version cannot take over; failed mounts release what they
+//   steps one per action while held; restart and load; update() hot-loads (extends in place for an additive version,
+//   otherwise starts the new version from its own first state: ARCHITECTURE §4) and leaves the running game untouched
+//   when the new version cannot take over (checks, build, first frame); failed mounts release what they
 //   installed; keys bound to the game's verbs have their default prevented only while focus is in the game;
 // - the lifecycle as a catalogue-wide property (ARCHITECTURE §1.7): every template's host document, every UI lab
 //   document and every example game mounts, starts, plays, hot-loads, still takes input after the hot-load, and on
@@ -18,11 +19,17 @@ import { liveCatalogue } from '../v2/planner/catalog.js';
 import { hostPreflight } from '../v2/verify/controls.js';
 import { PRIMITIVE_EXPERIMENT_SCHEMA } from '../v2/experiments/primitive-host.js';
 import { withExperiment } from '../v2/experiments/primitive.js';
+import { mergePatch } from '../v2/kernel/document.js';
 
 const B = installBrowser();
 test.after(() => B.restore());
-const { mountGame, loadPromoted } = await import('../v2/web/player.js');
-await loadPromoted();
+const host = await import('../v2/web/player.js');
+await host.loadPromoted();
+// Every game a test mounts is unloaded after it, so a test that fails half-way leaves nothing to the next one (each test
+// still asserts on its own that its dispose released everything).
+const mounted = new Set();
+const mountGame = (...args) => { const g = host.mountGame(...args); mounted.add(g); return g; };
+test.afterEach(() => { for (const g of mounted) g.dispose(); mounted.clear(); });
 
 const maze = templateById('maze-chase');
 const flush = () => new Promise(r => setImmediate(r));
@@ -33,7 +40,10 @@ const uses = (doc, id) => (doc.graphics || []).some(g => g.use === id);
 async function start(game) {
   await flush();
   if (game.rt.view.paused) { B.key('Enter'); B.keyup('Enter'); }
-  // Intros may hold play once it starts (a VS screen on match_start): run until play has gone on for 10 frames.
+  play(game);
+}
+/** Intros may hold play once it starts (a VS screen on match_start): run until play has gone on for 10 frames. */
+function play(game) {
   for (let i = 0, free = 0; i < 400 && free < 10; i++) { B.frame(game.rt.view.paused ? 50 : 1000 / 60); free = game.rt.view.paused ? 0 : free + 1; }
 }
 
@@ -100,28 +110,36 @@ test('host: restart goes back to the first state; load restores a snapshot; setT
   g.dispose(); assert.deepEqual(B.held(), []);
 });
 
-test('host: update() rebuilds the world, carries the running state over (no title), and replaces the old world only once built', async () => {
+test('host: update() starts the new version from its own first state (no title), and replaces the old world only once built', async () => {
   const g = mount(maze.doc);
   await start(g);
   frames(45);
   const old = g.rt, at = g.rt.state.frame, listeners = B.listeners();
-  const next = structuredClone(maze.doc);
+  // A revised start: the new version's lives apply at once, which carrying the running state over would hide.
+  const next = structuredClone(maze.doc); next.systems.find(x => x.use === 'gameplay.death').with.lives = 5;
+  assert.equal(old.service('death').lives(), 3);
   assert.equal(g.update({ doc: next, version: 1 }), false, 'a version that is not newer is refused');
-  assert.equal(g.update({ doc: next, version: 2 }), true);
+  assert.equal(g.update({ doc: next, version: 2 }), 'restarted', 'a version that is not additive restarts on its own start (ARCHITECTURE §4)');
   assert.notEqual(g.rt, old, 'a new world');
-  assert.equal(g.rt.state.frame, at, 'the running state carried over (rt.restore)');
+  assert.equal(g.rt.state.frame, 1, 'from its first state, plus the first frame the host runs at once (as on mount); no state of the old version');
+  assert.equal(g.rt.service('death').lives(), 5, 'the revised start applies at once');
   assert.equal(g.rt.view.continuing, true);
   assert.equal(g.rt.view.paused, false, 'a hot-loaded version continues play: no title screen');
   assert.deepEqual(B.listeners(), listeners, 'the old world released its listeners: the counts are those of one world');
   assert.equal(B.container.querySelectorAll('.gv-overlay').length, 1, 'one overlay');
   old.view.act({ run: true }); await flush();
   assert.ok(!g.rt.state.events.some(e => e.action === 'run'), 'the old view no longer reaches the game');
-  frames(10); assert.ok(g.rt.state.frame > at, 'the new world plays');
-  assert.equal(g.version, 2);
+  frames(10); assert.ok(g.rt.state.frame > 1, 'the new world plays');
+  g.rt.view.restart(); assert.equal(g.rt.service('death').lives(), 5, 'restart goes back to the new version\'s first state');
+  frames(10);
+  const rt2 = g.rt, f2 = rt2.state.frame, detail = mergePatch(next, {});
+  assert.equal(g.update({ doc: detail.doc, version: 3, report: { added: detail.added } }), 'extended', 'an additive (detail) version extends the running world in place');
+  assert.equal(g.rt, rt2, 'the same world'); assert.equal(g.rt.state.frame, f2, 'play goes on where it was');
+  assert.equal(g.version, 3);
   g.dispose(); assert.deepEqual(B.held(), []);
 });
 
-test('host: an update that fails checks, fails to build or cannot take the running state leaves the game untouched', async () => {
+test('host: an update that fails checks, fails to build or fails its first frame leaves the game untouched', async () => {
   const g = mount(maze.doc);
   await start(g);
   frames(20);
@@ -142,12 +160,13 @@ test('host: an update that fails checks, fails to build or cannot take the runni
   assert.deepEqual(B.listeners(), l2, 'what the failed build installed is released');
   assert.equal(g2.rt.state.status, 'playing'); g2.dispose();
   assert.deepEqual(B.held(), []);
-  const picky = { id: 'gameplay.test.picky', card: { intent: 'Refuses a state it did not make (its restore hook throws).', views: ['any'], params: {} }, install(rt) { rt.onRestore(() => { throw Error('not my state'); }); } };
-  const g3 = mountGame(B.container, { doc: maze.doc, version: 1 }, { now: B.now, primitives: [picky] });
+  const stepBoom = { id: 'gameplay.test.step-boom', card: { intent: 'Throws on its first step.', views: ['any'], params: {} }, install(rt) { rt.system('rules', () => { throw Error('step boom'); }, 'gameplay.test.step-boom'); } };
+  const g3 = mountGame(B.container, { doc: maze.doc, version: 1 }, { now: B.now, primitives: [stepBoom] });
   await start(g3); frames(20);
-  const rt3 = g3.rt, l3 = B.listeners(), nodes3 = [...B.container.childNodes];
-  const withPicky = structuredClone(maze.doc); withPicky.systems.push({ use: 'gameplay.test.picky', with: {} });
-  assert.equal(g3.update({ doc: withPicky, version: 3 }), false, 'a world that cannot take the running state');
+  const rt3 = g3.rt, f3 = rt3.state.frame, l3 = B.listeners(), nodes3 = [...B.container.childNodes];
+  const withStepBoom = structuredClone(maze.doc); withStepBoom.systems.push({ use: 'gameplay.test.step-boom', with: {} });
+  assert.equal(g3.update({ doc: withStepBoom, version: 3 }), false, 'a world whose first step throws');
+  assert.equal(rt3.state.frame, f3, 'the running world did not step for it');
   assert.equal(g3.rt, rt3, 'the running world is kept');
   assert.deepEqual(B.listeners(), l3);
   assert.deepEqual([...B.container.childNodes], nodes3, 'and its nodes');
@@ -182,7 +201,7 @@ test('host: a document experiment runs in a Worker box that belongs to its world
   await start(g); frames(10);
   const first = B.workers().filter(w => !w.terminated);
   assert.equal(first.length, 1, 'the experiment runs in one Worker');
-  assert.equal(g.update({ doc: structuredClone(doc), version: 2 }), true);
+  assert.equal(g.update({ doc: structuredClone(doc), version: 2 }), 'restarted');
   frames(10);
   assert.ok(first[0].terminated, 'the replaced world\'s Worker is terminated');
   assert.equal(B.workers().filter(w => !w.terminated).length, 1, 'the new world runs its own');
@@ -275,10 +294,11 @@ for (const [name, doc] of cases) {
       const before = { input: probeInput(g), menu: probeMenu(g) };
       const listeners = B.listeners(), at = g.rt.state.frame;
       assert.ok(listeners.window + listeners.document + listeners.container > 0, 'the host and the game listen for input');
-      assert.equal(g.update({ doc: structuredClone(doc), version: 2 }), true, 'the hot-load rebuilds');
-      assert.equal(g.rt.state.frame, at, 'state carried over');
+      assert.equal(g.update({ doc: structuredClone(doc), version: 2 }), 'restarted', 'the hot-load rebuilds');
+      assert.ok(g.rt.state.frame <= 1 && g.rt.state.frame < at, 'the new version starts from its own first state (ARCHITECTURE §4)');
+      assert.equal(g.rt.view.continuing, true, 'no title screen: play goes on');
       assert.deepEqual(B.listeners(), listeners, 'after the hot-load, one world listens');
-      frames(5);
+      play(g);
       // Input works after the hot-load exactly as before it: the same key reaches the game, the menu key pauses.
       assert.deepEqual(probeInput(g), before.input, 'a gameplay key does after the hot-load what it did before');
       assert.deepEqual(probeMenu(g), before.menu, 'the menu key does after the hot-load what it did before');
