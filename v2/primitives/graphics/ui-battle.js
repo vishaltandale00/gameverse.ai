@@ -43,6 +43,9 @@ export default {
   card: {
     intent: 'Turn-based battle UI for any battle or tactics system: sides with sprites, draining HP bars and statuses, a message box, and Fight/Bag/Party/Run menus with targeting; or a compact command panel over the world for tactics.',
     views: ['any'],
+    // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
+    interactions: ['pieces-turns', 'menu'],
+    controls: { verbs: ['battle', 'turn_act', 'end_turn'] },
     params: {
       layout: { type: 'string', default: 'auto', options: ['auto', 'screen', 'panel'], effect: 'full battle screen, or a command panel over the world (auto: screen in non-spatial battle spaces)' },
       style: { type: 'string', default: 'auto', options: ['auto', ...THEMES] },

@@ -37,7 +37,7 @@ export default {
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Ground locomotion for the player and NPCs: walk, run, sprint (drains a stamina pool), crouch and jump, with acceleration, air control, coyote time, jump buffer and feel presets. Works in 3D, side and top-down continuous spaces and steps cell by cell on grid or graph spaces.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       walk: { type: 'number', min: 0.5, max: 8, default: 3, unit: 'units/s', effect: 'speed with a light stick or the walk verb' },
       run: { type: 'number', min: 0.5, max: 20, default: 6, unit: 'units/s', effect: 'default moving speed' },

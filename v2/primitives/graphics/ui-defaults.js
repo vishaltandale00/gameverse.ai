@@ -5,6 +5,8 @@
 // (combat.health -> hp, plot.quest -> journal, gameplay.economy -> money...).
 // Nothing game-specific: every rule keys off primitive ids, cards and data.
 
+import { unclaimedChoices } from '../engine/runtime-lib-controls.js';
+
 const has = (registry, id) => (registry ? registry.has(id) : true);
 const sysOf = (doc, id) => (doc.systems || []).find(s => s.use === id || s.use.startsWith(id + '.'));
 const uses = (doc, id) => Boolean(sysOf(doc, id));
@@ -133,6 +135,9 @@ export function defaultGraphics(doc, registry) {
   if (uses(doc, 'gameplay.creature.battle') || uses(doc, 'gameplay.turns')) add('graphics.ui.battle', {});
   if (uses(doc, 'gameplay.cards')) add('graphics.ui.cards', {});
   if (![...listed].some(u => u.startsWith('graphics.audio.'))) add('graphics.audio.synth', {});
+  // Every choice verb the document's loops declare (card.actionSpace 'choice') gets a control: the UI primitives above
+  // issue the ones their card.controls name; graphics.ui.choices issues the rest from the game's options.
+  if (unclaimedChoices({ ...doc, graphics: [...(doc.graphics || []), ...out] }, registry).length) add('graphics.ui.choices', {});
   return out;
 }
 

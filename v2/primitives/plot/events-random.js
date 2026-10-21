@@ -16,6 +16,8 @@ export default {
   solverKey,
   card: {
     loop: { verbs: ['event_choice'], progress: ['random_event_choice'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { event_choice: { type: 'choice', of: 'a choice of the pending event' } },
     intent: 'Random text events with weighted draws, conditions, cooldowns and once-only events; choices with conditions and effects can chain into further events (FTL, Reigns, radiant encounters).',
     views: ['any'],
     params: {

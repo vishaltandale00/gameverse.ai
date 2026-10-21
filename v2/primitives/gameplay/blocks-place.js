@@ -14,6 +14,8 @@ export default {
   id: 'gameplay.blocks.place',
   card: {
     loop: { verbs: ['place', 'select_item'], progress: ['block_placed', 'prop_placed'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { select_item: { type: 'choice', of: 'a placeable item the bag holds' } },
     intent: 'Place held block items into cells (or props from items with `place`), aimed at the looked-at face or an explicit cell; protected zones, occupancy and forbidNear checks; ghost preview; set_blocks for scripted edits.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     params: {

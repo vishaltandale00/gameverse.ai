@@ -20,6 +20,8 @@ export default {
   id: 'gameplay.build.structure',
   card: {
     loop: { verbs: ['build', 'demolish'], progress: ['built', 'slot_filled'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { build: { type: 'choice', of: 'a piece and the cell it is anchored at' }, demolish: { type: 'choice', of: 'a built structure' } },
     intent: 'Snap-together building: pieces (cell shapes of a block with an item cost) placed on a grid with rotation, only inside owned plots when ownership is on, demolish for a refund, and settlement slots that complete when built in.',
     views: ['1p', '3p', 'td', 'iso'],
     params: {

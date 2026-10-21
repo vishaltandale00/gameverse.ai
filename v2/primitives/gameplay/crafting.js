@@ -17,6 +17,8 @@ export default {
   id: 'gameplay.crafting',
   card: {
     loop: { verbs: ['craft', 'combine'], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { craft: { type: 'choice', of: 'a craftable recipe' }, combine: { type: 'choice', of: 'items to combine' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.recipes", "min": 2, "why": "crafting needs recipes", "example": {"id": "torch", "inputs": [{"item": "stick", "count": 1}, {"item": "resin", "count": 1}], "output": {"item": "torch_item", "count": 2}}},

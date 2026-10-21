@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { primitives } from '../v2/primitives/plot/story-testkit.js';
 import { manor, withExitGate } from '../v2/primitives/plot/story-testkit.js';
 import { preflight } from '../v2/kernel/document.js';
-import { maker } from '../v2/verify/drive.js';
+import { controlledMaker, hostPreflight } from '../v2/verify/controls.js';
 import { usedPrimitives, stateHash } from '../v2/verify/util.js';
 import { strategies, select } from '../v2/verify/strategies/index.js';
 import { replayMacros } from '../v2/verify/strategies/turn-board.js';
@@ -20,10 +20,12 @@ import { checkComposition } from '../v2/planner/compose-check.js';
 
 // The live catalogue (promoted primitives included, with the reference test space): every card.mode is held to these checks.
 const { registry, logic } = await liveCatalogue({ base: primitives() });
+// Each mode's bot plays the document a person plays (the host's input and UI added) through the controls a person has.
 const ctxOf = doc => {
-  const r = preflight(doc, registry, logic);
+  assert.ok(preflight(doc, registry, logic).ok);
+  const r = hostPreflight(doc, registry, logic);
   assert.ok(r.ok, JSON.stringify(r.errors));
-  const make = maker(r.doc, registry, logic);
+  const make = controlledMaker(r.doc, registry, logic);
   return { doc: r.doc, registry, logic, make, seed: 1, capabilities: r.capabilities, used: usedPrimitives(r.doc), playerSpace: make(1).player()?.space ?? r.doc.spaces[0].id };
 };
 const base = (id, spaces, systems, content, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id, title: id, seed: 9, spaces, systems, content, ...extra });
@@ -215,7 +217,7 @@ for (const loop of ['tactics', 'card-battle', 'rts', 'launcher']) test(`mode ${l
 test('mode race: the lookahead driver enters the car, finishes first and replays', () => {
   const { ctx, runs } = playMode('race');
   assert.equal(runs[0].place, 1);
-  assert.ok(runs[0].path.includes('enter car1'), 'drove the car');
+  assert.ok(runs[0].path.includes('enter vehicle') && runs[0].path.some(l => l.startsWith('drive')), 'pressed enter and drove the car');
   const w = replayRace(ctx.make, 1, runs[0].path);
   assert.equal(w.state.status, 'won');
   assert.equal(stateHash(w.state), runs[0].hash);

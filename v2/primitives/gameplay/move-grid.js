@@ -43,7 +43,7 @@ export default {
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Grid-locked movement. lane mode: Pac-Man style continuous movement along cell lanes, with buffered turns, a cornering window, instant reversal and stopping at walls. step mode: one-cell hops with walk/run timing, turn-in-place, queued hops and one-way ledges (Pokémon overworld, Crossy Road). Cell tags add ledges, one-way cells, class-only doors and speed zones.',
     views: ['td', 'board', 'iso'],
-    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       mode: { type: 'string', options: ['lane', 'step'], default: 'step', effect: 'lane: continuous along lanes; step: discrete hops' },
       speed: { type: 'number', min: 0.5, max: 60, default: round6(BASE_SPEED * 0.8), unit: 'cells/s', effect: 'lane speed (classic level 1: 0.8 × 9.47)' },

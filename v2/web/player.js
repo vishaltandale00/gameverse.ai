@@ -10,9 +10,8 @@ import { preflight, mergePatch } from '/v2/kernel/document.js';
 import { createWorld, DT } from '/v2/kernel/world.js';
 import { experimentPrimitives } from '/v2/experiments/primitive-host.js';
 import { createWorkerBox } from '/v2/experiments/primitive-runtime.js';
-import { withDefaultGraphics } from '/v2/primitives/graphics/ui-defaults.js';
 import { keyName, expand } from '/v2/primitives/engine/runtime-lib-input.js';
-import { withDefaultInput } from '/v2/web/input-defaults.js';
+import { hostDocument } from '/v2/web/host-doc.js';
 
 const TOUCH = typeof window !== 'undefined' && ('ontouchstart' in window || window.matchMedia?.('(pointer: coarse)').matches);
 
@@ -48,7 +47,7 @@ function catalogueFor(doc, extra) {
 export function mountGame(container, record, { onState, primitives = null, now = () => performance.now(), createRenderer = undefined } = {}) {
   let cat = catalogueFor(record.doc, primitives);
   // Every game gets input, UI, audio and renderers: the document's own plus defaults chosen from its systems, spaces and view.
-  const withGraphics = (d, registry) => { const doc = structuredClone(d); doc.systems = withDefaultInput(doc, registry, { touch: TOUCH }); doc.graphics = withDefaultGraphics(doc, registry); return doc; };
+  const withGraphics = (d, registry) => hostDocument(d, registry, { touch: TOUCH });
   let doc = withGraphics(record.doc, cat.registry);
   let checked = preflight(doc, cat.registry, cat.logic);
   // Presentation never blocks play: drop graphics instances that fail checks and fall back to the defaults.

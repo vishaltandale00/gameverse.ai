@@ -14,6 +14,8 @@ import { playtest } from './playtest.js';
 import { checkInvariants } from './invariants.js';
 import { select } from './strategies/index.js';
 import { maker } from './drive.js';
+import { controlledMaker } from './controls.js';
+import { hostDocument } from '../web/host-doc.js';
 import { winMeasure } from './objective.js';
 import { now, usedPrimitives, problem } from './util.js';
 
@@ -69,7 +71,8 @@ export async function verify(doc, registry, logic, opts = {}) {
   const time = async (name, fn) => { const t = now(); try { return await fn(); } finally { timings[name] = Math.round(now() - t); } };
   const problems = [];
 
-  const pre = await time('preflight', () => preflight(doc, registry, logic));
+  // Every stage verifies the document a person plays: the host's default input and UI added (v2/web/host-doc.js).
+  const pre = await time('preflight', () => preflight(hostDocument(doc, registry), registry, logic));
   const report = { ok: false, seed: seed ?? null, preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, plot: null, spatial: null, playtest: null, strategies: null, invariants: null, problems, timings, exhaustive: {} };
   for (const e of pre.errors) problems.push(problem(e.code, e.path, e.message, { hint: e.hint, severity: 'error', stage: 'preflight' }));
   for (const w of pre.warnings) problems.push(problem(w.code, w.path, w.message, { hint: w.hint, severity: 'warning', stage: 'preflight' }));
@@ -96,7 +99,9 @@ export async function verify(doc, registry, logic, opts = {}) {
       // The bots are playtest agents too (§6.3): every runtime they play is measured on the win quantity the playtest
       // steers by (opts.playtest.win), so the gate sees how far their play moved it toward the win.
       const wm = winMeasure(opts.playtest?.win ?? null), reached = { high: wm ? 0 : null };
-      const make = wm ? measured(maker(nd, registry, logic), wm, reached) : maker(nd, registry, logic), probe = make(seed);
+      // The bots play through the controls a person has (controls.js): every step they take is device input sampled
+      // through the document's bindings, or an action a mounted UI primitive issues.
+      const make = wm ? measured(controlledMaker(nd, registry, logic), wm, reached) : controlledMaker(nd, registry, logic), probe = make(seed);
       const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
       const ran = [], tb = now();
@@ -107,7 +112,13 @@ export async function verify(doc, registry, logic, opts = {}) {
           const r = playBot(s, ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
           ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget, ...(wm ? { progress: reached.high } : {}) });
           tag(r.problems.map(p => ({ ...p, strategy: s.id })), 'strategy');
-        } catch (error) { ran.push({ id: s.id, reason, ok: false, error: String(error?.message || error) }); problems.push(problem('runtime_error', 'systems', `strategy '${s.id}' threw: ${error?.message || error}`, { stage: 'strategy', strategy: s.id })); }
+        } catch (error) {
+          ran.push({ id: s.id, reason, ok: false, error: String(error?.message || error) });
+          // A bot asking for a verb no control issues is the game's defect (a loop played with a verb a person cannot
+          // give): controls_missing, blocking; any other throw is a runtime error.
+          if (error?.code === 'controls_missing') problems.push(problem('controls_missing', 'systems', `the ${s.id} bot needed ${error.message.replace(/^controls_missing: /, '')}`, { stage: 'strategy', strategy: s.id, missing: error.missing }));
+          else problems.push(problem('runtime_error', 'systems', `strategy '${s.id}' threw: ${error?.message || error}`, { stage: 'strategy', strategy: s.id }));
+        }
       });
       return { ran, skipped };
     }));

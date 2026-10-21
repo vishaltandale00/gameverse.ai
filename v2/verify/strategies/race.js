@@ -1,11 +1,11 @@
 // Race driver for checkpoint races (gameplay.race) on foot, mounted or in a
 // vehicle. Every `every` frames it looks ahead on snapshots over the player's
-// real controls: the driver options a vehicle offers (drive / drive left /
-// drive right / brake), else held move directions, and picks the line that
-// makes the most race progress (checkpoints passed) and ends nearest the next
-// checkpoint, searching two choices deep. Entering a vehicle is taken when
-// one is offered (vehicle-only races need it). It must finish first.
-import { applyOption, hold, optionLabels, DIRS8 } from '../drive.js';
+// real controls (the held move axis a seated driver steers with, else held move
+// directions), and picks the line that makes the most race progress
+// (checkpoints passed) and ends nearest the next checkpoint, searching two
+// choices deep. It presses the enter key when a vehicle is in reach (vehicle-only
+// races need it). It must finish first.
+import { hold, DIRS8 } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { multiSeed, problem, pathOf } from './common.js';
@@ -33,17 +33,19 @@ export function raceScore(rt, doc, config) {
   return passed * 1e4 - d;
 }
 
-/** The player's controls now: driver options, else held move directions. Never 'exit vehicle'. */
+/**
+ * The player's controls now, as a person holds them: press the enter key when a vehicle is in reach and the player is
+ * on foot (the options hint that one is: vehicle-only races need it), then the held move axis the seated driver steers
+ * with (forward, forward and left, forward and right, back to brake), else held move directions on foot. Never exit.
+ */
 export function raceMacros(rt, every) {
-  const options = rt.availableOptions(), labels = optionLabels(options);
-  const enter = options.findIndex(o => o.actions?.enter_vehicle !== undefined);
-  if (enter >= 0 && !rt.player()?.components.seat) return [{ label: labels[enter], option: options[enter] }];
-  const drive = options.map((o, i) => ({ label: labels[i], option: o })).filter(m => m.option.actions?.drive !== undefined);
-  if (drive.length) return drive;
+  const seated = Boolean(rt.player()?.components.seat);
+  if (!seated && rt.availableOptions().some(o => o.actions?.enter_vehicle !== undefined)) return [{ label: 'enter vehicle', input: { actions: { enter_vehicle: true } }, frames: 1 }];
+  if (seated) return [['drive', [0, 1], 45], ['drive left', [-1, 1], 20], ['drive right', [1, 1], 20], ['brake', [0, -1], 15]].map(([label, move, frames]) => ({ label, input: { axes: { move } }, frames }));
   return DIRS8.slice(1).map(([x, y]) => ({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } }, frames: every }));
 }
 
-const playMacro = (rt, m, b) => { if (m.option) applyOption(rt, m.option, b); else hold(rt, m.input, m.frames, b); };
+const playMacro = (rt, m, b) => hold(rt, m.input, m.frames, b);
 
 /** Replay a recorded path of macro labels from a fresh world. */
 export function replayRace(make, seed, path, { every = 12 } = {}) {

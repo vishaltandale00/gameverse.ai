@@ -12,7 +12,7 @@ import { checkComposition } from '../v2/planner/compose-check.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
 import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { verify, playBot } from '../v2/verify/index.js';
-import { maker } from '../v2/verify/drive.js';
+import { controlledMaker, hostPreflight } from '../v2/verify/controls.js';
 import { usedPrimitives } from '../v2/verify/util.js';
 import { strategies, select, modeBots } from '../v2/verify/strategies/index.js';
 
@@ -64,7 +64,8 @@ for (const t of TEMPLATES) {
     });
 
     test(`template ${t.id} on world seed ${seed}: the gate plays the bot its loop names on that seed, it wins and replays`, async () => {
-      const r = checked(seeded(t, seed)), make = maker(r.doc, registry, logic);
+      checked(seeded(t, seed));
+      const r = hostPreflight(seeded(t, seed).doc, registry, logic), make = controlledMaker(r.doc, registry, logic);
       const ctx = { doc: r.doc, registry, logic, make, seed, capabilities: r.capabilities, used: usedPrimitives(r.doc), playerSpace: make(seed).player()?.space ?? r.doc.spaces[0].id };
       const named = modeBots(ctx).map(x => x.s.id);
       assert.ok(named.length, `${t.id}: a loop in the document names its bot (card.mode.bot)`);

@@ -37,6 +37,9 @@ export default {
   card: {
     intent: 'Card game UI for any deck game: fanned hand with focus lift, costs and playable glow, procedural card art, energy, draw/discard piles, enemies with intents and health, duel board row, targeting and End turn.',
     views: ['ui', 'any'],
+    // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
+    interactions: ['menu'],
+    controls: { verbs: ['play_card', 'end_turn'] },
     params: {
       style: { type: 'string', default: 'auto', options: ['auto', ...THEMES] },
       maxHand: { type: 'integer', default: 12, min: 1, max: 20, effect: 'cards laid out before the fan compresses' },

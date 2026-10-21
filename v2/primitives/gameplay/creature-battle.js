@@ -320,6 +320,8 @@ export function engine(ctx) {
 export default {
   id: ID,
   card: {
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running' } },
     loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
       lose: { param: 'onLose', reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
       // As an encounter: a won battle or a capture takes the foe out; a lost battle the player's side; running away leaves both.

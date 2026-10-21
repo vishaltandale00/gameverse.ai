@@ -43,6 +43,8 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { turn_act: { type: 'choice', of: 'a unit, its action and the action target', pick: 'unit' }, turn_move: { type: 'choice', of: 'a unit and a cell its move reaches', pick: 'unit' }, select_unit: { type: 'choice', of: 'a unit of the side whose turn it is', selects: 'unit' } },
     loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
       // The participants an event names (role -> data field): a hit names the acting unit and the unit it hit.
       involves: { attack_hit: { attacker: 'who', defender: 'target' } },

@@ -35,6 +35,9 @@ export default {
   card: {
     intent: 'Full world map sheet: discovery fog, player position, quest pins, markers by tag, region labels, zone cursor, zoom/pan, user pins, and fast travel to discovered travel points (view.act fast_travel).',
     views: ['any'],
+    // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
+    interactions: ['avatar-realtime', 'avatar-grid'],
+    controls: { verbs: ['fast_travel'] },
     params: {
       fog: { type: 'boolean', default: true, effect: 'hide undiscovered zones' },
       fastTravel: { type: 'boolean', default: false, effect: 'offer fast travel to discovered travel points' },

@@ -16,7 +16,8 @@ test('defaults: picked from the systems each document uses', () => {
   const { registry } = catalogue([testSpace]);
   const pick = f => Object.fromEntries(defaultGraphics(strip(game(f)), registry).map(g => [g.use, g.with]));
   const bp = pick('blockport.json');
-  assert.deepEqual(Object.keys(bp).sort(), ['graphics.audio.synth', 'graphics.ui.dialogue', 'graphics.ui.hud', 'graphics.ui.inventory', 'graphics.ui.journal', 'graphics.ui.map', 'graphics.ui.menu', 'graphics.ui.minimap'].sort());
+  // talk, accept_quest, travel, build... take a chosen value: graphics.ui.choices issues the ones no other UI names.
+  assert.deepEqual(Object.keys(bp).sort(), ['graphics.audio.synth', 'graphics.ui.choices', 'graphics.ui.dialogue', 'graphics.ui.hud', 'graphics.ui.inventory', 'graphics.ui.journal', 'graphics.ui.map', 'graphics.ui.menu', 'graphics.ui.minimap'].sort());
   assert.ok(bp['graphics.ui.hud'].stars, 'wanted level -> stars');
   assert.ok(bp['graphics.ui.hud'].counters.some(c => c.var === 'money.bucks'), 'economy currency -> counter');
   assert.ok(bp['graphics.ui.hud'].meters.some(m => m.pool === 'stamina'), 'resource pool -> meter');
@@ -28,7 +29,7 @@ test('defaults: picked from the systems each document uses', () => {
   const qm = pick('quiet-manor.json');
   assert.deepEqual(Object.keys(qm).sort(), ['graphics.audio.synth', 'graphics.render.dom', 'graphics.ui.menu', 'graphics.ui.story']);
   assert.equal(isTextual(game('quiet-manor.json')), true);
-  assert.deepEqual(defaultGraphics(game('blockport.json'), registry), [], 'a document that lists UI and audio keeps its own');
+  assert.deepEqual(defaultGraphics(game('blockport.json'), registry), [{ use: 'graphics.ui.choices', with: {} }], 'a document that lists UI and audio keeps its own, and gets the control its choice verbs lack');
   assert.equal(defaultHud({ systems: [], content: {} }).meters.length, 0);
 });
 

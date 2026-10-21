@@ -22,6 +22,8 @@ export default {
   id: 'gameplay.item.use',
   card: {
     loop: { verbs: ['use_item'], progress: ['used_item'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { use_item: { type: 'choice', of: 'a usable item in the bag' } },
     intent: 'Consumables and usable items (food, potions, scrolls, tools): run the item’s use effects with per-item or per-group cooldowns, an optional usability predicate and consumption; merged crafted items apply their ingredient effects.',
     views: ['any'],
     params: {

@@ -15,7 +15,7 @@ export const AXES = new Set(['wasd', 'arrows', 'dpad', 'lstick', 'rstick', 'mous
 export const SPECIAL = new Set(['wheel']);
 /** Standard gamepad button order (W3C "standard" mapping). */
 export const PAD_ORDER = ['pad_a', 'pad_b', 'pad_x', 'pad_y', 'lb', 'rb', 'lt', 'rt', 'select', 'start', 'lstick_press', 'rstick_press', 'dpad_up', 'dpad_down', 'dpad_left', 'dpad_right'];
-const AXIS_KEYS = { wasd: { up: 'w', down: 's', left: 'a', right: 'd' }, arrows: { up: 'up', down: 'down', left: 'left', right: 'right' }, dpad: { up: 'dpad_up', down: 'dpad_down', left: 'dpad_left', right: 'dpad_right' } };
+export const AXIS_KEYS = { wasd: { up: 'w', down: 's', left: 'a', right: 'd' }, arrows: { up: 'up', down: 'down', left: 'left', right: 'right' }, dpad: { up: 'dpad_up', down: 'dpad_down', left: 'dpad_left', right: 'dpad_right' } };
 const RANGE = /^(\d)-(\d)$/;
 
 /** Physical keys a binding name covers (axis groups expand to their keys); null when unknown. */
@@ -29,22 +29,49 @@ export function expand(name) {
 }
 export const deviceOf = key => (PAD.has(key) || key === 'lstick' || key === 'rstick' || key === 'dpad' ? 'gamepad' : 'keyboard');
 
-/** Compile bindings {view: {verb: [names]}} into {view: {buttons: {key: [{verb, value}]}, axes: {verb: [source]}, keys: {verb: [names]}}}. */
+/**
+ * One verb's binding entry: a list of key names (a press sends `true`; a range like 1-9 sends the digit), or a value
+ * map { <value>: [key names] } for a verb whose action takes one of a closed set of values (card.actionSpace enum): each
+ * key sends its value. Value names are decoded as JSON where they parse (numbers, booleans), else they are strings.
+ * -> [{ name, value }] where value undefined means "a press" (true, or the digit of a range).
+ */
+export function bindingKeys(entry) {
+  if (Array.isArray(entry)) return entry.map(name => ({ name, value: undefined }));
+  if (entry && typeof entry === 'object') return Object.entries(entry).flatMap(([v, names]) => (Array.isArray(names) ? names : []).map(name => ({ name, value: decodeValue(v) })));
+  return [];
+}
+/** A value-map key as the value the action receives ('-1' -> -1, 'true' -> true, 'left' -> 'left'). */
+export function decodeValue(v) { try { const x = JSON.parse(v); return typeof x === 'number' || typeof x === 'boolean' ? x : v; } catch { return v; } }
+/** Every key name of a binding entry (list or value map), in order. */
+export const bindingNames = entry => bindingKeys(entry).map(k => k.name);
+
+/**
+ * Compile bindings {view: {verb: entry}} into {view: {buttons: {key: [{verb, value}]}, axes: {verb: [source]},
+ * keys: {verb: [names]}, values: {verb: {value: [names]}}}} (entry: bindingKeys).
+ */
 export function compile(bindings, axisVerbs) {
   const out = {};
   for (const [view, map] of Object.entries(bindings || {})) {
-    const v = out[view] = { buttons: {}, axes: {}, keys: {} };
-    for (const [verb, names] of Object.entries(map || {})) {
-      v.keys[verb] = names.slice();
-      for (const name of names) {
-        if (AXES.has(name) && (axisVerbs.has(verb) || name === 'mouse' || name === 'lstick' || name === 'rstick')) { (v.axes[verb] ??= []).push(name); continue; }
+    const v = out[view] = { buttons: {}, axes: {}, keys: {}, values: {} };
+    for (const [verb, entry] of Object.entries(map || {})) {
+      const list = bindingKeys(entry);
+      v.keys[verb] = list.map(k => k.name);
+      if (!Array.isArray(entry)) v.values[verb] = structuredClone(entry);
+      for (const { name, value } of list) {
+        if (value === undefined && AXES.has(name) && (axisVerbs.has(verb) || name === 'mouse' || name === 'lstick' || name === 'rstick')) { (v.axes[verb] ??= []).push(name); continue; }
         const m = String(name).match(RANGE);
-        for (const key of expand(name) || []) (v.buttons[key] ??= []).push({ verb, value: m ? Number(key) : true });
+        for (const key of expand(name) || []) (v.buttons[key] ??= []).push({ verb, value: value !== undefined ? value : m ? Number(key) : true });
       }
     }
   }
   return out;
 }
+
+/**
+ * The view whose bindings apply to a runtime: the document's primary view when the bindings have it, else the first
+ * view they list (engine.input.actions in a host without a view kind, and the headless input driver, v2/verify/controls.js).
+ */
+export function hostView(keymap, primary) { const views = Object.keys(keymap || {}); return keymap?.[primary] ? primary : views[0] ?? null; }
 
 /** Keys bound to more than one verb in a view, ignoring verbs that share keys on purpose. */
 export function conflicts(bindings, shareKeys = []) {
@@ -52,7 +79,7 @@ export function conflicts(bindings, shareKeys = []) {
   const shared = (a, b) => shareKeys.some(g => g.includes(a) && g.includes(b));
   for (const [view, map] of Object.entries(bindings || {})) {
     const owner = {};
-    for (const [verb, names] of Object.entries(map || {})) for (const name of names) for (const key of expand(name) || []) {
+    for (const [verb, entry] of Object.entries(map || {})) for (const name of new Set(bindingNames(entry))) for (const key of expand(name) || []) {
       for (const other of owner[key] || []) if (other !== verb && !shared(other, verb)) out.push({ view, key, verbs: [other, verb] });
       (owner[key] ??= []).push(verb);
     }
@@ -87,10 +114,10 @@ export function sample(view, dev, opts = {}) {
       else if (src === 'mouse') { x += (dev.mouse?.dx || 0) * lookSensitivity; y += -(dev.mouse?.dy || 0) * lookSensitivity * (invertY ? -1 : 1); }
       else if (src === 'lstick' || src === 'rstick') {
         const s = dev.sticks?.[src] || [0, 0], sx = dead(s[0], deadzone), sy = -dead(s[1], deadzone);
-        if (verb === 'look' || src === 'rstick') { x += sx * lookRate * dt; y += sy * lookRate * dt * (invertY ? -1 : 1); } else { x += sx; y += sy; }
+        if (verb === 'look') { x += sx * lookRate * dt; y += sy * lookRate * dt * (invertY ? -1 : 1); } else { x += sx; y += sy; }
       }
     }
-    const isLook = sources.every(s => s === 'mouse' || s === 'rstick') || verb === 'look';
+    const isLook = verb === 'look' || sources.every(s => s === 'mouse');
     axes[verb] = isLook ? [x, y] : norm([Math.max(-1, Math.min(1, x)), Math.max(-1, Math.min(1, y))]);
   }
   return { actions, held, axes };

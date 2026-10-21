@@ -12,6 +12,8 @@ export default {
   id: 'gameplay.economy',
   card: {
     loop: { verbs: ['buy', 'sell', 'haggle'], progress: ['bought', 'sold'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { buy: { type: 'choice', of: 'an item the open shop sells' }, sell: { type: 'choice', of: 'an item in the bag' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "shops", "min": 1, "why": "an economy needs somewhere to spend", "example": [{"id": "general_store", "stock": [{"item": "potion", "price": 20}]}]},

@@ -1,6 +1,6 @@
 // Versus checks for any document where the player fights AI opponents with
 // health (ported from the fighting kit's verifier):
-//   1. every combat verb connects with an opponent placed beside the player;
+//   1. every combat verb connects with an opponent the player walks up to (through the controls);
 //   2. the opponent AI can finish a match against an idle player (no stalemate);
 //   3. a scripted player (approach, attack in turn, back off from active
 //      attacks) beats the opponents in at least some seeded matches.
@@ -10,13 +10,17 @@ import { hold, hpOf, foes, vitality, posOf } from '../drive.js';
 import { budget as makeBudget, instancesOf } from '../util.js';
 import { multiSeed, problem, livingFoes } from './common.js';
 
-/** Verbs declared by combat primitives in the document, else every verb. */
+/**
+ * The combat presses a person has: the verbs declared by combat primitives in the document (all verbs if none declare
+ * any), each with the value its first key sends (a press sends true; a verb bound per value, a fighter's special
+ * motions, sends one of them), keeping only verbs a control issues. -> { verbs: [verb], presses: [{ verb, value }], declared }
+ */
 export function combatVerbs(ctx, rt) {
   const declared = new Set();
   for (const x of instancesOf(ctx.doc)) { const p = ctx.registry.get(x.inst?.use); if (p && /\.combat\b/.test(p.id)) for (const a of p.card.provides.actions || []) declared.add(a); }
-  const verbs = rt.actions();
-  const list = verbs.filter(v => declared.has(v));
-  return { verbs: list.length ? list : verbs, declared: list.length > 0 };
+  const verbs = rt.actions().filter(v => !rt.controls || rt.controls.presses(v).length);
+  const list = verbs.filter(v => declared.has(v)), chosen = list.length ? list : verbs;
+  return { verbs: chosen, presses: chosen.map(v => ({ verb: v, value: rt.controls ? rt.controls.presses(v)[0] : true })), declared: list.length > 0 };
 }
 
 const nearestFoe = rt => {
@@ -24,45 +28,46 @@ const nearestFoe = rt => {
   const api = rt.space(p.space), at = posOf(rt, p);
   return livingFoes(rt).map(e => ({ e, d: api.distance(at, e.at) })).sort((a, b) => a.d - b.d)[0] || null;
 };
-const offset = (at, dx) => (Array.isArray(at) ? at.map((v, i) => (i === 0 ? v + dx : v)) : at);
+const toward = (rt, p, f) => { const at = posOf(rt, p); return Array.isArray(at) && Array.isArray(f.e.at) ? [Math.sign(f.e.at[0] - at[0]) || 1, Math.sign(Math.round(f.e.at[1] - at[1]))] : [0, 0]; };
 
-/** Does `verb` damage an opponent placed beside the player (either side)? */
-export function connects(rt, verb, { frames = 90 } = {}) {
+/**
+ * Does a press damage the nearest opponent? Through the controls: walk to it with the held move axis until it is
+ * within reach (or `approach` frames pass), face it, press, and watch for its health to drop.
+ */
+export function connects(rt, press, { frames = 90, reach = 1.2, approach = 240 } = {}) {
   const snap = rt.snapshot();
-  for (const side of [-1, 1]) {
-    rt.restore(snap);
-    const p = rt.player(), f = nearestFoe(rt); if (!p || !f) break;
-    const api = rt.space(p.space), size = p.components.body?.size?.[0] ?? 1;
-    if (Array.isArray(f.e.at)) api.setPos(p, offset(f.e.at, side * (size + 0.1)), rt);
-    else api.setPos(p, f.e.at, rt);
-    const id = f.e.id, hp0 = hpOf(f.e);
-    hold(rt, { actions: { [verb]: true } }, 1);
-    for (let i = 0; i < frames && rt.state.status === 'playing'; i++) {
-      const e = rt.entity(id);
-      if (!e || (hpOf(e) ?? hp0) < hp0) { rt.restore(snap); return true; }
-      hold(rt, {}, 1);
-    }
+  const f0 = nearestFoe(rt); if (!rt.player() || !f0) { rt.restore(snap); return false; }
+  const id = f0.e.id, hp0 = hpOf(f0.e);
+  for (let i = 0; i < approach && rt.state.status === 'playing'; i++) {
+    const p = rt.player(), f = nearestFoe(rt); if (!p || !f || f.e.id !== id || f.d <= reach) break;
+    hold(rt, { axes: { move: toward(rt, p, f) } }, 1);
+  }
+  const p = rt.player(), f = nearestFoe(rt);
+  if (p && f) hold(rt, { axes: { move: [toward(rt, p, f)[0], 0] }, actions: { [press.verb]: press.value } }, 1);
+  for (let i = 0; i < frames && rt.state.status === 'playing'; i++) {
     const e = rt.entity(id);
     if (!e || (hpOf(e) ?? hp0) < hp0) { rt.restore(snap); return true; }
+    hold(rt, {}, 1);
   }
+  const e = rt.entity(id), hit = !e || (hpOf(e) ?? hp0) < hp0;
   rt.restore(snap);
-  return false;
+  return hit;
 }
 
-/** A scripted fighter: approach, attack in turn, step back from an opponent mid-attack. */
-export function scriptedFighter(verbs, { reach = 1.5 } = {}) {
+/** A scripted fighter: approach, attack in turn, step back from an opponent mid-attack. presses: [{ verb, value }]. */
+export function scriptedFighter(presses, { reach = 1.5 } = {}) {
   let turn = 0, cool = 0, back = 0;
   return rt => {
     const p = rt.player(), f = nearestFoe(rt);
     if (!p || !f) return {};
-    const at = posOf(rt, p), dx = Array.isArray(at) && Array.isArray(f.e.at) ? Math.sign(f.e.at[0] - at[0]) || 1 : 0, dy = Array.isArray(at) && Array.isArray(f.e.at) ? Math.sign(Math.round(f.e.at[1] - at[1])) : 0;
+    const [dx, dy] = toward(rt, p, f);
     const busy = f.e.components.attacks?.active || f.e.components.melee?.active || f.e.components.ai?.attacking;
     if (back > 0) { back--; return { axes: { move: [-dx, 0] } }; }
     if (busy && f.d < reach * 1.5 && (vitality(rt).hp ?? 1) > 0 && turn % 3 === 2) { back = 6; return { axes: { move: [-dx, 0] } }; }
     if (f.d > reach) return { axes: { move: [dx, dy] } };
     if (cool > 0) { cool--; return {}; }
-    cool = 6; const v = verbs[turn++ % verbs.length];
-    return { actions: { [v]: true }, axes: { move: [dx, 0] } };
+    cool = 6; const x = presses[turn++ % presses.length];
+    return { actions: { [x.verb]: x.value }, axes: { move: [dx, 0] } };
   };
 }
 
@@ -82,9 +87,10 @@ export default {
       return w;
     };
     const rt = ready(ctx.make(ctx.seed)), problems = [], proven = [];
-    const { verbs, declared } = combatVerbs(ctx, rt);
-    // 1. Every combat verb connects.
-    const hits = verbs.filter(v => connects(rt, v));
+    const { verbs, presses, declared } = combatVerbs(ctx, rt);
+    // 1. Every combat verb connects (walked up to through the controls, then pressed).
+    const reach0 = 1.2 * (rt.player()?.components.body?.size?.[0] ?? 1);
+    const hitting = presses.filter(x => connects(rt, x, { reach: reach0 })), hits = hitting.map(x => x.verb);
     if (!hits.length) problems.push(problem('no_attack_connects', 'systems', `none of the player's verbs (${verbs.join(', ')}) damage an opponent beside the player`, { hint: 'check attack reach and hitboxes against opponent size' }));
     else if (declared) for (const v of verbs.filter(x => !hits.includes(x))) problems.push(problem('whiff', 'systems', `combat verb '${v}' never damages an opponent beside the player`, { severity: 'warning', hint: 'raise its reach or fix its hitbox' }));
     if (hits.length === verbs.length) proven.push(`every combat verb connects (${verbs.join(', ')})`);
@@ -97,7 +103,7 @@ export default {
     // 3. A scripted player beats the AI sometimes.
     const range = reach ?? 1.2 * (rt.player()?.components.body?.size?.[0] ?? 1);
     const play = seed => {
-      const w = ready(ctx.make(seed)), fought = livingFoes(w).length > 0, policy = scriptedFighter(hits.length ? hits : verbs, { reach: range });
+      const w = ready(ctx.make(seed)), fought = livingFoes(w).length > 0, policy = scriptedFighter(hitting.length ? hitting : presses, { reach: range });
       // Fight while opponents stand; between rounds (KO, round end, next round) wait up to 10 s for the match to go on or end.
       let idleFrames = 0;
       while (w.state.status === 'playing' && w.state.frame < matchFrames && !b.over() && vitality(w).alive && idleFrames < 600) { if (livingFoes(w).length) { idleFrames = 0; hold(w, policy(w), 1, b); } else { idleFrames++; hold(w, {}, 1, b); } }

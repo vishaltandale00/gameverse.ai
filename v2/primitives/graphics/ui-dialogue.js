@@ -78,6 +78,9 @@ export default {
   card: {
     intent: 'Dialogue box for any conversation: portraits of the speaker from its model, typewriter text with pacing, choices navigable by keyboard, gamepad, pointer and number keys, and subtitles for barks and narration.',
     views: ['any'],
+    // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
+    interactions: ['avatar-realtime', 'avatar-grid', 'menu'],
+    controls: { verbs: ['choose', 'skip_cutscene'] },
     params: {
       style: { type: 'string', default: 'auto', options: ['auto', ...THEMES], effect: 'visual theme' },
       portrait: { type: 'boolean', default: true, effect: 'show speaker portraits painted from their models' },

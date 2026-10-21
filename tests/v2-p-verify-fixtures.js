@@ -12,6 +12,7 @@ import spaceGraph from '../v2/primitives/engine/space-graph.js';
 import storyboard from '../v2/primitives/plot/storyboard.js';
 import inventory from '../v2/primitives/gameplay/inventory.js';
 import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
+import inputActions from '../v2/primitives/engine/input-actions.js';
 
 const P = defaults => Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, { type: 'json', default: v }]));
 const fx = (id, intent, params, { card = {}, ...rest } = {}) => ({ id, ...rest, card: { intent, views: ['any'], params: P(params), ...card } });
@@ -154,7 +155,7 @@ export const falling = fx('gameplay.fixture.falling', 'test: falling pieces', { 
 
 /** 2048-style slide/merge with a `board` service; spawns 2 (90%) or 4 through rt.random. */
 export const slide = fx('gameplay.fixture.slide', 'test: slide and merge', { n: 4, target: 64, moves: 1000 }, {
-  card: { provides: { actions: ['slide'], services: ['board'] } },
+  card: { provides: { actions: ['slide'], services: ['board'] }, actionSpace: { slide: { type: 'enum', options: ['left', 'right', 'up', 'down'] } } },
   install(rt, cfg) {
     const S = () => rt.store('gameplay.fixture.slide'), n = cfg.n;
     const spawn = g => { const empty = g.map((v, i) => (v ? -1 : i)).filter(i => i >= 0); if (!empty.length) return; g[empty[Math.floor(rt.random() * empty.length)]] = rt.random() < 0.9 ? 2 : 4; };
@@ -406,7 +407,8 @@ export const travel = fx('gameplay.fixture.travel', 'test: macro travel options'
 
 export const FIXTURES = [rows, platformer, step, glide, spawner, abilities, falling, slide, match, pellets, chasers, bullets, runner, melee, launcher, balls, battle, travel, ...Object.values(breakers)];
 export function fixtureCatalogue(extra = []) {
-  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, ...spaces2d.filter(p => p.id !== 'engine.space.graph'), storyboard, inventory, ...FIXTURES, ...extra]);
+  // engine.input.actions: the gate's bots play through the controls the host mounts (v2/verify/controls.js).
+  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, ...spaces2d.filter(p => p.id !== 'engine.space.graph'), storyboard, inventory, inputActions, ...FIXTURES, ...extra]);
   return { registry, logic: buildLogic(registry, Logic) };
 }
 export function normalized(doc, cat = fixtureCatalogue()) {

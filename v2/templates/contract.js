@@ -21,7 +21,7 @@ import { checkComposition } from '../planner/compose-check.js';
 import { loopProblems } from '../planner/loop-check.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
 import { tuneTarget } from '../planner/templates.js';
-import { maker } from '../verify/drive.js';
+import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
 
@@ -82,9 +82,12 @@ export function tuneProblems(t, registry) {
   return out;
 }
 
-/** The context the gate's bots play a preflighted document in. */
+/**
+ * The context the gate's bots play a preflighted host document in (the document a person plays: v2/web/host-doc.js),
+ * through the controls a person has (v2/verify/controls.js).
+ */
 export function playContext(checked, registry, logic) {
-  const make = maker(checked.doc, registry, logic);
+  const make = controlledMaker(checked.doc, registry, logic);
   return { doc: checked.doc, registry, logic, make, seed: SEEDS[0], capabilities: checked.capabilities, used: usedPrimitives(checked.doc), playerSpace: make(SEEDS[0]).player()?.space ?? checked.doc.spaces[0].id };
 }
 
@@ -127,17 +130,20 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const evidence = { contract: CONTRACT_VERSION, seeds: [...SEEDS], stages: {}, gate: null, bots: [], ms: 0 };
   const problems = [];
   const t = /** @type {any} */ (template);
-  let checked = null;
+  let checked = null, bare = null;
   const run = {
     format: () => formatProblems(t),
     tune: () => tuneProblems(t, registry),
+    // The document preflights, and so does the document a person plays (the host's input and UI added).
     preflight: () => {
       const r = preflight(structuredClone(t.doc), registry, logic);
-      if (r.ok) { checked = r; return []; }
-      return r.errors.map(e => problem('preflight_failed', `${e.code} ${e.path}: ${e.message}`, { path: e.path, cause: e.code }));
+      if (!r.ok) return r.errors.map(e => problem('preflight_failed', `${e.code} ${e.path}: ${e.message}`, { path: e.path, cause: e.code }));
+      const h = hostPreflight(t.doc, registry, logic);
+      if (!h.ok) return h.errors.map(e => problem('preflight_failed', `host document: ${e.code} ${e.path}: ${e.message}`, { path: e.path, cause: e.code }));
+      bare = r; checked = h; return [];
     },
-    composition: () => checkComposition(checked.doc, registry, { logic }).failures.map(f => problem('composition_failed', `${f.check}: ${f.message}`, { cause: f.check })),
-    loop: () => loopProblems(checked.doc, registry, { logic }).map(p => problem('loop_problem', p.message, { path: p.path, cause: p.code })),
+    composition: () => checkComposition(bare.doc, registry, { logic }).failures.map(f => problem('composition_failed', `${f.check}: ${f.message}`, { cause: f.check })),
+    loop: () => loopProblems(bare.doc, registry, { logic }).map(p => problem('loop_problem', p.message, { path: p.path, cause: p.code })),
     gate: async () => {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };

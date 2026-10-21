@@ -20,7 +20,10 @@ test('input defaults: verbs listed without bindings get keys for the primary vie
   const w = inputOf(out).with, side = w.bindings.side;
   assert.deepEqual(side.move.slice(0, 2), ['arrows', 'wasd']);
   assert.ok(side.jump.includes('space'));
-  for (const v of ['place', 'rotate_cw', 'rotate_ccw', 'shift_left', 'shift_right', 'hard_drop']) assert.ok(w.verbs.includes(v) && side[v]?.length, `${v} is a verb with a key`);
+  for (const v of ['rotate_cw', 'rotate_ccw', 'shift_left', 'shift_right', 'hard_drop']) assert.ok(w.verbs.includes(v) && side[v]?.length, `${v} is a verb with a key`);
+  // The falling pieces' place takes a chosen placement (card.actionSpace choice): no key, which would send `true` to
+  // an action that ignores it; the choices UI issues it.
+  assert.equal(side.place, undefined, 'a choice verb gets no dead key');
   for (const v of ['menu', 'inventory']) assert.equal(side[v], undefined, 'UI verbs are left to the UI hotkeys');
   for (const ks of Object.values(side)) for (const k of ks) assert.ok(!['esc', 'i', 'j', 'm', 'p', 'tab'].includes(k), `UI hotkey ${k} kept free`);
   assert.deepEqual(inputErrors({ ...doc(out) }), [], 'conflict-free and valid');

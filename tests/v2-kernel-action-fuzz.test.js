@@ -52,7 +52,8 @@ for (const id of ids) {
     // (legacy cards use {kind: continuous|impulse, params}). Keys may be actions or input axes.
     for (const [verb, spec] of Object.entries(registry.get(id).card.actionSpace || {})) {
       assert.ok(spec && typeof spec === 'object', `actionSpace.${verb}`);
-      assert.ok(['number', 'vector', 'enum'].includes(spec.type) || ['continuous', 'impulse'].includes(spec.kind), `actionSpace.${verb} needs a type or kind`);
+      assert.ok(['number', 'vector', 'enum', 'choice'].includes(spec.type) || ['continuous', 'impulse'].includes(spec.kind), `actionSpace.${verb} needs a type or kind`);
+      if (spec.type === 'choice') assert.ok(typeof spec.of === 'string' && spec.of.length > 3, `actionSpace.${verb}: a choice says what its value names (of)`);
       if (spec.type === 'enum') assert.ok(Array.isArray(spec.options) && spec.options.length, `actionSpace.${verb}.options`);
     }
   });

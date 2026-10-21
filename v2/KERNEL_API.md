@@ -84,7 +84,7 @@ The player's scalars are mirrored to vars: `hp`, `hp.max`, `res.<pool>`, `score`
 **Solver conventions.**
 - Option `label`s must be unique within one state's `availableOptions()`.
 - `state.rng` is a uint32 that solvers may reseed to sample chance.
-- A primitive with continuous verbs declares `card.actionSpace: {verb: {type: 'number'|'vector'|'enum', min?, max?, options?}}` so playtesters can sweep it.
+- A primitive declares how each verb's value is given in `card.actionSpace: {verb: {type: 'number'|'vector'|'enum'|'choice', min?, max?, options?, of?}}` (or `{kind: 'continuous'|'impulse', params}`), so playtesters can sweep it and the host gives a person a control for it (ARCHITECTURE §6.3, `v2/web/input-defaults.js` `verbControl`): no entry (or an impulse, or an enum of `[true]`) is a press, a key sending `true`; an enum gets one key per value; a vector or continuous input axis (`move`, `look`, `aim`...) is held; `choice` (with `of`: what the value names) is a value chosen among those the primitive's options list, and a number or vector that is no input axis is one too: a UI primitive whose `card.controls` declares the verb issues it.
 - A primitive may shape its part of the solver's state key with an optional `solverKey(rt, config, instance)`, and report progress with `progress(rt)`.
 - Spaces expose `size` (or `bounds()` with the `bounds` capability) and, when they are cell-based, `cellOf(at) → key`. `reachable` returns a Set of those keys (or zone ids in graph spaces).
 

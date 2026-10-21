@@ -6,7 +6,7 @@
 // allocates free verbs to primitives that need a button (claim). In the
 // browser only, this primitive also listens to keyboard, mouse, gamepad and
 // touch and sets view.input(); it never touches rt.state there.
-import { compile, conflicts, expand, sample, glyph, keyName, deviceOf, PAD_ORDER } from './runtime-lib-input.js';
+import { compile, conflicts, expand, sample, glyph, keyName, deviceOf, PAD_ORDER, bindingKeys, hostView, decodeValue } from './runtime-lib-input.js';
 import { SLUG } from './runtime-lib.js';
 
 const ID = 'engine.input.actions';
@@ -24,7 +24,7 @@ export default {
     params: {
       verbs: { type: 'list', of: { type: 'string' }, min: 1, default: ['move', 'look', 'jump', 'use', 'attack', 'menu'], effect: 'verb names the game uses; each becomes a player action' },
       axes: { type: 'list', of: { type: 'string' }, default: ['move', 'look', 'drive', 'steer'], effect: 'verbs that are 2D axes ([x, y], y up/forward positive) rather than buttons' },
-      bindings: { type: 'object', open: true, default: {}, effect: 'view -> verb -> key names: letters, digits, f1-f12, space shift ctrl alt tab enter esc up down left right, wasd/arrows/dpad (axes), lmb rmb mmb wheel mouse, pad_a pad_b pad_x pad_y lb rb lt rt start select lstick rstick lstick_press rstick_press dpad_*, ranges like 1-9' },
+      bindings: { type: 'object', open: true, default: {}, effect: 'view -> verb -> key names (or, for a verb taking one of a closed set of values, value -> key names): letters, digits, f1-f12, space shift ctrl alt tab enter esc up down left right, wasd/arrows/dpad (axes), lmb rmb mmb wheel mouse, pad_a pad_b pad_x pad_y lb rb lt rt start select lstick rstick lstick_press rstick_press dpad_*, ranges like 1-9' },
       shareKeys: { type: 'list', default: [], of: { type: 'list', of: { type: 'string' } }, effect: 'groups of verbs allowed to share a key because they never apply at once (jump/glide, move/drive)' },
       touch: { type: 'boolean', default: false, effect: 'show an on-screen stick and buttons on touch devices' },
       deadzone: { type: 'number', default: 0.2, min: 0, max: 0.9, effect: 'gamepad stick deadzone' },
@@ -43,8 +43,9 @@ export default {
       if (!map || typeof map !== 'object' || Array.isArray(map)) { errors.push({ code: 'param_type', path: `bindings.${view}`, message: 'a view maps verbs to key lists' }); continue; }
       for (const [verb, keys] of Object.entries(map)) {
         if (!verbs.has(verb)) errors.push({ code: 'input_verb_unknown', path: `bindings.${view}.${verb}`, message: `'${verb}' is not in verbs`, hint: `verbs: ${config.verbs.join(', ')}` });
-        if (!Array.isArray(keys)) { errors.push({ code: 'param_type', path: `bindings.${view}.${verb}`, message: 'must be a list of key names' }); continue; }
-        keys.forEach((k, i) => { if (!expand(k)) errors.push({ code: 'input_key_unknown', path: `bindings.${view}.${verb}[${i}]`, message: `unknown key '${k}'`, hint: 'gamepad face buttons are pad_a pad_b pad_x pad_y' }); });
+        const valueMap = keys && typeof keys === 'object' && !Array.isArray(keys);
+        if (!Array.isArray(keys) && !(valueMap && Object.values(keys).every(Array.isArray))) { errors.push({ code: 'param_type', path: `bindings.${view}.${verb}`, message: 'must be a list of key names, or a map of values to key-name lists' }); continue; }
+        bindingKeys(keys).forEach(({ name: k }, i) => { if (!expand(k)) errors.push({ code: 'input_key_unknown', path: `bindings.${view}.${verb}[${i}]`, message: `unknown key '${k}'`, hint: 'gamepad face buttons are pad_a pad_b pad_x pad_y' }); });
       }
     }
     if (!errors.length) for (const c of conflicts(config.bindings, config.shareKeys)) errors.push({ code: 'input_binding_conflict', path: `bindings.${c.view}`, message: `'${c.key}' is bound to both ${c.verbs.join(' and ')}`, hint: 'rebind one, or list both verbs in a shareKeys group' });
@@ -66,8 +67,8 @@ export default {
   },
   install(rt, config, instance) {
     const axisVerbs = new Set(config.axes), keymap = compile(config.bindings, axisVerbs);
-    const views = Object.keys(keymap), primary = rt.doc.views?.primary;
-    const viewKind = () => rt.view?.kind ?? (keymap[primary] ? primary : views[0]);
+    const primary = rt.doc.views?.primary;
+    const viewKind = () => rt.view?.kind ?? hostView(keymap, primary);
     const claims = new Map(); // verb -> owner (configuration, rebuilt identically at install, not state)
     let device = 'keyboard';
     const cache = () => (rt.caches[ID] ??= { frame: -1, by: {} });
@@ -164,7 +165,23 @@ export default {
   },
 };
 
-// Minimal touch layer: left half is a virtual stick for `move`, buttons for the first bound non-axis verbs.
+/**
+ * The on-screen buttons a touch device gets for one view's bindings: one per bound button verb (a verb bound to a value
+ * map gets one per value), so every verb a key issues is also issuable by touch. Pure, for tests.
+ * @returns {Array<{ verb: string, value: unknown, label: string }>}
+ */
+export function touchButtons(view) {
+  const out = [];
+  for (const verb of Object.keys(view?.keys || {})) {
+    if (view.axes[verb]) continue;
+    const values = view.values?.[verb];
+    if (values) for (const v of Object.keys(values)) out.push({ verb, value: decodeValue(v), label: `${verb.replace(/_/g, ' ')} ${v}` });
+    else out.push({ verb, value: true, label: verb.replace(/_/g, ' ') });
+  }
+  return out;
+}
+
+// Minimal touch layer: left half is a virtual stick for `move`, a button for every bound button verb (touchButtons).
 function mountTouch(container, view, dev, onTouch, api) {
   if (!view) return;
   const layer = document.createElement('div');
@@ -178,13 +195,13 @@ function mountTouch(container, view, dev, onTouch, api) {
   zone.addEventListener('touchend', () => { stick.id = null; dev.sticks.lstick = [0, 0]; });
   layer.append(zone);
   if (view.axes.move && !view.axes.move.includes('lstick')) view.axes.move.push('lstick');
-  const verbs = Object.keys(view.keys).filter(v => !view.axes[v]).slice(0, 6);
-  verbs.forEach((verb, i) => {
+  const buttons = touchButtons(view), cols = buttons.length > 9 ? 4 : 3, size = buttons.length > 9 ? 52 : 64;
+  buttons.forEach(({ verb, value, label }, i) => {
     const b = document.createElement('button');
-    b.textContent = verb.replace(/_/g, ' ');
-    b.style.cssText = `position:absolute;right:${16 + (i % 3) * 72}px;bottom:${16 + Math.floor(i / 3) * 72}px;width:64px;height:64px;border-radius:50%;pointer-events:auto;opacity:.75;font:12px sans-serif`;
-    const key = `touch_${verb}`;
-    (view.buttons[key] ??= []).push({ verb, value: true });
+    b.textContent = label;
+    b.style.cssText = `position:absolute;right:${16 + (i % cols) * (size + 8)}px;bottom:${16 + Math.floor(i / cols) * (size + 8)}px;width:${size}px;height:${size}px;border-radius:50%;pointer-events:auto;opacity:.75;font:11px sans-serif`;
+    const key = `touch_${verb}${value === true ? '' : `_${String(value)}`}`;
+    (view.buttons[key] ??= []).push({ verb, value });
     b.addEventListener('touchstart', ev => { onTouch(); if (!dev.down.has(key)) dev.pressed.add(key); dev.down.add(key); ev.preventDefault(); }, { passive: false });
     b.addEventListener('touchend', () => dev.down.delete(key));
     layer.append(b);

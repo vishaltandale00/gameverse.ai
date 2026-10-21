@@ -11,6 +11,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: ['unlock_perk'], progress: ['perk_unlocked'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { unlock_perk: { type: 'choice', of: 'an unlockable perk' } },
     intent: 'Perk/skill tree: nodes with point costs, prerequisites, ranks and var modifiers (stat.*, hp.max, res.*.max); use-based nodes unlock from usage events; unlock_perk/reset_perks effects, `perk` predicate and an unlock verb.',
     views: ['any'],
     params: {

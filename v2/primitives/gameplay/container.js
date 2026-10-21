@@ -17,6 +17,8 @@ export default {
   id: 'gameplay.container',
   card: {
     loop: { verbs: ['take', 'store', 'take_all'], progress: ['opened', 'container_opened'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { take: { type: 'choice', of: 'an item in the open container' }, store: { type: 'choice', of: 'an item in the bag' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "container", "min": 1, "placed": 1, "why": "containers are entities with a container component {slots, table?}", "example": {"id": "chest", "kind": "prop", "components": {"container": {"slots": 6}}}},

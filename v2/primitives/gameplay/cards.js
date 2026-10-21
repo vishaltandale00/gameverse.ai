@@ -22,6 +22,8 @@ const DECAYS = ['vulnerable', 'weak', 'frail'];
 export default {
   id: ID,
   card: {
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { play_card: { type: 'choice', of: 'a card in hand (and its target)' }, attack_with: { type: 'choice', of: 'a board card and its target' }, pick_card: { type: 'choice', of: 'a reward card' } },
     loop: { verbs: ['play_card', 'attack_with', 'pick_card'], progress: ['card_played', 'card_damage', 'minion_died'],
       // As an encounter: the card battle ends through gameplay.turns (card.mode.via), whose victory and defeat params it uses.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onVictory', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onDefeat', player: 'defeated', opponent: 'keeps' } } } },

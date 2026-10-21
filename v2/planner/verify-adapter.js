@@ -5,6 +5,7 @@
 //   { ok, verified?, completable, exhaustive, source, preflight: { ok, errors, warnings, ms }, solve?, problems, ms }
 // Problems from v2/verify carry { code, path, message, hint, severity, stage } (PROBLEM_CODES).
 import { preflight } from '../kernel/document.js';
+import { hostDocument } from '../web/host-doc.js';
 import { solve } from '../verify/solve.js';
 import { loopEvents } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
@@ -155,7 +156,10 @@ export function winQuantity(doc, registry, core = null) {
  */
 export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, maxStates = 20000, playtestMs = null } = {}) {
   const started = performance.now();
-  const pre = preflight(doc, registry, logic);
+  // The gate verifies what the host mounts (ARCHITECTURE §6.3): the document with the host's default input and UI
+  // (v2/web/host-doc.js, the same function the browser player mounts), so the controls the bots play through are the
+  // ones a person gets.
+  const pre = preflight(hostDocument(doc, registry), registry, logic);
   const summary = { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms };
   if (!pre.ok) return { ok: false, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems: [], doc: null, ms: Math.round(performance.now() - started) };
   // source is set by every return below.

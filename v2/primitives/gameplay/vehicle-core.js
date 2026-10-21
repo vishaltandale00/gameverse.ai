@@ -235,8 +235,10 @@ export default {
     };
     rt.provide('vehicles', service);
 
-    rt.action('enter_vehicle', (value, rt) => { const p = rt.player(); if (p) service.enter(p, typeof value === 'string' ? value : true); });
-    rt.action('exit_vehicle', (value, rt) => { const p = rt.player(); if (p) service.exit(p); });
+    // Enter and exit share one key (input-defaults SHARE): a press does the one that applies, so the press that seats
+    // the player does not also take it out again in the same step.
+    rt.action('enter_vehicle', (value, rt) => { const p = rt.player(); if (!p || p.components.seat) return; service.enter(p, typeof value === 'string' ? value : true); if (p.components.seat) rt.store(ID).enteredAt = rt.state.frame; });
+    rt.action('exit_vehicle', (value, rt) => { const p = rt.player(); if (p && rt.store(ID).enteredAt !== rt.state.frame) service.exit(p); });
     rt.action('horn', (value, rt) => { const v = seatedVehicle(rt.player()); if (v) rt.emit('horn', { vehicle: v.id, who: 'player' }); });
     rt.action('radio', (value, rt) => {
       const v = seatedVehicle(rt.player()); if (!v || !config.stations.length) return;

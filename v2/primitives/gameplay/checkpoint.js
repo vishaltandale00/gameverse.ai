@@ -25,6 +25,8 @@ export default {
   id: 'gameplay.checkpoint',
   card: {
     loop: { verbs: ['fast_travel'], progress: ['checkpoint_set'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { fast_travel: { type: 'choice', of: 'an active checkpoint' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": true}}},

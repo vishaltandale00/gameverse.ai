@@ -18,6 +18,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { select: { type: 'choice', of: 'units of the player faction', selects: 'who' }, order: { type: 'choice', of: 'an order for units (gather, move, attack-move) and its target', pick: 'who' }, produce: { type: 'choice', of: 'a building and what it trains' }, rally: { type: 'choice', of: 'a building and its rally point' } },
     // Its AI-controlled factions play themselves (stepAI): they gather, produce and order attack-moves.
     drives: { control: 'ai', actions: ['order', 'produce'], events: ['order_given', 'unit_attack', 'unit_produced'], movement: true },
     // Shapes of the archetype component this primitive owns (the planner's schemas and repair read them).

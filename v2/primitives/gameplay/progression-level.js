@@ -19,6 +19,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: ['allocate'], progress: ['xp_gained', 'level_up'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { allocate: { type: 'choice', of: 'a stat to raise' } },
     intent: 'XP and levels: an XP curve, level cap, stat points with per-point and per-level growth, XP sources keyed by events (with wildcards, level scaling and party sharing), level-up effects, and per-entity progress for party members.',
     views: ['any'],
     params: {

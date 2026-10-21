@@ -66,6 +66,9 @@ export function resultsModel(rt, ev = {}) {
 const card = {
   intent: 'Screens around play for any game: title with press start and controls, pause with restart, save/load slots, settings and controls, character and stage select, VS intro, round and stage banners, and a results screen at the end.',
   views: ['any'],
+  // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
+  interactions: ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'],
+  controls: { verbs: ['save_game', 'load_game'] },
   params: {
     style: { type: 'string', default: 'auto', options: ['auto', ...THEMES], effect: 'visual theme' },
     title: { type: 'boolean', default: true, effect: 'show a title screen before play starts' },

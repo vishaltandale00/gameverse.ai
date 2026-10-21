@@ -49,6 +49,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: ['select_stage', 'next_stage'], progress: ['stage_clear', 'sequence_complete'] },
+    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
+    actionSpace: { select_stage: { type: 'choice', of: 'a stage' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "stages", "min": 3, "why": "a level sequence needs several stages, each with its own goal and parameters"},

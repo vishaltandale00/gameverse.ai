@@ -4,6 +4,7 @@
 // read through documented component fields and space capabilities only.
 import { createWorld } from '../kernel/world.js';
 import { touchDefeats } from '../primitives/gameplay/combat-lib.js';
+import { ControlsMissing } from './controls.js';
 
 /** A factory of fresh headless worlds for one normalized document. */
 export function maker(doc, registry, logic) {
@@ -23,9 +24,23 @@ export function hold(rt, input, n = 1, b = null) {
 /**
  * Apply one option: `apply(rt)` macros run first; then `actions` are stepped
  * `steps` times (default 1); an option with only `steps` steps empty input.
+ * On a controlled runtime (v2/verify/controls.js) an option is a hint of what a person can do: its actions are issued
+ * through the controls (the keys go down on the first frame and stay down for its steps; values chosen through a UI
+ * are sent once) and its `apply` macro is never run; an option whose only content is a macro is not something a
+ * person can do (ControlsMissing).
  */
 export function applyOption(rt, option, b = null) {
   const before = rt.state.frame;
+  if (rt.controls) {
+    const actions = option.actions || {}, verbs = Object.keys(actions).filter(v => actions[v] !== undefined && actions[v] !== null && actions[v] !== false);
+    if (!verbs.length && typeof option.apply === 'function') throw new ControlsMissing([{ verb: option.label ?? 'option', why: 'the option is a macro (apply) and issues no action' }]);
+    const n = option.steps || 1;
+    hold(rt, { actions }, 1);
+    const held = Object.fromEntries(verbs.filter(v => actions[v] === true).map(v => [v, true]));
+    if (n > 1) hold(rt, Object.keys(held).length ? { held } : {}, n - 1);
+    b?.step(Math.max(1, rt.state.frame - before));
+    return;
+  }
   if (typeof option.apply === 'function') option.apply(rt);
   if (option.actions || (!option.apply && !option.steps)) hold(rt, { actions: option.actions || {} }, option.steps || 1);
   else if (option.steps && playing(rt)) hold(rt, {}, option.steps);
@@ -107,9 +122,10 @@ export const DIRS8 = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1],
 
 /**
  * Generic input macros when a document exposes no options: idle, axis moves,
- * each action verb alone and with a move. `verbs` defaults to rt.actions().
+ * each action verb alone and with a move. `verbs` defaults to the verbs a person can press (a controlled runtime,
+ * v2/verify/controls.js), else rt.actions().
  */
-export function inputMacros(rt, { verbs = rt.actions(), axes = true, combos = true } = {}) {
+export function inputMacros(rt, { verbs = rt.controls ? rt.controls.pressable() : rt.actions(), axes = true, combos = true } = {}) {
   const out = [{ label: 'idle', input: {} }];
   if (axes) for (const [x, y] of DIRS8.slice(1)) out.push({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } } });
   for (const v of verbs) {

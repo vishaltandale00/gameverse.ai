@@ -1,8 +1,8 @@
 // Striker for ball sports (gameplay.sports): through the player's real
 // controls it runs to a spot behind the ball on the line to the goal its team
 // scores in (each step choosing, on snapshots, the held direction that ends
-// nearest that spot), and kicks toward the goal mouth when the ball is in
-// range. It must win the match (outscore the other teams before the clock).
+// nearest that spot), and presses kick when the ball is in range, which sends
+// it from the player through the ball toward the goal mouth. It must win the match (outscore the other teams before the clock).
 import { hold, posOf, DIRS8 } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
@@ -40,7 +40,8 @@ export default {
         const spot = bc.map((v, i) => v - dir[i] * behind);
         // Kick when in range and roughly behind the ball (the ball sits between the player and the goal).
         const behindBall = len(sub(pc, bc)) <= config.kickRange && (bc[0] - pc[0]) * dir[0] + (bc[1] - pc[1]) * dir[1] > 0;
-        if (behindBall) { hold(rt, { actions: { kick: { dir: [...dir, 0] } } }, 1, b); path.push('kick'); continue; }
+        // The kick key kicks from the player through the ball, so standing behind it on the goal line aims it at the goal.
+        if (behindBall) { hold(rt, { actions: { kick: true } }, 1, b); path.push('kick'); continue; }
         const snap = rt.snapshot();
         let best = null;
         for (const [x, y] of DIRS8.slice(1)) {

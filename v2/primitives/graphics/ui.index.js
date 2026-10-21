@@ -11,5 +11,6 @@ import map from './ui-map.js';
 import battle from './ui-battle.js';
 import cards from './ui-cards.js';
 import feedback from './ui-feedback.js';
+import choices from './ui-choices.js';
 
-export default [hud, dialogue, journal, inventory, menu, minimap, map, battle, cards, audioSynth, feedback];
+export default [hud, dialogue, journal, inventory, menu, minimap, map, battle, cards, audioSynth, feedback, choices];
