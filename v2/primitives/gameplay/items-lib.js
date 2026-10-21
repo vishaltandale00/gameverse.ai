@@ -259,14 +259,3 @@ export function blocks(rt) {
   if (c.blocksDoc !== rt.doc) { c.blocksDoc = rt.doc; c.blocks = new Map((rt.doc.content?.blocks || []).map(b => [b.id, b])); }
   return c.blocks;
 }
-
-/** Push a param-style error for list entries with duplicate ids. */
-export function uniqueIds(list, path, errors, what = 'entry') {
-  const seen = new Set();
-  (list || []).forEach((x, i) => { if (seen.has(x.id)) errors.push({ code: 'id_duplicate', path: `${path}[${i}].id`, message: `duplicate ${what} id '${x.id}'` }); seen.add(x.id); });
-}
-/** Error helper: unknown item id in content (refs checked by the kernel only for card params). */
-export function checkItem(doc, id, path, errors) {
-  if (id == null) return;
-  if (!(doc.content?.items || []).some(i => i.id === id)) errors.push({ code: 'ref_unknown', path, message: `unknown item '${id}'` });
-}
