@@ -179,10 +179,15 @@ export function stepsFrom(api, e, at, rt) {
   return typeof api.canMove === 'function' ? ns.filter(n => /** @type {NonNullable<SpaceApi['canMove']>} */ (api.canMove)({ ...e, at: /** @type {any} */ (at) }, n, rt)) : ns;
 }
 
-/** Axis-aligned box of an entity's body in its space, honoring api.anchor ('center' | 'min' | 'cell' | 'slot'). @param {Entity} entity @param {{ anchor?: string }} api */
+/**
+ * Axis-aligned box of an entity's body in its space, honoring api.anchor ('center' | 'min' | 'cell' | 'slot'):
+ * 'center' and 'cell' positions are the box centre (a cell space's integer positions are cell centres, its cell
+ * spanning [at - 0.5, at + 0.5)); 'min' and 'slot' positions are its corner. @param {Entity} entity @param {{ anchor?: string }} api
+ */
 export function bodyBox(entity, api) {
   const at = Array.isArray(entity.at) ? entity.at : [0, 0, 0], size = entity.components?.body?.size || at.map(() => 1);
-  const min = api.anchor === 'center' ? at.map((/** @type {number} */ v, /** @type {number} */ i) => v - (size[i] ?? 1) / 2) : at.slice();
+  const centred = api.anchor === 'center' || api.anchor === 'cell';
+  const min = centred ? at.map((/** @type {number} */ v, /** @type {number} */ i) => v - (size[i] ?? 1) / 2) : at.slice();
   return { min, max: min.map((/** @type {number} */ v, /** @type {number} */ i) => v + (size[i] ?? 1)) };
 }
 

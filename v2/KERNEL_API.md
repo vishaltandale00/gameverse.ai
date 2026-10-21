@@ -111,7 +111,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 
 - **Anchors.** `api.anchor` says what `e.at` means:
   - `'center'`: the centre of the body box, y up (continuous spaces: tilemap, arena2d, physics2d, track, voxel, mesh3d);
-  - `'cell'`: the grid space;
+  - `'cell'`: the grid space: integer positions are cell centres, so the body box is centred on `e.at` as for `'center'` (a cell spans `[at - 0.5, at + 0.5)`);
   - `'slot'`: the graph and none spaces;
   - `'min'`: the test space only.
 

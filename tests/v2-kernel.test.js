@@ -124,3 +124,11 @@ test('the plot solver finds the ending path and flags unreachable content', asyn
   assert.ok(b.unreachedEndings.includes('escape'));
   assert.ok(b.deadEnds.length > 0);
 });
+
+test('bodyBox: centre and cell anchors centre the box on the position; min and slot anchors start it there', async () => {
+  const { bodyBox } = await import('../v2/kernel/testing.js');
+  const e = { at: [3, 5], components: { body: { size: [1, 2] } } };
+  assert.deepEqual(bodyBox(e, { anchor: 'center' }), { min: [2.5, 4], max: [3.5, 6] });
+  assert.deepEqual(bodyBox(e, { anchor: 'cell' }), { min: [2.5, 4], max: [3.5, 6] }, 'a grid cell spans [at - 0.5, at + 0.5)');
+  assert.deepEqual(bodyBox(e, { anchor: 'min' }), { min: [3, 5], max: [4, 7] });
+});

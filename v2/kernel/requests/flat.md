@@ -29,12 +29,7 @@ Each request names the workaround already in place in `v2/primitives/graphics/*`
 
 Optionally, add `graphics.render.dom` before `graphics.ui.story` for graph spaces. Each renderer already brings default juice (particles and feedback), a default backdrop, generated art and a default camera.
 
-## 3. Grid anchor vs `bodyBox`
-
-The grid card says integer `at` values are cell centres. `testing.js` `bodyBox(e, api)` with `anchor: 'cell'`, however, returns `min = at`, which is a cell spanning `[at, at + 1)`.
-
-The flat grid renderer follows the space card and draws cells centred on `cellCenter(at)`. Please make the two agree: either `bodyBox` centres cell anchors, or the grid documents `at` as the cell corner.
-
 ## Resolved
 
+- Grid anchor vs `bodyBox`: `bodyBox` centres `'cell'` anchors like `'center'` (integer grid positions are cell centres; melee and AI hit shapes on a grid now reach every side).
 - Digit-led id segments: `graphics.lighting.2d` registers under its catalog id (cbc7e2d8).

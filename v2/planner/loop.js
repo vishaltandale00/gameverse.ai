@@ -12,7 +12,8 @@
 //             when   a predicate template for a plot ending ('$target' is a number the content picks);
 //             ending a plot ending section wins (the story);
 //             scope  'encounter' when the win resolves one encounter (a battle) rather than the game (default 'game');
-//             applies { param, field?, is }: the win exists only when the instance config matches (the preset makes it);
+//             applies { param, field?, is } | { param, given: true }: the win exists only when the instance config matches
+//                    (the preset makes it), or sets the param at all (`given`: a crawl exists only where the dungeon holds a boss);
 //             reads  the state the win condition tests (planner/loop-check.js): { component, of: opponents|player } | { event } | { var },
 //                    with `from` (the primitive whose code writes it, when not this one or the component's owner) and
 //                    `by` (what changes it: { actions: player verbs that do, directly or through the effects the document
@@ -38,7 +39,7 @@ import { isObj, isList, prop } from '../kernel/guards.js';
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
 /** @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: ReadsBy }} EndReads */
-/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is: unknown }, reads?: EndReads }} LoopEnd */
+/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */
 /** A side's fate when an inner loop ends one way. @typedef {'keeps' | 'defeated'} Fate */
 /** @typedef {{ param: string, player: Fate, opponent?: Fate }} OutcomeResult */
 /** @typedef {{ sides: string[], results: Record<string, OutcomeResult> }} LoopOutcome */
@@ -149,11 +150,13 @@ export const endsGame = e => Boolean(e && e.scope !== 'encounter');
 
 /**
  * Does an `applies` condition hold for an instance config (card defaults applied)? A list param matches when any
- * entry's field equals `is`. @param {LoopEnd['applies'] | undefined} a @param {Record<string, unknown>} config
+ * entry's field equals `is`; `given: true` holds when the config sets the param (a value, a non-empty list).
+ * @param {LoopEnd['applies'] | undefined} a @param {Record<string, unknown>} config
  */
 export function appliesTo(a, config) {
   if (!a) return true;
   const v = config?.[a.param];
+  if (a.given === true) return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '';
   if (Array.isArray(v)) return v.some(x => (a.field ? prop(x, a.field) : x) === a.is);
   return (a.field ? prop(v, a.field) : v) === a.is;
 }

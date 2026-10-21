@@ -236,7 +236,8 @@ export function structureOf(decomposition, selection, registry) {
  * that clears the level). @param {SystemInstance} inst @param {LoopEnd['applies']} a @param {RegistryLike} registry
  */
 function apply(inst, a, registry) {
-  if (!a?.param) return;
+  // A `given` condition names a param the content decides (which archetype the boss is): nothing to make here.
+  if (!a?.param || a.given === true) return;
   const spec = registry.get(inst.use)?.card.params?.[a.param];
   /** @type {Record<string, any>} */
   const w = inst.with ??= {};

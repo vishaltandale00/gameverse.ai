@@ -8,7 +8,7 @@
 // choose motion 'self': it integrates its own bodies with gravityAt + slide and
 // emits the same `contact` events, so destructibles behave the same everywhere.
 
-/** Anchor convention of entity positions: physics spaces use centres; cell spaces box corners. */
+/** Anchor convention of entity positions (api.anchor): physics and cell spaces use centres, the test space box corners. */
 import { bodyBox } from '../../kernel/testing.js';
 
 export const sizeOf = e => { const s = e.components.body?.size || [1, 1]; return [s[0] ?? 1, s[1] ?? 1]; };
@@ -18,7 +18,7 @@ export function centerOf(api, e) { const b = bodyBox(anchored(api, e), api); ret
 /** Position an entity so its body box is centred on c (keeping any 3rd coordinate). */
 export function placeCenter(rt, api, e, c) {
   const s = sizeOf(e), at = (api.pos ? api.pos(e) : e.at) || [0, 0];
-  const p = api.anchor === 'center' ? [c[0], c[1]] : [c[0] - s[0] / 2, c[1] - s[1] / 2];
+  const p = api.anchor === 'center' || api.anchor === 'cell' ? [c[0], c[1]] : [c[0] - s[0] / 2, c[1] - s[1] / 2];
   api.setPos(e, at.length > 2 ? [p[0], p[1], ...at.slice(2)] : p, rt);
 }
 export const velOf = (api, e) => (api.velocity ? api.velocity(e) : null) || e.components.body?.vel || [0, 0];

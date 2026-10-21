@@ -22,6 +22,13 @@ export default {
     intent: 'Generates a room-and-corridor dungeon with keys always placed before their locks, a boss room, loot in dead ends, and proves it solvable from the start.',
     views: ['td', '3p', 'iso', 'side'],
     spaces: ['engine.space.tilemap', 'engine.space.grid', 'engine.space.mesh3d'],
+    // The crawl: explore the rooms, pick up the keys, open their locks and defeat the boss its boss room holds. It exists
+    // only where the dungeon holds a boss (applies: boss given); a dungeon without one is a world, not a game of its own.
+    // The win is the boss encounter's (gameplay.combat.boss bosses[].onDefeat); defeat comes from health and death
+    // rules. Its bot plays it on cell spaces (navigate: it plans over the walker's moves and the space's cells).
+    mode: { loop: 'crawl', applies: { param: 'boss', given: true }, via: 'gameplay.combat.boss', interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', ['navigate']], needs: { content: ['content.archetypes'], participants: null },
+      progress: ['key_found', 'unlocked'],
+      win: { param: 'bosses.onDefeat', reads: { component: 'health', of: 'opponents', by: { events: ['died'], effects: ['damage'] } } }, lose: { param: null }, bot: 'crawl' },
     params: {
       rooms: { type: 'integer', min: 3, max: 80, default: 12, scale: 'world', per: 'area' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },

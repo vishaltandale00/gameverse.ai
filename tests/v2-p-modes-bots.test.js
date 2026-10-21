@@ -14,7 +14,7 @@ import { replayMacros } from '../v2/verify/strategies/turn-board.js';
 import { replayRace } from '../v2/verify/strategies/race.js';
 import { modeCatalogue } from '../v2/planner/catalog.js';
 import { modeShapeErrors, modesIn, modeApplies } from '../v2/primitives/gameplay/modes-lib-mode.js';
-import { interactionsOf } from '../v2/planner/loop.js';
+import { interactionsOf, appliesTo } from '../v2/planner/loop.js';
 import { fitsInteraction } from '../v2/planner/select.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 
@@ -111,6 +111,13 @@ const DOCS = {
       { player: { archetype: 'hero', at: [0, 0] } });
   },
   story: () => withExitGate(manor()),
+  crawl: () => base('crawl', [{ id: 'd', use: 'engine.space.grid', with: { size: [24, 24], exclusive: true },
+    generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 3, keys: ['key_1'], roomSize: [5, 5], boss: 'ogre' } }] }],
+    [{ use: 'gameplay.move.grid' }, { use: 'gameplay.combat.health' }, { use: 'gameplay.combat.melee' },
+      { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'ogre', archetype: 'ogre', start: 'sight', phases: [{ at: 1 }], onDefeat: won }] } }],
+    { archetypes: [{ id: 'hero', components: { health: { max: 10 }, melee: { moves: { w1: { name: 'Sweep', damage: 2, reach: 1.2, arc: 360, startup: 6, active: 6, recovery: 12, units: 'world' } } } } },
+      { id: 'ogre', kind: 'boss', components: { health: { max: 6 } } }, { id: 'key', components: {} }, { id: 'locked_door', components: {} }, { id: 'chest', components: {} }],
+    items: [{ id: 'key_1', name: 'Key' }], blocks: [{ id: 'stone', solid: true }, { id: 'locked_door', solid: true }] }, { player: { archetype: 'hero' } }),
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
@@ -128,7 +135,7 @@ const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loo
 // Fast settings per bot (a few seeds, shallow searches).
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
-  placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {},
+  placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {}, crawl: {},
   stages: { placement: { seeds: [1], depth: 1, pieces: 60 } },
 };
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
@@ -165,6 +172,10 @@ test('modes: every card.mode is well formed, names a registered bot, and has a d
   const collect = registry.get('gameplay.collectible').card.mode;
   assert.equal(modeApplies(collect, { counters: [{ id: 'coins' }] }), false, 'collect is a mode only when a counter clears the level');
   assert.equal(modeApplies(collect, { counters: [{ id: 'coins', clearsLevel: true }] }), true);
+  const crawl = registry.get('engine.generate.dungeon.rooms').card.mode;
+  assert.equal(modeApplies(crawl, { rooms: 8 }), false, 'a dungeon without a boss is a world, not a crawl');
+  assert.equal(modeApplies(crawl, { rooms: 8, boss: 'warden' }), true, 'given: the dungeon holds a boss');
+  assert.deepEqual([{}, { boss: 'warden' }].map(c => appliesTo(crawl.applies, c)), [false, true], 'the loop reads `given` the same way');
 });
 
 test('modes: a wrapper mode plays its wrapped mode; without modes, detection still selects', () => {
@@ -205,7 +216,7 @@ test('mode creature-battle: the greedy battler wins the trainer battle the story
   assert.equal(a.metrics.rate, 1, JSON.stringify(a.metrics.runs));
 });
 
-for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
+for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
 
 test('mode story: the plot solver reaches a winning ending that replays', () => {
   const { runs } = playMode('story');

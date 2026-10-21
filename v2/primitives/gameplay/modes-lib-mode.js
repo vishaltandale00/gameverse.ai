@@ -23,7 +23,8 @@
 //   via?:   primitive id whose params win/lose/participants name (the loop runs on that primitive);
 //   wraps?: true for a mode that sequences another mode (its bot plays the wrapped mode);
 //   applies?: { param, field?, is } the mode exists only when the instance config matches
-//             (a list param matches when any entry's field equals `is`).
+//             (a list param matches when any entry's field equals `is`); { param, given: true } when the
+//             instance sets the param at all (a value, a non-empty list).
 // }
 export const INTERACTIONS = ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'];
 export const OPPONENTS = ['none', 'ai-rival', 'ai-side', 'hazards', 'clock'];
@@ -33,6 +34,7 @@ export function modeApplies(mode, config = {}) {
   const a = mode?.applies;
   if (!a) return Boolean(mode);
   const v = config?.[a.param];
+  if (a.given === true) return Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '';
   if (Array.isArray(v)) return v.some(x => (a.field ? x?.[a.field] : x) === a.is);
   return (a.field ? v?.[a.field] : v) === a.is;
 }
