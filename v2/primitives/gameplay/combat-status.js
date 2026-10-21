@@ -45,6 +45,11 @@ export default {
       onApply: { type: 'effects', effect: 'effects when applied (self = the bearer)' }, onEnd: { type: 'effects', effect: 'effects when it ends' },
       persistOnDeath: { type: 'boolean' },
     } } } },
+    // Shapes of the archetype components this primitive owns: status mirrors the active statuses (KERNEL_API §2).
+    components: {
+      status: { type: 'object', values: { type: 'number', min: 0, unit: 's' }, effect: 'status id -> seconds left (mirrored from the active statuses)' },
+      immune: { type: 'list', of: { type: 'string' }, effect: 'status ids or status tags it never takes' },
+    },
     rules: { status_type_unknown: { fields: ['content.statuses[].tick.type'], message: "a tick's damage type is one of gameplay.combat.health's types",
       example: { 'content.statuses': [{ id: 'frightened', name: null, duration: 6, stacks: null, refresh: null, tick: { dps: 1, every: null, type: 'acid' }, tags: null, shield: null, persistOnDeath: null }] } } },
   },
