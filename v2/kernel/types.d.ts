@@ -82,7 +82,24 @@ export interface Adapts {
   provides: { capabilities?: string[]; content?: string[]; services?: string[] };
   from: { spaces?: string[]; capabilities?: string[] };
   projection: string;
+  /** The mashup relation the adapter realises (play spec): union (two concepts in one world), nested, skin. */
+  relation?: 'union' | 'nested' | 'skin';
+  /**
+   * Sub-space adapters: an instance with an `id` defines a space of that id, of the space kind named by the
+   * instance's `with[kind]` configured by `with[config]`. Its capabilities are that kind's (they are not added to
+   * the host); `content` lists the world content the region takes from its host (cells, course).
+   */
+  subspace?: { kind: string; config?: string; content?: string[] };
 }
+/** What an adapter's adapt() hook receives: the host space, what it lacks, and the cards that need it. */
+export interface AdaptRequest {
+  space: { id: string; use: string; with: Record<string, any>; caps: string[] };
+  missing: { capabilities: string[]; content: string[]; services: string[] };
+  neededBy: Array<{ use: string; card: Card }>;
+  registry: RegistryLike;
+}
+/** An adapter instance an adapt() hook proposes: its region id (sub-space adapters) and configuration. */
+export interface AdaptProposal { id?: string; with: Record<string, any> }
 
 /** A card as a primitive file writes it: params/provides/requires may be omitted (the Registry fills them). */
 export interface CardInput {
@@ -179,6 +196,10 @@ export interface Primitive {
   extend?(rt: Runtime, config: Record<string, any>, added: Added, instance: Instance): void;
   /** Spaces whose capabilities depend on params. */
   capabilities?(config: Record<string, any>): string[];
+  /** Adapters: the configuration projecting what a space lacks (planner/adapters.js), or null when it can't. */
+  adapt?(request: AdaptRequest): AdaptProposal | null;
+  /** Skin adapters: the document with this instance's content mapping applied (pure). */
+  skin?(doc: Doc, config: Record<string, any>): Doc;
   [extra: string]: unknown;
 }
 /** A primitive as stored by the Registry: card params/provides/requires always present. */
