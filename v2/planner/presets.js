@@ -17,6 +17,9 @@
 // - Mashup relations of the play spec are realised by the adapters that declare them (card.adapts.relation): nested
 //   (the joined mechanics' loops entered from the rest), skin (their content fills the rest's slots); union and any
 //   space/primitive mismatch by the registered adapters that cover what the space lacks (adapters.js).
+// - Participants are seated by code (content.js placeParticipants): a loop's declared groups (sides, teams,
+//   factions) get its pieces on their own edge of the space's cells or in their own zone; a skin adapter's maps come
+//   from the composition (configureSkins). A space's world is what the final collection needs (world.js planWorld).
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
@@ -24,7 +27,8 @@ import { random } from '../kernel/rng.js';
 import { defaultsOf } from './catalog.js';
 import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
-import { configureGenerators, furnishWorld } from './world.js';
+import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
+import { contractsOf, participantsOf, placeParticipants } from './content.js';
 import { isAvatar } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
@@ -282,6 +286,45 @@ export function wireCore(input, structure, registry) {
 }
 
 /**
+ * A skin adapter's maps, from the composition (never the model): `to` is the core loop's content contract section
+ * (the owner of the win first: content.archetypes for an archetypes contract, else its section), `from` the first
+ * content section another primitive of the collection needs that has entries (a skin mashup's mechanics first: the
+ * source concept). Archetype targets get the contract's component (its example's values, the group field set to the
+ * first participant group) and the source entry's name. Mutates `doc`; -> the maps written ([] when underivable).
+ * @param {any} doc @param {Structure} st @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry
+ * @returns {Array<{ from: string, to: string }>}
+ */
+export function configureSkins(doc, st, decomposition, selection, registry) {
+  /** @type {any[]} */
+  const insts = (doc.systems || []).filter((/** @type {any} */ s) => registry.get(s?.use)?.card.adapts?.relation === 'skin');
+  if (!insts.length) return [];
+  const sectionOf = (/** @type {import('./content.js').Contract} */ c) => (c.need === 'archetypes' ? 'content.archetypes' : c.need === 'section' && /^content\./.test(String(c.at)) ? String(c.at) : null);
+  const owners = [...new Set([st.win?.use, ...st.core].filter(/** @returns {x is string} */ x => typeof x === 'string'))];
+  const owner = owners.find(id => contractsOf(registry, id).some(sectionOf));
+  if (!owner) return [];
+  const target = /** @type {import('./content.js').Contract} */ (contractsOf(registry, owner).find(sectionOf));
+  const to = /** @type {string} */ (sectionOf(target));
+  const entries = (/** @type {string} */ path) => { const v = path.split('.').reduce((/** @type {any} */ o, k) => o?.[k], doc); return Array.isArray(v) ? v.length : isObj(v) ? Object.keys(v).length : 0; };
+  const skinned = new Set((decomposition.core?.mashup || []).filter(m => m.relation === 'skin').flatMap(m => m.mechanics)
+    .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []));
+  const others = st.systems.filter(id => id !== owner).sort((a, b) => Number(skinned.has(b)) - Number(skinned.has(a)));
+  const from = others.flatMap(id => contractsOf(registry, id).map(c => (c.need === 'section' ? String(c.at) : '')))
+    .find(path => /^content\.[A-Za-z0-9_]+$/.test(path) && path !== to && entries(path) > 0);
+  if (!from) return [];
+  /** @type {Record<string, unknown>} */
+  let template = {};
+  if (to === 'content.archetypes') {
+    const ex = isObj(target.example) ? target.example : {}, C = target.component;
+    const seat = participantsOf(doc, registry).find(p => p.use === owner);
+    const comp = C ? { ...(isObj(prop(ex.components, C)) ? /** @type {Record<string, unknown>} */ (prop(ex.components, C)) : {}), ...(seat?.field && seat.groups[0] ? { [seat.field]: seat.groups[0].id } : {}) } : null;
+    template = { kind: typeof ex.kind === 'string' ? ex.kind : 'npc', ...(C && comp ? { components: { [C]: comp } } : {}) };
+  }
+  const maps = [{ from, to, template, ...(to === 'content.archetypes' ? { fields: { 'components.name': 'name' } } : {}) }];
+  for (const inst of insts) inst.with = { ...(isObj(inst.with) ? inst.with : {}), maps: structuredClone(maps) };
+  return maps.map(m => ({ from: m.from, to: m.to }));
+}
+
+/**
  * preset({ decomposition, selection, registry, logic, seed, prompt }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
  * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec
  */
@@ -327,6 +370,17 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const prefs = st.win ? st.loops.find(l => l.use === st.win?.use)?.loop.space || [] : [];
   if (st.win && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0])))
     gaps.push({ mechanic: st.win.use, description: `needs adapter: ${st.win.use} on ${selSpaces[0].use}`, importance: 'supporting', kind: 'adapter', primitive: st.win.use, why: `${st.win.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
+  // The world each space gets is what the collection's declarations need (world.js planWorld), re-planned for the
+  // final collection: a generator a mechanic named is kept; one the selection planned for a mover the structure took
+  // out (a board whose pieces are seated, not walked) is not. A board that needs only cells gets no rooms generator.
+  const intent = [decomposition.premise, ...(decomposition.mechanics || []).map(m => m.description)].filter(Boolean).join('. ');
+  const worldFor = (/** @type {typeof selSpaces[number]} */ s, /** @type {number} */ si) => {
+    const named = (selection.generators || []).filter(g => g.space === s.id && !g.auto).map(g => g.id);
+    const moved = st.systems.some(id => isMovement(registry, id) && (selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
+    if (!moved || !needSets(registry, s.use).length) return named;
+    const have = [...OUTLINE_AUTHORS, ...named.flatMap(id => contentOfGenerator(registry, id))];
+    return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, intent, exclude: named }).generators];
+  };
   /** @type {OutlineSpace[]} */
   const spaces = selSpaces.map((s, si) => {
     const card = registry.get(s.use)?.card || { views: [] };
@@ -350,7 +404,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
       if (i < zones.length - 1) z.exits.push({ to: zones[i + 1].id });
       if (i > 1 && i % 3 === 0) { z.exits.push({ to: zones[i - 2].id }); zones[i - 2].exits?.push({ to: z.id }); }
     });
-    const generators = selection.generators.filter(g => g.space === s.id).map(g => ({ use: g.id }));
+    const generators = worldFor(s, si).map(use => ({ use }));
     return { id: s.id, use: s.use, ...(Object.keys(s.with || {}).length ? { with: s.with } : {}), zones, ...(generators.length ? { generators } : {}), _shape: shape };
   });
   const primary = spaces[0];
@@ -383,7 +437,8 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // Nested loops point at their space.
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
   // Mashup relations: the adapter that declares each one joins with the structure code owns (which loops, which
-  // sub-space); its trigger, outcomes and maps are content the model writes through the form.
+  // sub-space); a nested encounter's trigger and outcomes are content the model writes through the form, a skin's
+  // maps are written below (configureSkins).
   for (const m of decomposition.core?.mashup || []) {
     const use = adaptersFor(registry, m.relation)[0];
     if (!use || m.relation === 'union') continue;
@@ -413,9 +468,13 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const packed = applyPacks(doc, registry);
   // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
   const scaffolded = configureGenerators(doc, registry);
+  // Adapter params are structure: a skin maps the source concept's content onto the core loop's contract section.
+  const skins = configureSkins(doc, st, decomposition, selection, registry);
+  // Participants are structure: the loop's sides (teams, factions) get their pieces seated on the space.
+  const seated = placeParticipants(applySkins(doc, registry), registry);
   // Every primitive of the collection is kept: repair fixes fields and reports what it cannot fix.
   const keep = new Set(doc.systems.map((/** @type {SystemInstance} */ s) => s.use));
-  let repaired = repairDocument(applySkins(doc, registry), { registry, logic, protect: keep });
+  let repaired = repairDocument(seated.doc, { registry, logic, protect: keep });
   // Engagement fills what a loop needs from the content (a starting deck from the cards, sides from the units): when the
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
@@ -423,7 +482,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
   const structure = { version: PRESETS_VERSION, packs: packed, core: st.core, loop: st.loops.filter(l => st.core.includes(l.use) || l.use === st.win?.use).map(l => ({ use: l.use, progress: l.loop.progress })),
     win: st.win ? { use: st.win.use, added: Boolean(st.win.added) } : null, lose: st.lose.map(l => l.use), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed,
-    endings: loopWired.endings, nested: nested.map(n => n.space), holes: st.holes };
+    endings: loopWired.endings, nested: nested.map(n => n.space), holes: st.holes, skins, seated: seated.added.map(a => a.rule) };
   const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure, st };
   return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: /** @type {true} */ (true), ...rest } : { doc: /** @type {unknown} */ (repaired.doc), ok: /** @type {false} */ (false), ...rest };
 }

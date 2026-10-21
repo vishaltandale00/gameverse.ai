@@ -1,0 +1,227 @@
+{
+ "source": "local-data/v2/games/chess-but-with-pokemon-mvhni0gk/failed-1.json",
+ "prompt": "chess but with pokemon",
+ "seed": null,
+ "decomposition": {
+  "version": "decompose/0.2",
+  "title": "Pok\u00e9mon Chess",
+  "premise": "A strategic game combining the classic gameplay of chess with Pok\u00e9mon characters and their unique abilities. Players command Pok\u00e9mon as chess pieces, each with special moves influencing the board state.",
+  "tone": "strategic, competitive, playful",
+  "references": [
+   {
+    "name": "Chess",
+    "kind": "game",
+    "keeps": [
+     "core grid-based movement",
+     "turn-based play",
+     "check/checkmate objective"
+    ]
+   },
+   {
+    "name": "Pok\u00e9mon",
+    "kind": "game",
+    "keeps": [
+     "unique character abilities",
+     "type advantages",
+     "distinct creature roster"
+    ]
+   }
+  ],
+  "mechanics": [
+   {
+    "id": "turn_based_piece_movement",
+    "verb": "move pieces turn by turn",
+    "description": "Players alternate turns moving their chess pieces on the board according to chess movement rules.",
+    "from": "Chess",
+    "importance": "core"
+   },
+   {
+    "id": "unique_abilities",
+    "verb": "use unique Pok\u00e9mon abilities",
+    "description": "Each Pok\u00e9mon piece has special abilities or moves that can alter normal chess mechanics or affect other pieces.",
+    "from": "Pok\u00e9mon",
+    "importance": "core"
+   },
+   {
+    "id": "type_advantages",
+    "verb": "exploit type advantages",
+    "description": "Certain Pok\u00e9mon types have advantages or disadvantages against others, influencing captures or defenses.",
+    "from": "Pok\u00e9mon",
+    "importance": "supporting"
+   }
+  ],
+  "spaces": [
+   {
+    "role": "main board",
+    "kind": "board",
+    "description": "Standard chess 8x8 grid where pieces move and battles happen."
+   }
+  ],
+  "views": [
+   "board"
+  ],
+  "movement": "none",
+  "acts": 1,
+  "zones": 2,
+  "core": {
+   "interaction": "pieces-turns",
+   "opponent": "ai-rival",
+   "win": "checkmate the opponent's king Pok\u00e9mon",
+   "lose": "be checkmated",
+   "theme": "chess meets Pok\u00e9mon strategy",
+   "narrative": false,
+   "mashup": []
+  },
+  "source": "gpt-4.1-mini-2025-04-14",
+  "ms": 4082
+ },
+ "selection": {
+  "mechanics": [
+   {
+    "id": "turn_based_piece_movement",
+    "verb": "move pieces turn by turn",
+    "description": "Players alternate turns moving their chess pieces on the board according to chess movement rules.",
+    "from": "Chess",
+    "importance": "core",
+    "primitives": [
+     "gameplay.move.grid",
+     "gameplay.turns",
+     "engine.space.grid",
+     "engine.adapt.skin"
+    ],
+    "source": "catalogue-model",
+    "score": 1,
+    "candidates": [
+     {
+      "id": "gameplay.turns",
+      "score": 3.333
+     },
+     {
+      "id": "gameplay.falling.pieces",
+      "score": 2.5
+     },
+     {
+      "id": "gameplay.match",
+      "score": 2.417
+     }
+    ]
+   },
+   {
+    "id": "unique_abilities",
+    "verb": "use unique Pok\u00e9mon abilities",
+    "description": "Each Pok\u00e9mon piece has special abilities or moves that can alter normal chess mechanics or affect other pieces.",
+    "from": "Pok\u00e9mon",
+    "importance": "core",
+    "primitives": [
+     "gameplay.turns",
+     "gameplay.ability.active",
+     "engine.adapt.skin",
+     "engine.script.sandbox"
+    ],
+    "source": "catalogue-model",
+    "score": 1,
+    "candidates": [
+     {
+      "id": "gameplay.falling.pieces",
+      "score": 1.688
+     },
+     {
+      "id": "gameplay.combat.melee",
+      "score": 1.125
+     },
+     {
+      "id": "engine.adapt.skin",
+      "score": 1
+     }
+    ]
+   },
+   {
+    "id": "type_advantages",
+    "verb": "exploit type advantages",
+    "description": "Certain Pok\u00e9mon types have advantages or disadvantages against others, influencing captures or defenses.",
+    "from": "Pok\u00e9mon",
+    "importance": "supporting",
+    "primitives": [
+     "gameplay.creature.battle",
+     "engine.script.sandbox"
+    ],
+    "source": "catalogue-model",
+    "score": 1,
+    "candidates": [
+     {
+      "id": "gameplay.combat.health",
+      "score": 0.535
+     },
+     {
+      "id": "gameplay.creature.battle",
+      "score": 0.535
+     },
+     {
+      "id": "gameplay.move.grid",
+      "score": 0.535
+     }
+    ]
+   }
+  ],
+  "spaces": [
+   {
+    "id": "main_board",
+    "use": "engine.space.grid",
+    "with": {},
+    "role": "main board",
+    "caps": [
+     "position",
+     "distance",
+     "navigate",
+     "pathfind",
+     "reachable",
+     "occupancy",
+     "los",
+     "overlap",
+     "editCells",
+     "settle",
+     "cellRules",
+     "bounds"
+    ]
+   }
+  ],
+  "systems": [
+   "engine.adapt.skin",
+   "engine.input.actions",
+   "engine.script.sandbox",
+   "gameplay.ability.active",
+   "gameplay.creature.battle",
+   "gameplay.creature.party",
+   "gameplay.inventory",
+   "gameplay.move.grid",
+   "gameplay.turns"
+  ],
+  "graphics": [],
+  "gaps": [],
+  "provider": "catalogue-model",
+  "completeness": {
+   "locomotion": {
+    "view": "board",
+    "medium": "none",
+    "removed": [],
+    "added": null
+   },
+   "mapping": {
+    "checked": [
+     "turn_based_piece_movement",
+     "unique_abilities"
+    ],
+    "changes": [
+     {
+      "mechanic": "turn_based_piece_movement",
+      "added": "gameplay.move.grid",
+      "why": "The mechanic requires discrete, turn-based movement of pieces on a grid according to chess movement rules. 'gameplay.move.grid' provides grid-locked movement su"
+     }
+    ],
+    "ms": 3679
+   }
+  },
+  "agency": true,
+  "agencyAttempts": []
+ }
+}

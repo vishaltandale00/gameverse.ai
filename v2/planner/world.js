@@ -98,19 +98,32 @@ export const OUTLINE_AUTHORS = ['zones'];
 
 /** @typedef {{ id: string, covers: string[], rank: number[], score: number }} Ranked */
 /**
- * Generators that target this space kind (card.spaces), configurable by the planner, ranked by the
- * declarations: most of `want` (default: the space's needs) covered, then a scaffold hook (configures
- * itself from the document), then views that include `view`, then the narrowest target list, then id.
+ * Whether an own-extent generator fits the space's extent (its `fit` hook gives params for the whole area). A
+ * generator that declares no own extent, has no fit hook, or a space without an extent is not excluded here.
+ * @param {RegistryLike} registry @param {string} id @param {SpaceLike} space
+ */
+export function fitsSpace(registry, id, space) {
+  const p = generator(registry, id), area = spaceExtent(registry, space);
+  if (!p || !area || declaredExtent(p) !== 'own' || typeof p.fit !== 'function') return true;
+  try { return Boolean(p.fit(defaultsOf(p.card), area, space)); } catch { return false; }
+}
+/**
+ * Generators that target this space kind (card.spaces), configurable by the planner and fitting the space's extent
+ * (fitsSpace: rooms that need more room than the board has are not offered), ranked by the declarations: most of
+ * `want` (default: the space's needs) covered, then the least content nobody asked for (provides.content outside
+ * `allowed`, default `want`: a board that needs cells gets a board, not a dungeon's rooms), then a scaffold hook
+ * (configures itself from the document), then views that include `view`, then the narrowest target list, then id.
  * -> [{ id, covers: [kinds], score }]
- * @param {RegistryLike} registry @param {SpaceLike} space @param {string | null} [view] @param {string[] | null} [want]
+ * @param {RegistryLike} registry @param {SpaceLike} space @param {string | null} [view] @param {string[] | null} [want] @param {string[] | null} [allowed]
  * @returns {Array<{ id: string, covers: string[], score: number }>}
  */
-export function generatorsFor(registry, space, view = null, want = null) {
-  const need = want ?? spaceNeeds(registry, space.use);
-  return registry.ids('engine').filter(id => isGenerator(id) && targets(registry, id, space.use) && configurable(registry, id)).map(id => {
-    const p = /** @type {GeneratorPrimitive} */ (generator(registry, id)), card = p.card, covers = contentOfGenerator(registry, id).filter(c => need.includes(c)); // id comes from registry.ids
+export function generatorsFor(registry, space, view = null, want = null, allowed = null) {
+  const need = want ?? spaceNeeds(registry, space.use), ok = allowed ?? need;
+  return registry.ids('engine').filter(id => isGenerator(id) && targets(registry, id, space.use) && configurable(registry, id) && fitsSpace(registry, id, space)).map(id => {
+    const p = /** @type {GeneratorPrimitive} */ (generator(registry, id)), card = p.card, made = contentOfGenerator(registry, id), covers = made.filter(c => need.includes(c)); // id comes from registry.ids
+    const surplus = made.filter(c => !ok.includes(c)).length;
     const views = card.views || ['any'], fitsView = view && (views.includes(view) || views.includes('any')) ? 1 : 0;
-    return { id, covers, rank: [covers.length, typeof p.scaffold === 'function' ? 1 : 0, fitsView, -(card.spaces || []).length], score: covers.length * 100 + (typeof p.scaffold === 'function' ? 10 : 0) + fitsView * 4 - (card.spaces || []).length };
+    return { id, covers, rank: [covers.length, -surplus, typeof p.scaffold === 'function' ? 1 : 0, fitsView, -(card.spaces || []).length], score: covers.length * 100 - surplus * 20 + (typeof p.scaffold === 'function' ? 10 : 0) + fitsView * 4 - (card.spaces || []).length };
   }).sort(cmpRank).map(({ rank, ...g }) => g);
 }
 /** @param {Ranked} a @param {Ranked} b */
@@ -128,7 +141,7 @@ export function needSetFor(registry, space, { have = [], intent = '' } = {}) {
   if (met) return met;
   if (!intent || sets.length < 2) return sets[0];
   // g.id comes from generatorsFor (registered ids).
-  const score = (/** @type {string[]} */ set) => Math.max(0, ...generatorsFor(registry, space, null, set).filter(g => g.covers.length).map(g => relevance({ verb: '', description: intent }, { id: g.id, .../** @type {RegisteredPrimitive} */ (registry.get(g.id)).card })));
+  const score = (/** @type {string[]} */ set) => Math.max(0, ...generatorsFor(registry, space, null, set, [...set, ...have]).filter(g => g.covers.length).map(g => relevance({ verb: '', description: intent }, { id: g.id, .../** @type {RegisteredPrimitive} */ (registry.get(g.id)).card })));
   const base = score(sets[0]), best = sets.slice(1).map(set => ({ set, s: score(set) })).sort((a, b) => b.s - a.s)[0];
   return best && best.s >= LEXICAL_ACCEPT && best.s > base ? best.set : sets[0];
 }
@@ -146,7 +159,8 @@ export function planWorld(registry, space, { view = null, have = [], exclude = [
   /** @type {string[]} */
   const picks = [];
   while (left.length) {
-    const best = generatorsFor(registry, space, view, left).find(g => g.covers.length && !picks.includes(g.id) && !exclude.includes(g.id));
+    // Surplus is judged against the whole need set (and what the space has): covering one kind of it is not surplus.
+    const best = generatorsFor(registry, space, view, left, [...set, ...have]).find(g => g.covers.length && !picks.includes(g.id) && !exclude.includes(g.id));
     if (!best) break;
     picks.push(best.id); left = left.filter(c => !best.covers.includes(c));
   }
@@ -306,7 +320,8 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   const fixes = [];
   for (const { space: s0, index } of spacesNeedingWorld(pre.doc, registry)) {
     const had = worldContent(current, registry, current.spaces[index], world);
-    let left = needSetFor(registry, s0, { have: had, intent: intentOf(current) }).filter(k => !had.includes(k));
+    const aim = needSetFor(registry, s0, { have: had, intent: intentOf(current) });
+    let left = aim.filter(k => !had.includes(k));
     /** @type {Set<string>} */
     const tried = new Set();
     while (left.length) {
@@ -314,7 +329,7 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
       const envelope = envelopeFor(current, registry, space);
       /** @type {{ trial: Record<string, unknown>, pre: Doc, rt: Runtime, use: string, covers: string[], generation: GenerationProblem[] } | null} */
       let kept = null;
-      for (const cand of generatorsFor(registry, space, primaryView(doc), left).filter(g => g.covers.length && !tried.has(g.id))) {
+      for (const cand of generatorsFor(registry, space, primaryView(doc), left, [...aim, ...had]).filter(g => g.covers.length && !tried.has(g.id))) {
         tried.add(cand.id);
         const p = generator(registry, cand.id);
         /** @type {Scaffold | null | undefined} */
@@ -653,7 +668,19 @@ export function configureGenerators(doc, registry) {
   list(doc.spaces).forEach((space, i) => isObj(space) && list(space.generators).forEach((gen, j) => {
     if (!isObj(gen)) return;
     const p = generator(registry, gen.use);
-    if (typeof p?.scaffold !== 'function') return;
+    if (!p) return;
+    // An own-extent generator the scaffold does not configure takes its size-dependent params (room count, area) from
+    // the space's extent through its fit hook (provides.extent), never its card defaults.
+    const fitted = () => {
+      const area = spaceExtent(registry, space);
+      if (!area || declaredExtent(p) !== 'own' || typeof p.fit !== 'function') return;
+      /** @type {Record<string, unknown> | null | undefined} */
+      let fit = null; try { fit = p.fit(obj(gen.with), area, space); } catch { fit = null; }
+      if (!fit || Object.entries(fit).every(([k, v]) => JSON.stringify(obj(gen.with)[k]) === JSON.stringify(v))) return;
+      gen.with = { ...obj(gen.with), ...fit };
+      fixes.push({ code: 'world_extent_fit', path: `spaces[${i}].generators[${j}]`, action: `fitted ${String(gen.use)} to the ${area[2]}×${area[3]} space` });
+    };
+    if (typeof p.scaffold !== 'function') { fitted(); return; }
     const card = p.card, given = obj(gen.with);
     // Missing required params: the scaffold configures the instance (and its start). Otherwise it only fills params
     // the instance leaves unset (regions to keep clear, the proof's movement...), never overriding what is there.
@@ -661,7 +688,7 @@ export function configureGenerators(doc, registry) {
     /** @type {Scaffold | null | undefined} */
     let made = null;
     try { made = p.scaffold(space, doc, { envelope: envelopeFor(doc, registry, space), reserve: reservedRegions(doc, registry, space.id), registry }); } catch { made = null; }
-    if (!made) return;
+    if (!made) { if (missing || !Object.keys(given).length) fitted(); return; }
     const unset = Object.keys(made.with || {}).filter(k => given[k] === undefined);
     if (!missing && !unset.length) return;
     applyScaffold(doc, i, gen, made, { start: missing, registry });

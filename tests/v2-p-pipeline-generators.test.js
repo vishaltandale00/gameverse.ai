@@ -59,7 +59,9 @@ test('planWorld: each space kind gets generators for exactly what it needs', () 
   assert.deepEqual(plan('engine.space.voxel'), ['engine.generate.terrain.noise']);
   assert.deepEqual(plan('engine.space.track'), ['engine.generate.chunks']);
   assert.deepEqual(plan('engine.space.tilemap'), ['engine.generate.tilemap.rooms']);
-  assert.deepEqual(plan('engine.space.grid'), ['engine.generate.dungeon.rooms']);
+  // A grid needs cells: the board that builds only cells, not a dungeon's rooms (which an 8×8 board cannot hold anyway).
+  assert.deepEqual(plan('engine.space.grid'), ['engine.generate.grid.board']);
+  assert.deepEqual(plan('engine.space.grid', { size: [64, 64] }), ['engine.generate.grid.board']);
   assert.deepEqual(plan('engine.space.arena2d'), ['engine.generate.layout.shapes']);
   assert.deepEqual(plan('engine.space.physics2d'), ['engine.generate.layout.shapes']);
   assert.deepEqual(plan('engine.space.graph'), ['engine.generate.graph.world']);
