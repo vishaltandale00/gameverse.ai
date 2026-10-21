@@ -2,8 +2,9 @@
 // a fixed 60 Hz with graphics primitives mounted into a container, and
 // hot-load newer versions of the same game while it is being played.
 // - Additive versions (detail patches: report.added) extend the running world (rt.extend).
-// - Other versions (tweaks, revisions, experiments) rebuild the world from the new
-//   document and restore the running state into it, so play continues where it was.
+// - Other versions (tweaks, revisions, experiments) rebuild the world from the new document and start it from its
+//   first state: a version is checked like a new game from its start (ARCHITECTURE §4), so the state of another
+//   version is never carried into it and a revised start (lives, seed counts) applies at once.
 // Experiment primitives a document carries run in sandboxed Workers (v2/experiments).
 import { catalogue, PRIMITIVES } from '/v2/primitives/index.js';
 import { preflight, mergePatch } from '/v2/kernel/document.js';
@@ -110,7 +111,7 @@ export function mountGame(container, record, { onState, primitives = null, now =
   raf = requestAnimationFrame(loop);
   return {
     get rt() { return rt; }, get version() { return version; },
-    /** Hot-load a newer version without restarting: extend for additive versions, rebuild-and-restore otherwise. */
+    /** Load a newer version: extend the running world for additive versions ('extended'), else rebuild it and start the new version from its first state ('restarted'); false when it fails checks. */
     update(next) {
       if (next.version <= version) return false;
       const added = next.report?.added;
@@ -120,21 +121,19 @@ export function mountGame(container, record, { onState, primitives = null, now =
         const ok = preflight(nextDoc, cat.registry, cat.logic);
         if (!ok.ok) return false;
         rt.extend(ok.doc, added || mergePatch(rt.doc, {}).added);
-        version = next.version; return true;
+        version = next.version; return 'extended';
       }
-      // Rebuild: new params or primitives apply on install, so install again and carry the state over.
+      // Rebuild: the new version's params and primitives apply on install, from its own first state.
       const nextCat = changedExperiments ? catalogueFor(next.doc, primitives) : cat;
       const rebuilt = withGraphics(next.doc, nextCat.registry);
       const ok = preflight(rebuilt, nextCat.registry, nextCat.logic);
       if (!ok.ok) return false;
-      const state = rt.snapshot();
       for (const b of cat.boxes) if (nextCat !== cat) b.dispose?.();
       release(); container.replaceChildren(); frames = []; view = makeView();
       cat = nextCat;
       rt = createWorld(ok.doc, cat.registry, cat.logic, { headless: false, view });
       first = rt.snapshot();
-      try { rt.restore({ ...state, docId: ok.doc.id }); } catch { /* incompatible state: start fresh */ }
-      version = next.version; return true;
+      version = next.version; return 'restarted';
     },
     dispose() { if (disposed) return; disposed = true; cancelAnimationFrame(raf); release(); detachHost(); for (const b of cat.boxes) b.dispose?.(); container.replaceChildren(); },
   };

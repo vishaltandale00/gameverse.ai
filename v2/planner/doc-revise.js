@@ -91,8 +91,9 @@ export function tweakCandidates(doc, request, registry) {
 
 /** @param {number} v */
 const round = v => Math.round(v * 1000) / 1000;
-/** @param {TweakCandidate} c @param {number} direction @param {string} request @returns {number | boolean} */
-function nextValue(c, direction, request) {
+/** A tighter range for a tweakable param than its card's (a template's tune slot), by its document path ('systems[2].with.speed'). @typedef {Map<string, { minimum?: number, maximum?: number }>} TweakLimits */
+/** @param {TweakCandidate} c @param {number} direction @param {string} request @param {{ minimum?: number, maximum?: number }} [limit] @returns {number | boolean} */
+function nextValue(c, direction, request, limit = {}) {
   const s = c.schema, cur = c.current;
   if (s.type === 'boolean') return DISABLE.test(request) ? false : ENABLE.test(request) ? true : !cur;
   const number = request.match(/\b(\d+(?:\.\d+)?)\b/);
@@ -102,7 +103,7 @@ function nextValue(c, direction, request) {
   else if (/\bdouble|twice\b/.test(request)) v = cur * 2 * (direction < 0 ? 0.25 : 1);
   else if (/\bhalf|halve\b/.test(request)) v = cur / 2;
   else v = cur === 0 ? (direction > 0 ? (s.max !== undefined ? Math.min(s.max, 1) : 1) : 0) : cur * (direction > 0 ? 1.35 : 0.74);
-  v = Math.min(s.max ?? Infinity, Math.max(s.min ?? -Infinity, v));
+  v = Math.min(s.max ?? Infinity, limit.maximum ?? Infinity, Math.max(s.min ?? -Infinity, limit.minimum ?? -Infinity, v));
   return s.type === 'integer' ? Math.round(v) : round(v);
 }
 
@@ -166,12 +167,13 @@ const TWEAK_Q = 'Would changing this parameter in the stated direction carry out
 
 /**
  * tweakDocument(doc, request, { registry, decisions? }) -> { doc, ops: [{ path, use, param, from, to }], matched, ms, source }
- * Only parameter values change; never code, never content lists.
+ * Only parameter values change; never code, never content lists. `limits`: tighter ranges than the cards' for some
+ * params (a template game's tune slots: the range its template tunes them in), applied when a value is chosen.
  * @param {Doc} input @param {unknown} request
- * @param {{ registry: RegistryLike, decisions?: Decisions | null, limit?: number }} options
+ * @param {{ registry: RegistryLike, decisions?: Decisions | null, limit?: number, limits?: TweakLimits | null }} options
  * @returns {Promise<{ doc: Doc, ops: TweakOp[], matched: boolean, scaled?: { factor: number, unscaled: unknown[] }, ms: number, source: string }>}
  */
-export async function tweakDocument(input, request, { registry, decisions = null, limit = 4 }) {
+export async function tweakDocument(input, request, { registry, decisions = null, limit = 4, limits = null }) {
   const started = performance.now();
   const text = String(request || '').toLowerCase();
   // A world-size request grows the content with the container (declared scale params, generators re-fitted): scaleWorld.
@@ -198,7 +200,7 @@ export async function tweakDocument(input, request, { registry, decisions = null
   /** @type {TweakOp[]} */
   const ops = [];
   for (const c of candidates.slice(0, limit)) {
-    const to = nextValue(c, direction || 1, text);
+    const to = nextValue(c, direction || 1, text, limits?.get(c.path));
     if (to === c.current || to === undefined) continue;
     setPath(doc, c.path, to);
     ops.push({ path: c.path, use: c.use, param: c.param, from: c.current, to });
