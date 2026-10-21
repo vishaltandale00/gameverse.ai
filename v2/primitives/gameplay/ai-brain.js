@@ -11,7 +11,6 @@ import {
   centerOf, clearLine, deltaTo, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
 import { touchDefeats } from './combat-lib.js';
-import { ENTITY_KINDS } from '../../kernel/params.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
 const ID = 'gameplay.ai.brain';
@@ -34,7 +33,7 @@ const at = { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'a po
 const BEHAVIOR = {
   do: { type: 'string', options: KINDS, required: true, effect: 'behavior kind' },
   when: { type: 'predicate', effect: 'run this behavior while it holds (context.self = agent; near/zone default to who:self)' },
-  target: { type: 'string', selects: ENTITY_KINDS, effect: "'player', an entity/character id, or 'hostile' (nearest remembered hostile)" },
+  target: { type: 'string', effect: "'player', an entity/character id, or 'hostile' (nearest remembered hostile)" },
   range: n(undefined, { min: 0, effect: 'wander/patrol radius, flee distance, circle radius, sight-challenge reach' }),
   speed: n(undefined, { min: 0, effect: 'speed multiplier for this behavior (×ai.speed); absolute tiles/s for target-tile' }),
   run: { type: 'boolean', effect: 'use the run multiplier' },

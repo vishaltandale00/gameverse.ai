@@ -12,7 +12,6 @@
 // mf, phase, stun, combo}, components.versus {meter, juggle, air, guard},
 // components.body.facing, and rt.service('melee').moves(entity) for frame data.
 import { round6, dead, spaceOf, continuous } from './ai-lib.js';
-import { ENTITY_KINDS } from '../../kernel/params.js';
 
 const ID = 'gameplay.ai.versus';
 /** Kit difficulty table (index = level). */
@@ -74,7 +73,7 @@ const SPECIAL = { type: 'object', fields: {
 } };
 const CPU = {
   level: { type: 'integer', min: 1, max: 5 }, style: { type: 'string', options: Object.keys(PREF) },
-  opponent: { type: 'string', selects: ENTITY_KINDS, effect: 'the entity it fights (default: the nearest fighter)' },
+  opponent: { type: 'string', effect: 'the entity id it fights (default: the nearest fighter)' },
   specials: { type: 'list', of: SPECIAL, effect: "its specials (default: the fighter's melee moves with a motion)" },
   super: { type: 'object', fields: { motion: { type: 'string', options: MOTION_NAMES }, button: { type: 'string', options: ['a', 'b'] }, cost: { type: 'number', min: 0, effect: 'meter it needs (default 100)' } }, effect: "its super (default: the fighter's super move)" },
   throwRange: { type: 'number', min: 0 }, platform: { type: 'boolean', effect: 'false: no platform recovery' },
