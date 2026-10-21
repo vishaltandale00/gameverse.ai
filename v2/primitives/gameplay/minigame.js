@@ -29,7 +29,7 @@ export default {
     params: {
       games: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
         id: { type: 'string', required: true }, kind: { type: 'string', options: KINDS, default: 'custom' },
-        space: { type: 'ref', to: 'space', effect: 'move the player here for the minigame' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' },
+        space: { type: 'ref', to: 'space', effect: 'move the player here for the minigame' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in the minigame space' },
         timeSec: { type: 'number', default: 0, min: 0, max: 3600, unit: 's', effect: 'time limit (0 = none); timing out loses' },
         win: { type: 'predicate' }, lose: { type: 'predicate' },
         onStart: { type: 'effects', default: [] }, onWin: { type: 'effects', default: [] }, onLose: { type: 'effects', default: [] }, onEnd: { type: 'effects', default: [] },
@@ -52,9 +52,14 @@ export default {
     // As an encounter's inner loop: the encounter starts its first game.
     engage: { encounter: { start: [{ do: 'start_minigame', game: '$first:with.games' }] } },
     reads: [],
+    rules: {
+      minigame_kind: { fields: ['games[].kind', 'games[].win', 'games[].lose', 'games[].timeSec'], message: 'a custom minigame ends by win, lose or timeSec > 0' },
+      minigame_place: { fields: ['games[].zone', 'games[].at', 'games[].space'], message: 'a minigame with zone or at names its space' },
+    },
   },
   logic(logic) {
     logic.predicate('minigame', {
+      codes: [{ code: 'minigame_state', fields: ['state'], message: 'state is one of active, idle, won, lost, quit', example: { minigame: true, state: 'paused' } }],
       refs: p => (typeof p.minigame === 'string' ? [['minigame', p.minigame]] : []),
       check: (p, path, errors) => { if (p.state !== undefined && !['active', 'idle', ...RESULTS].includes(p.state)) errors.push(err('minigame_state', `${path}.state`, 'state must be active|idle|won|lost|quit')); },
       test: (p, rt) => {
@@ -69,9 +74,9 @@ export default {
     logic.effect('end_minigame', { check: (e, path, errors) => { if (e.result !== undefined && !RESULTS.includes(e.result)) errors.push(err('effect_invalid', `${path}.result`, 'result must be won|lost|quit')); }, run: (e, rt) => { rt.store(ID).request = { end: e.result ?? 'won' }; } });
   },
   validate(config) {
-    const errors = [], ids = new Set();
+    // Game ids are the kind 'minigame' (unique slugs): the kernel checks them.
+    const errors = [];
     config.games.forEach((g, i) => {
-      if (ids.has(g.id)) errors.push(err('minigame_duplicate', `with.games[${i}].id`, `duplicate minigame '${g.id}'`)); ids.add(g.id);
       if (g.kind === 'custom' && !g.win && !g.lose && !g.timeSec) errors.push(err('minigame_kind', `with.games[${i}]`, 'a custom minigame needs win, lose or timeSec to end', 'or end it with end_minigame'));
       if ((g.zone || g.at !== undefined) && !g.space) errors.push(err('minigame_place', `with.games[${i}].space`, 'zone/at need the minigame space'));
     });
