@@ -401,9 +401,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     if (!pick) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: m.candidates.length ? `closest primitives (${m.candidates.slice(0, 3).map(c => c.id).join(', ')}) don't implement it` : 'no primitive covers it' });
   }
   // The mapping fits how the idea is played: what does not serve the interaction leaves its mechanic, and what it did
-  // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap.
+  // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap. A built collection
+  // was only offered what serves it (a joined idea's mechanics are played their own way), so it is not refitted.
   const joinedBy = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
-  const interactionFit = fitInteraction({ mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
+  const interactionFit = fitInteraction({ mechanics: built ? [] : mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
   for (const c of interactionFit.changes) {
     if (!mechanics.some(m => m.primitives.includes(c.removed))) chosen.delete(c.removed);
     if (c.by) chosen.add(c.by);
