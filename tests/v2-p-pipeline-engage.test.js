@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { engageDocument } from '../v2/planner/engage.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
+import { proceduralOutline, ensureAgency } from '../v2/planner/outline.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createWorld } from '../v2/kernel/world.js';
 import { hashOf } from '../v2/server/store.js';
@@ -63,4 +64,74 @@ test('engage is idempotent, deterministic and keeps what the document has', () =
   const seated = structuredClone(r.doc);
   const again = engageDocument(seated, registry, logic);
   assert.ok(!again.applied.some(a => a.part === 'player.enter'));
+});
+
+test('kart skeleton: the procedural outline for the same selection is drivable and passes the agency check', async () => {
+  const { decomposition, selection: stored } = JSON.parse(readFileSync(new URL('./fixtures/v2-live/kart.json', import.meta.url), 'utf8')).report;
+  // The report keeps the selection's chosen ids; the planner's working fields start empty.
+  const selection = { generators: [], graphics: [], gaps: [], bind: {}, ...stored, spaces: stored.spaces.map(s => ({ caps: [], ...s })) };
+  const o = proceduralOutline({ decomposition, selection, registry, logic, seed: 5, prompt: 'Mario Kart with shopping carts' });
+  assert.ok(o.ok);
+  assert.equal(firstPlayable(o.doc, registry, logic, { seed: 5 }).options, 0, 'the skeleton alone offers nothing');
+  const rt = steps(boot(engageDocument(o.doc, registry, logic).doc), 120, { axes: { move: [0, 1] } });
+  assert.ok(rt.state.counts.vehicle_entered >= 1 && rt.state.vars['vehicle.speed'] > 0);
+  const a = await ensureAgency({ decomposition, selection, registry, logic, seed: 5 });
+  assert.ok(a.agency && a.attempts.length === 1, JSON.stringify(a.attempts));
+});
+
+test('platformer: the player runs and jumps from the first frames', () => {
+  const doc = live('platformer');
+  const e = engageDocument(doc, registry, logic);
+  assert.ok(e.ok);
+  assert.ok(firstPlayable(e.doc, registry, logic, { seed: doc.seed }).options > 0);
+  // The falling-pieces board tops out on frame 1 in this document (the generator walls over it; fixed in the
+  // world generator, not here), so the movement check runs without that one instance.
+  const d = structuredClone(e.doc); d.systems = d.systems.filter(s => s.use !== 'gameplay.falling.pieces');
+  const rt = steps(boot(d), 30);
+  assert.equal(rt.state.status, 'playing');
+  const [x0, y0] = rt.player().at;
+  steps(rt, 30, { axes: { move: [1, 0] } });
+  assert.ok(rt.player().at[0] > x0 + 2, 'the player runs right');
+  rt.step({ actions: { jump: true }, held: { jump: true } });
+  let top = rt.player().at[1];
+  for (let i = 0; i < 20; i++) { rt.step({ held: { jump: true } }); top = Math.max(top, rt.player().at[1]); }
+  assert.ok(top > y0 + 2 && rt.state.counts.jumped >= 1, 'the player jumps');
+});
+
+// ---------- the contracts on small documents ----------
+const doc0 = (systems, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id: 'e', title: 'E', seed: 3,
+  spaces: [{ id: 'world', use: 'engine.space.tilemap', with: { size: [24, 12], mode: 'topdown' }, zones: [{ id: 'all', rect: [0, 0, 24, 12] }] }],
+  systems, content: { archetypes: [{ id: 'hero', components: { name: 'You' } }, ...(extra.archetypes || [])], ...(extra.content || {}) }, player: { archetype: 'hero', space: 'world', at: [4.5, 4.5] } });
+
+test('combat: the player gets health and a basic attack that hurts an enemy', () => {
+  const doc = doc0([{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.melee' }], { archetypes: [{ id: 'dummy', kind: 'enemy', components: { health: { max: 20 }, team: 'enemy' } }] });
+  const e = engageDocument(doc, registry, logic);
+  assert.ok(e.ok, JSON.stringify(e.errors));
+  const hero = e.doc.content.archetypes.find(a => a.id === 'hero');
+  assert.ok(hero.components.health && hero.components.melee, JSON.stringify(e.applied));
+  const rt = boot(e.doc);
+  rt.spawn('dummy', { id: 'd1', space: 'world', at: [5.4, 4.5] });
+  steps(rt, 2);
+  assert.equal(rt.state.vars.hp, 10);
+  for (let i = 0; i < 4; i++) { rt.step({ actions: { attack: true } }); steps(rt, 30); }
+  assert.ok(rt.entity('d1').components.health.hp < 20, 'the attack connected');
+  // A moveset the document chose is kept as it is.
+  const own = structuredClone(doc); own.content.archetypes[0].components.melee = { moves: ['jab'] };
+  assert.deepEqual(engageDocument(own, registry, logic).doc.content.archetypes[0].components.melee, { moves: ['jab'] });
+});
+
+test('config and join contracts fill only what the document left empty', () => {
+  const species = [{ id: 'sprout', name: 'Sprout', types: ['normal'], base: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 }, catchRate: 45, expYield: 64, growth: 'medium', learnset: [] }];
+  const party = engageDocument(doc0([{ use: 'gameplay.creature.party' }], { content: { species, moves: [], types: { normal: {} } } }), registry, logic);
+  assert.ok(party.ok, JSON.stringify(party.errors));
+  assert.deepEqual(party.doc.systems.find(s => s.use === 'gameplay.creature.party').with.start, [{ species: 'sprout', level: 5 }]);
+  const kept = engageDocument(doc0([{ use: 'gameplay.creature.party', with: { start: [{ species: 'sprout', level: 9 }] } }], { content: { species, moves: [], types: { normal: {} } } }), registry, logic);
+  assert.equal(kept.doc.systems[0].with.start[0].level, 9);
+  // Nothing to fill from: left alone and reported.
+  const none = engageDocument(doc0([{ use: 'gameplay.combat.projectile' }]), registry, logic);
+  assert.ok(none.skipped.some(s => s.what === 'playerWeapon'));
+  const turns = engageDocument(doc0([{ use: 'gameplay.combat.health' }, { use: 'gameplay.turns', with: { sides: [{ id: 'heroes', control: 'player', members: [] }, { id: 'foes', control: 'ai', members: [] }], actions: [] } }]), registry, logic);
+  assert.ok(turns.ok, JSON.stringify(turns.errors));
+  assert.deepEqual(turns.doc.systems[1].with.sides[0].members, ['player']);
+  assert.deepEqual(turns.doc.systems[1].with.sides[1].members, []);
 });

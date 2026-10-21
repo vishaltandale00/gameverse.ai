@@ -7,7 +7,7 @@
 //
 // card.engage = {
 //   player: {
-//     components: { comp: defaults },      merged into the player's archetype (missing keys only)
+//     components: { comp: defaults },      added to the player's archetype when it lacks that component
 //     spawn: { role, archetype },          an entity made at the player's start (role names it in effects, e.g. 'vehicle');
 //                                          an archetype in the document with the same component keys is reused
 //     enter: [effects],                    run once at start; '$player' and '$<role>' are substituted, effects naming
@@ -18,7 +18,10 @@
 //   participants: { param },               who the participants are: the instance param listing ids or archetypes;
 //                                          missing ones are spawned at start beside the player
 //   config: { param: value },              instance params filled when the document leaves them unset or empty;
-//                                          '$first:<doc.path>' = the id of the first entry at that path (dropped if none)
+//                                          '$first:<path>' / '$ids:<path>' = the first / every id listed at a document path
+//                                          ('with.<param>' = the instance's own param); dropped when there is none
+//   join: { param, field, where? },        the player joins the first entry of a list param (where: matching fields) when
+//                                          no entry lists 'player' in `field` (a team's members, a side's members)
 // }
 //
 // Start spawns and start effects run through the spawner primitive that declares the `spawn` effect (its rules
@@ -31,15 +34,6 @@ export const ENGAGE_VERSION = 'engage/0.1';
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const clone = v => structuredClone(v);
 const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_');
-
-/** Fill keys of `defaults` missing from `target` (recursively for plain objects). Returns the keys added. */
-function fillMissing(target, defaults, path = '', out = []) {
-  for (const [k, v] of Object.entries(defaults || {})) {
-    if (target[k] === undefined) { target[k] = clone(v); out.push(path + k); }
-    else if (isObj(target[k]) && isObj(v)) fillMissing(target[k], v, `${path}${k}.`, out);
-  }
-  return out;
-}
 
 /** Replace '$name' strings in effects; null when an effect names a role that is not bound. */
 function bind(value, roles) {
@@ -104,21 +98,37 @@ export function engageDocument(input, registry, logic) {
     for (const [param, value] of Object.entries(card.engage.config || {})) {
       const cur = inst.with?.[param];
       if (cur !== undefined && !(Array.isArray(cur) && !cur.length) && cur !== null && cur !== '') continue;
-      let v = clone(value), missing = false;
-      const sub = x => { if (typeof x === 'string' && x.startsWith('$first:')) { const list = at(doc, x.slice(7)); const first = Array.isArray(list) ? list.find(e => e?.id)?.id : isObj(list) ? Object.keys(list)[0] : undefined; if (first === undefined) missing = true; return first; } if (Array.isArray(x)) return x.map(sub); if (isObj(x)) return Object.fromEntries(Object.entries(x).map(([k, y]) => [k, sub(y)])); return x; };
-      v = sub(v);
+      let missing = false;
+      const idsAt = path => { const list = path.startsWith('with.') ? at(inst, path) : at(doc, path); return Array.isArray(list) ? list.map(e => e?.id).filter(x => typeof x === 'string') : isObj(list) ? Object.keys(list) : []; };
+      const sub = x => {
+        if (typeof x === 'string' && /^\$(first|ids):/.test(x)) { const [, kind, path] = x.match(/^\$(first|ids):(.*)$/), ids = idsAt(path); if (!ids.length) missing = true; return kind === 'first' ? ids[0] : ids; }
+        if (Array.isArray(x)) return x.map(sub); if (isObj(x)) return Object.fromEntries(Object.entries(x).map(([k, y]) => [k, sub(y)])); return x;
+      };
+      const v = sub(clone(value));
       if (missing) { skipped.push({ use: id, part: 'config', what: param, why: 'the document has no content to fill it from' }); continue; }
       inst.with = { ...(inst.with || {}), [param]: v };
       applied.push({ use: id, path, part: 'config', what: param });
     }
   }
 
-  // 2. Player components.
+  // The player joins a list param's entry (a team, a side) when no entry names it.
+  for (const { inst, path, card, id } of found) {
+    const j = card.engage.join; if (!j?.param || !j.field) continue;
+    const list = inst.with?.[j.param]; if (!Array.isArray(list) || !list.length) continue;
+    if (list.some(x => Array.isArray(x?.[j.field]) && x[j.field].includes('player'))) continue;
+    const target = list.find(x => isObj(x) && Object.entries(j.where || {}).every(([k, v]) => x[k] === v)) ?? (j.where ? null : list[0]);
+    if (!isObj(target)) continue;
+    target[j.field] = [...(Array.isArray(target[j.field]) ? target[j.field] : []), 'player'];
+    applied.push({ use: id, path, part: 'join', what: `${j.param}.${target.id ?? 0}` });
+  }
+
+  // 2. Player components: a component the archetype already has is the document's choice and stays as it is.
   for (const { card, id } of found) {
     const comps = card.engage.player?.components;
     if (!comps || !player) continue;
     player.components = isObj(player.components) ? player.components : {};
-    const added = fillMissing(player.components, comps);
+    const added = Object.keys(comps).filter(k => player.components[k] === undefined);
+    for (const k of added) player.components[k] = clone(comps[k]);
     if (added.length) applied.push({ use: id, part: 'player.components', what: added.join(',') });
   }
 
@@ -175,7 +185,7 @@ export function engageDocument(input, registry, logic) {
   const aEnter = entersOf('actors');
   actors.forEach((a, k) => {
     const where = beside(start, k + 1), components = {};
-    for (const f of found) if (f.card.engage.actors?.components) fillMissing(components, f.card.engage.actors.components);
+    for (const f of found) for (const [k, v] of Object.entries(f.card.engage.actors?.components || {})) components[k] ??= clone(v);
     const own = archetype(a.archetype);
     for (const key of Object.keys(components)) if (own?.components?.[key] !== undefined) delete components[key];
     addRule({ id: a.id, archetype: a.archetype, ...(space ? { space } : {}), at: where, unique: true, activation: 'always', respawnSec: 0, ...(Object.keys(components).length ? { components } : {}) });

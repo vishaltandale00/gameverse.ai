@@ -14,6 +14,8 @@ const STATES = ['kickoff', 'play', 'goal', 'break', 'over', 'won', 'lost', 'draw
 export default {
   id: ID,
   card: {
+    // The player plays: it joins the first team when no team lists it.
+    engage: { join: { param: 'teams', field: 'members' } },
     intent: 'Ball sports: ball, teams, goal zones, kickoffs, match clock with periods and overtime (golden goal or extra time), mercy rule, kicks, touches and last-touch scoring, possession; the ball rides the physics space when it has dynamics, else it is simulated here with drag, gravity, bounces and hits from players and cars.',
     views: ['td', 'side', '3p'],
     params: {

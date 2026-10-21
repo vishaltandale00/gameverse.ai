@@ -19,6 +19,8 @@ const PUSH_DECAY = 0.8; // per frame; total travel = push / (1 - decay)
 const health = {
   id: KEY,
   card: {
+    // The player can be hurt (and so lose and win fights) from the first frame.
+    engage: { player: { components: { health: { max: 10 } } } },
     intent: 'Hit points for any entity with a health component: damage types with resistances and armor (from components and equipment stat vars), i-frames, hit stun, knockback, contact damage, physics impact damage, and death rules (corpse, despawn, respawn at home or spawn, split on death). Every other combat primitive deals damage through it.',
     views: ['any'],
     params: {
