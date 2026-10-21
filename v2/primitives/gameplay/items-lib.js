@@ -68,9 +68,15 @@ export const matches = (def, accepts) => { const t = tokens(def); return (accept
 
 /** A count range [a, b] (a <= b; [n, n] is exactly n): the one shape every rolled count declares. */
 export const RANGE = Object.freeze({ type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] (both included; [n, n] is exactly n)' });
-/** Integer in [a, b] from rt.random() (RANGE). */
+/** The pickup component (a world pickup: touching or using it takes the item), read by gameplay.loot and gameplay.interact. */
+export const PICKUP = Object.freeze({ type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } }, effect: 'a world pickup: touching or using it takes the item' });
+/**
+ * Integer in [a, b] from rt.random() (RANGE). A bare number is engine/blocks.js's built-in default drop count
+ * ({ item: <block>, count: 1 }), not a document shape: documents declare RANGE.
+ */
 export function roll(rt, range, fallback = 1) {
   if (range == null) return fallback;
+  if (typeof range === 'number') return range;
   const [a, b] = range; return a + Math.floor(rt.random() * (b - a + 1));
 }
 /** Weighted pick over entries with `weight` (default 1); null when total weight is 0. */

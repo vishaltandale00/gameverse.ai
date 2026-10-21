@@ -7,7 +7,7 @@
 // player. Entities with a `loot` component (table id) drop when they die.
 import { give, room } from './inventory.js';
 import { ID_PATTERN } from '../../kernel/sections.js';
-import { RANGE, roll, pick, whoKey, isVec, center, len, sub, pull, boxOf, boxesTouch } from './items-lib.js';
+import { RANGE, PICKUP, roll, pick, whoKey, isVec, center, len, sub, pull, boxOf, boxesTouch } from './items-lib.js';
 
 const KEY = 'gameplay.loot';
 const tables = rt => { if (rt.caches.lootDoc !== rt.doc) { rt.caches.lootDoc = rt.doc; rt.caches.loot = new Map((rt.doc.content?.tables || []).map(t => [t.id, t])); } return rt.caches.loot; };
@@ -72,7 +72,7 @@ export default {
     // Shapes of the archetype components this primitive owns.
     components: {
       loot: { type: 'ref', to: 'table', effect: 'the table it drops when it dies (or when looted)' },
-      pickup: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } }, effect: 'a world pickup: touching it takes the item' },
+      pickup: PICKUP,
       magnet: { type: 'number', min: 0, effect: 'a pickup: magnet radius (default the magnet param)' },
     },
     rules: { table_invalid: { fields: ['content.tables[].rolls', 'content.tables[].always[].count', 'content.tables[].entries[].count'], message: 'a [min, max] range has min <= max' } },
