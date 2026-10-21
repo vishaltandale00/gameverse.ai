@@ -362,7 +362,7 @@ export function composeNested(outer, inner, { registry, logic }) {
   const p = prefixDocument(inner.doc, prefixOf(inner.id), { registry, logic });
   problems.push(...p.problems);
   const first = objects(p.doc.spaces)[0]?.id, own = isStr(first) ? first : null;
-  // The inner keeps its own space when its loop declares the spaces it plays on and that space is one of them.
+  // The inner keeps its own space: the one its verified template plays its loop on (a creature battle's arena).
   const merged = mergeDocuments(outer.doc, p.doc, { registry, keepSpaces: true, bind: own });
   problems.push(...merged.problems);
   const doc = merged.doc;
