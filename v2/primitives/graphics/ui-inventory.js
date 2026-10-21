@@ -85,7 +85,7 @@ export default {
     intent: 'Inventory sheet for any game: sorted item grid with details and use/equip, equipment paper doll, crafting recipes with have/need, charm loadout with notch budget, skills, and shop/container trade panels that open when the game opens a shop or container.',
     views: ['any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
-    interactions: ['avatar-realtime', 'avatar-grid', 'menu'],
+    interactions: ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'],
     controls: { verbs: ['equip', 'unequip', 'use_item', 'craft', 'buy', 'sell', 'take', 'store', 'close_shop', 'close_container'] },
     params: {
       panels: { type: 'list', default: ['items'], min: 1, of: { type: 'string', options: PANELS }, effect: 'which panels the sheet has' },

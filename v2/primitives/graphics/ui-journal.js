@@ -82,7 +82,7 @@ export default {
     intent: 'Journal sheet: quest log grouped by tracked, active, available, completed and failed with objective progress and rewards; lore codex; bestiary of creatures met or defeated; characters met; notes. Keyboard, gamepad and pointer navigable.',
     views: ['any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
-    interactions: ['avatar-realtime', 'avatar-grid', 'menu'],
+    interactions: ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'],
     controls: { verbs: ['track_quest'] },
     params: {
       tabs: { type: 'list', default: ['quests', 'lore', 'characters'], min: 1, of: { type: 'string', options: TABS }, effect: 'which pages the journal has, in order' },
