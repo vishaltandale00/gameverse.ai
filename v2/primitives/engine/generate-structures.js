@@ -14,6 +14,7 @@ import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 const card = {
   intent: 'Places buildings and landmarks (houses, towers, camps, ruins, shrines, bridges, gates, arenas, mines, lots) at fixed spots or scattered in zones, with optional walk-in interiors, loot tables and spawned occupants.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     place: {
       type: 'list', min: 1, required: true, effect: 'structures to place',
@@ -37,7 +38,7 @@ const card = {
     floorHeight: { type: 'number', min: 2, max: 10, unit: 'm', effect: 'storey height (default 4 cells on voxel, 3.5 m on mesh3d)' },
     attempts: { type: 'integer', min: 1, max: 1000, default: 60, effect: 'site tries per scattered copy' },
   },
-  provides: { services: ['structures'], events: [] },
+  provides: { content: ['structures'], extent: 'overlay', services: ['structures'], events: [] },
   reads: ['content.structures', 'content.tables'],
 };
 

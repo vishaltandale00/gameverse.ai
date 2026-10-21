@@ -11,17 +11,18 @@ import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDist
 const card = {
   intent: 'Water: sea up to a level, inland lakes carved into basins, and river water (with flow direction). Fills voxel worlds with water blocks; answers waterDepthAt for swimming, boats and navigation.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     level: { type: 'number', min: -1000, max: 10000, unit: 'm', effect: 'sea surface height (default: the terrain/space sea level)' },
-    lakes: { type: 'integer', min: 0, max: 256, default: 0, effect: 'inland lakes placed in local low ground above sea level' },
+    lakes: { type: 'integer', min: 0, max: 256, default: 0, scale: 'world', per: 'area', effect: 'inland lakes placed in local low ground above sea level' },
     flow: { type: 'boolean', default: false, effect: 'rivers report a flow direction and speed (flowAt) for currents and boats' },
     sea: { type: 'boolean', default: true, effect: 'flood everything below level (false: only lakes and rivers hold water)' },
-    lakeRadius: { type: 'list', of: { type: 'number', min: 2, max: 2000 }, min: 2, max: 2, default: [16, 60], unit: 'm', effect: 'lake radius range' },
+    lakeRadius: { type: 'list', of: { type: 'number', min: 2, max: 2000 }, min: 2, max: 2, default: [16, 60], unit: 'm', scale: 'world', effect: 'lake radius range' },
     lakeDepth: { type: 'number', min: 0.5, max: 100, default: 5, unit: 'm', effect: 'depth at a lake centre' },
     flowSpeed: { type: 'number', min: 0, max: 20, default: 1.5, unit: 'm/s', effect: 'river current speed at the source (slows toward the mouth)' },
     block: { type: 'string', default: 'water', effect: 'voxel block used for water cells' },
   },
-  provides: { services: ['waterDepthAt'], events: [] },
+  provides: { content: ['water'], extent: 'space', services: ['waterDepthAt'], events: [] },
   reads: [],
 };
 

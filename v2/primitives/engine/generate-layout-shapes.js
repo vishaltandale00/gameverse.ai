@@ -82,10 +82,11 @@ export default {
   card: {
     intent: 'Lays out pegs, bricks and stacked structures from shapes (arcs, rings, grids, spirals, waves, row pictures, stacks, pyramids, towers) as entities, assigns roles by seed, and proves no piece is sealed in, overlapping or unsupported.',
     views: ['side', 'td', 'board'],
+    spaces: ['engine.space.physics2d', 'engine.space.arena2d'],
     params: {
       groups: { type: 'list', of: group, min: 1, required: true },
-      origin: { type: 'list', of: { type: 'number' }, default: [0, 0], effect: 'space position of layout (0, 0)' },
-      scale: { type: 'number', min: 0.001, default: 1, effect: 'space units per layout unit' },
+      origin: { type: 'list', of: { type: 'number' }, default: [0, 0], scale: 'world', effect: 'space position of layout (0, 0)' },
+      scale: { type: 'number', min: 0.001, default: 1, scale: 'world', effect: 'space units per layout unit' },
       yDown: { type: 'boolean', default: false, effect: 'layout y grows downward (board coordinates) into a y-up space' },
       bounds: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: '[x0,y0,x1,y1] in layout units; pieces outside are skipped' },
       minSpacing: { type: 'number', min: 0, default: 0.52, effect: 'point pieces closer than this to a placed piece are skipped' },
@@ -99,10 +100,43 @@ export default {
       openSide: { type: 'string', options: ['bottom', 'top'], default: 'bottom', effect: 'side of a row picture the ball comes from' },
       archetype: { type: 'string', default: 'piece', effect: 'archetype when a group names none' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'layout'] },
+    provides: { content: ['structures', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'layout'] },
     requires: { capabilities: ['position'] },
     problems: ['piece_sealed', 'piece_overlap', 'piece_unsupported', 'role_shortfall', 'layout_empty'],
     validates: ['material_unknown', 'shape_data_missing', 'roles_overfull'],
+  },
+  /**
+   * Planner hook (v2/planner/world.js), arena2d and physics2d spaces: static solid pieces in every zone. With
+   * gravity, stepped platforms whose tops stay within the movement envelope's jump height (each reachable from
+   * the ground or the step below); top-down, pillars that leave the zone's middle row open. Pieces keep to the
+   * right of the player's start and inside the space.
+   */
+  scaffold(space, doc, { envelope = {} } = {}) {
+    if (!this.card.spaces.includes(space.use)) return null;
+    const physics = space.use === 'engine.space.physics2d', size = physics ? space.with?.bounds ?? [20, 12] : space.with?.size ?? [16, 9];
+    const g = physics ? (Array.isArray(space.with?.gravity) ? space.with.gravity[1] : -9.8) : Number(space.with?.gravity ?? 0);
+    const side = Math.abs(g) > 1e-6, reach = Number.isFinite(envelope.jumpHeight) && envelope.jumpHeight > 0.5 ? envelope.jumpHeight : 2;
+    const p = doc.player, here = p && (p.space ?? doc.spaces?.[0]?.id) === space.id && Array.isArray(p.at) ? p.at : null;
+    const pieces = [], T = 0.5;
+    const zones = (space.zones || []).map(z => z.rect).filter(r => Array.isArray(r) && r.length === 4 && r.every(Number.isFinite));
+    for (const [rx0, ry0, rx1, ry1] of zones.length ? zones : [[0, 0, size[0], size[1]]]) {
+      const x0 = Math.max(0, rx0), x1 = Math.min(size[0], rx1), y0 = Math.max(0, ry0), y1 = Math.min(size[1], ry1), w = x1 - x0, h = y1 - y0;
+      if (w < 4 || h < 3) continue;
+      const left = here && here[0] >= x0 && here[0] < x1 ? Math.max(x0, here[0] + 2) : x0 + 1;
+      if (x1 - left < 3) continue;
+      if (side) {
+        const step = Math.max(T + 0.5, Math.min(reach * 0.7, (h - 2) / 2)), pw = Math.min(4, (x1 - left) / 2);
+        for (let k = 1; k <= 2 && y0 + k * step + 1.5 < y1; k++) pieces.push({ x: +(left + pw * (k - 0.5)).toFixed(2), y: +(y0 + k * step - T).toFixed(2), w: +pw.toFixed(2), h: T });
+      } else {
+        const mid = (y0 + y1) / 2, pw = Math.min(2, w / 6);
+        for (const fx of [0.33, 0.66]) { const cx = left + (x1 - left) * fx; for (const cy of [y0 + (mid - y0) / 2, mid + (y1 - mid) / 2]) if (Math.abs(cy - mid) > pw) pieces.push({ x: +cx.toFixed(2), y: +(cy - pw / 2).toFixed(2), w: +pw.toFixed(2), h: +pw.toFixed(2) }); }
+      }
+    }
+    if (!pieces.length) return null;
+    return {
+      with: { groups: [{ id: 'arena', shape: 'pieces', kind: 'platform', archetype: 'arena_solid', material: 'rock', pieces }], support: false },
+      content: { archetypes: [{ id: 'arena_solid', components: { name: 'Platform', body: { solid: true, static: true } } }] },
+    };
   },
   validate(raw) {
     const config = withDefaults(this.card, raw);

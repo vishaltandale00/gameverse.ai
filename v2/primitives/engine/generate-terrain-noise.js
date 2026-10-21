@@ -10,20 +10,21 @@ import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks, z
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     octaves: { type: 'integer', min: 1, max: 8, default: 5, effect: 'noise detail layers' },
-    scale: { type: 'number', min: 16, max: 4096, default: 256, unit: 'm', effect: 'horizontal size of the largest hills' },
+    scale: { type: 'number', min: 16, max: 4096, default: 256, unit: 'm', scale: 'world', effect: 'horizontal size of the largest hills' },
     amplitude: { type: 'number', min: 1, max: 600, default: 40, unit: 'm', effect: 'height range of the terrain' },
     ridged: { type: 'number', min: 0, max: 1, default: 0, effect: 'blend toward sharp ridged mountains' },
     falloff: { type: 'string', options: ['none', 'island', 'radial'], default: 'none', effect: 'island: land sinks into sea at the edges; radial: one central massif' },
     seaLevel: { type: 'number', min: -1000, max: 10000, unit: 'm', effect: 'sea level the terrain is shaped around (default: the space sea level, 0 on mesh3d)' },
-    rivers: { type: 'integer', min: 0, max: 64, default: 0, effect: 'rivers traced from high ground down to the sea and carved in' },
+    rivers: { type: 'integer', min: 0, max: 64, default: 0, scale: 'world', per: 'area', effect: 'rivers traced from high ground down to the sea and carved in' },
     erosion: { type: 'integer', min: 0, max: 8, default: 0, effect: 'hydraulic + thermal erosion passes on the coarse grid' },
     warp: { type: 'number', min: 0, max: 1, default: 0, effect: 'domain warp strength: twisted, less grid-like landforms' },
     landBias: { type: 'number', min: -3, max: 3, default: 0.2, effect: 'shifts terrain up (+) or down (-) relative to sea level, in amplitudes' },
     lacunarity: { type: 'number', min: 1.5, max: 3, default: 2, effect: 'frequency multiplier per octave' },
     gain: { type: 'number', min: 0.2, max: 0.8, default: 0.5, effect: 'amplitude multiplier per octave' },
-    extent: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: 'world box [x0, z0, x1, z1] for falloff and rivers (default: space size, or the union of zones)' },
+    extent: { type: 'list', of: { type: 'number' }, min: 4, max: 4, scale: 'world', effect: 'world box [x0, z0, x1, z1] for falloff and rivers (default: space size, or the union of zones)' },
     land: { type: 'list', of: { type: 'ref', to: 'zone' }, default: [], effect: 'zones guaranteed to be dry land (raised above sea level, rising from the zone edge)' },
     landHeight: { type: 'number', min: 0, max: 200, default: 2, unit: 'm', effect: 'minimum height above sea inside land zones' },
     grid: { type: 'integer', min: 32, max: 512, default: 160, effect: 'coarse grid resolution (per side) used for erosion and river tracing' },
@@ -38,7 +39,7 @@ const card = {
       },
     },
   },
-  provides: { events: ['generated'], services: ['surface'] },
+  provides: { content: ['terrain'], extent: 'space', events: ['generated'], services: ['surface'] },
   reads: [],
 };
 
@@ -74,9 +75,23 @@ function erode(hm, N, cellM, passes, seed, amplitude) {
   }
 }
 
+const TERRAIN_BLOCKS = [['bedrock', '#2b2b2b'], ['stone', '#7d7d7d'], ['dirt', '#7a5532'], ['grass', '#5f9e3a'], ['sand', '#d8c78a'], ['gravel', '#8a8580']];
+
 export default {
   id: 'engine.generate.terrain.noise',
   card,
+  /**
+   * Planner hook (v2/planner/world.js): rolling ground for a mesh3d or voxel space, every zone kept dry land, gentle
+   * enough for roads and vehicles. On a voxel document that lists its blocks, the terrain blocks it lacks are declared.
+   */
+  scaffold(space, doc) {
+    if (!card.spaces.includes(space.use)) return null;
+    const voxel = space.use === 'engine.space.voxel', land = (space.zones || []).filter(z => zoneBox(z)).map(z => z.id);
+    const out = { with: { amplitude: voxel ? 10 : 12, scale: voxel ? 96 : 256, landBias: 0.6, ...(land.length ? { land } : {}) } };
+    const known = new Set((doc.content?.blocks || []).map(b => b?.id));
+    if (voxel && known.size) { const add = TERRAIN_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), solid: true, color })); if (add.length) out.content = { blocks: add }; }
+    return out;
+  },
   validate(config, doc, ctx, inst) {
     const errors = checkBlocks(doc, inst, Object.entries(config.blocks || {}).map(([k, id]) => [`with.blocks.${k}`, id]));
     if (config.extent && !(config.extent[2] > config.extent[0] && config.extent[3] > config.extent[1])) errors.push({ code: 'terrain_extent_invalid', path: 'with.extent', message: 'extent must be [x0, z0, x1, z1] with x1 > x0 and z1 > z0' });

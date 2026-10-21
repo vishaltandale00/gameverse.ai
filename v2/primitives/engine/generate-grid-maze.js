@@ -244,15 +244,16 @@ export default {
   card: {
     intent: 'Generates a mirrored, one-tile-wide, dead-end-free maze with hunter houses, wrapping tunnels and pellets, and proves every corridor and pellet reachable from the start.',
     views: ['td', 'board'],
+    spaces: ['engine.space.grid', 'engine.space.tilemap'],
     params: {
-      size: { type: 'string', default: 'classic', effect: `maze size: ${Object.keys(SIZES).join('|')} or a key of params.sizes` },
+      size: { type: 'string', default: 'classic', scale: 'world', effect: `maze size: ${Object.keys(SIZES).join('|')} or a key of params.sizes` },
       style: { type: 'string', default: 'classic', effect: `corridor shape: ${Object.keys(STYLES).join('|')} or a key of params.styles` },
       density: { type: 'number', min: 0, max: 1, default: 0.6, effect: '1 keeps every lattice corridor; lower removes more (never below degree 2)' },
       tunnels: { type: 'integer', min: 1, max: 2, default: 1 },
       powerPellets: { type: 'integer', min: 2, max: 6, default: 4, effect: 'classic-size count; larger sizes scale with area' },
       sizes: { type: 'json', default: {}, effect: 'extra sizes {name:{w,h,houses:[{axis,cy}]}} (w even)' },
       styles: { type: 'json', default: {}, effect: 'extra styles {name:{gaps:[i..], inner:n}}' },
-      origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], effect: 'space cell of the maze corner' },
+      origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world', effect: 'space cell of the maze corner' },
       yUp: { type: 'boolean', default: true, effect: 'maze row 0 is the top row of the space region' },
       palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall' }, houseWall: { type: 'string', default: 'house_wall' }, door: { type: 'string', default: 'house_door' } } },
       pellet: { type: 'string', default: 'pellet', effect: 'archetype spawned on pellet tiles ("" for none)' },
@@ -262,10 +263,27 @@ export default {
       placePlayer: { type: 'boolean', default: true, effect: 'move the player to the maze start when it spawns' },
       attempts: { type: 'integer', min: 0, max: 16, default: 4, effect: 'sub-seeds before the complete-lattice fallback' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
+    provides: { content: ['cells', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
     validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],
+  },
+  /** The cells the maze fills: [x0, y0, x1, y1) from its origin and size (card provides.extent: 'own'). */
+  extentOf(raw) {
+    const config = withDefaults(this.card, raw), spec = { ...SIZES, ...config.sizes }[config.size];
+    return spec ? [config.origin[0], config.origin[1], config.origin[0] + spec.w, config.origin[1] + spec.h] : null;
+  },
+  /**
+   * Params that make the maze fill rect [x0, y0, x1, y1) (the space): a custom size of the rect's width (made even)
+   * and height, with the hunter houses of the largest preset that fits its area. null when the rect is smaller
+   * than the smallest maze (20 × 21).
+   */
+  fit(raw, rect) {
+    const w = Math.floor((rect[2] - rect[0]) / 2) * 2, h = Math.floor(rect[3] - rect[1]);
+    if (!(w >= 20 && h >= 21)) return null;
+    const preset = Object.values(SIZES).filter(s => s.w * s.h <= w * h).sort((a, b) => b.w * b.h - a.w * a.h)[0] || SIZES.classic;
+    const name = `fit_${w}x${h}`;
+    return { size: name, sizes: { ...(raw?.sizes || {}), [name]: { w, h, houses: structuredClone(preset.houses) } }, origin: [Math.ceil(rect[0]), Math.ceil(rect[1])] };
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);

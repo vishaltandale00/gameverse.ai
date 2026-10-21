@@ -30,10 +30,11 @@ export default {
   card: {
     intent: 'Generates grid boards: match-3 fills with no initial matches and a guaranteed move, symmetric tactics maps with deploy zones, lane fields joining two bases, and hex continents with spread starts; each kind proves its guarantee.',
     views: ['board', 'td', 'iso'],
+    spaces: ['engine.space.grid'],
     params: {
       kind: { type: 'string', options: ['tactics', 'lanes', 'match', 'hex-continent'], default: 'tactics' },
-      size: { type: 'list', of: { type: 'integer', min: 2, max: 256 }, min: 2, max: 2, effect: 'board [w,h]; default: the space size' },
-      origin: { type: 'list', of: { type: 'integer' }, default: [0, 0] },
+      size: { type: 'list', of: { type: 'integer', min: 2, max: 256 }, min: 2, max: 2, scale: 'world', effect: 'board [w,h]; default: the space size' },
+      origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world' },
       fill: { type: 'list', of: piece, default: [{ piece: 'red' }, { piece: 'blue' }, { piece: 'green' }, { piece: 'yellow' }, { piece: 'purple' }], effect: 'match: weighted pieces' },
       fillNoMatch: { type: 'boolean', default: true }, matchLength: { type: 'integer', min: 2, max: 6, default: 3 }, ensureMove: { type: 'boolean', default: true },
       terrain: { type: 'list', of: terrain, default: [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }], effect: 'tactics: obstacle/feature terrain' },
@@ -47,10 +48,20 @@ export default {
       starts: { type: 'integer', min: 0, max: 16, default: 2 }, minStartDistance: { type: 'integer', min: 1, max: 64, default: 6 }, landPerStart: { type: 'integer', min: 1, default: 20 },
       attempts: { type: 'integer', min: 0, max: 16, default: 8 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'board'] },
+    provides: { content: ['cells'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'board'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
     validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open'],
+  },
+  /** The cells the board fills: origin + size, or the whole space when size is unset (provides.extent: 'own'). */
+  extentOf(raw, space) {
+    const config = withDefaults(this.card, raw), [W, H] = config.size || space?.with?.size || [8, 8];
+    return [config.origin[0], config.origin[1], config.origin[0] + W, config.origin[1] + H];
+  },
+  /** Params that make the board fill rect [x0, y0, x1, y1). */
+  fit(raw, rect) {
+    const w = Math.floor(rect[2] - rect[0]), h = Math.floor(rect[3] - rect[1]);
+    return w >= 2 && h >= 2 && w <= 256 && h <= 256 ? { origin: [Math.ceil(rect[0]), Math.ceil(rect[1])], size: [w, h] } : null;
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);

@@ -59,6 +59,7 @@ export default {
   card: {
     intent: 'Streams authored chunks along an axis ahead of the player for endless runners, flyers and climbers: tiered by a speed curve, spaced by density, every chunk proven passable.',
     views: ['side', 'td', '3p'],
+    spaces: ['engine.space.track', 'engine.space.tilemap', 'engine.space.arena2d'],
     params: {
       chunks: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
         id: { type: 'string', required: true }, tier: { type: 'integer', min: 1, max: 3, default: 1 },
@@ -70,7 +71,8 @@ export default {
       axis: { type: 'string', options: ['x', 'y', 'z'], default: 'x', effect: 'progress axis in the space' },
       cross: { type: 'string', options: ['x', 'y', 'z'], default: 'y', effect: 'axis of the other picture dimension' },
       origin: { type: 'list', of: { type: 'number' }, default: [0, 0, 0], effect: 'space position of progress 0, cross 0' },
-      firstAt: { type: 'number', default: 10, effect: 'progress of the first chunk' },
+      firstAt: { type: 'number', default: 10, scale: 'world', effect: 'progress of the first chunk' },
+      end: { type: 'number', min: 0, scale: 'world', effect: 'progress where the course ends: no chunk starts at or beyond it (default: endless)' },
       speed: { type: 'object', default: {}, fields: { start: { type: 'number', min: 0, default: 10 }, max: { type: 'number', min: 0, default: 22 }, rampSeconds: { type: 'number', min: 1, default: 90 } }, effect: 'speed curve (units/s) that sets tiers' },
       tierBy: { type: 'string', options: ['time', 'distance'], default: 'time' },
       tierDistance: { type: 'list', of: { type: 'number' }, default: [300, 900], min: 2, max: 2, effect: 'distance thresholds for tiers 2 and 3' },
@@ -83,10 +85,45 @@ export default {
       clearBehind: { type: 'boolean', default: true, effect: 'clear placed cells behind as well as entities' },
       chunkZones: { type: 'boolean', default: false, effect: 'add a zone chunk_<n> per placed chunk (x/y axes; spaces with addZone, which keep zones in state) so solvers can name the chunk a run fails in' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['generation', 'chunks'] },
+    provides: { content: ['course', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['generation', 'chunks'] },
     requires: { capabilities: ['position'] },
     problems: ['chunk_impassable', 'chunk_tier_missing', 'chunks_fallback'],
     validates: ['chunk_duplicate', 'chunk_rows_ragged', 'chunk_char_unknown', 'chunk_axis_invalid', 'chunk_legend_invalid'],
+  },
+  /**
+   * Planner hook (v2/planner/world.js), track spaces: a finite course over the zones' progress span (the track's
+   * length, when it has none, becomes the end of its last zone), from just past the start zone to the end: lane
+   * barriers (solid obstacles the leader passes) and pickups in three tiers, every chunk leaving a free lane line.
+   */
+  scaffold(space) {
+    if (space.use !== 'engine.space.track') return null;
+    const ranges = (space.zones || []).map(z => z.range).filter(r => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite) && r[1] > r[0]);
+    const lanes = Math.max(1, Math.min(16, Math.round(space.with?.lanes ?? 3)));
+    const given = Number(space.with?.length) || 0, end = given > 0 ? given : ranges.length ? Math.max(...ranges.map(r => r[1])) : 200;
+    const start = ranges.length ? Math.min(...ranges.map(r => r[0])) : 0, first = ranges.length ? Math.min(...ranges.map(r => r[1])) : start + 20;
+    const firstAt = Math.min(end - 8, start + Math.max(10, Math.min(first - start, 30)));
+    if (!(end - firstAt >= 8)) return null;
+    const row = f => Array.from({ length: lanes }, (_, j) => f(j)).join('');
+    const free = (i, j) => (j === i % lanes);
+    const chunks = [
+      { id: 'pickups', tier: 1, spacing: 2, rows: [row(j => (j % 2 ? 'o' : '.')), row(() => '.'), row(j => (j % 2 ? '.' : 'o'))] },
+      { id: 'barrier', tier: 1, spacing: 2, rows: [row(j => (lanes > 1 && !free(1, j) ? '#' : '.')), row(() => '.'), row(j => (j === (1 % lanes) ? 'o' : '.'))] },
+      { id: 'slalom', tier: 2, spacing: 2, rows: [row(j => (lanes > 1 && !free(0, j) ? '#' : '.')), row(() => '.'), row(() => '.'), row(j => (lanes > 1 && !free(lanes - 1, j) ? '#' : 'o'))] },
+      { id: 'gauntlet', tier: 3, spacing: 2, rows: [row(j => (lanes > 1 && !free(2, j) ? '#' : '.')), row(j => (j === (2 % lanes) ? 'o' : '.')), row(() => '.'), row(j => (lanes > 1 && !free(0, j) ? '#' : '.'))] },
+    ];
+    const size = [1, 0.8, 1];
+    return {
+      with: {
+        chunks, along: 'rows', axis: 'x', cross: 'y', origin: [0, -size[1] / 2, 0], firstAt: +firstAt.toFixed(2), end: +end.toFixed(2), tierBy: 'distance',
+        tierDistance: [+(firstAt + (end - firstAt) / 3).toFixed(2), +(firstAt + (2 * (end - firstAt)) / 3).toFixed(2)], gap: { base: 8, min: 4 },
+        legend: { '.': {}, '#': { archetype: 'course_barrier', blocks: true }, o: { archetype: 'course_pickup', components: { collectible: { counter: 'pickups', value: 1 } } } },
+      },
+      content: { archetypes: [
+        { id: 'course_barrier', components: { name: 'Barrier', body: { size, solid: true, obstacle: true } } },
+        { id: 'course_pickup', components: { name: 'Pickup', body: { size: [0.8, 0.8, 0.8] } } },
+      ] },
+      ...(given > 0 ? {} : { space: { with: { length: +end.toFixed(2) } } }),
+    };
   },
   validate(raw) {
     const config = withDefaults(this.card, raw);
@@ -141,7 +178,7 @@ export default {
     };
     const stream = () => {
       const p = progressOf(); if (p === null) return;
-      for (let guard = 0; st().nextAt < p + config.ahead && guard < 64; guard++) spawnChunk();
+      for (let guard = 0; st().nextAt < p + config.ahead && (config.end === undefined || st().nextAt + (st().chunkN ? join : 0) < config.end) && guard < 64; guard++) spawnChunk();
       const s = st(), cut = p - config.behind;
       if (s.placed.length && s.placed[0].p < cut) { const keep = []; for (const e of s.placed) { if (e.p < cut) rt.despawn(e.id); else keep.push(e); } s.placed = keep; }
       if (config.clearBehind && s.cells.length && s.cells[0].p < cut) { const writer = cellWriter(rt, space), keep = []; for (const c of s.cells) { if (c.p < cut) writer.set(c.at, null); else keep.push(c); } writer.flush(); s.cells = keep; }

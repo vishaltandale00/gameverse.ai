@@ -16,10 +16,11 @@ export default {
   card: {
     intent: 'A track with a progress axis and a lane/height cross-section: endless runners (switch lanes, jump, slide, ride on obstacles), lane racers and rail shooters. Optional loop with lap counting; a window around the leader culls passed obstacles.',
     views: ['3p', 'side', 'td'],
+    needs: { content: ['course'] },
     params: {
       lanes: { type: 'integer', min: 1, max: 16, default: 3, effect: 'number of lanes (lane index 0..lanes-1; positions may be fractional mid-switch)' },
       laneWidth: { type: 'number', min: 0.1, max: 100, default: 1, unit: 'u', effect: 'lane spacing in track units (distance and rendering)' },
-      length: { type: 'number', min: 0, default: 0, unit: 'u', effect: 'track length; 0 = endless' },
+      length: { type: 'number', min: 0, default: 0, unit: 'u', scale: 'world', effect: 'track length; 0 = endless' },
       loop: { type: 'boolean', default: false, effect: 'progress wraps at length (circuits); emits lap' },
       gravity: { type: 'number', default: -30, unit: 'u/s²', effect: 'gravity along the height axis' },
       ceiling: { type: 'number', min: 0.1, default: 8, unit: 'u', effect: 'maximum height' },

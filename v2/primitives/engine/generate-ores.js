@@ -11,6 +11,7 @@ const R = 16; // vein region size (cells)
 const card = {
   intent: 'Places ore veins (coal, iron, gold, crystals...) inside stone at chosen depths, optionally only under certain biomes, so mining has a depth/rarity curve.',
   views: ['any'],
+  spaces: ['engine.space.voxel'],
   params: {
     veins: {
       type: 'list', min: 1, required: true, effect: 'ore table',
@@ -21,7 +22,7 @@ const card = {
       } },
     },
   },
-  provides: { events: [] },
+  provides: { content: ['ores'], extent: 'space', events: [] },
   reads: [],
 };
 

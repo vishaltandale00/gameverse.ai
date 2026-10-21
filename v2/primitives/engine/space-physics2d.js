@@ -23,9 +23,10 @@ export default {
   card: {
     intent: 'Continuous 2D rigid-body physics: circles, boxes, polygons and capsule segments with restitution, friction, joints (distance, rope, revolute with motor and limits), sensors, kinematic movers, fast bullets and sleeping. For physics puzzles, pinball, breakout, slingshot toys and top-down driving.',
     views: ['side', 'td'],
+    needs: { content: ['structures'] },
     params: {
       gravity: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, -9.8], unit: 'm/s²', effect: 'gravity vector (y up)' },
-      bounds: { type: 'list', of: { type: 'number', min: 1, max: 100000 }, min: 2, max: 2, default: [20, 12], unit: 'm', effect: 'world width and height from the origin' },
+      bounds: { type: 'list', of: { type: 'number', min: 1, max: 100000 }, min: 2, max: 2, default: [20, 12], unit: 'm', scale: 'world', effect: 'world width and height from the origin' },
       edges: edgesParam('solid'),
       substeps: { type: 'integer', min: 1, max: 8, default: 4, effect: 'solver substeps per frame' },
       iterations: { type: 'integer', min: 1, max: 20, default: 6, effect: 'velocity iterations per substep' },

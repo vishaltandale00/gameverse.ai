@@ -6,6 +6,7 @@ export default {
   card: {
     intent: 'A world of named locations connected by exits; entities are at one location at a time. Exits can be gated by predicates (keys, flags, abilities).',
     views: ['text', 'map', 'scene-cards'],
+    needs: { content: ['zones'] },
     params: {},
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'blocked'] },
     reads: [],

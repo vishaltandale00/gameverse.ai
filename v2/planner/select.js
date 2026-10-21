@@ -7,7 +7,7 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
-import { generatorsFor, needsWorld, isMovement } from './world.js';
+import { planWorld, unfurnishable, spaceNeeds, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 
 export const SELECT_VERSION = 'select/0.1';
 export const LEXICAL_ACCEPT = 0.75;    // calibrated in tests/v2-p-pipeline-select.test.js
@@ -106,7 +106,14 @@ const spaceSlug = (role, i) => ((String(role || 'world').toLowerCase().match(/[a
  * (a variant of any space primitive) that can, and only then reported as unmet.
  */
 export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer = [], exclude = []) {
-  const spaceIds = registry.ids('engine').filter(id => isSpace(id) && !exclude.includes(id));
+  let spaceIds = registry.ids('engine').filter(id => isSpace(id) && !exclude.includes(id));
+  // Something moves through the world: a space kind whose declared needs (card.needs.content) no registered
+  // generator can build would be a void, so it is not offered (when another space kind can be).
+  const excluded = [];
+  if (primitiveIds.some(id => isMovement(registry, id))) {
+    const ok = spaceIds.filter(id => { const missing = unfurnishable(registry, id); if (missing.length) excluded.push({ use: id, missing, why: `no registered generator builds ${missing.join(', ')} for ${id}` }); return !missing.length; });
+    if (ok.length) spaceIds = ok; else excluded.length = 0;
+  }
   const variants = spaceIds.flatMap(id => spaceVariants(registry, id).map(v => ({ use: id, ...v, card: registry.get(id).card })));
   const needers = primitiveIds.filter(id => !isSpace(id)).map(id => ({ id, caps: requirementsOf(registry, id).capabilities }));
   const wantViews = new Set([...(decomposition.views || []), ...(decomposition.spaces || []).flatMap(s => KIND_HINTS[s.kind]?.views || [])]);
@@ -120,7 +127,7 @@ export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer 
   };
   const pick = (pool, kind) => variants.map(v => ({ v, s: score(v, pool, kind) })).sort((a, b) => b.s - a.s || a.v.use.localeCompare(b.v.use))[0]?.v || null;
   const spaces = [], bind = {}, unmet = [];
-  if (!variants.length) return { spaces, bind, unmet: needers.map(n => ({ id: n.id, missing: n.caps, why: 'no space primitive is registered' })) };
+  if (!variants.length) return { spaces, bind, excluded, unmet: needers.map(n => ({ id: n.id, missing: n.caps, why: 'no space primitive is registered' })) };
   const primary = pick(needers, decomposition.spaces?.[0]?.kind);
   spaces.push({ id: spaceSlug(decomposition.spaces?.[0]?.role, 0), use: primary.use, with: primary.with, role: decomposition.spaces?.[0]?.role || 'world', caps: [...primary.caps] });
   let rest = needers.filter(n => !fits(primary, n));
@@ -139,7 +146,7 @@ export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer 
     unmet.push({ id: n.id, missing: best?.missing || n.caps, why: `no registered space provides ${n.caps.join(', ')}` });
   }
   // Extra space roles the idea asks for (an overworld and an interior) that nothing bound yet stay one space: the outline may add more.
-  return { spaces, bind, unmet };
+  return { spaces, bind, unmet, excluded };
 }
 
 /** Best renderer per space and overlay UI: graphics cards that name the space, then view overlap. */
@@ -253,7 +260,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
 
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
-  const { spaces, bind, unmet } = chooseSpaces(registry, [...chosen], decomposition, prefer, excludeSpaces);
+  const { spaces, bind, unmet, excluded: excludedSpaces = [] } = chooseSpaces(registry, [...chosen], decomposition, prefer, excludeSpaces);
   for (const u of unmet) {
     chosen.delete(u.id);
     for (const m of mechanics) if (m.primitives.includes(u.id)) {
@@ -279,23 +286,30 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
       const m = mechanics.find(x => x.id === g.mechanic); if (m) { m.primitives = [spaces[0].use]; m.source = `${m.source}+space`; }
     }
   }
-  const generators = [...chosen].filter(isGenerator).map(id => ({ id, space: (spaces.find(s => requirementsOf(registry, id).capabilities.every(c => s.caps.includes(c))) || spaces[0])?.id }));
+  // A generator a mechanic named goes to the first chosen space its card targets (card.spaces); one that targets
+  // none of them is dropped, never bound to a space it can't build.
+  const generators = [], dropped = [];
+  for (const id of [...chosen].filter(isGenerator)) {
+    const s = spaces.find(x => targets(registry, id, x.use));
+    if (s) generators.push({ id, space: s.id }); else { dropped.push({ id, why: `targets ${(registry.get(id).card.spaces || []).join(', ') || 'no space'}; chosen: ${spaces.map(x => x.use).join(', ')}` }); chosen.delete(id); }
+  }
+  for (const d of dropped) for (const m of mechanics) m.primitives = m.primitives.filter(x => x !== d.id);
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
-  // A cell space something moves through gets a world even when no mechanic mapped to a generator (the mapping
-  // rarely names one): the best-fitting generator from the cards (required capabilities, views, a scaffold hook
-  // that configures it from the zones and the movement envelope). The outline fills its params.
+  // A space something moves through gets a world even when no mechanic mapped to a generator (the mapping rarely
+  // names one): the generators whose cards declare the content the space card says it needs (planWorld). Zones
+  // are the outline's own; the outline's scaffold pass fills each generator's params.
   const movers = systems.filter(id => isMovement(registry, id));
   for (const s of spaces) {
-    if (generators.some(g => g.space === s.id) || !needsWorld(registry, s)) continue;
-    if (!movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
-    const best = generatorsFor(registry, s, decomposition.views?.[0])[0];
-    if (best) generators.push({ id: best.id, space: s.id, auto: true });
+    if (!spaceNeeds(registry, s.use).length || !movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
+    const have = [...OUTLINE_AUTHORS, ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
+    const plan = planWorld(registry, s, { view: decomposition.views?.[0], have, exclude: generators.filter(g => g.space === s.id).map(g => g.id) });
+    for (const id of plan.generators) generators.push({ id, space: s.id, auto: true });
   }
   return {
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).

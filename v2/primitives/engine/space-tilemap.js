@@ -19,9 +19,10 @@ export default {
   card: {
     intent: 'A 2D map of tile layers, side view with gravity (platformers, metroidvanias) or top-down (adventure maps, roguelikes). Solid tiles, one-way platforms and slopes come from content.blocks; editable cells with an edit log; ability-aware pathfinding and reachability for verification.',
     views: ['side', 'td'],
+    needs: { content: ['cells'] },
     params: {
       tile: { type: 'integer', min: 8, max: 64, unit: 'px', default: 16, effect: 'pixels per tile (renderers)' },
-      size: { type: 'list', of: { type: 'integer', min: 2, max: 4096 }, min: 2, max: 2, default: [64, 32], unit: 'tiles', effect: 'map width and height' },
+      size: { type: 'list', of: { type: 'integer', min: 2, max: 4096 }, min: 2, max: 2, default: [64, 32], unit: 'tiles', scale: 'world', effect: 'map width and height' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side', effect: 'side: gravity, platforms and slopes; topdown: walls, ledges and water' },
       gravity: { type: 'number', min: -400, max: 400, unit: 'tiles/s²', default: -60, effect: 'vertical gravity in side mode (negative pulls down); zone rules.gravity overrides it' },
       layers: { type: 'list', of: { type: 'string' }, min: 1, default: ['bg', 'solid', 'fg'], effect: 'tile layers back to front' },

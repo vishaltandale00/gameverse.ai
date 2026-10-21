@@ -30,10 +30,11 @@ export default {
   card: {
     intent: 'Generates node maps (layered act maps, web sector maps, linear gated chains) as zones with exits, typed by weighted templates, and proves every node reachable and the end reachable from everywhere.',
     views: ['map', 'ui', 'text'],
+    spaces: ['engine.space.graph'],
     params: {
-      nodes: { type: 'integer', min: 2, max: 400, default: 15, effect: 'node count (web, linear); layered derives it from layers × paths' },
+      nodes: { type: 'integer', min: 2, max: 400, default: 15, scale: 'world', effect: 'node count (web, linear); layered derives it from layers × paths' },
       layout: { type: 'string', options: ['layered', 'web', 'linear'], default: 'layered' },
-      layers: { type: 'integer', min: 2, max: 60, default: 8, effect: 'layered: floors between start and end' },
+      layers: { type: 'integer', min: 2, max: 60, default: 8, scale: 'world', effect: 'layered: floors between start and end' },
       width: { type: 'integer', min: 1, max: 16, default: 5, effect: 'layered: columns per floor' },
       paths: { type: 'integer', min: 1, max: 16, default: 4, effect: 'layered: upward walks that make the map' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: 'web: extra edges; linear: side branches' },
@@ -47,10 +48,25 @@ export default {
       placePlayer: { type: 'boolean', default: true },
       attempts: { type: 'integer', min: 0, max: 16, default: 6 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'worldgraph'] },
+    provides: { content: ['zones'], extent: 'space', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'worldgraph'] },
     requires: { capabilities: ['position'] },
     problems: ['node_unreachable', 'node_dead_end', 'edge_crossing', 'template_min', 'repeat_kind', 'graph_fallback'],
     validates: ['template_zone_reused', 'template_range_invalid', 'graph_too_small'],
+  },
+  /**
+   * Planner hook (v2/planner/world.js), graph spaces: a linear, two-way chain through the space's own zones in order
+   * (the first is the start node, the last the end, each one between bound once), or a default chain with no zones.
+   */
+  scaffold(space) {
+    if (!this.card.spaces.includes(space.use)) return null;
+    const zones = (space.zones || []).filter(z => z?.id);
+    if (!zones.length) return { with: { layout: 'linear', nodes: 6, branching: 0, twoWay: 'yes' } };
+    const mid = zones.slice(1, -1);
+    return { with: {
+      layout: 'linear', branching: 0, twoWay: 'yes', nodes: Math.max(2, zones.length), noRepeat: [],
+      start: { zone: zones[0].id }, ...(zones.length > 1 ? { end: { zone: zones.at(-1).id } } : {}),
+      templates: mid.length ? mid.map(z => ({ kind: z.id, zone: z.id, min: 1, max: 1 })) : [{ kind: 'path', weight: 1 }],
+    } };
   },
   validate(raw) {
     const config = withDefaults(this.card, raw);

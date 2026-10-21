@@ -15,6 +15,7 @@ import { prefab, addStamp } from './worlds3d-lib-prefab.js';
 const card = {
   intent: 'Lays out city districts: levelled ground, street grids (regular, organic or radial) with lanes and sidewalks, blocks split into lots, buildings with floor counts and styles, landmarks and street furniture. Lots are queryable (lotAt) for ownership and building games.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     districts: {
       type: 'list', min: 1, required: true, effect: 'one entry per district zone',
@@ -24,7 +25,7 @@ const card = {
         landmarks: { type: 'list', of: { type: 'string' }, default: [] }, grid: { type: 'string', options: ['regular', 'organic', 'radial'], default: 'regular' },
       } },
     },
-    block: { type: 'list', of: { type: 'integer', min: 8, max: 400 }, min: 2, max: 2, default: [48, 48], unit: 'm', effect: 'block size between streets' },
+    block: { type: 'list', of: { type: 'integer', min: 8, max: 400 }, min: 2, max: 2, default: [48, 48], unit: 'm', scale: 'world', effect: 'block size between streets' },
     roadWidth: { type: 'number', min: 3, max: 24, default: 8, unit: 'm' },
     sidewalk: { type: 'number', min: 0, max: 10, default: 2, unit: 'm' },
     interiors: { type: 'boolean', default: false, effect: 'buildings are hollow with doors, floors and ladders' },
@@ -37,7 +38,7 @@ const card = {
     drive: { type: 'string', options: ['right', 'left'], default: 'right' },
     styles: { type: 'object', open: true, default: {}, effect: 'style -> {wall, roof, window, floor, trim...} voxel block overrides' },
   },
-  provides: { services: ['roadgraph', 'lotAt'], events: [] },
+  provides: { content: ['structures', 'road-network'], extent: 'overlay', services: ['roadgraph', 'lotAt'], events: [] },
   reads: [],
 };
 
