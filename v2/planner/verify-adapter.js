@@ -22,7 +22,7 @@ import { prop } from '../kernel/guards.js';
 /** Something carrying verification problems: a Verification, a StaticPlot. @typedef {{ problems?: VerifyProblem[] } | null | undefined} WithProblems */
 /** A solver result as v2/verify reports it (plot layer or solve.js). @typedef {{ completable?: boolean | null, exhaustive?: unknown, endings?: Record<string, unknown>, beatsNeverFired?: string[], states?: number | null, [k: string]: unknown }} SolveLike */
 /** v2/verify's playtest result (the archive sample keeps snapshots). @typedef {{ winnable?: boolean, win?: unknown, losses?: unknown, idle?: unknown, explored?: unknown, framesSimulated?: number, timeline?: unknown, sample?: Array<{ key?: unknown, frames?: unknown, score?: unknown }>, [k: string]: unknown }} PlaytestRun */
-/** v2/verify's verify() report, as far as this adapter reads it. @typedef {SolveLike & { ok?: boolean, plot?: SolveLike | null, solve?: SolveLike | null, problems?: VerifyProblem[], playtest?: PlaytestRun | null, timings?: Record<string, number> }} VerifyReport */
+/** v2/verify's verify() report, as far as this adapter reads it. @typedef {SolveLike & { ok?: boolean, plot?: SolveLike | null, solve?: SolveLike | null, problems?: VerifyProblem[], playtest?: PlaytestRun | null, strategies?: { ran?: BotRun[] } | null, timings?: Record<string, number> }} VerifyReport */
 /** @typedef {{ verify?: (doc: Doc, registry: RegistryLike, logic: LogicLike, opts: Record<string, unknown>) => Promise<VerifyReport | null | undefined> }} VerifyModule */
 /** @typedef {{ completable: boolean | null | undefined, exhaustive: unknown, endings: Record<string, unknown>, beatsNeverFired: string[], states: number | null }} SolveSummary */
 /**
@@ -64,18 +64,48 @@ async function verifyModule() {
   return loaded;
 }
 
-// The publish gate: the game must not crash. A playtest agent plays it headless; any thrown step,
-// NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks publishing.
+// The publish gate (ARCHITECTURE.md §1.5, §6.2): the game runs and is viable. A playtest agent plays it headless;
+// any thrown step, NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks
+// publishing. When the playbots' report is given, the game must also be playable: the player can act, the bot its
+// modes name (card.mode.bot) plays it, and progress toward a win happens. No time-to-finish requirement.
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss']);
 // Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
 /** @type {Set<string | undefined>} */
 const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
-/** @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems] @returns {{ viable: boolean, viability: string | null }} */
-export function viability(play, problems = []) {
-  const crash = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage));
-  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ') : null;
-  return { viable: !why, viability: why };
+/** A strategy run as v2/verify reports it. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string }} BotRun */
+/** @param {unknown} v @returns {v is { marksTotal?: number }} */
+const isTimeline = v => typeof v === 'object' && v !== null;
+/**
+ * @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems]
+ * @param {{ ran?: BotRun[] } | null} [strategies] the strategies stage's report; given, the playability checks apply
+ * @returns {{ viable: boolean, viability: string | null }}
+ */
+export function viability(play, problems = [], strategies) {
+  const why = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage)).map(p => `${p.code}: ${p.message}`);
+  if (strategies !== undefined && !why.length) why.push(...unplayable(play, problems, strategies));
+  return why.length ? { viable: false, viability: why.slice(0, 3).join('; ') } : { viable: true, viability: null };
 }
+
+/** @param {unknown} play @param {VerifyProblem[]} problems @param {{ ran?: BotRun[] } | null} strategies @returns {string[]} */
+function unplayable(play, problems, strategies) {
+  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: unknown } | null} */ (isObjLike(play) ? play : null);
+  if (!pt) return ['not_played: the playtest agent did not play the game'];
+  const stuck = problems.find(p => p.code === 'stuck_state');
+  if (stuck || (typeof pt.explored === 'number' && pt.explored <= 1)) return [`cannot_act: ${stuck?.message || 'no input moves the game past its first state'}`];
+  const bots = (strategies?.ran || []).filter(r => String(r.reason || '').startsWith('mode '));
+  if (!bots.length) return ['no_mode_bot: nothing in the game declares its core loop (card.mode), so no bot can prove it plays'];
+  const progressed = Boolean(pt.winnable) || (isTimeline(pt.timeline) && (pt.timeline.marksTotal ?? 0) > 0);
+  /** @type {string[]} */
+  const out = [];
+  for (const b of bots) {
+    if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);
+    else if (b.metrics && 'skipped' in b.metrics) out.push(`mode_absent: the ${b.id} bot (${b.reason}) found nothing to play (${b.metrics.skipped})`);
+    else if (!(b.proven || []).length && !progressed) out.push(`no_progress: the ${b.id} bot (${b.reason}) and the explorer made no progress toward a win`);
+  }
+  return out;
+}
+/** @param {unknown} v @returns {v is Record<string, unknown>} */
+const isObjLike = v => typeof v === 'object' && v !== null;
 
 /**
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic
@@ -103,7 +133,7 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
       /** @type {Verification} */
       const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
         playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })) } : null,
-        ...viability(pt, problems),
+        ...(playtestMs ? viability(pt, problems, r?.strategies ?? null) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
       // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.
