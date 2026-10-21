@@ -42,7 +42,10 @@ import { isObj, isList, prop } from '../kernel/guards.js';
 /**
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
- *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null }} Loop
+ *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null,
+ *   targets: string | null }} Loop
+ * `targets`: the service through which the loop tells each of its AI-controlled participants where to go next (its
+ * next checkpoint, the ball): kernel/types.d.ts TargetService; a driver with card.drives.targets steers them by it.
  */
 /** @typedef {{ use: string, path: string, loop: Loop }} LoopPrimitive */
 /** @typedef {LoopEnd & { use: string, path: string }} PlacedEnd */
@@ -82,6 +85,7 @@ export function cardLoop(card) {
     space: /** @type {Array<string | string[]>} */ (space.filter(x => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')))),
     via: typeof mode?.via === 'string' ? mode.via : null, bot: typeof mode?.bot === 'string' ? mode.bot : null, wraps: Boolean(mode?.wraps),
     outcome: outcomeOf(own?.outcome),
+    targets: typeof (own?.targets ?? mode?.targets) === 'string' ? String(own?.targets ?? mode?.targets) : null,
   };
 }
 

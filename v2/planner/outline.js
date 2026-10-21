@@ -238,7 +238,7 @@ Mechanics no primitive covers (do not fake them): ${selection.gaps.map(g => g.de
 A valid skeleton built from those primitives (structure only, placeholder names; it is a scaffold, not the game):
 ${JSON.stringify(scaffoldView(skeleton))}
 
-Write the outline for THIS idea: an evocative title and premise, ${decomposition.acts} acts of beats, ${decomposition.zones} or more distinct named zones, the archetypes and their spawns zone by zone, characters with roles and lines, items, quests where the primitives run them, params tuned to the idea, and an ending. Fill every content requirement listed in the instructions.`;
+Write the outline for THIS idea: an evocative title and premise, ${decomposition.acts ? `${decomposition.acts} acts of beats, ` : ''}${decomposition.zones ? `${decomposition.zones} or more distinct named zones` : "the skeleton's zones as distinct named places"}, the archetypes and their spawns zone by zone, characters with roles and lines, items, quests where the primitives run them, params tuned to the idea, and an ending. Fill every content requirement listed in the instructions.`;
 }
 
 /**

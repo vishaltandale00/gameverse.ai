@@ -18,9 +18,10 @@
 //   opponents     AI-controlled participants act: a loop whose groups have AI control (a group not seating the player
 //                 whose engage.join.where field is 'ai'; with no `where`, the non-player participants of a loop whose
 //                 declared opponent is 'ai-*'), and a play spec whose opponent is 'ai-*' (options.opponent), need a
-//                 primitive that drives them (card.drives, control 'ai': the loop itself, one that names the loop, or one
-//                 whose components they carry; for the play spec, a driving core loop or a component driver with a placed
-//                 carrier) -> loop_opponent_inert; and when such a loop declares a game-ending lose, what its drivers make
+//                 primitive that drives them (card.drives, control 'ai': the loop itself, one that names the loop, one
+//                 that steers the participants of loops declaring a target service (drives.targets, card.loop.targets),
+//                 or one whose components they carry; for the play spec, a driving core loop or a component driver with
+//                 a placed carrier) -> loop_opponent_inert; and when such a loop declares a game-ending lose, what its drivers make
 //                 the opponents do (drives.actions/effects/events/movement, and the effects in their action data) must
 //                 be something that changes what the lose reads (lose.reads.by) -> loop_lose_unaffected_by_opponent.
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
@@ -55,7 +56,7 @@ import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
  */
 /**
  * A card's drives declaration, normalised (card.drives; types.d.ts Drives).
- * @typedef {{ control: string, components: string[], loops: string[], actions: string[], effects: string[], events: string[], movement: boolean }} Driving
+ * @typedef {{ control: string, components: string[], loops: string[], targets: boolean, actions: string[], effects: string[], events: string[], movement: boolean }} Driving
  */
 /**
  * @typedef {{ code: string, path: string, message: string, hint: string, severity: 'error' | 'warning', stage: 'loop', primitive: string, need: LoopNeed }} LoopProblem
@@ -79,10 +80,16 @@ const strs = v => (Array.isArray(v) ? v.filter(isStr).map(String) : []);
 export function drivesOf(card) {
   const d = prop(card, 'drives');
   if (!isObj(d) || !isStr(d.control)) return null;
-  return { control: String(d.control), components: strs(d.components), loops: strs(d.loops), actions: strs(d.actions), effects: strs(d.effects), events: strs(d.events), movement: d.movement === true };
+  return { control: String(d.control), components: strs(d.components), loops: strs(d.loops), targets: d.targets === true, actions: strs(d.actions), effects: strs(d.effects), events: strs(d.events), movement: d.movement === true };
 }
-/** Does a driver drive the participants of its own loop (it names neither components nor loops)? @param {Driving} d */
-export const drivesOwn = d => !d.components.length && !d.loops.length;
+/** Does a driver drive the participants of its own loop (it names no components, loops or target services)? @param {Driving} d */
+export const drivesOwn = d => !d.components.length && !d.loops.length && !d.targets;
+/**
+ * Does a driver serve a loop by what the loop declares: it names the loop (drives.loops), or it steers the participants
+ * of loops with a target service and the loop declares one (drives.targets, card.loop.targets)?
+ * @param {Driving} d @param {string} use the loop primitive's id @param {Loop | null | undefined} loop
+ */
+export const drivesLoop = (d, use, loop) => d.loops.some(r => satisfies(use, r)) || (d.targets && Boolean(loop?.targets));
 /**
  * Can what a driver's entities do change what a loop end reads (its reads.by)? Their declared actions, effects, events
  * or movement, plus `effects`: the effects its instance's action data runs. @param {Driving} d @param {import('./loop.js').ReadsBy} by @param {string[]} [effects]
@@ -278,7 +285,7 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
   /** Does an archetype carry component C (its own components, or a spawn rule's override placing it)? @param {string} a @param {string} C */
   const carries = (a, C) => prop(prop(arches.find(x => x.id === a), 'components'), C) !== undefined || rules.some(r => prop(r, 'archetype') === a && prop(prop(r, 'components'), C) !== undefined);
   /** The drivers of a loop's AI participants (the loop, or the host it plays through, driving its own). @param {LoopInstance} l @param {Set<string>} ai @returns {DriverInstance[]} */
-  const driving = (l, ai) => drivers.filter(d => ((d.use === l.use || d.use === l.loop.via) && drivesOwn(d.drives)) || d.drives.loops.some(r => satisfies(l.use, r)) || [...ai].some(a => d.drives.components.some(C => carries(a, C))));
+  const driving = (l, ai) => drivers.filter(d => ((d.use === l.use || d.use === l.loop.via) && drivesOwn(d.drives)) || drivesLoop(d.drives, l.use, l.loop) || [...ai].some(a => d.drives.components.some(C => carries(a, C))));
   /** Core loops that declare AI-controlled participants or an AI opponent: they answer the play spec's opponent (checked above). @type {Set<string>} */
   const aiCore = new Set();
   const isCore = (/** @type {LoopInstance} */ l) => l === owner || !coreIds || coreIds.includes(l.use);
@@ -332,6 +339,16 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
         opponents = new Set(others.filter(x => arches.some(a => a.id === x)));
         hasAI = loopAI && others.length > 0;
         aiArch = opponents;
+      } else if (groups.length && isStr(prop(join, 'field')) && prop(join, 'param') === P) {
+        // Groups that list their members (engage.join.field) with no component seating them: the AI-controlled ones
+        // are those not seating the player whose seating field is 'ai', or (no `where`, an AI opponent) those whose
+        // members do not include the player.
+        const field = String(prop(join, 'field'));
+        const isPlayer = (/** @type {string} */ m) => m === 'player' || m === playerArch;
+        const ai = groups.filter(g => (where ? !seats(g) && Object.keys(where).some(k => (g[k] ?? fieldDefault(k)) === 'ai') : loopAI && !list(g[field]).some(m => isStr(m) && isPlayer(m))));
+        const others = ai.flatMap(g => list(g[field]).filter(isStr).map(String)).filter(m => !isPlayer(m));
+        hasAI = others.length > 0;
+        aiArch = new Set(others.filter(x => arches.some(a => a.id === x)));
       }
     }
     // Its AI-controlled participants act: a primitive drives them, and (when its lose ends the game) what they do can
@@ -342,7 +359,7 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       const ds = driving(l, aiArch);
       const need = /** @type {LoopNeed} */ ({ kind: 'driver', control: 'ai', loop: l.use, archetypes: [...aiArch].sort(), ...(lose ? { by: lose } : {}) });
       const does = lose ? ` and can change what its lose reads (${byText(lose)})` : '';
-      if (!ds.length) push(LOOP_CODES.inert, l, l.path, `its loop has AI-controlled participants (${need.archetypes?.join(', ') || P}) and no primitive of the document drives them (card.drives control 'ai': this loop, one naming it, or one whose components they carry)`, `add a primitive that drives them${does} (card.drives), with its component on them`, need);
+      if (!ds.length) push(LOOP_CODES.inert, l, l.path, `its loop has AI-controlled participants (${need.archetypes?.join(', ') || P}) and no primitive of the document drives them (card.drives control 'ai': this loop, one naming it, one steering by its target service, or one whose components they carry)`, `add a primitive that drives them${does} (card.drives), with its component on them`, need);
       else if (lose && !ds.some(d => drivesBy(d.drives, lose, d.effects))) push(LOOP_CODES.loseUnaffected, l, l.path, `its lose reads ${readsText(readsOf(l.loop.lose))}, changed by ${byText(lose)}, and nothing its AI participants' drivers (${ds.map(d => d.use).join(', ')}) make them do changes it`, `give the opponents an action whose effects change it (the card's declared example), or add a driver whose entities do (${byText(lose)})`, need);
     }
     if ((hasAI || loopAI) && isCore(l)) aiCore.add(l.use);

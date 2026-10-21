@@ -224,7 +224,10 @@ test('(e) three unrelated ideas go through the same steps and prompts, none of t
     assert.equal(d.core.loop, plan.spec.loop);
     assert.deepEqual(d.concepts.map(c => c.id), plan.concepts.map(c => c.id));
     assert.equal(d.mechanics.filter(m => d.concepts.some(c => c.id === m.from)).length, d.mechanics.length, 'every mechanic comes from a concept');
-    assert.equal(d.acts, plan.story?.acts ?? 3, 'acts asked only for a narrative');
+    // The story's size is asked only for a narrative and never invented: a pure loop carries no act or zone count.
+    assert.equal(d.acts, plan.story?.acts, 'acts asked only for a narrative');
+    assert.equal(d.zones, plan.story?.zones, 'zones asked only for a narrative');
+    if (!plan.spec.narrative) assert.ok(!('acts' in d) && !('zones' in d), `${prompt}: no invented counts`);
     for (const c of writer.calls) { const k = c.schema.name; if (!systems.has(k)) systems.set(k, new Set()); systems.get(k).add(c.system); }
   }
   // One system prompt per form across the three ideas: nothing in the steps depends on the idea.

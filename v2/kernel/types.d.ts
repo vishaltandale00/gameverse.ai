@@ -147,8 +147,10 @@ export interface CardInput {
 }
 /**
  * card.drives: the primitive acts for AI-controlled entities (opponents, rivals, AI sides). `components`: it drives
- * every entity carrying one of them; `loops`: the AI participants of these loop primitives (ids or prefixes); neither:
- * the AI-controlled participants of its own loop. What the driven entities do, in the vocabulary of a loop end's
+ * every entity carrying one of them; `loops`: the AI participants of these loop primitives (ids or prefixes);
+ * `targets`: the AI participants of every loop that declares a target service (card.loop.targets / card.mode.targets,
+ * see TargetService), steered toward the target it gives each; none of these: the AI-controlled participants of its
+ * own loop. What the driven entities do, in the vocabulary of a loop end's
  * reads.by: player-style `actions` they take, `effects` they run, `events` they emit, `movement` (their bodies move,
  * touch and pass). Checked against the loops' losses (planner/loop-check.js loop_lose_unaffected_by_opponent).
  */
@@ -156,6 +158,7 @@ export interface Drives {
   control: 'ai';
   components?: string[];
   loops?: string[];
+  targets?: boolean;
   actions?: string[];
   effects?: string[];
   events?: string[];
@@ -176,6 +179,17 @@ export interface CardMode {
   lose?: { param: string };
   /** A registered verify strategy id (v2/verify/strategies). */
   bot?: string;
+  /** The service (TargetService) its install provides: where each of its AI-controlled participants goes next. */
+  targets?: string;
+}
+/**
+ * A loop's target service (card.loop.targets / card.mode.targets names it; the loop provides it at install): its
+ * AI-controlled participants (entity ids; never the player) and, for each, where it should go now: a position, a zone
+ * or an entity, or null while it has nowhere to go (a countdown, a kickoff, finished).
+ */
+export interface TargetService {
+  participants(): string[];
+  target(id: string): { at?: number[] | string; zone?: string; entity?: string } | null;
 }
 export interface Card extends CardInput {
   params: Params;

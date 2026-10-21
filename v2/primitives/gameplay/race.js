@@ -49,13 +49,15 @@ export default {
       events: ['race_countdown', 'race_start', 'checkpoint', 'checkpoint:*', 'lap', 'best_lap', 'race_finished', 'race_finished:*', 'wrong_way', 'race_timeout', 'race_dnf', 'ghost_saved', 'position_changed'],
       vars: ['race.position', 'race.lap', 'race.time', 'race.timer', 'race.best'],
       actions: [],
+      services: ['race.targets'],
     },
     requires: { capabilities: ['position'] },
     reads: [],
     // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
     engage: { participants: { param: 'racers' } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
-    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, win: { param: 'onWin', reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
+    // Its target service (mode.targets): each AI-controlled racer's next checkpoint zone while the race runs.
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {
@@ -145,6 +147,16 @@ export default {
       }
       r.next = (r.next + 1) % N;
     };
+    // The target service (card.mode.targets): every race of the document answers for its own racers.
+    const races = (rt.caches.raceTargets ??= []);
+    races.push({
+      participants: () => Object.entries(rt.state.prim[key]?.racers || {}).filter(([id]) => id !== 'player').map(([id]) => id),
+      target: id => { const s = rt.state.prim[key], r = s?.racers?.[id]; return s?.state === 'running' && r && !r.finished ? { zone: CP[r.next] } : null; },
+    });
+    if (!rt.hasService('race.targets')) rt.provide('race.targets', {
+      participants: () => [...new Set(races.flatMap(x => x.participants()))],
+      target: id => races.map(x => x.target(id)).find(Boolean) ?? null,
+    });
     rt.system('rules', rt => {
       const s = st();
       if (s.request === 'reset') { s.state = 'idle'; s.racers = {}; s.order = []; s.request = null; if (rt.entity(`ghost-${config.id}`)) rt.despawn(`ghost-${config.id}`); }

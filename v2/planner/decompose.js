@@ -28,8 +28,8 @@ import { obj, list, objects, isStr, isObj, messageOf, prop } from '../kernel/gua
  * @property {SpaceRole[]} spaces
  * @property {string[]} views
  * @property {string} movement  ground | air | water | track | none (MOVEMENT)
- * @property {number} acts
- * @property {number} zones
+ * @property {number} [acts]  the story's acts: only for a narrative idea, as the model wrote them (never a default)
+ * @property {number} [zones]  the story's places: only for a narrative idea, as the model wrote them (never a default)
  * @property {Concept[]} concepts  the idea's source concepts (decomposeIdea step 1); a mechanic's `from` is a concept id
  * @property {import('./play-spec.js').Core} [core]  the play spec (decomposeIdea always writes one; normalize() adds an undecided one with a registry)
  */
@@ -45,7 +45,7 @@ export const MOVEMENT = ['ground', 'air', 'water', 'track', 'none'];
 const str = { type: 'string' };
 export const DECOMPOSITION_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'premise', 'references', 'mechanics', 'spaces', 'views', 'movement', 'acts', 'zones', 'tone'],
+  required: ['title', 'premise', 'references', 'mechanics', 'spaces', 'views', 'movement', 'tone'],
   properties: {
     title: str, premise: str, tone: str,
     references: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['name', 'kind', 'keeps'], properties: {
@@ -66,7 +66,7 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - spaces: the kinds of space the game is played in (an overworld and a separate battle screen are two spaces). kind: continuous-3d, continuous-2d, tiles-side (side view), tiles-topdown, board (discrete turn-based grid), locations (rooms/places joined by exits), none (cards, menus, dialogue).
 - views: camera/presentation views (1p 3p td side iso board ui text). The FIRST view is the game's main camera: keep the genre's own (a platformer is side, a top-down farm is td, a 3D adventure is 3p, a board or puzzle grid is board, a card game is ui).
 - movement: how the player's avatar moves most of the time: ground (walking, running, jumping, driving on foot-level terrain), air (flying is the core loop), water (swimming/sailing is the core loop), track (lanes or a fixed course), none (no avatar: cards, boards, falling pieces, menus).
-- acts and zones: a sensible size for a first version (acts 2-4, zones 3-8).
+- acts and zones (a narrative idea only): the story's size for a first version (acts 2-4, zones 3-8).
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
 
@@ -400,7 +400,6 @@ export function normalize(input, prompt = '', registry = null) {
     spaces: objects(d.spaces).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? String(s.kind) : 'locations', description: String(s.description || '').slice(0, 200) })),
     views: list(d.views).filter(v => VIEWS.includes(v)).map(String),
     movement: isStr(d.movement) && MOVEMENT.includes(d.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
-    acts: clampInt(d.acts, 1, 6, 3), zones: clampInt(d.zones, 2, 12, 5),
   };
   // The play spec: the model's (narrowed); without one (the offline mode) the collection decides what it would have said.
   if (registry || isObj(d.core)) {
@@ -408,6 +407,13 @@ export function normalize(input, prompt = '', registry = null) {
     out.core.mashup = linkMashup(out.core.mashup, mechanics);
     // No avatar, no avatar movement: the medium follows the interaction (an undecided one decides nothing here).
     if (out.core.interaction && !isAvatar(out.core.interaction)) out.movement = 'none';
+  }
+  // The story's size exists only for a narrative idea (not one the play spec says is a pure loop), and only as the
+  // model wrote it: no act or zone count is ever invented. Place counts come from declarations (presets.js placesFor).
+  if (out.core?.narrative !== false) {
+    const acts = clampInt(d.acts, 1, 6, 0), zones = clampInt(d.zones, 2, 12, 0);
+    if (acts) out.acts = acts;
+    if (zones) out.zones = zones;
   }
   return out;
 }
@@ -495,5 +501,5 @@ export function decomposeOffline(prompt, answers = [], registry = null) {
   const mechanics = VERBS.filter(([, , re]) => re.test(lower)).map(([id, description]) => ({ id, verb: id, description, from: '', importance: 'core' }));
   // Only what the sentence asks for: no exploring or story is added to an idea that does not name them.
   const views = [/\bfirst[- ]person\b|\bfps\b/.test(lower) && '1p', /\bthird[- ]person\b|\b3d\b/.test(lower) && '3p', /\btop[- ]down\b/.test(lower) && 'td', /\bside[- ]?scroll\w*\b|\bplatform\w*\b/.test(lower) && 'side', /\btext\b|\bstory\b|\bmystery\b/.test(lower) && 'text'].filter(Boolean);
-  return { ...normalize({ title: titleFrom(prompt), premise: prompt, references, mechanics, spaces: [], views, acts: 3, zones: 5, tone: '' }, prompt, registry), source: 'offline' };
+  return { ...normalize({ title: titleFrom(prompt), premise: prompt, references, mechanics, spaces: [], views, tone: '' }, prompt, registry), source: 'offline' };
 }

@@ -164,7 +164,7 @@ const grid = registry => ({ id: 'maze', use: 'engine.space.grid', with: { size: 
 /** A selection mapping one core mechanic to `systems`. */
 const selectionOf = (registry, systems, description, space = graph) => ({ systems: [...systems], spaces: [space(registry)], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
   mechanics: [{ id: 'core', verb: description.split(' ')[0], description, importance: 'core', primitives: systems.filter(s => s.startsWith('gameplay.')), candidates: [], source: 'test', score: 1, from: '' }] });
-const decompositionOf = (description, core) => ({ version: 'test', title: 'Test Game', premise: `${description}. A test.`, tone: 'brisk', references: [], views: ['ui'], spaces: [], movement: 'none', acts: 1, zones: 2,
+const decompositionOf = (description, core) => ({ version: 'test', title: 'Test Game', premise: `${description}. A test.`, tone: 'brisk', references: [], views: ['ui'], spaces: [], movement: 'none',
   mechanics: [{ id: 'core', verb: description.split(' ')[0], description, from: '', importance: 'core' }], core: { theme: '', narrative: false, mashup: [], lose: '', ...core } });
 const COLLECTIONS = {
   sides: { systems: ['gameplay.test.duel'], description: 'two camps trade blows in turns until one camp falls', core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'the other camp falls' } },
@@ -395,7 +395,7 @@ const memoryCtx = () => {
 const scripted = (name, mapped) => {
   const c = COLLECTIONS[name];
   // The iterative decomposition's forms; 'text' is the graph's view (the old 'map' was never a decomposition view).
-  const decompose = decomposer(planFrom({ title: 'The Test Game', premise: `${c.description}.`, tone: 'brisk', views: ['text'], acts: 1, zones: 2, movement: 'none',
+  const decompose = decomposer(planFrom({ title: 'The Test Game', premise: `${c.description}.`, tone: 'brisk', views: ['text'], movement: 'none',
     mechanics: [{ id: 'core', verb: c.description.split(' ')[0], description: c.description, from: '', importance: 'core' }], spaces: [{ role: 'field', kind: 'locations', description: 'a field' }],
     core: { loop: 'core', lose: '', theme: 'test', narrative: false, mashup: [], ...c.core } }));
   return fakeWriter([(req) => {

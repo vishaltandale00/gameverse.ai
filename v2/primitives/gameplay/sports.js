@@ -18,7 +18,8 @@ export default {
     // The player plays: it joins the first team when no team lists it.
     engage: { join: { param: 'teams', field: 'members' } },
     // Ball-sport mode: the player's team scores into goal zones against the other team before the clock runs out.
-    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, win: { param: 'onWin', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
+    // Its target service (mode.targets): every team member but the player goes for the ball while play is live.
+    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, targets: 'sports.targets', win: { param: 'onWin', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
     intent: 'Ball sports: ball, teams, goal zones, kickoffs, match clock with periods and overtime (golden goal or extra time), mercy rule, kicks, touches and last-touch scoring, possession; the ball rides the physics space when it has dynamics, else it is simulated here with drag, gravity, bounces and hits from players and cars.',
     views: ['td', 'side', '3p'],
     params: {
@@ -47,7 +48,7 @@ export default {
       onWin: { type: 'effects', default: [] }, onLose: { type: 'effects', default: [] }, onDraw: { type: 'effects', default: [] },
       endGame: { type: 'boolean', default: true },
     },
-    provides: { events: ['kickoff', 'goal', 'goal:*', 'period_start', 'period_end', 'overtime', 'match_end', 'ball_touched', 'kick'], vars: ['score.*', 'match.clock', 'match.period', 'match.live'], actions: ['kick'] },
+    provides: { events: ['kickoff', 'goal', 'goal:*', 'period_start', 'period_end', 'overtime', 'match_end', 'ball_touched', 'kick'], vars: ['score.*', 'match.clock', 'match.period', 'match.live'], actions: ['kick'], services: ['sports.targets'] },
     actionSpace: { kick: { kind: 'impulse', params: { power: { min: 0, max: 30 } } } },
     requires: { capabilities: ['position'] },
     reads: [],
@@ -113,6 +114,12 @@ export default {
       const dir = norm(v && Array.isArray(v.dir) ? v3(v.dir) : d), power = typeof v === 'object' && v.power !== undefined ? v.power : config.kickPower;
       setVel(b, mul(dir, power)); touch(s, p.id);
       rt.emit('kick', { who: p.id, power });
+    });
+
+    // The target service (card.mode.targets): the AI-controlled team members and the ball they go for in play.
+    rt.provide('sports.targets', {
+      participants: () => config.teams.flatMap(t => members(t)).filter(e => e.id !== 'player').map(e => e.id),
+      target: () => (rt.state.prim[ID]?.phase === 'play' && ball() ? { entity: config.ballId } : null),
     });
 
     rt.system('physics', rt => {
