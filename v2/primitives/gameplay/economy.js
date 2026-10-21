@@ -3,7 +3,7 @@
 // accepted goods, restocking by day and haggling. A shop opens through
 // open_shop, an entity with a `shop` component (shop id), or talking to its owner.
 import { give, take, count, room, bag } from './inventory.js';
-import { item as itemDef, matches, whoKey } from './items-lib.js';
+import { item as itemDef, matches, whoKey, itemsData, TOKEN_FIELDS } from './items-lib.js';
 
 const KEY = 'gameplay.economy';
 const parse = v => (typeof v === 'string' ? { item: v, count: 1 } : { item: v?.item, count: Math.max(1, v?.count ?? 1) });
@@ -23,7 +23,7 @@ export default {
     views: ['any'],
     params: {
       currencies: { type: 'list', default: [{ id: 'gold', name: 'Gold' }], min: 1, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' },
         var: { type: 'string', effect: "var holding the balance (default 'money.<id>')" },
         start: { type: 'number', default: 0, min: 0, effect: 'starting balance' },
         items: { type: 'list', default: [], of: { type: 'ref', to: 'item' }, effect: 'items that convert into this currency when gained (an item with the currency id converts too)' },
@@ -32,7 +32,7 @@ export default {
       shops: { type: 'list', default: [], of: { type: 'object', fields: {
         id: { type: 'string', required: true },
         owner: { type: 'ref', to: 'character', effect: 'talking to this character opens the shop' },
-        currency: { type: 'string', effect: 'currency id (default the first)' },
+        currency: { type: 'ref', to: 'currency', effect: 'currency id (default the first)' },
         stock: { type: 'list', default: [], of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', default: 1, min: 0 }, price: { type: 'number', min: 0 } } } },
         restock: { type: 'string', default: 'never', options: ['daily', 'weekly', 'never'], effect: 'stock refills when var time.day advances past a day/week boundary' },
         buys: { type: 'list', default: [], of: { type: 'string' }, effect: "item tokens the shop buys (kind, tag, id, '*'); [] buys nothing" },
@@ -51,6 +51,9 @@ export default {
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],
     defines: [{ kind: 'shop', in: 'shops' }, { kind: 'currency', in: 'currencies' }],
+    data: itemsData([...TOKEN_FIELDS, 'value']),
+    // Shapes of the archetype components this primitive owns.
+    components: { shop: { type: 'ref', to: 'shop', effect: 'using this entity opens the shop' } },
   },
   logic(logic) {
     const money = (rt, e) => rt.caches.economy?.(e) ?? null;
@@ -60,14 +63,6 @@ export default {
     logic.effect('pay', { refs: e => (e.currency ? [['currency', e.currency]] : []), check: amountCheck, run: (e, rt) => { if (money(rt, e)?.spend(e.amount, e.currency)) rt.emit('paid', { to: e.to ?? null, amount: e.amount, currency: e.currency ?? null }); } });
     logic.effect('open_shop', { refs: e => [['shop', e.shop]], run: (e, rt, c) => rt.caches.shopOpen?.(whoKey(e.who, c), e.shop) });
     logic.effect('close_shop', { run: (e, rt, c) => rt.caches.shopClose?.(whoKey(e.who, c)) });
-  },
-  validate(config, doc, ctx, inst = {}) {
-    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], cur = new Set(config.currencies.map(c => c.id));
-    const seen = new Set();
-    for (const c of config.currencies) { if (seen.has(c.id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate currency '${c.id}'` }); seen.add(c.id); }
-    for (const s of config.shops) if (s.currency && !cur.has(s.currency)) errors.push({ code: 'shop_invalid', path: P, message: `shop '${s.id}' uses unknown currency '${s.currency}'`, hint: [...cur].join(', ') });
-    return errors;
   },
   install(rt, config) {
     const curs = new Map(config.currencies.map(c => [c.id, c])), shops = new Map(config.shops.map(s => [s.id, s]));
@@ -146,7 +141,7 @@ export default {
     });
     rt.on('interacted', d => {
       const t = rt.entity(d.target); if (!t) return;
-      if (typeof t.components.shop === 'string' && shops.has(t.components.shop)) open(d.who, t.components.shop);
+      if (shops.has(t.components.shop)) open(d.who, t.components.shop);
       else if (config.ownerOpens && d.kind === 'talk' && !t.components.interact?.dialogue) { const s = config.shops.find(x => x.owner === t.id); if (s) open(d.who, s.id); }
     });
     rt.options(rt => {

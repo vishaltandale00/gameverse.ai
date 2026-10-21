@@ -154,7 +154,7 @@ const kitchen = (discover = 'learned') => doc({ resources: [{ id: 'stamina', max
   content: { items: ITEMS, archetypes: [hero, { id: 'campfire', kind: 'prop', components: { station: 'fire' } }],
     recipes: [
       { id: 'r_stew', station: 'cook', inputs: [{ tag: 'meat', count: 1 }, { tag: 'fruit', count: 1 }], output: { item: 'stew', count: 1 }, time: 0.5, learned: true, merge: true },
-      { id: 'r_ingot', station: 'forge', inputs: [{ item: 'ore', count: 2 }], output: { item: 'ingot', count: 1 }, learned: 'smithing' },
+      { id: 'r_ingot', station: 'forge', inputs: [{ item: 'ore', count: 2 }], output: { item: 'ingot', count: 1 }, learnedFlag: 'smithing' },
       { id: 'r_secret', station: 'fire', inputs: [{ item: 'apple', count: 2 }], output: { item: 'gem', count: 1 } },
     ] },
 });
@@ -205,7 +205,11 @@ test('crafting: replay, bad config codes and game instances', () => {
   bad.content.recipes[2].output.item = 'nothing';
   bad.systems[2].with.discover = 'osmosis';
   const c = codes(checkWith(bad));
-  for (const code of ['recipe_invalid', 'ref_unknown', 'param_option']) assert.ok(c.includes(code), code);
+  for (const code of ['recipe_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  // Input and output items are content.recipes' declared references (card.data): ref_unknown at their paths (warnings
+  // until kernel/document.js DECLARATIONS_ENFORCED) where the validator's were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of [`ref_unknown@content.recipes[1].inputs[${bad.content.recipes[1].inputs.length - 2}].item`, 'ref_unknown@content.recipes[2].output.item']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.crafting')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -361,6 +365,8 @@ test('economy: replay, bad config codes and game instances', () => {
   bad.plot.storyboard = { acts: [{ id: 'a', beats: [{ id: 'b', do: [{ do: 'open_shop', shop: 'bakery' }, { do: 'give_money', amount: -5 }] }] }] };
   bad.systems.push({ use: 'plot.storyboard' });
   const c = codes(checkWith(bad));
-  for (const code of ['shop_invalid', 'ref_unknown', 'param_option', 'id_duplicate', 'effect_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['ref_unknown', 'param_option', 'id_duplicate', 'effect_invalid']) assert.ok(c.includes(code), code);
+  // A shop's currency is a reference to the currency kind (card.defines): ref_unknown at its path where shop_invalid was.
+  assert.ok(checkWith(bad).errors.some(x => x.code === 'ref_unknown' && x.path.endsWith('.shops[0].currency')));
   for (const x of gameInstances('gameplay.economy')) assert.deepEqual(x.paramErrors, [], x.game);
 });
