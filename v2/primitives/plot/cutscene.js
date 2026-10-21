@@ -157,8 +157,8 @@ export default {
     rt.system('plot', rt => { const a = st(rt).active; if (!a) return; if (a.hold > 0) a.hold--; pump(); }, ID);
     rt.options(rt => {
       const a = st(rt).active; if (!a) return [];
-      if (canSkip(a)) return [{ label: `skip ${a.id}`, actions: { skip_cutscene: true } }];
-      return [{ label: `watch ${a.id}`, actions: {}, steps: Math.max(1, Math.min(remaining() + 1, ticks(rt, config.maxSeconds))) }];
+      if (canSkip(a)) return [{ label: `skip ${a.id}`, text: 'Skip', actions: { skip_cutscene: true } }];
+      return [{ label: `watch ${a.id}`, text: 'Watch', actions: {}, steps: Math.max(1, Math.min(remaining() + 1, ticks(rt, config.maxSeconds))) }];
     });
   },
 };

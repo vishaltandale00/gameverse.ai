@@ -106,7 +106,7 @@ export default {
       if (!mine) { fill(menu, el('p.gv-dim', { text: view?.turn && view.turn !== 'player' ? 'Waiting…' : '' })); items = []; return; }
       if (cats.length === 1 && !cats[0].direct) { level = 'items'; cat = cats[0].id; }
       if (level === 'root') items = cats.map(c => btn(c.label, () => (c.direct ? choose(c.items[0]) : (level = 'items', cat = c.id, lastMenuSig = '', index = 0, paintMenu()))));
-      else items = (cats.find(c => c.id === cat)?.items || []).map(it => btn(it.label || titleCase(it.id), () => choose(it), { disabled: it.enabled === false, type: it.type, sub: [isNum(it.pp) ? `PP ${it.pp}/${it.ppMax ?? it.pp}` : '', isNum(it.cost) && it.cost ? `${it.cost} AP` : '', isNum(it.count) ? `×${it.count}` : '', it.hit ? `${Math.round(Object.values(it.hit)[0])}% hit` : ''].filter(Boolean).join(' · ') }));
+      else items = (cats.find(c => c.id === cat)?.items || []).map(it => btn(it.text || it.label || titleCase(it.id), () => choose(it), { disabled: it.enabled === false, type: it.type, sub: [isNum(it.pp) ? `PP ${it.pp}/${it.ppMax ?? it.pp}` : '', isNum(it.cost) && it.cost ? `${it.cost} AP` : '', isNum(it.count) ? `×${it.count}` : '', it.hit ? `${Math.round(Object.values(it.hit)[0])}% hit` : ''].filter(Boolean).join(' · ') }));
       if (S.canAct(rt, 'end_turn') && view.source === 'turns') items.push(btn('End turn', () => { rt.view.act({ end_turn: true }); host.sound('confirm'); }));
       index = clamp(index, 0, items.length - 1);
       fill(menu, ...items); focusMenu();

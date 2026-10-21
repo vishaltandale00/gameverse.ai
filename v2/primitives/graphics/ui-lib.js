@@ -179,5 +179,25 @@ export const docZone = (doc, id) => { for (const s of doc.spaces || []) { const 
 export const charName = (doc, id) => id === 'player' ? (docCharacter(doc, doc.player?.archetype)?.name || 'You') : (docCharacter(doc, id)?.name || titleCase(id));
 export const itemName = (doc, id) => docItem(doc, id)?.name || titleCase(id);
 export const zoneName = (doc, id) => docZone(doc, id)?.name || titleCase(id);
+/**
+ * What the document's primitives tell a person as their events fire (card.tells, declared by the event's owner):
+ * [{ use, event, label, entry?: { at, by }, detail? }], one per instance's card, in document order.
+ */
+export function tellsOf(doc, registry) {
+  const out = [], seen = new Set();
+  for (const inst of [...(doc.systems || []), ...(doc.spaces || []), ...(doc.spaces || []).flatMap(s => s.generators || [])]) {
+    const tells = registry?.get?.(inst.use)?.card?.tells; if (!tells || seen.has(inst.use)) continue;
+    seen.add(inst.use);
+    for (const [event, t] of Object.entries(tells)) out.push({ use: inst.use, event, ...t });
+  }
+  return out;
+}
+/** The words of one tell for an event's data: { label, title, detail } (title: the named entry's title or name). */
+export function tellWords(doc, tell, data) {
+  if (!tell.entry) return { label: tell.label, title: '', detail: '' };
+  const id = data?.[tell.entry.by], list = tell.entry.at.split('.').reduce((o, k) => o?.[k], doc);
+  const e = Array.isArray(list) ? list.find(x => x?.id === id) : null;
+  return { label: tell.label, title: e?.title || e?.name || titleCase(id), detail: tell.detail && typeof e?.[tell.detail] === 'string' ? e[tell.detail] : '' };
+}
 /** The document instance of a system primitive (first match), for reading its configuration. */
 export const docSystem = (doc, use) => (doc.systems || []).find(s => s.use === use || s.use.startsWith(use + '.'));

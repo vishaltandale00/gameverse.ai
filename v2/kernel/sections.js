@@ -13,13 +13,15 @@ import { isObj } from './guards.js';
 /** @typedef {import('./types.js').ParamSchema} ParamSchema */
 /** @typedef {import('./types.js').RegistryLike} RegistryLike */
 
+/** A name a person reads: 1-40 characters starting with a non-space (the forms' pattern and the kernel check). */
+export const NAME_PATTERN = '^\\S.{0,39}$';
 /** The id of an indexed entry (preflight's id indexes): a lowercase slug. The form pattern and the kernel check are this rule. */
 export const ID_PATTERN = '^[a-z0-9][a-z0-9_-]{0,63}$';
 /**
  * A name a person reads. `display: true` marks a string a person reads (a name, a title, a line, a description): the
  * template path's content forms theme exactly the display text of the sections a document has.
  */
-const NAME = /** @type {ParamSchema} */ ({ type: 'string', display: true, effect: 'the name a person reads' });
+const NAME = /** @type {ParamSchema} */ ({ type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads: 1-40 characters, starting with a non-space' });
 const ID = /** @type {ParamSchema} */ ({ type: 'string', pattern: ID_PATTERN, required: true, effect: 'a lowercase slug, unique in its section' });
 /** A list of entries with ids and names, plus the fields given. @param {Record<string, ParamSchema>} [fields] @returns {ParamSchema} */
 const entries = (fields = {}) => ({ type: 'list', of: { type: 'object', open: true, fields: { id: ID, name: NAME, ...fields } } });

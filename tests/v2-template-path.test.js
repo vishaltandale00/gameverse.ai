@@ -9,7 +9,7 @@ import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import {
-  pickForm, pickSystem, checkPick, composeTemplates, namedSections, namesForm, conceptForm, frameTuneForm, writeContent, askPick, narrowPick, tuneTarget, tunePaths, offeredTemplates, templateLoops,
+  pickForm, pickSystem, checkPick, composeTemplates, textSections, conceptForm, frameTuneForm, writeContent, askPick, narrowPick, tuneTarget, tunePaths, offeredTemplates, templateLoops,
   LOOP_KINDS, THEME_KINDS, PICK_KINDS, PLAYED_RELATIONS, PICK_RULES, NAME_PATTERN,
 } from '../v2/planner/templates.js';
 import { fakeWriter, mazeWriter } from './v2-p-pipeline-fixtures.js';
@@ -37,6 +37,7 @@ const IDEAS = {
   'slide-merge': { idea: '2048 with planets', game: '2048', themes: [['planets', 'theme']] },
   'falling-blocks': { idea: 'Tetris with books on a library shelf', game: 'Tetris', themes: [['books on a library shelf', 'theme']] },
   'creature-battle': { idea: 'Pokémon battles between kitchen appliances', game: 'Pokémon', themes: [['kitchen appliances', 'theme']] },
+  story: { idea: 'A Monkey Island style adventure in a haunted lighthouse town', game: 'Monkey Island', themes: [['haunted lighthouse town', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 
@@ -60,8 +61,9 @@ function replies(id, nameFor = k => `${theme(id)} ${k}`.slice(0, 40)) {
       const target = tuneTarget(t.doc, slotPath(p), registry);
       return [k, target.instances[0].with?.[target.param] ?? target.spec.default];
     })));
-    // A names form: one object per section of the template's entries (a field re-ask: its slots directly).
-    const names = ps => Object.fromEntries(Object.entries(ps).map(([k, p]) => [k, p.type === 'object' ? names(p.properties) : nameFor(k, req)]));
+    // A content form: an object per section, per entry, a slot per display-text field (a field re-ask: its slots
+    // directly). A slot is answered for its entry ('<entry> <field>', the field left out for a name).
+    const names = (ps, entry = null) => Object.fromEntries(Object.entries(ps).map(([k, p]) => [k, p.type === 'object' ? names(p.properties, k) : nameFor(entry === null ? k : k === 'name' ? entry : `${entry} ${k}`, req)]));
     return JSON.stringify(names(props));
   };
 }
@@ -276,38 +278,54 @@ test('nested and union compose from declarations; one that does not fails with i
   assert.deepEqual(twice.problems.map(p => [p.code, p.path]), [['compose_id_collision', 'games[1].template']]);
 });
 
-test('content forms: one strict names form per template of the composition (a slot per named entry, grouped by section; ids fixed by code), plus frame_tune', () => {
+test('content forms: one strict form per template of the composition (a slot per display-text field of every entry it brought, grouped by section and entry; ids fixed by code), plus frame_tune', () => {
   const expected = { 'maze-chase': ['content_archetypes', 'content_statuses', 'content_blocks'], race: ['content_archetypes', 'zones_circuit'] };
   for (const t of TEMPLATES) {
     const c = composeTemplates(pickOf(t.id), { templates: TEMPLATES, registry }), doc = c.doc;
-    const sections = namedSections(doc);
+    const sections = textSections(doc, registry);
     if (expected[t.id]) assert.deepEqual(sections.map(s => s.form), expected[t.id]);
     assert.deepEqual(c.parts.map(p => p.template.id), [t.id]);
-    const f = conceptForm(doc, c.parts[0]);
+    const f = conceptForm(doc, c.parts[0], 0, registry);
     assert.deepEqual(strictProblems(f.schema.schema), []);
-    assert.deepEqual(Object.keys(f.schema.schema.properties), sections.map(s => s.form), `${t.id}: one object per named section`);
-    const all = (n, i0 = -1) => Object.fromEntries(sections.map((s, si) => [s.form, Object.fromEntries(s.entries.map((e, i) => [e.id, si === 0 && i === i0 ? 'x'.repeat(41) : 'x'.repeat(n)]))]));
+    assert.deepEqual(Object.keys(f.schema.schema.properties), sections.map(s => s.form), `${t.id}: one object per section with display text`);
+    const all = (n, bad = false) => Object.fromEntries(sections.map((s, si) => [s.form, Object.fromEntries(s.entries.map((e, i) => [e.key, Object.fromEntries(e.slots.map(x => [x.key, bad && si === 0 && i === 0 && x === e.slots[0] ? ' ' : 'x'.repeat(n)]))]))]));
     for (const s of sections) {
       const slots = f.schema.schema.properties[s.form];
-      assert.deepEqual(Object.keys(slots.properties), s.entries.map(e => e.id), `${s.form}: a slot per existing id`);
-      for (const p of Object.values(slots.properties)) assert.deepEqual([p.type, p.pattern], ['string', NAME_PATTERN]);
-      assert.equal(accepts(slots.properties[s.entries[0].id], ''), false); assert.equal(accepts(slots.properties[s.entries[0].id], 'x'.repeat(41)), false);
-      // The per-section form (namesForm) is the same slots.
-      assert.deepEqual(namesForm(s).schema.schema, slots);
+      assert.deepEqual(Object.keys(slots.properties), s.entries.map(e => e.key), `${s.form}: an object per entry with display text`);
+      for (const e of s.entries) assert.deepEqual(Object.keys(slots.properties[e.key].properties), e.slots.map(x => x.key));
+      const name = slots.properties[s.entries[0].key].properties.name;
+      if (name) { assert.deepEqual([name.type, name.pattern], ['string', NAME_PATTERN]); assert.equal(accepts(name, ''), false); assert.equal(accepts(name, 'x'.repeat(41)), false); }
     }
-    assert.deepEqual(f.check(f.narrow(all(40))), []);
-    assert.deepEqual(f.check(f.narrow(all(40, 0))).map(p => [p.code, p.field]), [['name_invalid', `${sections[0].form}.${sections[0].entries[0].id}`]]);
+    assert.deepEqual(f.check(f.narrow(all(20))), []);
+    const first = sections[0].entries[0];
+    assert.deepEqual(f.check(f.narrow(all(20, true))).map(p => [p.code, p.field]), [['text_invalid', `${sections[0].form}.${first.key}.${first.slots[0].key}`]]);
     const frame = frameTuneForm(c.template, doc, cat);
     assert.deepEqual(strictProblems(frame.schema.schema), []);
     assert.deepEqual(frame.slots.map(s => s.path), tunePaths(t));
   }
-  // Composed: each template names what it brought, in its own form.
+  // Composed: each template themes what it brought, in its own form.
   const chess = composeTemplates(pickWith({ primary: game('Chess', 'game', 'board'), games: [game('Pokémon', 'game', 'creature-battle', 'nested')] }), { templates: TEMPLATES, registry });
-  const forms = chess.parts.map(p => conceptForm(chess.doc, p));
+  const forms = chess.parts.map((p, i) => conceptForm(chess.doc, p, i, registry));
   assert.deepEqual(forms.map(f => f.schema.name), ['names_board', 'names_creature_battle']);
-  const ids = forms.map(f => f.sections.flatMap(s => s.entries.map(e => e.id)));
-  assert.deepEqual(ids[0].filter(id => ids[1].includes(id)), [], 'no entry is named twice');
-  assert.deepEqual([...ids[0], ...ids[1]].sort(), namedSections(chess.doc).flatMap(s => s.entries.map(e => e.id)).sort(), 'every named entry is in one form');
+  const ids = forms.map(f => f.sections.flatMap(s => s.entries.map(e => `${s.at}:${e.id}`)));
+  assert.deepEqual(ids[0].filter(id => ids[1].includes(id)), [], 'no entry is themed twice');
+  assert.deepEqual([...ids[0], ...ids[1]].sort(), textSections(chess.doc, registry).flatMap(s => s.entries.map(e => `${s.at}:${e.id}`)).sort(), 'every entry with display text is in one form');
+});
+
+test('content forms cover every display-text field of every template document, alone and in every declared nested composition', () => {
+  const covered = (doc, parts) => {
+    const forms = parts.map((p, i) => conceptForm(doc, p, i, registry)).filter(Boolean);
+    const slots = forms.flatMap(f => f.sections.flatMap(s => s.entries.flatMap(e => e.slots.map(x => `${s.at}|${e.id}|${x.path.join('.')}`))));
+    const all = textSections(doc, registry).flatMap(s => s.entries.flatMap(e => e.slots.map(x => `${s.at}|${e.id}|${x.path.join('.')}`)));
+    assert.deepEqual([...slots].sort(), [...all].sort(), 'each display-text field in exactly one form');
+    // Applying a themed answer rewrites exactly those fields.
+    const out = structuredClone(doc);
+    for (const f of forms) f.apply(out, f.narrow(Object.fromEntries(f.sections.map(s => [s.form, Object.fromEntries(s.entries.map(e => [e.key, Object.fromEntries(e.slots.map(x => [x.key, 'Themed']))]))]))));
+    assert.ok(textSections(out, registry).every(s => s.entries.every(e => e.slots.every(x => x.text === 'Themed'))));
+  };
+  for (const t of TEMPLATES) { const c = composeTemplates(pickOf(t.id), { templates: TEMPLATES, registry }); covered(c.doc, c.parts); }
+  const chess = composeTemplates(pickWith({ primary: game('Chess', 'game', 'board'), games: [game('Pokémon', 'game', 'creature-battle', 'nested')] }), { templates: TEMPLATES, registry });
+  covered(chess.doc, chess.parts);
 });
 
 test('content forms are asked in parallel; a failing name re-asks only that field, then escalates that form once', async () => {
@@ -324,11 +342,12 @@ test('content forms are asked in parallel; a failing name re-asks only that fiel
   for (const c of base.calls) assert.match(c.system, /haunted library \(setting\)/), assert.match(c.system, /Premise: Pac-Man in a haunted library/);
   // A bad name: only that field is asked again; still bad, the escalation writer gets that field alone.
   const bad = fakeWriter([replies(t.id, k => (k === 'hero' || k.startsWith('field_') ? '' : 'Fine'))]);
+  // (the hero's name slot is answered for 'hero': see replies)
   const code = fakeWriter([req => JSON.stringify(Object.fromEntries(Object.keys(req.schema.schema.properties).map(k => [k, 'Ghost Reader'])))], { model: 'escalation' });
   const c2 = [];
   const r2 = await writeContent({ writer: bad, escalate: code, attempts: 2, template: t, doc, pick: pickOf(t.id), themes: [], registry, logic, calls: c2, clock: { codeMs: 0 } });
   const names = c2.filter(c => c.form === 'names_maze_chase');
-  assert.deepEqual(names.map(c => [c.fields ?? null, Boolean(c.escalated)]), [[null, false], [['content_archetypes.hero'], false], [['content_archetypes.hero'], true]]);
+  assert.deepEqual(names.map(c => [c.fields ?? null, Boolean(c.escalated)]), [[null, false], [['content_archetypes.hero.name'], false], [['content_archetypes.hero.name'], true]]);
   assert.equal(code.calls.length, 1); assert.deepEqual(Object.keys(code.calls[0].schema.schema.properties), ['field_1']);
   assert.equal(r2.doc.content.archetypes.find(a => a.id === 'hero').name, 'Ghost Reader');
   assert.equal(r2.doc.content.archetypes.find(a => a.id === 'pellet').name, 'Fine', 'answers that passed are kept');
