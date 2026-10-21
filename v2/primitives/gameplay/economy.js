@@ -11,6 +11,7 @@ const parse = v => (typeof v === 'string' ? { item: v, count: 1 } : { item: v?.i
 export default {
   id: 'gameplay.economy',
   card: {
+    loop: { verbs: ['buy', 'sell', 'haggle'], progress: ['bought', 'sold'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "shops", "min": 1, "why": "an economy needs somewhere to spend", "example": [{"id": "general_store", "stock": [{"item": "potion", "price": 20}]}]},

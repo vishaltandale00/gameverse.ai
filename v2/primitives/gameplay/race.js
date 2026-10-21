@@ -14,6 +14,7 @@ const STATES = ['idle', 'countdown', 'running', 'finished'];
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['checkpoint', 'lap', 'race_finished'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "racers", "min": 3, "why": "a race needs rivals: racers lists the player and at least two other racer ids or archetypes", "example": ["player", "rival_1", "rival_2", "rival_3"]},

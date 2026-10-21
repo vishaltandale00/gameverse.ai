@@ -36,6 +36,7 @@ export function rollTable(rt, id, context = {}, depth = 0) {
 export default {
   id: 'gameplay.loot',
   card: {
+    loop: { verbs: [], progress: ['loot_dropped', 'picked_up'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.tables", "min": 1, "why": "loot drops roll from tables", "example": {"id": "drop_small", "rolls": [1, 1], "entries": [{"item": "coin", "weight": 3}]}},

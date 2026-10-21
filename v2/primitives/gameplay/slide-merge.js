@@ -49,6 +49,7 @@ export const canMove = (grid, W, H) => DIRS.some(d => slideGrid(grid, W, H, d).m
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['slide'], progress: ['slid', 'merged'] },
     // Slide-merge mode: make the target tile before the board jams.
     mode: { loop: 'slide-merge', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { param: 'onTarget' }, lose: { param: 'onStuck' }, bot: 'expectimax' },
     intent: '2048-style board: slide all tiles toward an edge, equal tiles merge once per move, a 2 or 4 spawns after each move, rocks split lines; works on any editCells board.',

@@ -21,6 +21,7 @@ export function applyMerged(rt, who, effects) {
 export default {
   id: 'gameplay.item.use',
   card: {
+    loop: { verbs: ['use_item'], progress: ['used_item'] },
     intent: 'Consumables and usable items (food, potions, scrolls, tools): run the item’s use effects with per-item or per-group cooldowns, an optional usability predicate and consumption; merged crafted items apply their ingredient effects.',
     views: ['any'],
     params: {

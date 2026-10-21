@@ -19,6 +19,7 @@ const PUSH_DECAY = 0.8; // per frame; total travel = push / (1 - decay)
 const health = {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['damaged', 'defeated'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: {
       health: { type: 'object', fields: { max: { type: 'number', min: 0.01, required: true, effect: 'hit points' }, hp: { type: 'number', min: 0 }, regen: { type: 'number', effect: 'hp per second' }, iframeSec: { type: 'number', min: 0 }, respawn: { type: 'json', effect: 'none|home|spawn or {mode, sec}' }, resist: { type: 'object', open: true, effect: 'damage type -> fraction resisted' }, armor: { type: 'object', open: true } }, effect: 'hit points' },

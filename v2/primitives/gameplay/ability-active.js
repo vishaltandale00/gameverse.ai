@@ -16,6 +16,7 @@ const KINDS = ['bomb', 'shield', 'hyperspace', 'blink', 'effects'];
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['ability_used'] },
     intent: 'Active abilities on a button with cooldowns, charges and resource costs: screen-clearing bombs with i-frames, timed shields, hyperspace jumps with risk, blinks, or any effects.',
     views: ['any'],
     params: {

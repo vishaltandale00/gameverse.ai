@@ -40,6 +40,7 @@ function controlsFor(rt, v) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['enter_vehicle', 'exit_vehicle'], progress: ['vehicle_entered'] },
     intent: 'Vehicles anyone can enter and exit: seats (driver + passengers), carjacking NPC drivers, locked cars with theft attempts and alarms, ownership, hull damage with burning and explosion, fuel, horn and radio. Motion comes from gameplay.vehicle.car/boat/aircraft; AI drives by writing components.drive.control.',
     views: ['any'],
     params: {

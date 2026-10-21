@@ -89,6 +89,7 @@ const num = (min, max, unit, effect) => ({ type: 'number', min, max, unit, effec
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'], progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],

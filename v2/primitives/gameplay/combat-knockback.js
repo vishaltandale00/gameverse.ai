@@ -14,6 +14,7 @@ const KEY = 'gameplay.combat.knockback';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['launched', 'stock_lost', 'blast_ko'] },
     intent: 'Platform-fighter knockback for any entity with a knockback component: damage builds percent, hits launch by [base, growth, angle] scaled by percent and weight, launched bodies fly and drift, and leaving the blast zone costs a stock (respawn with invulnerability) or KOs.',
     views: ['side'],
     params: {

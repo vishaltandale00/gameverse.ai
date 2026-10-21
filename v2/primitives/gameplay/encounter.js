@@ -27,6 +27,7 @@ const TRAINER = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['encounter', 'trainer_challenge'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "areas", "min": 1, "why": "wild encounters need areas (zones) with weighted species tables", "example": [{"id": "meadow_grass", "zone": "meadow", "rate": 0.12, "table": [{"species": "sprout", "weight": 3, "minLevel": 2, "maxLevel": 4}]}]},

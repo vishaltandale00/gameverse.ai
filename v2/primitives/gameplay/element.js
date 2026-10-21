@@ -17,6 +17,7 @@ const KEY = 'gameplay.element';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['reaction', 'ignited'] },
     intent: 'Element chemistry: element tags on entities, statuses and cells, and reaction rules (fire burns grass, water puts out burning, ice and fire, electricity conducts) triggered by typed hits, statuses, water and ignite effects; burning cells spread and burn out.',
     views: ['any'],
     params: {

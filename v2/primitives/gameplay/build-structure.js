@@ -19,6 +19,7 @@ const rotate = ([x, y, z], r) => [[x, y, z], [z, y, -x], [-x, y, -z], [-z, y, x]
 export default {
   id: 'gameplay.build.structure',
   card: {
+    loop: { verbs: ['build', 'demolish'], progress: ['built', 'slot_filled'] },
     intent: 'Snap-together building: pieces (cell shapes of a block with an item cost) placed on a grid with rotation, only inside owned plots when ownership is on, demolish for a refund, and settlement slots that complete when built in.',
     views: ['1p', '3p', 'td', 'iso'],
     params: {

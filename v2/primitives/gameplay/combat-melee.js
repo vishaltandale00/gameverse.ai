@@ -26,6 +26,7 @@ const MOVE_FIELDS = { id: { type: 'string', required: true } };
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['attack', 'heavy', 'special', 'super', 'throw', 'block'], progress: ['hit', 'combo', 'parried', 'staggered'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc"], "min": 1, "placed": 3, "zones": 2, "why": "melee needs opponents with health to hit, placed where the player meets them", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},

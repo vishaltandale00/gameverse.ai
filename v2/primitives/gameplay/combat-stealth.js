@@ -12,6 +12,7 @@ const KEY = 'gameplay.combat.stealth';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['takedown'], progress: ['takedown', 'lost_target'] },
     intent: 'Stealth detection: watchers fill a detection meter while they see (range, view cone, line of sight, crouching, light) or hear the player; full meters detect, emptied ones lose the target; silent takedowns from behind on unaware watchers.',
     views: ['3p', '1p', 'td', 'side'],
     params: {

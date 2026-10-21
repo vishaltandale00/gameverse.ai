@@ -19,6 +19,7 @@ const REFRESH = ['reset', 'extend', 'keep', 'max'];
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['status_applied'] },
     intent: 'Buffs and debuffs from content.statuses on any entity: duration, stacks, damage ticks, stat modifiers, tags, shields and immunities. Covers burning, poison, slow, stun, fright, invulnerability and shields; other primitives read its modifiers.',
     views: ['any'],
     params: {

@@ -20,6 +20,7 @@ const RESPAWN = ['checkpoint', 'nearest-safe', 'none'];
 export default {
   id: 'gameplay.hazard',
   card: {
+    loop: { verbs: [], progress: ['hazard_killed'] },
     intent: 'Damage volumes and falls (spikes, lava, acid, drowning, fall damage, kill planes, a rising camera kill line or the space bounds): typed hazards with entry damage, damage over time, statuses, kills and respawn to safe footing or the checkpoint.',
     views: ['any'],
     params: {

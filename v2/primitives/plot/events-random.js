@@ -15,6 +15,7 @@ export default {
   id: ID,
   solverKey,
   card: {
+    loop: { verbs: ['event_choice'], progress: ['random_event_choice'] },
     intent: 'Random text events with weighted draws, conditions, cooldowns and once-only events; choices with conditions and effects can chain into further events (FTL, Reigns, radiant encounters).',
     views: ['any'],
     params: {

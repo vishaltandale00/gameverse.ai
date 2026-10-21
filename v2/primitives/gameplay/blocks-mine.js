@@ -34,6 +34,7 @@ export function dropsOf(rt, id) {
 export default {
   id: 'gameplay.blocks.mine',
   card: {
+    loop: { verbs: ['mine'], progress: ['block_mined', 'mine_hit'] },
     intent: 'Break cells with tool tiers and hardness time (hold the mine verb), drops into the bag or as world pickups, tool wear, protected zones; block_mined:<block> events.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     params: {

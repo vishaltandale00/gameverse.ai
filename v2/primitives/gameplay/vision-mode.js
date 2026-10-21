@@ -11,6 +11,7 @@ const KEY = 'gameplay.vision.mode';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['sense'], progress: ['scanned'] },
     intent: 'Sense/detective vision: toggle an overlay that reveals and records tagged entities (traces, clues, weak points, herbs) within range, with cooldown, optional duration and resource drain.',
     views: ['any'],
     params: {

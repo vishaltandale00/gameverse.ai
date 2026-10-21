@@ -20,6 +20,7 @@ const KINDS = ['magnet', 'multiplier', 'shield', 'invulnerable', 'weapon', 'slow
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['powerup'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { powerup: { type: 'string', effect: 'a powerups[] id given when collected' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

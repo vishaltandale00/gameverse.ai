@@ -29,6 +29,7 @@ export default {
   id: ID,
   solverKey,
   card: {
+    loop: { verbs: ['choose'], progress: ['choice_made', 'dialogue_end'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.dialogue", "min": 2, "why": "conversations are node graphs keyed by dialogue id; characters point at them with dialogue: [{id}]", "example": {"keeper_intro": {"speaker": "keeper", "start": "n1", "nodes": {"n1": {"who": "keeper", "say": "The lamp went dark at midnight.", "choices": [{"text": "Who was here?", "next": "n2"}, {"text": "Goodbye.", "next": "n3"}]}, "n2": {"who": "keeper", "say": "Only the cook, and she left early.", "end": true}, "n3": {"say": "Mind the stairs.", "end": true}}}}},

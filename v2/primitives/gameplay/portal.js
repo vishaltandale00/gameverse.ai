@@ -23,6 +23,7 @@ export function rotateOnto(v, a, b) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['fire_portal', 'close_portals'], progress: ['portal_placed', 'portal_entered'] },
     intent: 'Placeable linked portals: fire a portal of each colour onto valid surfaces by raycast; bodies entering one exit the other with momentum rotated to the exit face (speed conserved), cooldown against ping-pong, fixed authored pairs, fizzles on invalid surfaces.',
     views: ['1p', '3p', 'side'],
     params: {

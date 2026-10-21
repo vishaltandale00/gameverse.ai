@@ -98,6 +98,7 @@ export function hostile(rt, a, b) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['aggro', 'spotted', 'lost_target'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { ai: { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

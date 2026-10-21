@@ -13,6 +13,7 @@ const N6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]
 export default {
   id: 'gameplay.blocks.place',
   card: {
+    loop: { verbs: ['place', 'select_item'], progress: ['block_placed', 'prop_placed'] },
     intent: 'Place held block items into cells (or props from items with `place`), aimed at the looked-at face or an explicit cell; protected zones, occupancy and forbidNear checks; ghost preview; set_blocks for scripted edits.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     params: {
