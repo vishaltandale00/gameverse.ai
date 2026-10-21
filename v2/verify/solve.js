@@ -7,8 +7,11 @@
 //   'iddfs'      iterative deepening with a depth-indexed transposition table
 // Reports endings with option paths, beats that never fired, endings never
 // reached, dead ends (no options, game not over) and whether the search was
-// exhaustive or stopped by its budget.
-import { maker, applyOption, settle, optionLabels, replayOptions } from './drive.js';
+// exhaustive or stopped by its budget. A state that offers no options while the
+// simulation is still resolving (a board cascading, pieces settling, a shot in
+// flight) is stepped idle until options appear (waitSteps, as the bots wait for
+// a decision): only a state that stays without options is a dead end.
+import { maker, applyOption, settle, optionLabels } from './drive.js';
 import { abstraction } from './abstraction.js';
 import { objective } from './objective.js';
 import { budget as makeBudget } from './util.js';
@@ -25,14 +28,35 @@ class Heap {
   }
 }
 
+/** Settle, then step idle while the game plays and offers no options, up to `wait` steps. */
+function toDecision(rt, settleSteps, wait, b = null) {
+  settle(rt, settleSteps, b);
+  let k = 0;
+  while (rt.state.status === 'playing' && k < wait && !rt.availableOptions().length) { rt.step({}); k++; }
+  b?.step(k);
+}
+
+/** Replay a path of option labels from a fresh world, reaching each decision as the search did. */
+function replay(make, seed, path, settleSteps, wait) {
+  const rt = make(seed);
+  toDecision(rt, settleSteps, wait);
+  for (const label of path) {
+    if (rt.state.status !== 'playing') return { rt, ok: false };
+    const options = rt.availableOptions(), j = optionLabels(options).indexOf(label);
+    if (j < 0) return { rt, ok: false };
+    applyOption(rt, options[j]); toDecision(rt, settleSteps, wait);
+  }
+  return { rt, ok: true };
+}
+
 const pathOf = node => { const out = []; for (let n = node; n?.label !== undefined; n = n.parent) out.push(n.label); return out.reverse(); };
 
 /**
  * solve(doc, registry, logic, opts) — doc must be preflight's normalized document.
- * opts: { search, budgetMs, maxStates, maxDepth, settleSteps, seed, quantum, includeRng, entities, key(rt), heuristic(rt) }
+ * opts: { search, budgetMs, maxStates, maxDepth, settleSteps, waitSteps, seed, quantum, includeRng, entities, key(rt), heuristic(rt) }
  */
 export function solve(doc, registry, logic, opts = {}) {
-  const { search = 'bfs', budgetMs = 2000, maxStates = 20000, maxDepth = Infinity, settleSteps = 2, seed } = opts;
+  const { search = 'bfs', budgetMs = 2000, maxStates = 20000, maxDepth = Infinity, settleSteps = 2, waitSteps = 600, seed } = opts;
   const b = makeBudget({ ms: budgetMs, states: maxStates, steps: opts.maxSteps ?? Infinity });
   // Spaces without options of their own get travel macros (warp along the space's path, or steer the real controls).
   let make = maker(doc, registry, logic), travel = null;
@@ -47,7 +71,7 @@ export function solve(doc, registry, logic, opts = {}) {
   const keyOf = opts.key || abs.key;
   const goal = objective(doc, registry, logic);
   const h = opts.heuristic || goal.score;
-  settle(rt, settleSteps, b);
+  toDecision(rt, settleSteps, waitSteps, b);
 
   const beatsFired = new Set(), endings = new Map(), outcomes = {}, deadEnds = [];
   const record = () => { for (const id of Object.keys(rt.store('plot.storyboard').fired || {})) beatsFired.add(id); };
@@ -69,7 +93,7 @@ export function solve(doc, registry, logic, opts = {}) {
       rt.restore(node.snap);
       // Options are re-read after restore: macro apply() closures may capture state.
       const opt = rt.availableOptions()[i] || options[i];
-      try { applyOption(rt, opt, b); settle(rt, settleSteps, b); }
+      try { applyOption(rt, opt, b); toDecision(rt, settleSteps, waitSteps, b); }
       catch (error) { errors.push({ path: [...pathOf(node), labels[i]], message: String(error?.message || error) }); continue; }
       record();
       const child = { parent: node, label: labels[i], depth: node.depth + 1 };
@@ -128,7 +152,7 @@ export function solve(doc, registry, logic, opts = {}) {
   let replayed = null;
   const first = [...endings.entries()].filter(([k]) => outcomes[k] !== 'lost').sort((x, y) => x[1].length - y[1].length)[0];
   if (first && opts.checkReplay !== false) {
-    const r = replayOptions(make, seed, first[1], settleSteps);
+    const r = replay(make, seed, first[1], settleSteps, waitSteps);
     replayed = r.ok && (r.rt.state.ending || r.rt.state.status) === first[0];
   }
   return {

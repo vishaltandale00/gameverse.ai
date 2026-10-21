@@ -196,3 +196,21 @@ test('the quiet-manor example document verifies clean on the real catalogue', as
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.equal(r.plot.completable, true);
 });
+
+test('solve: a state without options while the board resolves is waited on, not a dead end', async () => {
+  const { buildCatalogue } = await import('../v2/planner/catalog.js');
+  const { preflight } = await import('../v2/kernel/document.js');
+  const { registry, logic } = buildCatalogue();
+  // A match board animates each swap (swap, clear and settle frames): no swap is offered until the board is stable again.
+  const doc = { schema: 'gameverse.v2.game/0.2', id: 'm', title: 'm', seed: 3, spaces: [{ id: 'g', use: 'engine.space.grid', with: { size: [6, 6] } }],
+    systems: [{ use: 'gameplay.match', with: { board: { name: 'board', at: [0, 0], size: [6, 6], axes: [0, 1], fall: -1 }, moves: 12 } }, { use: 'plot.ending' }], content: { archetypes: [] },
+    plot: { endings: [{ id: 'scored', title: 'Score', when: { var: 'score', gte: 60 }, outcome: 'won' }] } };
+  const d = preflight(doc, registry, logic).doc;
+  const s = solve(d, registry, logic, { budgetMs: 2000, seed: 3 });
+  assert.equal(s.completable, true, JSON.stringify(s.endings));
+  assert.equal(s.replayed, true, 'the ending path replays from a fresh world');
+  assert.equal(s.deadEndCount, 0);
+  // Without waiting, every resolving board was a dead end and the search claimed an exhaustive proof of no ending.
+  const blind = solve(d, registry, logic, { budgetMs: 2000, seed: 3, waitSteps: 0 });
+  assert.deepEqual([blind.completable, blind.exhaustive, blind.deadEndCount > 0], [false, true, true]);
+});

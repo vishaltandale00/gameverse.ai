@@ -73,13 +73,13 @@ async function verifyModule() {
 // publishing. When the playbots' report is given, the game must also be playable: the player can act, the loop its
 // primitives declare (card.loop.progress) happens from play, and play makes progress toward the win: a win (the
 // explorer's or a bot's), or the quantity the core loop's win reads (card.loop.win.reads: winQuantity) moved toward
-// the win by play beyond what idling moves it. Bots the cards name are stronger players when present, never a
+// the win by play (the explorer's or a bot's) beyond what idling moves it. Bots the cards name are stronger players when present, never a
 // requirement. No time-to-finish requirement; the solver's softlock report is not used.
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss']);
 // Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
 /** @type {Set<string | undefined>} */
 const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
-/** A strategy run as v2/verify reports it. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string }} BotRun */
+/** A strategy run as v2/verify reports it; progress: how far its play moved the win quantity toward the win. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string, progress?: number | null }} BotRun */
 /**
  * @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems]
  * @param {{ ran?: BotRun[] } | null} [strategies] the strategies stage's report; given, the playability checks apply
@@ -116,7 +116,9 @@ function unplayable(play, problems, strategies, loop) {
   // moves it (an intro beat, ambient events or a rising general score are not progress).
   if (!won0) {
     const pr = isObjLike(pt.progress) ? /** @type {WinProgress} */ (pt.progress) : null;
-    const high = Number(pr?.high ?? NaN), still = Number.isFinite(Number(pr?.idle)) ? Number(pr?.idle) : 0;
+    // The play that moved it furthest: the explorer's, or a bot's (bots are playtest agents too, measured on the same quantity).
+    const reached = [Number(pr?.high ?? NaN), ...(strategies?.ran || []).map(b => Number(b.progress ?? NaN))].filter(Number.isFinite);
+    const high = reached.length ? Math.max(...reached) : NaN, still = Number.isFinite(Number(pr?.idle)) ? Number(pr?.idle) : 0;
     if (!pr) out.push('no_progress: no win was seen and the core loop\'s win declares no quantity to measure (card.loop.win.reads)');
     else if (!(Number.isFinite(high) && high > still)) out.push(`no_progress: no win was seen and the win quantity (${pr.quantity}${Number.isFinite(pr.target) ? `, target ${pr.target}` : ''}) never moved toward the win beyond idling (idle ${still}, play ${Number.isFinite(high) ? high : 0})`);
   }

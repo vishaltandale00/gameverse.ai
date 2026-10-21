@@ -23,10 +23,13 @@ test('stage.sequence: puzzle goals (lines, score with stars, jelly remaining), c
   assert.ok(rt.test({ stage: 'l1', phase: 'play' }));
   rt.emit('lines_cleared', { count: 3 }); rt.step();
   assert.equal(rt.state.vars['stage.progress'], 0.75);
+  assert.equal(rt.state.vars['stage.advance'], 0.75, 'the levels win quantity moves within the first stage');
   rt.emit('lines_cleared', { count: 1 }); rt.step();
   assert.equal(rt.state.counts['stage_clear:l1'], 1);
+  assert.equal(rt.state.vars['stage.advance'], 1);
   drive(rt, 8);
   assert.ok(rt.test({ stage: 'l2' }));
+  assert.equal(rt.state.vars['stage.advance'], 1, 'one stage cleared, none of the next one yet');
   rt.state.vars.score = 900; rt.step();
   assert.equal(rt.state.counts['stage_clear:l2'], 1);
   assert.equal(rt.state.vars['stage.stars'], 2);
@@ -39,6 +42,7 @@ test('stage.sequence: puzzle goals (lines, score with stars, jelly remaining), c
   assert.equal(rt.state.counts.sequence_complete, 1);
   assert.equal(rt.state.status, 'won');
   assert.equal(rt.state.vars['stage.starsTotal'], 2);
+  assert.equal(rt.state.vars['stage.advance'], 3, 'every stage cleared');
 });
 
 test('stage.sequence: move limits fail the stage; lives allow retries, then game over', () => {

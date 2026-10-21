@@ -14,6 +14,7 @@ import { playtest } from './playtest.js';
 import { checkInvariants } from './invariants.js';
 import { select } from './strategies/index.js';
 import { maker } from './drive.js';
+import { winMeasure } from './objective.js';
 import { now, usedPrimitives, problem } from './util.js';
 
 /** Stable problem codes this layer emits (planner-facing). */
@@ -83,15 +84,19 @@ export async function verify(doc, registry, logic, opts = {}) {
   if (opts.strategies !== false) {
     const ts = now();
     report.strategies = await time('strategies', () => guard('strategies', () => {
-      const make = maker(nd, registry, logic), probe = make(seed);
+      // The bots are playtest agents too (§6.3): every runtime they play is measured on the win quantity the playtest
+      // steers by (opts.playtest.win), so the gate sees how far their play moved it toward the win.
+      const wm = winMeasure(opts.playtest?.win ?? null), reached = { high: wm ? 0 : null };
+      const make = wm ? measured(maker(nd, registry, logic), wm, reached) : maker(nd, registry, logic), probe = make(seed);
       const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
       const ran = [], tb = now();
       chosen.forEach(({ s, reason }, i) => {
+        if (wm) reached.high = 0;
         const share = (botBudget !== null ? Math.max(50, botBudget - (now() - tb)) : left() * 0.6) / (chosen.length - i);
         try {
           const r = s.run(ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
-          ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget });
+          ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget, ...(wm ? { progress: reached.high } : {}) });
           tag(r.problems.map(p => ({ ...p, strategy: s.id })), 'strategy');
         } catch (error) { ran.push({ id: s.id, reason, ok: false, error: String(error?.message || error) }); problems.push(problem('runtime_error', 'systems', `strategy '${s.id}' threw: ${error?.message || error}`, { stage: 'strategy', strategy: s.id })); }
       });
@@ -110,6 +115,23 @@ export async function verify(doc, registry, logic, opts = {}) {
   report.ok = !problems.some(p => p.severity === 'error');
   timings.total = Math.round(now() - t0);
   return report;
+}
+
+/**
+ * A maker whose runtimes record, after every step, how far the state has moved the win quantity toward the win since
+ * the runtime was made (`reached.high`, the furthest). Only the state is read (never a path-carried tally), so the
+ * snapshots and restores a bot's lookahead makes cannot inflate it.
+ */
+function measured(make, wm, reached) {
+  return seed => {
+    const rt = make(seed), from = wm.start(rt), step = rt.step.bind(rt);
+    rt.step = input => {
+      const out = step(input), a = wm.advance(rt, from);
+      if (Number.isFinite(a) && a > reached.high) reached.high = a;
+      return out;
+    };
+    return rt;
+  };
 }
 
 export { solve } from './solve.js';
