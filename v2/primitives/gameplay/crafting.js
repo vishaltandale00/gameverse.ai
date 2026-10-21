@@ -26,7 +26,7 @@ export default {
     intent: 'Recipes at stations with item or tag inputs, craft times and queues, recipe discovery (known, learned, or experiment by combining items) and cooking-style merges whose output carries the summed ingredient effects.',
     views: ['any'],
     params: {
-      stations: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string' }, tags: { type: 'list', default: [], of: { type: 'string' } }, zone: { type: 'ref', to: 'zone', effect: 'standing in this zone counts as being at the station' } } }, effect: 'crafting stations' },
+      stations: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, tags: { type: 'list', default: [], of: { type: 'string' } }, zone: { type: 'ref', to: 'zone', effect: 'standing in this zone counts as being at the station' } } }, effect: 'crafting stations' },
       handCraft: { type: 'boolean', default: true, effect: 'recipes without a station can be crafted anywhere' },
       stationRange: { type: 'number', default: 3, min: 0, max: 50, unit: 'space units', effect: 'distance to a station entity that counts as being at it' },
       queue: { type: 'boolean', default: false, effect: 'timed recipes queue up; false allows one timed job at a time' },
