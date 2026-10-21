@@ -250,9 +250,13 @@ function install(rt, config) {
   host.on('unlock', unlock);
   host.on('restarted', () => { pending = []; last = {}; ended = false; musicIdx = undefined; });
   const win = host.doc?.defaultView || globalThis.window;
-  const gesture = () => { if (unlock()) { win?.removeEventListener?.('pointerdown', gesture, true); win?.removeEventListener?.('keydown', gesture, true); } };
-  win?.addEventListener?.('pointerdown', gesture, true);
-  win?.addEventListener?.('keydown', gesture, true);
+  // The first gesture unlocks audio; the listeners go with it, or with the view if the game is unloaded first.
+  const stops = [];
+  const gesture = () => { if (unlock()) for (const stop of stops.splice(0)) stop(); };
+  stops.push(host.listen(win, 'pointerdown', gesture, true), host.listen(win, 'keydown', gesture, true));
+  // A page the person has already interacted with may start audio at once: a hot-loaded version (view.continuing)
+  // keeps playing sound without waiting for another key.
+  if (rt.view.continuing || globalThis.navigator?.userActivation?.hasBeenActive) gesture();
 
   // Collect every step's events (the host may run several steps per display frame).
   rt.on('*', e => { if (pending.length < 256) pending.push(e); });

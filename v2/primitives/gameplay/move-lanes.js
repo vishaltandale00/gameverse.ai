@@ -167,7 +167,7 @@ export default {
       }
     }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       return [['lane left', { left: true }], ['lane right', { right: true }], ['jump', { jump: true }], ['slide', { slide: true }], ['run on', {}]].map(([label, actions]) => ({ label, actions, steps: label === 'run on' ? 12 : 1 }));
     });
   },

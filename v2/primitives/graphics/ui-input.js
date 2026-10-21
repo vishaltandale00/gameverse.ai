@@ -3,15 +3,20 @@
 // map, digit1..9), a stack of layers with focus, and the gameplay input gate.
 //
 // Rules:
-// - With no modal layer open, only the open hotkeys (menu / inventory / journal /
-//   map) are consumed, and only if nothing in engine.input.actions binds that key
-//   to a gameplay verb. Every other key passes through to gameplay untouched.
-// - While a modal layer is open, view.modal is set and the gameplay input read
-//   by the host (view.input) returns nothing, so gameplay never sees UI input.
-// - Non-modal layers (barks, HUD) never take input.
+// - The open hotkeys (menu / inventory / journal / map) are consumed only if nothing in engine.input.actions binds
+//   that key to a gameplay verb.
+// - A key is first its UI verb (Esc: back) for the layers that take input; a layer that does not handle it lets
+//   the open hotkey bound to the key have it (Esc, P: the pause menu); a key nobody takes passes to gameplay.
+// - While a modal layer is open (pause, dialogue, panels), view.modal is set and the gameplay input read by the
+//   host (view.input) returns nothing, so gameplay never sees UI input.
+// - A non-modal input layer (choices, turn screens) takes the UI keys gameplay does not bind: the keys the
+//   document binds to its verbs reach the game, as the controls card shows them.
+// - Layers that take no input (barks, HUD) never see keys.
+// The simulation's own modal (rt.modal) is the kernel's: a step's input is filtered by it in every host.
 
 export const VERBS = ['up', 'down', 'left', 'right', 'confirm', 'back', 'prev', 'next', 'menu', 'inventory', 'journal', 'map'];
 const EMPTY = Object.freeze({ actions: {}, axes: { move: [0, 0], look: [0, 0] }, held: {} });
+const SWALLOWED = 'swallowed';
 
 // Normalised key names, matching the vocabulary used in engine.input.actions bindings.
 export function keyName(e) {
@@ -39,10 +44,14 @@ export function docBindings(doc) {
   return out;
 }
 
+/** The keys the document's engine.input.actions binds to gameplay verbs (every verb but the open hotkeys'). */
+export function gameplayKeys(doc) {
+  return new Set(Object.entries(docBindings(doc)).filter(([v]) => !(v in OPEN_KEYS)).flatMap(([, ks]) => [...ks]));
+}
+
 /** Resolve the open hotkeys against the document's gameplay bindings. */
 export function openKeys(doc) {
-  const b = docBindings(doc);
-  const gameplay = new Set(Object.entries(b).filter(([v]) => !(v in OPEN_KEYS)).flatMap(([, ks]) => [...ks]));
+  const b = docBindings(doc), gameplay = gameplayKeys(doc);
   const out = {};
   for (const [verb, defaults] of Object.entries(OPEN_KEYS)) {
     const bound = b[verb] ? [...b[verb]] : [];
@@ -75,7 +84,7 @@ export function createUiInput(host) {
   const { view, rt } = host;
   const layers = []; // { id, modal, onVerb(verb, info) -> handled? }
   const hotkeys = new Map(); // verb -> fn
-  let keys = openKeys(rt.doc);
+  let keys = openKeys(rt.doc), gameplay = gameplayKeys(rt.doc);
   let device = 'keyboard';
   const pads = { prev: {}, repeat: {} };
 
@@ -88,36 +97,50 @@ export function createUiInput(host) {
 
   const top = () => layers[layers.length - 1] || null;
   const modal = () => layers.some(l => l.modal);
-  // view.modal mirrors both UI modal layers and the simulation's modal (rt.modal), so the input
-  // primitive, the UI and the simulation agree on who owns input.
+  // view.modal names the open modal UI layer: the input primitive gives gameplay nothing while it is set.
   const uiModal = () => [...layers].reverse().find(l => l.modal)?.id || null;
-  const sync = () => { view.modal = uiModal() || (rt.modal ? `sim:${rt.modal.owner}` : null); host.root.classList.toggle('gv-modal-open', Boolean(uiModal())); };
+  const sync = () => { view.modal = uiModal(); host.root.classList.toggle('gv-modal-open', Boolean(view.modal)); };
 
+  // -> true (handled), SWALLOWED (a modal layer took it without handling it) or false (nobody took it).
   function dispatch(verb, info = {}) {
     for (let i = layers.length - 1; i >= 0; i--) {
       const l = layers[i];
       if (!l.modal && !l.takesInput) continue;
       if (l.onVerb?.(verb, info) !== false) return true;
-      if (l.modal) return true; // a modal layer swallows what it does not handle
+      if (l.modal) {
+        // A modal layer swallows what it does not handle, except a hotkey registered overModal (the pause menu is
+        // reachable from every screen that does not use its key itself).
+        const h = hotkeys.get(verb);
+        if (h?.overModal) { h.fn(info); return true; }
+        return SWALLOWED;
+      }
     }
-    const fn = hotkeys.get(verb);
-    if (fn) { fn(info); return true; }
+    const h = hotkeys.get(verb);
+    if (h) { h.fn(info); return true; }
     return false;
   }
 
-  function onKey(e) {
+  // Handling a key is a read of the world (UI code reads services and sends choices through view.act).
+  function onKey(e) { rt.read(() => key(e)); }
+  function key(e) {
     if (e.defaultPrevented || e.isComposing) return;
     if (e.target?.tagName === 'INPUT' && e.target.type === 'text') return;
     device = 'keyboard';
     const k = keyName(e);
     const open = Object.keys(keys).find(v => keys[v].includes(k) && hotkeys.has(v)) || null;
     const uiKey = () => (/^[1-9]$/.test(k) ? `digit${k}` : k === 'tab' ? (e.shiftKey ? 'prev' : 'next') : Object.keys(MODAL_KEYS).find(v => MODAL_KEYS[v].includes(k)) || null);
-    let verb = null;
-    if (modal()) verb = uiKey() || Object.keys(keys).find(v => keys[v].includes(k)) || null;
-    else if (layers.some(l => l.takesInput)) verb = open || uiKey(); // open hotkeys (pause, inventory...) win over a non-modal input layer
-    else verb = open;
-    if (!verb) return;
-    if (dispatch(verb, { source: 'key', repeat: e.repeat, key: k })) { e.preventDefault?.(); e.stopPropagation?.(); }
+    const info = { source: 'key', repeat: e.repeat, key: k };
+    let taken = false;
+    if (modal()) {
+      const ui = uiKey(), bound = Object.keys(keys).find(v => keys[v].includes(k)) || null;
+      taken = ui ? dispatch(ui, info) : false;
+      if (taken !== true && bound && bound !== ui) taken = dispatch(bound, info) || taken;
+    } else {
+      const ui = layers.some(l => l.takesInput) && !gameplay.has(k) ? uiKey() : null;
+      taken = ui ? dispatch(ui, info) : false;
+      if (taken !== true && open) taken = dispatch(open, info);
+    }
+    if (taken) { e.preventDefault?.(); e.stopPropagation?.(); }
   }
   const win = host.doc?.defaultView || globalThis.window;
   win?.addEventListener?.('keydown', onKey, true);
@@ -135,12 +158,15 @@ export function createUiInput(host) {
     },
     pop(layer) { const i = layers.indexOf(layer); if (i >= 0) layers.splice(i, 1); sync(); },
     isOpen: layer => layers.includes(layer),
-    /** Register an open hotkey verb ('menu', 'inventory', 'journal', 'map'). */
-    hotkey(verb, fn) { hotkeys.set(verb, fn); },
+    /**
+     * Register an open hotkey verb ('menu', 'inventory', 'journal', 'map'). overModal: it is reached past a modal
+     * layer that does not handle the verb (the pause menu).
+     */
+    hotkey(verb, fn, { overModal = false } = {}) { hotkeys.set(verb, { fn, overModal }); },
     keysFor: verb => keys[verb] || MODAL_KEYS[verb] || [],
     /** Feed a verb directly (pointer handlers, tests). */
-    press: (verb, info = {}) => dispatch(verb, { source: 'api', ...info }),
-    refresh() { keys = openKeys(rt.doc); },
+    press: (verb, info = {}) => rt.read(() => dispatch(verb, { source: 'api', ...info })),
+    refresh() { keys = openKeys(rt.doc); gameplay = gameplayKeys(rt.doc); },
     /** Poll gamepads once per display frame (edge-triggered with D-pad/stick repeat). */
     poll() {
       const list = globalThis.navigator?.getGamepads?.() || [];

@@ -142,7 +142,7 @@ export default {
       }
     }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       const out = [['left', { left: true }], ['right', { right: true }]];
       if (c.mode !== 'rail') out.push(['up', { up: true }], ['down', { down: true }]);
       if (c.mode === 'inertial' && hyper.enabled) out.push(['hyperspace', { hyperspace: true }]);

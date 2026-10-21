@@ -5,7 +5,7 @@
 // renderer for graph and none spaces, and a readable overlay elsewhere.
 // Endings are left to graphics.ui.menu's results screen when it is present.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, fill, setText, setClass, pulse, later, charName, itemName, docZone, zoneName, titleCase, tellsOf, tellWords } from './ui-lib.js';
+import { uiHost, fill, setText, setClass, pulse, charName, itemName, docZone, zoneName, titleCase, tellsOf, tellWords } from './ui-lib.js';
 import { portraitColor } from './ui-portrait.js';
 import { moveFocus } from './ui-input.js';
 import * as S from './ui-sources.js';
@@ -80,7 +80,7 @@ export default {
       const end = doc().plot?.endings?.find(x => x.id === (e.ending ?? rt.state.ending));
       push('act', end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over'));
       if (end?.epilogue || end?.text) push('say', end.epilogue || end.text);
-      if (!(doc().graphics || []).some(g => g.use === 'graphics.ui.menu')) { fill(ending, el('div.gv-results.gv-panel', {}, el('h2.gv-display', { text: end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over') }), el('p.gv-epilogue', { text: end?.epilogue || end?.text || '' }))); later(() => ending.classList.remove('gv-hide'), 600); }
+      if (!(doc().graphics || []).some(g => g.use === 'graphics.ui.menu')) { fill(ending, el('div.gv-results.gv-panel', {}, el('h2.gv-display', { text: end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over') }), el('p.gv-epilogue', { text: end?.epilogue || end?.text || '' }))); host.later(() => ending.classList.remove('gv-hide'), 600); }
     });
 
     rt.view.onFrame(() => {

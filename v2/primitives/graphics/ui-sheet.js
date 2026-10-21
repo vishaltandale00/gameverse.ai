@@ -3,7 +3,7 @@
 // footer of device-aware hints, open/close animation, a hotkey that toggles
 // it, optional simulation hold while open, and roving focus over whatever
 // focusable items the body registers (lists or grids).
-import { setClass, setText, fill, later } from './ui-lib.js';
+import { setClass, setText, fill } from './ui-lib.js';
 import { glyph, moveFocus } from './ui-input.js';
 
 /**
@@ -83,7 +83,7 @@ export function createSheet(host, opts) {
     close() {
       if (!host.input.isOpen(layer)) return;
       host.input.pop(layer); host.sound('close'); host.hold(opts.id, false);
-      panel.classList.add('is-out'); later(() => { if (!host.input.isOpen(layer)) root.classList.add('gv-hide'); }, 200);
+      panel.classList.add('is-out'); host.later(() => { if (!host.input.isOpen(layer)) root.classList.add('gv-hide'); }, 200);
       opts.onClose?.(sheet);
     },
     toggle(tabId) { if (sheet.isOpen) sheet.close(); else sheet.open(tabId); },
