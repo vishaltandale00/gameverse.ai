@@ -7,9 +7,11 @@
 // effects. Dynamic zones are regions ({at, size|r} or {zone}) whose
 // membership this primitive computes through the space's overlap/distance
 // capabilities; they emit the same enter_zone / leave_zone events.
-import { frames, inRegion, checkFx, uniqueIds, isVec } from './runtime-lib.js';
+import { frames, inRegion, checkFx, isVec } from './runtime-lib.js';
 
 const ID = 'engine.zones';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
 const effectsField = { type: 'effects', default: [] };
 
 export default {
@@ -23,15 +25,15 @@ export default {
       rulesDefault: { type: 'object', open: true, default: {}, effect: 'rule values outside any zone that sets them (var zone.rule.<key>)' },
       rules: { type: 'list', default: [], effect: 'effects per zone (static or dynamic)',
         of: { type: 'object', fields: {
-          zone: { type: 'string', required: true, effect: 'static zone or dynamic zone id' }, who: { type: 'string', options: ['player', 'any'], default: 'player' },
+          zone: { type: 'ref', to: 'zone', required: true, effect: 'a static or dynamic zone' }, who: { type: 'string', options: ['player', 'any'], default: 'player' },
           onEnter: effectsField, onLeave: effectsField, onDiscover: effectsField,
           while: effectsField, everySec: { type: 'number', default: 1, min: 0.05, unit: 's', effect: 'period of `while` effects' },
           when: { type: 'predicate', effect: 'rule applies only while it holds' },
         } } },
       dynamic: { type: 'list', default: [], effect: 'zones created by this primitive',
         of: { type: 'object', fields: {
-          id: { type: 'string', required: true }, name: { type: 'string' }, space: { type: 'ref', to: 'space' },
-          at: { type: 'json', effect: 'centre in the space\'s coordinates' }, size: { type: 'json', effect: 'box size (with at)' }, r: { type: 'number', min: 0, effect: 'radius (with at)' },
+          id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, space: { type: 'ref', to: 'space' },
+          at: { type: 'json', effect: 'centre in the space\'s coordinates' }, size: { type: 'list', of: { type: 'number', min: 0 }, min: 1, max: 3, effect: 'box size (with at)' }, r: { type: 'number', min: 0, effect: 'radius (with at)' },
           zone: { type: 'ref', to: 'zone', effect: 'cover a static zone instead of a shape' },
           open: { type: 'boolean', default: true, effect: 'open at start' }, lifetimeSec: { type: 'number', min: 0, effect: 'closes this long after opening' },
           rules: { type: 'object', open: true, default: {}, effect: 'rule vars while inside' }, tags: { type: 'list', of: { type: 'string' }, default: [] },
@@ -41,6 +43,10 @@ export default {
     provides: { events: ['blocked', 'discovered', 'discovered:*', 'enter_zone', 'enter_zone:*', 'leave_zone', 'zone_opened', 'zone_opened:*', 'zone_closed', 'zone_closed:*'], vars: ['zone.current', 'zone.previous', 'zones.discovered', 'zone.rule.*', 'zone.dynamic'] },
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'zone', in: 'dynamic' }, { kind: 'region', in: 'dynamic' }],
+    data: { zones: { type: 'list', of: { type: 'object', open: true, fields: { rules: { type: 'object', open: true, effect: 'rule name -> value, published as var zone.rule.<name> while the player is inside' } } } } },
+    rules: {
+      zone_dynamic_shape: { fields: ['dynamic[].at', 'dynamic[].size', 'dynamic[].r', 'dynamic[].zone'], message: 'a dynamic zone has at with size or r (a vector at), or a zone it covers', example: only({ dynamic: [{ id: 'arena' }] }) },
+    },
   },
   logic(logic) {
     logic.predicate('discovered', { refs: p => [['zone', p.discovered]], test: (p, rt) => Boolean(rt.store(ID).discovered?.[p.discovered]) });
@@ -48,23 +54,18 @@ export default {
     logic.predicate('region', { refs: p => [['region', p.region]], test: (p, rt, c) => { const e = rt.resolve(p.who, c); return Boolean(e && rt.store(ID).inside?.[e.id]?.includes(p.region)); } });
     logic.predicate('region_open', { refs: p => [['region', p.region_open]], test: (p, rt) => Boolean(rt.store(ID).dyn?.[p.region_open]?.open) });
     logic.effect('discover', { refs: e => [['zone', e.zone]], run: (e, rt, c) => rt.service('zones').discover(e.zone, rt.resolve(e.who, c)?.id ?? 'player') });
+    const codes = (kind, extra = {}) => [{ code: 'zone_effect_invalid', fields: ['zone', ...(kind === 'move_zone' ? ['at', 'follow'] : [])], message: `${kind} names a dynamic zone id${kind === 'move_zone' ? ' and has at or follow' : ''}`, example: { do: kind, ...extra } }];
+    const regionRef = e => (typeof e.zone === 'string' ? [['region', e.zone]] : []);
     const region = (e, path, errors) => { if (typeof e.zone !== 'string') errors.push({ code: 'zone_effect_invalid', path, message: `${e.do} needs a dynamic zone id` }); };
-    logic.effect('open_zone', { refs: e => [['region', e.zone]], check: region, run: (e, rt) => rt.service('zones').open(e.zone, e) });
-    logic.effect('close_zone', { refs: e => [['region', e.zone]], check: region, run: (e, rt) => rt.service('zones').close(e.zone) });
-    logic.effect('move_zone', { refs: e => [['region', e.zone]], check: (e, path, errors) => { region(e, path, errors); if (e.at === undefined && !e.follow) errors.push({ code: 'zone_effect_invalid', path, message: 'move_zone needs at or follow' }); }, run: (e, rt, c) => rt.service('zones').move(e.zone, e.follow ? rt.resolve(e.follow, c)?.at : e.at) });
+    logic.effect('open_zone', { codes: codes('open_zone'), refs: regionRef, check: region, run: (e, rt) => rt.service('zones').open(e.zone, e) });
+    logic.effect('close_zone', { codes: codes('close_zone'), refs: regionRef, check: region, run: (e, rt) => rt.service('zones').close(e.zone) });
+    logic.effect('move_zone', { codes: codes('move_zone'), refs: regionRef, check: (e, path, errors) => { region(e, path, errors); if (e.at === undefined && !e.follow) errors.push({ code: 'zone_effect_invalid', path, message: 'move_zone needs at or follow' }); }, run: (e, rt, c) => rt.service('zones').move(e.zone, e.follow ? rt.resolve(e.follow, c)?.at : e.at) });
   },
-  validate(config, doc, ctx) {
-    const errors = [], statics = new Set((doc.spaces || []).flatMap(s => (s.zones || []).map(z => z.id)));
-    const dyn = uniqueIds(config.dynamic, 'dynamic', 'zone_dynamic_duplicate', errors);
+  validate(config) {
+    const errors = [];
     config.dynamic.forEach((d, i) => {
-      if (statics.has(d.id)) errors.push({ code: 'zone_dynamic_duplicate', path: `dynamic[${i}].id`, message: `dynamic zone '${d.id}' reuses a static zone id` });
       if (d.zone === undefined && (d.at === undefined || (d.size === undefined && d.r === undefined && isVec(d.at)))) errors.push({ code: 'zone_dynamic_shape', path: `dynamic[${i}]`, message: 'a dynamic zone needs at with size or r, or a zone' });
-      if (d.size !== undefined && !isVec(d.size)) errors.push({ code: 'zone_dynamic_shape', path: `dynamic[${i}].size`, message: 'size must be a vector' });
     });
-    config.rules.forEach((r, i) => {
-      if (!statics.has(r.zone) && !dyn.has(r.zone)) errors.push({ code: 'ref_unknown', path: `rules[${i}].zone`, message: `unknown zone '${r.zone}'` });
-    });
-    (doc.spaces || []).forEach((s, i) => (s.zones || []).forEach((z, j) => { if (z.rules !== undefined && (typeof z.rules !== 'object' || Array.isArray(z.rules))) errors.push({ code: 'zone_rules_invalid', path: `spaces[${i}].zones[${j}].rules`, message: 'zone rules must be an object of name -> value' }); }));
     return errors;
   },
   install(rt, config) {

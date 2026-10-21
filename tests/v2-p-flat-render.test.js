@@ -79,9 +79,10 @@ test('renderer preflight: missing space and wrong binding have stable codes', ()
   const r1 = preflight(base, registry, logic);
   assert.ok(r1.errors.some(e => e.code === 'flat_no_space' && e.path === 'graphics[0]'));
   const r2 = preflight(docFor('grid', { graphics: [{ use: 'graphics.render.grid', with: { wallColor: 'blue' } }] }), registry, logic);
-  assert.ok(r2.errors.some(e => e.code === 'flat_color' && e.path === 'graphics[0].with.wallColor'));
+  // Colors and materials are declared (a hex pattern, the materials' closed set): the kernel's codes report them.
+  assert.ok(r2.errors.some(e => e.code === 'param_pattern' && e.path === 'graphics[0].with.wallColor'));
   const r3 = preflight(docFor('physics2d', { graphics: [{ use: 'graphics.render.physics2d', with: { materials: { crate: 'cheese' } } }] }), registry, logic);
-  assert.ok(r3.errors.some(e => e.code === 'flat_material'));
+  assert.ok(r3.errors.some(e => e.code === 'param_option' && e.path === 'graphics[0].with.materials.crate'));
   const twoSpaces = docFor('tilemap', { graphics: [{ use: 'graphics.render.grid', space: 'world' }] });
   twoSpaces.spaces.push({ id: 'board', use: 'engine.space.grid', with: { size: [4, 4] } });
   assert.ok(preflight(twoSpaces, registry, logic).errors.some(e => e.code === 'flat_space_kind'));

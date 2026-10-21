@@ -20,6 +20,7 @@ export default {
     },
     provides: {},
     requires: { primitives: ['graphics.anim.clips'] },
+    rules: { speeds_order: { fields: ['idleWalkRun'], message: 'speeds increase: idle < walk < run' } },
   },
   validate(config) {
     const t = config.idleWalkRun;

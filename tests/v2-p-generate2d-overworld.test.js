@@ -23,7 +23,7 @@ const doc = ({ space = 'engine.space.tilemap', seed = 4, w = {} } = {}) => ({
   spaces: [{ id: 'ow', use: space, with: space === 'engine.space.test' ? { size: [256, 256, 1] } : { size: [256, 256], mode: 'topdown' }, generators: [{ use: 'engine.generate.tilemap.overworld', with: { areas: AREAS(), starters: ['sprout', 'ember', 'drop'], ...w } }] }],
   systems: [{ use: 'plot.storyboard' }],
   plot: { storyboard: { acts: [{ id: 'a1', beats: [{ id: 'left_town', when: { zone: 'route1' }, do: [{ do: 'set_flag', flag: 'outside' }] }] }] } },
-  content: { archetypes: [{ id: 'hero', components: {} }] },
+  content: { archetypes: [{ id: 'hero', components: {} }], items: [{ id: 'potion', name: 'Potion' }, { id: 'rope', name: 'Rope' }] },
   player: { archetype: 'hero', space: 'ow' },
 });
 
@@ -79,7 +79,7 @@ test('tilemap.overworld: preflight sees area zones and rejects bad configs with 
   const bad = doc({ w: { start: 'mars' } });
   bad.spaces[0].generators[0].with.areas.push({ id: 'home', kind: 'town' }, { id: 'gym2', kind: 'gym', connects: [{ to: 'nowhere' }] });
   const got = codes(bad);
-  for (const c of ['start_unknown', 'area_duplicate', 'connect_unknown', 'gym_leader_missing']) assert.ok(got.includes(c), `${c} in ${got}`);
+  for (const c of ['start_unknown', 'id_duplicate', 'connect_unknown', 'gym_leader_missing']) assert.ok(got.includes(c), `${c} in ${got}`);
   const kind = doc(); kind.spaces[0].generators[0].with.areas[0].kind = 'castle';
   assert.ok(codes(kind).includes('param_option'));
 });

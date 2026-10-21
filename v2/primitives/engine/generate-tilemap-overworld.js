@@ -30,14 +30,14 @@ const DEFAULT_ROLES = { npc: 'npc', trainer: 'trainer', guard: 'guard', nurse: '
 
 const area = { type: 'object', fields: {
   id: { type: 'string', required: true }, kind: { type: 'string', options: ['town', 'route', 'cave', 'gym', 'league', 'interior'], required: true },
-  name: { type: 'string' }, description: { type: 'string' }, theme: { type: 'string' }, zone: { type: 'ref', to: 'zone', effect: 'place the map at this zone\'s rect (it must fit)' },
+  name: { type: 'string', display: true, effect: 'the area name a person reads (signs, map)' }, description: { type: 'string', display: true, effect: 'the sign text after the name' }, theme: { type: 'string' }, zone: { type: 'ref', to: 'zone', effect: 'place the map at this zone\'s rect (it must fit)' },
   length: { type: 'integer', min: 24, max: 160, effect: 'routes/caves: tiles along the travel axis (default 50)' },
   connects: { type: 'list', default: [], of: { type: 'object', fields: { to: { type: 'string', required: true }, gate: { type: 'predicate' } } } },
-  services: { type: 'list', of: { type: 'string' }, default: [], effect: 'heal, mart, pc (town buildings or room counters)' },
-  npcs: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string' }, ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id' }, name: { type: 'string' }, lines: { type: 'list', of: { type: 'string' } } } } },
-  trainers: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string' }, name: { type: 'string' } } } },
-  leader: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string' }, name: { type: 'string' } } },
-  items: { type: 'list', of: { type: 'string' }, default: [], effect: 'pickups placed in far corners (routes, caves)' },
+  services: { type: 'list', of: { type: 'string', options: ['heal', 'mart', 'pc'] }, default: [], effect: 'town buildings or room counters' },
+  npcs: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string' }, ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id' }, name: { type: 'string', display: true, effect: 'the name a person reads' }, lines: { type: 'list', of: { type: 'string', display: true }, effect: 'what the npc says' } } } },
+  trainers: { type: 'list', default: [], of: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id' }, name: { type: 'string', display: true, effect: 'the name a person reads' } } } },
+  leader: { type: 'object', open: true, fields: { id: { type: 'string', required: true }, ref: { type: 'string', selects: ENTITY_KINDS, effect: 'archetype or character id' }, name: { type: 'string', display: true, effect: 'the name a person reads' } } },
+  items: { type: 'list', of: { type: 'ref', to: 'item' }, default: [], effect: 'pickups placed in far corners (routes, caves)' },
   encounterRate: { type: 'number', min: 0, max: 1, default: 0.1 },
 } };
 
@@ -51,10 +51,10 @@ export default {
       areas: { type: 'list', of: area, min: 1, required: true },
       start: { type: 'string', effect: 'starting area id (default the first)' },
       startBuildings: { type: 'list', of: { type: 'string' }, default: ['lab'], effect: 'extra buildings in the start town' },
-      starters: { type: 'list', of: { type: 'string' }, default: [], effect: 'archetypes set out in the start lab' },
-      buildings: { type: 'json', default: {}, effect: 'building kind → {w, roof}; extends the defaults' },
-      tiles: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_TILES).map(k => [k, { type: 'string' }])), effect: 'tile role → block (walkable roles: ground path grass flower door floor mat switch carpet default to empty)' },
-      roles: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_ROLES).map(k => [k, { type: 'string' }])), effect: 'entity role → archetype' },
+      starters: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'archetypes (or characters) set out in the start lab' },
+      buildings: { type: 'object', default: {}, values: { type: 'object', fields: { w: { type: 'integer', min: 1, required: true, unit: 'tiles', effect: 'building width' }, roof: { type: 'string', required: true, effect: 'roof look recorded for renderers' } } }, effect: 'building kind → {w, roof}; extends the defaults' },
+      tiles: { type: 'object', default: {}, fields: Object.fromEntries([...Object.keys(DEFAULT_TILES), ...WALKABLE].map(k => [k, { type: 'ref', to: 'block', effect: `the ${k} tile` }])), effect: 'tile role → block (walkable roles: ground path grass flower door floor mat switch carpet default to empty)' },
+      roles: { type: 'object', default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_ROLES).map(k => [k, { type: 'ref', to: 'archetype', effect: `spawned for ${k} entities` }])), effect: 'entity role → archetype' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0] },
       gap: { type: 'integer', min: 1, max: 32, default: 4, effect: 'tiles between packed maps' },
       rowWidth: { type: 'integer', min: 32, effect: 'atlas row width (default the space width)' },
@@ -65,12 +65,23 @@ export default {
     },
     provides: { content: ['cells', 'rooms', 'zones', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
+    // A feature or entity whose ref is a character spawns that character's archetype.
+    reads: ['plot.characters'],
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', open: true, fields: { archetype: { type: 'ref', to: 'archetype' } } } } },
     defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
     // The guarantee: the published `targets` (every warp tile) are reachable from `from` by the player's body, walking
     // and taking the published `passes` (warps).
     traversal: { mover: 'player', problems: ['exit_unreachable', 'door_unreachable', 'map_unreachable'] },
     problems: ['exit_unreachable', 'door_unreachable', 'switch_unreachable', 'trainer_unreachable', 'item_unreachable', 'npc_unreachable', 'leader_unreachable', 'champion_unreachable', 'map_unreachable', 'warp_unpaired', 'area_too_big'],
-    validates: ['area_duplicate', 'connect_unknown', 'start_unknown', 'gym_leader_missing'],
+    rules: {
+      // Connections are deeper than the forms ask: the example is a document of its own.
+      connect_unknown: { fields: ['areas[].connects[].to', 'areas[].id'], message: 'a connection leads to an area id of areas', example: { at: 'spaces[0].generators[0].with.areas[0].connects[0].to', doc: {
+        spaces: [{ id: 'world', use: 'engine.space.tilemap', with: { size: [256, 256], mode: 'topdown' }, generators: [{ use: 'engine.generate.tilemap.overworld', with: { areas: [{ id: 'home', kind: 'town', connects: [{ to: 'nowhere' }] }] } }] }],
+        systems: [], player: { archetype: 'walker', at: [1, 1] }, content: { archetypes: [{ id: 'walker', name: 'Walker' }] },
+      } } },
+      start_unknown: { fields: ['start', 'areas[].id'], message: 'start is an area id of areas', example: { areas: [{ id: 'home', kind: 'town', name: null, description: null, theme: null, zone: null, length: null, services: null, leader: null, encounterRate: null }], start: 'harbor' } },
+      gym_leader_missing: { fields: ['areas[].kind', 'areas[].leader'], message: 'a gym area has a leader', example: { areas: [{ id: 'gym', kind: 'gym', name: null, description: null, theme: null, zone: null, length: null, services: null, leader: null, encounterRate: null }] } },
+    },
   },
   /**
    * provides.extent 'own': the maps are packed into an atlas whose height depends on the generated map sizes, so
@@ -79,9 +90,8 @@ export default {
   extentOf() { return null; },
   validate(raw) {
     const config = withDefaults(this.card, raw);
-    const errors = [], ids = new Set(config.areas.map(a => a.id)), seen = new Set();
+    const errors = [], ids = new Set(config.areas.map(a => a.id));
     config.areas.forEach((a, i) => {
-      if (seen.has(a.id)) errors.push(problem('area_duplicate', `areas[${i}].id`, `duplicate area '${a.id}'`)); seen.add(a.id);
       a.connects.forEach((c, j) => { if (!ids.has(c.to)) errors.push(problem('connect_unknown', `areas[${i}].connects[${j}].to`, `unknown area '${c.to}'`)); });
       if (a.kind === 'gym' && !a.leader) errors.push(problem('gym_leader_missing', `areas[${i}].leader`, `gym '${a.id}' needs a leader`));
     });

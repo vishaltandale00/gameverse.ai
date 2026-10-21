@@ -15,13 +15,14 @@ import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, d
 import { roleOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
 
 export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win', 'dazed'];
+/** The content.models fields lookOf and drawEntity read (model-lib.js modelsData), for every flat renderer's card.data. */
+export const FLAT_MODEL_FIELDS = ['kind', 'palette', 'parts', 'size', 'anims', 'pivot', 'preset', 'color', 'shapes', 'prop', 'rig', 'bones', 'clips', 'look'];
 
-/** The model spec for an entity: its own components.model, else its archetype's. */
+/** The model spec for an entity: its own components.model, else its archetype's (a content.models id: MODEL_COMPONENT). */
 export function modelSpec(doc, e) {
   const arch = doc.content?.archetypes?.find(a => a.id === e.archetype) || {};
   const m = e.components?.model ?? arch.components?.model;
   if (typeof m === 'string') return { key: m, spec: doc.content?.models?.[m] || null, arch };
-  if (m && typeof m === 'object') return { key: `${e.archetype}#inline`, spec: m, arch };
   return { key: `${e.archetype}#auto`, spec: null, arch };
 }
 

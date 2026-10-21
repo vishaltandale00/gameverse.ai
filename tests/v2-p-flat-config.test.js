@@ -29,7 +29,7 @@ test('every flat instance in v2/games preflights with zero param errors', () => 
       const errors = []; checkFields(flat.find(p => p.id === g.use).card.params, g.with || {}, `graphics[${i}].with`, errors, null);
       assert.deepEqual(errors, [], `${f} graphics[${i}] ${g.use}`);
       const own = flat.find(p => p.id === g.use).validate?.(checkFields(flat.find(p => p.id === g.use).card.params, g.with || {}, '', [], null), doc, {}, { path: `graphics[${i}]` }) || [];
-      assert.deepEqual(own.filter(e => /^flat_(color|theme|preset|anim|bone|rig|material)/.test(e.code)), [], `${f} graphics[${i}] ${g.use} validate`);
+      assert.deepEqual(own.filter(e => /^flat_(bind|preset|vector|bone|clip|rig)/.test(e.code)), [], `${f} graphics[${i}] ${g.use} validate`);
     });
   }
   assert.ok(seen >= 10, `covered ${seen} instances`);
@@ -37,14 +37,16 @@ test('every flat instance in v2/games preflights with zero param errors', () => 
 
 test('bad configs are rejected with stable codes', () => {
   const cases = [
-    [{ use: 'graphics.tileset.pixel', with: { themes: [{ id: 'a', palette: { a: 'red' } }, { id: 'a' }], bind: { stone: 'nope' } } }, ['flat_color', 'flat_theme_duplicate', 'flat_theme_unknown']],
-    [{ use: 'graphics.sprite.pixel', with: { outline: 'bright' } }, ['flat_color']],
-    [{ use: 'graphics.sprite.vector', with: { presets: { slime: 'dragon' } } }, ['flat_vector_preset']],
-    [{ use: 'graphics.anim.sprite', with: { map: { sprint: 'run' } } }, ['flat_anim_state']],
+    // Colors, theme ids and the themes bind names, vector presets and anim states are declared (patterns, a tile_theme
+    // kind, closed sets): the kernel's codes report them where the validators' own codes did.
+    [{ use: 'graphics.tileset.pixel', with: { themes: [{ id: 'a', palette: { a: 'red' } }, { id: 'a' }], bind: { stone: 'nope' } } }, ['param_pattern', 'id_duplicate', 'ref_unknown']],
+    [{ use: 'graphics.sprite.pixel', with: { outline: 'bright' } }, ['param_pattern']],
+    [{ use: 'graphics.sprite.vector', with: { presets: { slime: 'dragon' } } }, ['param_option']],
+    [{ use: 'graphics.anim.sprite', with: { map: { sprint: 'run' } } }, ['param_unknown']],
     [{ use: 'graphics.rig.custom', with: { rigs: [{ id: 'worm', bones: [{ id: 'b', parent: 'a' }, { id: 'a' }] }], archetypes: { slime: 'ghost-rig' } } }, ['flat_bone_parent', 'flat_rig_unknown']],
-    [{ use: 'graphics.background.parallax', with: { layers: [{ pattern: 'hills', color: 'teal' }] } }, ['flat_color']],
+    [{ use: 'graphics.background.parallax', with: { layers: [{ pattern: 'hills', color: 'teal' }] } }, ['param_pattern']],
     [{ use: 'graphics.background.parallax', with: { layers: [{ pattern: 'lava-lamps' }] } }, ['param_option']],
-    [{ use: 'graphics.lighting.2d', with: { lights: [{ follow: 'hero', color: 'warm' }] } }, ['flat_color']],
+    [{ use: 'graphics.lighting.2d', with: { lights: [{ follow: 'hero', color: 'warm' }] } }, ['param_pattern']],
     [{ use: 'graphics.particles', with: { bind: [{ event: 'hit', preset: 'boom' }] } }, ['flat_preset_unknown']],
     [{ use: 'graphics.fx.feedback', with: { shakeOn: { hurt: 3 } } }, ['param_range']],
     [{ use: 'graphics.post', with: { tonemap: 'reinhard' } }, ['param_option']],
@@ -57,7 +59,12 @@ test('bad configs are rejected with stable codes', () => {
   assert.ok(pf(docFor('physics2d', { graphics: [{ use: 'graphics.camera.isometric' }] })).errors.some(e => e.code === 'iso_space'));
   const bad = docFor('tilemap', { graphics: [{ use: 'graphics.render.tilemap' }, { use: 'graphics.sprite.pixel' }], content: { models: { hero: { kind: 'pixel', size: [16], parts: [{ rect: [0, 0], c: 'z' }] } } } });
   const r = pf(bad);
-  for (const c of ['flat_pixel_size', 'flat_pixel_part', 'flat_pixel_color']) assert.ok(r.errors.some(e => e.code === c), c);
+  for (const c of ['flat_pixel_size', 'flat_pixel_color']) assert.ok(r.errors.some(e => e.code === c), c);
+  // rect's [x, y, w, h] shape is declared on content.models (a warning until kernel/document.js DECLARATIONS_ENFORCED);
+  // a pixel part without a rect is the rule.
+  assert.ok([...r.errors, ...r.warnings].some(e => e.code === 'param_range' && e.path === 'content.models.hero.parts[0].rect'));
+  const noRect = docFor('tilemap', { graphics: [{ use: 'graphics.render.tilemap' }, { use: 'graphics.sprite.pixel' }], content: { models: { hero: { kind: 'pixel', size: [16, 16], parts: [{ c: '#202030' }] } } } });
+  assert.ok(pf(noRect).errors.some(e => e.code === 'flat_pixel_part'));
 });
 
 const FULL = [

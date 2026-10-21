@@ -97,7 +97,7 @@ test('engine.weather: weighted states with durations, forced and locked changes'
 });
 
 test('engine.blocks: definitions, harvest rules, break times, drops and light', () => {
-  const blocks = [{ id: 'stone', solid: true, hardness: 2, tool: 'pick', tier: 'stone', drops: [{ item: 'cobble' }] }, { id: 'torch', solid: false, light: 6 }, { id: 'bedrock', hardness: 9999 }];
+  const blocks = [{ id: 'stone', solid: true, hardness: 2, tool: 'pick', tier: 2, drops: [{ item: 'cobble' }] }, { id: 'torch', solid: false, light: 6 }, { id: 'bedrock', hardness: 9999 }];
   const { rt } = make([{ use: 'engine.blocks' }], { content: { blocks, items: [{ id: 'cobble' }] } });
   const b = rt.service('blocks');
   assert.equal(b.def('stone').tier, 2);
@@ -173,10 +173,10 @@ test('preflight rejects bad runtime-world configs with stable codes', () => {
     { use: 'engine.blocks', with: { tiers: ['hand'] } },
     { use: 'engine.zones', with: { dynamic: [{ id: 'yard', at: [1, 1] }], rules: [{ zone: 'mars' }] } },
     { use: 'plot.storyboard' },
-  ], { content: { blocks: [{ id: 'ore', tier: 'diamond', light: 99 }] } });
+  ], { content: { blocks: [{ id: 'ore', tier: 9, light: 20 }] } });
   bad.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { daytime: 7 }, do: [{ do: 'skip_time' }, { do: 'start_timer', timer: 'Bad!' }] }] }] } };
   const c = codes(bad, [...PRIMS, storyboard]);
-  for (const code of ['time_phases_invalid', 'time_timer_duplicate', 'weather_duration', 'weather_unknown', 'weather_weights', 'block_tier_unknown', 'block_light_range', 'zone_dynamic_duplicate', 'zone_dynamic_shape', 'ref_unknown', 'time_daytime_invalid', 'time_effect_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['time_phases_invalid', 'id_duplicate', 'weather_duration', 'weather_unknown', 'weather_weights', 'block_tier_unknown', 'block_light_range', 'zone_dynamic_shape', 'ref_unknown', 'time_daytime_invalid', 'time_effect_invalid']) assert.ok(c.includes(code), code);
 });
 
 test('every engine.time/weather/blocks/zones instance in v2/games has valid params', () => {

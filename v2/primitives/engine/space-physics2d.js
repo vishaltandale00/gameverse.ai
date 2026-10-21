@@ -7,12 +7,25 @@
 // components.body; the space keeps the solver world in state, syncs entity
 // edits in before each step and results out after, and reports contacts.
 import { createWorld, addBody, addArc, addChain, removeBody, wake, bodyIndex, applyImpulse, addDistanceJoint, addRevoluteJoint, stepWorld, raycastWorld, queryShape, depenetrate, containsPoint, aabbOf } from './spaces2d-rigid.js';
-import { zoneIndex, zoneTracker, zoneEditor, obstacleOf, inSpace, bodyOf, rectHas, rectArea, rectCenter, rectDist, edgesParam, checkEdges, wrapDelta, mod, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, zoneEditor, obstacleOf, inSpace, bodyOf, rectHas, rectArea, rectCenter, rectDist, edgesParam, checkEdges, EDGES_RULES, wrapDelta, mod, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { BODY, zonesData } from './runtime-lib.js';
 
 const SHAPES = ['circle', 'box', 'poly', 'seg'];
 const WALL_KINDS = ['box', 'circle', 'poly', 'seg', 'arc', 'chain'];
 const JOINT_KINDS = ['distance', 'rope', 'revolute'];
 const num = (d, o = {}) => ({ type: 'number', default: d, ...o });
+const POINT = { type: 'list', of: { type: 'number' }, min: 2, max: 2 };
+/** The body fields this space reads beyond the shared ones (engine.physics.* declare those: runtime-lib BODY). */
+const BODY2D = { type: 'object', open: true, effect: 'a solver body (the shared body fields plus its shape and solver settings)', fields: {
+  shape: { type: 'object', effect: 'collision shape (default: a box of body.size)', fields: {
+    kind: { type: 'string', options: SHAPES, required: true }, r: { type: 'number', min: 0, effect: 'circle / segment radius' }, w: { type: 'number', min: 0 }, h: { type: 'number', min: 0 },
+    points: { type: 'list', min: 3, of: POINT, effect: 'polygon points, local' }, a: { ...POINT, effect: 'segment start, local' }, b: { ...POINT, effect: 'segment end, local' },
+  } },
+  type: { type: 'string', options: ['dynamic', 'static', 'kinematic'], effect: 'default dynamic (kinematic for entity obstacles with body.solid)' },
+  density: { type: 'number', min: 0, effect: 'default 1' }, angle: { type: 'number', unit: 'rad' }, angVel: { type: 'number', unit: 'rad/s' },
+  bullet: { type: 'boolean', effect: 'continuous collision for fast bodies' }, damping: { type: 'number', min: 0 }, angularDamping: { type: 'number', min: 0 },
+  fixedRotation: { type: 'boolean' }, category: { type: 'integer', min: 0, max: 0xffff }, mask: { type: 'integer', min: 0, max: 0xffff },
+} };
 const shapeFields = {
   restitution: num(0.2, { min: 0, max: 1.5 }), friction: num(0.5, { min: 0, max: 5 }), sensor: { type: 'boolean', default: false },
   category: { type: 'integer', default: 1, min: 0, max: 0xffff }, mask: { type: 'integer', default: 0xffff, min: 0, max: 0xffff }, tags: { type: 'list', of: { type: 'string' }, default: [] },
@@ -40,14 +53,14 @@ export default {
       walls: { type: 'list', default: [], of: { type: 'object', fields: {
         id: { type: 'string' }, kind: { type: 'string', options: WALL_KINDS, default: 'box' },
         at: { type: 'list', of: { type: 'number' }, default: [0, 0] }, size: { type: 'list', of: { type: 'number' }, default: [1, 1] }, angle: num(0, { unit: 'rad' }),
-        r: num(0, { min: 0 }), points: { type: 'list', of: { type: 'json' }, default: [] }, radius: num(1, { min: 0 }), from: num(0, { unit: 'rad' }), to: num(Math.PI, { unit: 'rad' }), segments: { type: 'integer', min: 1, max: 128, default: 8 },
+        r: num(0, { min: 0 }), points: { type: 'list', of: POINT, default: [] }, radius: num(1, { min: 0 }), from: num(0, { unit: 'rad' }), to: num(Math.PI, { unit: 'rad' }), segments: { type: 'integer', min: 1, max: 128, default: 8 },
         ...shapeFields,
       } }, effect: 'static geometry: boxes, circles, polygons, capsule segments (points [a,b]), arcs (at=center) and chains of segments' },
       bodies: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype' }, at: { type: 'list', of: { type: 'number' }, required: true }, body: { type: 'json' },
+        id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype' }, at: { type: 'list', of: { type: 'number' }, required: true }, body: { ...BODY2D, fields: { ...BODY.fields, ...BODY2D.fields } },
       } }, effect: 'entities spawned at start with these body settings (merged over the archetype body)' },
       joints: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, kind: { type: 'string', options: JOINT_KINDS, required: true }, a: { type: 'string' }, b: { type: 'string', required: true },
+        id: { type: 'string', required: true }, kind: { type: 'string', options: JOINT_KINDS, required: true }, a: { type: 'ref', to: 'physics_body', effect: 'a body of bodies (omitted: a world anchor)' }, b: { type: 'ref', to: 'physics_body', required: true, effect: 'a body of bodies' },
         anchor: { type: 'list', of: { type: 'number' } }, anchorB: { type: 'list', of: { type: 'number' } }, length: { type: 'number', min: 0 },
         motor: { type: 'boolean', default: false }, speed: num(0, { unit: 'rad/s' }), maxTorque: num(0, { min: 0 }), limit: { type: 'boolean', default: false }, lower: num(0, { unit: 'rad' }), upper: num(0, { unit: 'rad' }),
       } }, effect: 'joints between entities (a omitted = world anchor); anchors are world points' },
@@ -61,6 +74,15 @@ export default {
     },
     at: 'At = [x, y] metres, y up: the body centre of mass. components.body = {size, vel, angle, angVel, shape:{kind:circle,r}|{kind:box,w,h}|{kind:poly,points}|{kind:seg,a,b,r}, type:dynamic|static|kinematic (static:true alias), density=1, restitution=0.2, friction=0.5, sensor, bullet, gravityScale=1, damping, angularDamping=0.05, fixedRotation, category=1, mask=0xffff}; the space fills mass and sleeping.',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1) metres, spawn?, tags?, rules?}; membership by body centre',
+    defines: [{ kind: 'physics_body', in: 'bodies' }],
+    components: { body: BODY2D },
+    data: zonesData('rect', 'spawn', 'tags'),
+    rules: {
+      ...EDGES_RULES,
+      wall_invalid: { fields: ['walls[].points', 'walls[].kind'], message: 'seg and chain walls have at least two points, poly walls at least three' },
+      joint_anchor_missing: { fields: ['joints[].anchor', 'joints[].kind'], message: 'a revolute joint has an anchor (its world pivot)', example: { doc: { spaces: [{ id: 'field', use: 'engine.space.physics2d', with: { bodies: [{ id: 'post', at: [1, 1] }], joints: [{ id: 'hinge', kind: 'revolute', b: 'post' }] } }] } } },
+      joint_limit_invalid: { fields: ['joints[].lower', 'joints[].upper', 'joints[].limit'], message: 'a limited joint has lower ≤ upper', example: { doc: { spaces: [{ id: 'field', use: 'engine.space.physics2d', with: { bodies: [{ id: 'post', at: [1, 1] }], joints: [{ id: 'hinge', kind: 'distance', b: 'post', limit: true, lower: 1, upper: 0 }] } }] } } },
+    },
     state: 'rt.state.spaces[id] = {world: solver JSON (bodies with ref = entity or wall id, joints with jid, warm-start cache, touching pairs), inside, out, zones?}',
     notes: "Entity obstacles: components.body.solid (default type kinematic) collides; solid:false turns the body into a ghost (an opened door); oneWay bodies hold others only from above (arriving against gravity) and never stop bullets. Events: contact {a, b, impulse, normal (a→b), at, speed, begin, sensor}; impact (same, begin contacts with impulse ≥ impactMin); contact_end {a, b}. a/b are entity ids or wall ids. raycast hits are 'entity' (with id) or 'cell' for static walls (with wall). slide() moves a body kinematically with depenetration. Joint angles in radians.",
   },
@@ -71,14 +93,11 @@ export default {
   },
   validate(config) {
     const errors = [...checkEdges(config.edges, 'with.edges')];
-    const ids = new Set((config.bodies || []).map(b => b.id));
     (config.walls || []).forEach((w, i) => {
       if ((w.kind === 'seg' || w.kind === 'chain') && (!Array.isArray(w.points) || w.points.length < 2)) errors.push({ code: 'wall_invalid', path: `with.walls[${i}].points`, message: `${w.kind} walls need at least two points` });
       if (w.kind === 'poly' && (!Array.isArray(w.points) || w.points.length < 3)) errors.push({ code: 'wall_invalid', path: `with.walls[${i}].points`, message: 'poly walls need at least three points' });
     });
-    (config.bodies || []).forEach((b, i) => { const s = b.body?.shape; if (s && !SHAPES.includes(s.kind)) errors.push({ code: 'shape_invalid', path: `with.bodies[${i}].body.shape.kind`, message: `shape kind must be ${SHAPES.join('|')}` }); });
     (config.joints || []).forEach((j, i) => {
-      for (const k of ['a', 'b']) if (j[k] != null && !ids.has(j[k])) errors.push({ code: 'joint_body_unknown', path: `with.joints[${i}].${k}`, message: `joint '${j.id}' references body '${j[k]}' not declared in bodies`, hint: 'declare it under with.bodies, or add the joint at runtime with addJoint' });
       if (j.kind === 'revolute' && !j.anchor) errors.push({ code: 'joint_anchor_missing', path: `with.joints[${i}].anchor`, message: 'revolute joints need a world pivot anchor' });
       if (j.limit && j.lower > j.upper) errors.push({ code: 'joint_limit_invalid', path: `with.joints[${i}]`, message: 'lower limit exceeds upper' });
     });

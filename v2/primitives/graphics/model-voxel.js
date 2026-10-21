@@ -9,6 +9,7 @@ import { PART_ALIASES } from './rig-humanoid.js';
 import { eulerMatrix } from './three-rig.js';
 import { colorOf } from './three-util.js';
 import { resolveColor } from './model-lowpoly.js';
+import { modelsData, docExample } from './model-lib.js';
 
 /** Primary rig part names (their own bone); everything else attaches by alias or to the nearest primary part. */
 export const PRIMARY = { head: 'head', torso: 'chest', body: 'chest', armL: 'upperArmL', armR: 'upperArmR', legL: 'upperLegL', legR: 'upperLegR' };
@@ -153,14 +154,25 @@ export default {
     },
     provides: {},
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'palette', 'parts', 'size', 'rig', 'height']) },
+    rules: {
+      model_size: { fields: ['content.models.*.size', 'content.models.*.kind'], message: 'a voxel model has size [w, h, d]',
+        example: docExample({ models: { crate: { kind: 'voxel', size: [4, 4], parts: [] } } }) },
+      model_part: { fields: ['content.models.*.parts[].box', 'content.models.*.kind'], message: 'every part of a voxel model has box [x, y, z, w, h, d]',
+        example: docExample({ models: { crate: { kind: 'voxel', size: [4, 4, 4], parts: [{ c: '#806040' }] } } }) },
+      model_color: { fields: ['content.models.*.parts[].c', 'content.models.*.palette'], message: "a voxel part's c is a key of the model's palette or a #hex color",
+        example: docExample({ models: { crate: { kind: 'voxel', size: [4, 4, 4], palette: { w: '#806040' }, parts: [{ box: [0, 0, 0, 4, 4, 4], c: 'stone' }] } } }) },
+    },
   },
   validate(config, doc) {
     const errs = [];
     for (const [id, m] of Object.entries(doc.content?.models || {})) {
-      if (m.kind !== 'voxel') continue;
+      if (m?.kind !== 'voxel') continue;
       if (!Array.isArray(m.size) || m.size.length !== 3) errs.push({ code: 'model_size', path: `content.models.${id}.size`, message: 'voxel models need size [w,h,d]' });
-      (m.parts || []).forEach((p, i) => {
-        if (!Array.isArray(p.box) || p.box.length !== 6) errs.push({ code: 'model_part', path: `content.models.${id}.parts[${i}].box`, message: 'box must be [x,y,z,w,h,d]' });
+      (Array.isArray(m.parts) ? m.parts : []).forEach((p, i) => {
+        if (!p || typeof p !== 'object') return;
+        // box's [x, y, z, w, h, d] shape is the card's (content.models); that a voxel part has one is this rule.
+        if (p.box === undefined) errs.push({ code: 'model_part', path: `content.models.${id}.parts[${i}].box`, message: 'a voxel part needs box [x,y,z,w,h,d]' });
         else if (p.c && m.palette && !(p.c in m.palette) && !String(p.c).startsWith('#')) errs.push({ code: 'model_color', path: `content.models.${id}.parts[${i}].c`, message: `'${p.c}' is not in the model palette`, hint: Object.keys(m.palette).join(', ') });
       });
     }

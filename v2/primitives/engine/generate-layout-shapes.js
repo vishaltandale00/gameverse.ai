@@ -72,8 +72,14 @@ const group = { type: 'object', fields: {
   material: { type: 'string', default: 'wood' },
   motion: { type: 'string', default: 'none', effect: 'recorded for motion primitives: none|rotate|slide|...' },
   rows: { type: 'list', of: { type: 'string' }, effect: 'shape rows: picture, top row first' },
-  legend: { type: 'object', default: {}, values: { type: 'object', open: true, fields: { kind: { type: 'string' }, archetype: { type: 'ref', to: 'archetype' } } }, effect: 'rows: char → {kind?, archetype?, hp?, unbreakable?, material?, motion?}' },
-  pieces: { type: 'list', of: { type: 'json' }, effect: 'shape pieces: [{x, y, w, h, material?, shape?}] (x centre, y bottom)' },
+  legend: { type: 'object', default: {}, values: { type: 'object', fields: {
+    kind: { type: 'string', effect: 'piece kind (default brick, or unbreakable for sealing chars)' }, archetype: { type: 'ref', to: 'archetype', effect: 'archetype of this char\'s pieces' },
+    hp: { type: 'number', min: 0, effect: 'hit points (default the digit 2-9 the char is, else 1)' }, material: { type: 'string', effect: 'a material name (default the group\'s)' }, motion: { type: 'string', effect: 'motion recorded on the piece (default the group\'s)' },
+  } }, effect: 'rows: char → {kind?, archetype?, hp?, material?, motion?}' },
+  pieces: { type: 'list', effect: 'shape pieces (x centre, y bottom)', of: { type: 'object', fields: {
+    x: { type: 'number', required: true }, y: { type: 'number', default: 0 }, w: { type: 'number', min: 0.01, required: true }, h: { type: 'number', min: 0.01, required: true },
+    material: { type: 'string', effect: 'a material name (default the group\'s)' }, shape: { type: 'string', effect: 'recorded on the piece (default box)' },
+  } } },
   tags: { type: 'list', of: { type: 'string' }, default: [] },
 } };
 
@@ -94,16 +100,20 @@ export default {
         role: { type: 'string', required: true }, count: { type: 'integer', min: 0 }, fraction: { type: 'number', min: 0, max: 1 },
         kind: { type: 'string', effect: 'only pieces of this kind' }, archetype: { type: 'ref', to: 'archetype', effect: 'archetype for pieces given this role' },
       } }, effect: 'roles assigned in order to seed-shuffled pieces' },
-      materials: { type: 'json', default: {}, effect: 'extra/overriding materials {name:{hp, density, mu, e, score, static?}}' },
+      materials: { type: 'object', default: {}, values: { type: 'object', open: true, fields: { hp: { type: 'number', min: 0, effect: 'hit points per unit area (unset: unbreakable)' }, static: { type: 'boolean', effect: 'pieces of it never move' } } }, effect: 'extra/overriding materials by name: {hp, static, density, mu, e, score...}' },
       support: { type: 'boolean', default: true, effect: 'prove structure pieces rest on the ground (y 0 in layout) or another piece' },
       sealing: { type: 'list', of: { type: 'string' }, default: ['m'], effect: 'row chars that block the ball (unbreakable)' },
       openSide: { type: 'string', options: ['bottom', 'top'], default: 'bottom', effect: 'side of a row picture the ball comes from' },
-      archetype: { type: 'string', default: 'piece', effect: 'the content.archetypes id of pieces whose group names none' },
+      archetype: { type: 'ref', to: 'archetype', default: 'piece', effect: 'archetype of pieces whose group names none' },
     },
     provides: { content: ['structures', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'layout'] },
     requires: { capabilities: ['position'] },
     problems: ['piece_sealed', 'piece_overlap', 'piece_unsupported', 'role_shortfall', 'layout_empty'],
-    validates: ['material_unknown', 'shape_data_missing', 'roles_overfull'],
+    rules: {
+      material_unknown: { fields: ['groups[].material', 'groups[].pieces[].material', 'materials'], message: `a material is ${Object.keys(MATERIALS).join(', ')} or a name in materials`, example: { groups: [{ shape: 'stack', id: null, kind: null, archetype: null, x: null, y: null, size: null, count: null, angle: null, span: null, pieceSize: null, bricks: null, material: 'jelly', motion: null, rows: null, tags: null }] } },
+      shape_data_missing: { fields: ['groups[].shape', 'groups[].rows', 'groups[].pieces'], message: 'a rows group lists rows; a pieces group lists pieces' },
+      roles_overfull: { fields: ['roles[].fraction', 'roles[].count'], message: 'role fractions sum to at most 1 and role counts to at most 4000' },
+    },
   },
   /**
    * Planner hook (v2/planner/world.js), arena2d and physics2d spaces: static solid pieces in every zone. With

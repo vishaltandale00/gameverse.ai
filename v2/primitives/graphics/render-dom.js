@@ -7,7 +7,9 @@
 // card element (heading text for screen readers) holding the canvas.
 import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER } from './flat-stage.js';
-import { drawEntity, lookOf } from './flat-models.js';
+import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
+import { modelsData, MODEL_COMPONENT } from './model-lib.js';
+import { bindingRules } from './flat-stage.js';
 import { sceneryImage, themeFor } from './flat-art.js';
 import { clamp01, label, rgba, FONTS } from './flat-util.js';
 
@@ -22,10 +24,13 @@ export default {
       showPlayer: { type: 'boolean', default: true, effect: 'draw the player in the scene' },
       time: { type: 'string', default: 'auto', options: ['auto', 'day', 'sunset', 'night', 'dawn'], effect: 'scenery lighting (auto: from zone tags and the story)' },
     },
-    reads: ['plot.characters', 'content.archetypes'],
+    reads: ['plot.characters', 'content.archetypes', 'content.models'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }) },
+    components: { model: MODEL_COMPONENT },
+    rules: { flat_no_space: bindingRules('graphics.render.dom', ['engine.space.graph', 'engine.space.none'], { id: 'other', use: 'engine.space.grid', with: { size: [4, 4] } }).flat_no_space },
   },
   validate(config, doc) {
-    return (doc.spaces || []).some(s => s.use === 'engine.space.graph' || s.use === 'engine.space.none') ? [] : [{ code: 'flat_no_space', message: 'graphics.render.dom needs a graph or none space' }];
+    return (doc.spaces || []).some(s => s.use === 'engine.space.graph' || s.use === 'engine.space.none') ? [] : [{ code: 'flat_no_space', path: '', message: 'graphics.render.dom needs a graph or none space' }];
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

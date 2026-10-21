@@ -10,6 +10,7 @@ import { uiHost, fill, titleCase, itemName, charName, docItem, docSystem, fmtInt
 import { icon, itemIcon } from './ui-icons.js';
 import { createSheet } from './ui-sheet.js';
 import * as S from './ui-sources.js';
+import { itemsData, blocksData } from './model-lib.js';
 
 export const PANELS = ['items', 'equipment', 'crafting', 'loadout', 'container', 'shop', 'skills'];
 const LABEL = { items: 'Items', equipment: 'Equipment', crafting: 'Crafting', loadout: 'Charms', container: 'Container', shop: 'Shop', skills: 'Skills' };
@@ -95,6 +96,8 @@ export default {
       pause: { type: 'boolean', default: true, effect: 'hold the simulation while open' },
     },
     reads: ['content.items', 'content.recipes', 'content.blocks'],
+    data: { 'content.items': itemsData(['kind', 'icon', 'color', 'desc', 'rarity', 'tags', 'block']), 'content.blocks': blocksData(['color']) },
+    rules: { ui_tab_duplicate: { fields: ['panels'], message: 'each panel is listed once', example: { panels: ['items', 'items'] } } },
   },
   validate(config) {
     const seen = new Set(), errors = [];

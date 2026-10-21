@@ -12,6 +12,7 @@ import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
 import { declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
+import { itemsData } from './model-lib.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const pos = (d = 'top-left') => ({ type: 'string', default: d, options: POSITIONS, effect: 'screen anchor' });
@@ -27,23 +28,23 @@ const card = {
     meters: { type: 'list', default: [], of: { type: 'object', fields: {
       pool: { type: 'string', effect: "'hp' or a gameplay.resource pool id (reads res.<pool> and res.<pool>.max)" },
       var: { type: 'string', effect: 'explicit var to show instead of a pool' },
-      max: { type: 'json', effect: 'max as a number or a var name (default <var>.max)' },
-      label: { type: 'string' }, color: { type: 'string', default: '' }, icon: { type: 'string' },
+      max: { type: 'number', effect: 'a fixed max' }, maxVar: { type: 'string', effect: 'the var holding the max (default <var>.max)' },
+      label: { type: 'string', display: true }, color: { type: 'string', default: '' }, icon: { type: 'string' },
       pos: pos('top-left'), style: { type: 'string', default: 'bar', options: ['bar', 'pips'], effect: 'continuous bar or one pip per point' },
       low: { type: 'number', default: 0.25, min: 0, max: 1, effect: 'fraction under which the meter pulses' },
     } }, effect: 'bars bound to pools or vars' },
     counters: { type: 'list', default: [], of: { type: 'object', fields: {
-      var: { type: 'string' }, item: { type: 'ref', to: 'item' }, icon: { type: 'string' }, label: { type: 'string' },
-      max: { type: 'json', effect: 'max as a number or var name (enables icon rows)' },
+      var: { type: 'string' }, item: { type: 'ref', to: 'item' }, icon: { type: 'string' }, label: { type: 'string', display: true },
+      max: { type: 'number', effect: 'a fixed max (enables icon rows)' }, maxVar: { type: 'string', effect: 'the var holding the max (enables icon rows)' },
       pos: pos('top-right'), style: { type: 'string', default: 'auto', options: ['auto', 'number', 'icons'], effect: 'auto: icon row when the max is small (hearts), else a number' },
     } }, effect: 'numbers or icon rows bound to vars or inventory items' },
-    score: { type: 'object', default: null, fields: { var: { type: 'string', default: 'score' }, label: { type: 'string', default: 'Score' }, pos: pos('top-center') }, effect: 'big score readout' },
+    score: { type: 'object', default: null, fields: { var: { type: 'string', default: 'score' }, label: { type: 'string', default: 'Score', display: true }, pos: pos('top-center') }, effect: 'big score readout' },
     lives: { type: 'object', default: null, fields: { var: { type: 'string', default: 'lives' }, icon: { type: 'string', default: 'heart' }, pos: pos('top-left') }, effect: 'lives as icons' },
     stars: { type: 'object', default: null, fields: { var: { type: 'string', default: 'wanted' }, max: { type: 'integer', default: 5, min: 1, max: 10 }, icon: { type: 'string', default: 'star' }, pos: pos('top-right') }, effect: 'wanted-level style stars' },
     readouts: { type: 'list', default: [], of: { type: 'object', fields: {
-      var: { type: 'string', required: true }, label: { type: 'string' }, pos: pos('top-center'),
+      var: { type: 'string', required: true }, label: { type: 'string', display: true }, pos: pos('top-center'),
       format: { type: 'string', default: 'number', options: ['number', 'clock', 'percent', 'ordinal', 'speed'], effect: 'how the value is written' },
-      max: { type: 'json', effect: 'optional max (number or var) shown as value/max' },
+      max: { type: 'number', effect: 'a fixed max shown as value/max' }, maxVar: { type: 'string', effect: 'the var holding a max shown as value/max' },
     } }, effect: 'labelled values: timers, laps, positions, speed, moves' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
     compass: { type: 'boolean', default: false, effect: 'heading strip with the tracked objective marker' },
@@ -60,12 +61,17 @@ const card = {
   },
   requires: { primitives: [] },
   reads: ['content.items', 'content.statuses', 'plot.quests'],
+  data: { 'content.items': itemsData(['kind', 'icon', 'color', 'block']) },
+  rules: {
+    ui_meter_unbound: { fields: ['meters[].pool', 'meters[].var'], message: 'a meter names a pool or a var' },
+    ui_counter_unbound: { fields: ['counters[].var', 'counters[].item'], message: 'a counter names a var or an item' },
+  },
 };
 
 /** Meter/counter source vars and max. */
 export function meterVars(m) {
   const v = m.var || (m.pool === 'hp' || m.pool === 'health' ? 'hp' : m.pool ? `res.${m.pool}` : null);
-  return { value: v, max: typeof m.max === 'string' ? m.max : (isNum(m.max) ? m.max : v ? `${v}.max` : null) };
+  return { value: v, max: isNum(m.max) ? m.max : m.maxVar || (v ? `${v}.max` : null) };
 }
 function maxOf(rt, maxRef, fallbackVar) {
   if (isNum(maxRef)) return maxRef;
@@ -93,7 +99,7 @@ export const iconFills = (value, per, slots) => Array.from({ length: slots }, (_
 /** Vars other primitives publish that the HUD shows by itself when auto is on (catalog/var conventions). */
 export const AUTO_READOUTS = [
   { var: 'round.timer', label: 'Time', format: 'clock', pos: 'top-center' }, { var: 'round', label: 'Round', format: 'number', pos: 'top-center' },
-  { var: 'race.position', label: 'Pos', format: 'ordinal', pos: 'top-right' }, { var: 'race.lap', label: 'Lap', format: 'number', pos: 'top-right', max: 'race.laps' },
+  { var: 'race.position', label: 'Pos', format: 'ordinal', pos: 'top-right' }, { var: 'race.lap', label: 'Lap', format: 'number', pos: 'top-right', maxVar: 'race.laps' },
   { var: 'race.time', label: 'Time', format: 'clock', pos: 'top-right' }, { var: 'vehicle.speed', label: 'km/h', format: 'speed', pos: 'bottom-right' },
   { var: 'stage.number', label: 'Stage', format: 'number', pos: 'top-center' }, { var: 'stage.moves', label: 'Moves', format: 'number', pos: 'top-right' },
   { var: 'stage.time', label: 'Time', format: 'clock', pos: 'top-right' }, { var: 'wave', label: 'Wave', format: 'number', pos: 'top-center' },
@@ -111,7 +117,7 @@ export function formatReadout(value, format) {
 export function readoutsFor(rt, config) {
   const vars = rt.state.vars, shown = new Set([...config.meters.map(m => meterVars(m).value), ...config.counters.map(c => c.var), config.score?.var, config.lives?.var, config.stars?.var]);
   const list = [...config.readouts, ...(config.auto ? AUTO_READOUTS.filter(a => !config.readouts.some(r => r.var === a.var)) : [])];
-  return list.filter(r => isNum(vars[r.var]) && !shown.has(r.var)).map(r => { const max = isNum(r.max) ? r.max : typeof r.max === 'string' ? vars[r.max] : undefined; return { key: `r:${r.var}`, var: r.var, label: r.label ?? titleCase(r.var.split('.').pop()), text: formatReadout(vars[r.var], r.format) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos: r.pos || 'top-center', format: r.format || 'number', low: r.format === 'clock' && vars[r.var] <= 10 }; });
+  return list.filter(r => isNum(vars[r.var]) && !shown.has(r.var)).map(r => { const max = isNum(r.max) ? r.max : r.maxVar ? vars[r.maxVar] : undefined; return { key: `r:${r.var}`, var: r.var, label: r.label ?? titleCase(r.var.split('.').pop()), text: formatReadout(vars[r.var], r.format) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos: r.pos || 'top-center', format: r.format || 'number', low: r.format === 'clock' && vars[r.var] <= 10 }; });
 }
 
 /**
@@ -133,7 +139,7 @@ export function hudModel(rt, config, local = {}) {
   for (const [i, c] of config.counters.entries()) {
     let value, max = null, ic;
     if (c.item) { value = S.bag(rt)[c.item] || 0; ic = c.icon ? { name: c.icon } : itemIcon(docItem(rt.doc, c.item)); }
-    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = c.max !== undefined ? maxOf(rt, c.max, c.var) : maxOf(rt, `${c.var}.max`, c.var); ic = { name: c.icon || c.var }; }
+    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = maxOf(rt, isNum(c.max) ? c.max : c.maxVar || `${c.var}.max`, c.var); ic = { name: c.icon || c.var }; }
     const display = counterDisplay(c.style, max);
     out.counters.push({ key: `c${i}`, value, max, icon: ic, label: c.label ?? (c.item ? itemName(rt.doc, c.item) : titleCase(c.var)), pos: c.pos, display, fills: display.kind === 'icons' ? iconFills(value, display.per, display.slots) : null });
   }

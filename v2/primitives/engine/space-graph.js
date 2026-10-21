@@ -1,6 +1,18 @@
 // Locations and connections as a graph: adventure, narrative, board and
 // management games, world maps, or the "macro" layer above other spaces.
 // Zones are nodes; exits are edges, optionally gated by a predicate.
+import { ZONE_FIELDS } from './runtime-lib.js';
+/** The fields of a place (a graph zone) beyond the kernel's { id, name }: its exits name zones and may be gated by a predicate. */
+const PLACE = {
+  description: { type: 'string', display: true, effect: 'what a person reads about the place' }, tags: ZONE_FIELDS.tags,
+  exits: { type: 'list', of: { type: 'object', fields: { to: { type: 'ref', to: 'zone', required: true }, gate: { type: 'predicate', effect: 'the exit is open while it holds' } } } },
+};
+
+/** A rule example: the story's town (its places kept, the lamp room given one more exit) beside another space. */
+const TOWN = [['harbour', 'Harbour', ['town', 'water'], ['inn', 'chapel', 'cliffs']], ['inn', 'Inn', ['town', 'indoors'], ['harbour']], ['chapel', 'Chapel', ['town', 'indoors'], ['harbour']], ['cliffs', 'Cliff path', ['wild'], ['harbour', 'tower']], ['tower', 'Lighthouse', ['indoors'], ['cliffs', 'lamp_room']], ['lamp_room', 'Lamp room', ['indoors', 'high'], ['tower']]]
+  .map(([id, name, tags, to]) => ({ id, name, tags, exits: to.map(t => ({ to: t })) }));
+const townWith = (space, exit) => ({ doc: { spaces: [{ id: 'town', use: 'engine.space.graph', zones: TOWN.map(z => (z.id === 'lamp_room' ? { ...z, exits: [...z.exits, exit] } : z)) }, space] } });
+
 export default {
   id: 'engine.space.graph',
   card: {
@@ -12,9 +24,11 @@ export default {
     needs: { content: ['zones'] },
     // The fields of this space's zones (each a place): its exits name zones and may be gated by a predicate. Composition
     // renames the references they hold with the zones (planner/compose.js).
-    zoneFields: {
-      name: { type: 'string' }, description: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } },
-      exits: { type: 'list', of: { type: 'object', fields: { to: { type: 'ref', to: 'zone', required: true }, gate: { type: 'predicate' } } } },
+    zoneFields: { name: { type: 'string', display: true, effect: 'the name a person reads' }, ...PLACE },
+    data: { zones: { type: 'list', of: { type: 'object', open: true, fields: PLACE } } },
+    rules: {
+      graph_exit_space: { fields: ['zones[].exits[].to'], message: "an exit leads to a zone of its own space",
+        example: townWith({ id: 'cellar', use: 'engine.space.graph', zones: [{ id: 'vault', name: 'Vault', exits: [] }] }, { to: 'vault' }) },
     },
     params: {},
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },
@@ -24,8 +38,7 @@ export default {
     const errors = [];
     doc.spaces.filter(s => s.use === 'engine.space.graph').forEach((s, i) => (s.zones || []).forEach((z, j) => (z.exits || []).forEach((x, k) => {
       const path = `spaces[${doc.spaces.indexOf(s)}].zones[${j}].exits[${k}]`;
-      if (!(s.zones || []).some(o => o.id === x.to)) errors.push({ code: 'ref_unknown', path: `${path}.to`, message: `exit to unknown zone '${x.to}' in space '${s.id}'` });
-      if (x.gate) ctx.checkPredicate(x.gate, `${path}.gate`, errors);
+      if (typeof x?.to === 'string' && (doc.spaces || []).some(o => o !== s && (o.zones || []).some(z2 => z2?.id === x.to)) && !(s.zones || []).some(o => o.id === x.to)) errors.push({ code: 'graph_exit_space', path: `${path}.to`, message: `exit to zone '${x.to}' of another space than '${s.id}'` });
     })));
     return errors;
   },

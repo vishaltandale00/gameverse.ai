@@ -546,7 +546,6 @@
        "tunnels": 2,
        "powerPellets": 4,
        "sizes": {},
-       "styles": {},
        "origin": [
         0,
         0
@@ -971,6 +970,23 @@
        "speed": 2
       }
      }
+    }
+   ],
+   "blocks": [
+    {
+     "id": "wall",
+     "name": "Wall",
+     "solid": true
+    },
+    {
+     "id": "house_wall",
+     "name": "House wall",
+     "solid": true
+    },
+    {
+     "id": "house_door",
+     "name": "House door",
+     "solid": true
     }
    ]
   },

@@ -27,7 +27,7 @@ const doc = (w = {}, seed = 3) => ({
   spaces: [{ id: 'w', use: 'engine.space.test', with: { size: [100, 60, 1] }, zones: [{ id: 'a', rect: [0, 0, 60, 60] }, { id: 'b', rect: [60, 0, 100, 60] }],
     generators: [{ use: 'engine.generate.tilemap.rooms', with: { rooms: rooms(), ...w } }] }],
   systems: [{ use: w.mode === 'topdown' ? 'gameplay.move.walk' : 'gameplay.move.platformer' }],
-  content: { archetypes: [{ id: 'hero', components: {} }, { id: 'slime', components: {} }, { id: 'golem', components: {} }] },
+  content: { archetypes: [{ id: 'hero', components: {} }, { id: 'slime', components: {} }, { id: 'golem', components: {} }], blocks: [{ id: 'spikes', solid: false, tags: ['hazard'] }] },
   player: { archetype: 'hero', at: [3, 3] },
 });
 const codes = d => { const r = new Registry(PRIMS); return preflight(d, r, buildLogic(r, Logic)).errors.map(e => e.code); };

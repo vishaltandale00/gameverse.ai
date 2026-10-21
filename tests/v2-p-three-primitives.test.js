@@ -114,12 +114,12 @@ test('every three instance in v2/games preflights with zero param errors', () =>
 
 test('preflight rejects bad configs with stable codes', () => {
   const cases = [
-    ['graphics.render.voxel', { meshBudgetMs: 100 }, 'param_range'], ['graphics.material.palette', { colors: { stone: 'red' } }, 'color_invalid'],
+    ['graphics.render.voxel', { meshBudgetMs: 100 }, 'param_range'], ['graphics.material.palette', { colors: { stone: 'red' } }, 'param_pattern'],
     ['graphics.material.palette', { style: 'chrome' }, 'param_option'], ['graphics.anim.clips', { presets: ['xyzzy'] }, 'clip_unknown'],
     ['graphics.anim.clips', { clips: [{ id: 'c', dur: 1, keys: { spine: [[2, 0, 0, 0]] } }] }, 'clip_keys'], ['graphics.anim.locomotion', { idleWalkRun: [3, 1, 2] }, 'speeds_order'],
     ['graphics.terrain.procedural', { splat: [{ color: '#112233' }] }, 'splat_rule'], ['graphics.terrain.procedural', { fog: { near: 900, far: 100 } }, 'fog_range'],
     ['graphics.rig.humanoid', { attach: [{ bone: 'handR' }] }, 'attach_empty'], ['graphics.rig.humanoid', { attach: [{ bone: 'tail', slot: 'x' }] }, 'param_option'],
-    ['graphics.sky', { palette: { day: 'blue' } }, 'color_invalid'], ['graphics.camera.first-person', { fov: 200 }, 'param_range'],
+    ['graphics.sky', { palette: { day: 'blue' } }, 'param_pattern'], ['graphics.camera.first-person', { fov: 200 }, 'param_range'],
     ['graphics.camera.third-person', { shoulder: 'up' }, 'param_option'], ['graphics.render.mesh3d', { shadows: 'ultra' }, 'param_option'],
     ['graphics.foliage.scatter', { windSway: -1 }, 'param_range'], ['graphics.anim.ik', { iterations: 0 }, 'param_range'],
     ['graphics.anim.secondary', { chains: [{ bones: [] }] }, 'param_range'], ['graphics.anim.ragdoll', { maxActive: 0 }, 'param_range'],
@@ -132,9 +132,16 @@ test('preflight rejects bad configs with stable codes', () => {
     assert.ok(r.errors.some(e => e.code === code), `${use} ${JSON.stringify(w)} -> ${code}; got ${r.errors.map(e => e.code).join(',')}`);
   }
   const bad = voxelDoc(); bad.content.models.broken = { kind: 'voxel', size: [4, 4, 4], palette: { a: '#fff' }, parts: [{ box: [0, 0, 0], c: 'a' }] };
-  assert.ok(preflight(bad, registry, logic).errors.some(e => e.code === 'model_part'));
+  // A voxel part's box length and a lowpoly part's shape are declared on content.models (model-lib.js): the section shape
+  // check reports them (a warning until kernel/document.js DECLARATIONS_ENFORCED); what a kind requires stays a rule.
+  const found = r => [...r.errors, ...r.warnings];
+  assert.ok(found(preflight(bad, registry, logic)).some(e => e.code === 'param_range' && e.path === 'content.models.broken.parts[0].box'));
+  const bad1 = voxelDoc(); bad1.content.models.broken = { kind: 'voxel', size: [4, 4, 4], parts: [{ c: '#fff' }] };
+  assert.ok(preflight(bad1, registry, logic).errors.some(e => e.code === 'model_part'));
   const bad2 = meshDoc(); bad2.content.models.broken = { kind: 'lowpoly', parts: [{ shape: 'torus', at: [0, 0, 0], size: [1, 1, 1] }] };
-  assert.ok(preflight(bad2, registry, logic).errors.some(e => e.code === 'model_shape'));
+  assert.ok(found(preflight(bad2, registry, logic)).some(e => e.code === 'param_option' && e.path === 'content.models.broken.parts[0].shape'));
+  const bad3 = meshDoc(); bad3.content.models.broken = { kind: 'lowpoly', parts: [{ at: [0, 0, 0], size: [1, 1, 1] }] };
+  assert.ok(preflight(bad3, registry, logic).errors.some(e => e.code === 'model_shape'));
 });
 
 test('voxel world: chunks mesh within budget, actors are rigged and animated, edits re-mesh their chunk', () => {

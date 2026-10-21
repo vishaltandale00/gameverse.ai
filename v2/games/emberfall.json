@@ -3946,7 +3946,7 @@
      {"shape":"box","at":[0,0,0],"size":[0.8,8.8,0.8],"c":"m","name":"ember_seams","glow":true}
     ],
     "rig": "custom",
-    "bones": 9
+    "boneCount": 9
    },
    "rime_warden": {
     "kind": "lowpoly",
@@ -3967,7 +3967,7 @@
      {"shape":"box","at":[-3,1.2,0],"size":[4,0.1,2.4],"c":"b","name":"wingL"}
     ],
     "rig": "custom",
-    "bones": 12
+    "boneCount": 12
    },
    "barrow_wight": {
     "kind": "lowpoly",

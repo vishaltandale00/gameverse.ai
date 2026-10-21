@@ -32,12 +32,12 @@ test('settlements: preflight rejects bad roads, districts, structures and props 
   assert.deepEqual(codes(harbor()), []);
   assert.ok(codes(harbor({ roads: { links: [{ from: 'west', to: 'west' }] } })).includes('road_link_self'));
   assert.ok(codes(harbor({ roads: { links: [{ from: 'west', to: 'mars' }] } })).includes('ref_unknown'));
-  assert.ok(codes(harbor({ city: { districts: [{ zone: 'west', floors: [9, 2] }] } })).includes('param_range'));
+  assert.ok(codes(harbor({ city: { districts: [{ zone: 'west', floors: [9, 2] }] } })).includes('range_reversed'));
   assert.ok(codes(harbor({ city: { districts: [{ zone: 'west', grid: 'hex' }] } })).includes('param_option'));
   assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'castle', zone: 'east', at: [1, 1] }] } })).includes('param_option'));
   assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'hut', zone: 'east' }] } })).includes('structure_position_missing'));
   assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'hut', zone: 'east', at: [1, 1], count: [1, 2] }] } })).includes('structure_position_ambiguous'));
-  assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'hut', zone: 'east', at: [1, 1] }, { id: 'x', kind: 'hut', zone: 'east', at: [2, 2] }] } })).includes('id_duplicate'));
+  assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'hut', zone: 'east', at: [1, 1] }, { id: 'x', kind: 'hut', zone: 'east', at: [2, 2] }] } })).includes('structure_duplicate'));
   assert.ok(codes(harbor({ structures: { place: [{ id: 'x', kind: 'hut', zone: 'east', at: [1, 1], spawns: ['dragon'] }] } })).includes('ref_unknown'));
   assert.ok(codes(harbor({ scatter: { props: [{ per100m2: 1 }] } })).includes('scatter_prop_kind'));
   assert.ok(codes(harbor({ scatter: { props: [{ model: 'boulder' }] } })).includes('ref_unknown'));

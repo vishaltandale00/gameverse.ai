@@ -6,6 +6,52 @@ import { bodyBox } from '../../kernel/testing.js';
 import { Logic } from '../../kernel/logic.js';
 
 export const FPS = 60;
+
+/**
+ * The body component (KERNEL_API §2, owned by the engine physics primitives: engine.physics.body, .character and
+ * .rigid declare this one shape): the shared kinematic fields every space and movement primitive reads, and the
+ * material and controller fields the physics primitives read. Open: a space adds fields of its own (physics2d's shape).
+ * `facing` (+1/-1 in 2D, a vector in 3D) has no single type in the params dialect and is not declared.
+ */
+export const BODY = Object.freeze({ type: 'object', open: true, effect: 'kinematics and collision of a body (spaces with dynamics keep it current)', fields: {
+  size: { type: 'list', of: { type: 'number', min: 0 }, min: 1, max: 3, effect: 'box extents per axis' },
+  vel: { type: 'list', of: { type: 'number' }, max: 3, effect: 'velocity per axis' },
+  grounded: { type: 'boolean', effect: 'standing on something (spaces keep it current)' },
+  layer: { type: 'string', effect: 'collision layer: one of engine.physics.body layers' },
+  solid: { type: 'boolean', effect: "true: other bodies' slide treats this entity as an obstacle (doors, crates); false: an opened obstacle" },
+  oneWay: { type: 'boolean', effect: 'solid from above only' },
+  sensor: { type: 'boolean', effect: 'reports contacts, never pushes' },
+  static: { type: 'boolean', effect: 'never moved by contacts' },
+  mass: { type: 'number', min: 0, effect: 'share of push-apart and impulses (default 1)' },
+  friction: { type: 'number', min: 0, max: 2, effect: 'surface friction (default engine.physics.body friction)' },
+  restitution: { type: 'number', min: 0, max: 1, effect: 'bounciness (default engine.physics.body restitution)' },
+  controller: { type: 'string', effect: "who integrates the body: 'character' (engine.physics.character), 'move' (a movement primitive owns integration)" },
+  character: { type: 'object', effect: 'per-entity overrides of engine.physics.character', fields: {
+    radius: { type: 'number', min: 0.01, max: 50, unit: 'm' }, height: { type: 'number', min: 0.01, max: 100, unit: 'm' }, stepHeight: { type: 'number', min: 0, max: 10, unit: 'm' },
+    slopeLimit: { type: 'number', min: 0, max: 89, unit: 'deg' }, gravityScale: { type: 'number', min: 0, max: 10 }, maxFall: { type: 'number', min: 0.1, max: 1000, unit: 'm/s' },
+  } },
+  tags: { type: 'list', of: { type: 'string' }, effect: 'classes space rules match (grid rules appliesTo/except)' },
+  gravityScale: { type: 'number', min: 0, max: 10, effect: "multiplier on the space's gravity" },
+} });
+/**
+ * Zone fields the spaces read (card.data.zones; kernel/sections.js merges them over the base { id, name }): each space
+ * declares the fields of its zone shapes from these constants, so two spaces declaring one field declare it the same way.
+ */
+export const ZONE_FIELDS = Object.freeze({
+  rect: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: 'half-open box [x0, y0, x1, y1) in the space\'s plane coordinates' },
+  spawn: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'where entities entering the zone appear' },
+  tags: { type: 'list', of: { type: 'string' }, effect: 'zone classes other primitives match' },
+  cells: { type: 'list', of: { type: 'list', of: { type: 'integer' }, min: 2, max: 2 }, effect: 'the cells [c, r] of the zone' },
+  range: { type: 'list', of: { type: 'number' }, min: 2, max: 2, effect: 'half-open track segment [p0, p1)' },
+  lanes: { type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: 'inclusive lane range [l0, l1]' },
+  bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, max: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, r: { type: 'number', min: 0 } }, effect: 'box from min to max (x, y, z or x, z)' },
+  center: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'circle centre (with r)' },
+  r: { type: 'number', min: 0, effect: 'circle radius (with center)' },
+  polygon: { type: 'list', min: 3, of: { type: 'list', of: { type: 'number' }, min: 2, max: 2 }, effect: 'ground polygon of [x, z] points' },
+});
+/** card.data for the zones a space reads: the named ZONE_FIELDS. @param {...string} names */
+export const zonesData = (...names) => ({ zones: { type: 'list', of: { type: 'object', open: true, fields: Object.fromEntries(names.map(n => [n, ZONE_FIELDS[n]])) } } });
+
 /** Seconds to whole frames (never negative). */
 export const frames = sec => Math.max(0, Math.round((sec || 0) * FPS));
 export const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;

@@ -8,7 +8,7 @@
 // Coulomb friction on contact), impulse resolution between bodies (moving
 // characters and other solid non-rigid bodies push as infinite mass), and
 // sleeping for bodies at rest.
-import { isVec, v3, boxOf, boxShape, round, sweep } from './runtime-lib.js';
+import { isVec, v3, boxOf, boxShape, round, sweep, BODY } from './runtime-lib.js';
 
 const ID = 'engine.physics.rigid';
 const SLOP = 0.004, PERCENT = 0.8, AXES = ['x', 'y', 'z'];
@@ -32,11 +32,20 @@ export default {
     },
     provides: { events: ['impact', 'impact:*', 'woke', 'slept'], services: ['rigid'] },
     requires: { capabilities: ['overlap', 'gravity'] },
+    components: {
+      body: BODY,
+      rigid: { type: 'object', effect: 'a dynamic rigid body (velocity in components.body.vel)', fields: {
+        mass: { type: 'number', min: 0.000001, effect: 'default 1' }, restitution: { type: 'number', min: 0, max: 1, effect: 'bounciness (default the body, else params.restitution)' },
+        friction: { type: 'number', min: 0, max: 2, effect: 'Coulomb friction (default the body, else params.friction)' }, static: { type: 'boolean', effect: 'never moves (infinite mass)' },
+        sleeping: { type: 'boolean', effect: 'at rest until touched or pushed' },
+      } },
+    },
   },
   logic(logic) {
+    const codes = kind => [{ code: 'rigid_effect_invalid', fields: ['v'], message: 'v is a velocity vector (a list of numbers)', example: { do: kind, v: 'up' } }];
     const vec = (e, path, errors) => { if (!Array.isArray(e.v) || !e.v.every(Number.isFinite)) errors.push({ code: 'rigid_effect_invalid', path, message: `${e.do} needs v: a velocity vector` }); };
-    logic.effect('impulse', { check: vec, run: (e, rt, c) => { const t = rt.resolve(e.who, c); if (t) rt.service('rigid').impulse(t, e.v, { add: e.add !== false }); } });
-    logic.effect('set_velocity', { check: vec, run: (e, rt, c) => { const t = rt.resolve(e.who, c); if (t) rt.service('rigid').impulse(t, e.v, { add: false, raw: true }); } });
+    logic.effect('impulse', { codes: codes('impulse'), check: vec, run: (e, rt, c) => { const t = rt.resolve(e.who, c); if (t) rt.service('rigid').impulse(t, e.v, { add: e.add !== false }); } });
+    logic.effect('set_velocity', { codes: codes('set_velocity'), check: vec, run: (e, rt, c) => { const t = rt.resolve(e.who, c); if (t) rt.service('rigid').impulse(t, e.v, { add: false, raw: true }); } });
     logic.predicate('sleeping', { test: (p, rt, c) => Boolean(rt.resolve(p.sleeping, c)?.components.rigid?.sleeping) });
   },
   install(rt, config) {

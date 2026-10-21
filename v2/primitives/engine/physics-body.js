@@ -6,7 +6,7 @@
 // pushed apart along the axis of least penetration through the space's
 // slide (so walls still win). The `bodies` service answers layer questions
 // for other primitives (projectiles, pickups, hazards).
-import { isVec, boxOf, boxShape } from './runtime-lib.js';
+import { isVec, boxOf, boxShape, BODY } from './runtime-lib.js';
 
 const ID = 'engine.physics.body';
 
@@ -25,6 +25,11 @@ export default {
     },
     provides: { events: ['collide', 'collide:*', 'separate'], services: ['bodies'] },
     requires: { capabilities: ['overlap'] },
+    components: { body: BODY },
+    rules: {
+      body_layer_duplicate: { fields: ['layers'], message: 'layer names are distinct' },
+      body_layer_unknown: { fields: ['matrix[].a', 'matrix[].b', 'content.archetypes[].components.body.layer'], message: 'matrix pairs and archetype body layers name layers of layers' },
+    },
   },
   logic(logic) {
     // {touching: archetype|id, who?}: the subject is in contact with it now.

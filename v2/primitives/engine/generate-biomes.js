@@ -35,6 +35,7 @@ const card = {
   provides: { content: ['biomes'], extent: 'space', services: ['biomeAt'], events: [] },
   defines: [{ kind: 'biome', in: 'biomes' }],
   reads: [],
+  rules: { biome_range_invalid: { fields: ['biomes[].temp', 'biomes[].moist'], message: 'temp and moist are [low, high] ranges with low ≤ high' } },
 };
 
 export default {
@@ -42,21 +43,20 @@ export default {
   card,
   logic(logic) {
     logic.predicate('biome', {
-      check(p, path, errors) { if (typeof p.biome !== 'string' && !Array.isArray(p.biome)) errors.push({ code: 'predicate_invalid', path: `${path}.biome`, message: 'biome must be a biome id or a list of ids' }); },
-      refs: p => [].concat(p.biome || []).map(b => ['biome', b]),
+      // { biome: [ids] }: true while the subject stands in one of the listed biomes.
+      check(p, path, errors) { if (!Array.isArray(p.biome) || !p.biome.length || !p.biome.every(b => typeof b === 'string')) errors.push({ code: 'predicate_invalid', path: `${path}.biome`, message: 'biome is a list of biome ids' }); },
+      refs: p => (Array.isArray(p.biome) ? p.biome : []).map(b => ['biome', b]),
       test(p, rt, c) {
         const e = rt.resolve(p.who, c); if (!e?.space || !Array.isArray(e.at) || !rt.hasService('biomeAt')) return false;
         const svc = rt.service('biomeAt').of(e.space); if (!svc) return false;
         const at = e.at.length === 2 ? [e.at[0], 0, e.at[1]] : e.at, b = svc.call(at[0], at[2]);
-        return [].concat(p.biome).includes(b);
+        return p.biome.includes(b);
       },
     });
   },
   validate(config) {
-    const errors = [], ids = new Set();
-    config.biomes?.forEach((b, i) => {
-      if (ids.has(b.id)) errors.push({ code: 'id_duplicate', path: `with.biomes[${i}].id`, message: `duplicate biome '${b.id}'` });
-      ids.add(b.id);
+    const errors = [];
+    (Array.isArray(config.biomes) ? config.biomes : []).forEach((b, i) => {
       for (const k of ['temp', 'moist']) if (b[k] && b[k][0] > b[k][1]) errors.push({ code: 'biome_range_invalid', path: `with.biomes[${i}].${k}`, message: `${k} range must be [low, high]` });
     });
     return errors;

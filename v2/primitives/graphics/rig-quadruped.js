@@ -2,6 +2,7 @@
 // head, jaw, ears, 4 legs x 3 bones, tail chain, mane chain, saddle socket) for
 // horses, dogs, deer, wolves and boars, sized from body length and leg length.
 import { joinStage, presentationOnly } from './three-stage.js';
+import { modelsData } from './model-lib.js';
 
 export const QUADRUPED_LEGS = ['FL', 'FR', 'BL', 'BR'];
 
@@ -57,6 +58,7 @@ export default {
     },
     provides: {},
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'rig', 'height', 'length', 'species', 'saddle']) },
   },
   install(rt, config, instance) {
     if (presentationOnly(rt)) return;

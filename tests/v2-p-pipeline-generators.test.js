@@ -199,9 +199,9 @@ const MATRIX = [
   ['engine.generate.grid.board', 'grid', {}],
   ['engine.generate.grid.maze', 'grid', {}], ['engine.generate.grid.maze', 'tilemapTd', {}],
   ['engine.generate.tilemap.overworld', 'overworld', { areas: [
-    { id: 'home', kind: 'town', services: ['heal', 'shop'], connects: [{ to: 'route1' }] },
+    { id: 'home', kind: 'town', services: ['heal', 'mart'], connects: [{ to: 'route1' }] },
     { id: 'route1', kind: 'route', length: 30, connects: [{ to: 'home' }, { to: 'city' }], items: ['potion'] },
-    { id: 'city', kind: 'town', services: ['heal'], connects: [{ to: 'route1' }] }] }],
+    { id: 'city', kind: 'town', services: ['heal'], connects: [{ to: 'route1' }] }] }, { items: [{ id: 'potion', name: 'Potion' }] }],
   ['engine.generate.tilemap.rooms', 'tilemap', S],
 ];
 const USE = { tilemapTd: 'engine.space.tilemap', overworld: 'engine.space.tilemap' };

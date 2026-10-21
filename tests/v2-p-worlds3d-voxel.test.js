@@ -37,7 +37,7 @@ spaceConformance(test, assert, { name: 'engine.space.voxel', primitives: PRIMITI
 test('voxel: preflight rejects bad chunking and ranges with stable codes', () => {
   const codes = w => { try { make(flat(w)); return []; } catch (e) { return e.errors.map(x => x.code); } };
   assert.ok(codes({ height: 72 }).includes('voxel_height_chunk'));
-  assert.ok(codes({ seaLevel: 64 }).includes('param_range'));
+  assert.ok(codes({ seaLevel: 64 }).includes('voxel_level_range'));
   assert.ok(codes({ chunk: [16, 32] }).includes('param_range'));
   assert.ok(codes({ lightModel: 'rtx' }).includes('param_option'));
   assert.deepEqual(codes({}), []);

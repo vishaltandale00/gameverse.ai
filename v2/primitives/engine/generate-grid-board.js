@@ -18,9 +18,9 @@
 import { withDefaults, drawSeed, stream, Raster, spaceOf, cellWriter, addZones, publish, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.grid.board';
-const piece = { type: 'object', fields: { piece: { type: 'string', required: true, effect: 'the cell token: a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 } } };
-const terrain = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 }, blocks: { type: 'boolean', default: false, effect: 'impassable' } } };
-const biome = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, elevation: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, moisture: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, blocks: { type: 'boolean', default: false } } };
+const piece = { type: 'object', fields: { piece: { type: 'ref', to: 'block', required: true, effect: 'the cell token' }, weight: { type: 'number', min: 0, default: 1 } } };
+const terrain = { type: 'object', fields: { block: { type: 'ref', to: 'block', required: true, effect: 'the terrain cell' }, weight: { type: 'number', min: 0, default: 1 }, blocks: { type: 'boolean', default: false, effect: 'impassable' } } };
+const biome = { type: 'object', fields: { block: { type: 'ref', to: 'block', required: true, effect: 'the biome cell' }, elevation: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, moisture: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, blocks: { type: 'boolean', default: false } } };
 
 export const HEX_DIRS = { even: [[1, 0], [-1, 0], [0, -1], [-1, -1], [0, 1], [-1, 1]], odd: [[1, 0], [-1, 0], [1, -1], [0, -1], [1, 1], [0, 1]] };
 export const hexNeighbors = (x, y) => HEX_DIRS[y & 1 ? 'odd' : 'even'].map(([dx, dy]) => [x + dx, y + dy]);
@@ -41,12 +41,12 @@ export default {
       fillNoMatch: { type: 'boolean', default: true }, matchLength: { type: 'integer', min: 2, max: 6, default: 3 }, ensureMove: { type: 'boolean', default: true },
       terrain: { type: 'list', of: terrain, default: [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }], effect: 'tactics: obstacle/feature terrain' },
       density: { type: 'number', min: 0, max: 0.8, default: 0.18, effect: 'tactics: share of cells given terrain; lanes: field fill' },
-      ground: { type: 'string', effect: 'tactics: the block (a content.blocks id) of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
+      ground: { type: 'ref', to: 'block', effect: 'tactics: the block of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
       symmetry: { type: 'string', options: ['none', 'mirror', 'rotate'], default: 'rotate' },
       teams: { type: 'integer', min: 1, max: 4, default: 2 }, deployDepth: { type: 'integer', min: 1, max: 8, default: 2 },
-      lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'string', default: 'jungle', effect: 'lanes: field block' },
+      lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'ref', to: 'block', default: 'jungle', effect: 'lanes: field block' },
       continents: { type: 'integer', min: 1, max: 12, default: 2 }, land: { type: 'number', min: 0.1, max: 0.9, default: 0.45 },
-      water: { type: 'string', default: 'ocean' },
+      water: { type: 'ref', to: 'block', default: 'ocean', effect: 'hex-continent: sea cells' },
       biomes: { type: 'list', of: biome, default: [{ block: 'coast', elevation: [0, 0.15] }, { block: 'desert', elevation: [0.15, 0.7], moisture: [0, 0.3] }, { block: 'plains', elevation: [0.15, 0.7], moisture: [0.3, 0.65] }, { block: 'forest', elevation: [0.15, 0.7], moisture: [0.65, 1] }, { block: 'hills', elevation: [0.7, 0.9] }, { block: 'mountain', elevation: [0.9, 1], blocks: true }] },
       starts: { type: 'integer', min: 0, max: 16, default: 2 }, minStartDistance: { type: 'integer', min: 1, max: 64, default: 6 }, landPerStart: { type: 'integer', min: 1, default: 20 },
       attempts: { type: 'integer', min: 0, max: 16, default: 8 },
@@ -54,7 +54,11 @@ export default {
     provides: { content: ['cells'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'board'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
-    validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open', 'board_ground_blocks'],
+    rules: {
+      board_pieces_few: { fields: ['kind', 'fillNoMatch', 'fill[].weight'], message: 'a match board with fillNoMatch has at least 3 fill pieces of weight > 0', example: { kind: 'match', fill: [{ piece: 'pillar', weight: null }] } },
+      board_terrain_open: { fields: ['kind', 'terrain'], message: 'a tactics board lists at least one terrain' },
+      board_ground_blocks: { fields: ['ground', 'terrain[].block', 'terrain[].blocks'], message: 'ground is not a blocking terrain block (open cells are walkable)' },
+    },
   },
   /** The cells the board fills: origin + size, or the whole space when size is unset (provides.extent: 'own'). */
   extentOf(raw, space) {
@@ -68,8 +72,7 @@ export default {
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
-    if (!config.size && !Array.isArray(sp?.with?.size)) errors.push(problem('board_size_missing', 'size', 'give size or bind to a space with a size'));
+    const errors = [];
     if (config.kind === 'match' && config.fillNoMatch && config.fill.filter(p => p.weight > 0).length < 3) errors.push(problem('board_pieces_few', 'fill', 'a no-match fill needs at least 3 pieces'));
     if (config.kind === 'tactics' && !config.terrain.length) errors.push(problem('board_terrain_open', 'terrain', 'tactics boards need terrain'));
     if (config.kind === 'tactics' && config.ground != null && config.terrain.some(t => t.blocks && t.block === config.ground)) errors.push(problem('board_ground_blocks', 'ground', `ground '${config.ground}' is a blocking terrain block; open cells must be walkable`));

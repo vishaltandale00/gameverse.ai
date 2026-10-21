@@ -16,7 +16,7 @@ const doc = ({ space = 'engine.space.test', size = [80, 80, 1], w = {}, seed = 6
   schema: 'gameverse.v2.game/0.2', id: 'dungeon', title: 'Dungeon', seed,
   spaces: [{ id: 'd', use: space, with: { size }, zones: [], generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 14, keys: ['bronze_key', 'iron_key'], branching: 0.4, boss: 'warden', loot: 'chest_common', ...w } }] }],
   systems,
-  content: { items: [{ id: 'bronze_key', name: 'Bronze key' }, { id: 'iron_key', name: 'Iron key' }], archetypes: [{ id: 'hero', components: {} }, { id: 'warden', components: {} }, { id: 'key', components: {} }, { id: 'locked_door', components: {} }, { id: 'chest', components: {} }], blocks: [{ id: 'stone', solid: true }, { id: 'locked_door', solid: true }] },
+  content: { items: [{ id: 'bronze_key', name: 'Bronze key' }, { id: 'iron_key', name: 'Iron key' }], archetypes: [{ id: 'hero', components: {} }, { id: 'warden', components: {} }, { id: 'key', components: {} }, { id: 'locked_door', components: {} }, { id: 'chest', components: {} }], blocks: [{ id: 'stone', solid: true }, { id: 'locked_door', solid: true }], tables: [{ id: 'chest_common', name: 'Common chest' }] },
   player: { archetype: 'hero' },
 });
 

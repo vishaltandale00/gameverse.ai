@@ -26,9 +26,10 @@ export default {
     requires: {},
   },
   logic(logic) {
+    const codes = kind => [{ code: 'save_slot_invalid', fields: ['slot'], message: 'slot is a positive integer or "auto"', example: { do: kind, slot: 0 } }];
     const slot = (e, path, errors) => { if (e.slot !== undefined && !(Number.isInteger(e.slot) && e.slot >= 1) && e.slot !== 'auto') errors.push({ code: 'save_slot_invalid', path, message: 'slot is a positive integer or "auto"' }); };
-    logic.effect('save_game', { check: slot, run: (e, rt) => rt.service('save').save(e.slot ?? 'auto', e.label) });
-    logic.effect('load_game', { check: slot, run: (e, rt) => rt.service('save').load(e.slot ?? 'auto') });
+    logic.effect('save_game', { codes: codes('save_game'), check: slot, run: (e, rt) => rt.service('save').save(e.slot ?? 'auto', e.label) });
+    logic.effect('load_game', { codes: codes('load_game'), check: slot, run: (e, rt) => rt.service('save').load(e.slot ?? 'auto') });
     logic.effect('set_checkpoint', {
       refs: e => (e.zone ? [['zone', e.zone]] : []),
       run: (e, rt, c) => { const who = rt.resolve(e.who, c); rt.service('save').checkpoint({ id: e.id, zone: e.zone, at: e.at, space: e.space }, who); },

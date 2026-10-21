@@ -9,9 +9,12 @@
 // the arcade ghost house, waves leaving a gate, a queue at a door.
 // The spawn/despawn effects place entities through the same code.
 import { ENTITY_KINDS } from '../../kernel/params.js';
-import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds } from './runtime-lib.js';
+import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick } from './runtime-lib.js';
 
 const ID = 'engine.spawner';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
+
 const pair = (effect, dflt) => ({ type: 'list', of: { type: 'integer', min: 0 }, min: 1, max: 2, default: dflt, effect });
 
 export default {
@@ -34,7 +37,7 @@ export default {
           despawnDist: { type: 'number', min: 0, effect: 'cull spawns farther than this from the player; also no spawning beyond it' },
           cullWhenInactive: { type: 'boolean', default: false, effect: 'despawn this rule\'s entities when it deactivates' },
           maxAlive: { type: 'integer', min: 0, effect: 'hard cap for the rule' },
-          group: { type: 'string', effect: 'shared cap group id (see groups)' },
+          group: { type: 'ref', to: 'spawn_group', effect: 'shared cap group (an id of groups)' },
           groupSize: pair('[min, max] spawned together around one anchor', [1, 1]),
           surface: { type: 'list', of: { type: 'ref', to: 'block' }, effect: 'only on ground of these materials (surface capability)' },
           biome: { type: 'string', effect: 'only where the biomeAt service reports this biome' },
@@ -61,39 +64,45 @@ export default {
     provides: { events: ['spawned', 'spawned:*', 'spawn_telegraph', 'spawn_telegraph:*', 'released', 'released:*', 'culled', 'spawn_failed'], vars: ['population', 'population.*'] },
     requires: { capabilities: ['position'] },
     reads: [],
-    defines: [{ kind: 'spawn_rule', in: 'rules' }],
+    defines: [{ kind: 'spawn_rule', in: 'rules' }, { kind: 'spawn_group', in: 'groups' }],
+    rules: {
+      spawn_range: { fields: ['rules[].count', 'rules[].groupSize', 'rules[].unique'], message: 'a [min, max] pair has min ≤ max; a unique rule keeps one entity (count at most 1)', example: only({ rules: [{ id: 'balls', archetype: 'ball', count: [3, 1] }] }) },
+      spawn_at_invalid: { fields: ['rules[].at'], message: 'at is a point (a list of numbers), a list of points, or a location id (a string)', example: only({ rules: [{ id: 'balls', archetype: 'ball', at: true }] }) },
+      spawn_release_invalid: { fields: ['rules[].release', 'rules[].telegraph'], message: 'a release has counter, globalOn, idleSec or when; globalOn comes with globalLimits; held spawns are not telegraphed', example: only({ rules: [{ id: 'balls', archetype: 'ball', release: {} }] }) },
+    },
   },
   logic(logic) {
+    const codes = (kind, fields, message, example) => [{ code: 'spawn_effect_invalid', fields, message, example: { do: kind, ...example } }];
     const where = (e, path, errors) => { if (e.count !== undefined && !(Number.isInteger(e.count) && e.count >= 1 && e.count <= 100)) errors.push({ code: 'spawn_effect_invalid', path, message: 'count must be an integer in [1, 100]' }); };
     logic.effect('spawn', {
+      codes: codes('spawn', ['archetype', 'count'], 'spawn names an archetype; count is an integer in [1, 100]', { archetype: 'ball', count: 200 }),
       refs: e => [['archetype', e.archetype], ...(e.zone ? [['zone', e.zone]] : [])],
       check: (e, path, errors) => { if (typeof e.archetype !== 'string') errors.push({ code: 'spawn_effect_invalid', path, message: 'spawn needs an archetype' }); where(e, path, errors); },
       run: (e, rt, c) => rt.service('spawner').spawn(e, c),
     });
     logic.effect('despawn', {
+      codes: codes('despawn', ['who', 'archetype', 'rule'], 'despawn names who, an archetype or a rule', {}),
       refs: e => [...(typeof e.archetype === 'string' ? [['archetype', e.archetype]] : []), ...(typeof e.rule === 'string' ? [['spawn_rule', e.rule]] : [])],
       check: (e, path, errors) => { if (e.who === undefined && e.archetype === undefined && e.rule === undefined) errors.push({ code: 'spawn_effect_invalid', path, message: 'despawn needs who, archetype or rule' }); },
       run: (e, rt, c) => rt.service('spawner').despawn(e, c),
     });
+    const ruleRef = e => (typeof e.rule === 'string' ? [['spawn_rule', e.rule]] : []);
     const rule = (e, path, errors) => { if (typeof e.rule !== 'string') errors.push({ code: 'spawn_effect_invalid', path, message: `${e.do} needs a rule id` }); };
-    logic.effect('reset_spawner', { refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').reset(e.rule) });
-    logic.effect('rehold', { refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').rehold(e.rule, { global: e.global }) });
-    logic.effect('release', { refs: e => [['spawn_rule', e.rule]], check: rule, run: (e, rt) => rt.service('spawner').release(e.rule) });
+    logic.effect('reset_spawner', { codes: codes('reset_spawner', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').reset(e.rule) });
+    logic.effect('rehold', { codes: codes('rehold', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').rehold(e.rule, { global: e.global }) });
+    logic.effect('release', { codes: codes('release', ['rule'], 'rule is a spawn rule id', {}), refs: ruleRef, check: rule, run: (e, rt) => rt.service('spawner').release(e.rule) });
     logic.predicate('held', { test: (p, rt, c) => Boolean(rt.resolve(p.held, c)?.components.spawner?.held) });
   },
-  validate(config, doc, ctx) {
+  validate(config) {
     const errors = [];
-    uniqueIds(config.rules, 'rules', 'spawn_rule_duplicate', errors);
-    const groups = uniqueIds(config.groups, 'groups', 'spawn_group_duplicate', errors);
     config.rules.forEach((r, i) => {
       const path = `rules[${i}]`;
-      for (const k of ['count', 'groupSize']) if (r[k]?.length === 2 && r[k][0] > r[k][1]) errors.push({ code: 'spawn_range', path: `${path}.${k}`, message: `${k} min ${r[k][0]} > max ${r[k][1]}` });
-      if (r.group && !groups.has(r.group)) errors.push({ code: 'spawn_group_unknown', path: `${path}.group`, message: `unknown group '${r.group}'` });
+      for (const k of ['count', 'groupSize']) if (Array.isArray(r[k]) && r[k].length === 2 && r[k][0] > r[k][1]) errors.push({ code: 'spawn_range', path: `${path}.${k}`, message: `${k} min ${r[k][0]} > max ${r[k][1]}` });
       if (r.at !== undefined && !(isVec(r.at) || typeof r.at === 'string' || (Array.isArray(r.at) && r.at.every(isVec)))) errors.push({ code: 'spawn_at_invalid', path: `${path}.at`, message: 'at must be a point or a list of points' });
       if (r.unique && (r.count?.[1] ?? r.count?.[0]) > 1) errors.push({ code: 'spawn_range', path: `${path}.count`, message: 'a unique rule keeps one entity' });
-      if (r.release) {
+      if (r.release && typeof r.release === 'object') {
         if (r.release.counter === undefined && r.release.idleSec === undefined && r.release.when === undefined && r.release.globalOn === undefined) errors.push({ code: 'spawn_release_invalid', path: `${path}.release`, message: 'release needs counter, globalOn, idleSec or when (otherwise spawns are held forever)' });
-        if (r.release.globalOn && !r.release.globalLimits.length) errors.push({ code: 'spawn_release_invalid', path: `${path}.release.globalLimits`, message: 'globalOn needs globalLimits' });
+        if (r.release.globalOn && !r.release.globalLimits?.length) errors.push({ code: 'spawn_release_invalid', path: `${path}.release.globalLimits`, message: 'globalOn needs globalLimits' });
         if (r.telegraph) errors.push({ code: 'spawn_release_invalid', path: `${path}.telegraph`, message: 'held spawns cannot be telegraphed' });
       }
     });

@@ -26,6 +26,7 @@ export default {
     },
     provides: { events: ['region_loaded', 'region_loaded:*', 'region_unloaded', 'region_unloaded:*'], vars: ['stream.loaded', 'stream.pending'], services: ['stream'] },
     requires: { capabilities: ['position'] },
+    rules: { stream_radius: { fields: ['unloadRadius', 'preloadRadius'], message: 'unloadRadius ≥ preloadRadius (regions unload farther out than they load)' } },
   },
   logic(logic) {
     logic.predicate('loaded', { refs: p => [['zone', p.loaded]], test: (p, rt) => Boolean(rt.store(ID).loaded?.[p.loaded]) });

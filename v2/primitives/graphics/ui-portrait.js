@@ -9,13 +9,16 @@ import { h, hueColor } from './ui-lib.js';
 
 const pal = (spec, c) => hex(spec.palette?.[c], null) || hex(c, null) || '#888888';
 
+/** The content.models fields portraits read (model-lib.js modelsData), for the card.data of every UI card that paints them. */
+export const PORTRAIT_MODEL_FIELDS = ['kind', 'palette', 'parts', 'size', 'rig', 'height', 'build'];
+
 /** Resolve what to paint for a character id, archetype id or model id. */
 export function modelFor(doc, id) {
   const models = doc.content?.models || {};
   const ch = doc.plot?.characters?.find(c => c.id === id);
   const arch = doc.content?.archetypes?.find(a => a.id === (ch?.archetype || id));
   const key = ch?.model || arch?.components?.model || id;
-  return { id: key, spec: typeof key === 'string' ? models[key] : (typeof key === 'object' ? key : null), name: ch?.name || id, look: ch?.look || arch?.components?.look };
+  return { id: key, spec: typeof key === 'string' ? models[key] ?? null : null, name: ch?.name || id, look: ch?.look || arch?.components?.look };
 }
 
 /**

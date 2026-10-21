@@ -5,11 +5,16 @@
 // the ground and the lane edges. A window around the leader gives `bounds`,
 // culls passed obstacles and reports `passed` (near-miss and combo scoring);
 // looped tracks wrap progress and count laps.
+import { zonesData } from './runtime-lib.js';
 import { zoneIndex, zoneTracker, zoneEditor, ownSpaces, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 
 const EPS = 1e-6;
 const STICK = 0.5; // a rider stays on the body it stands on if that body rose at most this far since its last slide
 const v3 = a => [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
+
+/** A rule example: the race's circuit as one plain space (its zones kept) with these zones added. */
+const CIRCUIT_ZONES = [['start_line', 'Start line', [0, 6]], ['first_bend', 'First bend', [25, 31]], ['back_straight', 'Back straight', [50, 56]], ['hairpin', 'Hairpin', [75, 81]], ['chicane', 'Chicane', [100, 106]], ['long_sweep', 'Long sweep', [125, 131]], ['final_bend', 'Final bend', [150, 156]], ['home_straight', 'Home straight', [175, 181]]].map(([id, name, range]) => ({ id, name, range }));
+const circuitWith = (...zones) => ({ doc: { spaces: [{ id: 'circuit', use: 'engine.space.track', with: { lanes: 5, laneWidth: 1, length: 200, loop: true }, zones: [...CIRCUIT_ZONES, ...zones] }] } });
 
 export default {
   id: 'engine.space.track',
@@ -37,6 +42,12 @@ export default {
     },
     at: 'At = [progress, lane, height], the centre of the body box; components.body.size = [length, width in lanes, height] (default [1, 0.8, 1]). Resting on the ground means height = size[2] / 2.',
     zones: 'Zone = {id, name?, range:[p0,p1), lanes?:[l0,l1] inclusive, tags?, rules?} — track segments (tunnel, bridge, finish)',
+    data: zonesData('range', 'lanes', 'tags'),
+    rules: {
+      track_loop_length: { fields: ['loop', 'length'], message: 'a looped track has a length > 0' },
+      zone_range_invalid: { fields: ['zones[].range'], message: 'a track zone has range [p0, p1) with p1 > p0', example: circuitWith({ id: 'pit', name: 'Pit', range: [40, 30] }) },
+      zone_lanes_invalid: { fields: ['zones[].lanes', 'lanes'], message: 'zone lanes [l0, l1] lie within 0..lanes-1 with l0 ≤ l1', example: circuitWith({ id: 'pit', name: 'Pit', range: [30, 40], lanes: [3, 7] }) },
+    },
     state: 'rt.state.spaces[id] = {laps:{entity:n}, passed:{obstacle:true}, inside, zones?}',
     notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on, one-way ones (body.oneWay) only stood on; riders (body.standingOn) move with ballistic movers and with setPos(e, at, rt, {carry:true}); body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]).',
   },
@@ -46,8 +57,8 @@ export default {
     if (config.loop && !(config.length > 0)) errors.push({ code: 'track_loop_length', path: 'with.length', message: 'a looped track needs a positive length' });
     for (const [s, i] of ownSpaces(doc, 'engine.space.track', config, inst)) (s.zones || []).forEach((z, j) => {
       const r = z.range, path = `spaces[${i}].zones[${j}]`;
-      if (!Array.isArray(r) || r.length !== 2 || !(r[1] > r[0])) errors.push({ code: 'zone_range_invalid', path: `${path}.range`, message: `zone '${z.id}' needs range [p0, p1) with p1 > p0` });
-      if (z.lanes && (z.lanes[0] < 0 || z.lanes[1] > config.lanes - 1 || z.lanes[1] < z.lanes[0])) errors.push({ code: 'zone_lanes_invalid', path: `${path}.lanes`, message: `lanes must lie within 0..${config.lanes - 1}` });
+      if (!Array.isArray(r) || !(r[1] > r[0])) errors.push({ code: 'zone_range_invalid', path: `${path}.range`, message: `zone '${z.id}' needs range [p0, p1) with p1 > p0` });
+      if (Array.isArray(z.lanes) && (z.lanes[0] < 0 || z.lanes[1] > config.lanes - 1 || z.lanes[1] < z.lanes[0])) errors.push({ code: 'zone_lanes_invalid', path: `${path}.lanes`, message: `lanes must lie within 0..${config.lanes - 1}` });
     });
     return errors;
   },

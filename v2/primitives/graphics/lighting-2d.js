@@ -8,7 +8,9 @@
 import { hubOf, bindAny, ORDER } from './flat-stage.js';
 import { terrain } from './render-tilemap.js';
 import { lookOf } from './flat-models.js';
-import { TAU, rgba, col, isHex, clamp01, lerp, surface, ctx2d, noise1, seedOf } from './flat-util.js';
+import { TAU, rgba, col, clamp01, lerp, surface, ctx2d, noise1, seedOf } from './flat-util.js';
+import { color } from './model-lib.js';
+import { ENTITY_KINDS } from '../../kernel/params.js';
 
 /** Visibility polygon (world points) from p within radius r over a solid(x, y) cell test. Pure. */
 export function lightPolygon(p, r, solid, rays = 96) {
@@ -37,22 +39,16 @@ export default {
     params: {
       ambient: { type: 'number', default: 0.35, min: 0, max: 1, effect: 'brightness where it is dark (0 black, 1 fully lit)' },
       lights: { type: 'list', default: [], of: { type: 'object', fields: {
-        follow: { type: 'string', required: true, effect: 'entity id, archetype, tag or player' },
-        radius: { type: 'number', default: 5, min: 0.2, max: 64, unit: 'tiles' }, color: { type: 'string', default: '#ffd890' },
+        follow: { type: 'string', required: true, selects: ENTITY_KINDS, effect: 'entity id, archetype, tag or player' },
+        radius: { type: 'number', default: 5, min: 0.2, max: 64, unit: 'tiles' }, color: color({ default: '#ffd890' }),
         flicker: { type: 'number', default: 0.05, min: 0, max: 1 }, shadow: { type: 'boolean', default: false, effect: 'rays stop at solid cells' }, intensity: { type: 'number', default: 1, min: 0, max: 2 },
       } }, effect: 'lights carried by entities' },
       darkZones: { type: 'list', default: [], of: { type: 'ref', to: 'zone' }, effect: 'zones at the ambient level (elsewhere lit); empty = darkness everywhere' },
-      tint: { type: 'string', default: '#06040e', effect: 'color of the darkness' },
+      tint: color({ default: '#06040e', effect: 'color of the darkness' }),
       auto: { type: 'boolean', default: true, effect: 'entities with a light component or glowing model emit light' },
       rays: { type: 'integer', default: 96, min: 16, max: 360, effect: 'shadow ray count per light' },
       max: { type: 'integer', default: 24, min: 1, max: 128, effect: 'most lights drawn (nearest the camera)' },
     },
-  },
-  validate(config) {
-    const errs = [];
-    config.lights.forEach((l, i) => { if (!isHex(l.color)) errs.push({ code: 'flat_color', path: `lights[${i}].color`, message: `'${l.color}' is not a hex color` }); });
-    if (!isHex(config.tint)) errs.push({ code: 'flat_color', path: 'tint', message: `'${config.tint}' is not a hex color` });
-    return errs;
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

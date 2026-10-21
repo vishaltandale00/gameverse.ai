@@ -8,9 +8,9 @@
 // are prefabs (voxel cells or mesh3d colliders), hollow when `interiors`.
 // Provides `lotAt(x, z)` and the lot list.
 import { Rng, rand2, subSeed, smoothstep } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneCenter, zoneDistance } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneCenter, zoneDistance, rangeRule, reversedRanges } from './worlds3d-lib-world.js';
 import { roadNet, addNode, addEdge, ensureRoadLayer, provideRoadgraph } from './worlds3d-lib-roads.js';
-import { prefab, addStamp } from './worlds3d-lib-prefab.js';
+import { prefab, addStamp, paletteShape } from './worlds3d-lib-prefab.js';
 
 const card = {
   intent: 'Lays out city districts: levelled ground, street grids (regular, organic or radial) with lanes and sidewalks, blocks split into lots, buildings with floor counts and styles, landmarks and street furniture. Lots are queryable (lotAt) for ownership and building games.',
@@ -36,10 +36,11 @@ const card = {
     floorHeight: { type: 'number', min: 2, max: 10, unit: 'm', effect: 'storey height (default 4 cells on voxel, 3.5 m on mesh3d)' },
     margin: { type: 'number', min: 0, max: 400, default: 32, unit: 'm', effect: 'distance over which levelled districts blend back into the terrain' },
     drive: { type: 'string', options: ['right', 'left'], default: 'right' },
-    styles: { type: 'object', open: true, default: {}, effect: 'style -> {wall, roof, window, floor, trim...} voxel block overrides' },
+    styles: { type: 'object', default: {}, values: paletteShape(), effect: 'style -> {wall, roof, window, floor, trim...} voxel block overrides' },
   },
   provides: { content: ['structures', 'road-network'], extent: 'overlay', services: ['roadgraph', 'lotAt'], events: [] },
   reads: [],
+  rules: { range_reversed: rangeRule(['districts[].floors']) },
 };
 
 const centroid = q => [q.reduce((s, p) => s + p[0], 0) / q.length, q.reduce((s, p) => s + p[1], 0) / q.length];
@@ -52,7 +53,7 @@ export default {
   id: 'engine.generate.city',
   card,
   validate(config) {
-    return (config.districts || []).flatMap((d, i) => (d.floors && d.floors[0] > d.floors[1] ? [{ code: 'param_range', path: `with.districts[${i}].floors`, message: 'floors must be [min, max]' }] : []));
+    return reversedRanges((Array.isArray(config.districts) ? config.districts : []).map((d, i) => [`with.districts[${i}].floors`, d?.floors]));
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

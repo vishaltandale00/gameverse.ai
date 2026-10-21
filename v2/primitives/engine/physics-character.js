@@ -7,7 +7,7 @@
 // Movement primitives either let it integrate (they write body.vel in the
 // `movement` phase) or own integration themselves (body.controller = 'move')
 // and call the `character` service's move() for slides with step-up.
-import { isVec, v3, round, sweep } from './runtime-lib.js';
+import { isVec, v3, round, sweep, BODY } from './runtime-lib.js';
 
 const ID = 'engine.physics.character';
 
@@ -30,6 +30,7 @@ export default {
     },
     provides: { events: ['landed', 'fell', 'left_ground', 'jumped', 'head_hit'], services: ['character'] },
     requires: { capabilities: ['gravity'] },
+    components: { body: BODY },
   },
   install(rt, config) {
     const st = () => rt.store(ID);

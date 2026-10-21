@@ -5,6 +5,7 @@
 // rain/snow/ash precipitation around the camera).
 import { joinStage, presentationOnly } from './three-stage.js';
 import { clamp, smoothstep } from './three-util.js';
+import { color6 } from './model-lib.js';
 
 const hexRgb = h => { const n = parseInt(String(h).replace('#', '').padEnd(6, '0').slice(0, 6), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
 const mixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
@@ -86,7 +87,7 @@ export default {
     intent: 'Sky and atmosphere for 3D: dome gradient by hour, sun and moon with glow, twinkling stars, drifting clouds, horizon-matched fog, sun/moon/ambient lighting from the time.hour var, and weather from the weather var (cover, darkening, fog, lightning, rain/snow/ash around the camera).',
     views: ['1p', '3p', 'iso', 'td'],
     params: {
-      palette: { type: 'object', default: {}, effect: 'zenith colors by phase', fields: { dawn: { type: 'string' }, day: { type: 'string' }, dusk: { type: 'string' }, night: { type: 'string' } } },
+      palette: { type: 'object', default: {}, effect: 'zenith colors by phase', fields: { dawn: color6(), day: color6(), dusk: color6(), night: color6() } },
       fogDensity: { type: 'number', default: 0.004, min: 0, max: 0.05, effect: 'exponential fog density in clear weather' },
       clouds: { type: 'number', default: 0.45, min: 0, max: 1, effect: 'cloud cover in clear weather' },
       sunTilt: { type: 'number', default: 20, min: 0, max: 80, unit: 'deg', effect: 'tilt of the sun path away from overhead' },
@@ -97,9 +98,6 @@ export default {
       precipitation: { type: 'boolean', default: true, effect: 'draw rain/snow/ash around the camera for wet weather' },
     },
     provides: {},
-  },
-  validate(config) {
-    return Object.entries(config.palette || {}).filter(([, v]) => !/^#[0-9a-f]{6}$/i.test(v)).map(([k, v]) => ({ code: 'color_invalid', path: `palette.${k}`, message: `'${v}' is not a #rrggbb color` }));
   },
   install(rt, config, instance) {
     if (presentationOnly(rt)) return;

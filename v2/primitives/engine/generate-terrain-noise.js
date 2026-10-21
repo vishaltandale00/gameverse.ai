@@ -5,7 +5,7 @@
 // also adds the cell layer that fills columns with bedrock/stone/sub/surface
 // blocks (biome-aware when engine.generate.biomes is present).
 import { fbm2, ridged2, warp2, smoothstep, clamp, subSeed, Rng } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks, zoneBox, zoneInnerDistance } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, chaikin, segDist2, zoneBox, zoneInnerDistance } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
@@ -34,13 +34,14 @@ const card = {
     blocks: {
       type: 'object', default: { surface: 'grass', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' }, effect: 'voxel block ids (biomes override surface/sub)',
       fields: {
-        surface: { type: 'string', default: 'grass' }, sub: { type: 'string', default: 'dirt' }, stone: { type: 'string', default: 'stone' },
-        bedrock: { type: 'string', default: 'bedrock' }, shore: { type: 'string', default: 'sand' }, underwater: { type: 'string', default: 'gravel' },
+        surface: { type: 'ref', to: 'block', default: 'grass' }, sub: { type: 'ref', to: 'block', default: 'dirt' }, stone: { type: 'ref', to: 'block', default: 'stone' },
+        bedrock: { type: 'ref', to: 'block', default: 'bedrock' }, shore: { type: 'ref', to: 'block', default: 'sand' }, underwater: { type: 'ref', to: 'block', default: 'gravel' },
       },
     },
   },
   provides: { content: ['terrain'], extent: 'space', events: ['generated'], services: ['surface'] },
   reads: [],
+  rules: { terrain_extent_invalid: { fields: ['extent'], message: 'extent is [x0, z0, x1, z1] with x1 > x0 and z1 > z0' } },
 };
 
 /** Droplet hydraulic erosion + one thermal relaxation, in place on a coarse grid. */
@@ -92,8 +93,8 @@ export default {
     if (voxel && known.size) { const add = TERRAIN_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), solid: true, color })); if (add.length) out.content = { blocks: add }; }
     return out;
   },
-  validate(config, doc, ctx, inst) {
-    const errors = checkBlocks(doc, inst, Object.entries(config.blocks || {}).map(([k, id]) => [`with.blocks.${k}`, id]));
+  validate(config) {
+    const errors = [];
     if (config.extent && !(config.extent[2] > config.extent[0] && config.extent[3] > config.extent[1])) errors.push({ code: 'terrain_extent_invalid', path: 'with.extent', message: 'extent must be [x0, z0, x1, z1] with x1 > x0 and z1 > z0' });
     return errors;
   },
