@@ -47,6 +47,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.emit(name, data)` | Emit an event and increment `counts[name]`. |
 | `rt.emitTyped(name, subject, data)` | Emits both `name` (with `subject`) and `name:<subject>`. Use it for every typed event (`defeated:goblin`, `item_gained:key`). |
 | `rt.action(name, fn(value, rt))` | Player verb. Input reaches it through `step({actions})`. |
+| `rt.hold(by, owners)` / `rt.release(by)` | Skip the systems registered by `owners` (their `rt.system` owner) until released. A nested loop holds the outer loop while it runs (`engine.adapt.nested`). Kept in `state.held` only while something is held. |
 | `rt.options(fn(rt) → [{label, actions, steps?, apply?(rt)}])` | Meaningful player choices for solvers and playtesters. Continuous spaces offer macro options such as "travel to zone X" via `apply`. |
 | `rt.provide(name, api)` / `rt.service(name)` | Shared services (`roadgraph`, `surface`, `biomeAt`...). Declare them in `card.provides.services` / `requires.services`. |
 | `rt.defineSpace(id, api)` / `rt.space(id)` / `rt.spaces()` | Spaces (§3). |

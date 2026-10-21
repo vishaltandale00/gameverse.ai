@@ -21,9 +21,10 @@ import puzzle from './gameplay/puzzle.index.js';
 import flat from './graphics/flat.index.js';
 import ui from './graphics/ui.index.js';
 import three from './graphics/three.index.js';
+import adapt from './engine/adapt.index.js';
 
 export const PRIMITIVES = [spaceGraph, storyboard, inventory, uiStory,
-  ...spaces2d, ...generate2d, ...worlds3d, ...runtime, ...story, ...move, ...items, ...combat, ...ai, ...modes, ...puzzle, ...flat, ...ui, ...three];
+  ...spaces2d, ...generate2d, ...worlds3d, ...runtime, ...story, ...move, ...items, ...combat, ...ai, ...modes, ...puzzle, ...flat, ...ui, ...three, ...adapt];
 export function catalogue(extra = []) {
   const registry = new Registry([...PRIMITIVES, ...extra]);
   return { registry, logic: buildLogic(registry, Logic) };

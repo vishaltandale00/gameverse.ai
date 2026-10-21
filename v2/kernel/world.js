@@ -92,6 +92,13 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     openModal(owner, { actions: allowed = [], kind = owner } = {}) { state.modal = { owner, kind, actions: [...allowed] }; rt.emit('modal_open', { owner, kind }); },
     closeModal(owner) { if (state.modal && (!owner || state.modal.owner === owner)) { const m = state.modal; state.modal = null; rt.emit('modal_close', { owner: m.owner, kind: m.kind }); } },
     get modal() { return state.modal || null; },
+    /**
+     * Hold the systems registered by `owners` (their rt.system owner, usually the primitive id) until release(by):
+     * a nested loop holds the outer loop while it runs. Event handlers and actions are not held. Kept in
+     * state.held (only while something is held), so snapshots and replays keep it.
+     */
+    hold(by, owners) { (state.held ??= {})[by] = [...new Set(owners)]; },
+    release(by) { if (!state.held) return; delete state.held[by]; if (!Object.keys(state.held).length) delete state.held; },
     /** Capabilities a space instance reports (same as preflight's). */
     /** True when the document installed this primitive (directly, as a space/generator, or as graphics). */
     has: id => installed.has(id),
@@ -169,7 +176,8 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
         const fn = actions.get(name);
         if (fn) { fn(value, rt); rt.emit('action', { action: name }); }
       }
-      for (const s of systems) { s.fn(rt); if (state.status !== 'playing') break; }
+      const held = state.held ? new Set(Object.values(state.held).flat()) : null;
+      for (const s of systems) { if (held?.has(s.owner)) continue; s.fn(rt); if (state.status !== 'playing') break; }
       while (deferred.length) /** @type {(rt: Runtime) => void} */ (deferred.shift())(rt);
       state.frame++; state.time = +(state.frame * DT).toFixed(6);
       return state;
