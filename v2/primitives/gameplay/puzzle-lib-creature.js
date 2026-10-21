@@ -101,7 +101,8 @@ export const expBar = (growth, c) => ({ from: expToLevel(growth, c.level), to: c
 // ---- damage ----
 export function effectiveness(content, moveType, defenderTypes) {
   if (!moveType) return 1;
-  return defenderTypes.reduce((m, t) => m * (content.types?.[moveType]?.[t] ?? 1), 1);
+  const chart = Array.isArray(content.types) ? {} : content.types;
+  return defenderTypes.reduce((m, t) => m * (chart?.[moveType]?.[t] ?? 1), 1);
 }
 export const stageMult = s => (s >= 0 ? (2 + s) / 2 : 2 / (2 - s));
 export const accMult = s => (s >= 0 ? (3 + s) / 3 : 3 / (3 - s));
@@ -197,7 +198,9 @@ export function bestMatchup(content, party, against, exclude = -1) {
 // ---- content validation (shared by party / battle preflight) ----
 export function validateContent(content = {}) {
   const errors = [], sp = new Set((content.species || []).map(s => s.id)), mv = new Set((content.moves || []).map(m => m.id));
-  const types = new Set([...Object.keys(content.types || {}), ...Object.values(content.types || {}).flatMap(o => Object.keys(o || {}))]);
+  // content.types is a chart ({ attacking: { defending: multiplier } }); a plain list of type names is a chart where every multiplier is 1.
+  const types = Array.isArray(content.types) ? new Set(content.types.map(t => (typeof t === 'string' ? t : t?.id)).filter(t => typeof t === 'string'))
+    : new Set([...Object.keys(content.types || {}), ...Object.values(content.types || {}).flatMap(o => Object.keys(o || {}))]);
   (content.species || []).forEach((s, i) => {
     const p = `content.species[${i}]`;
     if (!Array.isArray(s.types) || !s.types.length) errors.push({ code: 'species_invalid', path: `${p}.types`, message: 'species needs at least one type' });

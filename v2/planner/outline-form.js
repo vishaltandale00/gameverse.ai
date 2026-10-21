@@ -17,8 +17,8 @@ import { isGraphics, isSpace, isGenerator } from './catalog.js';
 import { contractsFor } from './content.js';
 
 export const FORM_VERSION = 'outline-form/0.1';
-const WIDE = 10;           // objects with more fields than this keep their required + first fields; the rest go to more_json
-const KEEP = 8;
+const WIDE = 32;           // objects with more fields than this keep their required + first fields; the rest go to more_json
+const KEEP = 28;           // (validators read fields like a turn action's `hit`: they must stay structured, not hide in more_json)
 const MAX_DEPTH = 4;       // nesting inside a param before values travel as JSON strings
 const SMALL_CARD = 12;     // cards with at most this many params expose every param
 const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
@@ -117,7 +117,9 @@ const spawnParams = card => (card.defines || []).filter(d => d.kind === 'spawn_r
  * skeleton: the procedural scaffold document (its spaces, zone shapes, systems and views are the frame).
  */
 export function outlineForm({ registry, skeleton, selection = null }) {
-  const systems = [...new Set((skeleton.systems || []).map(s => s.use))].filter(id => registry.has(id));
+  // Every selected primitive is in the form, including those the skeleton had to drop for lack of content
+  // (turns without sides, battles without species): the model writes that content, so it must be asked for.
+  const systems = [...new Set([...(skeleton.systems || []).map(s => s.use), ...(selection?.systems || [])])].filter(id => typeof id === 'string' && registry.has(id));
   const used = [...new Set([...(skeleton.spaces || []).flatMap(s => [s.use, ...(s.generators || []).map(g => g.use)]), ...systems])];
   const contracts = contractsFor(registry, used);
   const reads = new Set(used.flatMap(id => (registry.get(id)?.card.reads || []).filter(r => typeof r === 'string')));
@@ -158,7 +160,14 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   // Content.
   const { props: content, comps } = contentProps({ registry, used, hasQuests, hasDialogue, spawner });
   Object.assign(props, content);
-  for (const sec of sections) props[`section_${sec.replace('.', '_')}`] = str(`${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
+  // Sections a chosen card's content contract requires are required here too (never an empty "[]").
+  const sectionNeeds = new Map(contractsFor(registry, systems).filter(c => c.at).map(c => [c.at, c]));
+  for (const sec of sections) {
+    const c = sectionNeeds.get(sec);
+    props[`section_${sec.replace('.', '_')}`] = str(c
+      ? `${sec} as JSON text. REQUIRED by ${c.uses.join(', ')}: at least ${c.min || 1} entries in the shape the system prompt documents for ${sec}${c.why ? ` (${c.why})` : ''}; never "[]"`
+      : `${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
+  }
   props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
   props.endings = arr(obj({ id: str(), title: str(), text: str(), outcome: { type: 'string', enum: ['won', 'lost', 'neutral'] } }));
   props.player = obj({ archetype: str('the player archetype id (an archetypes entry of kind player)'), zone: str('start zone id') });
