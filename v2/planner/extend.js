@@ -235,10 +235,16 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
     let open = [...found.options], spec = '';
     /** @type {string | null} */
     let problem = null;
+    /** Why the step's own question failed (its answers kept failing), when it did. */
+    let failed = '';
     const mechanic = /** @type {import('./decompose.js').Mechanic} */ ({ id: formKey(m.name).replace(/[^A-Za-z0-9_]/g, '_').slice(0, 40) || 'mechanic', verb: m.verb === 'none' ? '' : m.verb, description: m.name, from: '', importance: m.importance === 'core' ? 'core' : 'supporting' });
     const head = `${header}\nPrimitives in the game: ${[...usesOf(doc)].join(', ')}\nThe idea also names "${m.name}" (${m.importance}${m.verb !== 'none' ? `, the verb '${m.verb}'` : ''}), which no primitive of the game gives the player yet.`;
     while (open.length) {
-      const a = await pickOption({ ask, registry, header: head, mechanic, options: open, problem });
+      /** @type {Awaited<ReturnType<typeof pickOption>>} */
+      let a;
+      // A question whose answers keep failing (makeAsk: selection_failed) leaves the mechanic missing, with why.
+      try { a = await pickOption({ ask, registry, header: head, mechanic, options: open, problem }); }
+      catch (error) { failed = `the extension question failed: ${messageOf(error).slice(0, 300)}`; break; }
       for (const x of a.asked) asks.push({ ...x, ok: false });
       if (a.pick === 'none') { spec = a.spec; asks[asks.length - 1].why = a.why; break; }
       const cand = /** @type {Option} */ (open.find(o => o.id === a.pick));
@@ -256,7 +262,8 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
       Object.assign(c, { by: 'extension', primitives: [...cand.members], why: a.why || `added ${cand.members.join(' + ')}` });
       break;
     }
-    if (!c.by) {
+    if (!c.by && failed) c.why = failed;
+    else if (!c.by) {
       // The gap layer writes the primitive no catalogue option gives (cfg.gaps 'auto', within its limit).
       const g = extensionGap(m, doc, interactions, spec);
       c.gap = g.gap;

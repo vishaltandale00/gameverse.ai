@@ -257,6 +257,17 @@ test('the gap layer failing: the build fails naming the mechanic, with the attem
   assert.match(out.e.message, /has a gun.*gap layer could not write it/);
 });
 
+test('an extension question whose answers keep failing leaves the mechanic missing: the build fails naming it, no gap layer, no content', async () => {
+  const inner = sonicWriter();
+  const w = { ...inner, calls: [], async complete(req) { w.calls.push(req); return req.schema.name === 'pick_primitive' ? { text: JSON.stringify({ pick: 'a laser', why: '', spec: '' }), ms: 1, model: 'fake' } : inner.complete(req); } };
+  let gaps = 0;
+  const { out } = await askThenAnswer(0, { writer: w, config: { gaps: 'auto' }, gapService: { async fill() { gaps++; return { ok: false, experiment: {} }; } } });
+  assert.equal(out.e.code, 'extension_missing');
+  assert.match(out.e.message, /"has a gun".*the extension question failed/);
+  assert.equal(gaps, 0, 'a failing answer is not "none fits"');
+  assert.ok(!w.calls.some(r => r.schema.name === 'frame_tune'));
+});
+
 test('an idea with no extension and no other reading asks nothing more: the pick, then the content round (at most 6 calls, 2 rounds)', async () => {
   const pick = { ...SONIC, readings: [], mechanics: [{ name: 'jumps over pits', verb: 'jump', importance: 'core' }] };
   // The pick here, every other form as the Sonic writer answers it.
