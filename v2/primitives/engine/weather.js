@@ -7,6 +7,8 @@
 import { frames, round, uniqueIds } from './runtime-lib.js';
 
 const ID = 'engine.weather';
+/** A rule example: a document whose systems are this one instance (a fragment replacing the host's systems). */
+const only = with_ => ({ doc: { systems: [{ use: ID, with: with_ }] } });
 
 export default {
   id: ID,
@@ -22,7 +24,7 @@ export default {
           biomes: { type: 'list', of: { type: 'string' }, effect: 'only in these biomes (with byBiome)' },
           seasons: { type: 'list', of: { type: 'string' }, effect: 'only in these seasons (engine.time var time.season)' },
           when: { type: 'predicate', effect: 'only while it holds' },
-          next: { type: 'object', open: true, effect: 'state id -> weight for the following state (Markov chain); default: global weights' },
+          next: { type: 'object', values: { type: 'number', min: 0 }, effect: 'state id -> weight for the following state (Markov chain); default: global weights' },
           vars: { type: 'object', open: true, effect: 'extra vars weather.<key> while active (e.g. visibility, wetness)' },
         } } },
       initial: { type: 'string', effect: 'starting state (default: the first allowed state)' },
@@ -32,10 +34,17 @@ export default {
     },
     provides: { events: ['weather', 'weather_changed', 'weather:*', 'weather_unknown'], vars: ['weather', 'weather.wind', 'weather.temp', 'weather.intensity', 'weather.previous', 'weather.*'] },
     requires: {},
+    rules: {
+      weather_state_duplicate: { fields: ['states[].id'], message: 'state ids are distinct' },
+      weather_duration: { fields: ['states[].minMin', 'states[].maxMin'], message: 'minMin ≤ maxMin' },
+      weather_unknown: { fields: ['initial', 'states[].next'], message: 'initial and the keys of next name states of states', example: only({ states: [{ id: 'clear', next: { fog: 1 } }] }) },
+      weather_weights: { fields: ['states[].weight'], message: 'at least one state has weight > 0' },
+    },
   },
   logic(logic) {
     logic.predicate('weather', { test: (p, rt) => (Array.isArray(p.weather) ? p.weather.includes(rt.state.vars.weather) : rt.state.vars.weather === p.weather) });
     logic.effect('change_weather', {
+      codes: [{ code: 'weather_effect_invalid', fields: ['weather', 'minutes'], message: 'weather is a state id; minutes is > 0', example: { do: 'change_weather', weather: 'rain', minutes: 0 } }],
       check: (e, path, errors) => { if (typeof e.weather !== 'string') errors.push({ code: 'weather_effect_invalid', path, message: 'change_weather needs a weather state id' }); if (e.minutes !== undefined && !(e.minutes > 0)) errors.push({ code: 'weather_effect_invalid', path, message: 'minutes must be > 0' }); },
       run: (e, rt) => rt.service('weather').set(e.weather, { lock: e.lock, minutes: e.minutes }),
     });

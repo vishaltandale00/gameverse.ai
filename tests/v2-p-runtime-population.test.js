@@ -101,13 +101,14 @@ test('engine.spawner: spawn/despawn effects place through zones, near targets an
 });
 
 test('engine.portal: gates, keys, two-way, single use, touch, locks and transit delay', () => {
-  const gate = { id: 'gameplay.testgate', card: { intent: 'gate predicate stand-in for plot.gate', provides: {}, ambient: true }, logic(l) { l.predicate('gate', { test: (p, rt) => Boolean(rt.state.flags[`gate.${p.gate}`]) }); } };
+  const gate = { id: 'gameplay.testgate', card: { intent: 'gate predicate stand-in for plot.gate', provides: {}, ambient: true, defines: [{ kind: 'gate', at: 'plot.gates' }] }, logic(l) { l.predicate('gate', { test: (p, rt) => Boolean(rt.state.flags[`gate.${p.gate}`]) }); } };
   const portals = [
     { id: 'door', from: { at: [4, 4, 0], size: [1, 1, 1] }, to: { zone: 'field', at: [20, 4, 0] }, gate: 'cellar', oneWay: false },
     { id: 'vault', from: { at: [6, 6, 0], r: 1 }, to: { at: [40, 20, 0] }, key: 'vault_key', consumeKey: true, once: true },
     { id: 'chute', from: { at: [10, 10, 0], size: [1, 1, 1] }, to: { at: [50, 2, 0] }, trigger: 'touch', transition: 'fade', do: [{ do: 'add_var', var: 'slid' }] },
   ];
   const d = doc([{ use: 'gameplay.inventory' }, { use: 'engine.portal', with: { portals } }], { items: [{ id: 'vault_key', name: 'Vault key' }] });
+  d.plot = { ...d.plot, gates: [{ id: 'cellar' }] };
   const { rt } = compile(d, { primitives: [...PRIMS, gate] });
   const p = rt.player(), api = rt.space('w');
   api.setPos(p, [4, 4, 0], rt); rt.step({ actions: { use_portal: true } });
@@ -172,7 +173,7 @@ test('preflight rejects bad spawner and portal configs with stable codes', () =>
   ]);
   bad.plot = { storyboard: { acts: [] } };
   const c = codes(bad);
-  for (const code of ['id_duplicate', 'spawn_range', 'spawn_release_invalid', 'ref_unknown', 'portal_endpoint', 'portal_gate_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['id_duplicate', 'spawn_range', 'spawn_release_invalid', 'ref_unknown', 'portal_endpoint', 'param_type']) assert.ok(c.includes(code), code);
 });
 
 test('every engine.spawner/portal instance in v2/games has valid params', () => {

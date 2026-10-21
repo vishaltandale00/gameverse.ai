@@ -28,7 +28,7 @@ export default {
           id: { type: 'string', required: true },
           from: { type: 'object', required: true, fields: { ...end, size: { type: 'list', of: { type: 'number', min: 0 }, min: 1, max: 3, effect: 'trigger box size' }, r: { type: 'number', min: 0, effect: 'trigger radius' } } },
           to: { type: 'object', required: true, fields: { ...end, facing: { type: 'number', effect: 'facing after arrival (degrees, or ±1 in side views)' } } },
-          gate: { type: 'json', effect: 'plot.gate id (string) or a predicate that must hold' },
+          gate: { type: 'ref', to: 'gate', effect: 'a plot.gate that must be open' }, when: { type: 'predicate', effect: 'must hold to use it (self = traveller)' },
           key: { type: 'ref', to: 'item', effect: 'item the traveller must carry' }, consumeKey: { type: 'boolean', default: false },
           prompt: { type: 'string', default: '', display: true, effect: 'shown near the portal' }, lockedText: { type: 'string', default: '', display: true, effect: 'shown when it is locked' },
           transition: { type: 'string', options: ['cut', 'fade', 'elevator', 'load'], default: 'cut' },
@@ -48,7 +48,6 @@ export default {
     defines: [{ kind: 'portal', in: 'portals' }],
     rules: {
       portal_endpoint: { fields: ['portals[].from', 'portals[].to', 'portals[].oneWay'], message: 'from has at or zone; to has at, zone or space; a zone given with a space is a zone of that space; a two-way portal (oneWay false) has a to at or zone' },
-      portal_gate_invalid: { fields: ['portals[].gate'], message: 'gate is a plot.gate id (a string) or a predicate (an object)', example: only({ portals: [{ id: 'door', from: { at: [0, 0] }, to: { at: [1, 1] }, gate: 5 }] }) },
     },
   },
   logic(logic) {
@@ -76,8 +75,6 @@ export default {
       if (!p.oneWay && p.to.at === undefined && p.to.zone === undefined) errors.push({ code: 'portal_endpoint', path: `${path}.to`, message: 'a two-way portal needs a destination at or zone to use it back' });
       if (p.gate !== undefined) {
         if (typeof p.gate === 'string') ctx.checkPredicate({ gate: p.gate }, `${path}.gate`, errors);
-        else if (p.gate && typeof p.gate === 'object') ctx.checkPredicate(p.gate, `${path}.gate`, errors);
-        else errors.push({ code: 'portal_gate_invalid', path: `${path}.gate`, message: 'gate is a plot.gate id or a predicate' });
       }
       if (p.key && p.consumeKey) ctx.checkEffect({ do: 'take_item', item: p.key }, `${path}.key`, errors);
       if (p.key) ctx.checkPredicate({ item: p.key, gte: 1 }, `${path}.key`, errors);
@@ -89,7 +86,7 @@ export default {
     const st = () => { const s = rt.store(ID); s.locked ??= {}; s.used ??= {}; s.transit ??= {}; s.cool ??= {}; s.near ??= {}; s.touching ??= {}; return s; };
     const region = (end, fallbackSpace) => ({ space: end.space ?? fallbackSpace, zone: end.zone, at: end.at, size: end.size, r: end.r });
     const ends = (p, reverse) => (reverse ? { from: { ...p.to, size: p.from.size, r: p.from.r }, to: { ...p.from, at: p.from.at } } : { from: p.from, to: p.to });
-    const gatePred = p => (p.gate === undefined ? null : typeof p.gate === 'string' ? { gate: p.gate } : p.gate);
+    const gatePred = p => { const all = [...(p.gate === undefined ? [] : [{ gate: p.gate }]), ...(p.when === undefined ? [] : [p.when])]; return all.length > 1 ? { all } : all[0] ?? null; };
     /** Can `e` use portal `id` now (ignoring range)? -> { ok, reason } */
     const usable = (id, e, { reverse = false } = {}) => {
       const p = byId[id], s = st(); if (!p || !e) return { ok: false, reason: 'unknown' };

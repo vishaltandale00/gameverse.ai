@@ -4,7 +4,7 @@
 // The clock and timers stop while `pauseWhen` holds (menus, cutscenes,
 // hit-stop). Everything lives in rt.store('engine.time') as JSON.
 import { compare } from '../../kernel/logic.js';
-import { frames, round, SLUG, checkFx, uniqueIds } from './runtime-lib.js';
+import { frames, round, SLUG, checkFx } from './runtime-lib.js';
 
 const ID = 'engine.time';
 const DAY_MIN = 24 * 60;
@@ -51,15 +51,21 @@ export default {
     },
     requires: {},
     defines: [{ kind: 'timer', in: 'timers' }],
+    rules: {
+      time_phases_invalid: { fields: ['phases'], message: 'at least one phase; every phase starts at an hour in [0, 24); no two phases start at the same hour' },
+      time_seasons_invalid: { fields: ['seasons'], message: 'season names are distinct' },
+    },
   },
   logic(logic) {
     // {daytime: 'night'} phase name, or {daytime: [fromHour, toHour]} window (wraps midnight).
     logic.predicate('daytime', {
+      codes: [{ code: 'time_daytime_invalid', fields: ['daytime'], message: 'daytime is a phase name or [fromHour, toHour]', example: { daytime: 7 } }],
       check: (p, path, errors) => { if (!(typeof p.daytime === 'string' || (Array.isArray(p.daytime) && p.daytime.length === 2 && p.daytime.every(Number.isFinite)))) errors.push({ code: 'time_daytime_invalid', path, message: 'daytime is a phase name or [fromHour, toHour]' }); },
       test: (p, rt) => { const v = rt.state.vars; return Array.isArray(p.daytime) ? inWindow(v['time.hour'] ?? 0, p.daytime) : v['time.phase'] === p.daytime; },
     });
     // {timer: id, state?: running|done|cancelled|idle} or {timer: id, lte: 3} (seconds left).
     logic.predicate('timer', {
+      codes: [{ code: 'time_timer_invalid', fields: ['timer', 'state'], message: 'timer is a timer id; state is running, done, cancelled or idle', example: { timer: 5 } }],
       check: (p, path, errors) => { if (typeof p.timer !== 'string') errors.push({ code: 'time_timer_invalid', path, message: 'timer needs a timer id' }); if (p.state && !['running', 'done', 'cancelled', 'idle'].includes(p.state)) errors.push({ code: 'time_timer_invalid', path, message: `unknown timer state '${p.state}'` }); },
       test: (p, rt) => {
         const t = rt.store(ID).timers?.[p.timer];
@@ -67,16 +73,18 @@ export default {
         return (t?.state ?? 'idle') === (p.state ?? 'running');
       },
     });
+    const codes = (example, fields, message) => [{ code: 'time_effect_invalid', fields, message, example }];
     const num = (k, path, e, errors) => { if (e[k] !== undefined && !Number.isFinite(e[k])) errors.push({ code: 'time_effect_invalid', path, message: `${k} must be a number` }); };
-    logic.effect('set_time', { check: (e, path, errors) => { num('hour', path, e, errors); num('day', path, e, errors); if (e.hour === undefined && e.day === undefined) errors.push({ code: 'time_effect_invalid', path, message: 'set_time needs hour and/or day' }); }, run: (e, rt) => rt.service('clock').set(e) }); // {hour, day?, back?}
-    logic.effect('skip_time', { check: (e, path, errors) => { num('hours', path, e, errors); num('minutes', path, e, errors); if (!(e.hours > 0 || e.minutes > 0)) errors.push({ code: 'time_effect_invalid', path, message: 'skip_time needs hours or minutes > 0' }); }, run: (e, rt) => rt.service('clock').skip((e.hours || 0) * 60 + (e.minutes || 0)) });
-    logic.effect('set_time_scale', { check: (e, path, errors) => { if (!(e.scale >= 0)) errors.push({ code: 'time_effect_invalid', path, message: 'scale must be >= 0' }); }, run: (e, rt) => { rt.store(ID).scale = e.scale; } });
+    logic.effect('set_time', { codes: codes({ do: 'set_time' }, ['hour', 'day'], 'set_time has hour and/or day, numbers'), check: (e, path, errors) => { num('hour', path, e, errors); num('day', path, e, errors); if (e.hour === undefined && e.day === undefined) errors.push({ code: 'time_effect_invalid', path, message: 'set_time needs hour and/or day' }); }, run: (e, rt) => rt.service('clock').set(e) }); // {hour, day?, back?}
+    logic.effect('skip_time', { codes: codes({ do: 'skip_time', hours: 0 }, ['hours', 'minutes'], 'skip_time has hours or minutes > 0, numbers'), check: (e, path, errors) => { num('hours', path, e, errors); num('minutes', path, e, errors); if (!(e.hours > 0 || e.minutes > 0)) errors.push({ code: 'time_effect_invalid', path, message: 'skip_time needs hours or minutes > 0' }); }, run: (e, rt) => rt.service('clock').skip((e.hours || 0) * 60 + (e.minutes || 0)) });
+    logic.effect('set_time_scale', { codes: codes({ do: 'set_time_scale', scale: -1 }, ['scale'], 'scale is a number ≥ 0'), check: (e, path, errors) => { if (!(e.scale >= 0)) errors.push({ code: 'time_effect_invalid', path, message: 'scale must be >= 0' }); }, run: (e, rt) => { rt.store(ID).scale = e.scale; } });
     logic.effect('start_timer', {
-      refs: e => (e.seconds === undefined ? [['timer', e.timer]] : []),
+      refs: e => (e.seconds === undefined && typeof e.timer === 'string' ? [['timer', e.timer]] : []),
+      codes: codes({ do: 'start_timer', timer: 'Bad!', seconds: 1 }, ['timer', 'seconds'], 'timer is a slug (a timer id, or a new timer with seconds); seconds is a number'),
       check: (e, path, errors, ctx) => { if (typeof e.timer !== 'string' || !SLUG.test(e.timer)) errors.push({ code: 'time_effect_invalid', path, message: 'start_timer needs a timer slug' }); num('seconds', path, e, errors); if (e.then) checkFx(e.then, `${path}.then`, errors, ctx); },
       run: (e, rt) => rt.service('clock').start(e.timer, e),
     });
-    logic.effect('cancel_timer', { check: (e, path, errors) => { if (typeof e.timer !== 'string') errors.push({ code: 'time_effect_invalid', path, message: 'cancel_timer needs a timer id' }); }, run: (e, rt) => rt.service('clock').cancel(e.timer) });
+    logic.effect('cancel_timer', { codes: codes({ do: 'cancel_timer' }, ['timer'], 'timer is a timer id'), check: (e, path, errors) => { if (typeof e.timer !== 'string') errors.push({ code: 'time_effect_invalid', path, message: 'cancel_timer needs a timer id' }); }, run: (e, rt) => rt.service('clock').cancel(e.timer) });
   },
   validate(config) {
     const errors = [];
@@ -84,8 +92,6 @@ export default {
     if (!hours.length) errors.push({ code: 'time_phases_invalid', path: 'phases', message: 'at least one phase is needed' });
     if (new Set(hours).size !== hours.length) errors.push({ code: 'time_phases_invalid', path: 'phases', message: 'two phases start at the same hour' });
     for (const [k, v] of Object.entries(config.phases || {})) if (!(Number.isFinite(v) && v >= 0 && v < 24)) errors.push({ code: 'time_phases_invalid', path: `phases.${k}`, message: 'phase start must be an hour in [0, 24)' });
-    uniqueIds(config.timers, 'timers', 'time_timer_duplicate', errors);
-    (config.timers || []).forEach((t, i) => { if (!SLUG.test(t.id || '')) errors.push({ code: 'id_invalid', path: `timers[${i}].id`, message: 'timer id must be a slug' }); });
     if (new Set(config.seasons).size !== config.seasons.length) errors.push({ code: 'time_seasons_invalid', path: 'seasons', message: 'season names must be unique' });
     return errors;
   },

@@ -8,7 +8,7 @@ import { compare } from '../../kernel/logic.js';
 const ID = 'engine.blocks';
 
 export function normalizeBlock(b, tiers) {
-  const tier = typeof b.tier === 'string' ? tiers.indexOf(b.tier) : (b.tier ?? 0);
+  const tier = b.tier ?? 0;
   return {
     id: b.id, name: b.name ?? b.id, color: b.color ?? '#888888', solid: b.solid !== false, hardness: b.hardness ?? 1,
     tool: b.tool ?? null, tier, tierName: tiers[tier] ?? null, drops: b.drops ?? [{ item: b.id, count: 1 }],
@@ -94,7 +94,7 @@ export default {
       /** Drops for a harvested block, rolled with rt.random for p < 1. */
       drops(id, tool = {}) {
         const d = def(id); if (!d || !api.canHarvest(id, tool)) return [];
-        return d.drops.filter(x => x.p === undefined || rt.random() < x.p).map(x => ({ item: x.item, count: Array.isArray(x.count) ? x.count[0] + Math.floor(rt.random() * (x.count[1] - x.count[0] + 1)) : (x.count ?? 1) }));
+        return d.drops.filter(x => x.p === undefined || rt.random() < x.p).map(x => ({ item: x.item, count: x.count ?? 1 }));
       },
       solidAt(at, space) { const s = rt.space(space); if (!s.getCell) return false; const id = s.getCell(at); return id != null && (def(id)?.solid ?? true); },
       /** Block light at `at`: max over emitters of (light - manhattan distance), searched within lightLevels cells. */
