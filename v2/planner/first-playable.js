@@ -132,14 +132,21 @@ export function firstPlayable(input, registry, logic, { seed, frames = 3, furnis
   }
   const empty = worldProblems(rt, pre.doc, registry);
   problems.push(...empty.map(p => ({ code: p.code, path: p.path, message: p.message, hint: p.hint })));
+  // Errors (never published): no player, a game over on its first frames, a player with nothing to do.
+  const errors = [];
   const player = rt.player();
   if (doc.player && !player) problems.push({ code: 'no_player', message: 'the player did not spawn' });
-  if (rt.state.status !== 'playing') problems.push({ code: 'ended_at_start', message: `the game ended on its first frames (${rt.state.status})` });
+  if (rt.state.status !== 'playing') {
+    const events = [...new Set(rt.state.events.map(e => e.name).filter(n => !n.includes(':')))].slice(-8);
+    errors.push({ code: 'ended_at_start', path: '$', message: `the game ended on its first ${frames} frames (${rt.state.status}${rt.state.ending ? `, ending '${rt.state.ending}'` : ''}) after events ${events.join(', ') || 'none'}`, hint: 'a primitive ends the game at once: its region may be blocked by generated terrain, or a beat ends the game without a trigger' });
+  }
+  const options = rt.availableOptions().length;
+  if (player && rt.state.status === 'playing' && options === 0) errors.push({ code: 'no_options', path: 'player', message: 'the player starts with no options (no way to act or travel)', hint: 'add a movement or interaction primitive the space supports, or start the player where it can move' });
   const fired = Object.keys(rt.store('plot.storyboard').fired || {});
   return {
-    ok: problems.every(p => p.code !== 'no_player'), doc: pre.doc, ms: elapsed(), version: FIRST_PLAYABLE_VERSION,
+    ok: problems.every(p => p.code !== 'no_player') && !errors.length, doc: pre.doc, ms: elapsed(), version: FIRST_PLAYABLE_VERSION,
     stateHash: hashOf(rt.snapshot()), start: player ? { space: player.space, at: player.at, zone: player.zone ?? null } : null,
-    options: rt.availableOptions().length, actions: rt.actions(), beatsFired: fired, removed, problems, errors: [], world,
+    options, actions: rt.actions(), beatsFired: fired, removed, problems, errors, world,
   };
 }
 

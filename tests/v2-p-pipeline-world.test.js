@@ -10,13 +10,13 @@ import { buildCatalogue } from '../v2/planner/catalog.js';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { writeOutline } from '../v2/planner/outline.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { furnishWorld, worldProblems, spacesNeedingWorld, contentOf } from '../v2/planner/world.js';
+import { furnishWorld, worldProblems, spacesNeedingWorld, contentOf, reservedRegions, configureGenerators } from '../v2/planner/world.js';
 import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 import { fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
 
 // A fixed slice of the catalogue: the stored game's primitives plus every 2D generator (they compete).
-const IDS = ['engine.space.tilemap', 'engine.space.graph', 'engine.input.actions', 'gameplay.move.platformer', 'gameplay.move.climb', 'gameplay.inventory', 'plot.storyboard',
+const IDS = ['engine.space.tilemap', 'engine.space.graph', 'engine.input.actions', 'gameplay.move.platformer', 'gameplay.move.climb', 'gameplay.inventory', 'plot.storyboard', 'gameplay.falling.pieces',
   ...PRIMITIVES.map(p => p.id).filter(id => id.startsWith('engine.generate.'))];
 const { registry, logic } = buildCatalogue([], IDS.map(id => PRIMITIVES.find(p => p.id === id)).filter(Boolean));
 
@@ -115,4 +115,66 @@ test('first playable furnishes an empty world it is handed and reports world_emp
   const none = firstPlayable(stored(), bare.registry, bare.logic, { seed: 3 });
   assert.ok(none.ok, 'still playable');
   assert.deepEqual(none.problems.map(p => p.code), ['world_empty']);
+});
+
+// Regression (local-data/v2/games/a-platformer-where-you-climb-mvhc12a2/v2.json): the furnished rooms filled the
+// falling-piece board with shaft walls and platforms, the first piece could not spawn, top_out ended the game on
+// frame 1, and first-playable still said ok (ended_at_start was only a problem), so it published as ready.
+const shafts = () => {
+  const xs = [[0, 12], [12, 24], [24, 36], [36, 48], [48, 64]], ids = ['becomes_yard', 'fast_sanctum', 'difficult_wilds', 'becomes_hollow', 'difficult_yard'];
+  return ids.map((id, i) => ({ id, zone: id, rect: [xs[i][0], 0, xs[i][1], 32], style: 'shaft', exits: [...(i ? [{ side: 'l', to: ids[i - 1] }] : []), ...(i < 4 ? [{ side: 'r', to: ids[i + 1] }] : [])] }));
+};
+const tetrisTower = () => {
+  const doc = stored();
+  doc.spaces[0].id = 'tower_climb'; doc.player.space = 'tower_climb'; doc.player.at = [2.5, 3];
+  doc.spaces[0].zones = shafts().map(r => ({ id: r.zone, name: r.zone, rect: r.rect }));
+  doc.spaces[0].generators = [{ use: 'engine.generate.tilemap.rooms', with: { mode: 'side', rooms: shafts(), movement: { jumpHeight: 4, jumpDistance: 6 }, palette: { wall: 'solid_block', ground: 'solid_block', platform: 'solid_block', rung: 'ledge' } } }];
+  doc.content.blocks.push({ id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] });
+  doc.systems = [
+    { use: 'engine.input.actions', with: { verbs: ['move', 'jump', 'rotate_cw', 'hard_drop'], axes: ['move'] } },
+    { use: 'gameplay.falling.pieces', with: { board: { name: 'board', at: [0, 0, 0], size: [10, 20], axes: [0, 1], fall: -1, layer: '' }, steer: 'player', onTopOut: [{ do: 'end_game', outcome: 'lost' }] }, space: 'tower_climb' },
+    { use: 'gameplay.move.platformer', with: { preset: 'runner', run: 12, jump: 22, gravity: 60 }, space: 'tower_climb' },
+    { use: 'plot.storyboard' },
+  ];
+  doc.plot.storyboard.acts[0].beats = [{ id: 'finale', when: { zone: 'difficult_yard' }, do: [{ do: 'end_game', ending: 'victory' }] }];
+  return doc;
+};
+
+test('a region another primitive owns (a falling-piece board, from boardParam metadata) is reserved: generated rooms leave it clear', () => {
+  assert.deepEqual(reservedRegions(tetrisTower(), registry, 'tower_climb'), [[0, 0, 10, 20]]);
+  const SEED = 1309811577; // the stored run's seed: its rooms put a shaft wall and platforms in the spawn rows
+  const blocked = firstPlayable(tetrisTower(), registry, logic, { seed: SEED });
+  assert.equal(blocked.ok, false, 'a game over on frame 1 is an error, never published');
+  assert.deepEqual(blocked.errors.map(e => e.code), ['ended_at_start']);
+  assert.match(blocked.errors[0].message, /lost.*top_out/);
+
+  const doc = tetrisTower();
+  const fixes = configureGenerators(doc, registry);
+  assert.deepEqual(doc.spaces[0].generators[0].with.keepClear, [[0, 0, 10, 20]]);
+  assert.match(fixes[0].action, /filled .*keepClear/);
+  assert.deepEqual(doc.spaces[0].generators[0].with.rooms, shafts(), 'what the document set is kept');
+  const fp = firstPlayable(doc, registry, logic, { seed: SEED });
+  assert.ok(fp.ok, JSON.stringify(fp.errors));
+  const { rt } = boot(fp.doc);
+  for (let i = 0; i < 120; i++) rt.step();
+  assert.equal(rt.state.status, 'playing');
+  const api = rt.space('tower_climb');
+  assert.deepEqual(api.cellsIn([[0, 0], [9, 19]]).filter(c => c.block !== null && !String(c.block).startsWith('piece_')), [], 'no generated terrain on the board');
+  assert.deepEqual(rt.service('generation').problems().filter(p => p.severity === 'error'), [], 'the board is reachable from the start');
+});
+
+test('the outline keeps a model draft with a blocked board playable, and a skeleton starts the player off the board', async () => {
+  const d = decomposition(['stack falling blocks to build a tower', 'run and jump through the tower'], { views: ['side'], spaces: [{ role: 'tower', kind: 'tiles-side' }], zones: 5, acts: 1 });
+  const mapping = { mappings: [{ mechanic: 'm0', primitives: ['gameplay.falling.pieces'], covered: true, why: '' }, { mechanic: 'm1', primitives: ['gameplay.move.platformer', 'engine.space.tilemap'], covered: true, why: '' }] };
+  const selection = await selectPrimitives({ decomposition: d, registry, writer: fakeWriter([mapping]) });
+  const SEED = 1309811577; // with this seed the draft's rooms block the board (previous test)
+  const o = await writeOutline({ writer: fakeWriter([tetrisTower()]), prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: SEED, maxRounds: 1, verify: false });
+  assert.ok(o.ok && o.source === 'fake-writer', JSON.stringify(o.rounds));
+  assert.deepEqual(o.doc.spaces[0].generators[0].with.keepClear, [[0, 0, 10, 20]]);
+  assert.ok(firstPlayable(o.doc, registry, logic, { seed: SEED }).ok);
+  const skeleton = await writeOutline({ prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: 4 });
+  const fp = firstPlayable(skeleton.doc, registry, logic, { seed: 4 });
+  assert.ok(fp.ok, JSON.stringify(fp.errors));
+  const board = reservedRegions(skeleton.doc, registry, skeleton.doc.spaces[0].id)[0];
+  assert.ok(board && !(fp.start.at[0] >= board[0] && fp.start.at[0] < board[2] && fp.start.at[1] < board[3]), `start ${fp.start.at} is off the board ${board}`);
 });

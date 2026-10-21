@@ -73,10 +73,11 @@ export default {
       oneWayPlatforms: { type: 'boolean', default: false, effect: 'platforms can be jumped through from below (needs a one_way block)' },
       spawnFeatures: { type: 'boolean', default: true },
       doorWarp: { type: 'boolean', default: true, effect: 'stepping onto a door tile moves the player to the paired door (exit gates apply)' },
+      keepClear: { type: 'list', default: [], of: { type: 'list', of: { type: 'integer' }, min: 4, max: 4 }, effect: 'rects [x0,y0,x1,y1) in tiles left empty (regions other primitives own, e.g. a falling-piece board); each must be reachable from the start' },
     },
     provides: { events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
-    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked'],
+    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
   /**
@@ -86,7 +87,7 @@ export default {
    * shafts, and the proof's movement taken from the document's movement envelope, so the generator only
    * builds what the player's real movement can traverse. -> { with, content? } or null.
    */
-  scaffold(space, doc, { envelope = {} } = {}) {
+  scaffold(space, doc, { envelope = {}, reserve = [] } = {}) {
     const E = this.card.params.exitSize.default, mode = space.with?.mode === 'topdown' ? 'topdown' : 'side';
     const [W, H] = Array.isArray(space.with?.size) ? space.with.size : [Infinity, Infinity];
     const rooms = [];
@@ -127,10 +128,14 @@ export default {
     const at = here && Array.isArray(p.at) ? p.at : null;
     const room = (at && rooms.find(r => inRect(r.rect, Math.floor(at[0]), Math.floor(at[1])))) || rooms[0];
     const [x0, y0, x1, y1] = room.rect, floor = mode === 'side' ? 1 + (ROOM_STYLES[room.style].ground ?? 1) : 1;
-    const cx = clamp(Math.floor(at?.[0] ?? x0 + 2), x0 + 2, x1 - 3) + 0.5;
-    const start = mode === 'side' ? [cx, y0 + floor + 1] : [cx, clamp(Math.floor(at?.[1] ?? y0 + 2), y0 + 2, y1 - 3) + 0.5];
+    // Outside the regions other primitives keep clear when the room has room for it (nearest column to the old start).
+    const sy = mode === 'side' ? y0 + floor + 1 : clamp(Math.floor(at?.[1] ?? y0 + 2), y0 + 2, y1 - 3);
+    const want = clamp(Math.floor(at?.[0] ?? x0 + 2), x0 + 1, x1 - 2), kept = x => reserve.some(c => inRect(c, x, sy));
+    const cols = Array.from({ length: x1 - x0 - 2 }, (_, i) => x0 + 1 + i).sort((a, b) => Math.abs(a - want) - Math.abs(b - want) || a - b);
+    const cx = (cols.find(x => !kept(x)) ?? want) + 0.5;
+    const start = mode === 'side' ? [cx, sy] : [cx, sy + 0.5];
     return {
-      with: { mode, rooms, movement, palette: { wall: solid, ground: solid, platform: solid, rung: ledge } },
+      with: { mode, rooms, movement, palette: { wall: solid, ground: solid, platform: solid, rung: ledge }, ...(reserve.length ? { keepClear: reserve.map(r => r.map(Math.round)) } : {}) },
       ...(add.length ? { content: { blocks: add } } : {}),
       ...(here ? { start } : {}),
     };
@@ -295,6 +300,12 @@ export function generateRooms(config, seed, start = null) {
     if (!any) problems.push(problem('room_unreachable', `rooms[${ri}]`, `room '${r.id}' cannot be reached from '${startRoom.id}' even with every ability`, { room: r.id }));
     else r.exits.forEach((e, pi) => { if (!hit.has(`${r.id}#${pi}`)) problems.push(problem('exit_unreachable', `rooms[${ri}]`, `room '${r.id}': exit '${e.side}' is never reached in the composed map`, { room: r.id })); });
   });
+  // Kept-clear regions must be reachable from the start (the player uses what fills them: stacked pieces...).
+  (config.keepClear || []).forEach((c, ci) => {
+    let any = false;
+    for (let y = Math.max(by0, c[1]); y < Math.min(by0 + BH, c[3]) && !any; y++) for (let x = Math.max(bx0, c[0]); x < Math.min(bx0 + BW, c[2]) && !any; x++) any = nodes.has((y - by0) * BW + (x - bx0));
+    if (!any && out.some(r => rectsOverlap(r.rect, c))) problems.push(problem('clear_unreachable', `keepClear[${ci}]`, `kept-clear region ${JSON.stringify(c)} is not reachable from the start`));
+  });
   const first = startRoom;
   return { rooms: out, graph: { start: first.id, edges: links }, problems, cells, attempts: attemptsTotal, fallback: anyFallback, seed };
 }
@@ -399,6 +410,8 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
     else if (o.side === 'b') rungs(o.span[0] - r.rect[0], o.span[1] - r.rect[0], g - 1, 0);
     else if (plain) { const x0 = o.side === 'l' ? 1 : W - 4; rungs(x0, x0 + 3, o.span[0] - r.rect[1] - 1, floor); }
   });
+  // Regions other primitives own stay empty (after everything above painted, before the proof sees the room).
+  for (const [cx0, cy0, cx1, cy1] of config.keepClear || []) for (let y = Math.max(0, cy0 - r.rect[1]); y < Math.min(H, cy1 - r.rect[1]); y++) for (let x = Math.max(0, cx0 - r.rect[0]); x < Math.min(W, cx1 - r.rect[0]); x++) put(x, y, EMPTY);
   // Proof: every port reaches every other port; features reachable from the first port.
   const reach = side ? reachSide : reachTop, problems = [];
   const fromPort = starts.map(s => reach(grid, m, [s.launch && grid.get(s.x, s.y) === ONEWAY ? { x: s.x, y: s.y + 1 } : s], goals));

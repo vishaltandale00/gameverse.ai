@@ -16,6 +16,8 @@ import { checkParam } from '../../kernel/params.js';
 
 export const boardParam = (size = [10, 20], name = 'board') => ({
   type: 'object',
+  // Space-region metadata (planner): this param claims the board's cells, so world generators leave them clear.
+  region: 'board',
   default: { name, at: [0, 0, 0], size, axes: [0, 1], fall: -1, layer: '' },
   effect: 'where the board sits in its space: name (shared by primitives on the same board), at (space cell of board column 0 / bottom row), size [w,h] cells, axes [across, vertical] space axis indexes, fall ±1 (space-axis direction pieces fall)',
   fields: {
