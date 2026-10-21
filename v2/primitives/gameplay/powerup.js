@@ -30,8 +30,8 @@ export default {
     intent: 'Power-ups: timed buffs (magnet, score multiplier, shield, invulnerability, slow motion, status, stat boosts) and tiered upgrades (weapon tiers with overflow points, extra lives, ability charges), collected from pickups or given by effects.',
     views: ['any'],
     params: {
-      powerups: { type: 'list', min: 1, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, kind: { type: 'string', options: KINDS, required: true }, name: { type: 'string' },
+      powerups: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
+        id: { type: 'string', required: true }, kind: { type: 'string', options: KINDS, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' },
         sec: { type: 'number', default: 10, min: 0, max: 3600, unit: 's', effect: '0 = until used (shield) or permanent (weapon)' },
         value: { type: 'number', default: 2, effect: 'multiplier, magnet pull speed, slowmo scale, stat delta' },
         radius: { type: 'number', default: 4, min: 0, max: 1000, unit: 'units', effect: 'magnet radius / shield bullet-clear radius' },
@@ -46,6 +46,7 @@ export default {
     },
     provides: { events: ['powerup', 'powerup:*', 'powerup_end', 'powerup_end:*', 'shield_break', 'overflow', 'tier_lost'], vars: ['score.mult', 'time.scale', 'powerup.*'], services: ['powerup'] },
     defines: [{ kind: 'powerup', in: 'powerups' }],
+    rules: { powerup_field_missing: { fields: ['powerups[].kind', 'powerups[].stat', 'powerups[].status', 'powerups[].weapon', 'powerups[].ability'], message: 'a stat power-up names its stat, a status one its status, a weapon one its weapon, a bomb one its ability' } },
   },
   logic(logic) {
     logic.effect('give_powerup', { refs: e => [['powerup', e.powerup]], run: (e, rt, c) => { const t = e.who ? rt.resolve(e.who, c) : rt.player(); if (t) rt.service('powerup').give(t, e.powerup); } });

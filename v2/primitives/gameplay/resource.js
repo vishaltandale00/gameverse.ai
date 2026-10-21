@@ -33,10 +33,14 @@ export default {
     intent: 'Named resource pools (stamina, mana, focus, oxygen, fuel, hunger) on the player and any entity: max, regen or passive drain, regen delay after spending, exhaustion lockout, drains while a predicate holds, and effects when a pool empties or refills. Movement and combat spend pools through drain tags.',
     views: ['any'],
     params: {
-      pools: { type: 'list', min: 1, of: { type: 'object', fields: POOL }, effect: 'pool definitions; archetype components.resources.<pool> overrides max/regen/regenDelay/start per entity' },
+      pools: { type: 'list', min: 1, required: true, of: { type: 'object', fields: POOL }, effect: 'pool definitions; archetype components.resources.<pool> overrides max/regen/regenDelay/start per entity' },
     },
     provides: { events: ['depleted', 'depleted:*', 'restored', 'restored:*', 'exhausted', 'spent'], vars: ['res.*'], services: ['resources'] },
     defines: [{ kind: 'pool', in: 'pools' }],
+    components: { resources: { type: 'object', effect: 'the pools this entity has (NPCs carry only those listed), by pools[] id; runtime state lives in each', values: { type: 'object', open: true, fields: {
+      max: { type: 'number', min: 0, max: 1e6 }, regen: { type: 'number', min: -1e4, max: 1e4, unit: '/s' }, regenDelay: { type: 'number', min: 0, max: 600, unit: 's' }, start: { type: 'number', min: 0, max: 1e6 },
+    } } } },
+    rules: { resource_start_invalid: { fields: ['pools[].start', 'pools[].max'], message: 'a pool\'s start is at most its max', example: { pools: [{ id: 'mana', max: 5, regen: null, regenDelay: null, startFull: null, start: 10, exhaustLock: null, unlockAt: null, drainTags: null, player: null }] } } },
   },
   logic(logic) {
     const svc = rt => rt.service('resources');
@@ -51,10 +55,9 @@ export default {
     logic.effect('refill', { run: (e, rt, c) => { const t = resolveWho(rt, e.who, c); if (t) svc(rt).refill(t, e.resource); } });
   },
   validate(config) {
-    const errors = [], seen = new Set();
+    // Pool ids are a kind the card defines (unique slugs): the kernel checks them.
+    const errors = [];
     config.pools.forEach((p, i) => {
-      if (seen.has(p.id)) errors.push(err('resource_duplicate', `with.pools[${i}].id`, `duplicate pool '${p.id}'`));
-      seen.add(p.id);
       if (p.start !== undefined && p.start > p.max) errors.push(err('resource_start_invalid', `with.pools[${i}].start`, 'start exceeds max'));
     });
     return errors;
