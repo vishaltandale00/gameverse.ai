@@ -1,3 +1,4 @@
+// @ts-check
 // Legacy 2D arcade builder (v2/engine prototype): a schema-constrained design ->
 // deterministic level build -> preflight + playtest, rebuilt with new layout
 // seeds when unwinnable. Retired from the studio's default flow, which now
@@ -6,17 +7,25 @@
 import { defaultRegistry } from '../modules/index.js';
 import { DESIGN_SCHEMA, DESIGN_PROMPT, designToSpec } from './design.js';
 import { checkArcade } from './arcade-pipeline.js';
+import { obj } from '../kernel/guards.js';
+
+/** @typedef {{ question: string, answer: string }} Answer */
+/** @typedef {{ spec: ReturnType<typeof designToSpec>, check: import('./arcade-pipeline.js').ArcadeCheck, attempt: number, relaxed?: string[] }} Built */
 
 export const DESIGN_PIPELINE_VERSION = 'v2-design/0.1';
 
+/** @param {{ prompt?: string, answers?: Answer[], previousDesign?: unknown, change?: string | null }} request */
 export function designRequest({ prompt, answers, previousDesign, change }) {
   const parts = [previousDesign ? `Current design:\n${JSON.stringify(previousDesign)}\n\nChange request: ${change}\nKeep everything the request doesn't mention.` : `Game idea: ${prompt}`];
   if (answers?.length) parts.push('Player preferences:\n' + answers.map(a => `- ${a.question}: ${a.answer}`).join('\n'));
   return parts.join('\n\n');
 }
 
-/** Build and verify a spec from a design, retrying layouts deterministically. */
+/** Build and verify a spec from a design (model output, narrowed by designToSpec), retrying layouts deterministically.
+ * @param {unknown} design @param {{ seed?: number, registry?: import('./arcade-pipeline.js').ArcadeModules, attempts?: number }} options
+ * @returns {Built | undefined} undefined only when `attempts` is 0 */
 export function buildVerified(design, { seed, registry = defaultRegistry(), attempts = 4 }) {
+  /** @type {Built | undefined} */
   let last;
   for (let attempt = 0; attempt < attempts; attempt++) {
     const spec = designToSpec(design, { seed, attempt });
@@ -26,9 +35,10 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
     if (check.ok) return last;
   }
   // "Collect everything" that the playtester can't verify falls back to reaching the goal, and says so.
-  if (design.mechanics?.collectAllToWin) {
-    const relaxed = buildVerified({ ...design, mechanics: { ...design.mechanics, collectAllToWin: false } }, { seed, registry, attempts });
-    if (relaxed.check.ok) return { ...relaxed, relaxed: ['collectAllToWin'] };
+  const mechanics = obj(obj(design).mechanics);
+  if (mechanics.collectAllToWin) {
+    const relaxed = buildVerified({ ...obj(design), mechanics: { ...mechanics, collectAllToWin: false } }, { seed, registry, attempts });
+    if (relaxed?.check.ok) return { ...relaxed, relaxed: ['collectAllToWin'] };
   }
   return last;
 }

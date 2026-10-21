@@ -1,3 +1,4 @@
+// @ts-check
 // The outline as a structured form: a strict JSON schema derived from exactly the chosen primitives' cards
 // (their params, the archetype components they own, the document sections they read and their content
 // contracts), and the conversion of a filled form into a game document.
@@ -15,22 +16,53 @@ import { DOC_SCHEMA } from '../kernel/document.js';
 import { OBJECTIVES } from '../primitives/plot/story-objectives.js';
 import { isGraphics, isSpace, isGenerator } from './catalog.js';
 import { contractsFor } from './content.js';
+import { isObj, isList, list, strings, obj as asObject, prop } from '../kernel/guards.js';
+
+/** @typedef {import('../kernel/types.js').Doc} Doc */
+/** @typedef {import('../kernel/types.js').Card} Card */
+/** @typedef {import('../kernel/types.js').Instance} Instance */
+/** @typedef {import('../kernel/types.js').SpaceInstance} SpaceInstance */
+/** @typedef {import('../kernel/types.js').ParamSchema} ParamSchema */
+/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
+/** @typedef {import('../kernel/types.js').RegisteredPrimitive} RegisteredPrimitive */
+/** @typedef {import('./types.js').ReplySchema} ReplySchema */
+/** @typedef {import('./content.js').MergedContract} MergedContract */
+/** A JSON schema node (the strict structured-output dialect). @typedef {Record<string, unknown>} JsonSchema */
+/** @typedef {{ type: 'object', additionalProperties: false, required: string[], properties: Record<string, JsonSchema>, description?: string }} ObjectSchema */
+/** A param/field spec as cards write it (any field may be missing). @typedef {Partial<ParamSchema>} Spec */
+/**
+ * How a form value decodes back to document JSON: as is, JSON text (lenient, strict object/list, effects list),
+ * a list of a codec, or an object of field codecs (more: a more_json catch-all; tune: a tune_json catch-all).
+ * @typedef {'raw' | 'json' | 'strict' | 'effects' | { list: Codec } | FieldsCodec} Codec
+ */
+/** @typedef {{ fields: Record<string, Codec>, more: boolean, tune?: boolean }} FieldsCodec */
+/** @typedef {{ id: string, exits: boolean, count: number }} SpaceLayout */
+/** Component slots: the archetype components schema and each component's codec. @typedef {{ schema: ObjectSchema, codecs: Record<string, Codec> }} ComponentSlots */
+/**
+ * The outline form: the strict schema, the converter of a filled form (model output) into a draft document, and what it was built from.
+ * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], version: string }} OutlineForm
+ */
 
 export const FORM_VERSION = 'outline-form/0.1';
 const WIDE = 32;           // objects with more fields than this keep their required + first fields; the rest go to more_json
 const KEEP = 28;           // (validators read fields like a turn action's `hit`: they must stay structured, not hide in more_json)
 const MAX_DEPTH = 4;       // nesting inside a param before values travel as JSON strings
 const SMALL_CARD = 12;     // cards with at most this many params expose every param
-const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+/** @param {unknown} s @returns {string} */
 const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_').slice(0, 48);
+/** @param {string} [description] @returns {JsonSchema} */
 const str = (description) => ({ type: 'string', ...(description ? { description } : {}) });
+/** @param {JsonSchema} s @returns {JsonSchema} */
 const nul = s => ({ anyOf: [s, { type: 'null' }] });
+/** @param {Record<string, JsonSchema>} properties @param {string} [description] @returns {ObjectSchema} */
 const obj = (properties, description) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties, ...(description ? { description } : {}) });
+/** @param {JsonSchema} items @param {string} [description] @returns {JsonSchema} */
 const arr = (items, description) => ({ type: 'array', items, ...(description ? { description } : {}) });
 const JSON_HINT = 'JSON text (a JSON value encoded as a string), or null to leave it unset';
+/** @param {Spec} spec @returns {string | undefined} */
 const describe = spec => [spec.effect, spec.unit && `unit ${spec.unit}`, (spec.min !== undefined || spec.max !== undefined) && `range ${spec.min ?? ''}..${spec.max ?? ''}`, spec.default !== undefined && `default ${JSON.stringify(spec.default).slice(0, 60)}`].filter(Boolean).join('; ').slice(0, 200) || undefined;
 
-/** Schema + codec for one param/field spec. codec: 'raw' | 'json' | { fields, more } | { list }. */
+/** Schema + codec for one param/field spec. codec: 'raw' | 'json' | { fields, more } | { list }. @param {Spec} spec @param {number} [depth] @returns {{ schema: JsonSchema, codec: Codec }} */
 export function specSchema(spec, depth = 0) {
   const d = describe(spec);
   const t = spec?.type;
@@ -47,18 +79,24 @@ export function specSchema(spec, depth = 0) {
   return { schema: nul(str(`${d ? d + '. ' : ''}${JSON_HINT}`)), codec: t === 'json' || !t ? 'json' : t === 'effects' ? 'effects' : 'strict' };
 }
 
-/** A strict object over fields: optional ones nullable; wide objects keep required + first fields and a more_json. */
+/**
+ * A strict object over fields: optional ones nullable; wide objects keep required + first fields and a more_json.
+ * @param {Record<string, Spec> | undefined} fields @param {number} [depth] @param {string} [description] @returns {{ schema: ObjectSchema, codec: FieldsCodec }}
+ */
 export function objectSchema(fields, depth = 0, description) {
   const entries = Object.entries(fields || {});
   const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || i < KEEP) : entries;
-  const props = {}, codecs = {};
+  /** @type {Record<string, JsonSchema>} */
+  const props = {};
+  /** @type {Record<string, Codec>} */
+  const codecs = {};
   for (const [k, f] of keep) { const s = specSchema(f || {}, depth); props[k] = f?.required || typeof s.codec === 'string' && s.codec !== 'raw' ? s.schema : nul(s.schema); codecs[k] = s.codec; }
   const more = entries.length > keep.length;
   if (more) props.more_json = nul(str(`other fields as one JSON object: ${entries.filter(e => !keep.includes(e)).map(([k]) => k).join(', ').slice(0, 300)}`));
   return { schema: obj(props, description), codec: { fields: codecs, more } };
 }
 
-/** Decode a form value back to document JSON with its codec (nulls drop out: they mean "use the default"). */
+/** Decode a form value back to document JSON with its codec (nulls drop out: they mean "use the default"). @param {unknown} value model output @param {Codec} codec @returns {unknown} */
 export function decode(value, codec) {
   if (value === null || value === undefined) return undefined;
   if (codec === 'json' || codec === 'strict' || codec === 'effects') {
@@ -71,9 +109,10 @@ export function decode(value, codec) {
     if (codec === 'strict') return v !== null && typeof v === 'object' ? v : undefined;
     return v === null ? undefined : v;
   }
-  if (codec?.list) return Array.isArray(value) ? value.map(v => decode(v, codec.list)).filter(v => v !== undefined) : undefined;
-  if (codec?.fields) {
+  if (typeof codec === 'object' && 'list' in codec) return Array.isArray(value) ? value.map(v => decode(v, codec.list)).filter(v => v !== undefined) : undefined;
+  if (typeof codec === 'object' && 'fields' in codec) {
     if (!isObj(value)) return undefined;
+    /** @type {Record<string, unknown>} */
     const out = {};
     for (const [k, c] of Object.entries(codec.fields)) { const v = decode(value[k], c); if (v !== undefined) out[k] = v; }
     if (codec.more && typeof value.more_json === 'string') { const m = decode(value.more_json, 'json'); if (isObj(m)) for (const [k, v] of Object.entries(m)) if (out[k] === undefined) out[k] = v; }
@@ -82,7 +121,7 @@ export function decode(value, codec) {
   return value;
 }
 
-/** A card's params as a form slot: which params are exposed directly; the rest travel in tune_json. */
+/** A card's params as a form slot: which params are exposed directly; the rest travel in tune_json. @param {Card} card @param {{ skip?: string[] }} [options] */
 function paramsSlot(card, { skip = [] } = {}) {
   const params = Object.entries(card.params || {}).filter(([k]) => !skip.includes(k));
   const small = params.length <= SMALL_CARD;
@@ -93,10 +132,14 @@ function paramsSlot(card, { skip = [] } = {}) {
   return { schema, codec };
 }
 
-/** Component slots for archetypes: every component a chosen primitive owns (card.components), strict. */
+/** Component slots for archetypes: every component a chosen primitive owns (card.components), strict. @param {RegistryLike} registry @param {string[]} ids @returns {ComponentSlots} */
 export function componentSlots(registry, ids) {
-  const props = {}, codecs = {};
-  for (const id of ids) for (const [k, spec] of Object.entries(registry.get(id)?.card.components || {})) {
+  /** @type {Record<string, JsonSchema>} */
+  const props = {};
+  /** @type {Record<string, Codec>} */
+  const codecs = {};
+  // card.components is written by primitive authors (program code): component name -> field spec.
+  for (const id of ids) for (const [k, spec] of Object.entries(/** @type {Record<string, Spec>} */ (registry.get(id)?.card.components || {}))) {
     if (props[k]) continue;
     const s = specSchema(spec, 1);
     props[k] = typeof s.codec === 'string' && s.codec !== 'raw' ? s.schema : nul(s.schema); codecs[k] = s.codec;
@@ -110,29 +153,34 @@ export const ARCH_KINDS = ['player', 'npc', 'creature', 'enemy', 'boss', 'vehicl
 const KERNEL_SECTIONS = new Set(['plot.characters', 'plot.storyboard', 'plot.endings', 'plot.quests', 'plot.dialogue', 'content.items', 'content.archetypes', 'content.models']);
 
 /** Spawn-rule list params (card.defines spawn_rule) are filled from the form's spawns, not written per instance. */
-const spawnParams = card => (card.defines || []).filter(d => d.kind === 'spawn_rule' && d.in).map(d => d.in);
+/** @param {Card} card @returns {string[]} */
+const spawnParams = card => (card.defines || []).flatMap(d => (d.kind === 'spawn_rule' && d.in ? [d.in] : []));
 
 /**
  * outlineForm({ registry, skeleton, selection }) -> { schema: {name, schema}, toDoc(form) -> doc, contracts, systems, sections, layout }
  * skeleton: the procedural scaffold document (its spaces, zone shapes, systems and views are the frame).
+ * @param {{ registry: RegistryLike, skeleton: Doc, selection?: unknown }} args @returns {OutlineForm}
  */
 export function outlineForm({ registry, skeleton, selection = null }) {
   // Every selected primitive is in the form, including those the skeleton had to drop for lack of content
   // (turns without sides, battles without species): the model writes that content, so it must be asked for.
-  const systems = [...new Set([...(skeleton.systems || []).map(s => s.use), ...(selection?.systems || [])])].filter(id => typeof id === 'string' && registry.has(id));
+  const systems = [...new Set([...(skeleton.systems || []).map(s => s.use), ...strings(prop(selection, 'systems'))])].filter(id => typeof id === 'string' && registry.has(id));
   const used = [...new Set([...(skeleton.spaces || []).flatMap(s => [s.use, ...(s.generators || []).map(g => g.use)]), ...systems])];
   const contracts = contractsFor(registry, used);
   const reads = new Set(used.flatMap(id => (registry.get(id)?.card.reads || []).filter(r => typeof r === 'string')));
   const hasQuests = reads.has('plot.quests'), hasDialogue = reads.has('plot.dialogue');
-  const sections = [...new Set([...reads, ...contracts.filter(c => c.need === 'section').map(c => c.at)])].filter(r => /^(plot|content)\.[a-zA-Z]+$/.test(r) && !KERNEL_SECTIONS.has(r) && r !== 'content.blocks');
-  const spawner = registry.ids().find(id => spawnParams(registry.get(id).card).length && registry.get(id).card.params?.rules);
+  const sections = [...new Set([...reads, ...contracts.filter(c => c.need === 'section').map(c => c.at)])].filter(/** @returns {r is string} */ r => typeof r === 'string' && /^(plot|content)\.[a-zA-Z]+$/.test(r) && !KERNEL_SECTIONS.has(r) && r !== 'content.blocks');
+  const spawner = registry.ids().find(id => { const card = registry.get(id)?.card; return Boolean(card && spawnParams(card).length && card.params?.rules); });
+  /** @type {Record<string, JsonSchema>} */
   const props = {};
   props.title = str('an evocative title for THIS idea');
   props.logline = str('one sentence');
   props.premise = str('two or three sentences: the world, the player, the goal');
 
   // Spaces: fixed by the selection (ids, primitives, params); the model names and describes the zones.
+  /** @type {SpaceLayout[]} */
   const layout = [];
+  /** @type {Record<string, JsonSchema>} */
   const spaceProps = {};
   for (const s of skeleton.spaces || []) {
     const exits = (s.zones || []).some(z => Array.isArray(z.exits));
@@ -146,15 +194,18 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   props.spaces = obj(spaceProps, 'every space of the game, by id');
 
   // Systems: one slot per chosen primitive, with its real params.
-  const sysProps = {}, sysCodecs = {};
+  /** @type {Record<string, JsonSchema>} */
+  const sysProps = {};
+  /** @type {Record<string, FieldsCodec>} */
+  const sysCodecs = {};
   for (const id of systems) {
-    const card = registry.get(id).card;
+    const card = /** @type {RegisteredPrimitive} */ (registry.get(id)).card;
     const slot = paramsSlot(card, { skip: spawnParams(card) });
     sysProps[id] = obj({ with: slot.schema }, String(card.intent || '').slice(0, 300));
     sysCodecs[id] = slot.codec;
   }
   props.systems = obj(sysProps, 'every chosen primitive with its params; null means the default');
-  const extras = registry.ids().filter(id => !isSpace(id) && !isGenerator(id) && !isGraphics(id) && !systems.includes(id) && !registry.get(id).card.ambient);
+  const extras = registry.ids().filter(id => !isSpace(id) && !isGenerator(id) && !isGraphics(id) && !systems.includes(id) && !registry.get(id)?.card.ambient);
   props.extra_systems = arr(obj({ use: { type: 'string', enum: extras.length ? extras : ['none'] }, with_json: nul(str(JSON_HINT)) }), 'other catalogue primitives this idea needs (usually none)');
 
   // Content.
@@ -173,19 +224,24 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   props.player = obj({ archetype: str('the player archetype id (an archetypes entry of kind player)'), zone: str('start zone id') });
 
   const schema = { name: 'game_outline', schema: obj(props) };
-  const toDoc = form => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout });
+  const toDoc = (/** @type {unknown} */ form) => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout });
   return { schema, toDoc, contracts, systems, sections, version: FORM_VERSION };
 }
 
+/** @param {unknown} v */
 const parseJson = v => decode(v, 'json');
+/** @param {unknown} v @returns {unknown[]} */
 const listOf = v => (Array.isArray(v) ? v : []);
 
 /**
  * Form slots for content (shared by the outline and the per-zone detail form): archetypes with the component slots
  * of every primitive in `used`, spawns (when a spawner exists; `zone` fixes their zone), items, characters, and
  * dialogue / quests when a primitive reads them. -> { props, comps }
+ * @param {{ registry: RegistryLike, used: string[], hasQuests: boolean, hasDialogue: boolean, spawner: string | null | undefined, zone?: string | null }} args
+ * @returns {{ props: Record<string, JsonSchema>, comps: ComponentSlots }}
  */
 export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, zone = null }) {
+  /** @type {Record<string, JsonSchema>} */
   const props = {};
   const comps = componentSlots(registry, used);
   props.archetypes = arr(obj({ id: str('lowercase slug'), kind: { type: 'string', enum: ARCH_KINDS }, name: str(), components: comps.schema }), 'every kind of entity: enemies, creatures, pickups, props, vehicles, NPC bodies; give each the components its role needs');
@@ -194,60 +250,73 @@ export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, 
   props.characters = arr(obj({ id: str('lowercase slug'), name: str(), role: str(), bio: str(), ...(zone ? {} : { home: nul(str('zone id')) }), archetype: nul(str('archetype id for their body, if any')), dialogue: arr(str('dialogue id')) }));
   if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: str('character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(str('character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
   if (hasQuests) {
-    const kinds = Object.keys(OBJECTIVES);
+    // The plot primitive's objective kinds (program code): kind -> { fields }.
+    const objectives = /** @type {Record<string, { fields?: object }>} */ (OBJECTIVES);
+    const kinds = Object.keys(objectives);
     props.quests = arr(obj({ id: str('lowercase slug'), title: str(), kind: { type: 'string', enum: ['main', 'side', 'contract', 'bounty', 'challenge'] }, giver: nul(str('character id')), ...(zone ? {} : { zone: nul(str('zone id')) }), summary: str(), autoStart: { type: 'boolean' },
-      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(str()), item: nul(str()), character: nul(str()), archetype: nul(str()), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(OBJECTIVES[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
+      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(str()), item: nul(str()), character: nul(str()), archetype: nul(str()), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(objectives[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
       rewards_json: nul(str('{"xp"?, "money"?, "items"?: [{"item","count"}]} as JSON')) }), 'quests the quest primitive runs; objectives use the goal kinds');
   }
   return { props, comps };
 }
 
-/** Content from a filled form (see contentProps): document-shaped lists, plus spawn rules for the spawner. */
+/**
+ * Content from a filled form (see contentProps): document-shaped lists, plus spawn rules for the spawner.
+ * @param {Record<string, unknown>} f the filled form (model output, unchecked) @param {{ comps: { codecs: Record<string, Codec> }, zone?: string | null }} options
+ */
 export function contentFromForm(f, { comps, zone = null }) {
   const archetypes = listOf(f.archetypes).filter(isObj).map(a => {
+    /** @type {Record<string, unknown>} */
     const components = {};
-    for (const [k, c] of Object.entries(comps.codecs)) { const v = decode(a.components?.[k], c); if (v !== undefined && !(isObj(v) && !Object.keys(v).length && typeof c !== 'string')) components[k] = v; }
-    const other = parseJson(a.components?.other_json); if (isObj(other)) for (const [k, v] of Object.entries(other)) if (components[k] === undefined) components[k] = v;
+    for (const [k, c] of Object.entries(comps.codecs)) { const v = decode(prop(a.components, k), c); if (v !== undefined && !(isObj(v) && !Object.keys(v).length && typeof c !== 'string')) components[k] = v; }
+    const other = parseJson(prop(a.components, 'other_json')); if (isObj(other)) for (const [k, v] of Object.entries(other)) if (components[k] === undefined) components[k] = v;
     if (a.name && components.name === undefined) components.name = String(a.name);
-    return { id: slug(a.id || a.name), kind: ARCH_KINDS.includes(a.kind) ? a.kind : 'prop', components };
+    return { id: slug(a.id || a.name), kind: typeof a.kind === 'string' && ARCH_KINDS.includes(a.kind) ? a.kind : 'prop', components };
   });
-  const items = listOf(f.items).filter(isObj).map(i => { const more = parseJson(i.more_json); return { ...(isObj(more) ? more : {}), id: slug(i.id || i.name), name: String(i.name || i.id), kind: ITEM_KINDS.includes(i.kind) ? i.kind : 'misc', ...(i.desc ? { desc: String(i.desc) } : {}), ...(Number.isFinite(i.value) ? { value: i.value } : {}) }; });
+  const items = listOf(f.items).filter(isObj).map(i => { const more = parseJson(i.more_json); return { ...(isObj(more) ? more : {}), id: slug(i.id || i.name), name: String(i.name || i.id), kind: typeof i.kind === 'string' && ITEM_KINDS.includes(i.kind) ? i.kind : 'misc', ...(i.desc ? { desc: String(i.desc) } : {}), ...(Number.isFinite(i.value) ? { value: i.value } : {}) }; });
   const characters = listOf(f.characters).filter(isObj).map(c => { const home = zone || (c.home ? slug(c.home) : null); return { id: slug(c.id || c.name), name: String(c.name || c.id), role: String(c.role || ''), ...(c.bio ? { bio: String(c.bio) } : {}), ...(home ? { home } : {}), ...(c.archetype ? { archetype: slug(c.archetype) } : {}), ...(listOf(c.dialogue).length ? { dialogue: listOf(c.dialogue).filter(x => typeof x === 'string').map(id => ({ id })) } : {}) }; });
+  /** @type {Record<string, unknown> | undefined} */
   let dialogue;
   if (Array.isArray(f.dialogue)) {
     dialogue = {};
     for (const d of f.dialogue.filter(isObj)) {
+      /** @type {Record<string, Record<string, unknown>>} */
       const nodes = {};
       for (const n of listOf(d.nodes).filter(isObj)) {
+        /** @type {Record<string, unknown>} */
         const node = { ...(n.who ? { who: n.who } : {}), say: String(n.say || '') };
         if (n.next) node.next = n.next; if (n.end) node.end = true;
-        const doFx = decode(n.do_json, 'effects'); if (doFx?.length) node.do = doFx;
+        const doFx = decode(n.do_json, 'effects'); if (isList(doFx) && doFx.length) node.do = doFx;
         const choices = listOf(n.choices).filter(isObj).map(c => ({ text: String(c.text || ''), ...(c.next ? { next: c.next } : {}), ...(decode(c.do_json, 'effects') ? { do: decode(c.do_json, 'effects') } : {}) }));
         if (choices.length) node.choices = choices;
         if (!node.next && !node.choices && !node.end) node.end = true;
         nodes[String(n.id || `n${Object.keys(nodes).length + 1}`)] = node;
       }
-      if (Object.keys(nodes).length) dialogue[slug(d.id)] = { speaker: d.speaker || 'player', start: nodes[d.start] ? d.start : Object.keys(nodes)[0], nodes };
+      if (Object.keys(nodes).length) dialogue[slug(d.id)] = { speaker: d.speaker || 'player', start: nodes[String(d.start)] ? d.start : Object.keys(nodes)[0], nodes };
     }
   }
   const quests = Array.isArray(f.quests) ? f.quests.filter(isObj).map(q => {
     const rewards = parseJson(q.rewards_json), qz = zone || (q.zone ? slug(q.zone) : null);
     return { id: slug(q.id || q.title), title: String(q.title || q.id), kind: q.kind || 'main', ...(q.giver ? { giver: slug(q.giver) } : {}), ...(qz ? { zone: qz } : {}), summary: String(q.summary || ''), ...(q.autoStart ? { autoStart: true } : {}),
-      objectives: listOf(q.objectives).filter(isObj).map(o => { const more = parseJson(o.more_json); const out = { ...(isObj(more) ? more : {}), id: slug(o.id || o.kind), kind: o.kind, text: String(o.text || '') }; for (const k of ['zone', 'item', 'character', 'archetype']) if (o[k]) out[k] = o[k]; if (Number.isInteger(o.count)) out.count = o.count; return out; }),
+      objectives: listOf(q.objectives).filter(isObj).map(o => {
+        const more = parseJson(o.more_json);
+        /** @type {Record<string, unknown>} */
+        const out = { ...(isObj(more) ? more : {}), id: slug(o.id || o.kind), kind: o.kind, text: String(o.text || '') }; for (const k of ['zone', 'item', 'character', 'archetype']) if (o[k]) out[k] = o[k]; if (Number.isInteger(o.count)) out.count = o.count; return out; }),
       ...(isObj(rewards) ? { rewards } : {}) };
   }) : undefined;
   const rules = listOf(f.spawns).filter(isObj).map((r, i) => {
-    const lo = Number.isInteger(r.min) ? Math.max(0, r.min) : 1, hi = Number.isInteger(r.max) ? Math.max(lo, r.max) : lo;
+    const lo = typeof r.min === 'number' && Number.isInteger(r.min) ? Math.max(0, r.min) : 1, hi = typeof r.max === 'number' && Number.isInteger(r.max) ? Math.max(lo, r.max) : lo;
     const when = decode(r.when_json, 'strict'), rz = zone || (r.zone ? slug(r.zone) : null);
-    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(rz ? { zone: rz } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
+    return { id: slug(r.id || `spawn_${i + 1}`), archetype: slug(r.archetype), ...(rz ? { zone: rz } : {}), count: [Math.max(1, lo), Math.max(1, hi)], ...(typeof r.respawnSec === 'number' && Number.isFinite(r.respawnSec) ? { respawnSec: Math.max(0, r.respawnSec) } : {}), ...(isObj(when) ? { when } : {}) };
   }).filter((r, i, a) => a.findIndex(x => x.id === r.id) === i);
   return { archetypes, items, characters, dialogue, quests, rules };
 }
 
-/** Zone geometry for shapes the model does not write (rects, ranges, bounds): laid out by index like the skeleton. */
+/** Zone geometry for shapes the model does not write (rects, ranges, bounds): laid out by index like the skeleton. @param {SpaceInstance} skeletonSpace @param {Record<string, unknown>[]} zones */
 function geometry(skeletonSpace, zones) {
   const ref = skeletonSpace.zones || [];
   const n = zones.length;
+  /** @returns {{ kind: 'rect', W: number, H: number, y0: number } | { kind: 'range', L: number } | { kind: 'bounds', template: typeof ref } | null} */
   const extentOf = () => {
     const rects = ref.filter(z => Array.isArray(z.rect)); if (rects.length) return { kind: 'rect', W: Math.max(...rects.map(z => z.rect[2])), H: Math.max(...rects.map(z => z.rect[3])), y0: Math.min(...rects.map(z => z.rect[1])) };
     const ranges = ref.filter(z => Array.isArray(z.range)); if (ranges.length) return { kind: 'range', L: Math.max(...ranges.map(z => z.range[1])) };
@@ -261,26 +330,49 @@ function geometry(skeletonSpace, zones) {
     if (!e) return;
     if (e.kind === 'rect') { const w = Math.max(1, Math.floor(e.W / n)); z.rect = [i * w, e.y0, i === n - 1 ? e.W : (i + 1) * w, e.H]; }
     if (e.kind === 'range') { const w = e.L / n; z.range = [+(i * w).toFixed(2), +((i + 1) * w).toFixed(2)]; }
-    if (e.kind === 'bounds') { const t = e.template[i % e.template.length].bounds; z.bounds = structuredClone(t); if (i >= e.template.length) { z.bounds.min[0] += 64 * Math.floor(i / e.template.length); z.bounds.max[0] += 64 * Math.floor(i / e.template.length); } }
+    if (e.kind === 'bounds') { const t = e.template[i % e.template.length].bounds; const b = structuredClone(t); z.bounds = b; if (i >= e.template.length) { b.min[0] += 64 * Math.floor(i / e.template.length); b.max[0] += 64 * Math.floor(i / e.template.length); } }
   });
 }
 
-const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.bounds.min[2] + 1] : z.rect ? [z.rect[0] + Math.min(1, (z.rect[2] - z.rect[0]) / 2), z.rect[1] + Math.min(1, (z.rect[3] - z.rect[1]) / 2)] : z.range ? [z.range[0] + 0.5, 0, 0] : null;
+/**
+ * A start position inside a zone (bounds, rect or range), else null (as outline.js zoneStart). A shape that is not a
+ * list of coordinates is skipped.
+ * @param {unknown} z @returns {number[] | null}
+ */
+const zoneStart = z => {
+  const min = prop(prop(z, 'bounds'), 'min'), rect = prop(z, 'rect'), range = prop(z, 'range');
+  const nums = (/** @type {unknown[]} */ v) => v.map(Number);
+  if (isList(min)) { const m = nums(min); return [m[0] + 1, m[1] + 1, m[2] + 1]; }
+  if (isList(rect)) { const r = nums(rect); return [r[0] + Math.min(1, (r[2] - r[0]) / 2), r[1] + Math.min(1, (r[3] - r[1]) / 2)]; }
+  if (isList(range)) return [Number(range[0]) + 0.5, 0, 0];
+  return null;
+};
 
-/** A filled form -> a game document in the kernel's shape (references are checked later by preflight and repair). */
+/**
+ * A filled form -> a game document in the kernel's shape (references are checked later by preflight and repair).
+ * @param {unknown} form the model's filled form
+ * @param {{ registry: RegistryLike, skeleton: Doc, systems: string[], sysCodecs: Record<string, FieldsCodec>, comps: ComponentSlots, sections: string[], spawner: string | undefined, layout: SpaceLayout[] }} frame
+ * @returns {Record<string, unknown>} a draft document (unchecked)
+ */
 export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout }) {
+  /** @type {Record<string, unknown>} */
   const f = isObj(form) ? form : {};
   const title = typeof f.title === 'string' && f.title.trim() ? f.title.trim() : skeleton.title;
   const spaces = (skeleton.spaces || []).map(s => {
-    const slot = f.spaces?.[s.id];
+    const slot = prop(f.spaces, s.id);
     const shape = layout.find(l => l.id === s.id);
-    let zones = listOf(slot?.zones).filter(isObj).map(z => ({ id: slug(z.id || z.name), name: String(z.name || z.id || ''), description: String(z.description || ''),
+    /** @type {Record<string, unknown>[]} */
+    let zones = listOf(prop(slot, 'zones')).filter(isObj).map(z => ({ id: slug(z.id || z.name), name: String(z.name || z.id || ''), description: String(z.description || ''),
       ...(shape?.exits ? { exits: listOf(z.exits).filter(isObj).map(x => ({ to: slug(x.to), ...(parseJson(x.gate_json) !== undefined ? { gate: parseJson(x.gate_json) } : {}) })) } : {}) }));
     const seen = new Set(); zones = zones.filter(z => !seen.has(z.id) && seen.add(z.id));
     if (!zones.length) zones = structuredClone(s.zones || []);
     else geometry(s, zones);
     return { ...structuredClone(s), zones };
   });
+  /**
+   * @type {{ schema: string, id: string, title: string, logline: string, seed: unknown, views: unknown, spaces: Record<string, unknown>[],
+   *   systems: Record<string, unknown>[], graphics?: unknown, plot: Record<string, unknown>, content: Record<string, unknown>, player?: unknown }}
+   */
   const out = {
     schema: DOC_SCHEMA, id: slug(title).replace(/_/g, '-'), title, logline: String(f.logline || skeleton.logline || ''), seed: skeleton.seed,
     views: structuredClone(skeleton.views), spaces,
@@ -291,22 +383,25 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   };
   const skelSys = new Map((skeleton.systems || []).map(s => [s.use, s]));
   for (const id of systems) {
-    const slot = f.systems?.[id], codec = sysCodecs[id];
-    const w = decode(slot?.with, codec) || {};
-    if (codec?.tune && typeof slot?.with?.tune_json === 'string') { const t = parseJson(slot.with.tune_json); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id).card.params?.[k]) w[k] = v; }
+    const slot = prop(f.systems, id), codec = sysCodecs[id];
+    const decoded = decode(prop(slot, 'with'), codec), w = isObj(decoded) ? decoded : {};
+    const tune = prop(prop(slot, 'with'), 'tune_json');
+    if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id)?.card.params?.[k]) w[k] = v; }
+    /** @type {Partial<Instance>} */
     const base = skelSys.get(id) || {};
     // Spawn-rule params keep what the scaffold had (start spawns are re-derived by engage); the form's spawns are added below.
-    for (const k of spawnParams(registry.get(id).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
+    for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
     out.systems.push({ use: id, ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
   }
-  for (const x of listOf(f.extra_systems)) if (isObj(x) && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {
+  for (const x of listOf(f.extra_systems)) if (isObj(x) && typeof x.use === 'string' && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {
     const w = parseJson(x.with_json); out.systems.push({ use: x.use, ...(isObj(w) ? { with: w } : {}) });
   }
   const content = contentFromForm(f, { comps });
+  /** @type {Record<string, unknown>[]} */
   const archetypes = content.archetypes;
-  const pid = slug(f.player?.archetype || '');
+  const pid = slug(prop(f.player, 'archetype') || '');
   let playerArch = archetypes.find(a => a.id === pid) || archetypes.find(a => a.kind === 'player');
-  if (!playerArch) { playerArch = structuredClone((skeleton.content?.archetypes || []).find(a => a.id === skeleton.player?.archetype) || { id: 'hero', components: { name: 'You' } }); playerArch.kind ??= 'player'; archetypes.push(playerArch); }
+  if (!playerArch) { const made = asObject(structuredClone(list(skeleton.content?.archetypes).find(a => prop(a, 'id') === skeleton.player?.archetype) || { id: 'hero', components: { name: 'You' } })); made.kind ??= 'player'; playerArch = made; archetypes.push(made); }
   out.content.archetypes = archetypes;
   const items = content.items;
   for (const it of skeleton.content?.items || []) if (!items.some(x => x.id === it.id)) items.push(structuredClone(it));
@@ -318,9 +413,11 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     const v = parseJson(f[`section_${sec.replace('.', '_')}`]);
     if (v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length)) continue;
     const [root, key] = sec.split('.');
-    out[root][key] = v;
+    const target = root === 'plot' ? out.plot : root === 'content' ? out.content : null; // sections are plot.* or content.*
+    if (target) target[key] = v;
   }
   const acts = listOf(f.acts).filter(isObj).map(a => ({ id: slug(a.id || a.title), title: String(a.title || a.id || ''), beats: listOf(a.beats).filter(isObj).map(b => {
+    /** @type {Record<string, unknown>} */
     const beat = { id: slug(b.id || b.title), ...(b.title ? { title: String(b.title) } : {}) };
     const when = parseJson(b.when_json); if (isObj(when)) beat.when = when;
     const after = listOf(b.after).filter(x => typeof x === 'string').map(slug); if (after.length) beat.after = after;
@@ -330,29 +427,29 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   }) }));
   if (acts.length) out.plot.storyboard = { acts };
   else if (skeleton.plot?.storyboard) out.plot.storyboard = structuredClone(skeleton.plot.storyboard);
-  const endings = listOf(f.endings).filter(isObj).map(e => ({ id: slug(e.id || e.title), title: String(e.title || e.id), text: String(e.text || ''), outcome: ['won', 'lost', 'neutral'].includes(e.outcome) ? e.outcome : 'won' }));
+  const endings = listOf(f.endings).filter(isObj).map(e => ({ id: slug(e.id || e.title), title: String(e.title || e.id), text: String(e.text || ''), outcome: typeof e.outcome === 'string' && ['won', 'lost', 'neutral'].includes(e.outcome) ? e.outcome : 'won' }));
   if (endings.length) out.plot.endings = endings; else if (skeleton.plot?.endings) out.plot.endings = structuredClone(skeleton.plot.endings);
   // Spawns -> the spawner's rules.
   const rules = content.rules;
   if (rules.length && spawner) {
     let sp = out.systems.find(s => s.use === spawner);
     if (!sp) { sp = { use: spawner, with: {} }; out.systems.unshift(sp); }
-    sp.with = { ...(sp.with || {}), rules: [...listOf(sp.with?.rules), ...rules] };
+    sp.with = { ...asObject(sp.with), rules: [...listOf(prop(sp.with, 'rules')), ...rules] };
   }
   // The player: its archetype, in its start zone (zone id in exit spaces, a point in positional ones).
   const space = out.spaces.find(s => s.id === skeleton.player?.space) || out.spaces[0];
-  const startZone = (space.zones || []).find(z => z.id === slug(f.player?.zone)) || space.zones?.[0];
+  const startZone = listOf(space.zones).find(z => prop(z, 'id') === slug(prop(f.player, 'zone'))) || listOf(space.zones)[0];
   const exits = layout.find(l => l.id === space.id)?.exits;
-  out.player = { ...structuredClone(skeleton.player || {}), archetype: playerArch.id, space: space.id, at: exits ? startZone?.id : (startZone && zoneStart(startZone)) || skeleton.player?.at };
+  out.player = { ...structuredClone(skeleton.player || {}), archetype: playerArch.id, space: space.id, at: exits ? prop(startZone, 'id') : (startZone && zoneStart(startZone)) || skeleton.player?.at };
   return out;
 }
 
-/** A document path as the form names it, for repair problems (best effort; the doc path is always kept too). */
+/** A document path as the form names it, for repair problems (best effort; the doc path is always kept too). @param {unknown} path @param {unknown} doc a draft @returns {string} */
 export function formPath(path, doc) {
   const p = String(path || '');
   let m;
-  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = doc?.systems?.[+m[1]]?.use; return use ? `systems["${use}"]${m[2]}` : p; }
-  if ((m = /^spaces\[(\d+)\]\.zones(.*)$/.exec(p))) { const id = doc?.spaces?.[+m[1]]?.id; return id ? `spaces["${id}"].zones${m[2]}` : p; }
+  if ((m = /^systems\[(\d+)\](.*)$/.exec(p))) { const use = prop(listOf(prop(doc, 'systems'))[+m[1]], 'use'); return use ? `systems["${use}"]${m[2]}` : p; }
+  if ((m = /^spaces\[(\d+)\]\.zones(.*)$/.exec(p))) { const id = prop(listOf(prop(doc, 'spaces'))[+m[1]], 'id'); return id ? `spaces["${id}"].zones${m[2]}` : p; }
   return p.replace(/^content\.archetypes/, 'archetypes').replace(/^content\.items/, 'items').replace(/^plot\.quests/, 'quests').replace(/^plot\.characters/, 'characters')
     .replace(/^plot\.storyboard\.acts/, 'acts').replace(/^plot\.endings/, 'endings').replace(/^plot\.dialogue\.([a-z0-9_-]+)/, 'dialogue[id=$1]').replace(/^(plot|content)\.([a-zA-Z]+)/, 'section_$1_$2');
 }

@@ -1,3 +1,4 @@
+// @ts-check
 // Content contracts: what a primitive needs in the document to be meaningful, read from the cards.
 // A combat primitive with nothing to fight, a race with no racers or a dialogue runner with no lines
 // all preflight, boot and even "complete", yet the game is hollow. Each card may declare
@@ -23,20 +24,36 @@
 // example); placeContent(doc) deterministically places archetypes that exist but nothing puts in the world.
 import { placements, spawnRules, spawnEffects } from './census.js';
 import { spawnerId } from './engage.js';
+import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
+
+/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
+/**
+ * A content need as a card declares it (card.content; cards are program code, see the header).
+ * @typedef {{ need: string, component?: string, kinds?: string[], min?: number, placed?: number, zones?: number, at?: string, param?: string, why?: string, example?: unknown }} ContractSpec
+ */
+/** One primitive's contract: the spec plus its primitive and a stable key. @typedef {ContractSpec & { use: string, key: string }} Contract */
+/** A contract merged over every primitive that asks for the same thing. @typedef {Contract & { uses: string[] }} MergedContract */
+/**
+ * A populate problem (repair feedback): stable code, document path, the shape to add in the hint.
+ * @typedef {{ code: string, path: string, message: string, hint: string, severity: 'error', contract: string, uses: string[], missing: Record<string, unknown> }} ContentProblem
+ */
+/** A placement added by placeContent. @typedef {{ rule: string, archetype: unknown, zone: unknown, count: number, contract: string }} Placement */
 
 export const CONTENT_VERSION = 'content/0.1';
-const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
-const at = (doc, path) => path.split('.').reduce((v, k) => (v == null ? undefined : v[k]), doc);
+/** The value at a dotted path (any JSON container; primitives box like property access does). @param {unknown} doc @param {string} path @returns {unknown} */
+const at = (doc, path) => path.split('.').reduce((v, k) => (v == null ? undefined : /** @type {Record<string, unknown>} */ (Object(v))[k]), doc);
+/** @param {unknown} v */
 const size = v => (Array.isArray(v) ? v.length : isObj(v) ? Object.keys(v).length : 0);
 // Sections the procedural skeleton always writes, and catalogue-wide ones a reader never needs filled.
 // Sections the kernel itself consumes (spawning, characters, the story runner's own data): never "unread".
 const KERNEL_SECTIONS = new Set(['content.archetypes', 'content.models', 'plot.characters', 'plot.storyboard', 'plot.endings']);
 const SKELETON = new Set(['plot.characters', 'plot.storyboard', 'plot.endings', 'content.items', 'content.archetypes', 'content.models', 'content.blocks']);
 
-/** Contracts of one primitive: declared, else derived. Each gets { use, key }. */
+/** Contracts of one primitive: declared, else derived. Each gets { use, key }. @param {RegistryLike} registry @param {string} id @returns {Contract[]} */
 export function contractsOf(registry, id) {
   const card = registry.get(id)?.card; if (!card) return [];
-  let list = Array.isArray(card.content) ? card.content : null;
+  // card.content is written by primitive authors (program code), in the ContractSpec shape documented above.
+  let list = Array.isArray(card.content) ? /** @type {ContractSpec[]} */ (card.content) : null;
   if (!list) {
     list = [];
     // Plot sections a gameplay/plot primitive runs on (quests, dialogue, clues...); content sections are often
@@ -48,9 +65,12 @@ export function contractsOf(registry, id) {
   return list.map((c, i) => ({ ...c, use: id, key: `${id}#${c.need}:${c.component || c.at || c.param || i}` }));
 }
 
-/** Contracts of every primitive a document (or a selection) uses, deduplicated by what they ask for. */
+/** Contracts of every primitive a document (or a selection) uses, deduplicated by what they ask for. @param {RegistryLike} registry @param {Iterable<string>} ids @returns {MergedContract[]} */
 export function contractsFor(registry, ids) {
-  const out = [], seen = new Map();
+  /** @type {MergedContract[]} */
+  const out = [];
+  /** @type {Map<string, MergedContract>} */
+  const seen = new Map();
   for (const id of [...new Set(ids)]) for (const c of contractsOf(registry, id)) {
     const k = `${c.need}|${c.component || ''}|${(c.kinds || []).join(',')}|${c.at || ''}|${c.need === 'param' ? c.use + '.' + c.param : ''}`;
     const prev = seen.get(k);
@@ -60,72 +80,93 @@ export function contractsFor(registry, ids) {
   return out;
 }
 
-const usedIds = doc => [...(doc.spaces || []).flatMap(s => [s.use, ...(s.generators || []).map(g => g.use)]), ...(doc.systems || []).map(s => s.use)].filter(Boolean);
-const zoneIds = doc => (doc.spaces || []).flatMap(s => (s.zones || []).map(z => z.id));
+/** Primitive ids a document (or a draft) uses. @param {unknown} doc @returns {string[]} */
+const usedIds = doc => [...list(prop(doc, 'spaces')).flatMap(s => [prop(s, 'use'), ...list(prop(s, 'generators')).map(g => prop(g, 'use'))]), ...list(prop(doc, 'systems')).map(s => prop(s, 'use'))].filter(isStr).filter(Boolean);
+/** @param {unknown} doc @returns {unknown[]} */
+const zoneIds = doc => list(prop(doc, 'spaces')).flatMap(s => list(prop(s, 'zones')).map(z => prop(z, 'id')));
 
-/** archetype id -> { count, zones:Set } of placed instances (spawn rules count their max, others count one). */
+/** @typedef {Map<unknown, { count: number, zones: Set<unknown> }>} PlacementCounts */
+/** archetype id -> { count, zones:Set } of placed instances (spawn rules count their max, others count one). @param {unknown} doc @param {RegistryLike} registry @returns {PlacementCounts} */
 export function placementCounts(doc, registry) {
+  /** @type {PlacementCounts} */
   const out = new Map();
-  const add = (id, n, zone) => { const e = out.get(id) || out.set(id, { count: 0, zones: new Set() }).get(id); e.count += n; if (zone) e.zones.add(zone); };
+  /** @param {unknown} id @param {number} n @param {unknown} zone */
+  const add = (id, n, zone) => { let e = out.get(id); if (!e) { e = { count: 0, zones: new Set() }; out.set(id, e); } e.count += n; if (zone) e.zones.add(zone); };
+  /** @type {Set<string>} */
   const covered = new Set();
-  for (const r of spawnRules(doc, registry)) if (typeof r.archetype === 'string') { add(r.archetype, r.unique ? 1 : Math.max(1, (Array.isArray(r.count) ? r.count[r.count.length - 1] : r.count) || 1), r.zone); covered.add(`${r._path}.archetype`); }
-  for (const e of spawnEffects(doc)) { add(e.archetype, Math.max(1, e.count || 1), e.zone); covered.add(`${e._path}.archetype`.replace(/^\./, '')); }
-  for (const c of doc.plot?.characters || []) if (typeof c?.archetype === 'string') add(c.archetype, 1, c.home);
-  for (const [id, paths] of placements(doc)) for (const p of paths) {
+  // Spawn rules and effects are document data: counts are coerced like Math.max coerces them.
+  for (const r of spawnRules(doc, registry)) { const count = prop(r, 'count'); if (typeof prop(r, 'archetype') === 'string') { add(prop(r, 'archetype'), prop(r, 'unique') ? 1 : Math.max(1, Number((Array.isArray(count) ? count[count.length - 1] : count) || 1)), prop(r, 'zone')); covered.add(`${prop(r, '_path')}.archetype`); } }
+  for (const e of spawnEffects(doc)) { add(prop(e, 'archetype'), Math.max(1, Number(prop(e, 'count') || 1)), prop(e, 'zone')); covered.add(`${prop(e, '_path')}.archetype`.replace(/^\./, '')); }
+  for (const c of list(prop(prop(doc, 'plot'), 'characters'))) if (typeof prop(c, 'archetype') === 'string') add(prop(c, 'archetype'), 1, prop(c, 'home'));
+  for (const [id, paths] of /** @type {Map<unknown, string[]>} */ (placements(doc))) for (const p of paths) {
     if (covered.has(p) || covered.has(p.replace(/^\./, '')) || /^plot\.characters\[\d+\]\.archetype$/.test(p)) continue;
     add(id, 1, null);
   }
   return out;
 }
 
-const archetypesWith = (doc, c) => (doc.content?.archetypes || []).filter(a => a?.id && a.id !== doc.player?.archetype && a.kind !== 'player'
-  && (!c.component || (isObj(a.components) && a.components[c.component] !== undefined)) && (!c.kinds?.length || !a.kind || c.kinds.includes(a.kind)));
+/** Non-player archetypes that satisfy a contract's component/kinds. @param {unknown} doc @param {ContractSpec} c @returns {Record<string, unknown>[]} */
+const archetypesWith = (doc, c) => objects(prop(prop(doc, 'content'), 'archetypes')).filter(a => a.id && a.id !== prop(prop(doc, 'player'), 'archetype') && a.kind !== 'player'
+  && (!c.component || (isObj(a.components) && a.components[c.component] !== undefined)) && (!c.kinds?.length || !a.kind || c.kinds.some(k => k === a.kind)));
 
+/** @param {unknown} example */
 const shape = example => (example === undefined ? '' : ` Shape: ${JSON.stringify(example).slice(0, 600)}`);
 
 /**
  * What the document's primitives need and do not have. -> [{ code, path, message, hint, severity, contract, missing }]
  * Problems use stable codes: content_missing (nothing there), content_unplaced (defined, not in the world),
  * content_spread (placed in too few zones), content_thin (fewer than the minimum).
+ * @param {unknown} doc @param {RegistryLike} registry @param {{ contracts?: MergedContract[] | null }} [options] @returns {ContentProblem[]}
  */
 export function populateProblems(doc, registry, { contracts = null } = {}) {
-  const list = contracts || contractsFor(registry, usedIds(doc));
-  const counts = placementCounts(doc, registry), zones = zoneIds(doc), problems = [];
+  const needs = contracts || contractsFor(registry, usedIds(doc));
+  const counts = placementCounts(doc, registry), zones = zoneIds(doc);
+  /** @type {ContentProblem[]} */
+  const problems = [];
+  /** @param {string} code @param {string} path @param {MergedContract} c @param {string} message @param {Record<string, unknown>} missing */
   const push = (code, path, c, message, missing) => problems.push({ code, path, message, hint: `${c.why ? c.why + '.' : ''}${shape(c.example)}`, severity: 'error', contract: c.key, uses: c.uses, missing });
-  for (const c of list) {
+  for (const c of needs) {
     if (c.need === 'archetypes') {
       const have = archetypesWith(doc, c);
       const what = `archetypes with a "${c.component}" component${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}`;
       if (have.length < (c.min || 1)) { push(have.length ? 'content_thin' : 'content_missing', 'content.archetypes', c, `${c.uses.join(', ')} need${c.uses.length > 1 ? '' : 's'} at least ${c.min || 1} ${what}; the document has ${have.length}`, { kind: 'archetypes', count: (c.min || 1) - have.length }); continue; }
       if (!c.placed) continue;
-      let total = 0, unknown = 0; const where = new Set();
+      let total = 0, unknown = 0;
+      /** @type {Set<unknown>} */
+      const where = new Set();
       for (const a of have) { const p = counts.get(a.id); if (p) { total += p.count; p.zones.forEach(z => where.add(z)); if (!p.zones.size) unknown += p.count; } }
       if (total < c.placed) push(total ? 'content_thin' : 'content_unplaced', 'systems', c, `${have.map(a => a.id).join(', ')} ${have.length > 1 ? 'are' : 'is'} defined but only ${total} of at least ${c.placed} are placed in the world: add spawn rules (archetype, zone, count) in the zones where they belong`, { kind: 'placed', count: c.placed - total, archetypes: have.map(a => a.id) });
       // Spread is judged only on placements whose zone is known (a generator feature or a param may place them anywhere).
       else if (c.zones && zones.length > 1 && unknown < c.placed && where.size < Math.min(c.zones, zones.length)) push('content_spread', 'systems', c, `${what} are placed in ${where.size} zone(s); spread them over at least ${Math.min(c.zones, zones.length)} zones so each place has its own`, { kind: 'spread', zones: Math.min(c.zones, zones.length) - where.size, archetypes: have.map(a => a.id) });
     } else if (c.need === 'section') {
-      const n = size(at(doc, c.at));
-      if (n < (c.min || 1)) push(n ? 'content_thin' : 'content_missing', c.at, c, `${c.uses.join(', ')} read${c.uses.length > 1 ? '' : 's'} ${c.at}, which has ${n} entr${n === 1 ? 'y' : 'ies'}; write at least ${c.min || 1}`, { kind: 'section', at: c.at, count: (c.min || 1) - n });
+      const n = size(at(doc, String(c.at)));
+      if (n < (c.min || 1)) push(n ? 'content_thin' : 'content_missing', String(c.at), c, `${c.uses.join(', ')} read${c.uses.length > 1 ? '' : 's'} ${c.at}, which has ${n} entr${n === 1 ? 'y' : 'ies'}; write at least ${c.min || 1}`, { kind: 'section', at: c.at, count: (c.min || 1) - n });
     } else if (c.need === 'param') {
-      (doc.systems || []).forEach((s, i) => {
-        if (s.use !== c.use) return;
-        const v = s.with?.[c.param], n = Array.isArray(v) ? v.length : v ? 1 : 0;
+      list(prop(doc, 'systems')).forEach((s, i) => {
+        if (prop(s, 'use') !== c.use) return;
+        const v = prop(prop(s, 'with'), String(c.param)), n = Array.isArray(v) ? v.length : v ? 1 : 0;
         if (n < (c.min || 1)) push(n ? 'content_thin' : 'content_missing', `systems[${i}].with.${c.param}`, c, `${c.use} ${c.param} has ${n} entr${n === 1 ? 'y' : 'ies'}; it needs at least ${c.min || 1}`, { kind: 'param', use: c.use, param: c.param, count: (c.min || 1) - n });
       });
     } else if (c.need === 'items') {
-      const n = (doc.content?.items || []).length;
+      const n = list(prop(prop(doc, 'content'), 'items')).length;
       if (n < (c.min || 1)) push(n ? 'content_thin' : 'content_missing', 'content.items', c, `${c.uses.join(', ')} need${c.uses.length > 1 ? '' : 's'} at least ${c.min || 1} items in content.items; the document has ${n}`, { kind: 'items', count: (c.min || 1) - n });
     }
   }
   return problems;
 }
 
-/** Primitive ids whose sections hold data nothing installed reads (quests with no quest runner...): readers to add. */
+/**
+ * Primitive ids whose sections hold data nothing installed reads (quests with no quest runner...): readers to add.
+ * @param {unknown} doc a document or a draft @param {RegistryLike} registry @returns {Array<{ section: string, reader: string | null }>}
+ */
 export function unreadReaders(doc, registry) {
-  const used = new Set(usedIds(doc)), reads = new Set();
+  const used = new Set(usedIds(doc));
+  /** @type {Set<string>} */
+  const reads = new Set();
   for (const id of used) for (const r of registry.get(id)?.card.reads || []) if (typeof r === 'string') reads.add(r);
+  /** @type {Array<{ section: string, reader: string | null }>} */
   const out = [];
-  for (const [root, obj] of [['plot', doc.plot], ['content', doc.content]]) for (const [k, v] of Object.entries(isObj(obj) ? obj : {})) {
+  for (const [root, section] of [['plot', prop(doc, 'plot')], ['content', prop(doc, 'content')]]) for (const [k, v] of Object.entries(isObj(section) ? section : {})) {
     const key = `${root}.${k}`;
     if (k === 'premise' || KERNEL_SECTIONS.has(key) || !size(v) || [...reads].some(r => key === r || key.startsWith(r + '.'))) continue;
     // The reader: a registered card that reads it and needs no capability (plot/data readers), fewest requirements first.
@@ -140,55 +181,73 @@ export function unreadReaders(doc, registry) {
  * Deterministic placement: archetypes a contract wants placed that the document defines but nothing puts in
  * the world get spawn rules through the spawner primitive, spread over the zones (hostile kinds skip the
  * player's start zone when there are others). Returns { doc, added: [{rule, archetype, zone}] }; input untouched.
+ * The result keeps the input's type: it only gains a spawner instance and spawn rules.
+ * @template T
+ * @param {T} input @param {RegistryLike} registry @param {{ contracts?: MergedContract[] | null }} [options]
+ * @returns {{ doc: T, added: Placement[] }}
  */
 export function placeContent(input, registry, { contracts = null } = {}) {
-  const list = (contracts || contractsFor(registry, usedIds(input))).filter(c => c.need === 'archetypes' && c.placed);
+  const needs = (contracts || contractsFor(registry, usedIds(input))).filter(c => c.need === 'archetypes' && c.placed);
   const sid = spawnerId(registry);
-  if (!list.length || !sid) return { doc: input, added: [] };
-  const doc = structuredClone(input), added = [];
+  if (!needs.length || !sid) return { doc: input, added: [] };
+  const copy = structuredClone(input);
+  if (!isObj(copy)) return { doc: input, added: [] };
+  /** @type {Record<string, unknown>} */
+  const doc = copy;
+  /** @type {Placement[]} */
+  const added = [];
   const counts = placementCounts(doc, registry);
-  const space = doc.spaces?.[0];
-  const zones = (space?.zones || []).map(z => z.id);
+  const space = list(doc.spaces)[0];
+  const zones = list(prop(space, 'zones')).map(z => prop(z, 'id'));
   if (!zones.length) return { doc: input, added };
-  const startZone = typeof doc.player?.at === 'string' ? doc.player.at : zones[0];
-  let spawner = null;
+  const startAt = prop(doc.player, 'at');
+  const startZone = typeof startAt === 'string' ? startAt : zones[0];
+  /** The spawner's rules list, created on first use. @type {unknown[] | null} */
+  let spawnerRules = null;
   const rules = () => {
-    if (spawner) return spawner.with.rules;
-    doc.systems = Array.isArray(doc.systems) ? doc.systems : [];
-    spawner = doc.systems.find(s => s?.use === sid);
-    if (!spawner) { spawner = { use: sid, with: { rules: [] } }; doc.systems.unshift(spawner); }
-    spawner.with = isObj(spawner.with) ? spawner.with : {};
-    spawner.with.rules = Array.isArray(spawner.with.rules) ? spawner.with.rules : [];
-    return spawner.with.rules;
+    if (spawnerRules) return spawnerRules;
+    const systems = Array.isArray(doc.systems) ? doc.systems : [];
+    doc.systems = systems;
+    const found = systems.find(s => prop(s, 'use') === sid);
+    /** @type {Record<string, unknown>} */
+    let spawner;
+    if (isObj(found)) spawner = found; else { spawner = { use: sid, with: { rules: [] } }; systems.unshift(spawner); }
+    const w = isObj(spawner.with) ? spawner.with : {};
+    spawner.with = w;
+    const r = Array.isArray(w.rules) ? w.rules : [];
+    w.rules = r;
+    spawnerRules = r;
+    return r;
   };
-  const taken = new Set(spawnRules(doc, registry).map(r => r.id));
-  for (const c of list) {
+  const taken = new Set(spawnRules(doc, registry).map((/** @type {unknown} */ r) => prop(r, 'id')));
+  for (const c of needs) {
     const have = archetypesWith(doc, c); if (!have.length) continue;
     let total = have.reduce((n, a) => n + (counts.get(a.id)?.count || 0), 0);
-    if (total >= c.placed) continue;
-    const hostile = have.some(a => ['enemy', 'boss'].includes(a.kind));
+    if (total >= (c.placed || 0)) continue;
+    const hostile = have.some(a => a.kind === 'enemy' || a.kind === 'boss');
     const pool = hostile && zones.length > 1 ? zones.filter(z => z !== startZone) : zones;
     const unplaced = have.filter(a => !counts.get(a.id)?.count);
     const order = unplaced.length ? unplaced : have;
-    const per = Math.max(1, Math.ceil((c.placed - total) / Math.max(1, Math.min(pool.length, Math.max(c.zones || 1, order.length)))));
-    for (let k = 0; total < c.placed && k < Math.max(pool.length, order.length) * 2; k++) {
+    const placed = c.placed || 0;
+    const per = Math.max(1, Math.ceil((placed - total) / Math.max(1, Math.min(pool.length, Math.max(c.zones || 1, order.length)))));
+    for (let k = 0; total < placed && k < Math.max(pool.length, order.length) * 2; k++) {
       const a = order[k % order.length], zone = pool[k % pool.length];
       let id = `place_${a.id}_${zone}`.slice(0, 60); while (taken.has(id)) id += '_b'; taken.add(id);
       const n = a.kind === 'boss' ? 1 : per;
       rules().push({ id, archetype: a.id, zone, count: [n, n], respawnSec: 0 });
       added.push({ rule: id, archetype: a.id, zone, count: n, contract: c.key });
-      total += n; const e = counts.get(a.id) || counts.set(a.id, { count: 0, zones: new Set() }).get(a.id); e.count += n; e.zones.add(zone);
+      total += n; let e = counts.get(a.id); if (!e) { e = { count: 0, zones: new Set() }; counts.set(a.id, e); } e.count += n; e.zones.add(zone);
     }
   }
-  return added.length ? { doc, added } : { doc: input, added };
+  return added.length ? { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), added } : { doc: input, added };
 }
 
-/** Problems as model-facing text, grouped (each with the shape to add). */
+/** Problems as model-facing text, grouped (each with the shape to add). @param {Array<{ code: string, path: string, message: string, hint?: string }>} problems @param {number} [limit] */
 export function describeContent(problems, limit = 12) {
   return problems.slice(0, limit).map(p => `- [${p.code}] ${p.path}: ${p.message}${p.hint ? `\n    ${p.hint}` : ''}`).join('\n');
 }
 
-/** Model-facing text: the content the chosen primitives need, with the exact shapes. */
+/** Model-facing text: the content the chosen primitives need, with the exact shapes. @param {MergedContract[]} contracts @returns {string} */
 export function contractText(contracts) {
   return contracts.map(c => {
     const what = c.need === 'archetypes' ? `≥${c.min || 1} archetypes with a "${c.component}" component${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}${c.placed ? `, ≥${c.placed} placed by spawns${c.zones ? ` across ≥${c.zones} zones` : ''}` : ''}`

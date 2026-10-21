@@ -1,3 +1,4 @@
+// @ts-check
 // Space-agnostic runtime. Holds JSON state and the hooks primitives install:
 // phase-ordered systems, event handlers, player actions, spaces (each space
 // primitive registers an API implementing the capabilities it provides) and
@@ -5,15 +6,29 @@
 // a renderer (graphics primitives install only when not headless).
 import { random, seedFrom } from './rng.js';
 
+/** @typedef {import('./types.js').Runtime} Runtime */
+/** @typedef {import('./types.js').State} State */
+/** @typedef {import('./types.js').Doc} Doc */
+/** @typedef {import('./types.js').Instance} Instance */
+/** @typedef {import('./types.js').View} View */
+/** @typedef {import('./types.js').SpaceApi} SpaceApi */
+/** @typedef {import('./types.js').Option} Option */
+/** @typedef {import('./types.js').RegistryLike} RegistryLike */
+/** @typedef {import('./types.js').LogicLike} LogicLike */
+
 export const PHASES = ['input', 'ai', 'movement', 'physics', 'interaction', 'rules', 'plot', 'late'];
 export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added', 'space_changed'];
 export const DT = 1 / 60;
 
+/**
+ * @template {LogicLike} L
+ * @param {RegistryLike} registry @param {new () => L} Logic @returns {L}
+ */
 export function buildLogic(registry, Logic) {
   const logic = new Logic();
   // Real owners first; ambient providers (stand-ins, pure vocabulary libraries) only fill kinds nobody owns.
-  const ids = registry.ids(), ambient = id => Boolean(registry.get(id).card.ambient);
-  for (const id of [...ids.filter(i => !ambient(i)), ...ids.filter(ambient)]) { logic.owner = id; logic.ambient = ambient(id); registry.get(id).logic?.(logic); }
+  const ids = registry.ids(), ambient = (/** @type {string} */ id) => Boolean(/** @type {import('./types.js').RegisteredPrimitive} */ (registry.get(id)).card.ambient);
+  for (const id of [...ids.filter(i => !ambient(i)), ...ids.filter(ambient)]) { logic.owner = id; logic.ambient = ambient(id); /** @type {import('./types.js').RegisteredPrimitive} */ (registry.get(id)).logic?.(logic); }
   logic.owner = null; logic.ambient = false;
   // One owner per vocabulary kind: a silent overwrite would change behavior by load order.
   if (logic.duplicates.length) throw Error(`vocabulary registered twice: ${logic.duplicates.map(d => `${d.type} '${d.kind}' by ${d.first} and ${d.second}`).join('; ')}`);
@@ -27,17 +42,26 @@ export function buildLogic(registry, Logic) {
  * Graphics primitives render into view.container, register per-frame draws
  * with view.onFrame, and send player choices through view.act({ name: value }).
  */
+/**
+ * @param {Doc} doc @param {RegistryLike} registry @param {LogicLike} logic
+ * @param {{ seed?: unknown, headless?: boolean, view?: View | null }} [opts]
+ * @returns {Runtime}
+ */
 export function createWorld(doc, registry, logic, { seed, headless = true, view = null } = {}) {
+  /** @type {State} */
   const state = {
     schema: 'gameverse.v2.state/0.1', docId: doc.id, frame: 0, time: 0, status: 'playing', ending: null,
     rng: seedFrom(seed ?? doc.seed ?? doc.id), modal: null, vars: {}, flags: {}, counts: {}, events: [],
     entities: {}, nextId: 1, spaces: {}, prim: {},
   };
-  const deferred = [], installed = new Set();
-  const ownerInstalled = owner => !owner || owner === 'kernel' || installed.has(owner) || Boolean(registry.get(owner)?.card.ambient);
-  const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), services = new Map(), restorers = [], optionProviders = [];
+  const deferred = /** @type {Array<(rt: Runtime) => void>} */ ([]), installed = /** @type {Set<string>} */ (new Set());
+  const ownerInstalled = (/** @type {string | undefined} */ owner) => !owner || owner === 'kernel' || installed.has(owner) || Boolean(registry.get(owner)?.card.ambient);
+  const systems = /** @type {Array<{ p: number, order: number, fn: (rt: Runtime) => void, owner: string }>} */ ([]), handlers = /** @type {Map<string, Array<(data: any, rt: Runtime) => void>>} */ (new Map()),
+    actions = /** @type {Map<string, (value: any, rt: Runtime) => void>} */ (new Map()), spaces = /** @type {Map<string, SpaceApi>} */ (new Map()), services = /** @type {Map<string, any>} */ (new Map()),
+    restorers = /** @type {Array<(rt: Runtime) => void>} */ ([]), optionProviders = /** @type {Array<(rt: Runtime) => Option[]>} */ ([]);
   let order = 0;
 
+  /** @type {Runtime} */
   const rt = {
     doc, registry, logic, headless, view, dt: DT, input: {}, caches: {},
     get state() { return state; },
@@ -50,7 +74,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     },
     /** Emit `name` with subject, then the qualified `name:<subject>` (counts and objectives address it). */
     emitTyped(name, subject, data = {}) { rt.emit(name, { ...data, subject }); if (subject != null) rt.emit(`${name}:${subject}`, data); },
-    on(name, fn) { if (!handlers.has(name)) handlers.set(name, []); handlers.get(name).push(fn); },
+    on(name, fn) { if (!handlers.has(name)) handlers.set(name, []); /** @type {Array<(data: any, rt: Runtime) => void>} */ (handlers.get(name)).push(fn); },
     system(phase, fn, owner = '') {
       const p = PHASES.indexOf(phase);
       if (p < 0) throw Error(`unknown phase '${phase}' from ${owner}`);
@@ -99,18 +123,18 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     /** Per-instance JSON state: rt.store('gameplay.inventory') -> object kept in snapshots.
      *  Fetch it inside each system/handler call; never cache it at install (restore() replaces it). */
     store(key) { return (state.prim[key] ??= {}); },
-    archetype(id) { return doc.content?.archetypes?.find(a => a.id === id); },
+    archetype(id) { return doc.content?.archetypes?.find((/** @type {any} */ a) => a.id === id); },
     spawn(archetype, { space, at, components = {}, id } = {}) {
       const base = rt.archetype(archetype)?.components || {};
       const entity = { id: id || `e${state.nextId++}`, archetype, space: space ?? doc.spaces?.[0]?.id ?? null, at: at ?? null, components: { ...structuredClone(base), ...components } };
       state.entities[entity.id] = entity;
-      if (entity.space && spaces.get(entity.space)?.place) spaces.get(entity.space).place(entity, rt);
+      if (entity.space && spaces.get(entity.space)?.place) /** @type {SpaceApi} */ (spaces.get(entity.space)).place(entity, rt);
       rt.emit('spawn', { id: entity.id, archetype });
       return entity;
     },
     despawn(id) {
       const e = state.entities[id]; if (!e) return;
-      if (e.space && spaces.get(e.space)?.remove) spaces.get(e.space).remove(e, rt);
+      if (e.space && spaces.get(e.space)?.remove) /** @type {SpaceApi} */ (spaces.get(e.space)).remove(e, rt);
       delete state.entities[id]; rt.emit('despawn', { id, archetype: e.archetype });
     },
     entity: id => state.entities[id],
@@ -118,13 +142,13 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     resolve(who, context = {}) {
       if ((who === undefined || who === null) && context.defaultWho) who = context.defaultWho; // e.g. AI rules: subject is the agent
       if (who === undefined || who === null || who === 'player') return state.entities.player || null;
-      if (who === 'self') return state.entities[context.self] || null;
-      return state.entities[who] || null;
+      if (who === 'self') return state.entities[/** @type {string} */ (context.self)] || null;
+      return state.entities[/** @type {string} */ (who)] || null;
     },
     /** Move an entity into another space (portals, interiors, battle screens). */
     moveToSpace(entity, spaceId, at = null, zone = undefined) {
       const from = entity.space;
-      if (from && spaces.get(from)?.remove) spaces.get(from).remove(entity, rt);
+      if (from && spaces.get(from)?.remove) /** @type {SpaceApi} */ (spaces.get(from)).remove(entity, rt);
       entity.space = spaceId; entity.at = at;
       const api = rt.space(spaceId);
       api.place(entity, rt);
@@ -146,7 +170,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
         if (fn) { fn(value, rt); rt.emit('action', { action: name }); }
       }
       for (const s of systems) { s.fn(rt); if (state.status !== 'playing') break; }
-      while (deferred.length) deferred.shift()(rt);
+      while (deferred.length) /** @type {(rt: Runtime) => void} */ (deferred.shift())(rt);
       state.frame++; state.time = +(state.frame * DT).toFixed(6);
       return state;
     },
@@ -175,12 +199,13 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     },
     snapshot: () => structuredClone(state),
     restore(snapshot) {
-      for (const k of Object.keys(state)) delete state[k];
+      for (const k of Object.keys(state)) delete /** @type {Record<string, any>} */ (state)[k];
       Object.assign(state, structuredClone(snapshot));
       for (const fn of restorers) fn(rt);
     },
   };
 
+  /** @param {Instance} instance @param {string} key */
   const install = (instance, key) => {
     const p = registry.get(instance.use);
     if (p && !(p.family === 'graphics' && headless)) installed.add(p.id);

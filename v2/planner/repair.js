@@ -1,3 +1,4 @@
+// @ts-check
 // Deterministic document repair driven by preflight's stable error codes
 // (KERNEL_API.md: errors carry code, path, message, hint). Each code has a
 // generic fix: unknown params are dropped, out-of-range values clamped,
@@ -10,80 +11,142 @@ import { preflight, DOC_SCHEMA } from '../kernel/document.js';
 import { REF_KINDS } from '../kernel/params.js';
 import { defaultsOf, isSpace, isGenerator, isGraphics, satisfying, spaceVariants, requirementsOf } from './catalog.js';
 import { vocabIndex } from './select.js';
+import { isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
+
+/** @typedef {import('../kernel/types.js').Doc} Doc */
+/** @typedef {import('../kernel/types.js').Instance} Instance */
+/** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
+/** @typedef {import('../kernel/types.js').ParamSchema} ParamSchema */
+/** @typedef {import('../kernel/types.js').PreflightResult} PreflightResult */
+/** @typedef {import('../kernel/types.js').Problem} Problem */
+/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
+/** A path step: an object key or a list index. @typedef {string | number} Key */
+/** A JSON container (object or list) indexed by path steps. @typedef {Record<Key, unknown>} Bag */
+/**
+ * An instance (space, generator, system, graphic) as found in a draft document: any fields, since a model
+ * may have written it; narrow `use`, `with`, `space` before relying on them.
+ * @typedef {Record<string, unknown>} DraftInstance
+ */
+/** @typedef {{ inst: DraftInstance, keys: Key[] }} InstanceEntry */
+/** @typedef {InstanceEntry & { rest: Key[], schema: ParamSchema | null | undefined }} Located */
+/** @typedef {{ code: string, path: string, action: string }} Fix */
+/** An instance repair dropped (`use` is whatever the document had there). @typedef {{ use: unknown, why: string, kind?: string }} Removed */
+/** @typedef {{ ensureId(kind: string): string }} SynthContext */
+/**
+ * repairDocument's result. `doc` is the repaired draft; when `ok`, preflight accepted exactly that draft (`checked`).
+ * @typedef {{ checked: PreflightResult | null, errors: Problem[], fixes: Fix[], removed: Removed[], rounds?: number, version: string }
+ *   & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} RepairResult
+ */
 
 export const REPAIR_VERSION = 'repair/0.1';
 
+/** @param {unknown} v @returns {v is Bag} a non-null object or list */
+const isBag = v => typeof v === 'object' && v !== null;
+/** Property access that never throws, like `o?.[k]` (primitives read through their wrapper). @param {unknown} o @param {Key} k @returns {unknown} */
+const step = (o, k) => (o == null ? undefined : /** @type {Bag} */ (Object(o))[k]);
+/** The list at obj[key], created when absent; null when something else is there. @param {Bag} o @param {Key} key @returns {unknown[] | null} */
+const listAt = (o, key) => { const v = (o[key] ??= []); return Array.isArray(v) ? v : null; };
+/** An instance's primitive id when it is a string, else ''. @param {DraftInstance} inst */
+const useOf = inst => str(inst.use);
+
 // ---------- paths ----------
+/** @param {unknown} path @returns {Key[]} */
 export function parsePath(path) {
+  /** @type {Key[]} */
   const keys = [];
   String(path || '').replace(/([^.[\]]+)|\[(\d+)\]/g, (_, name, index) => { keys.push(index !== undefined ? Number(index) : name); return ''; });
   return keys;
 }
-export const getAt = (obj, keys) => keys.reduce((o, k) => (o == null ? undefined : o[k]), obj);
+/** @param {unknown} obj @param {Key[]} keys @returns {unknown} */
+export const getAt = (obj, keys) => keys.reduce((/** @type {unknown} */ o, k) => step(o, k), obj);
+/** @param {unknown} obj @param {Key[]} keys @param {unknown} value */
 function setAt(obj, keys, value) {
   let parent = obj;
-  for (let i = 0; i < keys.length - 1; i++) { if (parent[keys[i]] == null) parent[keys[i]] = typeof keys[i + 1] === 'number' ? [] : {}; parent = parent[keys[i]]; if (typeof parent !== 'object') return; }
-  parent[keys.at(-1)] = value;
+  for (let i = 0; i < keys.length - 1; i++) { if (!isBag(parent)) return; if (parent[keys[i]] == null) parent[keys[i]] = typeof keys[i + 1] === 'number' ? [] : {}; parent = parent[keys[i]]; }
+  if (isBag(parent)) parent[keys[keys.length - 1]] = value;
 }
+/** @param {unknown} obj @param {Key[]} keys */
 function deleteAt(obj, keys) {
-  const parent = getAt(obj, keys.slice(0, -1)), k = keys.at(-1);
+  const parent = getAt(obj, keys.slice(0, -1)), k = keys[keys.length - 1];
   if (Array.isArray(parent) && typeof k === 'number') parent.splice(k, 1);
-  else if (parent && typeof parent === 'object') delete parent[k];
+  else if (isBag(parent)) delete parent[k];
 }
+/** @param {unknown} s */
 const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_').slice(0, 60);
 
 // ---------- id indexes (mirrors preflight's, read-only) ----------
+/** @type {Record<string, string>} */
 const BASE_AT = { character: 'plot.characters', quest: 'plot.quests', ending: 'plot.endings', dialogue: 'plot.dialogue', item: 'content.items', recipe: 'content.recipes', archetype: 'content.archetypes', block: 'content.blocks', model: 'content.models' };
-const get = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
+/** @param {unknown} o @param {string} path @returns {unknown} */
+const get = (o, path) => path.split('.').reduce((/** @type {unknown} */ v, k) => step(v, k), o);
+/** @param {RegistryLike} registry @param {string} kind @returns {string | null} */
 export function collectionOf(registry, kind) {
   if (BASE_AT[kind]) return BASE_AT[kind];
-  for (const id of registry.ids()) for (const d of registry.get(id).card.defines || []) if (d.kind === kind && d.at) return d.at;
+  for (const id of registry.ids()) for (const d of registry.get(id)?.card.defines || []) if (d.kind === kind && d.at) return d.at;
   return null;
 }
+/** Ids of `kind` in a (draft) document; ids that are not strings are not ids. @param {unknown} doc @param {RegistryLike} registry @param {string} kind @returns {string[]} */
 export function idsOf(doc, registry, kind) {
-  if (kind === 'space') return (doc.spaces || []).map(s => s.id);
-  if (kind === 'zone') return (doc.spaces || []).flatMap(s => (s.zones || []).map(z => z.id));
-  if (kind === 'beat') return (doc.plot?.storyboard?.acts || []).flatMap(a => (a.beats || []).map(b => b.id));
-  const at = collectionOf(registry, kind), out = [];
-  if (at) { const v = get(doc, at); if (Array.isArray(v)) out.push(...v.map(x => x?.id).filter(Boolean)); else if (v && typeof v === 'object') out.push(...Object.keys(v)); }
-  for (const id of registry.ids()) for (const d of registry.get(id).card.defines || []) if (d.kind === kind && d.in) for (const inst of instances(doc)) if (inst.inst.use === id) out.push(...(inst.inst.with?.[d.in] || []).map(x => x?.id).filter(Boolean));
-  return out;
-}
-export function instances(doc) {
+  const d = obj(doc);
+  if (kind === 'space') return objects(d.spaces).map(s => s.id).filter(isStr);
+  if (kind === 'zone') return objects(d.spaces).flatMap(s => objects(s.zones).map(z => z.id)).filter(isStr);
+  if (kind === 'beat') return objects(prop(prop(d.plot, 'storyboard'), 'acts')).flatMap(a => objects(a.beats).map(b => b.id)).filter(isStr);
+  /** @type {string[]} */
   const out = [];
-  (doc.spaces || []).forEach((s, i) => { out.push({ inst: s, keys: ['spaces', i] }); (s.generators || []).forEach((g, j) => out.push({ inst: g, keys: ['spaces', i, 'generators', j] })); });
-  (doc.systems || []).forEach((s, i) => out.push({ inst: s, keys: ['systems', i] }));
-  (doc.graphics || []).forEach((g, i) => out.push({ inst: g, keys: ['graphics', i] }));
+  const at = collectionOf(registry, kind);
+  if (at) { const v = get(d, at); if (Array.isArray(v)) out.push(...v.map(x => prop(x, 'id')).filter(isStr).filter(Boolean)); else if (v && typeof v === 'object') out.push(...Object.keys(v)); }
+  for (const id of registry.ids()) for (const def of registry.get(id)?.card.defines || []) { const field = def.in; if (def.kind === kind && field) for (const inst of instances(d)) if (inst.inst.use === id) out.push(...list(prop(inst.inst.with, field)).map(x => prop(x, 'id')).filter(isStr).filter(Boolean)); }
   return out;
 }
-/** The instance an error path points into, and the param schema at that path (when inside `with`). */
+/** Every object instance in a (draft) document with its path keys. @param {unknown} doc @returns {InstanceEntry[]} */
+export function instances(doc) {
+  const d = obj(doc);
+  /** @type {InstanceEntry[]} */
+  const out = [];
+  list(d.spaces).forEach((s, i) => { if (!isObj(s)) return; out.push({ inst: s, keys: ['spaces', i] }); list(s.generators).forEach((g, j) => { if (isObj(g)) out.push({ inst: g, keys: ['spaces', i, 'generators', j] }); }); });
+  list(d.systems).forEach((s, i) => { if (isObj(s)) out.push({ inst: s, keys: ['systems', i] }); });
+  list(d.graphics).forEach((g, i) => { if (isObj(g)) out.push({ inst: g, keys: ['graphics', i] }); });
+  return out;
+}
+/**
+ * The instance an error path points into, and the param schema at that path (when inside `with`).
+ * @param {unknown} doc @param {RegistryLike} registry @param {Key[]} keys @returns {Located | null}
+ */
 function locate(doc, registry, keys) {
+  /** @type {InstanceEntry | null} */
   let hit = null;
   for (const x of instances(doc)) if (x.keys.every((k, i) => keys[i] === k) && (!hit || x.keys.length > hit.keys.length)) hit = x;
   if (!hit) return null;
   const rest = keys.slice(hit.keys.length);
+  /** @type {ParamSchema | null | undefined} */
   let schema = null;
   if (rest[0] === 'with') {
-    let s = { type: 'object', fields: registry.get(hit.inst.use)?.card.params || {} };
+    /** @type {ParamSchema | null | undefined} */
+    let s = { type: 'object', fields: registry.get(isStr(hit.inst.use) ? hit.inst.use : undefined)?.card.params || {} };
     for (const k of rest.slice(1)) { s = s?.type === 'object' ? s.fields?.[k] : s?.type === 'list' ? s.of : null; if (!s) break; }
     schema = s;
   }
   return { ...hit, rest, schema };
 }
-
+/** @typedef {{ component: string, owner: string, rest: Key[], schema: ParamSchema, keys: Key[] }} ComponentField */
 /**
  * An archetype component field (content.archetypes[i].components.<component>...): its schema from the card that
  * owns the component (card.components), so a missing or mistyped component field is synthesized, not looped on.
+ * @param {RegistryLike} registry @param {Key[]} keys @returns {ComponentField | null}
  */
 function componentAt(registry, keys) {
-  if (keys[0] !== 'content' || keys[1] !== 'archetypes' || typeof keys[2] !== 'number' || keys[3] !== 'components' || typeof keys[4] !== 'string') return null;
-  const owner = registry.cards().find(c => c.components?.[keys[4]]);
-  let schema = owner?.components[keys[4]];
+  const name = keys[4];
+  if (keys[0] !== 'content' || keys[1] !== 'archetypes' || typeof keys[2] !== 'number' || keys[3] !== 'components' || typeof name !== 'string') return null;
+  const owner = registry.cards().find(c => prop(c.components, name));
+  // card.components (component name -> field schema) is primitive-authored card data, not model output.
+  /** @type {ParamSchema | null | undefined} */
+  let schema = owner ? /** @type {ParamSchema | undefined} */ (prop(owner.components, name)) : undefined;
   for (const k of keys.slice(5)) { schema = schema?.type === 'object' ? schema.fields?.[k] : schema?.type === 'list' ? schema.of : null; if (!schema) break; }
-  return schema ? { component: keys[4], owner: owner.id, rest: keys.slice(5), schema, keys: keys.slice(0, 5) } : null;
+  return schema && owner ? { component: name, owner: owner.id, rest: keys.slice(5), schema, keys: keys.slice(0, 5) } : null;
 }
 
 // ---------- value synthesis from a param schema ----------
+/** @param {ParamSchema | null | undefined} schema @param {SynthContext} ctx @returns {unknown} */
 export function synthesize(schema, ctx) {
   if (!schema) return null;
   if (schema.default !== undefined) return structuredClone(schema.default);
@@ -91,7 +154,7 @@ export function synthesize(schema, ctx) {
     case 'number': case 'integer': { let v = schema.min ?? 0; if (schema.max !== undefined) v = Math.min(v, schema.max); return schema.type === 'integer' ? Math.ceil(v) : v; }
     case 'boolean': return false;
     case 'string': return schema.options?.[0] ?? 'untitled';
-    case 'ref': return ctx.ensureId(schema.to);
+    case 'ref': return ctx.ensureId(String(schema.to));
     case 'list': return Array.from({ length: schema.min || 0 }, () => synthesize(schema.of, ctx));
     case 'object': return Object.fromEntries(Object.entries(schema.fields || {}).filter(([, f]) => f.required).map(([k, f]) => [k, synthesize(f, ctx)]));
     case 'predicate': return { time: 0, gte: 0 };
@@ -100,7 +163,9 @@ export function synthesize(schema, ctx) {
   }
 }
 
+/** @param {string} a @param {string} b */
 const near = (a, b) => a === b || slug(a) === slug(b) || (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a))) || lev(a, b) <= Math.max(1, Math.floor(Math.min(a.length, b.length) / 5));
+/** @param {string} a @param {string} b @returns {number} */
 function lev(a, b) {
   if (Math.abs(a.length - b.length) > 3) return 99;
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
@@ -108,88 +173,99 @@ function lev(a, b) {
   for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return d[a.length][b.length];
 }
+/** @param {unknown} id */
 const title = id => String(id).replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+/** @type {Record<string, (id: string) => Record<string, unknown>>} */
 const STUB = { character: id => ({ id, name: title(id) }), archetype: id => ({ id, components: {} }), ending: id => ({ id, title: title(id), outcome: 'won' }), item: id => ({ id, name: title(id) }) };
 const CREATABLE = new Set(['character', 'archetype', 'ending', 'item', 'quest', 'recipe']);
 
+/** @param {unknown} v @returns {unknown[] | undefined} */
 const asList = v => (v === undefined || v === null ? undefined : Array.isArray(v) ? v : [v]);
-const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 /**
  * Coerce the kernel document's own structure (ARCHITECTURE.md §3, not any primitive's params) so that
  * validators, repair and the planner never see a beat whose `do` is an object, a space whose `zones` is a
  * map, a null list entry or an id that is not a string. Models make these slips; everything downstream may
  * assume the documented shapes. Total: any JSON value in, a document of the documented shape out.
+ * @param {Record<string, unknown>} doc @param {Fix[]} [fixes] @returns {Record<string, unknown>}
  */
 export function normalizeShape(doc, fixes = []) {
-  const fix = (path, what) => fixes.push({ code: 'shape', path, action: what });
+  const fix = (/** @type {string} */ path, /** @type {string} */ what) => fixes.push({ code: 'shape', path, action: what });
   // A list of objects: maps become lists (key -> id), scalars and nulls are dropped, non-string ids are dropped.
-  const objects = (owner, key, path, { keyed = true, ids = true } = {}) => {
-    let v = owner[key];
+  /** @param {Bag} owner @param {string} key @param {string} path @param {{ keyed?: boolean, ids?: boolean }} [options] */
+  const objectList = (owner, key, path, { keyed = true, ids = true } = {}) => {
+    const v = owner[key];
     if (v === undefined) return;
     if (v === null) { delete owner[key]; fix(path, 'removed null'); return; }
-    if (!Array.isArray(v)) { v = isObj(v) && keyed && !('id' in v) ? Object.entries(v).map(([id, x]) => (isObj(x) ? { id, ...x } : null)) : [v]; fix(path, 'made a list'); }
-    const kept = v.filter(x => isObj(x)).filter(x => !ids || x.id === undefined || typeof x.id === 'string' || (typeof x.id === 'number' && (x.id = String(x.id))));
-    if (kept.length !== v.length) fix(path, `dropped ${v.length - kept.length} malformed entr${v.length - kept.length === 1 ? 'y' : 'ies'}`);
+    /** @type {unknown[]} */
+    let items;
+    if (!Array.isArray(v)) { items = isObj(v) && keyed && !('id' in v) ? Object.entries(v).map(([id, x]) => (isObj(x) ? { id, ...x } : null)) : [v]; fix(path, 'made a list'); }
+    else items = v;
+    const kept = items.filter(x => isObj(x)).filter(x => !ids || x.id === undefined || typeof x.id === 'string' || (typeof x.id === 'number' && (x.id = String(x.id))));
+    if (kept.length !== items.length) fix(path, `dropped ${items.length - kept.length} malformed entr${items.length - kept.length === 1 ? 'y' : 'ies'}`);
     owner[key] = kept;
   };
-  const section = key => { if (doc[key] !== undefined && !isObj(doc[key])) { doc[key] = {}; fix(key, 'made an object'); } };
-  for (const key of ['spaces', 'systems', 'graphics']) objects(doc, key, key, { keyed: key === 'spaces' });
-  (doc.spaces || []).forEach((s, i) => {
-    objects(s, 'zones', `spaces[${i}].zones`); objects(s, 'generators', `spaces[${i}].generators`, { keyed: false });
+  const section = (/** @type {string} */ key) => { if (doc[key] !== undefined && !isObj(doc[key])) { doc[key] = {}; fix(key, 'made an object'); } };
+  for (const key of ['spaces', 'systems', 'graphics']) objectList(doc, key, key, { keyed: key === 'spaces' });
+  list(doc.spaces).forEach((s, i) => {
+    if (!isObj(s)) return;
+    objectList(s, 'zones', `spaces[${i}].zones`); objectList(s, 'generators', `spaces[${i}].generators`, { keyed: false });
     if (s.with !== undefined && !isObj(s.with)) { delete s.with; fix(`spaces[${i}].with`, 'removed non-object'); }
-    (s.zones || []).forEach((z, j) => { if (z.exits !== undefined) { if (!Array.isArray(z.exits)) { z.exits = asList(z.exits) || []; fix(`spaces[${i}].zones[${j}].exits`, 'made a list'); } z.exits = z.exits.filter(isObj); } });
+    list(s.zones).forEach((z, j) => { if (isObj(z) && z.exits !== undefined) { if (!Array.isArray(z.exits)) { z.exits = asList(z.exits) || []; fix(`spaces[${i}].zones[${j}].exits`, 'made a list'); } z.exits = list(z.exits).filter(isObj); } });
   });
-  for (const key of ['systems', 'graphics']) (doc[key] || []).forEach((x, i) => { if (x.with !== undefined && !isObj(x.with)) { delete x.with; fix(`${key}[${i}].with`, 'removed non-object'); } });
+  for (const key of ['systems', 'graphics']) list(doc[key]).forEach((x, i) => { if (isObj(x) && x.with !== undefined && !isObj(x.with)) { delete x.with; fix(`${key}[${i}].with`, 'removed non-object'); } });
   section('plot'); section('content'); section('player');
   const plot = doc.plot;
-  if (plot) {
-    for (const k of ['characters', 'quests', 'endings']) objects(plot, k, `plot.${k}`);
+  if (isObj(plot)) {
+    for (const k of ['characters', 'quests', 'endings']) objectList(plot, k, `plot.${k}`);
     if (plot.storyboard !== undefined && !isObj(plot.storyboard)) { plot.storyboard = Array.isArray(plot.storyboard) ? { acts: plot.storyboard } : { acts: [] }; fix('plot.storyboard', 'made an object'); }
-    if (plot.storyboard) objects(plot.storyboard, 'acts', 'plot.storyboard.acts', { keyed: true });
-    (plot.storyboard?.acts || []).forEach((a, i) => {
+    const storyboard = plot.storyboard;
+    if (isObj(storyboard)) objectList(storyboard, 'acts', 'plot.storyboard.acts', { keyed: true });
+    list(step(plot.storyboard, 'acts')).forEach((a, i) => {
+      if (!isObj(a)) return;
       if (a.beats === undefined || a.beats === null) a.beats = [];
-      objects(a, 'beats', `plot.storyboard.acts[${i}].beats`);
-      a.beats.forEach((b, j) => {
+      objectList(a, 'beats', `plot.storyboard.acts[${i}].beats`);
+      list(a.beats).forEach((b, j) => {
+        if (!isObj(b)) return;
         if (b.do !== undefined && !Array.isArray(b.do)) { b.do = asList(b.do) || []; fix(`plot.storyboard.acts[${i}].beats[${j}].do`, 'made a list'); }
         if (Array.isArray(b.do)) b.do = b.do.filter(isObj);
         if (b.after !== undefined && !Array.isArray(b.after)) { b.after = asList(b.after) || []; fix(`plot.storyboard.acts[${i}].beats[${j}].after`, 'made a list'); }
         if (Array.isArray(b.after)) b.after = b.after.filter(x => typeof x === 'string');
       });
     });
-    if (plot.dialogue !== undefined && !isObj(plot.dialogue)) { plot.dialogue = Array.isArray(plot.dialogue) ? Object.fromEntries(plot.dialogue.filter(d => isObj(d) && typeof d.id === 'string').map(({ id, ...d }) => [id, d])) : {}; fix('plot.dialogue', 'made an id-keyed object'); }
+    if (plot.dialogue !== undefined && !isObj(plot.dialogue)) { plot.dialogue = Array.isArray(plot.dialogue) ? Object.fromEntries(plot.dialogue.filter(isObj).filter(d => typeof d.id === 'string').map(({ id, ...d }) => /** @type {const} */ ([String(id), d]))) : {}; fix('plot.dialogue', 'made an id-keyed object'); }
   }
-  if (doc.content) {
-    for (const k of ['items', 'archetypes', 'recipes', 'blocks']) objects(doc.content, k, `content.${k}`);
-    for (const a of doc.content.archetypes || []) if (a.components !== undefined && !isObj(a.components)) { a.components = {}; fix(`content.archetypes.${a.id}.components`, 'made an object'); }
-    if (doc.content.models !== undefined && !isObj(doc.content.models)) { delete doc.content.models; fix('content.models', 'removed non-object'); }
+  const content = doc.content;
+  if (isObj(content)) {
+    for (const k of ['items', 'archetypes', 'recipes', 'blocks']) objectList(content, k, `content.${k}`);
+    for (const a of objects(content.archetypes)) if (a.components !== undefined && !isObj(a.components)) { a.components = {}; fix(`content.archetypes.${a.id}.components`, 'made an object'); }
+    if (content.models !== undefined && !isObj(content.models)) { delete content.models; fix('content.models', 'removed non-object'); }
   }
   return doc;
 }
 
-/** preflight that reports a validator crash as an error instead of throwing. */
+/** preflight that reports a validator crash as an error instead of throwing. @param {unknown} doc @param {RegistryLike} registry @param {LogicLike} logic @returns {PreflightResult} */
 function safePreflight(doc, registry, logic) {
   try { return preflight(doc, registry, logic); }
   catch (error) {
-    if (process.env.GV_DEBUG) console.error(error.stack);
+    const stack = error instanceof Error ? error.stack : undefined;
+    if (process.env.GV_DEBUG) console.error(stack);
     // Where it threw (first v2 frame), so a crash is diagnosable from a stored record without a debugger.
-    const at = String(error?.stack || '').split('\n').find(l => /\/v2\//.test(l))?.replace(/^.*\/v2\//, 'v2/').replace(/\)$/, '') || null;
-    return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}${at ? ` (at ${at})` : ''}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] };
+    const at = String(stack || '').split('\n').find(l => /\/v2\//.test(l))?.replace(/^.*\/v2\//, 'v2/').replace(/\)$/, '') || null;
+    return { ok: false, doc: null, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(prop(error, 'message') || error).slice(0, 200)}${at ? ` (at ${at})` : ''}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] };
   }
 }
 
-/**
- * repairDocument(doc, { registry, logic, rounds }) -> { doc, ok, checked, errors, fixes, removed, rounds }
- * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
- */
 // Models often wrap a whole condition in `count` ({count: {var: 'x', gte: 5}}); `count` takes an event name.
 // When the value is itself a registered predicate, the intended condition is that predicate: unwrap it.
+/** @param {unknown} doc @param {LogicLike} logic @param {Fix[]} fixes */
 function unwrapCountPredicates(doc, logic, fixes) {
   const kinds = new Set([...Object.keys(logic?.predicates || {}), 'all', 'any', 'not', 'var', 'flag', 'time', 'zone', 'near', 'cell']);
+  /** @param {unknown} node @param {string} path */
   const walk = (node, path) => {
     if (Array.isArray(node)) { node.forEach((x, i) => walk(x, `${path}[${i}]`)); return; }
-    if (!node || typeof node !== 'object') return;
+    if (!isObj(node)) return;
     const inner = node.count;
-    if (inner && typeof inner === 'object' && !Array.isArray(inner) && Object.keys(inner).some(k => kinds.has(k))) {
+    if (isObj(inner) && Object.keys(inner).some(k => kinds.has(k))) {
       delete node.count; Object.assign(node, inner);
       fixes.push({ code: 'count_unwrapped', path, action: 'used the condition written inside count' });
     }
@@ -198,16 +274,35 @@ function unwrapCountPredicates(doc, logic, fixes) {
   walk(doc, '');
 }
 
-export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false, exclude = new Set(), protect = new Set() } = {}) {
+/** The space instance used when a document has none or an unknown one (any shape the caller built). @typedef {{ use?: unknown, with?: unknown, id?: unknown, [k: string]: unknown }} FallbackSpace */
+/**
+ * @typedef {object} RepairOptions
+ * @property {RegistryLike} registry
+ * @property {LogicLike} logic
+ * @property {number} [rounds]
+ * @property {FallbackSpace | null} [fallbackSpace]
+ * @property {boolean} [isolate]
+ * @property {Set<unknown>} [exclude] primitive ids never (re-)added; isolation adds the ones it removes
+ * @property {Set<unknown> | unknown[] | null} [protect] primitives of core mechanics: never removed
+ */
+/**
+ * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
+ * @param {unknown} input @param {RepairOptions} options @returns {RepairResult}
+ */
+export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false, exclude = new Set(), protect: protectIn = new Set() }) {
   // protect: primitives of core mechanics; never removed (isolation, capability or requirement fixes): their errors stay for the model.
-  if (!(protect instanceof Set)) protect = new Set(protect || []);
-  const kept = id => protect.has(id);
+  const protect = protectIn instanceof Set ? protectIn : new Set(protectIn || []);
+  const kept = (/** @type {unknown} */ id) => protect.has(id);
   const doc = structuredClone(input);
-  const fixes = [], removed = [];
-  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
+  /** @type {Fix[]} */
+  const fixes = [];
+  /** @type {Removed[]} */
+  const removed = [];
+  if (!isObj(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
   normalizeShape(doc, fixes);
   unwrapCountPredicates(doc, logic, fixes);
   const vocab = vocabIndex(registry);
+  /** @type {SynthContext} */
   const ctx = {
     ensureId(kind) {
       const have = idsOf(doc, registry, kind);
@@ -218,24 +313,28 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
       addToCollection(at, kind, id); return id;
     },
   };
+  /** @param {string} at @param {string} kind @param {string} id */
   const addToCollection = (at, kind, id) => {
     const keys = at.split('.');
+    /** @type {Bag} */
     let parent = doc;
-    for (const k of keys.slice(0, -1)) parent = (parent[k] ??= {});
-    const last = keys.at(-1);
-    if (kind === 'dialogue' || kind === 'model' || (parent[last] && !Array.isArray(parent[last]) && typeof parent[last] === 'object')) { (parent[last] ??= {})[id] ??= {}; }
-    else (parent[last] ??= []).push((STUB[kind] || (x => ({ id: x, name: title(x) })))(id));
+    for (const k of keys.slice(0, -1)) { const next = (parent[k] ??= {}); if (!isBag(next)) return; parent = next; }
+    const last = keys[keys.length - 1], here = parent[last];
+    if (kind === 'dialogue' || kind === 'model' || (here && !Array.isArray(here) && typeof here === 'object')) { const map = (parent[last] ??= {}); if (!isBag(map)) return; map[id] ??= {}; }
+    else { const items = listAt(parent, last); if (!items) return; items.push((STUB[kind] || ((/** @type {string} */ x) => ({ id: x, name: title(x) })))(id)); }
     fixes.push({ code: 'ref_unknown', path: at, action: `added ${kind} '${id}'` });
   };
+  /** @param {string | null | undefined} id @param {string} why @returns {boolean} */
   const addSystem = (id, why) => {
     if (!id || !registry.has(id) || exclude.has(id)) return false;
     if (isSpace(id)) return false;
-    if (isGenerator(id)) { (doc.spaces?.[0] && (doc.spaces[0].generators ??= []).push({ use: id })); }
-    else if (isGraphics(id)) (doc.graphics ??= []).push({ use: id });
-    else { if ((doc.systems || []).some(s => s.use === id)) return false; (doc.systems ??= []).push({ use: id }); }
+    if (isGenerator(id)) { const first = list(doc.spaces)[0]; if (isBag(first)) listAt(first, 'generators')?.push({ use: id }); }
+    else if (isGraphics(id)) listAt(doc, 'graphics')?.push({ use: id });
+    else { if (list(doc.systems).some(s => prop(s, 'use') === id)) return false; listAt(doc, 'systems')?.push({ use: id }); }
     fixes.push({ code: why, path: 'systems', action: `added ${id}` }); return true;
   };
 
+  /** @type {PreflightResult | null} */
   let checked = null;
   for (let round = 0; round < rounds; round++) {
     checked = safePreflight(doc, registry, logic);
@@ -244,15 +343,17 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
     if (checked.ok) {
       const missing = missingOwners(doc, registry, vocab);
       if (missing.length && round < rounds - 1) { for (const id of missing) addSystem(id, 'vocabulary_owner'); continue; }
-      return { doc, ok: true, checked, errors: [], fixes, removed, rounds: round, version: REPAIR_VERSION };
+      // preflight has just accepted this very object: it is a document.
+      return { doc: /** @type {Doc} */ (doc), ok: true, checked, errors: [], fixes, removed, rounds: round, version: REPAIR_VERSION };
     }
+    /** @type {Key[][]} */
     const removals = [];
     let progressed = false;
     const done = new Set();
     for (const e of checked.errors) {
       const keys = parsePath(e.path), sig = `${e.code}|${e.path}`;
       if (done.has(sig)) continue; done.add(sig);
-      const fix = action => { fixes.push({ code: e.code, path: e.path, action }); progressed = true; };
+      const fix = (/** @type {string} */ action) => { fixes.push({ code: e.code, path: e.path, action }); progressed = true; };
       const loc = locate(doc, registry, keys), comp = loc ? null : componentAt(registry, keys), field = loc || comp;
       switch (e.code) {
         case 'schema':
@@ -280,10 +381,12 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         case 'primitive_slot': {
           if (!loc || loc.keys.length !== 2) break;
-          const inst = loc.inst; removals.push(loc.keys);
-          if (isGraphics(inst.use)) (doc.graphics ??= []).push(inst);
-          else if (isGenerator(inst.use)) (doc.spaces?.[0]?.generators ?? (doc.spaces[0].generators = [])).push(inst);
-          else if (!isSpace(inst.use)) (doc.systems ??= []).push(inst);
+          const inst = loc.inst, use = useOf(inst), first = list(doc.spaces)[0];
+          // Where it belongs (a space in the wrong slot is only removed); null when there is nowhere to put it.
+          const slot = isGraphics(use) ? listAt(doc, 'graphics') : isGenerator(use) ? (isBag(first) ? listAt(first, 'generators') : null) : isSpace(use) ? undefined : listAt(doc, 'systems');
+          if (slot === null) break;
+          removals.push(loc.keys);
+          slot?.push(inst);
           fix(`moved ${inst.use} to its slot`);
           break;
         }
@@ -297,7 +400,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         case 'param_type': case 'param_option': {
           const s = field?.schema;
-          if (s && !s.required && field.rest.length > 1) { removals.push(keys); fix('reset to default'); }
+          if (field && s && !s.required && field.rest.length > 1) { removals.push(keys); fix('reset to default'); }
           else if (s) { setAt(doc, keys, synthesize(s, ctx)); fix('synthesized value'); }
           break;
         }
@@ -309,8 +412,11 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           const m = /unknown (\w+) '([^']*)'/.exec(e.message || ''); if (!m) break;
           const [, kind, bad] = m;
           const target = getAt(doc, keys);
-          const pointer = typeof target === 'string' ? keys : (target && typeof target === 'object' ? [...keys, Object.keys(target).find(k => target[k] === bad)] : null);
-          if (!pointer || pointer.at(-1) === undefined) {
+          /** @type {Key[] | null} */
+          let pointer = null;
+          if (typeof target === 'string') pointer = keys;
+          else if (isBag(target)) { const k = Object.keys(target).find(k => target[k] === bad); if (k !== undefined) pointer = [...keys, k]; }
+          if (!pointer || !pointer.length) {
             if (kind === 'archetype' && e.path === 'player.archetype') { addToCollection('content.archetypes', 'archetype', bad); progressed = true; }
             break;
           }
@@ -328,13 +434,13 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         case 'capability_missing': {
           if (!loc) break;
-          const need = requirementsOf(registry, loc.inst.use).capabilities;
-          const boundId = loc.inst.space ?? doc.spaces?.[0]?.id;
-          const bound = doc.spaces?.find(s => s.id === boundId);
-          const variant = bound && spaceVariants(registry, bound.use).find(v => need.every(c => v.caps.has(c)));
-          if (variant && Object.keys(variant.with).length) { bound.with = { ...(bound.with || {}), ...variant.with }; fix(`configured space '${bound.id}' with ${JSON.stringify(variant.with)}`); break; }
-          const other = (doc.spaces || []).find(s => s.id !== boundId && spaceVariants(registry, s.use).some(v => need.every(c => v.caps.has(c))));
-          if (other && !isSpace(loc.inst.use)) { loc.inst.space = other.id; fix(`bound to space '${other.id}'`); break; }
+          const need = requirementsOf(registry, useOf(loc.inst)).capabilities;
+          const boundId = loc.inst.space ?? prop(list(doc.spaces)[0], 'id');
+          const bound = objects(doc.spaces).find(s => s.id === boundId);
+          const variant = bound && spaceVariants(registry, useOf(bound)).find(v => need.every(c => v.caps.has(c)));
+          if (bound && variant && Object.keys(variant.with).length) { bound.with = { ...obj(bound.with), ...variant.with }; fix(`configured space '${bound.id}' with ${JSON.stringify(variant.with)}`); break; }
+          const other = objects(doc.spaces).find(s => s.id !== boundId && spaceVariants(registry, useOf(s)).some(v => need.every(c => v.caps.has(c))));
+          if (other && !isSpace(useOf(loc.inst))) { loc.inst.space = other.id; fix(`bound to space '${other.id}'`); break; }
           if (kept(loc.inst.use)) break;
           removed.push({ use: loc.inst.use, why: e.message, kind: 'capability' }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`);
           break;
@@ -348,7 +454,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         case 'service_missing': {
           const m = /service '([^']+)'/.exec(e.message || '');
-          const provider = m && registry.ids().find(id => (registry.get(id).card.provides?.services || []).includes(m[1]));
+          const provider = m && registry.ids().find(id => (registry.get(id)?.card.provides?.services || []).includes(m[1]));
           if (provider && addSystem(provider, e.code)) progressed = true;
           else if (loc && !kept(loc.inst.use)) { removed.push({ use: loc.inst.use, why: e.message }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`); }
           break;
@@ -356,7 +462,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         case 'vocabulary_owner_missing': {
           const m = /provided by '([^']+)'/.exec(e.message || '') || /"use": "([^"]+)"/.exec(e.hint || '');
           if (m && addSystem(m[1], e.code)) progressed = true;
-          else if (m && (doc.systems || []).some(s => s.use === m[1])) progressed = true;
+          else if (m && list(doc.systems).some(s => prop(s, 'use') === m[1])) progressed = true;
           // The owner was isolated (excluded): its vocabulary in document data is neutralised, not left dangling.
           else if (m && exclude.has(m[1]) && keys.length) { removals.push(keys); fix(`dropped ${/^(\w+)/.exec(e.message || '')?.[1] || 'vocabulary'} owned by isolated '${m[1]}'`); }
           break;
@@ -364,27 +470,31 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         case 'primitive_conflict': if (loc && !kept(loc.inst.use)) { removed.push({ use: loc.inst.use, why: e.message }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`); } break;
         case 'predicate_unknown': case 'effect_unknown': {
           const value = getAt(doc, keys);
-          const kind = e.code === 'effect_unknown' ? value?.do : value && typeof value === 'object' ? Object.keys(value)[0] : null;
-          const provider = e.code === 'effect_unknown' ? vocab.effects[kind] : vocab.predicates[kind];
-          if (provider && !(doc.systems || []).some(s => s.use === provider) && addSystem(provider, e.code)) { progressed = true; break; }
+          const kind = e.code === 'effect_unknown' ? step(value, 'do') : value && typeof value === 'object' ? Object.keys(value)[0] : null;
+          const provider = e.code === 'effect_unknown' ? vocab.effects[String(kind)] : vocab.predicates[String(kind)];
+          if (provider && !list(doc.systems).some(s => prop(s, 'use') === provider) && addSystem(provider, e.code)) { progressed = true; break; }
           removals.push(keys); fix(`removed unknown ${e.code === 'effect_unknown' ? 'effect' : 'predicate'} '${kind}'`);
           break;
         }
         case 'predicate_invalid': removals.push(keys); fix('removed invalid predicate'); break;
         case 'character_unspawnable': {
           // A character with no body: the body most other characters use (the game's NPC archetype), else no body.
-          const c = getAt(doc, keys); if (!c || typeof c !== 'object') break;
+          const c = getAt(doc, keys); if (!isBag(c)) break;
+          /** @type {Map<unknown, number>} */
           const counts = new Map();
-          for (const o of doc.plot?.characters || []) if (o?.archetype) counts.set(o.archetype, (counts.get(o.archetype) || 0) + 1);
+          for (const o of list(prop(doc.plot, 'characters'))) { const body = prop(o, 'archetype'); if (body) counts.set(body, (counts.get(body) || 0) + 1); }
           const common = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
           if (common) { c.archetype = common; fix(`gave the character the common body '${common}'`); } else { c.spawn = false; fix('character has no body (spawn: false)'); }
           break;
         }
         case 'plot_missing': {
-          doc.plot ??= {}; doc.plot.storyboard ??= {}; doc.plot.storyboard.acts = [{ id: 'act_1', title: 'Act 1', beats: [{ id: 'begin', title: 'Begin' }] }]; fix('added a minimal storyboard');
+          const plot = (doc.plot ??= {}); if (!isBag(plot)) break;
+          const storyboard = (plot.storyboard ??= {}); if (!isBag(storyboard)) break;
+          storyboard.acts = [{ id: 'act_1', title: 'Act 1', beats: [{ id: 'begin', title: 'Begin' }] }]; fix('added a minimal storyboard');
           break;
         }
-        default:
+        default: {
+          const last = keys.at(-1);
           // A primitive's own validate() code inside an instance's params: fall back to the param's default.
           if (loc?.schema && !loc.schema.required && loc.rest.length > 1) { removals.push(keys); fix(`reset ${e.code} param to default`); }
           // A primitive's "<something>_unknown" on document data is a dangling field or pointer: drop that field
@@ -393,15 +503,16 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           // optional-looking, else the list element that holds it. Base content is protected by the callers' guards.
           else if (!loc && ['param_type', 'param_missing', 'param_option', 'param_range', 'param_unknown'].includes(e.code) && /^(plot|content)\./.test(e.path)) {
             const parentKeys = keys.slice(0, -1), grand = getAt(doc, parentKeys.slice(0, -1));
-            if (e.code === 'param_unknown' || (e.code !== 'param_missing' && !['id', 'kind'].includes(keys.at(-1)) && typeof keys.at(-1) === 'string' && getAt(doc, keys) !== undefined && !Array.isArray(grand))) { removals.push(keys); fix(`dropped malformed field (${e.code})`); }
+            if (e.code === 'param_unknown' || (e.code !== 'param_missing' && last !== 'id' && last !== 'kind' && typeof last === 'string' && getAt(doc, keys) !== undefined && !Array.isArray(grand))) { removals.push(keys); fix(`dropped malformed field (${e.code})`); }
             else if (Array.isArray(grand) && typeof parentKeys.at(-1) === 'number') { removals.push(parentKeys); fix(`dropped malformed entry (${e.code})`); }
           }
-          else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof keys.at(-1) === 'string' && getAt(doc, keys) !== undefined && !['id', 'kind'].includes(keys.at(-1))) { removals.push(keys); fix(`dropped field (${e.code})`); }
+          else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof last === 'string' && getAt(doc, keys) !== undefined && last !== 'id' && last !== 'kind') { removals.push(keys); fix(`dropped field (${e.code})`); }
+        }
       }
     }
     // Removals last, deepest and highest index first, so earlier paths stay valid.
-    const cmp = (a, b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) { if (a[i] === b[i]) continue; return typeof a[i] === 'number' && typeof b[i] === 'number' ? b[i] - a[i] : String(b[i]).localeCompare(String(a[i])); } return b.length - a.length; };
-    const unique = [...new Map(removals.map(k => [JSON.stringify(k), k])).values()].sort(cmp);
+    const cmp = (/** @type {Key[]} */ a, /** @type {Key[]} */ b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) { const x = a[i], y = b[i]; if (x === y) continue; return typeof x === 'number' && typeof y === 'number' ? y - x : String(y).localeCompare(String(x)); } return b.length - a.length; };
+    const unique = [...new Map(removals.map(k => /** @type {[string, Key[]]} */ ([JSON.stringify(k), k]))).values()].sort(cmp);
     for (const k of unique) deleteAt(doc, k);
     if (!progressed) break;
   }
@@ -414,24 +525,27 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
       // An instance and everything that requires it go together (removing a dependency alone just re-adds it).
       // Candidates: every instance but the spaces themselves (systems, generators, graphics), keyed by path.
       const cands = instances(doc).filter(x => !(x.keys.length === 2 && x.keys[0] === 'spaces') && !kept(x.inst.use));
-      const keyOf = x => JSON.stringify(x.keys);
+      const keyOf = (/** @type {InstanceEntry} */ x) => JSON.stringify(x.keys);
+      /** @param {InstanceEntry} x @returns {InstanceEntry[]} */
       const dependents = x => {
         const out = new Map([[keyOf(x), x]]);
-        for (let grew = true; grew;) { grew = false; for (const c of cands) { if (out.has(keyOf(c))) continue; const req = requirementsOf(registry, c.inst.use).primitives; if ([...out.values()].some(o => req.some(r => o.inst.use === r || o.inst.use.startsWith(r + '.')))) { out.set(keyOf(c), c); grew = true; } } }
+        for (let grew = true; grew;) { grew = false; for (const c of cands) { if (out.has(keyOf(c))) continue; const req = requirementsOf(registry, useOf(c.inst)).primitives; if ([...out.values()].some(o => req.some(r => { const u = o.inst.use; return u === r || (isStr(u) && u.startsWith(r + '.')); }))) { out.set(keyOf(c), c); grew = true; } } }
         return [...out.values()];
       };
-      const without = list => { const d = structuredClone(doc); const sorted = list.map(x => x.keys).sort((a, b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return typeof a[i] === 'number' ? b[i] - a[i] : String(b[i]).localeCompare(String(a[i])); return b.length - a.length; }); for (const k of sorted) deleteAt(d, k); return d; };
+      /** @param {InstanceEntry[]} entries */
+      const without = entries => { const d = structuredClone(doc); const sorted = entries.map(x => x.keys).sort((a, b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) { const x = a[i], y = b[i]; if (x !== y) return typeof x === 'number' ? Number(y) - x : String(y).localeCompare(String(x)); } return b.length - a.length; }); for (const k of sorted) deleteAt(d, k); return d; };
       const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l && !(l.keys.length === 2 && l.keys[0] === 'spaces'));
+      /** @type {InstanceEntry[] | null} */
       let drop = located ? dependents(cands.find(c => keyOf(c) === JSON.stringify(located.keys)) || located) : null;
       // A validator that crashes: find every instance whose validator throws on its own (all other candidates removed).
       if (!drop && checked.errors.some(e => e.code === 'preflight_threw')) {
         const crashers = cands.filter(c => safePreflight(without(cands.filter(o => o !== c)), registry, logic).errors.some(e => e.code === 'preflight_threw'));
-        if (crashers.length && crashers.length < cands.length) drop = [...new Map(crashers.flatMap(dependents).map(x => [keyOf(x), x])).values()];
+        if (crashers.length && crashers.length < cands.length) drop = [...new Map(crashers.flatMap(x => dependents(x)).map(x => /** @type {[string, InstanceEntry]} */ ([keyOf(x), x]))).values()];
       }
       if (!drop) {
         let bestCount = before;
         // Score each removal after the ordinary repair (which may itself fix what the removal exposes), never re-adding it.
-        for (const c of cands) { const list = dependents(c); if (list.some(x => kept(x.inst.use))) continue; const trial = repairDocument(without(list), { registry, logic, rounds: 3, fallbackSpace, protect, exclude: new Set([...exclude, ...list.map(x => x.inst.use)]) }); const n = trial.errors.length; if (n < bestCount) { drop = list; bestCount = n; } if (!n) break; }
+        for (const c of cands) { const group = dependents(c); if (group.some(x => kept(x.inst.use))) continue; const trial = repairDocument(without(group), { registry, logic, rounds: 3, fallbackSpace, protect, exclude: new Set([...exclude, ...group.map(x => x.inst.use)]) }); const n = trial.errors.length; if (n < bestCount) { drop = group; bestCount = n; } if (!n) break; }
       }
       if (drop && drop.some(x => kept(x.inst.use))) drop = null;
       if (!drop) break;
@@ -446,26 +560,35 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
       checked = again.checked || safePreflight(doc, registry, logic);
     }
   }
-  return { doc, ok: checked.ok, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION };
+  // When ok, preflight accepted this draft (directly, or as the nested repair's result merged into it).
+  return checked.ok
+    ? { doc: /** @type {Doc} */ (doc), ok: true, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION }
+    : { doc, ok: false, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION };
 }
 
 const PREDICATE_KEYS = new Set(['when', 'gate', 'if', 'requires', 'fail', 'condition', 'unless', 'not']);
-/** Primitives that register effects/predicates the document uses but that the document does not include. */
+/**
+ * Primitives that register effects/predicates the document uses but that the document does not include.
+ * @param {unknown} doc @param {RegistryLike} registry @param {ReturnType<typeof vocabIndex>} [vocab] @returns {string[]}
+ */
 export function missingOwners(doc, registry, vocab = vocabIndex(registry)) {
-  const used = new Set([...(doc.systems || []), ...(doc.graphics || []), ...(doc.spaces || []).flatMap(s => [s, ...(s.generators || [])])].map(i => i?.use));
+  const d = obj(doc);
+  const used = new Set([...list(d.systems), ...list(d.graphics), ...list(d.spaces).flatMap(s => [s, ...list(prop(s, 'generators'))])].map(i => prop(i, 'use')));
+  /** @type {Set<string>} */
   const need = new Set();
+  /** @param {unknown} v @param {string | null} key */
   const visit = (v, key) => {
     if (Array.isArray(v)) { v.forEach(x => visit(x, key)); return; }
-    if (!v || typeof v !== 'object') return;
+    if (!isObj(v)) return;
     if (typeof v.do === 'string' && vocab.effects[v.do]) need.add(vocab.effects[v.do]);
-    if (PREDICATE_KEYS.has(key)) { const k = Object.keys(v)[0]; if (vocab.predicates[k]) need.add(vocab.predicates[k]); }
+    if (key !== null && PREDICATE_KEYS.has(key)) { const k = Object.keys(v)[0]; if (vocab.predicates[k]) need.add(vocab.predicates[k]); }
     for (const [k, x] of Object.entries(v)) visit(x, ['all', 'any'].includes(k) ? key : k);
   };
-  visit({ plot: doc.plot, spaces: doc.spaces, systems: doc.systems, content: doc.content }, null);
+  visit({ plot: d.plot, spaces: d.spaces, systems: d.systems, content: d.content }, null);
   return [...need].filter(id => !used.has(id) && registry.has(id));
 }
 
-/** Errors as model feedback: code, path, message and hint, one per line. */
+/** Errors as model feedback: code, path, message and hint, one per line. @param {Array<{ code: string, path?: string, message: string, hint?: unknown }>} errors @param {number} [limit] */
 export const describeErrors = (errors, limit = 20) => errors.slice(0, limit).map(e => `- [${e.code}] ${e.path}: ${e.message}${e.hint ? ` (hint: ${String(e.hint).slice(0, 200)})` : ''}`).join('\n');
 
 export { defaultsOf, REF_KINDS };

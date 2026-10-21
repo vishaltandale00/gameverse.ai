@@ -1,3 +1,4 @@
+// @ts-check
 // v2 game service: catalogue, games, versions, generation jobs and the event
 // stream the UI subscribes to. Mounted by v2/server/index.mjs.
 // Every new game is a kernel document (gameverse.v2.game/0.2) built by the
@@ -15,7 +16,39 @@ import { decomposeOffline } from '../planner/decompose.js';
 import { askQuestions } from '../planner/questions.js';
 import { createImprovementService } from '../improve/promote.js';
 import { createLocalClaudeRunner } from '../improve/runners/local-claude.js';
+import { isList, num, objects, prop, str } from '../kernel/guards.js';
 
+/** @typedef {import('node:http').IncomingMessage} IncomingMessage */
+/** @typedef {import('node:http').ServerResponse} ServerResponse */
+/** @typedef {import('./job-runner.mjs').Env} Env */
+/** @typedef {import('./jobs.js').Pipeline} Pipeline */
+/**
+ * The improvement service (improve/promote.js, not type-checked yet) as the routes use it.
+ * @typedef {object} ImprovementService
+ * @property {(request: Record<string, unknown>) => Promise<unknown>} start
+ * @property {() => unknown[]} list
+ * @property {(id: string) => unknown} status
+ * @property {(id: string) => unknown} cancel
+ * @property {(id: string) => Promise<{ ok: boolean, reason?: string } & Record<string, unknown>>} apply
+ */
+/**
+ * @typedef {object} GameServiceOptions
+ * @property {string} [root]
+ * @property {Env} [env]
+ * @property {import('../planner/types.js').Writers} [writers]
+ * @property {import('./job-runner.mjs').Decisions} [decisions]
+ * @property {ImprovementService | null} [improve]
+ * @property {import('./job-runner.mjs').ExperimentService | null} [experiments]
+ * @property {Record<string, unknown>} [config]
+ * @property {boolean | import('./isolate.js').IsolationOptions} [isolation]
+ */
+/** A route: the request body (`unknown`: narrowed in the handler) and the path match. @typedef {(body: unknown, m: RegExpMatchArray) => Promise<unknown>} RouteHandler */
+
+// improve/ is not type-checked yet: the option types inferred for these drop the options without defaults (root, runner).
+const newImprovementService = /** @type {(options: { root: string, runner: unknown }) => ImprovementService} */ (/** @type {unknown} */ (createImprovementService));
+const newLocalClaudeRunner = /** @type {(options: { root: string }) => unknown} */ (/** @type {unknown} */ (createLocalClaudeRunner));
+
+/** @param {string} text */
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
 const LEGACY = new Set(['gameverse.v2.game-spec/0.1', 'gameverse.v2.kit-game/0.1']);
 
@@ -27,31 +60,35 @@ const LEGACY = new Set(['gameverse.v2.game-spec/0.1', 'gameverse.v2.kit-game/0.1
  * injected (they can't cross a process) or V2_JOB_ISOLATION=off. Pass false, true, or { runner, heapMb, timeoutMs, forwardStderr }
  * (runner: a module URL exporting createJobRunner; tests use one with fake writers). Limits also come from
  * V2_JOB_HEAP_MB and V2_JOB_TIMEOUT_MS.
+ * @param {GameServiceOptions} [options]
  */
 export function createGameService({ root = fileURLToPath(new URL('../../local-data/v2/', import.meta.url)), env = process.env, writers: injectedWriters, decisions: injectedDecisions, improve: injectedImprove, experiments: injectedExperiments, config = {}, isolation } = {}) {
   const store = createStore(root);
   const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
   // The server keeps its own catalogue and clients for the catalog, questions and promote routes; isolated jobs build theirs in the child process.
   const { decisions, ready } = buildServices({ env, repoRoot, writers: injectedWriters, decisions: injectedDecisions, experiments: injectedExperiments, config });
-  const improve = injectedImprove !== undefined ? injectedImprove : env.V2_IMPROVE === 'off' ? null : createImprovementService({ root: repoRoot, runner: createLocalClaudeRunner({ root: repoRoot }) });
+  const improve = injectedImprove !== undefined ? injectedImprove : env.V2_IMPROVE === 'off' ? null : newImprovementService({ root: repoRoot, runner: newLocalClaudeRunner({ root: repoRoot }) });
   const injected = injectedWriters !== undefined || injectedDecisions !== undefined || injectedExperiments !== undefined;
   const isolate = isolation === undefined ? !injected && env.V2_JOB_ISOLATION !== 'off' : Boolean(isolation);
+  /** @type {Pipeline} */
   const pipeline = isolate
     ? createIsolatedPipeline({ env, repoRoot, config, ...(typeof isolation === 'object' ? isolation : {}) })
     : (job, ctx) => runJob(ready, job, ctx);
 
   const jobs = createJobs({ store, pipeline });
 
+  /** @type {[string, RegExp, RouteHandler][]} */
   const routes = [
     ['GET', /^\/api\/v2\/catalog$/, async () => { const { base, writers } = await ready; return { catalogHash: catalogHash(base.registry), primitives: base.registry.cards(), planner: KERNEL_PIPELINE_VERSION, writers: { spec: writers.spec?.model || null, code: writers.code?.model || null }, decisions: decisions?.provider || null, jobs: jobs.limits }; }],
     ['GET', /^\/api\/v2\/games$/, async () => ({ games: await store.list(), running: jobs.running() })],
     ['POST', /^\/api\/v2\/games$/, async body => {
-      const prompt = String(body?.prompt || '').trim();
+      const prompt = String(prop(body, 'prompt') || '').trim();
       if (!prompt || prompt.length > 4000) throw Object.assign(Error('Describe your game in 1–4000 characters.'), { status: 400 });
       const id = `${slug(prompt)}-${Date.now().toString(36)}`;
-      await store.createGame({ id, prompt, parent: body.parent || null });
-      const answers = Array.isArray(body.answers) ? body.answers.slice(0, 8).map(a => ({ question: String(a.question || '').slice(0, 200), answer: String(a.answer || '').slice(0, 200) })) : [];
-      const job = jobs.submit({ gameId: id, prompt, answers, seed: Number.isInteger(body.seed) ? body.seed : undefined, kind: 'create', submittedAt: Date.now() });
+      await store.createGame({ id, prompt, parent: str(prop(body, 'parent')) || null });
+      const given = prop(body, 'answers'), seed = prop(body, 'seed');
+      const answers = isList(given) ? given.slice(0, 8).map(a => ({ question: String(prop(a, 'question') || '').slice(0, 200), answer: String(prop(a, 'answer') || '').slice(0, 200) })) : [];
+      const job = jobs.submit({ gameId: id, prompt, answers, seed: typeof seed === 'number' && Number.isInteger(seed) ? seed : undefined, kind: 'create', submittedAt: Date.now() });
       return { gameId: id, jobId: job.id };
     }],
     // Follow-up change: a parameter tweak (no model) or targeted model ops; a new version publishes and hot-loads.
@@ -59,24 +96,24 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const meta = await store.meta(m[1]);
       if (!meta?.latest) throw Object.assign(Error('That game has no version to change yet.'), { status: 409 });
       const latest = await store.latest(m[1]);
-      if (LEGACY.has(latest?.doc?.schema)) throw legacyError();
-      const change = String(body?.change || '').trim();
+      if (LEGACY.has(str(prop(latest?.doc, 'schema')))) throw legacyError();
+      const change = String(prop(body, 'change') || '').trim();
       if (!change || change.length > 1000) throw Object.assign(Error('Describe the change in 1–1000 characters.'), { status: 400 });
       await store.updateMeta(m[1], { status: 'generating' });
-      const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change, base: meta.latest, kind: 'revise' });
+      const job = jobs.submit({ gameId: m[1], prompt: str(meta.prompt), change, base: num(meta.latest), kind: 'revise' });
       return { gameId: m[1], jobId: job.id };
     }],
     // A mechanic no primitive covers, written as a new primitive and gated in the experiments sandbox.
     ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/experiments$/, async (body, m) => {
       const { experiments } = await ready;
       if (!experiments) throw Object.assign(Error('Experiments need a code model; set OPENAI_API_KEY or Anthropic credentials.'), { status: 503 });
-      const request = String(body?.request || '').trim();
+      const request = String(prop(body, 'request') || '').trim();
       if (!request || request.length > 500) throw Object.assign(Error('Describe the experiment in 1-500 characters.'), { status: 400 });
       const meta = await store.meta(m[1]);
       if (!meta?.latest) throw Object.assign(Error('That game has no version yet.'), { status: 409 });
-      if (LEGACY.has((await store.latest(m[1]))?.doc?.schema)) throw legacyError();
+      if (LEGACY.has(str(prop((await store.latest(m[1]))?.doc, 'schema')))) throw legacyError();
       await store.updateMeta(m[1], { status: 'generating' });
-      const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change: request, kind: 'experiment' });
+      const job = jobs.submit({ gameId: m[1], prompt: str(meta.prompt), change: request, kind: 'experiment' });
       return { gameId: m[1], jobId: job.id };
     }],
     ['DELETE', /^\/api\/v2\/games\/([a-z0-9-]+)\/experiments\/([a-z0-9-]+)$/, async (_, m) => {
@@ -87,8 +124,8 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
     ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/promote$/, async (body, m) => {
       if (!improve) throw Object.assign(Error('Promotion is off (V2_IMPROVE=off).'), { status: 503 });
       const latest = await store.latest(m[1]);
-      const experiment = (latest?.doc?.experiments || []).find(e => e.id === body?.experimentId);
-      if (!experiment) throw Object.assign(Error('That experiment is not part of the latest version.'), { status: 404 });
+      const experiment = objects(prop(latest?.doc, 'experiments')).find(e => e.id === prop(body, 'experimentId'));
+      if (!experiment || !latest) throw Object.assign(Error('That experiment is not part of the latest version.'), { status: 404 });
       const { base } = await ready;
       const job = await improve.start({ target: 'primitive', experiment, doc: latest.doc, registry: base.registry, gameId: m[1], gameVersion: latest.version });
       return { job };
@@ -98,12 +135,13 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
     ['POST', /^\/api\/v2\/improve\/([a-z0-9-]+)\/cancel$/, async (_, m) => ({ job: await improve?.cancel(m[1]) })],
     // Apply a verified primitive to this checkout (fast-forward only; never pushes). The server restarts to load it.
     ['POST', /^\/api\/v2\/improve\/([a-z0-9-]+)\/apply$/, async (_, m) => {
+      if (!improve) throw Object.assign(Error('Promotion is off (V2_IMPROVE=off).'), { status: 503 });
       const result = await improve.apply(m[1]);
       if (!result.ok) throw Object.assign(Error(result.reason), { status: 409 });
       return { ...result, restartNeeded: true };
     }],
     ['POST', /^\/api\/v2\/questions$/, async body => {
-      const prompt = String(body?.prompt || '').trim();
+      const prompt = String(prop(body, 'prompt') || '').trim();
       if (!prompt) throw Object.assign(Error('Describe your game first.'), { status: 400 });
       const started = performance.now();
       // The instant (offline) decomposition frames the questions; the real one runs in the build.
@@ -139,6 +177,10 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
 
   return {
     store, jobs, ready, improve,
+    /**
+     * @param {IncomingMessage} req @param {ServerResponse} res @param {string} path
+     * @param {(req: IncomingMessage) => Promise<unknown>} readJson the request body, parsed (unknown: routes narrow it)
+     */
     async handle(req, res, path, readJson) {
       const asset = path.match(/^\/api\/v2\/games\/([a-z0-9-]+)\/assets\/([a-z0-9-]+\.(webp|svg))$/i);
       if (asset && req.method === 'GET') {
@@ -149,7 +191,7 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
         res.writeHead(200, { 'Content-Type': svg ? 'image/svg+xml' : 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable', ...(svg ? { 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" } : {}) }).end(bytes); return true;
       }
       if (path === '/api/v2/events') {
-        const game = new URL(req.url, 'http://x').searchParams.get('game');
+        const game = new URL(req.url ?? '', 'http://x').searchParams.get('game');
         streamEvents(jobs, req, res, game); return true;
       }
       for (const [method, re, fn] of routes) {

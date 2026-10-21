@@ -1,7 +1,20 @@
+// @ts-check
 // Spec-writer prompt. Everything here is stable across requests (cards,
 // rules, examples) so it is prompt-cached; only the user turn varies.
 import { SPEC_SCHEMA, LIMITS } from '../engine/spec.js';
 
+/**
+ * An arcade module tunable (engine/registry.js): a numeric range or a typed string/boolean option.
+ * @typedef {{ type?: string, options?: string[], default?: unknown, min?: number, max?: number, unit?: string, effect?: string }} ArcadeTunable
+ */
+/**
+ * An arcade module card as engine/registry.js `cards()` lists it.
+ * @typedef {{ id: string, intent?: string, phase?: string, tunables?: Record<string, ArcadeTunable>, provides?: object, requires?: object, conflicts?: string[] }} ArcadeCard
+ */
+/** @typedef {{ cards(): ArcadeCard[] }} ArcadeRegistry */
+/** A failed check, as engine/spec.js preflight and checkArcade report it. @typedef {{ code: string, path?: string, message: string, hint?: string }} ArcadeProblem */
+
+/** @param {ArcadeCard} card */
 function compactCard({ id, intent, phase, tunables = {}, provides = {}, requires = {}, conflicts = [] }) {
   const t = Object.fromEntries(Object.entries(tunables).map(([k, v]) => [k, v.type
     ? `${v.type}${v.options ? ' ' + v.options.join('|') : ''} = ${JSON.stringify(v.default)} — ${v.effect}`
@@ -9,6 +22,7 @@ function compactCard({ id, intent, phase, tunables = {}, provides = {}, requires
   return { id, intent, phase, tunables: t, provides, requires, ...(conflicts.length ? { conflicts } : {}) };
 }
 
+/** @param {ArcadeRegistry} registry @param {unknown[]} examples example specs, read from disk @returns {string} */
 export function systemPrompt(registry, examples) {
   return `You design small, fun 2D games for Gameverse. A player describes an idea; you answer with a game spec that the engine runs immediately.
 
@@ -37,12 +51,14 @@ Example specs:
 ${examples.map(e => JSON.stringify(e)).join('\n')}`;
 }
 
+/** @param {string} prompt @param {unknown} [previous] the previous spec, if any @returns {string} */
 export function createMessage(prompt, previous) {
   return previous
     ? `Previous spec:\n${JSON.stringify(previous)}\n\nChange request: ${prompt}`
     : `Game idea: ${prompt}`;
 }
 
+/** @param {ArcadeProblem[]} problems @returns {string} */
 export function repairMessage(problems) {
   return `That spec failed checks. Fix every problem and reply with the complete corrected JSON object (same shape: summary, spec, gaps).\nProblems:\n${problems.map(p => `- [${p.code}] ${p.path ? p.path + ': ' : ''}${p.message}${p.hint ? ' (hint: ' + p.hint + ')' : ''}`).join('\n')}`;
 }

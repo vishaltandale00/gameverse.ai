@@ -1,9 +1,11 @@
+// @ts-check
 // Game design (what the model writes) -> playable 2D game spec (what the
 // engine runs). The design is small and schema-constrained, so generation is
 // fast and never malformed; geometry comes from the deterministic level
 // builder, and the playtester proves the result winnable.
 import { SPEC_SCHEMA } from '../engine/spec.js';
 import { SIDE_SECTIONS, TOPDOWN_SECTIONS, buildSide, buildTopdown } from '../engine/levelgen.js';
+import { isNum, isStr, list, obj, prop, str } from '../kernel/guards.js';
 
 const actor = { type: 'object', additionalProperties: false, required: ['name', 'glyph'], properties: { name: { type: 'string' }, glyph: { type: 'string' } } };
 const num = { type: 'number' };
@@ -45,45 +47,58 @@ export const DESIGN_PROMPT = `You design small, fun, polished 2D action games fo
 - gaps: mechanics the idea asks for that this engine cannot do yet (empty when none).
 Match the idea's tone, pace and theme closely.`;
 
-const clamp = (v, lo, hi, d) => Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d;
-const slug = (s, d) => ((s || '').toLowerCase().match(/[a-z0-9]+/g) || [d]).join('-').slice(0, 40) || d;
-const hex = (s, d) => /^#[0-9a-f]{3,8}$/i.test(s || '') ? s : d;
-const luminance = c => { const h = c.replace('#', ''), v = h.length === 3 ? h.split('').map(x => x + x) : h.match(/../g); const [r, g, b] = v.slice(0, 3).map(x => parseInt(x, 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-/** Keep tiles readable against the background: shift lightness away from it when too close. */
+/** @param {unknown} v @param {number} lo @param {number} hi @param {number} d @returns {number} */
+const clamp = (v, lo, hi, d) => isNum(v) ? Math.min(hi, Math.max(lo, v)) : d;
+/** @param {unknown} s @param {string} d @returns {string} */
+const slug = (s, d) => (str(s).toLowerCase().match(/[a-z0-9]+/g) || [d]).join('-').slice(0, 40) || d;
+/** @param {unknown} s @param {string} d @returns {string} */
+const hex = (s, d) => isStr(s) && /^#[0-9a-f]{3,8}$/i.test(s) ? s : d;
+/** @param {string} c */
+const luminance = c => { const h = c.replace('#', ''), v = h.length === 3 ? h.split('').map(x => x + x) : h.match(/../g) || []; const [r, g, b] = v.slice(0, 3).map(x => parseInt(x, 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+/** Keep tiles readable against the background: shift lightness away from it when too close.
+ * @param {string} tile @param {string} background */
 function contrast(tile, background) {
   if (Math.abs(luminance(tile) - luminance(background)) >= 0.25) return tile;
   const dark = luminance(background) > 0.5, h = tile.replace('#', '').padEnd(6, '0').slice(0, 6);
-  return '#' + h.match(/../g).map(x => Math.round(dark ? parseInt(x, 16) * 0.45 : 255 - (255 - parseInt(x, 16)) * 0.45).toString(16).padStart(2, '0')).join('');
+  return '#' + (h.match(/../g) || []).map(x => Math.round(dark ? parseInt(x, 16) * 0.45 : 255 - (255 - parseInt(x, 16)) * 0.45).toString(16).padStart(2, '0')).join('');
 }
 
-/** Convert a design into a spec. attempt varies the layout seed and eases the jump on retries. */
-export function designToSpec(design, { seed = 1, attempt = 0 } = {}) {
+/**
+ * Convert a design into a spec. attempt varies the layout seed and eases the jump on retries.
+ * The design is model output (DESIGN_SCHEMA): `unknown`, narrowed field by field here.
+ * @param {unknown} input @param {{ seed?: number, attempt?: number }} [options]
+ */
+export function designToSpec(input, { seed = 1, attempt = 0 } = {}) {
+  const design = obj(input), inFeel = obj(design.feel);
   const side = design.view !== 'topdown';
   const ease = 1 + 0.12 * Math.max(0, attempt - 1);
   const feel = {
-    runSpeed: clamp(design.feel?.runSpeed, 3, 24, 8), jumpSpeed: clamp(design.feel?.jumpSpeed * ease, 8, 30, 16),
-    gravity: clamp(design.feel?.gravity, 20, 90, 48), airJumps: clamp(Math.round(design.feel?.airJumps), 0, 2, 0),
-    friction: clamp(design.feel?.friction, 8, 200, 60), airControl: clamp(design.feel?.airControl, 0.2, 1, 0.75),
+    runSpeed: clamp(inFeel.runSpeed, 3, 24, 8), jumpSpeed: clamp(Number(inFeel.jumpSpeed) * ease, 8, 30, 16),
+    gravity: clamp(inFeel.gravity, 20, 90, 48), airJumps: clamp(Math.round(Number(inFeel.airJumps)), 0, 2, 0),
+    friction: clamp(inFeel.friction, 8, 200, 60), airControl: clamp(inFeel.airControl, 0.2, 1, 0.75),
   };
   const allowed = side ? SIDE_SECTIONS : TOPDOWN_SECTIONS;
-  const sections = (design.sections || []).slice(0, 7).map(s => ({ type: allowed.includes(s.type) ? s.type : (side ? 'gauntlet' : 'arena'), difficulty: clamp(s.difficulty, 1, 3, 2) }));
-  const layoutSeed = `${seed}:${attempt}`;
-  const rows = side ? buildSide({ sections, length: design.length, seed: layoutSeed, physics: feel }) : buildTopdown({ sections, length: design.length, seed: layoutSeed });
-  const has = ch => rows.some(r => r.includes(ch));
-  const cast = design.cast || {};
-  const kinds = { player: slug(cast.player?.name, 'hero'), pickup: slug(cast.pickup?.name, 'gem'), enemy: slug(cast.enemy?.name, 'foe'), hazard: slug(cast.hazard?.name, 'spikes'), goal: slug(cast.goal?.name, 'exit') };
+  const sections = list(design.sections).slice(0, 7).map(obj).map(s => ({ type: isStr(s.type) && allowed.includes(s.type) ? s.type : (side ? 'gauntlet' : 'arena'), difficulty: clamp(s.difficulty, 1, 3, 2) }));
+  // levelgen (unchecked JS) infers `seed: number` from its default; it hashes any seed text.
+  const layoutSeed = /** @type {any} */ (`${seed}:${attempt}`);
+  const length = isStr(design.length) ? design.length : undefined;
+  const rows = side ? buildSide({ sections, length, seed: layoutSeed, physics: feel }) : buildTopdown({ sections, length, seed: layoutSeed });
+  const has = (/** @type {string} */ ch) => rows.some(r => r.includes(ch));
+  const cast = obj(design.cast);
+  /** @type {Record<string, string>} */
+  const kinds = { player: slug(prop(cast.player, 'name'), 'hero'), pickup: slug(prop(cast.pickup, 'name'), 'gem'), enemy: slug(prop(cast.enemy, 'name'), 'foe'), hazard: slug(prop(cast.hazard, 'name'), 'spikes'), goal: slug(prop(cast.goal, 'name'), 'exit') };
   // Kind names must be distinct from each other and from the tile kinds.
   const used = new Set(['ground', 'platform']);
   for (const role of Object.keys(kinds)) { let k = kinds[role]; while (used.has(k)) k = `${k}-${role}`; used.add(k); kinds[role] = k; }
-  const m = design.mechanics || {};
+  const m = obj(design.mechanics);
   const entities = {
-    ground: { solid: true, color: contrast(hex(design.palette?.ground, '#3b4a5c'), hex(design.background, '#101820')) },
-    platform: { solid: true, color: contrast(hex(design.palette?.platform, '#5b6b7c'), hex(design.background, '#101820')) },
-    [kinds.player]: { tags: ['player'], glyph: cast.player?.glyph || '🙂', w: 0.8, h: 0.9 },
-    [kinds.pickup]: { tags: ['collectible'], glyph: cast.pickup?.glyph || '💎', w: 0.6, h: 0.6 },
-    [kinds.enemy]: { tags: ['enemy'], glyph: cast.enemy?.glyph || '👾', w: 0.9, h: 0.85 },
-    [kinds.hazard]: { tags: ['hazard'], glyph: cast.hazard?.glyph || '🔺', w: 0.9, h: 0.6 },
-    [kinds.goal]: { tags: ['goal'], glyph: cast.goal?.glyph || '🚩', w: 1, h: 1 },
+    ground: { solid: true, color: contrast(hex(prop(design.palette, 'ground'), '#3b4a5c'), hex(design.background, '#101820')) },
+    platform: { solid: true, color: contrast(hex(prop(design.palette, 'platform'), '#5b6b7c'), hex(design.background, '#101820')) },
+    [kinds.player]: { tags: ['player'], glyph: prop(cast.player, 'glyph') || '🙂', w: 0.8, h: 0.9 },
+    [kinds.pickup]: { tags: ['collectible'], glyph: prop(cast.pickup, 'glyph') || '💎', w: 0.6, h: 0.6 },
+    [kinds.enemy]: { tags: ['enemy'], glyph: prop(cast.enemy, 'glyph') || '👾', w: 0.9, h: 0.85 },
+    [kinds.hazard]: { tags: ['hazard'], glyph: prop(cast.hazard, 'glyph') || '🔺', w: 0.9, h: 0.6 },
+    [kinds.goal]: { tags: ['goal'], glyph: prop(cast.goal, 'glyph') || '🚩', w: 1, h: 1 },
   };
   const modules = [
     side ? { use: 'platformer', with: feel } : { use: 'topdown', with: { speed: feel.runSpeed, friction: feel.friction } },
@@ -93,10 +108,10 @@ export function designToSpec(design, { seed = 1, attempt = 0 } = {}) {
     { use: 'health', with: { hp: clamp(m.health, 1, 10, 3), knockback: side ? 9 : 0 } },
     { use: 'goal' },
     ...(m.shoot && has('E') ? [{ use: 'shooter', with: { aim: side ? 'facing' : 'stick' } }] : []),
-    ...(m.timerSeconds > 0 ? [{ use: 'timer', with: { seconds: clamp(m.timerSeconds, 20, 600, 120) } }] : []),
+    ...(Number(m.timerSeconds) > 0 ? [{ use: 'timer', with: { seconds: clamp(m.timerSeconds, 20, 600, 120) } }] : []),
   ];
   const reach = { count: 'reach_goal', gte: 1 };
-  const lose = [{ var: 'hp', lte: 0 }, ...(m.timerSeconds > 0 ? [{ count: 'time_up', gte: 1 }] : [])];
+  const lose = [{ var: 'hp', lte: 0 }, ...(Number(m.timerSeconds) > 0 ? [{ count: 'time_up', gte: 1 }] : [])];
   return {
     schema: SPEC_SCHEMA, id: slug(design.title, 'game'), view: side ? 'side' : 'topdown', title: design.title || 'Untitled', pitch: design.pitch || '', seed,
     background: hex(design.background, '#101820'),
