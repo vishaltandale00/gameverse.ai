@@ -10,7 +10,7 @@ import { mashupProblem } from '../v2/planner/play-spec.js';
 import { selectPrimitives, declaredFit, servesInteraction } from '../v2/planner/select.js';
 import { replan, gapRequest } from '../v2/planner/replan.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
 const live = JSON.parse(readFileSync(new URL('./fixtures/v2-live/chess-pokemon-failed.json', import.meta.url), 'utf8'));
 const { registry } = buildCatalogue();
@@ -23,13 +23,14 @@ const mappedOf = id => live.selection.mechanics.find(m => m.id === id).primitive
 const card = id => ({ id, ...registry.get(id).card });
 
 /**
- * The live model, scripted: the catalogue mapping and the mapping check as recorded (the check named avatar grid
- * steps as the central primitive of piece movement), and the mashup field re-ask answered by `mashup(call)`.
+ * The live model, scripted for the iterative build: each mechanic picks the first of the primitives the live model mapped
+ * it to that is on offer (the live mapping named avatar grid steps first for piece movement), and the mashup field
+ * re-ask is answered by `mashup(call)`.
  */
 const liveWriter = mashup => fakeWriter([(req, i) => {
   const name = String(req.schema?.name || '');
-  if (name === 'mechanic_map') return JSON.stringify({ mappings: live.selection.mechanics.map(m => ({ mechanic: m.id, primitives: m.primitives, covered: true, why: '' })) });
-  if (name === 'mapping_check') return JSON.stringify({ checks: [{ mechanic: 'turn_based_piece_movement', central: 'gameplay.move.grid', wrong: [], why: live.selection.completeness.mapping.changes[0].why, spec: '' }] });
+  const built = buildAnswer(req, { picks: Object.fromEntries(live.selection.mechanics.map(m => [m.id, m.primitives])) });
+  if (built) return built;
   if (name === 'decomposition_fields') return JSON.stringify({ field_1: mashup(req, i) });
   throw Error(`unexpected form ${name}`);
 }]);
@@ -63,18 +64,24 @@ test('the decomposition asks for a mashup entry per joined idea, by mechanic id'
   assert.match(mashup.items.properties.mechanics.description, /mechanics\[\]\.id/);
 });
 
-test('selection: piece movement fits pieces-turns (the turns loop, not avatar steps) and the mashup is re-asked as one field', async () => {
+test('selection: piece movement fits pieces-turns (the turns loop, never offered avatar steps) and the mashup is re-asked as one field', async () => {
   const d = decomposition();
   const writer = liveWriter(() => [{ relation: 'nested', mechanics: ['turn_based_piece_movement', 'type_advantages'], why: 'a creature battle decides each capture' }]);
   const sel = await selectPrimitives({ decomposition: d, registry, writer });
   const move = sel.mechanics.find(m => m.id === 'turn_based_piece_movement');
-  assert.ok(!move.primitives.includes('gameplay.move.grid'), JSON.stringify(move.primitives));
-  assert.ok(move.primitives.includes('gameplay.turns'));
+  assert.deepEqual(move.primitives, ['gameplay.turns'], JSON.stringify(move.primitives));
+  // Avatar locomotion is never on offer for pieces moved in turns: the build only offers what serves the play spec.
+  const moves = writer.calls.filter(c => c.schema.name === 'pick_primitive' && /\nMechanic turn_based_piece_movement /.test(c.user));
+  assert.equal(moves.length, 1);
+  for (const c of moves) assert.ok(c.schema.schema.properties.pick.enum.every(id => id === 'none' || servesInteraction(card(id), INTERACTION)), JSON.stringify(c.schema.schema.properties.pick.enum));
+  assert.ok(!moves[0].schema.schema.properties.pick.enum.includes('gameplay.move.grid'));
+  // The joined idea's mechanic (from Pokémon) is played in its own loop: the creature battle is on offer for it.
+  assert.deepEqual(sel.mechanics.find(m => m.id === 'type_advantages').primitives, ['gameplay.creature.battle']);
   // Every mapped primitive and every system serves how the idea is played: no avatar locomotion anywhere.
   for (const id of [...sel.mechanics.flatMap(m => m.primitives), ...sel.systems]) assert.ok(servesInteraction(card(id), INTERACTION), `${id} does not serve ${INTERACTION}`);
   assert.ok(!sel.systems.some(id => card(id).locomotion), JSON.stringify(sel.systems));
   assert.ok(!sel.gaps.some(g => g.mechanic === 'turn_based_piece_movement'), JSON.stringify(sel.gaps));
-  assert.deepEqual(sel.completeness.interaction.changes.map(c => [c.mechanic, c.removed, c.by]), [['turn_based_piece_movement', 'gameplay.move.grid', 'gameplay.turns']]);
+  assert.equal(sel.spaces[0].use, 'engine.space.grid', 'the board the pieces-turns loop declares, showing the board view');
   // The mashup post-check fired and only core.mashup went back to the model (a field form), with the finding.
   const asks = writer.calls.filter(c => c.schema.name === 'decomposition_fields');
   assert.equal(asks.length, 1);

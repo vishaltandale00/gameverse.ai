@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { diagnose, replan } from '../v2/planner/replan.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { testCatalogue, fakeWriter, broken, picky } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, broken, picky, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
 /** A juggling loop that works: toss is a player verb, every toss is the loop's progress, enough tosses win. */
 const clubs = {
@@ -23,10 +23,12 @@ const clubs = {
 /** The test catalogue's `broken` juggler (its install throws) declares a playable loop too (a verb that juggles), so only its crash is wrong. */
 const brokenJuggler = { ...broken, card: { ...broken.card, loop: { verbs: ['juggle'], progress: ['juggled'], win: { when: { count: 'juggled', gte: '$target' } } }, provides: { events: ['juggled'], actions: ['juggle'] } } };
 /** picky (the title must start with "The"): a field only the model can fix. */
-const pickyLoop = { ...picky, card: { ...picky.card, loop: { verbs: [], progress: [] } } };
+const pickyLoop = { ...picky, card: { ...picky.card, loop: { verbs: [], progress: ['titled'] }, provides: { events: ['titled'] } } };
 const endingRunner = PRIMITIVES.find(p => p.id === 'plot.ending');
 
-const catalogue = () => testCatalogue([brokenJuggler, clubs, pickyLoop, endingRunner]);
+/** The juggling show is played on a menu (views ui): the space that shows it. */
+const uiSpace = PRIMITIVES.find(p => p.id === 'engine.space.none');
+const catalogue = () => testCatalogue([brokenJuggler, clubs, pickyLoop, endingRunner, uiSpace]);
 const memoryCtx = () => {
   const versions = [], stages = [], checkpoints = {};
   return { versions, stages, checkpoints, ctx: {
@@ -44,12 +46,11 @@ function scripted({ title = 'Torch Show' } = {}) {
       mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', from: '', importance: 'core' }, { id: 'titles', verb: 'insist', description: 'insists that the title starts with The', from: '', importance: 'core' }],
       spaces: [{ role: 'stage', kind: 'none', description: 'a stage' }], movement: 'none',
       core: { interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } });
-    if (name === 'mechanic_map') return JSON.stringify({ mappings: [{ mechanic: 'juggle', primitives: ['gameplay.test.broken'], covered: true, why: '' }, { mechanic: 'titles', primitives: ['gameplay.test.picky'], covered: true, why: '' }] });
-    if (name === 'mapping_check') return JSON.stringify({ checks: [] });
+    const built = buildAnswer(req, { picks: { juggle: ['gameplay.test.broken'], titles: ['gameplay.test.picky'] } });
+    if (built) return built;
     // A field-level re-ask: the title field gets fixed.
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, /^title/.test(p.description) ? `The ${title}` : null])));
     if (name.endsWith('_frame')) return JSON.stringify({ title, logline: 'Juggle.', premise: 'Juggle for a crowd.', spaces: {}, player: { archetype: req.schema.schema.properties.player.properties.archetype.enum?.[0] ?? 'player_side', zone: '' }, endings: [] });
-    if (name.endsWith('_systems')) return JSON.stringify({ systems: {}, extra_systems: [] });
     if (name.endsWith('_cast')) return JSON.stringify({ archetypes: [], items: [], characters: [] });
     if (name.startsWith('game_outline')) return '{}';
     return '{}';
@@ -84,7 +85,7 @@ test('a failing draft is re-planned and repaired, never substituted: the crashin
 });
 
 test('when the limits run out the build fails with every attempt and what is still missing (no degraded game)', async () => {
-  const cat = testCatalogue([brokenJuggler, pickyLoop, endingRunner]); // no other juggler in the catalogue
+  const cat = testCatalogue([brokenJuggler, pickyLoop, endingRunner, uiSpace]); // no other juggler in the catalogue
   const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted() }, config: { replanAttempts: 2, maxDetailTasks: 0 } });
   const { ctx, versions } = memoryCtx();
   await assert.rejects(pipeline({ gameId: 'g', prompt: 'juggle flaming torches', kind: 'create', seed: 3 }, ctx), e => {

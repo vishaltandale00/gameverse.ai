@@ -596,16 +596,21 @@ export function checkComposition(input, registry, opts = {}) {
           if (count < min) fail({ check: 'mode', code: 'mode_participants_missing', unit: u.use, message: `'${u.use}' needs ${min} participant(s) in with.${p}, has ${count}`, adaptable: false });
         }
       }
-      // space: the bound space, or the capabilities it lacks through an adapter.
-      const want = (isList(md.space) ? md.space : typeof md.space === 'string' ? [md.space] : []).filter((/** @type {unknown} */ x) => typeof x === 'string');
-      if (want.length && s && !want.includes(s.use)) {
-        const target = want.find((/** @type {string} */ id) => registry.has(id));
-        if (!target) hole('mode', { card: u.use, field: 'card.mode.space', code: 'mode_space_unregistered', message: `mode.space names no registered space (${want.join(', ')})` });
-        else for (const cap of [...capsOf(registry, target)].filter(x => !s.caps.has(x))) {
+      // space: the bound space, or the capabilities it lacks through an adapter. An alternative is a space id or a
+      // capability list any space providing them satisfies (card.mode.space).
+      const alts = (isList(md.space) ? md.space : typeof md.space === 'string' ? [md.space] : []).filter((/** @type {unknown} */ x) => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')));
+      const fits = (/** @type {string | string[]} */ a) => !s ? true : typeof a === 'string' ? a === s.use : a.every(c => s.caps.has(c));
+      if (alts.length && s && !alts.some(fits)) {
+        const ids = /** @type {string[]} */ (alts.filter(a => typeof a === 'string'));
+        const target = ids.find(id => registry.has(id));
+        const capList = /** @type {string[][]} */ (alts.filter(a => isList(a)))[0];
+        const lacking = target ? [...capsOf(registry, target)].filter(x => !s.caps.has(x)) : capList ? capList.filter(x => !s.caps.has(x)) : null;
+        if (!lacking) hole('mode', { card: u.use, field: 'card.mode.space', code: 'mode_space_unregistered', message: `mode.space names no registered space (${ids.join(', ')})` });
+        else for (const cap of lacking) {
           const a = adapterFor(x => x.provides.capabilities, cap, s);
           if (a && propose(a, u.space, `adapts ${cap} for ${u.use}'s mode space`)) continue;
           need(u.space, 'capabilities', cap, u.use);
-          fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' plays on ${short(target)}; ${short(s.use)} lacks ${cap}`, adaptable: true, need: { kind: 'capabilities', item: cap } });
+          fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' plays on ${target ? short(target) : `a space with ${capList.join(', ')}`}; ${short(s.use)} lacks ${cap}`, adaptable: true, need: { kind: 'capabilities', item: cap } });
         }
       }
       // bot: a registered strategy.

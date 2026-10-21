@@ -49,8 +49,10 @@ import { isObj, isList, isStr, list, strings, obj as asObject, prop } from '../k
  *   storyGroup: (cast: { characters?: string[], archetypes?: string[], items?: string[] }) => FormGroup | null, version: string }} OutlineForm
  */
 /**
- * One small part of the form, asked for on its own (in parallel with the others; `wave` 2 waits for wave 1's ids).
- * @typedef {{ id: string, keys: string[], wave: number, schema: ReplySchema }} FormGroup
+ * One small part of the form, asked for on its own. `phase` orders them (frame, then params one primitive at a time in
+ * dependency order, then content one contract section at a time, then the story); `wave` 2 (the story) waits for wave
+ * 1's ids. A params group writes one primitive's slot (`use`, at systems.<sub>).
+ * @typedef {{ id: string, keys: string[], wave: number, phase: 'frame' | 'params' | 'content' | 'story', schema: ReplySchema, use?: string, sub?: string }} FormGroup
  */
 
 export const FORM_VERSION = 'outline-form/0.1';
@@ -263,9 +265,8 @@ export function outlineForm({ registry, skeleton, selection = null }) {
     sysProps[formKey(id)] = obj({ with: slot.schema }, `${id}: ${String(card.intent || '').slice(0, 300)}`);
     sysCodecs[id] = slot.codec;
   }
+  // Primitives are the selection's (built and checked mechanic by mechanic): the form writes their params, never adds one.
   props.systems = obj(sysProps, 'every chosen primitive with its params; null means the default');
-  const extras = registry.ids().filter(id => !isSpace(id) && !isGenerator(id) && !isGraphics(id) && !systems.includes(id) && !registry.get(id)?.card.ambient);
-  props.extra_systems = arr(obj({ use: { type: 'string', enum: extras.length ? extras : ['none'] }, with_json: nul(str(JSON_HINT)) }), 'other catalogue primitives this idea needs (usually none)');
 
   // Content.
   const { props: content, comps } = contentProps({ registry, used, hasQuests, hasDialogue, spawner, refs: refsFor('archetypes'), zones: zoneIds });
@@ -299,33 +300,49 @@ export function outlineForm({ registry, skeleton, selection = null }) {
     if (!story) return null;
     const { props: again } = contentProps({ registry, used, hasQuests, hasDialogue, spawner, refs: refsFor('archetypes'), zones: zoneIds, cast });
     const p = Object.fromEntries(story.keys.map(k => [k, k === 'acts' ? props.acts : again[k]]).filter(([, v]) => v));
-    return Object.keys(p).length ? { id: story.id, keys: Object.keys(p), wave: story.wave, schema: { name: `game_outline_${story.id}`, schema: obj(p) } } : null;
+    return Object.keys(p).length ? { id: story.id, keys: Object.keys(p), wave: story.wave, phase: story.phase, schema: { name: `game_outline_${story.id}`, schema: obj(p) } } : null;
   };
-  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props), storyGroup, version: FORM_VERSION };
+  const uses = Object.fromEntries(Object.keys(sysCodecs).map(id => [formKey(id), id]));
+  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props, uses), storyGroup, version: FORM_VERSION };
 }
 
-// The small forms the outline is asked in: each a strict schema of a few top-level slots. The world frame, the
-// primitives' params, the cast (archetypes, their spawns, items, characters) and each content section are
-// independent (wave 1, in parallel); the story refers to the cast and places (wave 2).
+// The small forms the outline is asked in: each a strict schema of a few top-level slots. The world frame; one form
+// per chosen primitive's params (systems.<id>), asked in dependency order (build.js dependencyLayers); the cast
+// (archetypes, their spawns, items, characters) and each content section, each checked against its content contract
+// as soon as it is written; then the story, which refers to the cast and places (wave 2).
+/** @type {Array<{ id: string, keys: string[], wave: number, phase: FormGroup['phase'] }>} */
 const GROUPS = [
-  { id: 'frame', keys: ['title', 'logline', 'premise', 'spaces', 'player', 'endings'], wave: 1 },
-  { id: 'systems', keys: ['systems', 'extra_systems'], wave: 1 },
-  { id: 'cast', keys: ['archetypes', 'spawns', 'items', 'characters'], wave: 1 },
-  { id: 'story', keys: ['acts', 'dialogue', 'quests'], wave: 2 },
+  { id: 'frame', keys: ['title', 'logline', 'premise', 'spaces', 'player', 'endings'], wave: 1, phase: 'frame' },
+  { id: 'cast', keys: ['archetypes', 'spawns', 'items', 'characters'], wave: 1, phase: 'content' },
+  { id: 'story', keys: ['acts', 'dialogue', 'quests'], wave: 2, phase: 'story' },
 ];
-/** The form split into small strict forms (sections get one each). @param {Record<string, JsonSchema>} props @returns {FormGroup[]} */
-export function formGroups(props) {
+/** The params form of a primitive: its group id. @param {string} id */
+export const paramsGroupId = id => `params_${formKey(id)}`;
+/**
+ * The form split into small strict forms: the frame, one per primitive's params (`uses`: form key -> primitive id),
+ * the cast, one per section, the story. @param {Record<string, JsonSchema>} props @param {Record<string, string>} [uses] @returns {FormGroup[]}
+ */
+export function formGroups(props, uses = {}) {
   /** @type {FormGroup[]} */
   const out = [];
   const pick = (/** @type {string[]} */ keys) => Object.fromEntries(keys.filter(k => props[k]).map(k => [k, props[k]]));
-  for (const g of GROUPS) { const p = pick(g.keys); if (Object.keys(p).length) out.push({ id: g.id, keys: Object.keys(p), wave: g.wave, schema: { name: `game_outline_${g.id}`, schema: obj(p) } }); }
-  for (const k of Object.keys(props)) if (k.startsWith('section_')) out.push({ id: k, keys: [k], wave: 1, schema: { name: `game_outline_${k}`.slice(0, 64), schema: obj({ [k]: props[k] }) } });
+  const named = (/** @type {string} */ id) => `game_outline_${id}`.slice(0, 64);
+  for (const g of GROUPS) { const p = pick(g.keys); if (Object.keys(p).length) out.push({ id: g.id, keys: Object.keys(p), wave: g.wave, phase: g.phase, schema: { name: named(g.id), schema: obj(p) } }); }
+  const sys = /** @type {ObjectSchema | undefined} */ (props.systems);
+  for (const [key, slot] of Object.entries(sys?.properties || {})) {
+    const use = uses[key] || key.replace(/__/g, '.');
+    out.push({ id: paramsGroupId(use), keys: ['systems'], sub: key, use, wave: 1, phase: 'params', schema: { name: named(paramsGroupId(use)), schema: obj({ systems: obj({ [key]: slot }, sys?.description) }) } });
+  }
+  for (const k of Object.keys(props)) if (k.startsWith('section_')) out.push({ id: k, keys: [k], wave: 1, phase: 'content', schema: { name: named(k), schema: obj({ [k]: props[k] }) } });
   return out;
 }
-/** The group a form path belongs to (its top-level slot), or null. @param {FormGroup[]} groups @param {string} path */
+/**
+ * The group a form path belongs to (its top-level slot; a primitive's params form for systems.<key>), or null.
+ * @param {FormGroup[]} groups @param {string} path
+ */
 export function groupOfPath(groups, path) {
-  const top = String(path || '').split(/[.[]/)[0];
-  return groups.find(g => g.keys.includes(top)) || null;
+  const [top, sub] = String(path || '').split(/[.[\]"]+/).filter(Boolean);
+  return groups.find(g => g.keys.includes(top) && (!g.sub || g.sub === sub)) || null;
 }
 /** The small form a top-level slot is asked in (a section slot is its own). @param {string} slot */
 const groupOfSlot = slot => (slot.startsWith('section_') ? slot : GROUPS.find(g => g.keys.includes(slot))?.id ?? slot);
@@ -596,9 +613,6 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
     for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
     out.systems.push({ use: id, ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
-  }
-  for (const x of listOf(f.extra_systems)) if (isObj(x) && typeof x.use === 'string' && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {
-    const w = parseJson(x.with_json); out.systems.push({ use: x.use, ...(isObj(w) ? { with: w } : {}) });
   }
   const content = contentFromForm(f, { comps });
   /** @type {Record<string, unknown>[]} */

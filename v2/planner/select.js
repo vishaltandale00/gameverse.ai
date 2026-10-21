@@ -7,13 +7,14 @@
 // when available; otherwise the lexical ranking decides.
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
-import { parseReply } from './writer.js';
 import { cardLoop, endsGame } from './loop.js';
 import { isAvatar, mashupProblem, mashupSides } from './play-spec.js';
 import { askMashup } from './decompose.js';
 import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
-import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
+import { str, messageOf } from '../kernel/guards.js';
+import { buildSelection } from './build.js';
+import { checkComposition } from './compose-check.js';
 
 /** @typedef {import('../kernel/types.js').CardInput} CardInput */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -36,13 +37,14 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter' | 'win', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
  */
 /** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null, gap?: string }} LocomotionResult */
-/** @typedef {{ mechanic: string, added?: string, removed?: string, gap?: boolean, why: string }} MappingChange */
-/** @typedef {{ checked: string[], changes: MappingChange[], ms?: number | null, error?: string }} MappingCheck */
 /** A mechanic's primitive that does not serve the play spec's interaction, and what serves the mechanic instead. @typedef {{ mechanic: string, removed: string, by: string | null, why: string }} InteractionChange */
 /** The interaction fit of the mapping (fitInteraction). @typedef {{ interaction: string | null, changes: InteractionChange[] }} InteractionFit */
 /** The play spec's mashup post-check (play-spec.js mashupProblem) and its field re-ask. @typedef {{ problem: string, asked: number, mashup: import('./play-spec.js').Mashup[], model?: string, ms?: number, unresolved?: boolean }} MashupCheck */
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
-/** @typedef {{ primitives: string[], covered: boolean, why: string }} MechanicMapping */
+/**
+ * The iterative build as the selection report keeps it: the space step, every mechanic step (candidates, asks, checks,
+ * outcome), the content contracts recorded, model calls and time. @typedef {Omit<import('./build.js').BuildResult, 'mapping' | 'systems' | 'adapters' | 'bind' | 'gaps' | 'space'>} BuildReport
+ */
 /** A space kind not offered because no registered generator can furnish what it needs. @typedef {{ use: string, missing: string[], why: string }} ExcludedSpace */
 /** A generator a mechanic named that targets none of the chosen spaces. @typedef {{ id: string, why: string }} DroppedGenerator */
 /**
@@ -57,7 +59,8 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @property {Record<string, string>} bind  primitive id -> space id (primitives not on the first space)
  * @property {Gap[]} gaps
  * @property {string | null} provider
- * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null, interaction?: InteractionFit, mashup?: MashupCheck }} completeness
+ * @property {{ locomotion: LocomotionResult, interaction?: InteractionFit, mashup?: MashupCheck }} completeness
+ * @property {BuildReport} [build]  the iterative build's step log (build.js), when a model built the collection
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
  * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
@@ -237,7 +240,7 @@ export function vocabIndex(registry) {
 
 // Structural hints for a decomposed space kind: capabilities and views it implies (generic, not genre).
 /** @type {Record<string, { caps: string[], views: string[] }>} */
-const KIND_HINTS = {
+export const KIND_HINTS = {
   'continuous-3d': { caps: ['surface', 'raycast', 'gravity'], views: ['1p', '3p', 'iso'] },
   'continuous-2d': { caps: ['overlap'], views: ['td', 'side'] },
   'tiles-side': { caps: ['gravity', 'editCells'], views: ['side'] },
@@ -248,7 +251,7 @@ const KIND_HINTS = {
 };
 
 /** @param {unknown} role @param {number} i */
-const spaceSlug = (role, i) => ((String(role || 'world').toLowerCase().match(/[a-z0-9]+/g) || ['world']).join('_').slice(0, 30) || 'world') + (i ? `_${i}` : '');
+export const spaceSlug = (role, i) => ((String(role || 'world').toLowerCase().match(/[a-z0-9]+/g) || ['world']).join('_').slice(0, 30) || 'world') + (i ? `_${i}` : '');
 
 /**
  * Choose spaces so every chosen primitive's required capabilities are provided. The primary
@@ -340,60 +343,6 @@ export function chooseGraphics(registry, spaces) {
 const DECIDE = 'Which listed primitive implements this mechanic as the game needs it? Answer "none" if none of them really does (a related but different mechanic is "none").';
 
 /**
- * selectPrimitives({ decomposition, registry, decisions? }) -> {
- *   mechanics: [{ id, description, importance, primitives, score, source, candidates }],
- *   systems: [id], generators: [{ id, space }], graphics: [{ id, space }], spaces: [{ id, use, with, role, caps }],
- *   bind: { primitiveId: spaceId }, gaps: [{ mechanic, description, importance, kind, why }], ms }
- */
-/**
- * Whole-catalogue mapping: the model sees every gameplay/engine/plot card (id + intent) and maps each
- * mechanic to the primitives that implement it. Word overlap can't know that "rings" are collectibles or
- * that "tetromino" means falling pieces; the model can, so it is the primary selector when available.
- * Returns { [mechanicId]: { primitives: [ids], covered: bool, why } }; null without a writer (the offline mode). A writer that
- * fails every attempt throws (status 422, code selection_failed): the lexical ranking never stands in for it.
- * @param {{ writer?: Writer | null, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void, attempts?: number }} options
- * @returns {Promise<Record<string, MechanicMapping> | null>}
- */
-export async function mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log = () => {}, attempts = 2 }) {
-  if (!writer?.complete) return null;
-  /** @type {string[]} */
-  const failed = [];
-  for (let i = 0; i < Math.max(1, attempts); i++) {
-    const r = await mapOnce({ writer, decomposition, mechanics, cards, registry, log, retry: failed[failed.length - 1] || null });
-    if (r.ok) return r.mapping;
-    failed.push(r.error);
-  }
-  // A connected model that cannot map the mechanics fails selection with what it said; the lexical ranking is the
-  // offline mode only, never a substitute for a failing model.
-  throw Object.assign(Error(`Mapping the mechanics onto the catalogue failed after ${failed.length} attempt(s): ${failed.join('; ')}`), { status: 422, code: 'selection_failed', attempts: failed });
-}
-
-/**
- * One mapping call. -> { ok: true, mapping } | { ok: false, error }
- * @param {{ writer: Writer, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log: (msg: string) => void, retry: string | null }} options
- * @returns {Promise<{ ok: true, mapping: Record<string, MechanicMapping> } | { ok: false, error: string }>}
- */
-async function mapOnce({ writer, decomposition, mechanics, cards, registry, log, retry }) {
-  const index = cards.map(c => `${c.id}: ${String(c.intent || '').replace(/\s+/g, ' ').slice(0, 170)}`).join('\n');
-  const system = 'You map game mechanics onto a fixed catalogue of composable game primitives. Each primitive is general: "collectible" covers rings, coins, pellets, gems; "falling.pieces" covers Tetris/tetrominoes/falling blocks; "move.lanes" covers endless-runner lanes; a space covers travel inside it. For every mechanic, list the primitive ids (exact ids from the catalogue) that together implement it, most important first. Only say covered=false when no combination of catalogue primitives could implement it. Use only ids that appear in the catalogue.';
-  const user = `Game idea: ${decomposition.premise}\n\nMechanics:\n${mechanics.map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nCatalogue:\n${index}${retry ? `\n\nYour previous answer failed (${retry}): map every mechanic by its id.` : ''}`;
-  const schema = { name: 'mechanic_map', schema: { type: 'object', additionalProperties: false, required: ['mappings'], properties: { mappings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'primitives', 'covered', 'why'], properties: { mechanic: { type: 'string' }, primitives: { type: 'array', items: { type: 'string' } }, covered: { type: 'boolean' }, why: { type: 'string' } } } } } } };
-  try {
-    const reply = await writer.complete({ system, user, schema });
-    /** @type {Record<string, MechanicMapping>} */
-    const out = {};
-    // Model output: only object mappings and string ids are read.
-    for (const m of objects(prop(parseReply(reply.text), 'mappings'))) {
-      const ids = strings(m.primitives).filter(id => registry.has(id) && !isGraphics(id));
-      out[String(m.mechanic)] = { primitives: [...new Set(ids)], covered: Boolean(m.covered) && ids.length > 0, why: String(m.why || '').slice(0, 200) };
-    }
-    const unmapped = mechanics.filter(m => !out[m.id]).map(m => m.id);
-    if (!Object.keys(out).length || unmapped.length) return { ok: false, error: `no mapping for ${unmapped.join(', ') || 'any mechanic'}` };
-    return { ok: true, mapping: out };
-  } catch (error) { log(`catalogue mapping failed: ${messageOf(error)}`); return { ok: false, error: String(messageOf(error) || error).slice(0, 160) }; }
-}
-
-/**
  * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[], attempts?: number }} options
  * @returns {Promise<Selection>}
  */
@@ -406,13 +355,14 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
   // The model maps onto the cards that serve the play spec's interaction (no avatar locomotion for pieces moved in turns).
   const playedAs = decomposition.core?.interaction || null;
-  const playable = cards.filter(c => servesInteraction(c, playedAs));
-  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards: playable, registry, log, attempts });
+  // With a model, the collection is built iteratively (build.js): the space first, then one mechanic at a time, each
+  // pick checked (composition, closure, adapters) before the next. Offline, decisions or the lexical ranking map them.
+  const built = writer?.complete ? await buildSelection({ decomposition, registry, writer, log, excludeSpaces, attempts }) : null;
   /** @type {Record<string, DecisionAnswer> | null} */
   let decided = null;
   /** @type {string | null} */
-  let provider = mapped ? 'catalogue-model' : null;
-  if (!mapped && decisions && mechanics.some(m => m.candidates.length)) {
+  let provider = built ? 'build' : null;
+  if (!built && decisions && mechanics.some(m => m.candidates.length)) {
     try {
       const questions = Object.fromEntries(mechanics.filter(m => m.candidates.length).map(m => [m.id, { type: 'choice', instructions: `${DECIDE}\nMechanic: ${m.description}`,
         criteria: { ...Object.fromEntries(m.candidates.map(c => [c.id, /** @type {RegisteredPrimitive} */ (registry.get(c.id)).card.intent.slice(0, 300)])), none: 'None of these implements it.' } }]));
@@ -420,19 +370,15 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
       decided = r.answers; provider = r.provider;
     } catch (error) { log(`selection decisions failed: ${messageOf(error)}`); }
   }
-  // Selection completeness: each core mechanic must have the primitive that defines it (a model check, when a writer is connected).
-  const checked = mapped ? await checkMapping({ writer, decomposition, mechanics, mapped, cards: playable, registry, log }) : null;
   /** @type {Set<string>} */
-  const chosen = new Set();
+  const chosen = new Set(built?.systems || []);
   /** @type {Gap[]} */
-  const gaps = [];
+  const gaps = [...(built?.gaps || [])];
   for (const m of mechanics) {
-    const map = mapped?.[m.id];
+    const map = built?.mapping[m.id];
     if (map) {
-      m.primitives = map.covered ? map.primitives : [];
-      m.source = 'catalogue-model'; m.score = map.covered ? 1 : 0;
-      m.primitives.forEach(id => chosen.add(id));
-      if (!map.covered) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: map.why || 'no catalogue primitive implements it', ...(map.why && /Spec: /.test(map.why) ? { spec: map.why.split('Spec: ')[1] } : {}) });
+      m.primitives = [...map.primitives]; m.candidates = map.candidates;
+      m.source = 'build'; m.score = map.primitives.length ? 1 : 0;
       continue;
     }
     const top = m.candidates[0];
@@ -455,10 +401,11 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     if (!pick) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: m.candidates.length ? `closest primitives (${m.candidates.slice(0, 3).map(c => c.id).join(', ')}) don't implement it` : 'no primitive covers it' });
   }
   // The mapping fits how the idea is played: what does not serve the interaction leaves its mechanic, and what it did
-  // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap.
+  // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap. A built collection
+  // was only offered what serves it, so it is not refitted.
   // The joined idea's mechanics (the inner side of a mashup entry across concepts, play-spec.js mashupSides).
   const joinedBy = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => mashupSides(x, decomposition.mechanics || []).inner.includes(id));
-  const interactionFit = fitInteraction({ mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
+  const interactionFit = fitInteraction({ mechanics: built ? [] : mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
   for (const c of interactionFit.changes) {
     if (!mechanics.some(m => m.primitives.includes(c.removed))) chosen.delete(c.removed);
     if (c.by) chosen.add(c.by);
@@ -514,22 +461,32 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
   const lockOut = modeSpace ? registry.ids('engine').filter(id => isSpace(id) && id !== modeSpace) : [];
-  const { spaces, bind, unmet, excluded: excludedSpaces = [] } = chooseSpaces(registry, [...chosen], decomposition, prefer, [...new Set([...excludeSpaces, ...lockOut])]);
+  // A built collection keeps the space it was built on (never swapped): only what was added after it (the story
+  // runner, the vocabulary owner, the input) is checked against it here.
+  const { spaces, bind, unmet, excluded: excludedSpaces = [] } = built
+    ? { spaces: [built.space], bind: { ...built.bind }, unmet: unhosted(registry, [...chosen], built.space, built.bind, built.adapters), excluded: [] }
+    : chooseSpaces(registry, [...chosen], decomposition, prefer, [...new Set([...excludeSpaces, ...lockOut])]);
   // A primitive no chosen space can host stays the user's intent: a core mechanic's primitive becomes an adapter gap
   // (the gap layer writes the adapter that projects it onto the space, gated by tests and the playtest agent), never
   // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
   /** @type {AdapterInstance[]} */
-  const adapters = [];
+  const adapters = [...(built?.adapters || [])];
+  // Bindings to the chosen spaces (not to adapter regions): adapters are resolved from them, for the whole collection.
+  const spaceIds = new Set(spaces.map(s => s.id));
   for (const u of unmet) {
     chosen.delete(u.id);
-    // A registered adapter that projects what the space lacks keeps the primitive: its instance (with its config)
-    // joins the selection and the primitive is bound to the adapter's region (adapters.js resolveAdapters).
+    // A registered adapter that projects what the space lacks keeps the primitive: its instances (with their config)
+    // replace the selection's and the primitive is bound to the adapter's region (adapters.js resolveAdapters, run on
+    // the whole collection so the adapters already chosen are resolved again with it).
     /** @type {import('./adapters.js').AdapterResolution | null} */
     let r = null;
-    try { r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind, adapters }, registry); } catch { r = null; }
+    const own = Object.fromEntries(Object.entries(bind).filter(([, s]) => spaceIds.has(s)));
+    try { r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind: own }, registry); } catch { r = null; }
     if (r?.verdict === 'compatible-via-adapter') {
-      chosen.add(u.id); Object.assign(bind, r.bind);
-      for (const a of r.adapters) if (!adapters.some(x => x.use === a.use && x.space === a.space && x.id === a.id)) adapters.push(a);
+      chosen.add(u.id);
+      for (const k of Object.keys(bind)) delete bind[k];
+      Object.assign(bind, own, r.bind);
+      adapters.splice(0, adapters.length, ...r.adapters);
       continue;
     }
     // An adapter projects a primitive onto a space that lacks what it needs; when NO registered space provides it,
@@ -551,7 +508,8 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   if (loco.gap) gaps.push({ mechanic: 'movement', description: `needs movement: ${loco.gap}`, importance: 'core', kind: 'no_primitive', why: `${loco.gap}; the world is kept, not swapped` });
   // Mechanics the chosen space itself provides (travelling between its places) are not gaps: ask the decision
   // model once for every no-primitive gap, else fall back to lexical relevance against the space card.
-  const noPrim = gaps.filter(g => g.kind === 'no_primitive');
+  // A built collection already offered the space for each mechanic it may serve (build.js): its gaps stand.
+  const noPrim = built ? [] : gaps.filter(g => g.kind === 'no_primitive');
   if (noPrim.length && spaces.length) {
     const spaceCards = spaces.map(s => ({ id: s.use, .../** @type {RegisteredPrimitive} */ (registry.get(s.use)).card }));
     /** @type {Set<string>} */
@@ -595,8 +553,21 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, mapping: checked, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}),
+    ...(built ? { build: { version: built.version, loop: built.loop, spaceStep: built.spaceStep, steps: built.steps, contracts: built.contracts, calls: built.calls, ms: built.ms } } : {}), ms: Math.round(performance.now() - started),
   };
+}
+/**
+ * Primitives of a collection the space does not host (capabilities it lacks, with the adapters already chosen), from
+ * the composition check's capability failures. @param {RegistryLike} registry @param {string[]} ids @param {SpaceChoice} space
+ * @param {Record<string, string>} bind @param {AdapterInstance[]} adapters @returns {Unmet[]}
+ */
+function unhosted(registry, ids, space, bind, adapters) {
+  const r = checkComposition({ spaces: [space], systems: ids.filter(id => !isSpace(id)), bind, adapters }, registry, { resolve: false });
+  /** @type {Map<string, string[]>} */
+  const missing = new Map();
+  for (const f of r.failures) if (f.code === 'capability_missing' && f.need && ids.includes(f.unit)) missing.set(f.unit, [...(missing.get(f.unit) || []), f.need.item]);
+  return [...missing].map(([id, caps]) => ({ id, missing: caps, why: `${space.use} does not provide ${caps.join(', ')}` }));
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
 /** @param {string} id */
@@ -686,46 +657,4 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
   const host = mechanics.find(m => m.importance === 'core' && /\b(move|walk|run|jump|explor|navigat|travel|climb|platform|roam|fly|swim|drive)\w*/i.test(`${m.verb} ${m.description}`)) || mechanics.find(m => m.importance === 'core');
   if (host && Array.isArray(host.primitives) && !host.primitives.includes(best.id)) host.primitives.push(best.id);
   return out;
-}
-
-/**
- * Model check of the catalogue mapping: for every core mechanic, is the primitive that DEFINES it mapped (a Tetris
- * platformer needs the platformer movement, not grid steps)? The model sees the mapped primitives and the closest
- * alternatives (lexical candidates and siblings of what was mapped) and names the central one and any wrong ones.
- * Applies its answer to `mapped` (adds the central primitive, removes wrong ones). -> { checked, changes } or null.
- * @param {{ writer?: Writer | null, decomposition: { premise: string, views?: string[], movement?: string, core?: { interaction?: string | null } | null }, mechanics: SelectedMechanic[], mapped: Record<string, MechanicMapping>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
- * @returns {Promise<MappingCheck | null>}
- */
-export async function checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log = () => {} }) {
-  const core = mechanics.filter(m => m.importance === 'core' && mapped[m.id]);
-  if (!writer?.complete || !core.length) return null;
-  const byId = new Map(cards.map(c => [c.id, c]));
-  const line = (/** @type {string} */ id) => `${id}: ${String(byId.get(id)?.intent || '').replace(/\s+/g, ' ').slice(0, 160)}`;
-  const blocks = core.map(m => {
-    const have = mapped[m.id].primitives;
-    const domains = new Set(have.map(id => id.split('.').slice(0, 2).join('.')));
-    const alts = [...new Set([...m.candidates.map(c => c.id), ...cards.filter(c => domains.has(c.id.split('.').slice(0, 2).join('.'))).map(c => c.id)])].filter(id => !have.includes(id) && !isGraphics(id)).slice(0, 14);
-    return `Mechanic ${m.id}: ${m.description}\n  mapped:\n${have.map(id => `    ${line(id)}`).join('\n') || '    (none)'}\n  alternatives:\n${alts.map(id => `    ${line(id)}`).join('\n') || '    (none)'}`;
-  }).join('\n\n');
-  const system = 'You check a mechanic mapping for a game built from composable primitives. For each core mechanic decide which single primitive DEFINES it (the one without which the mechanic is not there at all: platforming needs the platformer movement, falling-block stacking needs the falling-pieces primitive, catching creatures needs the catch primitive). It may be one already mapped or one of the alternatives. Also list mapped primitives that implement a DIFFERENT mechanic than this one (a wrong sibling, e.g. grid steps for a jump-and-run, flying for a walking dungeon); supporting primitives that help are not wrong. Use exact ids from the lists. When none of them implements the mechanic as the game needs it (e.g. chess piece movement and checkmate), answer central "none" and write the spec of the primitive that would.';
-  const user = `Game idea: ${decomposition.premise}\nMain view: ${primaryOf(decomposition) || 'any'}; the avatar moves: ${decomposition.movement || 'unknown'}; played as: ${decomposition.core?.interaction || 'undecided'}\n\n${blocks}`;
-  const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why', 'spec'], properties: { mechanic: { type: 'string' }, central: { type: 'string', description: 'the defining primitive id, or "none" when no listed primitive implements this mechanic' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' }, spec: { type: 'string', description: 'when central is "none": what a new primitive must do (its rules, inputs, state, events and win condition), precise enough to build it; else empty' } } } } } } };
-  try {
-    const reply = await writer.complete({ system, user, schema });
-    /** @type {MappingChange[]} */
-    const changes = [];
-    // Model output: only object checks, string ids and a string list of wrong ids are read.
-    for (const c of objects(prop(parseReply(reply.text), 'checks'))) {
-      const mechanic = str(c.mechanic), named = str(c.central);
-      const entry = Object.hasOwn(mapped, mechanic) ? mapped[mechanic] : undefined; if (!entry) continue;
-      const m = core.find(x => x.id === mechanic); if (!m) continue;
-      const central = registry.has(named) && !isGraphics(named) ? named : null;
-      if (central && !entry.primitives.includes(central)) { entry.primitives = [central, ...entry.primitives]; entry.covered = true; changes.push({ mechanic: m.id, added: central, why: String(c.why || '').slice(0, 160) }); }
-      for (const w of strings(c.wrong)) if (w !== central && entry.primitives.includes(w)) { entry.primitives = entry.primitives.filter(x => x !== w); changes.push({ mechanic: m.id, removed: w, why: String(c.why || '').slice(0, 160) }); }
-      if (!entry.primitives.length) entry.covered = false;
-      // Nothing in the catalogue defines it: a core gap with a precise spec (the gap layer writes the primitive), never dropped.
-      if (named === 'none' && str(c.spec).trim()) { entry.covered = false; entry.why = `no catalogue primitive implements it. Spec: ${str(c.spec).slice(0, 600)}`; changes.push({ mechanic: m.id, gap: true, why: str(c.spec).slice(0, 160) }); }
-    }
-    return { checked: core.map(m => m.id), changes, ms: reply.ms ?? null };
-  } catch (error) { log(`mapping check failed: ${messageOf(error)}`); return { checked: [], changes: [], error: String(messageOf(error) || error).slice(0, 120) }; }
 }

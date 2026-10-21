@@ -7,7 +7,7 @@
 import { parseReply } from './writer.js';
 import { coreSchema, normalizeCore, normalizeMashup, undecidedCore, isAvatar } from './play-spec.js';
 import { fieldForm } from './outline-form.js';
-import { obj, list, objects, isStr, messageOf } from '../kernel/guards.js';
+import { obj, list, objects, isStr, messageOf, prop } from '../kernel/guards.js';
 
 /** @typedef {import('./types.js').Writer} Writer */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -96,6 +96,8 @@ export async function decomposeIdea({ writer = null, prompt, answers = [], regis
         const reply = await writer.complete({ system: registry ? `${SYSTEM}\n${CORE}` : SYSTEM, user: ask, schema: { name: 'decomposition', schema: registry ? decompositionSchema(registry) : DECOMPOSITION_SCHEMA } });
         const d = normalize(parseReply(reply.text), prompt, registry);
         if (!d.mechanics.some(m => m.importance === 'core')) { failed.push('no core mechanic: the core loop is the idea\'s core mechanics'); continue; }
+        // The play spec names the core mechanic the game is built around; one that names none is asked again for that field only.
+        if (d.core && !d.mechanics.some(m => m.importance === 'core' && m.id === d.core?.loop)) d.core = { ...d.core, loop: await askLoop({ writer, decomposition: d, attempts }) };
         return { ...d, source: reply.model, ms: Math.round(performance.now() - started), ...(failed.length ? { attempts: failed.length + 1 } : {}) };
       } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
     }
@@ -185,6 +187,28 @@ export async function askMashup({ writer, decomposition, registry, problem, rech
     } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
   }
   throw Object.assign(Error(`The play spec is incomplete: core.mashup was asked again ${failed.length} time(s) and still fails: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
+}
+
+/**
+ * core.loop, asked again on its own: the core mechanic ids are the only choices. Up to `attempts` calls; an answer
+ * outside them is never replaced by a guess (422 play_spec_incomplete).
+ * @param {{ writer: Writer, decomposition: Decomposition, attempts?: number }} options @returns {Promise<string>}
+ */
+export async function askLoop({ writer, decomposition, attempts = 2 }) {
+  const ids = decomposition.mechanics.filter(m => m.importance === 'core').map(m => m.id);
+  const schema = { name: 'core_loop', schema: { type: 'object', additionalProperties: false, required: ['loop'], properties: { loop: { type: 'string', enum: ids, description: 'the core mechanic the game is built around: the loop the player repeats' } } } };
+  const user = `Idea: ${decomposition.title}. ${decomposition.premise}\nCore mechanics (id: description):\n${decomposition.mechanics.filter(m => m.importance === 'core').map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nWhich one is the loop the game is built around? Reply with its id.`;
+  /** @type {string[]} */
+  const failed = [];
+  for (let i = 0; i < Math.max(1, attempts); i++) {
+    try {
+      const reply = await writer.complete({ system: SYSTEM, user, schema });
+      const loop = prop(parseReply(reply.text), 'loop');
+      if (typeof loop === 'string' && ids.includes(loop)) return loop;
+      failed.push(`'${String(loop).slice(0, 40)}' is not a core mechanic id`);
+    } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
+  }
+  throw Object.assign(Error(`The play spec is incomplete: core.loop was asked ${failed.length} time(s) and names no core mechanic: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
 }
 
 /** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */

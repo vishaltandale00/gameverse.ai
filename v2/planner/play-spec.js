@@ -20,7 +20,7 @@ import { cardLoop } from './loop.js';
 /**
  * The play spec. interaction null: the collection decides (its loops' declared interaction, or a base locomotion);
  * narrative null: the collection decides (a core mechanic mapped to the primitive that runs plot.storyboard).
- * @typedef {{ interaction: string | null, opponent: string, win: string, lose: string, theme: string, narrative: boolean | null, mashup: Mashup[], problems?: string[] }} Core
+ * @typedef {{ loop?: string, interaction: string | null, opponent: string, win: string, lose: string, theme: string, narrative: boolean | null, mashup: Mashup[], problems?: string[] }} Core
  */
 
 export const PLAY_SPEC_VERSION = 'play-spec/0.2';
@@ -34,8 +34,9 @@ export const isAvatar = interaction => typeof interaction === 'string' && intera
 export function coreSchema() {
   const str = { type: 'string' };
   return {
-    type: 'object', additionalProperties: false, required: ['interaction', 'opponent', 'win', 'lose', 'theme', 'narrative', 'mashup'],
+    type: 'object', additionalProperties: false, required: ['loop', 'interaction', 'opponent', 'win', 'lose', 'theme', 'narrative', 'mashup'],
     properties: {
+      loop: { type: 'string', description: "the id (exactly as in mechanics[].id) of the core mechanic the game is built around: the loop the player repeats" },
       interaction: { type: 'string', enum: INTERACTIONS, description: 'avatar-realtime: the player steers a character in real time; avatar-grid: a character stepping cell by cell; pieces-turns: the player moves pieces in turns; cursor-board: the player picks cells or pieces on a board; menu: the player picks options' },
       opponent: { type: 'string', enum: OPPONENTS, description: 'who plays against the player' },
       win: { ...str, description: "how the core loop is won, in the game's own terms" },
@@ -63,6 +64,7 @@ export function normalizeCore(core) {
   const opponent = isStr(core.opponent) && OPPONENTS.includes(core.opponent) ? core.opponent : 'none';
   if (isStr(core.opponent) && !OPPONENTS.includes(core.opponent)) problems.push(`unknown opponent '${core.opponent.slice(0, 40)}'`);
   return {
+    ...(isStr(core.loop) && core.loop ? { loop: core.loop.slice(0, 60) } : {}),
     interaction, opponent,
     win: String(core.win || '').slice(0, 200), lose: String(core.lose || '').slice(0, 200), theme: String(core.theme || '').slice(0, 120),
     narrative: typeof core.narrative === 'boolean' ? core.narrative : null,

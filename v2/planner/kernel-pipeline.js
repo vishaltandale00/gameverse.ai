@@ -125,7 +125,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // it is a Selection. Remove once outline.js declares its result.
     let selection = /** @type {Selection} */ (agency.selection);
     timings.selectMs = ms(t);
-    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, completeness: selection.completeness || null, agency: agency.agency, agencyAttempts: agency.attempts });
+    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, build: /** @type {any} */ (selection).build || null, agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider || 'lexical', spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description), agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('outlining', { model: spec?.model || 'procedural' });
     t = performance.now();
