@@ -10,11 +10,17 @@
 //   2. A worklist of mechanics: the core loop mechanic named by the play spec (core.loop, else the primary idea's first
 //      core mechanic), the other core mechanics, then supporting and flavour ones. For each:
 //      - candidates: cards whose declared loop serves the play spec's interaction (select.js declaredFit's structural
-//        part), that compose with the collection so far (compose-check, resolve:true) without a new failure or type
-//        hole, ranked by their declarations (declaredFit, then lexical relevance); at most MAX_CANDIDATES;
-//      - ONE small strict question: pick one candidate id (enum) or "none", with a one-line why;
-//      - the pick is added with its requirements closure (that card only), the whole collection is checked again
-//        (checkComposition) and its adapters resolved (resolveAdapters); the card's content contracts are recorded;
+//        part), each offered as a single card or as a minimal BUNDLE (bundles.js formBundle): the card with the
+//        companions it only composes alongside (its requires.primitives closure, the companions its declarations name,
+//        the adapter instances projecting it onto the space), at most MAX_BUNDLE primitives. Every option composes with
+//        the collection so far (compose-check, resolve:true) without a new failure or type hole. Ranked by their
+//        declarations (declaredFit, less BUNDLE_PENALTY per extra primitive, then lexical relevance); at most
+//        MAX_CANDIDATES. A bundle whose companion is the best declared fit of a later mechanic covers it too;
+//      - ONE small strict question: pick one option id (the seed card's id, enum) or "none", with a one-line why; each
+//        option is labelled with its members and why each extra one is there;
+//      - the pick is added with its bundle, the whole collection is checked again (checkComposition) and its adapters
+//        resolved (resolveAdapters); the members' content contracts are recorded; the mechanics it covers are marked
+//        covered and skipped in the worklist (outcome 'covered');
 //      - a pick that fails a check is dropped and the model is asked again with the exact problem, over the candidates
 //        left; when none fits (or the model says none) the mechanic is a gap with the primitive or adapter signature.
 //   Every step is logged (mechanic, candidates, asks, checks, outcome) in the selection report.
@@ -29,6 +35,7 @@ import { isAvatar, mashupSides } from './play-spec.js';
 import { declaredFit, servesInteraction, relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
 import { parseReply } from './writer.js';
+import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
 import { str, isStr, isObj, prop, messageOf } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -41,15 +48,24 @@ import { str, isStr, isObj, prop, messageOf } from '../kernel/guards.js';
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
 /** @typedef {import('./select.js').SpaceChoice} SpaceChoice */
 /** @typedef {import('./select.js').Gap} Gap */
-/** A candidate offered for a mechanic: its id, declared-fit score and the space configuration it composes on. @typedef {{ id: string, score: number, variant: number }} BuildCandidate */
+/**
+ * A candidate offered for a mechanic: its id (the seed card's, the enum value), declared-fit score (less the bundle
+ * penalty), the space configuration it composes on, its members (the seed first), the companions and adapter instances
+ * beyond the seed with why each is there, and the later mechanics a companion covers.
+ * @typedef {{ id: string, score: number, variant: number, members: string[], extra: import('./bundles.js').Companion[], adapters: import('./bundles.js').BundleAdapter[], covers: Array<{ mechanic: string, by: string }> }} BuildCandidate
+ */
 /** One model question and what came of it. @typedef {{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }} BuildAsk */
 /**
- * The checks run after a pick: the closure it brought, the whole-collection verdict, the adapters resolved and the content
- * contracts recorded. @typedef {{ closure: string[], compose: string, adapters: string[], contracts: string[], variant: Record<string, unknown> }} BuildChecks
+ * The checks run after a pick: the primitives its bundle brought beyond the pick (closure), the whole bundle, the
+ * whole-collection verdict, the adapters resolved and the content contracts recorded.
+ * @typedef {{ closure: string[], bundle: string[], compose: string, adapters: string[], contracts: string[], variant: Record<string, unknown> }} BuildChecks
  */
 /**
- * One worklist step. @typedef {{ mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
- *   checks: BuildChecks | null, outcome: 'added' | 'reused' | 'gap', primitive: string | null, collection: string[], ms: number }} BuildStep
+ * One worklist step. A step whose bundle covers later mechanics lists them (covers); a covered mechanic's own step has
+ * outcome 'covered', no question, and names the step that covered it (coveredBy).
+ * @typedef {{ mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
+ *   checks: BuildChecks | null, outcome: 'added' | 'reused' | 'gap' | 'covered', primitive: string | null, collection: string[], ms: number,
+ *   covers?: string[], coveredBy?: string }} BuildStep
  */
 /** The space step. @typedef {{ candidates: Array<{ use: string, score: number }>, asked: boolean, pick: string, why: string }} SpaceStep */
 /**
@@ -153,6 +169,12 @@ const keysOf = r => ({
 /** What `after` has that `before` did not. @param {ReturnType<typeof keysOf>} before @param {ReturnType<typeof keysOf>} after @returns {string[]} */
 const added = (before, after) => [...[...after.failures].filter(([k]) => !before.failures.has(k)).map(([, m]) => m), ...[...after.holes].filter(([k]) => !before.holes.has(k)).map(([, m]) => `type hole: ${m}`)];
 
+/**
+ * Candidate order: related first (the card's own declarations speak of the mechanic), then the declared fit (less the
+ * bundle penalty), then lexical relevance, then id. @param {{ id: string, score: number, related: number, rel: number }} a @param {typeof a} b
+ */
+const order = (a, b) => b.related - a.related || b.score - a.score || b.rel - a.rel || a.id.localeCompare(b.id);
+
 /** Conflicts inside a collection (card.conflicts), as problem lines. @param {RegistryLike} registry @param {string[]} ids */
 const conflictsIn = (registry, ids) => ids.flatMap(id => (cardOf(registry, id)?.conflicts || []).filter(c => c !== id && ids.includes(c)).map(c => `'${id}' conflicts with '${c}' (card.conflicts)`));
 
@@ -250,48 +272,98 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   const pool = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id));
 
   /**
-   * Can `id` join the collection: the space configuration (current first) on which the collection plus it has no new
-   * failure or type hole, or the problems on the current one. @param {string} id
+   * Can `ids` join the collection together: the space configuration (current first) on which the collection plus them
+   * has no new failure or type hole, or the problems on the current one. @param {string[]} ids
    * @returns {{ ok: true, variant: number } | { ok: false, why: string }}
    */
-  const composes = id => {
-    if (systems.includes(id)) return { ok: true, variant };
+  const composes = ids => {
+    const more = ids.filter(id => !systems.includes(id));
+    if (!more.length) return { ok: true, variant };
     /** @type {string[]} */
     let first = [];
     for (const v of [variant, ...variants.map((_, i) => i).filter(i => i !== variant)]) {
-      const extra = added(baseline, keysOf(compose([...systems, id], v)));
+      const extra = added(baseline, keysOf(compose([...systems, ...more], v)));
       if (!extra.length) return { ok: true, variant: v };
       if (v === variant) first = extra;
     }
     return { ok: false, why: first.slice(0, 3).join('; ') };
   };
+  /** The adapters the whole collection plus `ids` resolves on a space configuration. @param {string[]} ids @param {number} v */
+  const resolveWith = (ids, v) => resolveAdapters({ spaces: [spaceOn(v)], systems: [...systems, ...ids.filter(id => !systems.includes(id))] }, registry, { documented });
 
-  for (const m of worklist(decomposition)) {
-    const t0 = performance.now();
-    // Candidates: a declared loop that serves the interaction (and is not another interaction's game-owning loop the
-    // spec does not join), ranked by declarations; only those that compose with the collection are offered.
+  /** @typedef {{ id: string, score: number, related: number, rel: number }} Fit */
+  /** @type {Map<string, Fit[]>} */
+  const fitsMemo = new Map();
+  /**
+   * The cards whose declared loop fits a mechanic, best first: a declared loop that serves the interaction (and is not
+   * another interaction's game-owning loop the spec does not join), ranked by declarations. @param {Mechanic} m @returns {Fit[]}
+   */
+  const fitsFor = m => {
+    const memo = fitsMemo.get(m.id); if (memo) return memo;
     const own = joined(m);
     const playedAs = own ? null : interaction;
-    const fits = pool.map(card => {
+    const out = pool.map(card => {
       const loop = cardLoop(card);
       if (!loop || (!loop.verbs.length && !loop.progress.length) || !servesInteraction(card, playedAs)) return null;
       if (playedAs && loop.interaction && loop.interaction !== playedAs && endsGame(loop.win)) return null;
       // related: the card's own declarations (loop verbs, progress, names) speak of the mechanic, before how it is played.
       return { id: card.id, score: declaredFit(m, card, { interaction: playedAs, joined: own }) ?? 0, related: (declaredFit(m, card, { joined: own }) ?? 0) > 0 ? 1 : 0, rel: relevance(m, card) };
-    }).filter(/** @returns {x is { id: string, score: number, related: number, rel: number }} */ x => x !== null)
-      .sort((a, b) => b.related - a.related || b.score - a.score || b.rel - a.rel || a.id.localeCompare(b.id));
-    /** @type {BuildCandidate[]} */
-    const candidates = [];
+    }).filter(/** @returns {x is Fit} */ x => x !== null).sort(order);
+    fitsMemo.set(m.id, out);
+    return out;
+  };
+  const mechanicsInOrder = worklist(decomposition);
+  /** Mechanics a step's bundle already covered: mechanic id -> the covering step's mechanic and member. @type {Map<string, { by: string, primitive: string }>} */
+  const covered = new Map();
+  /**
+   * The later mechanics a bundle's companions cover (never by the seed itself): a companion whose declared loop does what
+   * the mechanic says (its verbs or progress events name it) and that is that mechanic's best declared fit.
+   * @param {string[]} extras @param {number} at the current worklist index @returns {Array<{ mechanic: string, by: string }>}
+   */
+  const coverage = (extras, at) => {
+    /** @type {Array<{ mechanic: string, by: string }>} */
+    const out = [];
+    for (const m2 of mechanicsInOrder.slice(at + 1)) {
+      if (covered.has(m2.id)) continue;
+      const by = extras.find(id => {
+        const card = pool.find(c => c.id === id);
+        return card && fitsFor(m2)[0]?.id === id && (declaredFit(m2, card) ?? 0) - relevance(m2, card) > 0;
+      });
+      if (by) out.push({ mechanic: m2.id, by });
+    }
+    return out;
+  };
+
+  for (const [at, m] of mechanicsInOrder.entries()) {
+    const t0 = performance.now();
+    const cover = covered.get(m.id);
+    if (cover) {
+      // An earlier step's bundle covers this mechanic: no question, logged as covered.
+      steps.push({ mechanic: m.id, importance: m.importance, candidates: [], rejected: [], asks: [], checks: null, outcome: 'covered', primitive: cover.primitive, coveredBy: cover.by, collection: [...systems], ms: Math.round(performance.now() - t0) });
+      continue;
+    }
+    // Candidates: each fitting card as a single card or the smallest bundle that composes with the collection (bundles.js),
+    // ranked by declarations less a penalty per extra primitive; only options that compose are offered.
+    /** @type {Array<BuildCandidate & { related: number, rel: number }>} */
+    let ranked = [];
     /** @type {Array<{ id: string, why: string }>} */
     const rejected = [];
-    for (const f of fits) {
-      if (candidates.length >= MAX_CANDIDATES) break;
-      const c = composes(f.id);
-      if (c.ok) candidates.push({ id: f.id, score: f.score, variant: c.variant }); else rejected.push({ id: f.id, why: c.why });
+    for (const f of fitsFor(m)) {
+      // Fits come best first and a bundle only loses score: once MAX_CANDIDATES are kept, a fit that cannot outrank the
+      // last of them ends the search.
+      if (ranked.length >= MAX_CANDIDATES && order(f, ranked[MAX_CANDIDATES - 1]) >= 0) break;
+      const b = formBundle({ registry, seed: f.id, systems, space: use, adapters, composes, resolve: resolveWith });
+      if (!b.ok) { rejected.push({ id: f.id, why: b.why }); continue; }
+      const size = b.members.length + b.adapters.length;
+      ranked.push({ id: f.id, score: +(f.score - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters,
+        covers: size > 1 ? coverage(b.extra.map(x => x.id), at) : [], related: f.related, rel: f.rel });
+      ranked = ranked.sort(order).slice(0, MAX_CANDIDATES);
     }
+    /** @type {BuildCandidate[]} */
+    const candidates = ranked.map(({ related, rel, ...c }) => c);
     // The space itself may be what a mechanic is (travelling between its places): offered when its card relates to it.
     const host = registry.cards().find(c => c.id === use);
-    if (host && candidates.length < MAX_CANDIDATES && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant });
+    if (host && candidates.length < MAX_CANDIDATES && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant, members: [use], extra: [], adapters: [], covers: [] });
     /** @type {BuildStep} */
     const step = { mechanic: m.id, importance: m.importance, candidates, rejected: rejected.slice(0, 6), asks: [], checks: null, outcome: 'gap', primitive: null, collection: [], ms: 0 };
     steps.push(step);
@@ -306,8 +378,8 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       const offered = open.map(c => c.id);
       const a = await ask({ name: 'pick_primitive', field: 'pick', options: [...offered, 'none'],
         extra: { spec: { type: 'string', description: 'when pick is "none": what a new primitive must do for this mechanic (its rules, inputs, state, events, how it is won), precise enough to build it; else ""' } },
-        system: 'You build a game from composable primitives, one mechanic at a time. Pick the ONE listed primitive that implements this mechanic as the game needs it, or "none" when none of them does (a related but different mechanic is "none"). Every listed primitive already composes with the collection so far.',
-        user: `${premise}\nSpace: ${use} (${role})\nCollection so far: ${systems.join(', ') || '(empty)'}\n\nMechanic ${m.id} (${m.importance}): ${m.description}\n\nCandidates:\n${open.map(c => { const card = cardOf(registry, c.id); const loop = cardLoop(card); return `- ${c.id}: ${String(card?.intent || '').replace(/\s+/g, ' ').slice(0, 180)}${loop?.verbs.length ? ` (verbs: ${loop.verbs.join(', ')})` : ''}`; }).join('\n')}${problem ? `\n\n${problem}` : ''}` });
+        system: 'You build a game from composable primitives, one mechanic at a time. Pick the ONE listed option (by its first id) that implements this mechanic as the game needs it, or "none" when none of them does (a related but different mechanic is "none"). An option written "a + b (why) + ..." is a bundle: the primitive with the companions it only works with; picking it adds them all. Every listed option already composes with the collection so far.',
+        user: `${premise}\nSpace: ${use} (${role})\nCollection so far: ${systems.join(', ') || '(empty)'}\n\nMechanic ${m.id} (${m.importance}): ${m.description}\n\nCandidates:\n${open.map(c => { const card = cardOf(registry, c.id); const loop = cardLoop(card); return `- ${bundleLabel(c)}: ${String(card?.intent || '').replace(/\s+/g, ' ').slice(0, 180)}${loop?.verbs.length ? ` (verbs: ${loop.verbs.join(', ')})` : ''}${c.covers.length ? ` [also covers ${c.covers.map(x => `${x.mechanic} via ${x.by}`).join(', ')}]` : ''}`; }).join('\n')}${problem ? `\n\n${problem}` : ''}` });
       /** @type {BuildAsk} */
       const asked = { offered, pick: a.pick, why: a.why, ok: false };
       step.asks.push(asked);
@@ -317,9 +389,9 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
         break;
       }
       const cand = /** @type {BuildCandidate} */ (open.find(c => c.id === a.pick));
-      // The pick with its closure, checked as a whole collection, its adapters resolved (the space is already in it).
+      // The pick with its bundle, checked as a whole collection, its adapters resolved (the space is already in it).
       const have = systems.includes(a.pick) || a.pick === use;
-      const closure = have ? [] : closureOf(registry, a.pick, systems);
+      const closure = have ? [] : cand.members.slice(1).filter(id => !systems.includes(id));
       const next = have ? systems : [...systems, a.pick, ...closure];
       const whole = compose(next, cand.variant);
       const fresh = [...conflictsIn(registry, next), ...added(baseline, keysOf(whole))];
@@ -331,7 +403,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       if (why) {
         asked.problem = why;
         open = open.filter(c => c.id !== a.pick);
-        problem = `Your pick ${a.pick} was dropped: ${why}. Pick another listed primitive, or "none".`;
+        problem = `Your pick ${cand.members.length > 1 ? cand.members.join(' + ') : a.pick} was dropped: ${why}. Pick another listed option, or "none".`;
         log(`build ${m.id}: ${a.pick} dropped (${why})`);
         continue;
       }
@@ -341,9 +413,18 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       adapters = r?.adapters || []; bind = r?.bind || {};
       const own = [a.pick, ...closure].flatMap(id => contractsOf(registry, id).map(c => c.key));
       for (const k of own) if (!contracts.includes(k)) contracts.push(k);
-      step.checks = { closure, compose: r?.verdict || whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} };
+      step.checks = { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: r?.verdict || whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} };
       step.outcome = reused ? 'reused' : 'added'; step.primitive = a.pick;
-      mapping[m.id] = { primitives: [a.pick], candidates: candidates.map(({ id, score }) => ({ id, score })), why: a.why };
+      // The mechanic maps to the pick and the companions it needs jointly (its requirements closure stays the pick's);
+      // the later mechanics a companion covers map to that companion and are skipped in the worklist.
+      const covering = new Set(cand.covers.map(x => x.by));
+      const joint = cand.extra.filter(x => x.kind === 'declared' && !covering.has(x.id)).map(x => x.id);
+      mapping[m.id] = { primitives: [a.pick, ...joint], candidates: candidates.map(({ id, score }) => ({ id, score })), why: a.why };
+      for (const x of cand.covers) {
+        covered.set(x.mechanic, { by: m.id, primitive: x.by });
+        mapping[x.mechanic] = { primitives: [x.by], candidates: [], why: `covered by the ${cand.members.join(' + ')} bundle picked for ${m.id}` };
+      }
+      if (cand.covers.length) step.covers = cand.covers.map(x => x.mechanic);
       break;
     }
     if (!step.primitive) {
