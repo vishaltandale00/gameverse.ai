@@ -214,7 +214,8 @@ export function sampleCard(id, { corpus, registry, logic, limit = 12 }) {
       tryValue('components', k, at, value, d => { d.content ||= {}; d.content.archetypes = [...(d.content.archetypes || []), { id: 'sampled_probe', name: 'Probe', components: { [k]: value } }]; });
     }
   }
-  // Data: each value of an entry of each section the card declares, as the section's first entry.
+  // Data: each value of an entry of each section the card declares, added as the section's first entry (the entries
+  // the document has stay: a sampled reference to the section's own kind names one of them).
   for (const section of Object.keys(card.data || {})) {
     const shape = sectionShape(registry, usesOf(base), section).shape;
     if (!shape) continue;
@@ -228,7 +229,7 @@ export function sampleCard(id, { corpus, registry, logic, limit = 12 }) {
       tryValue('data', section, at, value, d => {
         d[root] ||= {};
         const cur = d[root][key];
-        if (shape.type === 'list') d[root][key] = [value, ...(Array.isArray(cur) ? cur.slice(1) : [])];
+        if (shape.type === 'list') d[root][key] = [value, ...(Array.isArray(cur) ? cur : [])];
         else d[root][key] = { ...(isObj(cur) ? cur : {}), sampled: value };
       });
     }
