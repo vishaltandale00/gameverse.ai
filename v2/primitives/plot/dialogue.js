@@ -47,6 +47,18 @@ export default {
     },
     provides: { events: ['dialogue_error', 'dialogue_start', 'dialogue_end', 'dialogue_line', 'choice_made', 'skill_check', 'said', 'said:*'], services: ['dialogue'], actions: ['choose'] },
     reads: ['plot.dialogue'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.dialogue': { type: 'object', values: { type: 'object', fields: {
+      speaker: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, title: { type: 'string' }, start: { type: 'string', required: true, effect: 'a node id' },
+      nodes: { type: 'object', values: { type: 'object', fields: {
+        who: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, say: { type: 'string', required: true }, if: { type: 'predicate' }, else: { type: 'string', effect: 'a node id' },
+        do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, end: { type: 'boolean' }, once: { type: 'boolean' }, sec: { type: 'number', min: 0 },
+        choices: { type: 'list', of: { type: 'object', fields: {
+          id: { type: 'string' }, text: { type: 'string', required: true }, if: { type: 'predicate' }, do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, once: { type: 'boolean' }, end: { type: 'boolean' },
+          check: { type: 'object', fields: { stat: { type: 'string' }, var: { type: 'string' }, gte: { type: 'number', required: true }, roll: { type: 'string', options: Object.keys(ROLLS) }, bonus: { type: 'number' }, fail: { type: 'string', effect: 'a node id' }, failDo: { type: 'effects' } } },
+        } } },
+      } } },
+    } } } },
   },
   logic(logic) {
     logic.predicate('said', { refs: p => [['dialogue', p.said]], test: (p, rt) => { const s = st(rt).said[p.said]; return Boolean(s && (p.node === undefined ? Object.keys(s).length : s[p.node])); } });
@@ -205,8 +217,8 @@ export default {
     rt.options(rt => {
       const a = st(rt).active, n = node(a); if (!a || !n) return [];
       const steps = !config.interruptible && a.wait > 0 ? a.wait + 1 : 1;
-      if (!n.choices?.length) return config.autoAdvance ? [{ label: `listen ${a.dialogue}`, actions: {}, steps: Math.max(1, a.wait + 1) }] : [{ label: `continue ${a.dialogue}.${a.node}`, actions: { choose: 'next' }, steps }];
-      return openChoices(a).map(({ c, key }) => ({ label: `choose ${a.dialogue}.${key}: ${c.text}`, actions: { choose: key }, steps }));
+      if (!n.choices?.length) return config.autoAdvance ? [{ label: `listen ${a.dialogue}`, text: 'Listen', actions: {}, steps: Math.max(1, a.wait + 1) }] : [{ label: `continue ${a.dialogue}.${a.node}`, text: 'Continue', actions: { choose: 'next' }, steps }];
+      return openChoices(a).map(({ c, key }) => ({ label: `choose ${a.dialogue}.${key}: ${c.text}`, text: c.text, actions: { choose: key }, steps }));
     });
   },
 };

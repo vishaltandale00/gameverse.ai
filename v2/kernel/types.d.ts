@@ -273,12 +273,21 @@ export interface RegistryLike {
 // ---------- §5 logic ----------
 export type Predicate = Record<string, any>;
 export interface Effect { do: string; [field: string]: any }
+/**
+ * A problem code a vocabulary kind's check emits (beyond the kernel's KERNEL_CODES), declared with the kind: the fields
+ * it constrains and a minimal example (the predicate or effect) whose check emits exactly that code.
+ */
+export interface KindCode { code: string; fields: string[]; message?: string; example: unknown }
 export interface PredicateDef {
+  /** Every code `check` emits beyond the kernel's (kernel/rules.js). */
+  codes?: KindCode[];
   check?(p: Predicate, path: string, errors: Problem[], ctx: any): void;
   refs?(p: Predicate): Array<[string, unknown]>;
   test(p: Predicate, rt: Runtime, context: Context): boolean;
 }
 export interface EffectDef {
+  /** Every code `check` emits beyond the kernel's (kernel/rules.js). */
+  codes?: KindCode[];
   check?(e: Effect, path: string, errors: Problem[], ctx: any): void;
   refs?(e: Effect): Array<[string, unknown]>;
   run(e: Effect, rt: Runtime, context: Context): void;

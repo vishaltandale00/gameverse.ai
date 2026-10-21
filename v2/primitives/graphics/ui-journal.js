@@ -9,8 +9,8 @@ import { portrait, portraitColor } from './ui-portrait.js';
 import { createSheet } from './ui-sheet.js';
 import * as S from './ui-sources.js';
 
-export const TABS = ['quests', 'lore', 'bestiary', 'characters', 'notes'];
-const LABEL = { quests: 'Quests', lore: 'Lore', bestiary: 'Bestiary', characters: 'People', notes: 'Notes' };
+export const TABS = ['quests', 'clues', 'lore', 'bestiary', 'characters', 'notes'];
+const LABEL = { quests: 'Quests', clues: 'Clues', lore: 'Lore', bestiary: 'Bestiary', characters: 'People', notes: 'Notes' };
 const KIND = { main: 'Main quest', side: 'Side quest', contract: 'Contract', bounty: 'Bounty', challenge: 'Challenge' };
 const CREATURES = new Set(['enemy', 'boss', 'creature', 'mount']);
 const entryTab = e => (/bestiary|creature|enemy/.test(e.tag || '') ? 'bestiary' : /note/.test(e.tag || '') ? 'notes' : /character|person/.test(e.tag || '') ? 'characters' : 'lore');
@@ -45,6 +45,11 @@ export function journalModel(rt, config) {
       sections.push({ id: 'available', title: 'Available', entries: by('available').map(entry) });
       sections.push({ id: 'complete', title: 'Completed', entries: by('complete').map(entry) });
       sections.push({ id: 'failed', title: 'Failed', entries: by('failed').map(entry) });
+    } else if (id === 'clues') {
+      // The case so far (plot.investigation): the clues found and the conclusions drawn, read from its service and state.
+      const found = new Set(S.svc(rt, 'investigation', 'clues') || []), deduced = rt.state.prim['plot.investigation']?.deduced || {};
+      sections.push({ id: 'found', title: 'Found', entries: (doc.plot?.clues || []).filter(c => found.has(c.id)).map(c => ({ key: `k:${c.id}`, title: c.title || titleCase(c.id), sub: '', detail: { kicker: 'Clue', title: c.title || titleCase(c.id), text: c.text || '' } })) });
+      sections.push({ id: 'concluded', title: 'Concluded', entries: (doc.plot?.deductions || []).filter(d => deduced[d.id]).map(d => ({ key: `d:${d.id}`, title: d.title || titleCase(d.id), sub: d.wrong ? 'wrong' : '', state: d.wrong ? 'failed' : 'complete', detail: { kicker: d.wrong ? 'A wrong theory' : 'Conclusion', title: d.title || titleCase(d.id), text: d.conclusion || '' } })) });
     } else if (id === 'lore' || id === 'notes') {
       const known = (doc.plot?.entries || []).filter(e => entryTab(e) === id && S.known(rt, e));
       const groups = new Map();
