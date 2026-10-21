@@ -174,3 +174,14 @@ test('a regression is a proof: an unfinished search never counts as one', () => 
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: true }), true);
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: false }), false, 'an unfinished search is not a proof');
 });
+
+test('model outline: data the model writes that no chosen primitive reads is left out and recorded; no primitive is added for it', async () => {
+  const { d, sel } = plan();
+  const skeleton = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc);
+  const extra = { ...structuredClone(skeleton), plot: { ...structuredClone(skeleton.plot), quests: [{ id: 'q', title: 'Q', steps: [] }] } };
+  const r = await writeOutline({ forms: 'single', writer: fakeWriter([extra]), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, verify: false });
+  assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 2)));
+  assert.equal(r.doc.plot.quests, undefined);
+  assert.deepEqual(r.doc.systems.map(s => s.use).sort(), [...skeleton.systems.map(s => s.use)].sort(), 'the collection is code\'s');
+  assert.ok(r.rounds.some(x => x.unread?.includes('plot.quests')), JSON.stringify(r.rounds));
+});

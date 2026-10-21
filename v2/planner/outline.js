@@ -49,7 +49,7 @@ import { isObj, isList, isStr, obj, list, objects, str, prop } from '../kernel/g
 /**
  * One entry of writeOutline's round log.
  * @typedef {{ kind: string, ok?: boolean, errors?: number, error?: string, codes?: string[], fixes?: number, form?: boolean, worldAdded?: string[], placed?: number,
- *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number, checks?: FormCheck[] }} OutlineRound
+ *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number, checks?: FormCheck[], unread?: string[] }} OutlineRound
  */
 /** A problem as repair feedback reads it (preflight, boot, verification, content). @typedef {{ code: string, path?: string, message: string, hint?: unknown }} ProblemLike */
 /** @typedef {import('./content.js').ContentProblem} ContentProblem */
@@ -437,8 +437,10 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
     }
     // A reply in the document's own shape (older prompts, some writers) is a draft as is; otherwise it is the form.
     const draft = draftOf(value);
-    // Data nobody reads (quests with no quest runner): add the primitive that reads it.
-    for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
+    // Data nobody reads (quests with no quest runner) is no part of the game: the collection is code's, so no primitive
+    // is added for what the model wrote beyond the form; the section is left out and the round records it.
+    const unreadSections = unreadReaders(draft, registry).map(u => u.section);
+    for (const key of unreadSections) { const [root, k] = key.split('.'); const sec = prop(draft, root); if (isObj(sec)) delete sec[k]; }
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
     // Every primitive the draft uses is kept: repair fixes fields; what it cannot fix goes back as a problem.
     const keep = new Set([...core, ...list(draft.systems).map(x => prop(x, 'use')).filter(isStr).filter(id => registry.has(id))]);
@@ -475,6 +477,7 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
     if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
     /** @type {OutlineRound} */
     const entry = { kind: round ? 'model_repair' : 'model', ...(round === 0 && checks.length ? { checks } : {}), ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}${c.fields ? `[${c.fields}]` : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    if (unreadSections.length) entry.unread = unreadSections;
     rounds.push(entry);
     last = repaired;
     /** @type {ProblemLike[]} */
