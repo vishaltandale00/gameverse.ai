@@ -79,7 +79,7 @@ export async function verify(doc, registry, logic, opts = {}) {
   if (opts.strategies !== false) {
     report.strategies = await time('strategies', () => guard('strategies', () => {
       const make = maker(nd, registry, logic), probe = make(seed);
-      const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id };
+      const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
       const ran = [];
       chosen.forEach(({ s, reason }, i) => {

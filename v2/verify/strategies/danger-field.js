@@ -83,7 +83,11 @@ export default {
     const b = makeBudget({ ms: budgetMs, steps: maxSteps });
     const goals = [...plotZones(ctx.doc).keys()];
     const play = seed => {
-      const rt = ctx.make(seed), total = collectibles(rt).length;
+      // Pickups and threats placed by spawn rules arrive after frame 0: idle until targets exist (up to 1 s).
+      const rt = ctx.make(seed);
+      for (let i = 0; i < 60 && rt.state.status === 'playing' && !collectibles(rt).length; i++) rt.step({});
+      hold(rt, {}, 2);
+      const total = collectibles(rt).length;
       let deaths = 0, hunted = 0, lastHp = vitality(rt).hp, lastLives = vitality(rt).lives, why = '';
       const counts = {};
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {

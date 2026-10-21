@@ -73,7 +73,15 @@ export default {
   detect(ctx) { const rt = ctx.make(ctx.seed); return Boolean(rt.player()) && foes(rt).some(e => e.components.ai) && rt.actions().length > 0; },
   run(ctx, { matchFrames = 3600, seeds = [1, 2, 3, 4, 5, 6], budgetMs = 2000, maxSteps = Infinity, reach } = {}) {
     const b = makeBudget({ ms: budgetMs, steps: maxSteps });
-    const rt = ctx.make(ctx.seed), problems = [], proven = [];
+    // Opponents spawned by rules arrive after frame 0, and round rules (var round.live) hold fighters through an intro: idle until both are ready (up to 10 s).
+    const ready = w => {
+      let i = 0; const go = () => w.state.status === 'playing' && i++ < 600;
+      while (go() && !livingFoes(w).length) w.step({});
+      hold(w, {}, 2); // rules that start on the opponent's arrival (a match) get their first step
+      while (go() && w.state.vars['round.live'] === 0) w.step({});
+      return w;
+    };
+    const rt = ready(ctx.make(ctx.seed)), problems = [], proven = [];
     const { verbs, declared } = combatVerbs(ctx, rt);
     // 1. Every combat verb connects.
     const hits = verbs.filter(v => connects(rt, v));
@@ -81,7 +89,7 @@ export default {
     else if (declared) for (const v of verbs.filter(x => !hits.includes(x))) problems.push(problem('whiff', 'systems', `combat verb '${v}' never damages an opponent beside the player`, { severity: 'warning', hint: 'raise its reach or fix its hitbox' }));
     if (hits.length === verbs.length) proven.push(`every combat verb connects (${verbs.join(', ')})`);
     // 2. The AI finishes against an idle player.
-    const idle = ctx.make(ctx.seed), hp0 = vitality(idle).hp;
+    const idle = ready(ctx.make(ctx.seed)), hp0 = vitality(idle).hp;
     let damaged = false;
     for (let f = 0; f < matchFrames && idle.state.status === 'playing' && !b.over(); f++) { hold(idle, {}, 1, b); const v = vitality(idle); if (v.hp !== null && hp0 !== null && v.hp < hp0) damaged = true; if (!v.alive) break; }
     if (!damaged && idle.state.status === 'playing') problems.push(problem('stalemate', 'systems', `the opponents never damage an idle player in ${Math.round(matchFrames / 60)} s`, { severity: 'warning', hint: 'give the AI an attack it uses in range, or raise its aggression' }));
@@ -89,9 +97,11 @@ export default {
     // 3. A scripted player beats the AI sometimes.
     const range = reach ?? 1.2 * (rt.player()?.components.body?.size?.[0] ?? 1);
     const play = seed => {
-      const w = ctx.make(seed), policy = scriptedFighter(hits.length ? hits : verbs, { reach: range });
-      while (w.state.status === 'playing' && w.state.frame < matchFrames && !b.over() && livingFoes(w).length && vitality(w).alive) hold(w, policy(w), 1, b);
-      const won = w.state.status === 'won' || (!livingFoes(w).length && vitality(w).alive);
+      const w = ready(ctx.make(seed)), fought = livingFoes(w).length > 0, policy = scriptedFighter(hits.length ? hits : verbs, { reach: range });
+      // Fight while opponents stand; between rounds (KO, round end, next round) wait up to 10 s for the match to go on or end.
+      let idleFrames = 0;
+      while (w.state.status === 'playing' && w.state.frame < matchFrames && !b.over() && vitality(w).alive && idleFrames < 600) { if (livingFoes(w).length) { idleFrames = 0; hold(w, policy(w), 1, b); } else { idleFrames++; hold(w, {}, 1, b); } }
+      const won = w.state.status === 'won' || (fought && !livingFoes(w).length && vitality(w).alive);
       return { seed, won, status: w.state.status, frames: w.state.frame, foesLeft: livingFoes(w).length, hp: vitality(w).hp, budget: !won && w.state.status === 'playing' && Boolean(b.hit) };
     };
     const r = multiSeed(play, { seeds, passRate: 1 / seeds.length, b });

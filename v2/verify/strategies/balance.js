@@ -35,12 +35,13 @@ export default {
     const play = seed => {
       const rt = ctx.make(seed);
       untilDecision(rt, 600, b);
-      let turns = 0;
-      while (rt.state.status === 'playing' && turns < maxTurns && livingFoes(rt).length && vitality(rt).alive && !b.over()) {
+      // Battles whose opponents are not entities with health (creature parties inside a battle service) run while options last.
+      let turns = 0; const entityFoes = livingFoes(rt).length > 0;
+      while (rt.state.status === 'playing' && turns < maxTurns && (entityFoes ? livingFoes(rt).length : rt.availableOptions().length) && vitality(rt).alive && !b.over()) {
         const i = chooseTurn(rt, score, b); if (i < 0) break;
         simulateOption(rt, rt.snapshot(), i, { b }); turns++;
       }
-      const won = rt.state.status === 'won' || (!livingFoes(rt).length && vitality(rt).alive);
+      const won = rt.state.status === 'won' || (entityFoes && !livingFoes(rt).length && vitality(rt).alive);
       const lost = rt.state.status === 'lost' || !vitality(rt).alive;
       return { seed, won, lost, turns, stalemate: !won && !lost && turns >= maxTurns, budget: !won && !lost && turns < maxTurns && Boolean(b.hit), hp: ownHp(rt) };
     };
