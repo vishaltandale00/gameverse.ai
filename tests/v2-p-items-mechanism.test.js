@@ -24,7 +24,7 @@ const castle = () => doc({ combat: true,
   content: {
     items: [{ id: 'gem', name: 'Gem' }, { id: 'bomb', name: 'Bomb' }],
     blocks: [{ id: 'stone', name: 'Stone' }],
-    tables: [{ id: 'crate_loot', rolls: 1, entries: [{ item: 'gem', weight: 1 }] }],
+    tables: [{ id: 'crate_loot', rolls: [1, 1], entries: [{ item: 'gem', weight: 1 }] }],
     archetypes: [{ id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, health: { max: 50 } } }],
   },
 });

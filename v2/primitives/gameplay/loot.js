@@ -1,12 +1,13 @@
 // Loot tables (content.tables) for drops, chests, fishing and forage:
-//   { id, rolls: [a,b] | n, chance?: 0..1, pity?: n, unique?: b, always?: [{item,count}],
-//     entries: [{ item | table | null (nothing), weight, count?: [a,b] | n, when?: pred }] }
+//   { id, rolls: [a,b], chance?: 0..1, pity?: n, unique?: b, always?: [{item,count}],
+//     entries: [{ item | table | null (nothing), weight, count?: [a,b], when?: pred }] } (card.data)
 // `when` is tested with self = the dropper. `chance` gates the whole drop and a
 // pity meter guarantees one after `pity` misses (the shmup drop meter). Drops go
 // to a bag or into the world as `pickup` entities that a magnet draws to the
 // player. Entities with a `loot` component (table id) drop when they die.
 import { give, room } from './inventory.js';
-import { roll, pick, whoKey, isVec, center, len, sub, pull, boxOf, boxesTouch } from './items-lib.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
+import { RANGE, roll, pick, whoKey, isVec, center, len, sub, pull, boxOf, boxesTouch } from './items-lib.js';
 
 const KEY = 'gameplay.loot';
 const tables = rt => { if (rt.caches.lootDoc !== rt.doc) { rt.caches.lootDoc = rt.doc; rt.caches.loot = new Map((rt.doc.content?.tables || []).map(t => [t.id, t])); } return rt.caches.loot; };
@@ -55,6 +56,26 @@ export default {
     provides: { events: ['loot_dropped', 'loot_dropped:*', 'picked_up', 'picked_up:*'], services: ['loot'] },
     reads: ['content.tables', 'content.archetypes'],
     defines: [{ kind: 'table', at: 'content.tables' }],
+    // The section it owns, whole.
+    data: { 'content.tables': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', pattern: ID_PATTERN, required: true },
+      rolls: { ...RANGE, effect: 'entries rolled per drop, [min, max] (default [1, 1])' },
+      chance: { type: 'number', min: 0, max: 1, effect: 'chance the table drops at all' },
+      pity: { type: 'integer', min: 1, effect: 'a drop is guaranteed after this many misses' },
+      unique: { type: 'boolean', effect: 'an entry is rolled at most once per drop' },
+      always: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: RANGE } }, effect: 'dropped every time' },
+      entries: { type: 'list', required: true, of: { type: 'object', fields: {
+        item: { type: 'ref', to: 'item', effect: 'the item (neither item nor table: nothing)' }, table: { type: 'ref', to: 'table', effect: 'a nested table rolled instead' },
+        weight: { type: 'number', min: 0 }, count: RANGE, when: { type: 'predicate', effect: 'rollable only while it holds (self = the dropper)' },
+      } } },
+    } } } },
+    // Shapes of the archetype components this primitive owns.
+    components: {
+      loot: { type: 'ref', to: 'table', effect: 'the table it drops when it dies (or when looted)' },
+      pickup: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } }, effect: 'a world pickup: touching it takes the item' },
+      magnet: { type: 'number', min: 0, effect: 'a pickup: magnet radius (default the magnet param)' },
+    },
+    rules: { table_invalid: { fields: ['content.tables[].rolls', 'content.tables[].always[].count', 'content.tables[].entries[].count'], message: 'a [min, max] range has min <= max' } },
   },
   logic(logic) {
     logic.effect('drop_loot', {
@@ -63,24 +84,14 @@ export default {
       run: (e, rt, c) => { const fn = rt.caches.lootDrop; if (fn) fn(e.table, { who: whoKey(e.who, c), into: e.into, at: e.at, from: c.self }); else for (const x of rollTable(rt, e.table, c)) give(rt, whoKey(e.who, c), x.item, x.count); },
     });
   },
-  validate(config, doc, ctx) {
-    const errors = [], items = new Set((doc.content?.items || []).map(i => i.id)), ids = new Set((doc.content?.tables || []).map(t => t.id));
-    (doc.content?.tables || []).forEach((t, i) => {
+  validate(config, doc) {
+    const errors = [];
+    const range = (r, p) => { if (Array.isArray(r) && r.length === 2 && r[0] > r[1]) errors.push({ code: 'table_invalid', path: p, message: `range [${r[0]}, ${r[1]}]: min must be at most max` }); };
+    (Array.isArray(doc.content?.tables) ? doc.content.tables : []).forEach((t, i) => {
       const path = `content.tables[${i}]`;
-      const range = (r, p) => { if (r == null) return; const ok = typeof r === 'number' ? Number.isInteger(r) && r >= 0 : Array.isArray(r) && r.length === 2 && r.every(Number.isInteger) && r[0] >= 0 && r[0] <= r[1]; if (!ok) errors.push({ code: 'table_invalid', path: p, message: 'must be a count n or a range [min, max]' }); };
-      range(t.rolls, `${path}.rolls`);
-      if (t.chance != null && !(t.chance >= 0 && t.chance <= 1)) errors.push({ code: 'table_invalid', path: `${path}.chance`, message: 'chance must be in [0, 1]' });
-      if (t.pity != null && !(Number.isInteger(t.pity) && t.pity >= 1)) errors.push({ code: 'table_invalid', path: `${path}.pity`, message: 'pity must be a positive integer' });
-      if (!Array.isArray(t.entries)) { errors.push({ code: 'table_invalid', path: `${path}.entries`, message: 'entries must be a list' }); return; }
-      [...(t.always || []).map((e, k) => [e, `${path}.always[${k}]`]), ...t.entries.map((e, k) => [e, `${path}.entries[${k}]`])].forEach(([e, p]) => {
-        if (e.table != null) { if (!ids.has(e.table)) errors.push({ code: 'ref_unknown', path: `${p}.table`, message: `unknown table '${e.table}'` }); }
-        else if (e.item != null && !items.has(e.item)) errors.push({ code: 'ref_unknown', path: `${p}.item`, message: `unknown item '${e.item}'` });
-        if (e.weight != null && !(e.weight >= 0)) errors.push({ code: 'table_invalid', path: `${p}.weight`, message: 'weight must be >= 0' });
-        range(e.count, `${p}.count`);
-        if (e.when) ctx.checkPredicate(e.when, `${p}.when`, errors);
-      });
+      range(t?.rolls, `${path}.rolls`);
+      for (const k of ['always', 'entries']) (Array.isArray(t?.[k]) ? t[k] : []).forEach((e, j) => range(e?.count, `${path}.${k}[${j}].count`));
     });
-    (doc.content?.archetypes || []).forEach((a, i) => { const l = a.components?.loot; if (typeof l === 'string' && !ids.has(l)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.loot`, message: `unknown table '${l}'` }); });
     return errors;
   },
   /** Solver key: pity meters only (drop bookkeeping and expiry frames always grow). */
@@ -110,16 +121,16 @@ export default {
       if (!config.onDeath) return;
       const id = d.id ?? d.target ?? d.who; if (!id || id === 'player' || st().dropped[id]) return;
       const e = rt.entity(id), table = e?.components.loot ?? rt.archetype(d.archetype ?? d.subject)?.components?.loot;
-      if (typeof table !== 'string') return;
+      if (!table) return;
       st().dropped[id] = true;
       drop(table, { who: whoKey(d.by ?? d.killer ?? 'player'), from: e ? id : null, at: e?.at ?? d.at, space: e?.space });
     };
     rt.on('died', onDeath); rt.on('defeated', onDeath);
     rt.on('despawn', ({ id }) => { delete st().dropped[id]; });
-    rt.on('interacted', d => { const t = rt.entity(d.target); if (t?.components.loot && d.kind === 'loot' && typeof t.components.loot === 'string' && !st().dropped[t.id]) { st().dropped[t.id] = true; drop(t.components.loot, { who: d.who, into: 'bag', from: t.id }); } });
+    rt.on('interacted', d => { const t = rt.entity(d.target); if (t?.components.loot && d.kind === 'loot' && !st().dropped[t.id]) { st().dropped[t.id] = true; drop(t.components.loot, { who: d.who, into: 'bag', from: t.id }); } });
 
-    // World pickups: `pickup: {item, count}` or `item: "<id>"` components; touch collects, magnets pull.
-    const pickupOf = e => e.components.pickup ?? (typeof e.components.item === 'string' ? { item: e.components.item, count: 1 } : null);
+    // World pickups: `pickup: {item, count}` components; touch collects, magnets pull.
+    const pickupOf = e => e.components.pickup ?? null;
     rt.system('interaction', rt => {
       const s = st(), p = rt.player();
       for (const [id, until] of Object.entries(s.expire)) if (rt.state.frame >= until) { delete s.expire[id]; if (rt.entity(id)) rt.despawn(id); }

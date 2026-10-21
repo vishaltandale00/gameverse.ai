@@ -200,12 +200,12 @@ const dungeon = () => doc({
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.loot', with: { dropTo: 'world', magnet: 3, magnetSpeed: 20, scatter: 0 } }, { use: 'gameplay.container' }],
   content: { items: ITEMS, archetypes: [hero,
     { id: 'slime', kind: 'enemy', components: { body: { size: [1, 1, 1] }, loot: 'slime_drop' } },
-    { id: 'chest', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Open' }, container: { slots: 4, items: [{ item: 'gold', count: 5 }], table: 'chest' }, lock: 'key' } },
+    { id: 'chest', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Open' }, container: { slots: 4, items: [{ item: 'gold', count: 5 }], table: 'chest' }, lock: { key: 'key' } } },
     { id: 'bush', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Gather' }, container: { slots: 2, table: 'forage', autoTake: true, respawnDays: 2 } } }],
     tables: [
-      { id: 'slime_drop', rolls: 1, chance: 0.1, pity: 4, entries: [{ item: 'gem', weight: 1 }] },
+      { id: 'slime_drop', rolls: [1, 1], chance: 0.1, pity: 4, entries: [{ item: 'gem', weight: 1 }] },
       { id: 'chest', rolls: [2, 2], unique: true, entries: [{ item: 'ore', weight: 1, count: [1, 3] }, { item: 'apple', weight: 1 }, { item: 'helm', weight: 1, when: { flag: 'lucky' } }] },
-      { id: 'forage', rolls: 1, always: [{ item: 'apple', count: 1 }], entries: [{ table: 'chest', weight: 1 }, { item: null, weight: 1 }] },
+      { id: 'forage', rolls: [1, 1], always: [{ item: 'apple', count: [1, 1] }], entries: [{ table: 'chest', weight: 1 }, { item: null, weight: 1 }] },
     ] },
 });
 
@@ -274,10 +274,16 @@ test('loot/container: replay, bad config codes and game instances', () => {
   bad.content.tables[2].rolls = [3, 1];
   bad.content.archetypes[1].components.loot = 'missing_table';
   bad.content.archetypes[2].components.container.slots = 0;
-  bad.content.archetypes[2].components.lock = 'skeleton_key';
+  bad.content.archetypes[2].components.lock = { key: 'skeleton_key' };
   bad.systems[2].with.dropTo = 'void';
   const c = codes(checkWith(bad));
-  for (const code of ['table_invalid', 'ref_unknown', 'container_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  for (const code of ['table_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  // The tables, loot, container and lock values are content.tables' and the components' declared shapes (card.data,
+  // card.components), reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where
+  // table_invalid, container_invalid and the validators' ref_unknown were.
+  const r = checkWith(bad), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.tables[0].chance', 'param_range@content.tables[0].pity', 'ref_unknown@content.tables[1].entries[3].item', 'param_range@content.tables[1].entries[3].weight', 'ref_unknown@content.tables[1].entries[4].table',
+    'ref_unknown@content.archetypes[1].components.loot', 'param_range@content.archetypes[2].components.container.slots', 'ref_unknown@content.archetypes[2].components.lock.key']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const use of ['gameplay.loot', 'gameplay.container']) for (const x of gameInstances(use)) assert.deepEqual(x.paramErrors, [], `${use} ${x.game}`);
 });
 

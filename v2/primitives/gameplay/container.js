@@ -2,15 +2,15 @@
 // a `container` component ({ slots?, items?: [{item,count}], table?, locked?: pred,
 // autoTake?: b, respawnDays? }) holds its own bag (keyed by the entity id) that
 // is filled on first open from `items` and a loot table, and refilled after
-// `respawnDays` (var time.day). A `lock` component (item id | { key, consume?, when? })
+// `respawnDays` (var time.day). A `lock` component ({ key, consume?, when? })
 // needs the key. Opening happens through gameplay.interact or open_container;
 // the open container is then browsed with take/store/take_all/close_container.
 import { bag, give, take, transfer, count } from './inventory.js';
 import { rollTable } from './loot.js';
-import { whoKey, entityByRef, dist, checkItem } from './items-lib.js';
+import { whoKey, entityByRef, dist } from './items-lib.js';
 
 const KEY = 'gameplay.container';
-const lockOf = e => { const l = e.components.lock; return l == null ? null : typeof l === 'string' ? { key: l } : l; };
+const lockOf = e => e.components.lock ?? null;
 const parse = v => (typeof v === 'string' ? { item: v, count: 1 } : { item: v?.item, count: v?.count ?? 1 });
 
 export default {
@@ -36,6 +36,18 @@ export default {
     provides: { events: ['unlocked', 'opened', 'opened:*', 'container_opened', 'container_closed', 'container_locked', 'unlocked:*'], actions: ['take', 'store', 'take_all', 'close_container'], services: ['container'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.archetypes', 'content.tables'],
+    // Shapes of the archetype components this primitive owns.
+    components: {
+      container: { type: 'object', fields: {
+        slots: { type: 'integer', min: 1, max: 1000, unit: 'stacks', effect: 'its size (default the slots param)' },
+        items: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } }, effect: 'what it holds when first opened' },
+        table: { type: 'ref', to: 'table', effect: 'a loot table rolled into it when first opened (and on refill)' },
+        locked: { type: 'predicate', effect: 'it will not open while this holds' },
+        autoTake: { type: 'boolean', effect: 'opening moves everything to the opener (default the autoTake param)' },
+        respawnDays: { type: 'number', min: 0, effect: 'refills after this many days (var time.day); 0 never' },
+      }, effect: 'an entity holding items: a chest, corpse, barrel, forage plant' },
+      lock: { type: 'object', fields: { key: { type: 'ref', to: 'item', effect: 'the item that opens it' }, consume: { type: 'boolean', effect: 'opening spends the key' }, when: { type: 'predicate', effect: 'opens only while it holds' } }, effect: 'a container lock' },
+    },
   },
   logic(logic) {
     logic.effect('open_container', {
@@ -43,20 +55,6 @@ export default {
       run: (e, rt, c) => { const t = entityByRef(rt, e.container, c); if (t) rt.caches.containerOpen?.(whoKey(e.who, c), t, { force: true }); },
     });
     logic.effect('close_container', { run: (e, rt, c) => rt.caches.containerClose?.(whoKey(e.who, c)) });
-  },
-  validate(config, doc, ctx) {
-    const errors = [], tables = new Set((doc.content?.tables || []).map(t => t.id));
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const c = a.components?.container; if (!c) return;
-      const path = `content.archetypes[${i}].components`;
-      if (typeof c !== 'object') { errors.push({ code: 'container_invalid', path: `${path}.container`, message: 'container must be an object' }); return; }
-      if (c.slots !== undefined && !(Number.isInteger(c.slots) && c.slots >= 1)) errors.push({ code: 'container_invalid', path: `${path}.container.slots`, message: 'slots must be a positive integer' });
-      if (c.table && !tables.has(c.table)) errors.push({ code: 'ref_unknown', path: `${path}.container.table`, message: `unknown table '${c.table}'` });
-      (c.items || []).forEach((x, k) => checkItem(doc, x.item, `${path}.container.items[${k}].item`, errors));
-      if (c.locked) ctx.checkPredicate(c.locked, `${path}.container.locked`, errors);
-      const l = a.components.lock; if (l != null) checkItem(doc, typeof l === 'string' ? l : l.key, `${path}.lock`, errors);
-    });
-    return errors;
   },
   install(rt, config) {
     rt.caches.containerSlots = config.slots;

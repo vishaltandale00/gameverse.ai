@@ -66,10 +66,11 @@ export function tokens(def) {
 }
 export const matches = (def, accepts) => { const t = tokens(def); return (accepts || []).some(a => t.has(a)); };
 
-/** Integer in [a, b] from rt.random(); a number n means exactly n. */
+/** A count range [a, b] (a <= b; [n, n] is exactly n): the one shape every rolled count declares. */
+export const RANGE = Object.freeze({ type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] (both included; [n, n] is exactly n)' });
+/** Integer in [a, b] from rt.random() (RANGE). */
 export function roll(rt, range, fallback = 1) {
   if (range == null) return fallback;
-  if (typeof range === 'number') return range;
   const [a, b] = range; return a + Math.floor(rt.random() * (b - a + 1));
 }
 /** Weighted pick over entries with `weight` (default 1); null when total weight is 0. */
