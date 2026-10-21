@@ -10,8 +10,12 @@
 //   driver    AI-controlled participants nothing drives, or whose drivers cannot change what the lose reads
 //             (loop_opponent_inert, loop_lose_unaffected_by_opponent): the spec's opponent or a loop's participants;
 //   coverage  the win's reads that no player verb or effect of the collection changes, or whose component nobody owns
-//             (loop_win_unaffected, loop_component_unowned); at re-planning (a gate verdict: no_progress, loop_absent)
-//             the win's reads themselves, when the static check found nothing.
+//             (loop_win_unaffected, loop_component_unowned), and a wired lose nothing produces (loop_lose_unproduced);
+//             its pick joins the mechanic of the primitive whose end it serves. build.js asks it after every mechanic
+//             step (for a mechanic other than the core loop's); at re-planning (a gate verdict: no_progress,
+//             loop_absent) the win's reads themselves, when the static check found nothing.
+//   wins      never two wins (askWins): when several primitives of the collection declare a game-ending win, one
+//             small enum question picks the one the play spec's win sentence describes; the others are left unwired.
 // Each step is ONE small strict enum question: the candidates are catalogue cards whose declarations answer that need
 // (a declared win or lose, card.drives serving those participants and that loop, verbs or effects that change the
 // win's reads), played the play spec's way, each as a single card or a minimal bundle (bundles.js formBundle) that
@@ -24,8 +28,8 @@ import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { checkComposition, capsOf } from './compose-check.js';
 import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds, keepMashupAdapters } from './adapters.js';
 import { cardLoop, endsGame, composeLoop } from './loop.js';
-import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, LOOP_CODES } from './loop-check.js';
-import { preset, coreOf, declaredOutcomes, skinSections } from './presets.js';
+import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, playerChanges, LOOP_CODES } from './loop-check.js';
+import { preset, coreOf, declaredOutcomes, skinSections, innerOf } from './presets.js';
 import { mashupSides } from './play-spec.js';
 import { declaredFit, relevance, servesInteraction } from './select.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
@@ -42,14 +46,19 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 /** @typedef {import('./select.js').Gap} Gap */
 /** @typedef {import('./loop-check.js').LoopProblem} LoopProblem */
 /** @typedef {import('./bundles.js').Composes} Composes */
-/** The loop steps' kinds (win, lose, driver, coverage), the inner loop of a nested mashup, and the mashup adapter steps. @typedef {'win' | 'lose' | 'driver' | 'coverage' | 'inner' | 'nested' | 'union' | 'skin'} StepKind */
+/** The loop steps' kinds (win, lose, driver, coverage), the game's win among several (wins), the inner loop of a nested mashup, and the mashup adapter steps. @typedef {'win' | 'lose' | 'driver' | 'coverage' | 'wins' | 'inner' | 'nested' | 'union' | 'skin'} StepKind */
+/**
+ * The game's win when several primitives of the collection declare one (askWins): the one picked, the wins offered,
+ * why, and the wins left unwired. @typedef {{ use: string, offered: string[], why: string, unwired: string[] }} WinDecision
+ */
 /** A mechanic as the preset reads it (its core and loops come from the core mechanics' primitives). @typedef {{ id: string, importance: string, primitives: string[] }} StepMechanic */
 /**
  * The collection a step reads: its space (the configuration it composes on), systems, adapter instances and bindings,
- * what each mechanic maps to and the core loop mechanic's id (where the win, lose and coverage picks go), and the
- * composition checks bound to it (build.js composes / resolveWith; replan.js the same over a selection).
+ * what each mechanic maps to and the core loop mechanic's id (where the win, lose and coverage picks go), the game's
+ * win when several are declared (`win`: the primitive askWins picked; it owns the game's win), and the composition
+ * checks bound to it (build.js composes / resolveWith; replan.js the same over a selection).
  * @typedef {{ space: { id: string, use: string, with: Record<string, unknown>, role?: string, caps: string[] }, systems: string[], adapters: AdapterInstance[], bind: Record<string, string>,
- *   mechanics: StepMechanic[], loop: string | null,
+ *   mechanics: StepMechanic[], loop: string | null, win?: string | null,
  *   composes: (ids: string[]) => Composes, resolve: (ids: string[], variant: number) => { adapters: AdapterInstance[], bind: Record<string, string>, gaps: AdapterSpec[] } }} StepCollection
  */
 /**
@@ -63,7 +72,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  * question and its answer, what was added, the gap when none fits, and the loop check of the partial collection after it.
  * @typedef {{ kind: StepKind, mechanic: string | null, need: string, candidates: StepCandidate[], rejected: Array<{ id: string, why: string }>,
  *   asks: Array<{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }>, outcome: 'added' | 'reused' | 'none' | 'gap', primitive: string | null,
- *   members: string[], loop: string[], collection: string[], ms: number }} LoopStep
+ *   members: string[], loop: string[], collection: string[], ms: number, settled?: string }} LoopStep
  */
 /** Add a step's pick to the caller's collection, joined to `mechanic` (the core loop mechanic, or an inner loop's): the collection after it, or why not. @typedef {(kind: StepKind, pick: StepCandidate, mechanic?: string | null) => StepCollection | string} Commit */
 /** One strict enum question (makeAsk). @typedef {(q: { name: string, system: string, user: string, field: string, options: string[], extra?: Record<string, Record<string, unknown>> }) => Promise<{ pick: string, why: string, reply: Record<string, unknown> }>} Ask */
@@ -74,7 +83,7 @@ export const MAX_CANDIDATES = 8;
 /** @param {string} code (read at call time: loop-check.js and this module import each other through presets.js) */
 const isDriverCode = code => code === LOOP_CODES.inert || code === LOOP_CODES.loseUnaffected;
 /** @param {string} code */
-const isCoverCode = code => code === LOOP_CODES.unaffected || code === LOOP_CODES.owner;
+const isCoverCode = code => code === LOOP_CODES.unaffected || code === LOOP_CODES.owner || code === LOOP_CODES.loseUnproduced;
 /** @param {RegistryLike} registry @param {string} id */
 const cardOf = (registry, id) => registry.get(id)?.card ?? null;
 
@@ -118,7 +127,7 @@ export function selectionCollection(registry, sel, loop) {
   const before = of(sel.systems);
   return {
     space: { id: space?.id || 'world', use: space?.use || '', with: space?.with || {}, role: space?.role, caps: [...(space?.caps || [])] }, systems: [...sel.systems], adapters: [...(sel.adapters || [])], bind: { ...sel.bind },
-    mechanics: (sel.mechanics || []).map(m => ({ id: m.id, importance: m.importance, primitives: [...(m.primitives || [])] })), loop,
+    mechanics: (sel.mechanics || []).map(m => ({ id: m.id, importance: m.importance, primitives: [...(m.primitives || [])] })), loop, win: sel.win?.use ?? null,
     composes: ids => {
       const more = ids.filter(id => !sel.systems.includes(id));
       if (!more.length) return { ok: true, variant: 0 };
@@ -153,7 +162,7 @@ const coreIds = (registry, mechanics, systems) => [...coreOf({ mechanics, system
 export function partialCheck(registry, decomposition, c, { more = [], adapters = [], mechanics = c.mechanics, logic = null } = {}) {
   const systems = [...c.systems, ...more.filter(id => !c.systems.includes(id))];
   const selection = { systems, spaces: [{ role: 'world', ...c.space, caps: [...c.space.caps] }], generators: [], graphics: [], bind: { ...c.bind }, gaps: [], adapters: [...c.adapters, ...adapters].map(a => structuredClone(a)),
-    mechanics: mechanics.map(m => ({ ...m, primitives: [...m.primitives] })) };
+    mechanics: mechanics.map(m => ({ ...m, primitives: [...m.primitives] })), ...(c.win ? { win: { use: c.win } } : {}) };
   const p = preset({ decomposition: structuredClone(decomposition), selection: /** @type {any} */ (selection), registry, logic: logic || logicOf(registry), seed: 1 });
   return { owner: p.structure.loopCheck.owner, problems: p.loop };
 }
@@ -173,9 +182,16 @@ export function loopNeeds(registry, decomposition, c, check) {
   const ownerLose = check.owner ? cardLoop(cardOf(registry, check.owner))?.lose : null;
   if (lose && !composed.lose.length && !endsGame(ownerLose)) out.push({ kind: 'lose', key: 'lose', why: `the play spec is lost by "${lose}" and no core loop of the collection declares a game-ending lose (card.loop.lose)` });
   for (const p of check.problems) if (isDriverCode(p.code)) out.push({ kind: 'driver', key: `driver:${problemKey(p)}`, why: p.message, problem: p });
-  for (const p of check.problems) if (isCoverCode(p.code)) out.push({ kind: 'coverage', key: `coverage:${problemKey(p)}`, why: p.message, problem: p });
+  // What play cannot change of an end's reads: its pick joins the mechanic that primitive was chosen for.
+  for (const p of check.problems) if (isCoverCode(p.code)) { const join = mechanicOf(c, p.primitive); out.push({ kind: 'coverage', key: `coverage:${problemKey(p)}`, why: p.message, problem: p, ...(join ? { join } : {}) }); }
   return out;
 }
+
+/** The first mechanic (in the collection's order) a primitive maps to, or null. @param {StepCollection} c @param {string} id */
+export const mechanicOf = (c, id) => c.mechanics.find(m => m.primitives.includes(id))?.id ?? null;
+
+/** The end of a loop problem's primitive that its reads come from: its lose for loop_lose_unproduced, else its win. @param {RegistryLike} registry @param {LoopProblem} p */
+const problemEnd = (registry, p) => { const loop = cardLoop(cardOf(registry, p.primitive)); return p.code === LOOP_CODES.loseUnproduced ? loop?.lose : loop?.win; };
 
 /** The text of what a loop end reads. @param {import('./loop-check.js').LoopReads | null} r */
 const readsText = r => (!r ? 'nothing declared' : r.component ? `the ${r.of || 'opponents'}' "${r.component}"` : r.event ? `the event "${r.event}"` : `the var "${r.var}"`);
@@ -186,11 +202,13 @@ const byText = by => (by ? [by.actions?.length && `actions ${by.actions.join('/'
  * Cards whose declarations answer a need (before the composition and loop checks): a game-ending win or lose; a
  * driver with the need's control serving those participants and that loop (it names the loop or steers by its target
  * service, or acts by a component the preset puts on them) whose behaviour changes what the lose reads; or, for the
- * coverage of what the win reads, its owner, a primitive with player verbs that requires it, a provider of the event
- * or var it counts, the owner of an effect or the provider of an action its reads.by names.
- * @param {RegistryLike} registry @param {LogicLike} logic @param {StepNeed} need @param {{ reads: import('./loop-check.js').LoopReads | null }} context @returns {(card: any) => boolean}
+ * coverage of what an end reads, its owner, a primitive with player verbs that requires it, a provider of the event
+ * or var it counts, the owner of an effect or the provider of an action its reads.by names, or a player-driven card
+ * that declares a way to change it (loop-check.js playerChanges: it provides an action or event reads.by names, moves
+ * the player, or runs effects from its params when reads.by names an effect the collection owns).
+ * @param {RegistryLike} registry @param {LogicLike} logic @param {StepNeed} need @param {{ reads: import('./loop-check.js').LoopReads | null, used: string[] }} context @returns {(card: any) => boolean}
  */
-function answers(registry, logic, need, { reads }) {
+function answers(registry, logic, need, { reads, used }) {
   if (need.kind === 'win') return card => endsGame(cardLoop(card)?.win);
   if (need.kind === 'lose') return card => endsGame(cardLoop(card)?.lose);
   // The inner loop of a nested encounter: a loop that declares what its result means for an encounter's participants.
@@ -218,7 +236,8 @@ function answers(registry, logic, need, { reads }) {
     if (name && (card.provides?.events || []).some((/** @type {string} */ e) => e === name || e === base || e === `${base}:*`)) return true;
     if (name && (card.provides?.vars || []).some((/** @type {string} */ v) => v === name || String(name).startsWith(v + '.') || (v.endsWith('*') && String(name).startsWith(v.slice(0, -1))))) return true;
     if ((by?.effects || []).some(e => logic.owners.effect.get(e) === card.id)) return true;
-    return (by?.actions || []).some(a => (card.provides?.actions || []).includes(a));
+    if ((by?.actions || []).some(a => (card.provides?.actions || []).includes(a))) return true;
+    return Boolean(by) && playerChanges(registry, card, /** @type {import('./loop.js').ReadsBy} */ (by), { logic, used });
   };
 }
 
@@ -235,7 +254,8 @@ function signatureOf(need, decomposition, c, registry, owner, spec = '') {
     ? `${need.kind}: a primitive whose loop declares a game-ending ${need.kind} (card.loop.${need.kind}) for "${str(decomposition.core?.[need.kind]) || decomposition.premise}"${interaction ? `, played as ${interaction}` : ''}, whose ${need.kind}.reads ${need.kind === 'win' ? `the collection's player verbs (${verbs.join(', ') || 'none'}) can change` : 'play can change'}, ${on}`
     : need.kind === 'inner' ? `inner loop: a primitive whose loop declares an encounter outcome (card.loop.outcome: each result's effects param and each side's fate) and how an encounter starts it (card.engage.encounter), for "${need.join ? (decomposition.mechanics || []).find(m => m.id === need.join)?.description || need.join : 'the joined concept'}"`
     : need.kind === 'driver' ? `opponent: a primitive that declares card.drives { control: '${n?.control || 'ai'}' } for ${n?.loop ? `the ${n.loop} AI participants` : "the play spec's opponent"}${n?.by ? `, whose entities change what the lose reads (${byText(n.by)})` : ''}, ${on}`
-    : `loop: a primitive whose player verbs or effects change what the ${owner || 'core loop'} win reads (${readsText(owner ? readsOf(cardLoop(cardOf(registry, owner))?.win) : null)}), ${on}`;
+    : need.problem?.code === LOOP_CODES.loseUnproduced ? `loop: a primitive that produces what the ${need.problem.primitive} lose reads (${readsText(readsOf(problemEnd(registry, need.problem)))}), ${on}`
+    : `loop: a primitive whose player verbs or effects change what the ${need.problem?.primitive || owner || 'core loop'} win reads (${readsText(need.problem ? readsOf(problemEnd(registry, need.problem)) : owner ? readsOf(cardLoop(cardOf(registry, owner))?.win) : null)}), ${on}`;
   return `${text}${spec ? `. Spec: ${spec}` : ''}`.slice(0, 600);
 }
 
@@ -257,26 +277,29 @@ function declares(card, kind) {
 /**
  * Ask ONE loop step (see the header): the candidates that answer `need`, compose and pass the loop check of the
  * partial collection with them, ranked by declarations; the model picks one or "none". `exclude`: ids never offered
- * (tried before). -> the step record, the pick (null: a gap) and the gap.
+ * (tried before); `among`: when given, only these ids are offered (the build's own retrieval: retrieval.js validOptions
+ * for the mechanic the pick joins). -> the step record, the pick (null: a gap) and the gap.
  * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, need: StepNeed, ask: Ask, mechanic?: { id: string, verb: string, description: string } | null,
- *   exclude?: Iterable<string>, logic?: LogicLike | null }} options
+ *   exclude?: Iterable<string>, among?: Iterable<string> | null, logic?: LogicLike | null }} options
  * @returns {Promise<{ step: LoopStep, pick: StepCandidate | null, gap: Gap | null }>}
  */
-export async function askLoopStep({ registry, decomposition, collection: c, need, ask, mechanic = null, exclude = [], logic = null }) {
+export async function askLoopStep({ registry, decomposition, collection: c, need, ask, mechanic = null, exclude = [], among = null, logic = null }) {
   const t0 = performance.now();
   const lg = logic || logicOf(registry);
   const interaction = decomposition.core?.interaction || null;
   const skip = new Set(exclude);
   const before = partialCheck(registry, decomposition, c, { logic: lg });
   const had = new Set(before.problems.map(problemKey));
-  const ownerReads = before.owner ? readsOf(cardLoop(cardOf(registry, before.owner))?.win) : null;
-  const fits = answers(registry, lg, need, { reads: ownerReads });
+  const only = among ? new Set(among) : null;
+  // What the end reads: the problem's own primitive's (its win, or its lose), else the owner's win.
+  const ownerReads = need.problem ? readsOf(problemEnd(registry, need.problem)) : before.owner ? readsOf(cardLoop(cardOf(registry, before.owner))?.win) : null;
+  const fits = answers(registry, lg, need, { reads: ownerReads, used: c.systems });
   const sentence = need.kind === 'win' || need.kind === 'lose' ? str(decomposition.core?.[need.kind]) : need.kind === 'driver' ? [decomposition.core?.opponent, decomposition.core?.lose].filter(Boolean).join('. ') : str(decomposition.core?.win);
   // The pool: gameplay and plot cards (no space, generator, graphics or adapter) that answer the need and are played the
   // play spec's way: none whose loop is declared for another interaction and ends the game (another game). A member of
   // the collection may answer a win or lose (it joins the core loop); a driver or coverage need it left open, it cannot.
   const pool = registry.cards().filter(card => {
-    if (!/^(gameplay|plot)\./.test(card.id) || isSpace(card.id) || isGenerator(card.id) || isGraphics(card.id) || card.adapts || skip.has(card.id)) return false;
+    if (!/^(gameplay|plot)\./.test(card.id) || isSpace(card.id) || isGenerator(card.id) || isGraphics(card.id) || card.adapts || skip.has(card.id) || (only && !only.has(card.id))) return false;
     // A member of the collection may answer a win or lose; a driver, coverage or inner loop need it left open, it cannot.
     if ((need.kind === 'driver' || need.kind === 'coverage' || need.kind === 'inner') && c.systems.includes(card.id)) return false;
     // An inner loop is played its own way (entered from the outer loop): the spec's interaction does not bind it.
@@ -351,20 +374,19 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
  * Run the loop steps on a collection until it needs nothing more the steps answer (each need asked once): win, lose,
  * driver, coverage. `commit` adds a pick to the caller's collection (build.js, replan.js) and returns the collection
  * after it, or why it could not (the step is then a gap with that problem). After each step the loop check of the
- * partial collection is recorded on it. `only` limits the kinds; `exclude` maps a kind to ids never offered.
+ * partial collection is recorded on it. `only` limits the kinds; `exclude` maps a kind to ids never offered; `asked`
+ * holds the keys of needs asked before (the build's steps after each mechanic: build.js), never asked again.
  * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, commit: Commit,
- *   mechanic?: { id: string, verb: string, description: string } | null, only?: StepKind[], exclude?: (kind: StepKind) => Iterable<string>, needs?: StepNeed[], logic?: LogicLike | null, log?: (msg: string) => void }} options
+ *   mechanic?: { id: string, verb: string, description: string } | null, only?: StepKind[], exclude?: (kind: StepKind) => Iterable<string>, needs?: StepNeed[], asked?: Set<string>, logic?: LogicLike | null, log?: (msg: string) => void }} options
  * @returns {Promise<{ steps: LoopStep[], gaps: Gap[], collection: StepCollection }>}
  */
-export async function loopSteps({ registry, decomposition, collection, ask, commit, mechanic = null, only = ['win', 'lose', 'driver', 'coverage'], exclude = () => [], needs: given, logic = null, log = () => {} }) {
+export async function loopSteps({ registry, decomposition, collection, ask, commit, mechanic = null, only = ['win', 'lose', 'driver', 'coverage'], exclude = () => [], needs: given, asked = new Set(), logic = null, log = () => {} }) {
   const lg = logic || logicOf(registry);
   let c = collection;
   /** @type {LoopStep[]} */
   const steps = [];
   /** @type {Gap[]} */
   const gaps = [];
-  /** @type {Set<string>} */
-  const asked = new Set();
   for (let guard = 0; guard < 4 * MAX_CANDIDATES; guard++) {
     const open = (given && !steps.length ? given : loopNeeds(registry, decomposition, c, partialCheck(registry, decomposition, c, { logic: lg })))
       .filter(n => only.includes(n.kind) && !asked.has(n.key));
@@ -389,6 +411,37 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
     steps.push(r.step);
   }
   return { steps, gaps, collection: c };
+}
+
+/**
+ * Never two wins. The primitives of the collection whose loops declare a game-ending win (card.loop.win / mode.win),
+ * the loops a nested mashup enters from the rest left out (they never own the game's win: presets.js loopCore). With
+ * two or more, ONE small strict enum question over them, read against the play spec's win sentence, picks the game's
+ * win: it owns the game's win (presets.js loopCore orders it first, loop-check.js winOwner) and only it is wired; the
+ * others stay in the collection for what else they do and their wins are left unwired (recorded as `unwired`). Asked
+ * again only when the set of wins changes (a later pick declares another). -> the decision and its step, or null
+ * when the collection declares fewer than two wins or the decided set is unchanged.
+ * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, decided?: WinDecision | null, mechanic?: string | null, logic?: LogicLike | null }} options
+ * @returns {Promise<{ decision: WinDecision, step: LoopStep } | null>}
+ */
+export async function askWins({ registry, decomposition, collection: c, ask, decided = null, mechanic = null, logic = null }) {
+  const t0 = performance.now();
+  const inner = innerOf(decomposition, /** @type {any} */ ({ mechanics: c.mechanics }));
+  const wins = c.systems.filter(id => !inner.has(id) && endsGame(cardLoop(cardOf(registry, id))?.win));
+  if (wins.length < 2) return null;
+  if (decided && wins.includes(decided.use) && wins.length === decided.offered.length && wins.every(id => decided.offered.includes(id))) return null;
+  const sentence = str(decomposition.core?.win);
+  const a = await ask({ name: 'pick_game_win', field: 'pick', options: wins,
+    system: 'You build a game from composable primitives. A game is won ONE way, and more than one primitive of its collection declares how the game is won. Pick the ONE listed primitive whose win is the win the idea describes. The others stay in the game for what else they do; their wins are not wired.',
+    user: `Game idea: ${decomposition.premise}\nPlayed as: ${decomposition.core?.interaction || 'undecided'}\nWon by: ${sentence || '(unspecified)'}\nCollection so far: ${c.systems.join(', ')}\n\nPrimitives that declare a win:\n${wins.map(id => { const card = cardOf(registry, id); return `- ${id}: ${String(card?.intent || '').replace(/\s+/g, ' ').slice(0, 160)} [${declares({ id, ...card }, 'win')}]`; }).join('\n')}` });
+  const decision = { use: a.pick, offered: [...wins], why: a.why, unwired: wins.filter(id => id !== a.pick) };
+  /** @type {LoopStep} */
+  const step = { kind: 'wins', mechanic, need: `${wins.length} primitives declare a game-ending win (${wins.join(', ')}); the game has one: the one "${sentence || decomposition.premise}" describes`.slice(0, 300),
+    candidates: wins.map(id => ({ id, score: 0, variant: 0, members: [id], extra: [], adapters: [] })), rejected: [], asks: [{ offered: [...wins], pick: a.pick, why: a.why, ok: true }],
+    outcome: 'reused', primitive: a.pick, members: [a.pick], loop: [], collection: [...c.systems], ms: 0 };
+  step.loop = partialCheck(registry, decomposition, { ...c, win: a.pick }, { logic: logic || logicOf(registry) }).problems.map(p => `${p.code} ${p.primitive}`);
+  step.ms = Math.round(performance.now() - t0);
+  return { decision, step };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

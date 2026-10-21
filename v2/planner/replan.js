@@ -14,7 +14,7 @@ import { resolveAdapters, keepMashupAdapters } from './adapters.js';
 import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, ownersOf } from './retrieval.js';
 import { loopProblems } from './loop-check.js';
 import { loopCore } from './presets.js';
-import { makeAsk, loopSteps, stepSignature, selectionCollection } from './build-steps.js';
+import { makeAsk, loopSteps, stepSignature, selectionCollection, askWins } from './build-steps.js';
 import { isObj, isStr, list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -32,9 +32,9 @@ import { isObj, isStr, list, prop } from '../kernel/guards.js';
  * loop primitive's declared win can never be reached: `loop` says why, from the static loop check), 'fields' (content
  * and params only the model can fix).
  * `signature` (with `adapter`, compose-check's adapter card, when an adapter would fix it) is what re-planning found the
- * catalogue lacks: the gap layer's request.
+ * catalogue lacks: the gap layer's request. `reason`: why re-planning took no action for it (an unresolved diagnosis).
  * @typedef {{ kind: 'primitive' | 'mechanic' | 'win' | 'loop' | 'structure' | 'fields', mechanic?: string, primitive?: string, importance?: string, codes: string[], message: string,
- *   signature?: string, adapter?: AdapterSpec, loop?: { code: string, need: LoopNeed } }} Diagnosis
+ *   signature?: string, adapter?: AdapterSpec, loop?: { code: string, need: LoopNeed }, reason?: string }} Diagnosis
  */
 /** One re-planning decision. @typedef {{ action: 'replace' | 'add' | 'repair' | 'write', mechanic?: string, primitive?: string, by?: string, why: string }} Action */
 
@@ -127,7 +127,8 @@ const primitiveSignature = (m, sel, interaction, verbs) => `${m.id}: a primitive
  * the win's reads (loop_win_unaffected, or the gate's no_progress and loop_absent). `tried` (mechanic or step kind ->
  * ids) grows with every choice, so nothing is offered twice. Never removes a primitive without putting another in its
  * place. Without a writer nothing is chosen (only a declaration that clearly covers the mechanic is taken): the need is
- * unresolved, with the gap layer's signature.
+ * unresolved, with the gap layer's signature and the reason no action was taken (`reason`). A pick that makes the
+ * collection declare a second win is followed by the build's own wins question (build-steps.js askWins: selection.win).
  * -> { selection, actions, unresolved }
  * @param {Selection} selection @param {Diagnosis[]} diagnoses
  * @param {{ registry: RegistryLike, decomposition: Decomposition, tried: Map<string, Set<string>>, writer?: import('./types.js').Writer | null, attempts?: number, log?: (msg: string) => void }} context
@@ -156,7 +157,7 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
    * picked option, or the gap layer's request.
    * @param {{ id: string, verb: string, description: string, importance?: string, from?: string, primitives?: string[] }} m @param {string | null} old
    * @param {string} message
-   * @returns {Promise<{ covered: string, why: string } | { option: import('./retrieval.js').Option, why: string } | { signature: string }>}
+   * @returns {Promise<{ covered: string, why: string } | { option: import('./retrieval.js').Option, why: string } | { signature: string, reason: string }>}
    */
   const replacement = async (m, old, message) => {
     const seen = triedFor(m.id);
@@ -173,10 +174,10 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
     const rest = sel.systems.filter(x => x !== old);
     const state = collectionState({ checks: checksOf(), systems: rest, variant: 0, variants: [0] });
     const found = validOptions({ registry, decomposition: spec, mechanic, mapping, state, systems: rest, space: sel.spaces[0]?.use || '', adapters: state.baseline.adapters, exclude: [...seen, ...failed], verbs });
-    if (!found.options.length || !ask) return { signature: primitiveSignature(m, sel, found.context, verbs) };
+    if (!found.options.length || !ask) return { signature: primitiveSignature(m, sel, found.context, verbs), reason: !found.options.length ? `no untried valid option for ${m.id}${found.rejected.length ? ` (${found.rejected.slice(0, 2).map(x => `${x.id}: ${x.why}`).join('; ')})` : ''}`.slice(0, 300) : 'no model to choose among the options' };
     const a = await pickOption({ ask, registry, header, mechanic, options: found.options, problem: old ? `It replaces ${old}, which failed: ${message}`.slice(0, 300) : null });
     const option = found.options.find(o => o.id === a.pick);
-    if (!option) return { signature: `${primitiveSignature(m, sel, found.context, verbs)}${a.spec ? `. Spec: ${a.spec}` : ''}`.slice(0, 600) };
+    if (!option) return { signature: `${primitiveSignature(m, sel, found.context, verbs)}${a.spec ? `. Spec: ${a.spec}` : ''}`.slice(0, 600), reason: `the model picked none of ${found.options.length} option(s): ${a.why || 'none fits'}`.slice(0, 300) };
     return { option, why: a.why };
   };
   /** The validity checks on the selection's space (the build's: retrieval.js collectionChecks). */
@@ -203,27 +204,36 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
    * Re-plan through the loop steps (build-steps.js), the same mechanism the build ran: one small strict question over
    * checked candidates for `need`, never a pick made here. Candidates tried before (here, or offered by the build's own
    * step of that kind when it ended in a gap) and primitives that failed are not offered again. Without a model nothing
-   * is chosen: the need is unresolved with its signature. -> what was added, or the gap layer's request.
-   * @param {import('./build-steps.js').StepNeed} need @returns {Promise<{ added: string[], why: string, signature: string, adapter?: AdapterSpec }>}
+   * is chosen: the need is unresolved with its signature and the reason. A pick joins the need's mechanic (a coverage
+   * need: the mechanic of the primitive whose end it serves), else the core loop mechanic; when the collection then
+   * declares more than one win, the build's wins question picks the game's (selection.win).
+   * -> what was added, or the gap layer's request and why nothing was.
+   * @param {import('./build-steps.js').StepNeed} need @returns {Promise<{ added: string[], why: string, signature: string, reason: string, adapter?: AdapterSpec }>}
    */
   const step = async need => {
     const seen = triedFor(`step:${need.kind}`);
     for (const s of /** @type {any[]} */ (sel.build?.steps || [])) if (s?.kind === need.kind && s.outcome === 'gap') for (const x of s.candidates || []) seen.add(x.id);
-    if (!ask) return { added: [], why: '', signature: stepSignature(need, decomposition, collectionOf(), registry) };
+    if (!ask) return { added: [], why: '', signature: stepSignature(need, decomposition, collectionOf(), registry), reason: 'no model to choose a candidate' };
     /** @type {string[]} */
     const added = [];
     const r = await loopSteps({ registry, decomposition, collection: collectionOf(), ask, mechanic: loopMechanic, needs: [need], only: [need.kind], log,
       exclude: () => [...seen, ...failed],
-      commit: (kind, pick) => {
+      commit: (kind, pick, mech) => {
         for (const id of pick.members) { if (!sel.systems.includes(id)) { sel.systems.push(id); added.push(id); } require(id); }
         if (pick.adapters.length) adopt(resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry));
-        if (kind !== 'driver' && loopMechanic && !loopMechanic.primitives.includes(pick.id)) loopMechanic.primitives = [...loopMechanic.primitives, pick.id];
+        const into = (sel.mechanics || []).find(x => x.id === mech) || loopMechanic;
+        if (kind !== 'driver' && into && !into.primitives.includes(pick.id)) into.primitives = [...into.primitives, pick.id];
         return collectionOf();
       } });
     for (const s of r.steps) for (const x of s.candidates) seen.add(x.id);
     const last = r.steps[r.steps.length - 1];
     const gap = r.gaps[0];
-    return { added, why: last?.asks[last.asks.length - 1]?.why || '', signature: gap?.signature || (added.length ? '' : stepSignature(need, decomposition, collectionOf(), registry)), ...(gap?.adapter ? { adapter: gap.adapter } : {}) };
+    if (added.length) {
+      const w = await askWins({ registry, decomposition, collection: collectionOf(), ask, decided: sel.win || null, mechanic: need.join ?? loopMechanic?.id ?? null });
+      if (w) sel.win = w.decision;
+    }
+    return { added, why: last?.asks[last.asks.length - 1]?.why || '', signature: gap?.signature || (added.length ? '' : stepSignature(need, decomposition, collectionOf(), registry)),
+      reason: added.length ? '' : gap?.why || 'the step added nothing', ...(gap?.adapter ? { adapter: gap.adapter } : {}) };
   };
   /** The need a structure diagnosis is (its loop problem), for the driver or coverage step; null for another kind. @param {Diagnosis} d @returns {import('./build-steps.js').StepNeed | null} */
   const needOf = d => {
@@ -231,7 +241,8 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
     if (!n) return null;
     const problem = /** @type {import('./loop-check.js').LoopProblem} */ ({ code: d.loop?.code || '', path: '', message: d.message, hint: '', severity: 'error', stage: 'loop', primitive: d.primitive || '', need: n });
     if (n.kind === 'driver') return { kind: 'driver', key: `driver:${d.loop?.code}:${d.primitive}`, why: d.message, problem };
-    if (['owner', 'action', 'event', 'var'].includes(n.kind)) return { kind: 'coverage', key: `coverage:${d.loop?.code}:${d.primitive}`, why: d.message, problem };
+    // What play cannot change of an end's reads: the coverage step, its pick joining the primitive's own mechanic.
+    if (['owner', 'action', 'event', 'var'].includes(n.kind)) return { kind: 'coverage', key: `coverage:${d.loop?.code}:${d.primitive}`, why: d.message, problem, ...(d.mechanic ? { join: d.mechanic } : {}) };
     return null;
   };
   // A loop primitive whose declared win can never be reached (the static loop check, or the cause of a gate verdict):
@@ -249,12 +260,14 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
       const need = needOf(d);
       if (need) {
         const r = await step(need);
-        if (r.added.length) { actions.push({ action: 'add', ...(need.kind !== 'driver' && loopMechanic ? { mechanic: loopMechanic.id } : {}), primitive: r.added[0], why: `${need.kind} step${r.why ? ` (${r.why})` : ''}: ${d.message}`.slice(0, 240) }); continue; }
-        unresolved.push({ ...d, signature: r.signature, ...(r.adapter ? { adapter: r.adapter } : {}) });
+        const into = need.kind !== 'driver' ? need.join || loopMechanic?.id : null;
+        if (r.added.length) { actions.push({ action: 'add', ...(into ? { mechanic: into } : {}), primitive: r.added[0], why: `${need.kind} step${r.why ? ` (${r.why})` : ''}: ${d.message}`.slice(0, 240) }); continue; }
+        log(`replan: no action for ${d.loop.code} ${d.primitive || ''}: ${r.reason}`);
+        unresolved.push({ ...d, signature: r.signature, reason: `${need.kind} step: ${r.reason}`.slice(0, 400), ...(r.adapter ? { adapter: r.adapter } : {}) });
         continue;
       }
       // Its win declares no reads (a declaration hole): the loop primitive itself is re-planned for its mechanic.
-      if (!d.primitive) { unresolved.push(d); continue; }
+      if (!d.primitive) { unresolved.push({ ...d, reason: `${d.loop.code} names no primitive to re-plan` }); continue; }
       failed.add(d.primitive);
       d = { ...d, kind: 'primitive' };
     }
@@ -270,16 +283,16 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
       if (r.added.length) {
         if (need.kind === 'win') sel.gaps = sel.gaps.filter(g => g.kind !== 'win');
         actions.push({ action: 'add', ...(loopMechanic ? { mechanic: loopMechanic.id } : {}), primitive: r.added[0], why: `${need.kind} step${r.why ? ` (${r.why})` : ''}: ${d.message}`.slice(0, 240) });
-      } else unresolved.push({ ...d, signature: r.signature, ...(r.adapter ? { adapter: r.adapter } : {}) });
+      } else unresolved.push({ ...d, signature: r.signature, reason: `${need.kind} step: ${r.reason}`.slice(0, 400), ...(r.adapter ? { adapter: r.adapter } : {}) });
       continue;
     }
     const m = (sel.mechanics || []).find(x => x.id === d.mechanic) || (d.primitive ? (sel.mechanics || []).find(x => (x.primitives || []).includes(/** @type {string} */ (d.primitive))) : undefined);
-    if (!m) { unresolved.push(d); continue; }
+    if (!m) { unresolved.push({ ...d, reason: `no mechanic of the selection maps ${d.mechanic || d.primitive || 'it'}` }); continue; }
     // The mechanic's other primitives stay on offer (re-used); the failing one and earlier replacements never are.
     if (d.primitive) triedFor(m.id).add(d.primitive);
     const old = d.kind === 'primitive' && d.primitive ? d.primitive : null;
     const found = await replacement(m, old, d.message);
-    if ('signature' in found) { unresolved.push({ ...d, mechanic: m.id, signature: d.loop && d.signature ? d.signature : found.signature }); continue; }
+    if ('signature' in found) { unresolved.push({ ...d, mechanic: m.id, signature: d.loop && d.signature ? d.signature : found.signature, reason: found.reason }); continue; }
     const by = 'covered' in found ? found.covered : found.option.id;
     triedFor(m.id).add(by);
     // The failing primitive leaves (what another mechanic still maps to stays), the replacement takes its place.
@@ -324,5 +337,5 @@ export function addedBy(doc, selection, registry) {
 export const experimentsOf = doc => list(prop(doc, 'experiments')).filter(isObj);
 
 /** One line per unresolved diagnosis, for the failure report. @param {Diagnosis[]} ds */
-export const missingText = ds => ds.map(d => `${d.kind}${d.mechanic ? ` "${d.mechanic}"` : ''}${d.primitive ? ` (${d.primitive})` : ''}${d.loop ? ` [${d.codes.join(', ')}]` : ''}: ${d.message}${d.signature && d.loop ? `; needed: ${d.signature}` : ''}`.slice(0, 400));
+export const missingText = ds => ds.map(d => `${d.kind}${d.mechanic ? ` "${d.mechanic}"` : ''}${d.primitive ? ` (${d.primitive})` : ''}${d.loop ? ` [${d.codes.join(', ')}]` : ''}: ${d.message}${d.reason ? `; no action: ${d.reason}` : ''}${d.signature && d.loop ? `; needed: ${d.signature}` : ''}`.slice(0, 600));
 

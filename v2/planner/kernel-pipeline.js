@@ -178,10 +178,11 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const entry = { attempt: n, systems: [...selection.systems], stage: built.ok ? 'published' : built.stage, problems: built.ok ? [] : built.problems.slice(0, 8).map(p => `${prop(p, 'code')} ${prop(p, 'path') ?? ''}: ${String(prop(p, 'message') ?? '').slice(0, 160)}`) };
       attempts.push(entry);
       if (built.ok) break;
-      const fail = (/** @type {string[]} */ missing) => {
-        checkpoint('figure', { attempts, missing });
-        ctx.stage('not_buildable', { attempts: attempts.length, missing });
-        return Object.assign(Error(`This isn't the game you asked for yet. Tried ${attempts.length} time(s): ${attempts.map(a => `#${a.attempt} ${a.stage}${Array.isArray(a.actions) && a.actions.length ? ` → ${a.actions.map(x => prop(x, 'text')).join(', ')}` : ''}`).join('; ')}. Still missing: ${missing.slice(0, 4).join('; ')}`), { status: 422, code: 'not_buildable', report: { attempts, missing } });
+      /** @param {string[]} missing @param {string} [stopped] why the build stopped before its last attempt */
+      const fail = (missing, stopped = '') => {
+        checkpoint('figure', { attempts, missing, ...(stopped ? { stopped } : {}) });
+        ctx.stage('not_buildable', { attempts: attempts.length, missing, ...(stopped ? { stopped } : {}) });
+        return Object.assign(Error(`This isn't the game you asked for yet. Tried ${attempts.length} time(s): ${attempts.map(a => `#${a.attempt} ${a.stage}${Array.isArray(a.actions) && a.actions.length ? ` → ${a.actions.map(x => prop(x, 'text')).join(', ')}` : ''}`).join('; ')}.${stopped ? ` ${stopped}.` : ''} Still missing: ${missing.slice(0, 4).join('; ')}`), { status: 422, code: 'not_buildable', report: { attempts, missing, ...(stopped ? { stopped } : {}) } });
       };
       // A mashup relation the document lost is the pipeline's own gap: no re-planned pick restores an adapter instance.
       if (built.stage === 'mashup') throw fail(built.problems.map(p => `gap (adapter): ${String(prop(p, 'message'))}`));
@@ -214,9 +215,16 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       }
       Object.assign(entry, { actions });
       // Nothing left to change: the problems are what is missing. Re-asking the model only helps once it has written
-      // something (the outline ran); a gap in the collection needs another primitive.
+      // something (the outline ran); a gap in the collection needs another primitive. Another attempt on the same
+      // selection would fail the same way, so the build stops here, before its last attempt, and says so: each
+      // diagnosis re-planning took no action for is reported with its reason (replan.js `reason`).
       const changes = plan.actions.filter(a => a.action !== 'repair' || (built.stage !== 'selection' && built.stage !== 'structure'));
-      if (!changes.length && !actions.some(a => a.action === 'write' && Array.isArray(a.primitives))) throw fail(missingText(plan.unresolved.length ? plan.unresolved : diagnoses));
+      if (!changes.length && !actions.some(a => a.action === 'write' && Array.isArray(a.primitives))) {
+        const stopped = `Stopped after attempt ${n} of ${cfg.replanAttempts}: re-planning found no action for ${plan.unresolved.length || diagnoses.length} diagnosis(es)${plan.actions.length ? ` (only ${plan.actions.map(a => a.action).join(', ')}, which cannot change a ${built.stage} failure)` : ''}`;
+        Object.assign(entry, { stopped });
+        ctx.stage('replanned', { attempt: n, actions: actions.map(a => a.text), unresolved: missingText(plan.unresolved), stopped });
+        throw fail(missingText(plan.unresolved.length ? plan.unresolved : diagnoses), stopped);
+      }
       selection = plan.selection;
       ctx.stage('replanned', { attempt: n, actions: actions.map(a => a.text), unresolved: missingText(plan.unresolved) });
       built = await attempt(selection);

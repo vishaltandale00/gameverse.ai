@@ -172,9 +172,9 @@ test('(e) the same machinery builds a turn-based sides game, a real-time collect
       if (s.primitive && s.outcome !== 'covered') assert.ok(s.checks.compose, `${name}/${s.mechanic} checked`);
     }
     // Only small strict questions: the space (when more than one fits), per mechanic its coverage question or pick (a
-    // category first over a long list), and one per loop step asked.
-    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_category', 'covered_by', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage'].includes(c.schema.name)));
-    assert.equal(w.calls.filter(c => /^pick_(win|lose|driver|coverage)$/.test(c.schema.name)).length, b.steps.filter(s => s.kind !== 'mechanic' && s.asks.length).length, name);
+    // category first over a long list), one per loop step asked, and the game's win when several are declared.
+    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_category', 'covered_by', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage', 'pick_game_win'].includes(c.schema.name)));
+    assert.equal(w.calls.filter(c => /^pick_(win|lose|driver|coverage|game_win)$/.test(c.schema.name)).length, b.steps.filter(s => s.kind !== 'mechanic' && s.asks.length).length, name);
     assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.filter(s => s.outcome !== 'covered').length, name);
     assert.ok(b.systems.length > 0, name);
   }

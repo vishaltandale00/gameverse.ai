@@ -225,10 +225,12 @@ test('(e) bundles work the same on unrelated ideas: every option composes, withi
     const w = firstWriter();
     const b = await buildSelection({ decomposition: d, registry, writer: w });
     assert.ok(b.systems.length > 0, name);
-    // One step per mechanic, in worklist order (the loop steps after them); a covered one names the step whose bundle covered it.
+    // One step per mechanic, in worklist order (the loop steps after them; between them only what the checks after a
+    // mechanic step ask: the game's win among several, the coverage of an end); a covered one names the step whose bundle covered it.
     const mech = b.steps.filter(s => s.kind === 'mechanic');
     assert.equal(mech.length, x.mechanics.length, name);
-    assert.ok(b.steps.slice(mech.length).every(s => s.kind !== 'mechanic'), name);
+    const lastMech = b.steps.indexOf(mech[mech.length - 1]);
+    assert.ok(b.steps.slice(0, lastMech).every(s => s.kind === 'mechanic' || s.kind === 'wins' || s.kind === 'coverage'), name);
     for (const s of mech.filter(s => s.outcome === 'covered')) assert.ok(mech.find(t => t.mechanic === s.coveredBy)?.covers?.includes(s.mechanic), `${name}/${s.mechanic}`);
     assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.reduce((n, s) => n + s.asks.filter(a => !a.question).length, 0), name);
     // Every bundle member the collection gained is in it, and every option shown is labelled with its members.

@@ -484,6 +484,11 @@ test('when nothing in the catalogue can make the declared win reachable, the bui
   await assert.rejects(pipeline({ gameId: 'g', prompt: 'duel', kind: 'create', seed: 5 }, m.ctx), e => {
     assert.equal(e.code, 'not_buildable');
     assert.ok(e.report.missing.some(x => /gameplay\.test\.standoff/.test(x) && /loop_win_unaffected/.test(x) && /vigor/.test(x) && /player verbs or effects change/.test(x)), JSON.stringify(e.report.missing));
+    // Attempts remain, but another on the same selection would fail the same way: the stop says so, and each diagnosis
+    // re-planning took no action for says why.
+    assert.match(e.report.stopped, /^Stopped after attempt 1 of 3: re-planning found no action for 2 diagnosis/);
+    assert.match(e.message, /Stopped after attempt 1 of 3/);
+    assert.ok(e.report.missing.every(x => /; no action: /.test(x)), JSON.stringify(e.report.missing));
     return true;
   });
   assert.equal(m.versions.length, 0);

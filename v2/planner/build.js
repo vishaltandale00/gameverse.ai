@@ -24,7 +24,17 @@
 //      - the pick is added with its bundle, the whole collection is checked again and its adapters resolved; the
 //        members' content contracts are recorded;
 //      - when the model says none the mechanic is a gap with the primitive signature (adapter signatures come from
-//        the options that were not valid only because an adapter is missing).
+//        the options that were not valid only because an adapter is missing);
+//      - after EVERY mechanic step, before the next: never two wins (build-steps.js askWins: when the collection now
+//        declares more than one game-ending win, one small enum question picks the one the play spec's win sentence
+//        describes; the others are left unwired, recorded), then the loop check of the partial collection
+//        (build-steps.js partialCheck): every wired end (the game's win, the core loops' loses) whose reads no player
+//        verb or effect of the collection can change (loop_win_unaffected, loop_component_unowned,
+//        loop_lose_unproduced) gets the coverage step for that primitive and its mechanic: the candidates are that
+//        mechanic's valid options (retrieval.js validOptions) whose declarations change the reads, the model picks one
+//        or "none" (a gap), and the pick joins that mechanic. A coverage gap a later step resolved is marked settled.
+//        The core loop mechanic's own ends are left to the loop steps (3.), once the other mechanics built its loop.
+//        The check's problems are recorded on the mechanic step (loop).
 //   3. The loop steps (build-steps.js), after the mechanic steps: the win (when nothing in the collection declares one
 //      that can be wired), the lose (when the play spec has one and no core loop declares it), the drivers of AI
 //      opponents (loop_opponent_inert) and the coverage of what the win reads (loop_win_unaffected), each a small strict
@@ -40,7 +50,7 @@ import { cardLoop } from './loop.js';
 import { isAvatar, unplayedLoops } from './play-spec.js';
 import { relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
-import { makeAsk, loopSteps, adapterSteps } from './build-steps.js';
+import { makeAsk, loopSteps, adapterSteps, askWins, askLoopStep, partialCheck, loopNeeds } from './build-steps.js';
 import { keepMashupAdapters } from './adapters.js';
 import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, MAX_LIST } from './retrieval.js';
 import { isStr, prop } from '../kernel/guards.js';
@@ -67,18 +77,18 @@ import { isStr, prop } from '../kernel/guards.js';
  * the mechanics it covers (covers).
  * @typedef {{ kind: 'mechanic', mechanic: string, importance: string, candidates: BuildCandidate[], rejected: Array<{ id: string, why: string }>, asks: BuildAsk[],
  *   checks: BuildChecks | null, outcome: 'added' | 'reused' | 'gap' | 'covered', primitive: string | null, collection: string[], ms: number,
- *   covers?: string[], coveredBy?: string, coverage?: { by: string, why: string, asked: boolean }, context?: string | null }} BuildStep
+ *   covers?: string[], coveredBy?: string, coverage?: { by: string, why: string, asked: boolean }, context?: string | null, loop?: string[] }} BuildStep
  */
 /** The space step. @typedef {{ candidates: Array<{ use: string, score: number }>, asked: boolean, pick: string, why: string }} SpaceStep */
 /**
  * buildSelection()'s result: what each mechanic maps to, the space, the collection (picks and their closures), adapter
- * instances and bindings, how each mashup entry was realised (mashupAdapters), gaps, the recorded content contracts and
- * the step log.
- * @typedef {{ version: string, loop: string | null, space: SpaceChoice, spaceStep: SpaceStep, mapping: Record<string, { primitives: string[], candidates: Array<{ id: string, score: number }>, why: string }>,
+ * instances and bindings, how each mashup entry was realised (mashupAdapters), the game's win when several were
+ * declared (win), gaps, the recorded content contracts and the step log.
+ * @typedef {{ version: string, loop: string | null, space: SpaceChoice, spaceStep: SpaceStep, win: import('./build-steps.js').WinDecision | null, mapping: Record<string, { primitives: string[], candidates: Array<{ id: string, score: number }>, why: string }>,
  *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, mashupAdapters: import('./adapters.js').MashupRealisation[], gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
  */
 
-export const BUILD_VERSION = 'build/0.2';
+export const BUILD_VERSION = 'build/0.3';
 /** At most this many spaces are offered; mechanic options are never cut (over MAX_LIST a category question comes first). */
 export const MAX_SPACES = 8;
 export { MAX_LIST };
@@ -259,6 +269,73 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     return { ok: true, have, closure, checks: { closure, bundle: [...cand.members, ...cand.adapters.map(x => x.use)], compose: whole.verdict, adapters: adapters.map(x => x.use), contracts: own, variant: variants[variant]?.with || {} } };
   };
 
+  const loopId = loopMechanicOf(decomposition);
+  const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
+  // Adapters the mashup steps added keep their own list: tryAdd re-resolves the collection's adapters on each pick, and
+  // the mashup instances are kept through it (adapters.js keepMashupAdapters), with the records of what each realises.
+  /** @type {AdapterInstance[]} */
+  const stepAdapters = [];
+  /** @type {Record<string, string>} */
+  const stepBind = {};
+  /** @type {import('./adapters.js').MashupRealisation[]} */
+  const realised = [];
+  /** The game's win when the collection declares several (build-steps.js askWins). @type {import('./build-steps.js').WinDecision | null} */
+  let win = null;
+  const joined = () => keepMashupAdapters({ adapters, bind }, { adapters: stepAdapters, bind: stepBind, mashupAdapters: [{ relation: 'step', mechanics: [], instances: stepAdapters.map(a => ({ use: a.use, ...(a.id ? { id: a.id } : {}) })) }] });
+  const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems],
+    ...joined(),
+    mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic?.id ?? null, win: win?.use ?? null,
+    composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
+  /** Loop-step needs asked so far (their keys): none is asked twice in the build. @type {Set<string>} */
+  const askedNeeds = new Set();
+  /** The coverage gaps of the steps after a mechanic, with their need's key (a later step may resolve them). @type {Array<{ key: string, gap: Gap, step: import('./build-steps.js').LoopStep }>} */
+  const coverGaps = [];
+  /** Never two wins: when the collection declares several, one question picks the game's (build-steps.js askWins). @param {string | null} mechanic */
+  const settleWins = async mechanic => {
+    const r = await askWins({ registry, decomposition, collection: /** @type {any} */ (collection()), ask, decided: win, mechanic });
+    if (r) { win = r.decision; steps.push(r.step); log(`build: the game's win is ${win.use} (unwired: ${win.unwired.join(', ')})`); }
+  };
+  /**
+   * After a mechanic step, before the next: the wins, then the loop check of the partial collection (recorded on the
+   * step). Each wired end whose reads play cannot change gets the coverage step for its primitive's mechanic (that
+   * mechanic's valid options, retrieval.js validOptions, that answer the need; the model picks one or "none"), and the
+   * wins again after a pick. The core loop mechanic's own ends are completed by the loop steps, once every mechanic
+   * step has run (the other mechanics build its loop: asked earlier, the step would add what one of them brings).
+   * @param {BuildStep} after the mechanic step that just ran
+   */
+  const settle = async after => {
+    await settleWins(after.mechanic);
+    for (let guard = 0; guard < 16; guard++) {
+      const c = /** @type {any} */ (collection());
+      const needs = loopNeeds(registry, decomposition, c, partialCheck(registry, decomposition, c));
+      after.loop = needs.filter(n => n.problem).map(n => `${n.problem?.code} ${n.problem?.primitive}`);
+      const need = needs.find(n => n.kind === 'coverage' && !askedNeeds.has(n.key) && n.join && n.join !== loopMechanic?.id);
+      if (!need) break;
+      askedNeeds.add(need.key);
+      const mech = decomposition.mechanics.find(x => x.id === need.join) || null;
+      const among = mech ? validOptions({ registry, decomposition, mechanic: mech, mapping, state, systems, space: use, adapters }).options.map(o => o.id) : null;
+      const r = await askLoopStep({ registry, decomposition, collection: c, need, ask, mechanic: mech && { id: mech.id, verb: mech.verb, description: mech.description }, among });
+      let gap = r.gap;
+      if (r.pick) {
+        const t = tryAdd(r.pick);
+        if (!t.ok) {
+          const last = r.step.asks[r.step.asks.length - 1];
+          last.ok = false; last.problem = t.why; r.step.outcome = 'gap'; r.step.primitive = null;
+          gap = { mechanic: 'loop', description: `${r.pick.id} failed the checks for the coverage step: ${t.why}`.slice(0, 400), importance: 'core', kind: 'no_primitive', why: t.why.slice(0, 400) };
+        } else if (mech) {
+          const mapped = mapping[mech.id];
+          if (mapped && !mapped.primitives.includes(r.pick.id)) mapped.primitives.push(r.pick.id);
+          for (const id of [r.pick.id, ...t.closure]) own(id, mech.id);
+        }
+      }
+      if (gap) { gaps.push(gap); coverGaps.push({ key: need.key, gap, step: r.step }); }
+      r.step.loop = partialCheck(registry, decomposition, /** @type {any} */ (collection())).problems.map(p => `${p.code} ${p.primitive}`);
+      r.step.collection = [...systems];
+      steps.push(r.step);
+      if (r.step.primitive) await settleWins(mech?.id ?? after.mechanic);
+    }
+  };
+
   for (const m of worklist(decomposition)) {
     const t0 = performance.now();
     const header = `${premise}\nSpace: ${use} (${role})\nCollection so far: ${systems.join(', ') || '(empty)'}`;
@@ -282,6 +359,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       if (owner && owner.kind === 'mechanic') owner.covers = [...(owner.covers || []), m.id];
       step.collection = [...systems];
       step.ms = Math.round(performance.now() - t0);
+      await settle(step);
       continue;
     }
     // Every valid option, ordered by declarations; the space itself when its card relates to the mechanic.
@@ -333,36 +411,25 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     }
     step.collection = [...systems];
     step.ms = Math.round(performance.now() - t0);
+    await settle(step);
   }
   // 3. The loop steps (build-steps.js), once the core loop mechanic has its primitive: the win, the lose, the drivers
   //    of AI opponents and what lets play change the win's reads, each one small strict question with the loop check
   //    of the partial collection after it. Their picks join the core loop mechanic (the driver joins the collection
   //    only); what none answers is a gap for the gap layer.
-  const loopId = loopMechanicOf(decomposition);
-  const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
-  // Adapters the mashup steps added keep their own list: tryAdd re-resolves the collection's adapters on each pick, and
-  // the mashup instances are kept through it (adapters.js keepMashupAdapters), with the records of what each realises.
-  /** @type {AdapterInstance[]} */
-  const stepAdapters = [];
-  /** @type {Record<string, string>} */
-  const stepBind = {};
-  /** @type {import('./adapters.js').MashupRealisation[]} */
-  const realised = [];
-  const joined = () => keepMashupAdapters({ adapters, bind }, { adapters: stepAdapters, bind: stepBind, mashupAdapters: [{ relation: 'step', mechanics: [], instances: stepAdapters.map(a => ({ use: a.use, ...(a.id ? { id: a.id } : {}) })) }] });
-  const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems],
-    ...joined(),
-    mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic?.id ?? null,
-    composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
   if (loopMechanic && mapping[loopMechanic.id]?.primitives.length) {
-    const r = await loopSteps({ registry, decomposition, collection: /** @type {any} */ (collection()), ask, mechanic: loopMechanic, log,
-      commit: (kind, pick) => {
+    const r = await loopSteps({ registry, decomposition, collection: /** @type {any} */ (collection()), ask, mechanic: loopMechanic, log, asked: askedNeeds,
+      commit: (kind, pick, mech) => {
         const t = tryAdd(pick);
         if (!t.ok) return t.why;
-        if (kind !== 'driver') { const own = mapping[loopMechanic.id]; if (!own.primitives.includes(pick.id)) own.primitives.push(pick.id); }
+        // A win or lose joins the core loop mechanic; a coverage pick the mechanic of the primitive whose end it serves.
+        if (kind !== 'driver') { const own = mapping[mech && mapping[mech] ? mech : loopMechanic.id]; if (!own.primitives.includes(pick.id)) own.primitives.push(pick.id); }
         return /** @type {any} */ (collection());
       } });
     steps.push(...r.steps);
     gaps.push(...r.gaps);
+    // A win step that added a win beside one that cannot be wired: the game still has one win.
+    await settleWins(loopMechanic.id);
   }
   // 4. The mashup's adapters (build-steps.js adapterSteps): a nested entry asks which declared outer event enters the
   //    joined loop and adds engine.adapt.nested wired from declarations; union and skin entries are decided by them.
@@ -373,11 +440,19 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     steps.push(...m.steps);
     gaps.push(...m.gaps);
     realised.push(...m.realised);
+    await settleWins(null);
+  }
+  // A coverage gap of the steps after a mechanic that a later step resolved (its need is gone from the loop check of the
+  // whole collection) is no longer missing: its step is marked settled and its gap leaves the list.
+  if (coverGaps.length) {
+    const c = /** @type {any} */ (collection());
+    const open = new Set(loopNeeds(registry, decomposition, c, partialCheck(registry, decomposition, c)).map(n => n.key));
+    for (const x of coverGaps) if (!open.has(x.key)) { x.step.settled = 'a later step resolved it'; gaps.splice(gaps.indexOf(x.gap), 1); }
   }
   const all = collection();
   const caps = [...(variants[variant]?.caps || [])];
   return {
-    version: BUILD_VERSION, loop: loopMechanicOf(decomposition), space: { id: sid, use, with: variants[variant]?.with || {}, role, caps }, spaceStep,
+    version: BUILD_VERSION, loop: loopMechanicOf(decomposition), space: { id: sid, use, with: variants[variant]?.with || {}, role, caps }, spaceStep, win,
     mapping, systems, adapters: all.adapters, bind: all.bind, mashupAdapters: realised, gaps, contracts, steps, calls, ms: Math.round(performance.now() - started),
   };
 }

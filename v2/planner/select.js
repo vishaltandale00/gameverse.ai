@@ -43,7 +43,7 @@ import { checkComposition } from './compose-check.js';
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
 /**
  * The iterative build as the selection report keeps it: the space step, every mechanic step (candidates, asks, checks,
- * outcome), the content contracts recorded, model calls and time. @typedef {Omit<import('./build.js').BuildResult, 'mapping' | 'systems' | 'adapters' | 'bind' | 'mashupAdapters' | 'gaps' | 'space'>} BuildReport
+ * outcome), the content contracts recorded, model calls and time. @typedef {Omit<import('./build.js').BuildResult, 'mapping' | 'systems' | 'adapters' | 'bind' | 'mashupAdapters' | 'gaps' | 'space' | 'win'>} BuildReport
  */
 /** A space kind not offered because no registered generator can furnish what it needs. @typedef {{ use: string, missing: string[], why: string }} ExcludedSpace */
 /** A generator a mechanic named that targets none of the chosen spaces. @typedef {{ id: string, why: string }} DroppedGenerator */
@@ -64,6 +64,8 @@ import { checkComposition } from './compose-check.js';
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
  * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
+ * @property {import('./build-steps.js').WinDecision} [win]  the game's win when several primitives declare one (build-steps.js
+ *   askWins): it owns the game's win; the others' wins are left unwired
  * @property {import('./adapters.js').MashupRealisation[]} [mashupAdapters]  how the build's mashup adapter steps realised each
  *   core.mashup entry (the instances among `adapters`): every later re-resolution of `adapters` keeps them (adapters.js keepMashupAdapters)
  * @property {number} ms
@@ -561,7 +563,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), ...(mashupAdapters.length ? { mashupAdapters } : {}), completeness: { locomotion: loco, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(built?.win && systems.includes(built.win.use) ? { win: built.win } : {}), ...(adapters.length ? { adapters } : {}), ...(mashupAdapters.length ? { mashupAdapters } : {}), completeness: { locomotion: loco, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}),
     ...(built ? { build: { version: built.version, loop: built.loop, spaceStep: built.spaceStep, steps: built.steps, contracts: built.contracts, calls: built.calls, ms: built.ms } } : {}), ms: Math.round(performance.now() - started),
   };
 }
