@@ -48,9 +48,20 @@ export function buildCatalogue(extra = [], base = PRIMITIVES) {
   return { registry, logic: buildLogic(registry, Logic) };
 }
 
+/**
+ * The live catalogue: every registered primitive plus every promoted one (v2/primitives/promoted), what the server
+ * builds games from. Catalogue-wide conformance tests run over this, never over buildCatalogue() alone, so a promoted
+ * primitive (and the candidate a primitive promotion checks in its worktree) is held to the same properties.
+ * `base` replaces the registered primitives (a test kit's set, e.g. with the reference test space).
+ * @param {{ extra?: Primitive[], base?: Primitive[] }} [options]
+ */
+export async function liveCatalogue({ extra = [], base = PRIMITIVES } = {}) {
+  return buildCatalogue([...(await promotedPrimitives()), ...extra], base);
+}
+
 /** @param {{ extra?: Primitive[] }} [options] */
 export async function loadCatalogue({ extra = [] } = {}) {
-  return buildCatalogue([...(await promotedPrimitives()), ...extra]);
+  return liveCatalogue({ extra });
 }
 
 /** @param {RegistryLike} registry @returns {string} */

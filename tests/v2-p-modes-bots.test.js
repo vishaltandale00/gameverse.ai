@@ -4,7 +4,7 @@
 // prefers the bots a document's modes name over detection.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catalog } from '../v2/primitives/plot/story-testkit.js';
+import { primitives } from '../v2/primitives/plot/story-testkit.js';
 import { manor, withExitGate } from '../v2/primitives/plot/story-testkit.js';
 import { preflight } from '../v2/kernel/document.js';
 import { maker } from '../v2/verify/drive.js';
@@ -12,13 +12,14 @@ import { usedPrimitives, stateHash } from '../v2/verify/util.js';
 import { strategies, select } from '../v2/verify/strategies/index.js';
 import { replayMacros } from '../v2/verify/strategies/turn-board.js';
 import { replayRace } from '../v2/verify/strategies/race.js';
-import { modeCatalogue } from '../v2/planner/catalog.js';
+import { modeCatalogue, liveCatalogue } from '../v2/planner/catalog.js';
 import { modeShapeErrors, modesIn, modeApplies } from '../v2/primitives/gameplay/modes-lib-mode.js';
 import { interactionsOf, appliesTo } from '../v2/planner/loop.js';
 import { fitsInteraction } from '../v2/planner/select.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 
-const { registry, logic } = catalog();
+// The live catalogue (promoted primitives included, with the reference test space): every card.mode is held to these checks.
+const { registry, logic } = await liveCatalogue({ base: primitives() });
 const ctxOf = doc => {
   const r = preflight(doc, registry, logic);
   assert.ok(r.ok, JSON.stringify(r.errors));

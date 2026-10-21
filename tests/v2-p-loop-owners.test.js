@@ -10,11 +10,12 @@
 //                  player declares whether it moves the player, and a moving one declares the seat and its controls.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCatalogue } from '../v2/planner/catalog.js';
+import { liveCatalogue } from '../v2/planner/catalog.js';
 import { cardLoop, endsGame } from '../v2/planner/loop.js';
 import { loopReport, movesPlayer, playerChanges, evaluatesEndings, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
 
-const { registry, logic } = buildCatalogue();
+// The live catalogue: promoted primitives are held to the same loop properties.
+const { registry, logic } = await liveCatalogue();
 const cards = registry.cards();
 const won = [{ do: 'end_game', outcome: 'won' }];
 const isObj = v => typeof v === 'object' && v !== null && !Array.isArray(v);

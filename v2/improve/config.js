@@ -5,7 +5,7 @@
 
 export const LOOP_CONFIG = Object.freeze({
   id: 'gameverse.v2.promote-mod',
-  version: '0.2.0', // 0.2.0: adds the 'primitive' target (experiment primitive -> native kernel primitive)
+  version: '0.3.0', // 0.2.0: adds the 'primitive' target (experiment primitive -> native kernel primitive); 0.3.0: the 'template' target and the primitive target's catalogue conformance check
   runner: 'local-claude', // 'local-claude' | 'daytona' | 'fake'
 
   limits: {
@@ -23,6 +23,7 @@ export const LOOP_CONFIG = Object.freeze({
     maxLogBytes: 4 * 1024 * 1024,    // per attempt agent log retained in the job dir
     maxFeedbackChars: 6000,          // failure output fed back to the agent in a repair round
     maxExperimentCodeChars: 64_000,
+    conformanceTimeoutMs: 10 * 60_000, // the primitive target's catalogue conformance command (check-primitive --conformance)
   },
 
   agent: {
@@ -71,13 +72,16 @@ export const LOOP_CONFIG = Object.freeze({
         { id: 'primitive-tests', argv: ['node', '--test', '{primitiveTest}'] },
         { id: 'kernel', argv: ['node', '--test', 'tests/v2-kernel.test.js', 'tests/v2-kernel-conformance.test.js'] },
         { id: 'gate', argv: ['node', '{primitiveChecker}', '--root', '{workdir}', '--doc', '{docFile}', '--primitive', '{primitiveId}'] },
+        // The catalogue conformance tests with the candidate in the live catalogue (v2/improve/conformance.js); its own
+        // limit: the template contract file plays every template's bots on three seeds.
+        { id: 'conformance', argv: ['node', '{primitiveChecker}', '--root', '{workdir}', '--conformance'], timeoutLimit: 'conformanceTimeoutMs' },
       ],
     },
   },
 });
 
 const POSITIVE = ['prepareTimeoutMs', 'codingTimeoutMs', 'verifyCommandTimeoutMs', 'jobTimeoutMs', 'maxAgentTurns', 'maxBudgetUsd',
-  'maxActiveJobs', 'maxActivePerUser', 'maxActivePerGame', 'maxQueuedJobs', 'maxLogBytes', 'maxFeedbackChars', 'maxExperimentCodeChars'];
+  'maxActiveJobs', 'maxActivePerUser', 'maxActivePerGame', 'maxQueuedJobs', 'maxLogBytes', 'maxFeedbackChars', 'maxExperimentCodeChars', 'conformanceTimeoutMs'];
 
 /** The base config with overrides merged one level deep (limits, agent, scope); throws on an unbounded or malformed limit. */
 export function resolveConfig(overrides = {}) {
@@ -101,6 +105,7 @@ export function resolveConfig(overrides = {}) {
   if (typeof cfg.id !== 'string' || !/^\d+\.\d+\.\d+$/.test(cfg.version)) throw Error('loop config: id and semver version are required');
   if (!Array.isArray(cfg.verification) || !cfg.verification.length) throw Error('loop config: verification commands are required');
   for (const c of [...cfg.verification, ...cfg.targets.primitive.verification]) if (!c?.id || !Array.isArray(c.argv) || !c.argv.length) throw Error(`loop config: bad verification command ${JSON.stringify(c)}`);
+  for (const c of [...cfg.verification, ...cfg.targets.primitive.verification]) if (c.timeoutLimit !== undefined && !POSITIVE.includes(c.timeoutLimit)) throw Error(`loop config: verification command '${c.id}' names an unknown limit '${c.timeoutLimit}'`);
   if (!cfg.agent.allowedTools.every(t => typeof t === 'string')) throw Error('loop config: agent.allowedTools must be strings');
   return Object.freeze(cfg);
 }

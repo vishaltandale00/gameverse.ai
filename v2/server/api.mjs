@@ -130,7 +130,22 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const job = await improve.start({ target: 'primitive', experiment, doc: latest.doc, registry: base.registry, gameId: m[1], gameVersion: latest.version });
       return { job };
     }],
-    ['GET', /^\/api\/v2\/improve$/, async () => ({ jobs: improve ? improve.list() : [] })],
+    // Make a published version a template (improve target 'template'): derived from the version, checked by the whole
+    // template contract against the live catalogue, written to v2/templates/promoted/<id>.json on success. Body:
+    // { version?: the published version (the latest when absent), templateId?: the template's id (the game's id when absent) }.
+    ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/promote-template$/, async (body, m) => {
+      if (!improve) throw Object.assign(Error('Promotion is off (V2_IMPROVE=off).'), { status: 503 });
+      const asked = prop(body, 'version');
+      const version = typeof asked === 'number' && Number.isInteger(asked) ? await store.version(m[1], asked) : await store.latest(m[1]);
+      const doc = prop(version, 'doc');
+      if (!version || !doc || typeof doc !== 'object') throw Object.assign(Error('That game has no such published version.'), { status: 404 });
+      if (LEGACY.has(str(prop(doc, 'schema')))) throw legacyError();
+      const { base } = await ready;
+      const templateId = str(prop(body, 'templateId')) || null;
+      const job = await improve.start({ target: 'template', doc, registry: base.registry, gameId: m[1], gameVersion: prop(version, 'version'), templateId });
+      return { job };
+    }],
+    ['GET', /^\/api\/v2\/improve$/,async () => ({ jobs: improve ? improve.list() : [] })],
     ['GET', /^\/api\/v2\/improve\/([a-z0-9-]+)$/, async (_, m) => { const job = improve?.status(m[1]); if (!job) throw Object.assign(Error('No such job.'), { status: 404 }); return { job }; }],
     ['POST', /^\/api\/v2\/improve\/([a-z0-9-]+)\/cancel$/, async (_, m) => ({ job: await improve?.cancel(m[1]) })],
     // Apply a verified primitive to this checkout (fast-forward only; never pushes). The server restarts to load it.

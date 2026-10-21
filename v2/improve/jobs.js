@@ -12,7 +12,7 @@ export const STATES = ['queued', 'preparing', 'coding', 'verifying', 'succeeded'
 export const TERMINAL = new Set(['succeeded', 'failed', 'cancelled']);
 const NEXT = {
   queued: ['preparing', 'cancelled', 'failed'],
-  preparing: ['coding', 'failed', 'cancelled'],
+  preparing: ['coding', 'verifying', 'failed', 'cancelled'], // → verifying: the template target has no coding phase
   coding: ['verifying', 'failed', 'cancelled'],
   verifying: ['coding', 'succeeded', 'failed', 'cancelled'], // back to coding = a repair round
 };
@@ -114,7 +114,7 @@ export function timingReport(job) {
   const why = name => reached(name) ? `${name} still running` : `the job ${TERMINAL.has(job.state) ? 'ended' : 'has not yet reached'} before ${name}`;
   const queueMs = measure('queueMs', phase('queued'), 'still queued');
   const preparingMs = measure('preparingMs', phase('preparing'), why('preparing'));
-  const codingMs = measure('codingMs', phase('coding'), why('coding'));
+  const codingMs = measure('codingMs', phase('coding'), job.target === 'template' ? 'the template target has no coding phase' : why('coding'));
   const verifyingMs = measure('verifyingMs', phase('verifying'), why('verifying'));
   let totalMs = null;
   if (job.finishedAt != null) totalMs = job.finishedAt - job.createdAt; else unavailable.totalMs = 'job not finished';
