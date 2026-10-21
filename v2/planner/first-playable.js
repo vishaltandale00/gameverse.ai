@@ -141,7 +141,7 @@ export function firstPlayable(input, registry, logic, { seed, frames = 3, furnis
     errors.push({ code: 'ended_at_start', path: '$', message: `the game ended on its first ${frames} frames (${rt.state.status}${rt.state.ending ? `, ending '${rt.state.ending}'` : ''}) after events ${events.join(', ') || 'none'}`, hint: 'a primitive ends the game at once: its region may be blocked by generated terrain, or a beat ends the game without a trigger' });
   }
   const options = rt.availableOptions().length;
-  if (player && rt.state.status === 'playing' && options === 0) errors.push({ code: 'no_options', path: 'player', message: 'the player starts with no options (no way to act or travel)', hint: 'add a movement or interaction primitive the space supports, or start the player where it can move' });
+  if (player && rt.state.status === 'playing' && options === 0) problems.push({ code: 'no_options', path: 'player', message: 'the player starts with no options (no way to act or travel)', hint: 'add a movement or interaction primitive the space supports, or start the player where it can move' });
   const fired = Object.keys(rt.store('plot.storyboard').fired || {});
   return {
     ok: problems.every(p => p.code !== 'no_player') && !errors.length, doc: pre.doc, ms: elapsed(), version: FIRST_PLAYABLE_VERSION,

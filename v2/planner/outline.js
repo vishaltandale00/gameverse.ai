@@ -325,8 +325,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ...(worldAdded.length ? { worldAdded } : {}), ms: Math.round(performance.now() - t) });
     last = repaired;
     let problems = [];
-    if (repaired.ok && worldLeft.length) problems = worldLeft;
-    else if (repaired.ok) {
+    if (repaired.ok) {
       // Every round, the last included, must pass the publish gate: a playtest agent plays it to the end, nothing crashes.
       const g = verify ? await gate(repaired.doc) : { viable: true };
       rounds.at(-1).viable = g.viable;

@@ -21,7 +21,7 @@ import { catalogHash } from './catalog.js';
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze({
-  detailConcurrency: 3, maxDetailTasks: 0, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
+  detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
   solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1,
 });
 
