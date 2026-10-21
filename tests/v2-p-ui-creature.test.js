@@ -17,7 +17,7 @@ const doc = () => ({
   spaces: [{ id: 'world', use: 'engine.space.test', with: { size: [10, 10, 1] }, zones: [{ id: 'route', rect: [0, 0, 10, 10] }] }, { id: 'arena', use: 'engine.space.test', with: { size: [2, 2, 1] } }],
   systems: [{ use: 'gameplay.fixture.fx' }, { use: 'gameplay.inventory', with: { start: [{ item: 'tonic', count: 2 }] } }, { use: 'gameplay.creature.party', with: { start: [{ species: 'sprout', level: 8 }] } }, { use: 'gameplay.creature.battle', with: { space: 'arena' } }],
   content: {
-    types: { grass: { water: 2 }, normal: {} },
+    types: { grass: { water: 2 }, water: {}, normal: {} },
     moves: [{ id: 'tackle', name: 'Tackle', type: 'normal', category: 'physical', power: 40, accuracy: 100, pp: 35 }, { id: 'vine', name: 'Vine', type: 'grass', category: 'special', power: 45, accuracy: 100, pp: 25 }],
     species: [{ id: 'sprout', name: 'Sprout', types: ['grass'], base: B(45, 49, 49, 65, 65, 45), catchRate: 45, expYield: 64, growth: 'medium', learnset: [{ level: 1, move: 'tackle' }, { level: 1, move: 'vine' }] },
       { id: 'mote', name: 'Mote', types: ['normal'], base: B(1, 1, 1, 1, 1, 1), catchRate: 255, expYield: 200, growth: 'fast', learnset: [{ level: 1, move: 'tackle' }] }],

@@ -194,18 +194,24 @@ test('creature: deterministic replay of a battle', () => {
 test('creature: preflight rejects bad data and configs with stable codes', () => {
   const registry = new Registry(PRIMS), logic = buildLogic(registry, Logic);
   const codes = d => preflight(d, registry, logic).errors.map(e => e.code);
+  // Species, moves and creature items are the declared sections (card.data): their values are checked at their paths
+  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where species_invalid, move_invalid, battle_item_invalid
+  // and the validator's ref_unknown were.
+  const found = d => { const r = preflight(d, registry, logic); return [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`); };
   const bad = doc(); bad.content.species[0].base.hp = 0; bad.content.species[0].learnset.push({ level: 5, move: 'nope' });
-  assert.ok(codes(bad).includes('species_invalid'));
-  assert.ok(codes(bad).includes('ref_unknown'));
+  assert.ok(found(bad).includes('param_range@content.species[0].base.hp'), found(bad));
+  assert.ok(found(bad).includes(`ref_unknown@content.species[0].learnset[${bad.content.species[0].learnset.length - 1}].move`));
   const badMove = doc(); badMove.content.moves[0].category = 'magic';
-  assert.ok(codes(badMove).includes('move_invalid'));
+  assert.ok(found(badMove).includes('param_option@content.moves[0].category'));
+  const weak = doc(); weak.content.moves[0].category = 'physical'; weak.content.moves[0].power = 0;
+  assert.ok(codes(weak).includes('move_invalid'), 'a damaging move needs power (cross-field)');
   assert.ok(codes(doc({ systems: [{ use: 'gameplay.encounter', with: { areas: [{ id: 'a', rate: 0.1, table: [{ species: 'mote', minLevel: 5, maxLevel: 2 }] }] } }] })).includes('encounter_area'));
   assert.ok(codes(doc({ systems: [{ use: 'gameplay.encounter', with: { areas: [{ id: 'a', zone: 'route', table: [{ species: 'mote', minLevel: 5, maxLevel: 2 }] }] } }] })).includes('encounter_levels'));
   assert.ok(codes(doc({ systems: [{ use: 'gameplay.encounter', with: { areas: [{ id: 'a', zone: 'route', table: [{ species: 'ghost' }] }] } }] })).includes('ref_unknown'));
   const noBalls = doc(); noBalls.content.items = []; noBalls.systems[0].with.start = []; noBalls.systems[3].with.balls = [];
   assert.ok(codes(noBalls).includes('catch_no_balls'));
   const badItem = doc(); badItem.content.items[1].creature.kind = 'candy';
-  assert.ok(codes(badItem).includes('battle_item_invalid'));
+  assert.ok(found(badItem).includes('param_option@content.items[1].creature.kind'));
   const fx = doc(); fx.systems.push({ use: 'gameplay.encounter', with: { trainers: [{ id: 't', party: [{ species: 'mote' }], onDefeat: [{ do: 'start_battle' }] }] } });
   assert.ok(codes(fx).includes('effect_invalid'));
   const noParty = doc(); noParty.systems.splice(1, 1);

@@ -7,8 +7,11 @@
 // starts their battle (from sight AI, dialogue or a storyboard beat) once, and
 // trainer_defeated tells plot and gates they are beaten.
 import { weighted } from './puzzle-lib-board.js';
+import { creatureExample } from './creature-party.js';
 
 const ID = 'gameplay.encounter';
+/** The systems an encounter needs, for its rule examples. */
+const BATTLE = [{ use: 'gameplay.creature.party' }, { use: 'gameplay.creature.battle' }];
 const AREA = { type: 'object', fields: {
   id: { type: 'string', required: true },
   zone: { type: 'ref', to: 'zone', effect: 'zone the area covers' },
@@ -17,7 +20,7 @@ const AREA = { type: 'object', fields: {
   table: { type: 'list', required: true, min: 1, of: { type: 'object', fields: { species: { type: 'ref', to: 'species', required: true }, minLevel: { type: 'integer', default: 2, min: 1, max: 100 }, maxLevel: { type: 'integer', default: 5, min: 1, max: 100 }, weight: { type: 'number', default: 1, min: 0.001, max: 1000 } } } },
 } };
 const TRAINER = { type: 'object', fields: {
-  id: { type: 'string', required: true }, name: { type: 'string', default: '' }, class: { type: 'string', default: 'trainer' },
+  id: { type: 'string', required: true }, name: { type: 'string', default: '', display: true, effect: 'the name a person reads' }, class: { type: 'string', default: 'trainer', display: true, effect: 'the trainer class a person reads (Ranger, Hiker...)' },
   kind: { type: 'string', default: 'trainer', options: ['trainer', 'leader', 'champion'] },
   party: { type: 'list', required: true, min: 1, max: 6, of: { type: 'object', fields: { species: { type: 'ref', to: 'species', required: true }, level: { type: 'integer', default: 5, min: 1, max: 100 } } } },
   prize: { type: 'integer', default: 0, min: 0, max: 1e7 }, ai: { type: 'string', default: 'normal', options: ['easy', 'normal'] }, noHeal: { type: 'boolean', default: false },
@@ -45,6 +48,10 @@ export default {
     provides: { events: ['encounter_request', 'encounter', 'encounter:*', 'trainer_challenge', 'trainer_challenge:*', 'step'], vars: ['encounter.steps', 'encounter.repel'] },
     requires: { primitives: ['gameplay.creature.battle'] },
     defines: [{ kind: 'trainer', in: 'trainers' }],
+    rules: {
+      encounter_area: { fields: ['areas[].zone', 'areas[].block'], message: 'an area gives a zone or a block', example: creatureExample([...BATTLE, { use: ID, with: { areas: [{ id: 'meadow', table: [{ species: 'cub' }] }] } }]) },
+      encounter_levels: { fields: ['areas[].table[].minLevel', 'areas[].table[].maxLevel'], message: 'minLevel is at most maxLevel', example: creatureExample([...BATTLE, { use: ID, with: { areas: [{ id: 'meadow', block: 'grass', table: [{ species: 'cub', minLevel: 5, maxLevel: 2 }] }] } }]) },
+    },
   },
   logic(logic) {
     logic.effect('trainer_battle', { refs: e => [['trainer', e.trainer]], run: (e, rt) => rt.emit('encounter_request', { trainer: e.trainer }) });

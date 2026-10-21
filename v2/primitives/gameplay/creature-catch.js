@@ -5,6 +5,9 @@
 // for throws outside battle (Pokémon-Go-style encounters).
 import { captureOdds, attemptCapture, itemRule } from './puzzle-lib-creature.js';
 
+import { itemsData } from './items-lib.js';
+import { creatureExample } from './creature-party.js';
+
 const ID = 'gameplay.creature.catch';
 
 export default {
@@ -26,6 +29,9 @@ export default {
     // Content pack: mechanically valid default content the planner starts from (the model themes it).
     pack: { 'content.items': [{ id: 'capture_orb', name: 'Capture Orb', kind: 'misc', creature: { kind: 'ball', value: 1 } }] },
     reads: ['content.items'],
+    data: itemsData(['creature']),
+    rules: { catch_no_balls: { fields: ['balls', 'content.items[].creature.kind'], message: "there are ball items: balls lists some, or an item has creature.kind 'ball'",
+      example: creatureExample([{ use: 'gameplay.creature.party' }, { use: 'gameplay.creature.catch' }]) } },
   },
   logic(logic) {
     logic.effect('catch_creature', {
