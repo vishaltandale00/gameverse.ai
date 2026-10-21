@@ -19,7 +19,7 @@
 import { preflight } from '../kernel/document.js';
 import { rulesOf, KERNEL_CODES } from '../kernel/rules.js';
 import { sectionShape, ID_PATTERN } from '../kernel/sections.js';
-import { strictSpec, decode, answerProblems, WITNESS } from './outline-form.js';
+import { strictSpec, decode, answerProblems, WITNESS, formParams } from './outline-form.js';
 import { docRefs } from './content.js';
 import { instancesWithPaths } from './templates.js';
 import { requiredBy } from './bundles.js';
@@ -89,21 +89,6 @@ export function formValues(s, limit = 16, depth = 0) {
   return [];
 }
 
-
-/**
- * A card's params as its forms ask them: each declared param, a list that defines a reference kind (card.defines `in`)
- * with its entries' ids held to the kernel's id rule.
- * @param {Record<string, any>} card @returns {Record<string, ParamSchema>}
- */
-export function formParams(card) {
-  /** @type {Record<string, ParamSchema>} */
-  const out = { ...(card.params || {}) };
-  for (const d of card.defines || []) {
-    const spec = d.in ? out[d.in] : undefined;
-    if (spec?.type === 'list' && spec.of?.type === 'object') out[d.in] = { ...spec, of: { ...spec.of, fields: { ...spec.of.fields, id: { ...(spec.of.fields?.id ?? { type: 'string' }), pattern: ID_PATTERN, required: true } } } };
-  }
-  return out;
-}
 
 /** Every primitive a document instantiates. @param {Record<string, any>} doc */
 const usesOf = doc => new Set([...instancesWithPaths(doc).map(x => String(x.inst.use)), ...(Array.isArray(doc.graphics) ? doc.graphics.map((/** @type {any} */ g) => String(g.use)) : [])]);

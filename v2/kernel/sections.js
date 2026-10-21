@@ -31,8 +31,10 @@ const entries = (fields = {}) => ({ type: 'list', of: { type: 'object', open: tr
  * owning card declares (card.components). `zones` are every space's zones (spaces[].zones).
  */
 export const SECTIONS = Object.freeze({
-  'content.archetypes': entries({ components: { type: 'object', open: true, default: {}, effect: 'components keyed by the primitive that owns each (card.components)' } }),
-  'content.items': entries(),
+  // `kind`: what the entry is to the cards and checks that read it ('player' marks the player's body; content contracts
+  // name the kinds they need, card.content[].kinds): free text, each reader giving meaning to its own values.
+  'content.archetypes': entries({ kind: { type: 'string', effect: 'what the entity is (player, enemy, boss, npc, pickup, prop...): the kinds the content contracts name' }, components: { type: 'object', open: true, default: {}, effect: 'components keyed by the primitive that owns each (card.components)' } }),
+  'content.items': entries({ kind: { type: 'string', effect: 'what the item is (weapon, tool, key, currency...): readers sort and use it by kind' } }),
   'content.blocks': entries(),
   'content.recipes': entries(),
   'plot.characters': entries(),

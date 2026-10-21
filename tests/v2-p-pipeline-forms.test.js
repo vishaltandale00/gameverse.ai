@@ -10,7 +10,7 @@ import { proceduralOutline, writeOutline } from '../v2/planner/outline.js';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { dependencyLayers } from '../v2/planner/build.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, formAnswer } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 const SYSTEMS = ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'];
@@ -30,21 +30,20 @@ async function setup() {
 function scriptedReply(sk, form) {
   const space = sk.spaces[0];
   const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: null })) } : {}) }));
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } };
+  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } };
+  // The answers as documents write them; each form gets them as it asks (formAnswer: its slots, null where unset).
   const replies = {
     frame: { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, player: { archetype: 'hero', zone: zones[0].id }, endings: [] },
-    cast: { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }], characters: [] },
+    cast: { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, count: [2, 2], respawnSec: 0 })), items: [{ id: 'key', name: 'Key' }, { id: 'potion', name: 'Potion' }], characters: [] },
     story: { acts: [{ id: 'act_1', title: 'Escape', beats: [{ id: 'out', title: 'Out', when_json: JSON.stringify({ zone: zones[1].id }), after: [], optional: false, do_json: JSON.stringify([{ do: 'end_game', ending: 'victory' }]) }] }], dialogue: [], quests: [] },
   };
   return req => {
     const name = req.schema.name.replace('game_outline_', '');
     // The melee params' failing field, asked alone: a value in range.
     if (name === `params_${MELEE}_fields`) return JSON.stringify(Object.fromEntries(Object.keys(req.schema.schema.properties).map(k => [k, 200])));
-    if (name === `params_${MELEE}`) return JSON.stringify({ systems: { [MELEE]: { with: { parry: { window: 5000, stagger: null, riposte: null }, block: null, moves: [], tune_json: null } } } });
+    if (name === `params_${MELEE}`) return JSON.stringify(formAnswer(req.schema.schema, { systems: { [MELEE]: { with: { parry: { window: 5000 }, moves: [] } } } }));
     if (name.startsWith('params_')) return JSON.stringify({ systems: {} });
-    return JSON.stringify(replies[name] ?? {});
+    return JSON.stringify(replies[name] ? formAnswer(req.schema.schema, replies[name]) : {});
   };
 }
 const scripted = (sk, form) => fakeWriter([scriptedReply(sk, form)]);
@@ -91,7 +90,7 @@ test('content is asked one contract section at a time and checked against that c
     const name = req.schema.name.replace('game_outline_', '');
     if (name === 'cast' && first) { first = false; return JSON.stringify({ archetypes: [], spawns: [], items: [], characters: [] }); }
     if (name === 'cast_fields') {
-      return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, p.description.startsWith('archetypes') ? [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } }] : p.description.startsWith('items') ? [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'gem', name: 'Gem', kind: 'misc', desc: 'g', value: null, more_json: null }] : null])));
+      return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, p.description.startsWith('archetypes') ? formAnswer(p, [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } }]) : p.description.startsWith('items') ? formAnswer(p, [{ id: 'key', name: 'Key' }, { id: 'gem', name: 'Gem' }]) : null])));
     }
     return base(req);
   }]);

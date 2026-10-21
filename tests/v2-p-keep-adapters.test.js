@@ -20,8 +20,8 @@ import { proceduralOutline } from '../v2/planner/outline.js';
 import { preset, skinSections } from '../v2/planner/presets.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { keepMashupAdapters, mashupAdapterProblems } from '../v2/planner/adapters.js';
-import { outlineForm, fieldForm, objectSchema } from '../v2/planner/outline-form.js';
-import { fakeWriter, buildAnswer, decomposer, stepPick } from './v2-p-pipeline-fixtures.js';
+import { outlineForm, fieldForm, strictSpec } from '../v2/planner/outline-form.js';
+import { fakeWriter, buildAnswer, decomposer, stepPick, formAnswer } from './v2-p-pipeline-fixtures.js';
 
 const cat = catalogue();
 const { registry, logic } = cat;
@@ -61,12 +61,12 @@ async function createWriter(f, { gap = [], extra = [], spawn = null } = {}) {
   const outline = req => {
     const name = String(req.schema?.name || ''), props = req.schema?.schema?.properties || {};
     if (name.endsWith('_frame')) return { title: f.decomposition.title, logline: 'One line.', premise: f.decomposition.premise, spaces: {}, player: { archetype: props.player?.properties.archetype.enum?.[0] ?? 'player_side', zone: props.player?.properties.zone.enum?.[0] ?? '' }, endings: [] };
-    const zones = props.spawns?.items?.properties?.zone?.anyOf?.[0]?.enum || [];
-    if (name.endsWith('_cast')) return { archetypes: [...scaffold.content.archetypes, ...extra].map(a => ({ id: a.id, kind: a.kind, name: a.components?.name ?? a.id, components: { other_json: JSON.stringify(a.components || {}) } })),
-      items: (scaffold.content.items || []).map(({ id, name, kind, desc, value, ...more }) => ({ id, name: name ?? id, kind: kind ?? 'misc', desc: desc ?? '', value: value ?? null, more_json: JSON.stringify(more) })), characters: [],
-      ...(props.spawns ? { spawns: spawn ? zones.map((zone, i) => ({ id: `${spawn}_${i}`, archetype: spawn, zone, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })) : [] } : {}) };
+    const zones = props.spawns?.items?.properties?.zone?.anyOf?.[0]?.enum || props.spawns?.items?.properties?.zone?.enum || [];
+    // The cast as the strict form asks it (the declared shapes of archetypes, their components, items and spawn rules).
+    if (name.endsWith('_cast')) return formAnswer(req.schema.schema, { archetypes: [...scaffold.content.archetypes, ...extra], items: scaffold.content.items || [], characters: [],
+      ...(props.spawns ? { spawns: spawn ? zones.map((zone, i) => ({ id: `${spawn}_${i}`, archetype: spawn, zone, count: [2, 2], respawnSec: 0 })) : [] } : {}) });
     const section = Object.keys(props).find(k => k.startsWith('section_'));
-    if (section) { const [, root, key] = section.split('_'); return { [section]: scaffold[root]?.[key] ?? [] }; }
+    if (section) { const [, root, key] = section.split('_'); return formAnswer(req.schema.schema, { [section]: scaffold[root]?.[key] ?? [] }); }
     return {};
   };
   const writer = fakeWriter([req => stepPick(req) ?? decompose(req) ?? buildAnswer(req, state.outlining ? replanned : built) ?? JSON.stringify(outline(req))]);
@@ -201,7 +201,7 @@ test('interact.kind is declared with its options: an enum in the cast form and i
   const skeleton = proceduralOutline({ decomposition: structuredClone(PAC.decomposition), selection: structuredClone(sel), registry, logic, seed: PAC.seed, prompt: PAC.prompt }).doc;
   const form = outlineForm({ registry, skeleton, selection: sel });
   const cast = form.groups.find(g => g.id === 'cast');
-  const kind = bare(bare(cast.schema.schema.properties.archetypes.items.properties.components.properties.interact).properties.kind);
+  const kind = bare(bare(bare(cast.schema.schema.properties.archetypes.items.properties.components).properties.interact).properties.kind);
   const declared = registry.get('gameplay.interact').card.components.interact.fields.kind.options;
   assert.ok(declared.includes('talk') && !declared.includes('inspect'));
   assert.deepEqual(kind.enum, declared);
@@ -211,10 +211,11 @@ test('interact.kind is declared with its options: an enum in the cast form and i
   assert.deepEqual(bare(ff.schema.schema.properties.field_1).enum, declared);
 });
 
-test('a wide object keeps a field declared with options as an enum slot (never JSON text)', () => {
+test('a wide object keeps every declared field strict: a field declared with options is an enum slot, no field travels as JSON text', () => {
   const fields = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`f${i}`, { type: 'number' }]));
   fields.mode = { type: 'string', options: ['a', 'b'] };
-  const { schema, codec } = objectSchema(fields);
+  const { schema, codec } = strictSpec({ type: 'object', fields }, 1, null);
   assert.deepEqual(bare(schema.properties.mode).enum, ['a', 'b']);
-  assert.ok(codec.more, 'the other fields still travel in more_json');
+  assert.deepEqual(Object.keys(schema.properties).sort(), Object.keys(fields).sort(), 'every field has its slot (no more_json catch-all)');
+  assert.equal(codec.more, false);
 });

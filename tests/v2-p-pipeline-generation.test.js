@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { contractsFor, populateProblems, placeContent, unreadReaders, placementCounts } from '../v2/planner/content.js';
-import { outlineForm, decode, specSchema } from '../v2/planner/outline-form.js';
+import { outlineForm, decode, specSchema, strictSpec } from '../v2/planner/outline-form.js';
 import { proceduralOutline, writeOutline, coreOf } from '../v2/planner/outline.js';
 import { selectPrimitives, locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js';
 import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
@@ -16,7 +16,9 @@ import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
 import { preflight } from '../v2/kernel/document.js';
-import { fakeWriter, testCatalogue, picky } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, testCatalogue, picky, formAnswer } from './v2-p-pipeline-fixtures.js';
+/** A form slot without its null alternative. */
+const bare = n => (n?.anyOf ? n.anyOf.find(x => x.type !== 'null') : n);
 
 const { registry, logic } = buildCatalogue();
 const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/v2-live/${name}.json`, import.meta.url), 'utf8'));
@@ -77,7 +79,7 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
     assert.ok(depthOf(form.schema.schema) <= 10, 'within the strict nesting limit');
     // Every selected primitive has a slot, including those the skeleton could not configure without content.
     assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].map(id => id.replace(/\./g, "__")).sort(), 'one slot per chosen primitive, no others');
-    assert.ok(form.schema.schema.properties.archetypes.items.properties.components.properties, 'archetypes have component slots');
+    assert.ok(bare(form.schema.schema.properties.archetypes.items.properties.components).properties, 'archetypes have component slots');
   }
   // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.
   const d = { ...decomposeOffline('fight monsters in a dungeon and talk to villagers on quests'), views: ['td'], movement: 'ground' };
@@ -86,23 +88,23 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   const space = sk.spaces[0];
   const zones = space.zones.map((z, i) => ({ id: z.id, name: `Zone ${i}`, description: `zone ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const value = {
+  const comps = bare(form.schema.schema.properties.archetypes.items.properties.components).properties;
+  // The answer a model gives, as documents write it; the form takes what it asks (formAnswer: its slots, null where unset).
+  const value = formAnswer(form.schema.schema, {
     title: 'Mossdeep', logline: 'x', premise: 'y', spaces: { [space.id]: { zones } }, systems: {},
-    archetypes: [{ id: 'slime', kind: 'enemy', name: 'Slime', components: { ...blank, ...(comps.health ? { health: { max: 5, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } : {}), other_json: '{"faction":"ooze"}' } }],
-    ...(form.schema.schema.properties.spawns ? { spawns: [{ id: 'slimes', archetype: 'slime', zone: zones.at(-1).id, min: 2, max: 3, respawnSec: null, when_json: null }] } : {}),
-    items: [{ id: 'gem', name: 'Gem', kind: 'misc', desc: 'shiny', value: 5, more_json: null }],
-    characters: [{ id: 'ana', name: 'Ana', role: 'smith', bio: 'b', home: zones[0].id, archetype: null, dialogue: ['ana_hi'] }],
-    ...(form.schema.schema.properties.dialogue ? { dialogue: [{ id: 'ana_hi', speaker: 'ana', start: 'n1', nodes: [{ id: 'n1', who: null, say: 'Hello.', next: null, end: true, choices: [], do_json: null }] }] } : {}),
+    archetypes: [{ id: 'slime', kind: 'enemy', name: 'Slime', components: { ...(comps.health ? { health: { max: 5 } } : {}), faction: 'ooze' } }],
+    spawns: [{ id: 'slimes', archetype: 'slime', zone: zones.at(-1).id, count: [2, 3] }],
+    items: [{ id: 'gem', name: 'Gem', kind: 'misc', desc: 'shiny' }],
+    characters: [{ id: 'ana', name: 'Ana', role: 'smith', bio: 'b', home: zones[0].id, dialogue: [{ id: 'ana_hi' }] }],
+    dialogue: [{ id: 'ana_hi', speaker: 'ana', start: 'n1', nodes: [{ id: 'n1', who: null, say: 'Hello.', next: null, end: true, choices: [], do_json: null }] }],
     acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id },
-  };
+  });
   const doc = form.toDoc(value);
   assert.equal(doc.title, 'Mossdeep');
   assert.deepEqual(doc.views, sk.views, 'views are the selection\'s, never the model\'s');
   assert.deepEqual(doc.spaces.map(s => s.use), sk.spaces.map(s => s.use));
   const slime = doc.content.archetypes.find(a => a.id === 'slime');
-  assert.equal(slime.components.faction, 'ooze', 'other_json components merge in');
+  assert.equal(slime.components.faction, undefined, 'a component no chosen card declares has no slot, so no form writes it (no free JSON)');
   if (comps.health) assert.deepEqual(slime.components.health, { max: 5 }, 'nulls mean defaults and drop out');
   if (form.schema.schema.properties.spawns) assert.ok(doc.systems.some(s => (s.with?.rules || []).some(r => r.archetype === 'slime' && r.zone === zones.at(-1).id && r.count[1] === 3)));
   assert.equal(doc.plot.storyboard, undefined, 'no acts written means no story: never the scaffold\'s');
@@ -115,7 +117,9 @@ test('decode: JSON text fields become values; strict ones never become strings; 
   assert.equal(decode('not json', 'strict'), undefined);
   assert.equal(decode('coins', 'json'), 'coins', 'a json param may be a bare string');
   assert.deepEqual(decode('{"do":"say","text":"hi"}', 'effects'), [{ do: 'say', text: 'hi' }]);
-  assert.equal(specSchema({ type: 'predicate' }).codec, 'strict');
+  // A predicate (no declared field shape) has no strict form: no slot asks for it.
+  assert.equal(strictSpec({ type: 'predicate' }, 1, null), null);
+  assert.throws(() => specSchema({ type: 'predicate' }), /no strict form/);
 });
 
 test('writeOutline with a replayed form: the model fills content, populate problems go back, the result is the model\'s game', async () => {
@@ -127,13 +131,11 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   const needsEnemies = form.contracts.some(c => c.need === 'archetypes' && c.component === 'health');
   const space = sk.spaces[0];
   const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const base = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, systems: {}, items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }], characters: [], acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id }, archetypes: [] };
+  const base = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, systems: {}, items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k' }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p' }], characters: [], acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id }, archetypes: [] };
   const hollow = { ...base };
-  const full = { ...base, archetypes: [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: comps.health ? { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } : null, other_json: comps.health ? null : '{"health":{"max":4}}' } }],
-    spawns: zones.slice(1).map((z, i) => ({ id: `ghouls_${i}`, archetype: 'ghoul', zone: z.id, min: 2, max: 2, respawnSec: 0, when_json: null })) };
-  const writer = fakeWriter([hollow, full]);
+  const full = { ...base, archetypes: [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } }],
+    spawns: zones.slice(1).map((z, i) => ({ id: `ghouls_${i}`, archetype: 'ghoul', zone: z.id, count: [2, 2], respawnSec: 0 })) };
+  const writer = fakeWriter([formAnswer(form.schema.schema, hollow), formAnswer(form.schema.schema, full)]);
   const r = await writeOutline({ forms: 'single', writer, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false });
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
   assert.equal(r.doc.title, 'Ironhold');
@@ -155,24 +157,22 @@ test('small forms: each checked as soon as it is written; a repair re-asks only 
   assert.ok(form.groups.length >= 4 && form.groups.every(g => strictProblems(g.schema.schema).length === 0), 'each small form is strict');
   const space = sk.spaces[0];
   const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } };
+  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } };
   const frame = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, player: { archetype: 'hero', zone: zones[0].id }, endings: [] };
-  const items = [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }];
+  const items = [{ id: 'key', name: 'Key', kind: 'key', desc: 'k' }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p' }];
   // The story the model writes: reaching the second hall wins.
   const story = { acts: [{ id: 'act_1', title: 'Escape', beats: [{ id: 'out', title: 'Out', when_json: JSON.stringify({ zone: zones[1].id }), after: [], optional: false, do_json: JSON.stringify([{ do: 'end_game', ending: 'victory' }]) }] }], dialogue: [], quests: [] };
   const reply = cast => req => {
     const name = req.schema.name;
     // A field form: each slot is one failing field, described by its form path.
-    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, cast[String(p.description).split(/[.[:]/)[0]] ?? null])));
-    return JSON.stringify(name.endsWith('_frame') ? frame : name.endsWith('_cast') ? cast : story);
+    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, formAnswer(p, cast[String(p.description).split(/[.[:]/)[0]])])));
+    return JSON.stringify(formAnswer(req.schema.schema, name.endsWith('_frame') ? frame : name.endsWith('_cast') ? cast : story));
   };
   // The cast is hollow twice (the whole form, then its failing field), each time caught by its content contract right
   // after it was written: the frame, params and story are asked once; the third try goes to the stronger writer, as a
   // field form too, all within the first round.
   const hollow = { archetypes: [], spawns: [], items, characters: [] };
-  const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items, characters: [] };
+  const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, count: [2, 2], respawnSec: 0 })), items, characters: [] };
   const writer = fakeWriter([reply(hollow)]), escalate = fakeWriter([reply(full)], { model: 'stronger' });
   const r = await writeOutline({ writer, escalate, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false, maxRounds: 1 });
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));

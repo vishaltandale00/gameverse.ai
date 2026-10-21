@@ -219,3 +219,27 @@ export function mazeWriter({ steps = { lose: ['gameplay.death'] } } = {}) {
   };
   return fakeWriter([req => stepPick(req, { title: 'Coin Maze', name: 'coin maze' }) ?? decompose(req) ?? buildAnswer(req, { space: ['engine.space.grid'], picks: { collect: ['gameplay.move.grid'] }, steps }) ?? outline(req) ?? '{}']);
 }
+
+/**
+ * A document value written as a strict form's answer (the slots a scripted model fills): each property the schema has,
+ * from the value (null where the value has none and the slot is nullable), list entries each through the item schema,
+ * an anyOf through the branch the value fits (its enum'd discriminator). Fields the value has and the form does not ask
+ * are left out, as a model filling the form would.
+ * @param {any} schema @param {unknown} value
+ */
+export function formAnswer(schema, value) {
+  if (!schema || typeof schema !== 'object') return value ?? null;
+  if (Array.isArray(schema.anyOf)) {
+    const branches = schema.anyOf.filter(b => b.type !== 'null');
+    if (value === undefined || value === null) return schema.anyOf.some(b => b.type === 'null') ? null : formAnswer(branches[0], value);
+    const fit = branches.find(b => b.type === 'object' && value && typeof value === 'object' && Object.entries(b.properties || {}).every(([k, p]) => !Array.isArray(p.enum) || p.enum.length !== 1 || value[k] === p.enum[0]))
+      ?? branches.find(b => (b.type === 'array') === Array.isArray(value) && (b.type !== 'object' || (value && typeof value === 'object'))) ?? branches[0];
+    return formAnswer(fit, value);
+  }
+  if (schema.type === 'object') {
+    const v = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    return Object.fromEntries(Object.entries(schema.properties || {}).map(([k, p]) => [k, formAnswer(p, v[k])]));
+  }
+  if (schema.type === 'array') return Array.isArray(value) ? value.map(x => formAnswer(schema.items, x)) : [];
+  return value === undefined ? null : value;
+}

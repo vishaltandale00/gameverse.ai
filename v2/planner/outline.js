@@ -197,10 +197,10 @@ You fill a FORM (a JSON object matching the given schema exactly). The spaces, v
 - spaces.<id>.zones (only where the schema has them: a board or a card table has none): named zones, each different from the others in what is there (terrain, hazards, residents, enemies, treasures). Exits/gates only where the schema has them. On a space without zones, spawns name cells (at_json).
 - systems.<primitive id>.with: each chosen primitive's params, tuned to the idea (null = the card's default). Primitives that keep data in their params (racers, waves, crops, stages, shops, bosses, areas...) need that data here.
 - archetypes: EVERY kind of entity the game needs (enemies with health and behavior, creatures, pickups, props, vehicles, rivals), each with the components its role needs. An archetype with only a name is hollow.
-- spawns: where those entities appear: each zone gets its own mix (count = min..max alive).
+- spawns: where those entities appear: each zone gets its own mix (count = [min, max] alive).
 - items, characters (with home zones and their dialogue ids), dialogue (node graphs), quests (objectives use the goal kinds), and the plot/content sections the primitives read.
 - acts/beats and endings: a completable story through the zones; the last beat ends the game (effect end_game).
-JSON-text fields (*_json, and params the card types as json/predicate/effects) hold a JSON value encoded as a string, or null.
+JSON-text fields (zone gates, beat triggers and effects, dialogue effects: *_json) hold a JSON value encoded as a string, or null.
 Rules:
 - Every id is a lowercase slug, unique in its kind; every reference (zone, item, character, archetype, beat, ending, dialogue node) must exist.
 - Predicates: objects whose first key names the kind (${v.predicates.join(', ')}); numbers take comparators gte lte gt lt eq ne, e.g. {"item":"key"}, {"zone":"hall"}, {"all":[...]}.
