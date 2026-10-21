@@ -325,6 +325,8 @@ export default {
       {"need": "section", "at": "content.species", "min": 4, "why": "battles are fought between species"},
       {"need": "section", "at": "content.moves", "min": 4, "why": "battles use moves"},
     ],
+    // Creature-battle mode: menu turns against wild or trainer creatures, started by start_battle (encounters, beats).
+    mode: { loop: 'creature-battle', interaction: 'menu', opponent: 'ai-rival', space: ['engine.space.none'], needs: { content: ['content.species', 'content.moves', 'content.types'], participants: null }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'balance' },
     intent: 'Turn-based creature battles (wild, trainer, leader, champion) entered from any overworld into a battle space: moves, type chart, STAB, crits, stat stages, statuses, priority/speed order, switching, items, capture, escape, experience, move learning and evolution.',
     views: ['ui', 'any'],
     params: {
@@ -361,6 +363,12 @@ export default {
     const errors = [];
     (doc.content?.items || []).forEach((it, i) => { if (it.creature && !['ball', 'heal', 'status', 'revive'].includes(it.creature.kind)) errors.push({ code: 'battle_item_invalid', path: `content.items[${i}].creature.kind`, message: 'creature item kind is ball|heal|status|revive' }); });
     return errors;
+  },
+  /** Solver progress in a battle: the foe party's lost hp fraction minus half the player's; battles won count 10 each. */
+  progress(rt) {
+    const won = (rt.state.counts['battle_end:win'] ?? 0) * 10, b = rt.state.prim[ID]?.battle; if (!b) return won;
+    const lost = party => party.reduce((t, c) => { const max = statsOf(rt.doc.content, c).hp; return t + (max > 0 ? 1 - Math.max(0, c.hp) / max : 0); }, 0);
+    return won + lost(b.foe.party) - 0.5 * lost(b.player.party);
   },
   install(rt, config) {
     const st = () => rt.store(ID);

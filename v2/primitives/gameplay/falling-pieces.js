@@ -100,6 +100,8 @@ const DEFAULT_TOP_OUT = [{ do: 'end_game', outcome: 'lost' }];
 export default {
   id: ID,
   card: {
+    // Falling-blocks mode: clear lines before the stack tops out (the line target wins through an ending or a stage goal).
+    mode: { loop: 'falling-blocks', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'falling.lines', gte: '$target' } }, lose: { param: 'onTopOut' }, bot: 'placement' },
     intent: 'Falling pieces over a board in any editCells space: Tetris-guideline wells (SRS, 7-bag, hold, ghost, T-spins, combos), puyo pairs and capsules handed to gameplay.match, or blocks dropping into a platformer level / rising into a breakout wall as cells or entities.',
     views: ['side', 'board', 'td'],
     params: {

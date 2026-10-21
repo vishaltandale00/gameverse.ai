@@ -17,6 +17,8 @@ const ORDERS = ['move', 'attack', 'attack_move', 'gather', 'build', 'stop', 'hol
 export default {
   id: ID,
   card: {
+    // RTS mode: the player's faction against AI factions; won when only the player's faction stands.
+    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {
@@ -64,6 +66,23 @@ export default {
     config.factions.forEach((f, i) => { for (const r of Object.keys(f.start)) if (!config.resources.includes(r)) errors.push(err('rts_resource', `with.factions[${i}].start.${r}`, `unknown resource '${r}'`)); });
     return errors;
   },
+  /**
+   * Solver progress for the player's faction: enemy factions defeated (10 each), enemy units
+   * removed or worn down, own units standing (0.5 each), banked resources (0.001 each).
+   */
+  progress(rt, config) {
+    const s = rt.state.prim[ID], mine = config.factions.find(f => f.control === 'player')?.id; if (!s?.res || !mine) return 0;
+    const fac = e => e.components.rts?.faction ?? (e.id === 'player' ? config.factions[0].id : null);
+    let v = 0;
+    for (const e of Object.values(rt.state.entities)) {
+      const r = e.components.rts; if (!r || r.node || !alive(e)) continue;
+      const f = fac(e), h = e.components.health, frac = h?.max ? (h.hp ?? h.max) / h.max : 1;
+      if (f === mine) v += 0.5; else if (f) v -= frac;
+    }
+    for (const f of config.factions) if (f.id !== mine && s.defeated?.[f.id]) v += 10;
+    for (const n of Object.values(s.res[mine] || {})) v += 0.001 * n;
+    return v;
+  },
   install(rt, config) {
     const FAC = new Map(config.factions.map(f => [f.id, f])), F = s => Math.max(1, Math.round(s * 60));
     const st = () => {
@@ -77,7 +96,8 @@ export default {
     let memo = { key: null, all: [] };
     const units = (fac = null) => {
       const ents = rt.state.entities, key = `${rt.state.frame}:${rt.state.nextId}:${Object.keys(ents).length}`;
-      if (memo.key !== key) memo = { key, all: sortedEntities(rt).filter(e => R(e) && !R(e).node) };
+      // Keyed on the entities object too: after restore() the same frame/id counters can name different entity objects.
+      if (memo.key !== key || memo.ents !== ents) memo = { key, ents, all: sortedEntities(rt).filter(e => R(e) && !R(e).node) };
       return memo.all.filter(e => ents[e.id] === e && alive(e) && (!fac || factionOf(e) === fac));
     };
     const isBuilding = e => Boolean(R(e)?.produces || R(e)?.dropoff || R(e)?.supplyCap || R(e)?.building);
@@ -350,6 +370,14 @@ export default {
       const army = mine.filter(e => R(e).attack && !R(e).worker && !isBuilding(e) && !s.orders[e.id]);
       const target = units().find(e => factionOf(e) && factionOf(e) !== fac && visible(fac, e.at, e.space));
       if (army.length && target) out.push({ label: `rts attack ${target.id}`, actions: { order: { kind: 'attack_move', at: structuredClone(target.at), who: army.map(e => e.id) } } });
+      else if (army.length && config.fog && Array.isArray(army[0].at) && Array.isArray(api(army[0])?.size)) {
+        // No enemy in sight: scout (attack-move) toward the nearest unexplored point of a 3x3 lattice over the space.
+        const size = api(army[0]).size, at0 = army[0].at, pts = [];
+        for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) pts.push(at0.map((v, k) => (k < 2 ? Math.floor((size[k] * ((k ? j : i) + 0.5)) / 3) : v)));
+        const c = army.reduce((m, e) => m.map((x, k) => x + v3(e.at)[k] / army.length), [0, 0, 0]);
+        const open = pts.filter(p => !service.explored(fac, p)).sort((a, b) => len(sub(v3(a), c)) - len(sub(v3(b), c)) || cellKey(a).localeCompare(cellKey(b)));
+        if (open[0]) out.push({ label: `rts scout ${cellKey(open[0])}`, actions: { order: { kind: 'attack_move', at: open[0], who: army.map(e => e.id) } } });
+      }
       return out;
     });
   },

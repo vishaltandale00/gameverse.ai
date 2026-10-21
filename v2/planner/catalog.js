@@ -141,3 +141,14 @@ export function dataShapes(registry, ids) {
   for (const r of reads) if (all[r]) out.push(all[r]);
   return out;
 }
+
+/**
+ * Game modes declared on cards (card.mode, see v2/primitives/gameplay/modes-lib-mode.js), one entry per
+ * loop-owning primitive, sorted by mode id: { mode, card, intent, interaction, opponent, space, needs,
+ * win, lose, bot, via?, wraps?, applies? }. `card` is the primitive that owns the loop.
+ */
+export function modeCatalogue(registry) {
+  return registry.ids().map(id => ({ id, card: registry.get(id).card })).filter(x => x.card.mode)
+    .map(({ id, card }) => { const { loop, ...rest } = card.mode; return { mode: loop, card: id, intent: card.intent, ...structuredClone(rest) }; })
+    .sort((a, b) => (a.mode < b.mode ? -1 : a.mode > b.mode ? 1 : a.card < b.card ? -1 : 1));
+}

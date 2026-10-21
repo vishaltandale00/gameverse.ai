@@ -24,6 +24,8 @@ export default {
   card: {
     // The player's starting deck: every card the document defines, when it named none.
     engage: { config: { deck: '$ids:content.cards' } },
+    // Card-battle mode: played over gameplay.turns, whose sides and victory/defeat effects it uses.
+    mode: { loop: 'card-battle', via: 'gameplay.turns', interaction: 'menu', opponent: 'ai-side', space: ['engine.space.none'], needs: { content: ['content.cards'], participants: 'sides' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },
     intent: 'Card battles over gameplay.turns: deck, draw, hand, discard and exhaust piles, energy or growing mana, block, card modifiers (strength, vulnerable, weak, poison...), cards with effects from content.cards, enemy intents (roguelike format: persistent deck and card rewards) or minion boards with taunt/charge and hero attacks (duel format).',
     views: ['ui', 'board'],
     params: {

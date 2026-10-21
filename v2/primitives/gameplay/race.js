@@ -51,6 +51,8 @@ export default {
     reads: [],
     // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
     engage: { participants: { param: 'racers' } },
+    // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {

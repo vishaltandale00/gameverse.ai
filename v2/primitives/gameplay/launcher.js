@@ -23,6 +23,8 @@ export default {
       {"need": "param", "param": "shots", "min": 3, "why": "the shot queue is what the player fires"},
       {"need": "archetypes", "component": "health", "kinds": ["enemy", "prop", "creature", "boss"], "min": 1, "placed": 3, "why": "shots need targets with health placed in the world", "example": {"id": "pig_guard", "kind": "enemy", "components": {"health": {"max": 3}}}},
     ],
+    // Launcher mode: a shot per turn from the queue until the targets are destroyed (an ending counts them); an empty queue loses.
+    mode: { loop: 'launcher', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.physics2d', ['position']], needs: { content: ['content.archetypes'], participants: null }, win: { when: { count: 'destroyed', gte: '$target' } }, lose: { param: 'onEmpty' }, bot: 'turn-board' },
     intent: 'Cannon or slingshot launcher: aim/pull and fire one projectile per turn from a shot queue, with mid-flight abilities (split, boost, bomb, heavy dive) and turn end when the shot settles.',
     views: ['side', 'td'],
     params: {

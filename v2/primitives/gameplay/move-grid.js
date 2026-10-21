@@ -218,6 +218,12 @@ function stepCell(rt, e, api, c, G) {
   publish(e, g, G);
 }
 
+/** The entity in a cell that blocks a step: pickups (collectible) and bodies with blocking:false do not. */
+function blocker(rt, api, at, self) {
+  if (typeof api.occupant !== 'function') return null;
+  const ids = typeof api.entitiesAt === 'function' ? api.entitiesAt(at) : [api.occupant(at)];
+  return ids.find(id => { const o = id && id !== self && rt.entity(id); return o && !o.components.collectible && o.components.body?.blocking !== false; }) ?? null;
+}
 function faceTo(e, G, dir) { const v = G.dv(dir), d = [0, 0, 0]; d[G.A] = v[0]; d[G.B] = v[1]; setFacing(e, G.fr, d); }
 
 function tryStep(rt, e, api, c, G, g, dir, running) {
@@ -229,14 +235,14 @@ function tryStep(rt, e, api, c, G, g, dir, running) {
     if (ledge !== `ledge:${NAMES[dir]}`) return bump();
     const land = [to[0] + v[0], to[1] + v[1]];
     if (!G.open(to, dir)) return bump();
-    if (typeof api.occupant === 'function' && api.occupant(G.toWorld(land)) && api.occupant(G.toWorld(land)) !== e.id) return bump();
+    if (blocker(rt, api, G.toWorld(land), e.id)) return bump();
     if (typeof api.move === 'function') api.move(e, G.toWorld(land), rt, { force: true }); else api.setPos(e, G.toWorld(land), rt);
     g.move = { from, to: land, t: 0, dur: c.ledgeFrames, ledge: true };
     rt.emit('ledge_jump', { who: e.id, dir: NAMES[dir] });
     return;
   }
   if (!G.open(from, dir)) return bump();
-  if (typeof api.occupant === 'function') { const o = api.occupant(G.toWorld(to)); if (o && o !== e.id) return bump(); }
+  if (blocker(rt, api, G.toWorld(to), e.id)) return bump();
   const ok = typeof api.move === 'function' ? api.move(e, G.toWorld(to), rt) : (api.setPos(e, G.toWorld(to), rt), true);
   if (!ok) return bump();
   g.move = { from, to, t: 0, dur: running ? c.runFrames : c.walkFrames, run: running };
