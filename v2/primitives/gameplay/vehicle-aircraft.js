@@ -29,6 +29,16 @@ export default {
     provides: { events: ['airborne', 'landed', 'stall', 'stall_recovered', 'crash'] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
+    components: {
+      aircraft: { type: 'object', effect: 'flight of a vehicle', fields: {
+        stall: { type: 'number', min: 0, unit: 'km/h', effect: 'speed below which it stalls' }, maxSpeed: { type: 'number', min: 1, unit: 'km/h' }, climb: { type: 'number', min: 0, unit: 'm/s' },
+        turn: { type: 'number', min: 0, unit: 'deg/s' }, takeoffSpeed: { type: 'number', min: 0, unit: 'km/h' }, vtol: { type: 'boolean', effect: 'hovers (helicopters, drones): no takeoff roll' },
+      } },
+    },
+    rules: {
+      aircraft_no_vehicle: { fields: ['content.archetypes[].components.aircraft', 'content.archetypes[].components.vehicle'], message: 'an archetype with an aircraft component also has a vehicle component' },
+      aircraft_invalid: { fields: ['content.archetypes[].components.aircraft.maxSpeed', 'content.archetypes[].components.aircraft.stall', 'content.archetypes[].components.aircraft.takeoffSpeed', 'content.archetypes[].components.aircraft.vtol'], message: 'maxSpeed exceeds stall, and takeoffSpeed is at least stall unless vtol (after the defaults: stall 50, maxSpeed 200, takeoffSpeed 70 km/h)' },
+    },
     // movement: the player's body moves by this primitive from the start: it moves the vehicle it spawns for the player,
     // which vehicle.core seats the player in (its engage.player.enter) and carries the player along (loop-check.js movesPlayer).
     engage: { player: { movement: true, spawn: { role: 'vehicle', archetype: { id: 'aircraft', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, aircraft: {} } } } },

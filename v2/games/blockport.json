@@ -3268,7 +3268,7 @@
     "components": {
      "model": "motorbike",
      "health": {"max":60},
-     "vehicle": {"seats":2,"health":60,"fuel":100,"open":true},
+     "vehicle": {"seats":2,"health":60,"fuel":100},
      "car": {"maxSpeed":160,"accel":24,"grip":1.2,"mass":220,"steer":40,"brake":1,"drift":true,"lean":true}
     }
    },
