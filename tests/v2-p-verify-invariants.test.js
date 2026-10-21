@@ -22,6 +22,7 @@ test('invariants: each breaker is caught with its stable code', () => {
   assert.ok(has(inv(walker([{ use: 'gameplay.fixture.nan' }])), 'non_finite'));
   assert.ok(has(inv(walker([{ use: 'gameplay.fixture.mathrandom' }])), 'nondeterministic'));
   assert.ok(has(inv(walker([{ use: 'gameplay.fixture.explode' }])), 'entity_explosion'));
+  assert.ok(!has(inv(walker([{ use: 'gameplay.fixture.volley' }])), 'entity_explosion'), 'a count that settles (a bullet pattern) is no explosion');
   assert.ok(has(inv(walker([{ use: 'gameplay.fixture.storm' }])), 'event_storm'));
   assert.ok(has(inv(walker([{ use: 'gameplay.fixture.hidden' }])), 'snapshot_roundtrip'));
   assert.ok(has(inv(cellDoc({ id: 'inert' })), 'stuck_state'));

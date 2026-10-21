@@ -7,7 +7,8 @@
 //   works         pressing each verb's control (through the controls: controls.js), from states the gate's play
 //                 reached (the bots' play and the explorer's archive), produces one of the primitive's declared progress
 //                 or provided events more than not pressing it does from the same state (a held axis: moves the player,
-//                 or the vehicle it sits in, further than idling does); alone, or while holding a
+//                 or the vehicle it sits in, further than idling does), alone, while holding a direction, or at a few
+//                 moments after taking one of the choices the game offers there (an ability in a shot's flight); alone, or while holding a
 //                 direction when the move axis is bound (a run or dash modifies a move). A choice verb is pressed with
 //                 the values the game offers for it in that state.
 // A failing feature is a problem `feature_<code>` naming the primitive and verb; the table of every feature goes into
@@ -96,11 +97,12 @@ function works(rt, verb, declared, states, moves, frames, budget) {
   const where = () => { const p = rt.player(), seat = p?.components.seat, e = seat ? rt.entity(seat.vehicle) ?? p : p; return Array.isArray(e?.at) ? e.at.slice() : null; };
   // One run: after each frame, the declared events fired so far (an event fired sooner counts, not only more often),
   // and in the end how far the player moved.
+  // input: the first frame's input and the rest's, or a function of the frame index.
   const run = (snap, first, rest, n) => {
     rt.restore(snap);
     const c0 = { ...rt.state.counts }, a = where(), trace = [];
     for (let i = 0; i < n && rt.state.status === 'playing'; i++) {
-      rt.step(i === 0 ? first : rest); steps++;
+      rt.step(typeof first === 'function' ? first(i) : i === 0 ? first : rest); steps++;
       const at = {};
       for (const [k, v] of Object.entries(rt.state.counts)) if (v > (c0[k] || 0) && matches(declared, k)) at[k] = v - (c0[k] || 0);
       trace.push(at);
@@ -132,6 +134,23 @@ function works(rt, verb, declared, states, moves, frames, budget) {
       const event = axis ? (pressed.moved > idle.moved + 0.05 ? MOVED : undefined)
         : sooner(pressed, idle) ?? (ctx && Math.abs(pressed.moved - idle.moved) > 0.05 ? MOVED : undefined);
       if (event) { rt.restore(snap); return { works: true, event, tried }; }
+    }
+    // A press that applies only in what play leads to next (an ability in a shot's flight, a skip on a screen a choice
+    // opens): take one of the choices the game offers here, then press at a few moments of what follows, against the
+    // same choice without the press.
+    if (!axis && rt.controls.presses(verb).length) {
+      rt.restore(snap);
+      const next = rt.availableOptions().filter(o => o.actions && Object.keys(o.actions).length && o.actions[verb] === undefined).slice(0, 3);
+      for (const o of next) for (const at of [6, 15, 30]) {
+        if (steps > budget) return { works: false, tried };
+        const press = { actions: { [verb]: rt.controls.presses(verb)[0] } };
+        const choose = i => (i === 0 ? { actions: o.actions } : i === at ? press : {}), plain = i => (i === 0 ? { actions: o.actions } : {});
+        let pressed, idle;
+        try { pressed = run(snap, choose, null, frames + at); idle = run(snap, plain, null, frames + at); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
+        tried++;
+        const event = sooner(pressed, idle);
+        if (event) { rt.restore(snap); return { works: true, event, tried }; }
+      }
     }
   }
   return { works: false, tried };

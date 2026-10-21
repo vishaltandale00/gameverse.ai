@@ -383,6 +383,8 @@ export const breakers = {
   nan: fx('gameplay.fixture.nan', 'test: writes NaN', {}, { install(rt) { rt.system('rules', rt => { if (rt.state.frame === 5) rt.state.vars.speed = 0 / 0; }); } }),
   random: fx('gameplay.fixture.mathrandom', 'test: uses Math.random', {}, { install(rt) { rt.system('rules', rt => { rt.state.vars.noise = Math.random(); }); } }),
   explode: fx('gameplay.fixture.explode', 'test: spawns without limit', {}, { install(rt) { rt.system('rules', rt => { for (let i = 0; i < 40; i++) rt.spawn('dust', { at: [0, 0, 0] }); }); } }),
+  // A bullet pattern: 90 shots alive at once at most (each lasts 90 frames): many entities, but bounded.
+  volley: fx('gameplay.fixture.volley', 'test: a bounded stream of short-lived shots', {}, { install(rt) { rt.system('rules', rt => { const s = rt.store('gameplay.fixture.volley'); s.t = (s.t || 0) + 1; s.shots ??= []; s.shots.push(rt.spawn('dust', { at: [0, 0, 0] }).id); while (s.shots.length > 90) rt.despawn(s.shots.shift()); }); } }),
   storm: fx('gameplay.fixture.storm', 'test: event storm', {}, { install(rt) { rt.system('rules', rt => { for (let i = 0; i < 2500; i++) rt.emit('tick'); }); } }),
   hidden: fx('gameplay.fixture.hidden', 'test: simulation state outside rt.state', {}, { install(rt) { let n = 0; rt.system('rules', rt => { n++; rt.state.vars.n = n; }); } }),
   clock: fx('gameplay.fixture.clock', 'test: a store that changes every step, with a solverKey', { keyed: true }, {

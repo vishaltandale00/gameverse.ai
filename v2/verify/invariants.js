@@ -6,7 +6,7 @@
 import { maker, hold, inputMacros, applyOption } from './drive.js';
 import { problem, prng, stateHash, stableStringify, budget as makeBudget } from './util.js';
 
-export const LIMITS = { maxEntities: 5000, growthFactor: 8, maxEventsPerStep: 2000 };
+export const LIMITS = { maxEntities: 5000, growthFactor: 8, maxEventsPerStep: 2000, confirmFrames: 600, confirmGrowth: 1.5 };
 
 /** First non-finite number in a JSON tree: its path, or null. */
 export function findNonFinite(value, path = 'state') {
@@ -23,14 +23,28 @@ export function findNonFinite(value, path = 'state') {
  */
 export function stepChecker(limits = {}) {
   const L = { ...LIMITS, ...limits };
-  let base = null;
+  let base = null, limit = null;
+  /**
+   * Past the growth limit, the count must keep growing to be an explosion ("grows without bound"): the world runs on
+   * from a snapshot for `confirmFrames` with no input; a count that settles (a boss's bullet pattern, a dense wave
+   * whose shots expire) raises the limit to half again its plateau, and only growth past that is checked again.
+   */
+  const grows = (rt, n) => {
+    if (!rt.snapshot || !L.confirmFrames) return true;
+    const snap = rt.snapshot(); let top = n;
+    for (let i = 0; i < L.confirmFrames && rt.state.status === 'playing'; i++) { rt.step({}); top = Math.max(top, Object.keys(rt.state.entities).length); if (top > n * L.confirmGrowth) break; }
+    rt.restore(snap);
+    if (top > n * L.confirmGrowth) return true;
+    limit = Math.ceil(Math.max(top, n) * L.confirmGrowth);
+    return false;
+  };
   return {
     check(rt) {
       const s = rt.state, n = Object.keys(s.entities).length;
-      base ??= Math.max(1, n);
+      base ??= Math.max(1, n); limit ??= base * L.growthFactor + 50;
       const bad = findNonFinite(s);
       if (bad) return problem('non_finite', bad.replace(/^state/, 'state'), `non-finite number at ${bad} (frame ${s.frame})`, { hint: 'guard divisions and normalizations in the primitive that owns this field' });
-      if (n > L.maxEntities || n > base * L.growthFactor + 50) return problem('entity_explosion', 'systems', `${n} entities at frame ${s.frame} (started with ${base})`, { hint: 'cap spawners, despawn projectiles and effects' });
+      if (n > L.maxEntities || (n > limit && grows(rt, n))) return problem('entity_explosion', 'systems', `${n} entities at frame ${s.frame} (started with ${base}), still growing`, { hint: 'cap spawners, despawn projectiles and effects' });
       if (s.events.length > L.maxEventsPerStep) return problem('event_storm', 'systems', `${s.events.length} events in one step at frame ${s.frame} (most: ${topEvent(s.events)})`, { hint: 'an event handler is re-emitting or a system emits every step for every entity' });
       return null;
     },
