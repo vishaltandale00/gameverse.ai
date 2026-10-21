@@ -16,7 +16,9 @@ const counterOf = e => { const c = e.components.collectible; return typeof c ===
 export default {
   id: 'gameplay.collectible',
   card: {
-    loop: { verbs: [], progress: ['collected', 'counter_complete'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { collectible: { role: 'pickup' } },
+    loop: { shows: ['entities'], verbs: [], progress: ['collected', 'counter_complete'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { collectible: { type: 'json', effect: 'a counter id, or {counter, value?, points?, item?}' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

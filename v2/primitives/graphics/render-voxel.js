@@ -38,6 +38,9 @@ export default {
   card: {
     intent: 'three.js renderer for voxel spaces: greedy chunk meshing with ambient occlusion, per-face shade and sky exposure under a per-frame time budget, edit re-meshing ahead of streaming, LOD rings, frustum and distance culling, sun shadows, an aimed-block outline, and rigged actors for every entity in the space.',
     views: ['1p', '3p', 'iso'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'cells'],
     params: {
       meshBudgetMs: { type: 'number', default: 4, min: 1, max: 16, unit: 'ms', effect: 'chunk meshing time allowed per frame (higher streams faster, may drop frames)' },
       ao: { type: 'boolean', default: true, effect: 'per-vertex ambient occlusion' },

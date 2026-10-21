@@ -47,7 +47,8 @@ const ITEMS = [
   ['torch', /torch|lantern|lamp/], ['backpack', /backpack|pack|bag|satchel/], ['potion', /potion|flask|bottle|vial|elixir/], ['tool', /./],
 ];
 
-const words = a => `${a.id || ''} ${a.name || ''} ${(a.tags || []).join(' ')} ${a.kind || ''}`.toLowerCase().replace(/_/g, ' ');
+// Never the name: the content forms theme names, and a themed name must not change artwork (ARCHITECTURE §1.2).
+const words = a => `${a.id || ''} ${(a.tags || []).join(' ')} ${a.kind || ''}`.toLowerCase().replace(/_/g, ' ');
 
 /** Choose a body plan for an archetype. */
 export function bodyPlan(archetype) {
@@ -79,7 +80,7 @@ function palette(name, plan, kind) {
 
 /** A complete lowpoly spec for an archetype with no model of its own. */
 export function synthesizeSpec(archetype) {
-  const name = archetype.id || archetype.name || 'thing', kind = archetype.kind || 'npc';
+  const name = archetype.id || 'thing', kind = archetype.kind || 'npc';
   const plan = bodyPlan(archetype), pal = palette(name, plan, kind), w = words(archetype), r = i => hash01(name, 40 + i);
   const big = kind === 'boss' ? 1.6 + r(1) * 0.8 : 1;
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
@@ -192,8 +193,8 @@ function propSpec(name, w, pal, r) {
 
 /** A model for an item or attachment name ('sword', 'lantern', 'hand_axe'), in hand space (grip at origin, blade along +y). */
 export function itemSpec(item) {
-  const w = `${item.id || ''} ${item.name || ''} ${item.kind || ''} ${(item.tags || []).join(' ')}`.toLowerCase().replace(/_/g, ' ');
-  const type = ITEMS.find(([, re]) => re.test(w))[0], name = item.id || item.name || 'item', r = i => hash01(name, 70 + i);
+  const w = `${item.id || ''} ${item.kind || ''} ${(item.tags || []).join(' ')}`.toLowerCase().replace(/_/g, ' '); // never the themed name
+  const type = ITEMS.find(([, re]) => re.test(w))[0], name = item.id || 'item', r = i => hash01(name, 70 + i);
   const pal = { metal: '#c8ccd4', wood: '#6a4424', grip: '#3a2418', gem: hsl(r(1) * 360, 0.8, 0.6), cloth: hsl(r(2) * 360, 0.4, 0.35), glow: '#ffc060' };
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
   const T = {

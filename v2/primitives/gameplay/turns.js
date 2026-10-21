@@ -44,9 +44,11 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { turns: { role: 'npc' } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { turn_act: { type: 'choice', of: 'a unit, its action and the action target', pick: 'unit' }, turn_move: { type: 'choice', of: 'a unit and a cell its move reaches', pick: 'unit' }, select_unit: { type: 'choice', of: 'a unit of the side whose turn it is', selects: 'unit' } },
-    loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
+    loop: { shows: ['entities'], verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
       // The participants an event names (role -> data field): a hit names the acting unit and the unit it hit.
       involves: { attack_hit: { attacker: 'who', defender: 'target' } },
       // As an encounter: the player-controlled sides win (onVictory) or the last of them is defeated (onDefeat).

@@ -20,6 +20,9 @@ export default {
   card: {
     intent: 'three.js scene for heightfield + placed-object spaces: LOD terrain, streamed placed objects (generated buildings merged per cell, instanced props and models, foliage via graphics.foliage.scatter), terrain-following roads from the roadgraph, skinned animated actors, and sun or cascade shadows.',
     views: ['1p', '3p', 'iso', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities'],
     params: {
       shadows: { type: 'string', options: ['none', 'sun', 'cascade'], default: 'cascade', effect: 'sun shadow quality (cascade = wider, higher resolution)' },
       drawDistance: { type: 'number', default: 1200, min: 50, max: 20000, unit: 'm', effect: 'terrain and object draw distance (fog hides the edge)' },

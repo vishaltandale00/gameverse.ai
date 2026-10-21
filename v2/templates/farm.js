@@ -26,7 +26,7 @@ export default {
         { id: 'carrot_seed', name: 'Carrot seeds', kind: 'material' },
         { id: 'carrot', name: 'Carrot', kind: 'food' },
       ],
-      blocks: [{ id: 'grass', name: 'Grass', solid: false }, { id: 'rock', name: 'Rock', solid: true }, { id: 'farmland', name: 'Farmland', solid: false }],
+      blocks: [{ id: 'grass', name: 'Grass', solid: false, tile: 'grass', color: '#5f9e48' }, { id: 'rock', name: 'Rock', solid: true, tile: 'rock', color: '#8a8478' }, { id: 'farmland', name: 'Farmland', solid: false, tile: 'soil', color: '#7a5434' }],
       archetypes: [{ id: 'farmer', name: 'Farmer', components: {} }],
     },
     plot: { endings: [{ id: 'victory', title: 'Victory', epilogue: 'The harvest is in.', outcome: 'won', when: { count: 'harvested', gte: 8 } }] },

@@ -17,7 +17,9 @@ const ORDERS = ['move', 'attack', 'attack_move', 'gather', 'build', 'stop', 'hol
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { rts: [{ when: { building: true }, role: 'prop', prop: 'castle' }, { when: { node: true }, role: 'prop', prop: 'crystal' }, { role: 'npc' }] },
+    loop: { shows: ['entities', 'cells'], verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { select: { type: 'choice', of: 'units of the player faction', selects: 'who' }, order: { type: 'choice', of: 'an order for units (gather, move, attack-move) and its target', pick: 'who' }, produce: { type: 'choice', of: 'a building and what it trains' }, rally: { type: 'choice', of: 'a building and its rally point' } },
     // Its AI-controlled factions play themselves (stepAI): they gather, produce and order attack-moves.

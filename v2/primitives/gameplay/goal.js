@@ -15,7 +15,9 @@ export const goalId = e => (typeof e.components.goal === 'object' && e.component
 export default {
   id: KEY,
   card: {
-    loop: { verbs: [], progress: ['goal_reached'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { goal: { role: 'goal', prop: 'flag' } },
+    loop: { shows: ['entities'], verbs: [], progress: ['goal_reached'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { goal: { type: 'json', effect: 'true, or {id?}: touching this entity reaches the level\'s goal' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

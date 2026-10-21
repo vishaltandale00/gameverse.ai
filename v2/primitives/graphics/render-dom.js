@@ -9,6 +9,7 @@ import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER } from './flat-stage.js';
 import { drawEntity, lookOf } from './flat-models.js';
 import { sceneryImage, themeFor } from './flat-art.js';
+import { TIMES } from '../../art/scenery.js';
 import { clamp01, label, rgba, FONTS } from './flat-util.js';
 
 export default {
@@ -16,6 +17,9 @@ export default {
   card: {
     intent: 'Illustrated scene cards for graph and none spaces: painted scenery per location with crossfades, large location typography, and the characters and items present drawn standing in the scene with idle motion.',
     views: ['ui', 'text'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     params: {
       height: { type: 'number', default: 0.42, min: 0.15, max: 1, effect: 'card height as a fraction of the view' },
       font: { type: 'string', default: 'serif', options: Object.keys(FONTS), effect: 'title typography' },
@@ -50,8 +54,8 @@ export default {
     H.layer(ORDER.world, F => {
       const g = F.ctx, zone = zoneOf(F), id = zone?.id ?? '_';
       if (id !== shown) { prev = shown == null ? null : { zone: shownZone, t0: F.t }; shown = id; shownZone = zone; since = F.t; if (heading) heading.textContent = zone?.name || F.doc.title; }
-      const text = `${zone?.name || ''} ${(zone?.tags || []).join(' ')} ${zone?.description || ''}`.toLowerCase();
-      const time = config.time !== 'auto' ? config.time : /night|dark|crypt|cellar|cave|haunt|moon/.test(text) ? 'night' : /dusk|sunset|evening/.test(text) ? 'sunset' : 'day';
+      // auto: the time of day the zone declares (its `time`, or a tag naming one), never words in its name or text.
+      const time = config.time !== 'auto' ? config.time : [zone?.time, ...(zone?.tags || [])].find(t => TIMES.includes(t)) || 'day';
       const paint = (z, a) => {
         const img = sceneryImage({ theme: themeFor(F.doc, z), time }, false, `${F.doc.id}|${z?.id || ''}`);
         if (!img) { g.fillStyle = '#1a1622'; g.fillRect(0, 0, F.w, F.h); return; }

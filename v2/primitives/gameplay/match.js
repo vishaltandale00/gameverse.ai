@@ -224,7 +224,7 @@ export function model(cfg, grid, hole) {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['swap'], progress: ['matched', 'cascade'] },
+    loop: { shows: ['cells'], verbs: ['swap'], progress: ['matched', 'cascade'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { swap: { type: 'choice', of: 'two neighbouring cells' } },
     // Match-board mode: swaps under a move limit; the score (or a stage goal) wins, running out of moves loses.

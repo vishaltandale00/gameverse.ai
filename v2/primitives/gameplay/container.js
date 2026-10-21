@@ -16,6 +16,8 @@ const parse = v => (typeof v === 'string' ? { item: v, count: 1 } : { item: v?.i
 export default {
   id: 'gameplay.container',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { lock: { role: 'prop', prop: 'door' } },
     loop: { verbs: ['take', 'store', 'take_all'], progress: ['opened', 'container_opened'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { take: { type: 'choice', of: 'an item in the open container' }, store: { type: 'choice', of: 'an item in the bag' } },

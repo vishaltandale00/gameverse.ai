@@ -37,7 +37,7 @@ export default {
         piece('light_soldier', 'Light soldier', 'light', 1), piece('light_rider', 'Light rider', 'light', 2),
         piece('dark_soldier', 'Dark soldier', 'dark', 1), piece('dark_rider', 'Dark rider', 'dark', 2),
       ],
-      blocks: [{ id: 'pillar', name: 'Pillar', solid: true }],
+      blocks: [{ id: 'pillar', name: 'Pillar', solid: true, tile: 'rock', color: '#8a8478' }],
     },
   },
   tune: ['engine.space.grid.diagonals', 'engine.generate.grid.board.symmetry'],

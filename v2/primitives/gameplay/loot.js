@@ -36,6 +36,8 @@ export function rollTable(rt, id, context = {}, depth = 0) {
 export default {
   id: 'gameplay.loot',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { loot: { role: 'prop', prop: 'chest' } },
     loop: { verbs: [], progress: ['loot_dropped', 'picked_up'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [

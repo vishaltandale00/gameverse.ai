@@ -15,7 +15,9 @@ const STATES = ['kickoff', 'play', 'goal', 'break', 'over', 'won', 'lost', 'draw
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
+    // The archetype its `ball` param names reads as a ball on screen (graphics/flat-art.js; never its name).
+    presents: { ball: { role: 'prop', vector: 'orb' } },
+    loop: { shows: ['entities', 'zones'], verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
     // The player plays: it joins the first team when no team lists it.
     engage: { join: { param: 'teams', field: 'members' } },
     // Ball-sport mode: the player's team scores into goal zones against the other team before the clock runs out.

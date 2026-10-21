@@ -52,8 +52,8 @@ export default {
         { id: 'goal_flag', name: 'Goal flag', kind: 'prop', components: { goal: true, body: { size: [1, 3] } } },
       ],
       blocks: [
-        { id: 'stone', name: 'Stone', solid: true }, { id: 'ground', name: 'Ground', solid: true }, { id: 'brick', name: 'Brick', solid: true },
-        { id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] }, { id: 'spikes', name: 'Spikes', solid: false, tags: ['hazard'], hazard: 'spikes' },
+        { id: 'stone', name: 'Stone', solid: true, tile: 'rock' }, { id: 'ground', name: 'Ground', solid: true, tile: 'grass' }, { id: 'brick', name: 'Brick', solid: true, tile: 'brick' },
+        { id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'], tile: 'wood' }, { id: 'spikes', name: 'Spikes', solid: false, tags: ['hazard'], hazard: 'spikes', tile: 'spikes' },
       ],
     },
     player: { archetype: 'hero', at: [3, 3] },

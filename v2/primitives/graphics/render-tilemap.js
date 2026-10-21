@@ -7,12 +7,14 @@
 import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
 import { buildChunk, chunkCache, drawHazard, drawLiquid, MARGIN } from './flat-chunks.js';
-import { normalizeTheme, themeFromBlock, patternFor } from './flat-tiles.js';
+import { normalizeTheme, themeFromBlock, patternFor, PATTERNS } from './flat-tiles.js';
+import { blockColorOf, drawZones } from './flat-zones.js';
 import { drawEntity, lookOf } from './flat-models.js';
 import { tileZoom } from './flat-camera.js';
 import { driveSide, driveTopDown, roomAt } from './flat-follow.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
 import { rgba, col, mix } from './flat-util.js';
+import { PROPS } from '../../art/props.js';
 
 const DRAW_ORDER = { prop: 0, goal: 1, hazard: 1, pickup: 2, npc: 3, mount: 3, vehicle: 3, enemy: 4, boss: 4, projectile: 5, player: 6 };
 
@@ -35,10 +37,11 @@ export function terrain(H, F, api) {
       let theme = themes.get(ts.bind?.[block]) || themes.get(def.tile) || null;
       const roomTheme = themes.get(room?.theme) || themes.get(ts.zoneThemes?.[room?.zone]) || null;
       if (!theme && roomTheme) theme = { ...roomTheme, pattern: patternFor(def) };
-      if (!theme) theme = themeFromBlock(def, ts.edge || 'soft');
+      // A block declaring neither a tile nor a color takes its content.blocks position's color, so no two blocks look alike.
+      if (!theme) theme = themeFromBlock(def.color || PATTERNS.includes(def.tile) ? def : { ...def, color: blockColorOf(doc, block) }, ts.edge || 'soft');
       // Back-compat: a block whose own color is far from the theme keeps a hint of it.
       if (def.color && theme.palette && !themes.get(ts.bind?.[block])) theme = { ...theme, palette: { ...theme.palette, a: mix(theme.palette.a, col(def.color), 0.25) } };
-      v = { kind, theme, color: col(def.color, '#3a6aa0'), glowing: /lava|slag|acid|magma/.test(`${def.id} ${def.name || ''}`.toLowerCase()), hazard: /thorn|bramble/.test(`${def.id} ${def.name || ''}`.toLowerCase()) ? 'thorns' : 'spikes' };
+      v = { kind, theme, color: col(def.color, '#3a6aa0'), glowing: (Number(def.light) || 0) > 0 || def.tile === 'lava', hazard: PROPS.hazard.includes(def.tile) ? def.tile : 'spikes' }; // declared: block light and tile, never words
       cache.set(k, v);
       return v;
     },
@@ -52,6 +55,9 @@ export default {
   card: {
     intent: 'Canvas renderer for tilemap spaces (side or top-down): cached chunked layers in order, autotiled themed tiles, overhang shadows, live liquids and hazards, and every entity drawn with interpolated, animated sprites, rigs or generated art.',
     views: ['side', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'cells', 'zones'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
@@ -97,6 +103,7 @@ export default {
       snap: config.pixelSnap,
     };
     H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, (apiOf()?.config?.mode || 'side') === 'side' ? 'side' : 'td'); drawBackdrop(F, S.defaultLayers); }, { space, name: 'tilemap.backdrop' });
+    H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'tilemap.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.tilemap' });
 
     function draw(F) {

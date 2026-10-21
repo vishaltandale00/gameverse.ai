@@ -6,7 +6,7 @@ export default {
   id: 'plot.storyboard',
   solverKey, progress,
   card: {
-    loop: { verbs: [], progress: ['beat', 'act_complete'] },
+    loop: { shows: [], verbs: [], progress: ['beat', 'act_complete'] },
     // Story mode: beats fire as the player explores and talks; an ending (or an end_game effect) wins. Beats are
     // predicates on the world (zones, talk, items), whatever moves the player: walked in real time or stepped on a grid.
     mode: { loop: 'story', interaction: ['avatar-realtime', 'avatar-grid'], opponent: 'none', space: ['engine.space.tilemap', 'engine.space.graph', ['position']], needs: { content: ['plot.storyboard'], participants: null }, win: { ending: 'plot.endings', reads: { event: 'beat' } }, lose: { param: null }, bot: 'story' },

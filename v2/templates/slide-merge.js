@@ -15,7 +15,7 @@ export default {
     ],
     content: {
       archetypes: [],
-      blocks: [2, 4, 8, 16, 32, 64, 128, 256].map(v => ({ id: String(v), name: `Tile ${v}`, solid: true })),
+      blocks: [2, 4, 8, 16, 32, 64, 128, 256].map(v => ({ id: String(v), name: `Tile ${v}`, solid: true, label: String(v) })), // its number is drawn on the tile (card.loop.shows labels)
     },
   },
   tune: ['gameplay.slide.merge.spawnFour', 'gameplay.slide.merge.slideFrames'],

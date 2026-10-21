@@ -31,7 +31,7 @@ export default {
           components: { body: { layer: 'hunter' }, health: { max: 1, respawn: { mode: 'spawn', sec: 3 } }, touch: { damage: 1 }, ai: { brain: [{ do: 'target-tile', personality, scatter }], speed: 7 } } })),
       ],
       statuses: [{ id: 'frightened', name: 'Frightened', duration: 6, mods: { 'stat.fright': 1 } }],
-      blocks: [{ id: 'wall', name: 'Wall', solid: true }, { id: 'house_wall', name: 'House wall', solid: true }, { id: 'house_door', name: 'House door', solid: true }],
+      blocks: [{ id: 'wall', name: 'Wall', solid: true, tile: 'brick', color: '#3a5cff' }, { id: 'house_wall', name: 'House wall', solid: true, tile: 'brick', color: '#3a5cff' }, { id: 'house_door', name: 'House door', solid: true, tile: 'wood', color: '#ff9ad8' }],
     },
     player: { archetype: 'hero' },
   },

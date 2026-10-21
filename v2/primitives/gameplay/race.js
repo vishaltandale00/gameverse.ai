@@ -15,7 +15,7 @@ const STATES = ['idle', 'countdown', 'running', 'finished'];
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['checkpoint', 'lap', 'race_finished'],
+    loop: { shows: ['entities', 'zones'], verbs: [], progress: ['checkpoint', 'lap', 'race_finished'],
       // As an encounter (engine.adapt.nested): finishing first beats the rivals; finishing below first, timing out or a DNF loses to them.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

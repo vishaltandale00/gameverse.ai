@@ -100,6 +100,8 @@ export function hostile(rt, a, b) {
 export default {
   id: ID,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { ai: { role: 'npc' } },
     loop: { verbs: [], progress: ['aggro', 'spotted', 'lost_target'] },
     // It acts for every non-player entity with an `ai` component: its behaviors write movement intents (chase, flee, patrol...).
     drives: { control: 'ai', components: ['ai'], movement: true, events: ['aggro', 'spotted'] },

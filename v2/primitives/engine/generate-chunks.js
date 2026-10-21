@@ -66,7 +66,7 @@ export default {
     // The runner: an endless course run to a goal distance. Only a course with a goal is one (mode.applies); without
     // one the course is world, not a loop. The course owns the distance (var course.distance, written from the followed
     // entity's position), so the player changes it by moving.
-    mode: { loop: 'runner', applies: { param: 'goal', given: true }, interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.tilemap'], progress: ['chunk_placed', 'course_goal'], needs: { content: [], participants: null }, win: { param: 'onGoal', reads: { var: 'course.distance', by: { movement: true } } }, lose: { param: null }, bot: 'beam' },
+    mode: { shows: ['entities', 'cells'], loop: 'runner', applies: { param: 'goal', given: true }, interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.tilemap'], progress: ['chunk_placed', 'course_goal'], needs: { content: [], participants: null }, win: { param: 'onGoal', reads: { var: 'course.distance', by: { movement: true } } }, lose: { param: null }, bot: 'beam' },
     views: ['side', 'td', '3p'],
     spaces: ['engine.space.track', 'engine.space.tilemap', 'engine.space.arena2d'],
     params: {

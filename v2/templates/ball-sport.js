@@ -28,8 +28,8 @@ export default {
     content: {
       archetypes: [
         { id: 'hero', name: 'Captain', components: { body: { size: [1, 1] } } },
-        { id: 'teammate', name: 'Teammate', components: { body: { size: [1, 1] } } },
-        { id: 'opponent', name: 'Opponent', components: { body: { size: [1, 1] } } },
+        { id: 'teammate', name: 'Teammate', kind: 'npc', components: { body: { size: [1, 1] } } },
+        { id: 'opponent', name: 'Opponent', kind: 'enemy', components: { body: { size: [1, 1] } } },
         { id: 'ball', name: 'Ball', components: { body: { size: [0.6, 0.6] } } },
       ],
     },

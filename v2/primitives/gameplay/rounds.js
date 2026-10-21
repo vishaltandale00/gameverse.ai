@@ -14,7 +14,7 @@ const PHASES = ['waiting', 'intro', 'fight', 'ko', 'round_end', 'match_end'];
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['ko', 'round_end', 'match_end'],
+    loop: { shows: ['entities'], verbs: [], progress: ['ko', 'round_end', 'match_end'],
       // As an encounter: the first fighter (the player's) wins or loses the match; a draw leaves both.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' }, draw: { param: 'onDraw', player: 'keeps', opponent: 'keeps' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

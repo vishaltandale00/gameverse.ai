@@ -103,7 +103,7 @@ const VERBS = ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw
 export default {
   id: ID,
   card: {
-    loop: { verbs: VERBS, progress: ['piece_locked', 'lines_cleared'] },
+    loop: { shows: ['cells'], verbs: VERBS, progress: ['piece_locked', 'lines_cleared'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { place: { type: 'choice', of: 'a placement of the falling piece (column, rotation)' } },
     // Falling-blocks mode: clear lines before the stack tops out (the line target wins through an ending or a stage goal).

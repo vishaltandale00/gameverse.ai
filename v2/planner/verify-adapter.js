@@ -12,6 +12,7 @@ import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { isObj, objects, prop } from '../kernel/guards.js';
 import { loopInstances, winOwner, readsOf } from './loop-check.js';
+import { presentationProblems } from '../primitives/graphics/presentation.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -90,6 +91,8 @@ const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
  */
 export function viability(play, problems = [], strategies, loop = []) {
   const why = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage)).map(p => `${p.code}: ${p.message}`);
+  // A game whose renderers do not draw what its loops need a person to see is not playable by a person (graphics/presentation.js).
+  why.push(...problems.filter(p => p.stage === 'presentation' && p.severity === 'error').map(p => `${p.code}: ${p.message}`));
   if (strategies !== undefined && !why.length) why.push(...unplayable(play, problems, strategies, loop));
   return why.length ? { viable: false, viability: why.slice(0, 3).join('; ') } : { viable: true, viability: null };
 }
@@ -168,7 +171,7 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
   // source is set by every return below.
   const out = { ok: pre.ok, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems: /** @type {VerifyProblem[]} */ ([]), doc: pre.doc };
   // An empty world can be "completable" (zones are rects, the solver walks the map's solid edges): flag it.
-  const world = worldCheck(pre.doc, registry, logic);
+  const world = [...worldCheck(pre.doc, registry, logic), ...presentationProblems(pre.doc, registry).map(p => ({ ...p, severity: 'error', stage: 'presentation' }))];
   out.problems.push(...world);
   const m = await verifyModule();
   if (typeof m.verify === 'function') {

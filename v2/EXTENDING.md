@@ -20,7 +20,8 @@ standing in for decisions, no word lists over the idea, no per-game cases; nothi
 A rule enforced in code but not declared is a defect; a missing declaration fails the checks, it is never assumed.
 Controls: a verb whose action takes a value declares it in `card.actionSpace` (enum, axis, or `choice` with `of`); a loop
 whose verbs depend on the instance declares `card.loop.verbsOf(config, doc)`; a space declares `card.frame`; a renderer
-or camera declares `card.projection` per view; a UI primitive declares `card.interactions` and `card.controls`.
+or camera declares `card.projection` per view and a renderer `card.draws`; a loop with a win or lose declares `card.loop.shows`; a card
+owning a component declares what an entity carrying it reads as on screen in `card.presents` (never inferred from names); a UI primitive declares `card.interactions` and `card.controls`.
 
 **Checks it must pass:**
 - its own test meeting KERNEL_API.md §8: preflight a document using it; exercise it through `rt.step`, effects and
@@ -88,6 +89,7 @@ live (a new check is added there, with its code), run over every discovered temp
 | preflight | the document preflights | `preflight_failed` (cause: the preflight code) |
 | composition | the static composition check has no failure | `composition_failed` |
 | loop | the loop check has no problem | `loop_problem` (cause: the loop code) |
+| presentation | the host document's renderers draw everything its loops need a person to see: each loop with a win or lose declares `card.loop.shows` (entities, cells, zones, labels, marks: `v2/primitives/graphics/presentation.js`), and the renderer of each space its play happens in declares them in `card.draws` | `render_missing` `shows_undeclared` |
 | gate | `verifyDocument` (on the host document: `v2/web/host-doc.js`) with the playtest budget finds it viable | `gate_not_viable` |
 | controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`) | `controls_missing` `projection_undeclared` `direction_mismatch` `direction_inert` |
 | features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence) | `feature_missing` `feature_content_empty` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |

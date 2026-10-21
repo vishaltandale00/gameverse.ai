@@ -26,7 +26,7 @@ export default {
     // only where the dungeon holds a boss (applies: boss given); a dungeon without one is a world, not a game of its own.
     // The win is the boss encounter's (gameplay.combat.boss bosses[].onDefeat); defeat comes from health and death
     // rules. Its bot plays it on cell spaces (navigate: it plans over the walker's moves and the space's cells).
-    mode: { loop: 'crawl', applies: { param: 'boss', given: true }, via: 'gameplay.combat.boss', interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', ['navigate']], needs: { content: ['content.archetypes'], participants: null },
+    mode: { shows: ['entities', 'cells'], loop: 'crawl', applies: { param: 'boss', given: true }, via: 'gameplay.combat.boss', interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', ['navigate']], needs: { content: ['content.archetypes'], participants: null },
       progress: ['key_found', 'unlocked'],
       win: { param: 'bosses.onDefeat', reads: { component: 'health', of: 'opponents', by: { events: ['died'], effects: ['damage'] } } }, lose: { param: null }, bot: 'crawl' },
     params: {
