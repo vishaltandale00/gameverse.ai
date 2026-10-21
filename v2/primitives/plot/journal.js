@@ -1,7 +1,7 @@
 // Codex / lore / journal entries (plot.entries: { id, title, text, tag? }).
 // add_entry learns one (once); `known` and `entries` (count by tag) read them.
 // Entries with `when` are learned automatically the first plot tick it holds.
-import { err, checkKeys, checkPred, cached } from './story-lib.js';
+import { err, cached, ENTRY_ID, TEXT } from './story-lib.js';
 import { compare } from '../../kernel/logic.js';
 
 const ID = 'plot.journal';
@@ -33,7 +33,7 @@ export default {
     provides: { events: ['journal_added', 'journal_added:*'], services: ['journal'] },
     reads: ['plot.entries'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
-    data: { 'plot.entries': { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string', required: true }, tag: { type: 'string' }, when: { type: 'predicate' } } } } },
+    data: { 'plot.entries': { type: 'list', of: { type: 'object', fields: { id: ENTRY_ID, title: TEXT({ required: true, effect: 'the entry\'s title a person reads' }), text: TEXT({ required: true, effect: 'the entry a person reads' }), tag: { type: 'string', effect: 'the entries predicate counts entries by tag' }, when: { type: 'predicate' } } } } },
     defines: [{ kind: 'entry', at: 'plot.entries' }],
   },
   logic(logic) {
@@ -42,18 +42,7 @@ export default {
       check: (p, path, errors, ctx) => { if (typeof p.entries !== 'string') errors.push(err('predicate_invalid', path, 'entries takes a tag (or "*")')); else if (p.entries !== '*' && !(ctx.doc.plot?.entries || []).some(e => e.tag === p.entries)) errors.push(err('ref_unknown', path, `no entry has tag '${p.entries}'`)); } });
     logic.effect('add_entry', { refs: e => [['entry', e.entry]], run: (e, rt) => { learn(rt, e.entry); } });
   },
-  validate(config, doc, ctx) {
-    const errors = [], list = doc.plot?.entries;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [err('param_type', 'plot.entries', 'must be a list of entries')];
-    list.forEach((e, i) => {
-      const path = `plot.entries[${i}]`;
-      checkKeys(e, ['id', 'title', 'text', 'tag', 'when'], path, errors);
-      if (typeof e.title !== 'string' || typeof e.text !== 'string') errors.push(err('entry_invalid', path, 'entry needs title and text'));
-      checkPred(e.when, `${path}.when`, errors, ctx);
-    });
-    return errors;
-  },
+  // plot.entries is declared (card.data): the kernel checks it; no rule here crosses fields.
   install(rt) {
     st(rt); // create the store at install: UI reads (view/list/known) must never write state
     rt.provide('journal', {

@@ -160,7 +160,9 @@ test('preflight rejects broken quests with stable codes', () => {
     { id: 'b4', title: 'B4', prereq: ['b3'], timeLimit: -1, rewards: { xp: 5, coins: 3 }, objectives: [{ id: 'o', kind: 'defeat' }] },
   );
   const r = check(d);
-  for (const c of ['quest_invalid', 'ref_unknown', 'quest_cycle', 'objective_kind_unknown', 'id_duplicate', 'objective_invalid', 'param_range', 'param_unknown', 'param_missing', 'field_unknown']) assert.ok(codes(r).includes(c), c);
+  // Single-field rules are the declared shapes' (card.data, an objective's by its kind): an unknown kind is param_option,
+  // an unknown field param_unknown; duplicate objective ids and a deliver target of no kind have their own codes.
+  for (const c of ['quest_invalid', 'ref_unknown', 'quest_cycle', 'param_option', 'objective_duplicate', 'objective_invalid', 'objective_target_unknown', 'param_range', 'param_unknown', 'param_missing']) assert.ok(codes(r).includes(c), c);
   assert.ok(r.errors.some(e => ['effect_unknown', 'vocabulary_owner_missing'].includes(e.code) && /give_xp/.test(e.message)), 'xp rewards need a progression primitive');
   const p = doc({ maxActive: 0 });
   assert.deepEqual(codes(check(p)), ['param_range']);

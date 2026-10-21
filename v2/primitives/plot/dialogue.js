@@ -7,12 +7,9 @@
 // (`if`), run effects (`do`) and carry a skill check
 // `check: {stat|var, gte, roll?: 'none'|'d6'|'2d6'|'d20'|'d100', bonus?, fail?, failDo?}`.
 // Every open choice is a solver option.
-import { err, checkPred, checkEffects, checkRef, checkKeys, readSeconds, ticks } from './story-lib.js';
+import { err, isObj, readSeconds, ticks, TEXT, LINE, plotExample } from './story-lib.js';
 
 const ID = 'plot.dialogue';
-const NODE_FIELDS = ['who', 'say', 'if', 'else', 'do', 'next', 'end', 'choices', 'once', 'sec'];
-const CHOICE_FIELDS = ['id', 'text', 'if', 'do', 'next', 'once', 'check', 'end'];
-const CHECK_FIELDS = ['stat', 'var', 'gte', 'roll', 'bonus', 'fail', 'failDo'];
 const ROLLS = { none: [0, 0], d6: [1, 6], '2d6': [2, 6], d20: [1, 20], d100: [1, 100] };
 const MAX_HOPS = 64; // node-to-node jumps per step (guards authoring loops of non-waiting nodes)
 
@@ -48,17 +45,28 @@ export default {
     provides: { events: ['dialogue_error', 'dialogue_start', 'dialogue_end', 'dialogue_line', 'choice_made', 'skill_check', 'said', 'said:*'], services: ['dialogue'], actions: ['choose'] },
     reads: ['plot.dialogue'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    // Node ids are keys of their dialogue's nodes (start, next, else, a choice's next and a check's fail name one of them).
     data: { 'plot.dialogue': { type: 'object', values: { type: 'object', fields: {
-      speaker: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, title: { type: 'string' }, start: { type: 'string', required: true, effect: 'a node id' },
-      nodes: { type: 'object', values: { type: 'object', fields: {
-        who: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, say: { type: 'string', required: true }, if: { type: 'predicate' }, else: { type: 'string', effect: 'a node id' },
-        do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, end: { type: 'boolean' }, once: { type: 'boolean' }, sec: { type: 'number', min: 0 },
+      speaker: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, title: TEXT({ effect: 'the conversation\'s title a person reads' }), start: { type: 'string', required: true, effect: 'a node id' },
+      nodes: { type: 'object', required: true, values: { type: 'object', fields: {
+        who: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, say: TEXT({ required: true, effect: 'the line a person reads' }), if: { type: 'predicate' }, else: { type: 'string', effect: 'a node id' },
+        do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, end: { type: 'boolean' }, once: { type: 'boolean' }, sec: { type: 'number', min: 0, unit: 's' },
         choices: { type: 'list', of: { type: 'object', fields: {
-          id: { type: 'string' }, text: { type: 'string', required: true }, if: { type: 'predicate' }, do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, once: { type: 'boolean' }, end: { type: 'boolean' },
+          id: { type: 'string' }, text: LINE({ required: true, effect: 'what the player says, as they read it' }), if: { type: 'predicate' }, do: { type: 'effects' }, next: { type: 'string', effect: 'a node id' }, once: { type: 'boolean' }, end: { type: 'boolean' },
           check: { type: 'object', fields: { stat: { type: 'string' }, var: { type: 'string' }, gte: { type: 'number', required: true }, roll: { type: 'string', options: Object.keys(ROLLS) }, bonus: { type: 'number' }, fail: { type: 'string', effect: 'a node id' }, failDo: { type: 'effects' } } },
         } } },
       } } },
     } } } },
+    rules: {
+      dialogue_invalid: { fields: ['plot.dialogue.*.nodes', 'plot.dialogue.*.nodes.*.next', 'plot.dialogue.*.nodes.*.choices'], message: 'a dialogue has at least one node; a node has either next or choices, not both',
+        example: plotExample({ dialogue: { d: { start: 'a', nodes: { a: { say: 'Hello.', next: 'b', choices: [{ text: 'Hi.' }] }, b: { say: 'Bye.' } } } } }, 'plot.dialogue.d.nodes.a') },
+      dialogue_node_unknown: { fields: ['plot.dialogue.*.start', 'plot.dialogue.*.nodes.*.next', 'plot.dialogue.*.nodes.*.else', 'plot.dialogue.*.nodes.*.choices[].next', 'plot.dialogue.*.nodes.*.choices[].check.fail'], message: 'start, next, else, a choice\'s next and a check\'s fail name a node of the same dialogue',
+        example: plotExample({ dialogue: { d: { start: 'a', nodes: { a: { say: 'Hello.', next: 'nowhere' } } } } }, 'plot.dialogue.d.nodes.a.next') },
+      check_invalid: { fields: ['plot.dialogue.*.nodes.*.choices[].check.stat', 'plot.dialogue.*.nodes.*.choices[].check.var'], message: 'a skill check names a stat or a var',
+        example: plotExample({ dialogue: { d: { start: 'a', nodes: { a: { say: 'Lift it?', choices: [{ text: 'Try.', check: { gte: 3 } }] } } } } }, 'plot.dialogue.d.nodes.a.choices[0].check') },
+      speaker_unknown: { fields: ['plot.dialogue.*.speaker', 'plot.dialogue.*.nodes.*.who'], message: "a speaker is a plot.characters id, or 'player'",
+        example: plotExample({ dialogue: { d: { speaker: 'nobody', start: 'a', nodes: { a: { say: 'Hello.' } } } } }, 'plot.dialogue.d.speaker') },
+    },
   },
   logic(logic) {
     logic.predicate('said', { refs: p => [['dialogue', p.said]], test: (p, rt) => { const s = st(rt).said[p.said]; return Boolean(s && (p.node === undefined ? Object.keys(s).length : s[p.node])); } });
@@ -67,46 +75,33 @@ export default {
     logic.effect('start_dialogue', { refs: e => [['dialogue', e.dialogue], ...(e.with && e.with !== 'player' ? [['character', e.with]] : [])], run: (e, rt) => rt.service('dialogue').start(e.dialogue, { with: e.with }) });
     logic.effect('end_dialogue', { run: (e, rt) => rt.service('dialogue').end() });
   },
+  // The shape of plot.dialogue is declared (card.data); what is left are the rules across fields: node names, speakers.
   validate(config, doc, ctx) {
     const errors = [], all = doc.plot?.dialogue;
-    if (all === undefined) return errors;
-    if (!all || typeof all !== 'object' || Array.isArray(all)) return [err('param_type', 'plot.dialogue', 'must be an object of id -> dialogue')];
-    const speaker = (who, path) => { if (who !== undefined && who !== 'player') checkRef(ctx, 'character', who, path, errors); };
-    const target = (id, nodes, path) => { if (id !== undefined && !(id in nodes)) errors.push(err('dialogue_node_unknown', path, `unknown node '${id}'`, `nodes: ${Object.keys(nodes).join(', ')}`)); };
+    if (!isObj(all)) return errors;
+    const speaker = (who, path) => { if (typeof who === 'string' && who !== 'player' && ctx.indexes.character && !ctx.indexes.character.has(who)) errors.push(err('speaker_unknown', path, `unknown speaker '${who}'`, `characters: ${[...ctx.indexes.character].slice(0, 20).join(', ') || 'none'}, or 'player'`)); };
     for (const [id, d] of Object.entries(all)) {
-      const path = `plot.dialogue.${id}`;
-      checkKeys(d, ['speaker', 'start', 'nodes', 'title'], path, errors);
-      const nodes = d?.nodes;
-      if (!nodes || typeof nodes !== 'object' || !Object.keys(nodes).length) { errors.push(err('dialogue_invalid', `${path}.nodes`, 'dialogue needs at least one node')); continue; }
+      if (!isObj(d)) continue;
+      const path = `plot.dialogue.${id}`, nodes = isObj(d.nodes) ? d.nodes : null;
       speaker(d.speaker, `${path}.speaker`);
-      if (d.start === undefined) errors.push(err('dialogue_invalid', `${path}.start`, 'dialogue needs a start node'));
-      target(d.start, nodes, `${path}.start`);
+      if (!nodes) continue;
+      if (!Object.keys(nodes).length) { errors.push(err('dialogue_invalid', `${path}.nodes`, 'dialogue needs at least one node')); continue; }
+      const target = (to, at) => { if (typeof to === 'string' && !Object.hasOwn(nodes, to)) errors.push(err('dialogue_node_unknown', at, `unknown node '${to}'`, `nodes: ${Object.keys(nodes).join(', ')}`)); };
+      target(d.start, `${path}.start`);
       for (const [nid, n] of Object.entries(nodes)) {
-        const np = `${path}.nodes.${nid}`;
-        checkKeys(n, NODE_FIELDS, np, errors);
-        if (typeof n?.say !== 'string') errors.push(err('dialogue_invalid', `${np}.say`, 'node needs a say line'));
+        if (!isObj(n)) continue;
+        const np = `${path}.nodes.${nid}`, choices = Array.isArray(n.choices) ? n.choices : [];
         speaker(n.who, `${np}.who`);
-        checkPred(n.if, `${np}.if`, errors, ctx);
-        checkEffects(n.do, `${np}.do`, errors, ctx);
-        target(n.next, nodes, `${np}.next`); target(n.else, nodes, `${np}.else`);
-        if (n.next !== undefined && n.choices?.length) errors.push(err('dialogue_invalid', np, 'a node has either next or choices, not both'));
-        if (n.choices !== undefined && !Array.isArray(n.choices)) { errors.push(err('param_type', `${np}.choices`, 'must be a list')); continue; }
-        (n.choices || []).forEach((c, i) => {
+        target(n.next, `${np}.next`); target(n.else, `${np}.else`);
+        if (n.next !== undefined && choices.length) errors.push(err('dialogue_invalid', np, 'a node has either next or choices, not both'));
+        choices.forEach((c, i) => {
+          if (!isObj(c)) return;
           const cp = `${np}.choices[${i}]`;
-          checkKeys(c, CHOICE_FIELDS, cp, errors);
-          if (typeof c?.text !== 'string' || !c.text) errors.push(err('dialogue_invalid', `${cp}.text`, 'choice needs text'));
-          checkPred(c.if, `${cp}.if`, errors, ctx);
-          checkEffects(c.do, `${cp}.do`, errors, ctx);
-          target(c.next, nodes, `${cp}.next`);
-          if (c.check !== undefined) {
-            checkKeys(c.check, CHECK_FIELDS, `${cp}.check`, errors);
-            if (typeof c.check.stat !== 'string' && typeof c.check.var !== 'string') errors.push(err('check_invalid', `${cp}.check`, 'skill check needs stat or var'));
-            if (typeof c.check.gte !== 'number') errors.push(err('check_invalid', `${cp}.check.gte`, 'skill check needs a numeric gte'));
-            if (c.check.roll !== undefined && !(c.check.roll in ROLLS)) errors.push(err('check_invalid', `${cp}.check.roll`, `roll must be one of ${Object.keys(ROLLS).join('|')}`));
-            if (c.check.var) ctx.noteRef('var', c.check.var, `${cp}.check.var`, 'read');
-            target(c.check.fail, nodes, `${cp}.check.fail`);
-            checkEffects(c.check.failDo, `${cp}.check.failDo`, errors, ctx);
-          }
+          target(c.next, `${cp}.next`);
+          if (!isObj(c.check)) return;
+          if (typeof c.check.stat !== 'string' && typeof c.check.var !== 'string') errors.push(err('check_invalid', `${cp}.check`, 'skill check needs stat or var'));
+          if (typeof c.check.var === 'string') ctx.noteRef('var', c.check.var, `${cp}.check.var`, 'read');
+          target(c.check.fail, `${cp}.check.fail`);
         });
       }
     }

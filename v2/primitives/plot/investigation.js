@@ -6,7 +6,7 @@
 // when `auto` (or the autoDeduce param) is set. A `wrong` deduction is a false
 // theory: it still runs its effects and counts toward maxWrong; the case fails
 // (investigation_failed, no further deductions) when that many are made.
-import { err, checkKeys, checkPred, checkEffects, cached } from './story-lib.js';
+import { cached, ENTRY_ID, TEXT } from './story-lib.js';
 
 const ID = 'plot.investigation';
 const idx = rt => cached(rt, 'plot.investigation.index', doc => ({ clues: new Map((doc.plot?.clues || []).map(c => [c.id, c])), deductions: new Map((doc.plot?.deductions || []).map(d => [d.id, d])) }));
@@ -27,8 +27,8 @@ export default {
     actionSpace: { deduce: { type: 'choice', of: 'a deduction whose clues are found', from: 'options', emits: ['deduced'] } },
     // Section shapes this primitive reads (the planner's strict content form uses them).
     data: {
-      'plot.clues': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } }, when: { type: 'predicate', effect: 'found automatically when this holds; else given by add_clue effects' } } } },
-      'plot.deductions': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, clues: { type: 'list', min: 1, required: true, of: { type: 'string' }, effect: 'the plot.clues ids that prove it' }, conclusion: { type: 'string' }, wrong: { type: 'boolean', effect: 'a false theory' }, auto: { type: 'boolean' }, when: { type: 'predicate' }, do: { type: 'effects', effect: 'e.g. end the game when the culprit is named' } } } },
+      'plot.clues': { type: 'list', min: 1, of: { type: 'object', fields: { id: ENTRY_ID, title: TEXT({ required: true, effect: 'the clue as a person reads it in the case notes' }), text: TEXT({ effect: 'what the clue shows, as a person reads it' }), tags: { type: 'list', of: { type: 'string' } }, when: { type: 'predicate', effect: 'found automatically when this holds; else given by add_clue effects' } } } },
+      'plot.deductions': { type: 'list', min: 1, of: { type: 'object', fields: { id: ENTRY_ID, title: TEXT({ required: true, effect: 'the theory as a person reads it' }), clues: { type: 'list', min: 1, required: true, of: { type: 'ref', to: 'clue' }, effect: 'the clues that prove it' }, conclusion: TEXT({ effect: 'what concluding it tells a person' }), wrong: { type: 'boolean', effect: 'a false theory' }, auto: { type: 'boolean' }, when: { type: 'predicate' }, do: { type: 'effects', effect: 'e.g. end the game when the culprit is named' } } } },
     },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
@@ -55,26 +55,7 @@ export default {
     logic.effect('add_clue', { refs: e => [['clue', e.clue]], run: (e, rt) => find(rt, e.clue) });
     logic.effect('deduce', { refs: e => [['deduction', e.deduction]], run: (e, rt) => rt.service('investigation').deduce(e.deduction, { force: true }) });
   },
-  validate(config, doc, ctx) {
-    const errors = [], clues = doc.plot?.clues, deds = doc.plot?.deductions;
-    if (clues !== undefined && !Array.isArray(clues)) errors.push(err('param_type', 'plot.clues', 'must be a list of clues'));
-    if (deds !== undefined && !Array.isArray(deds)) errors.push(err('param_type', 'plot.deductions', 'must be a list of deductions'));
-    const ids = new Set((Array.isArray(clues) ? clues : []).map(c => c?.id));
-    (Array.isArray(clues) ? clues : []).forEach((c, i) => {
-      const path = `plot.clues[${i}]`;
-      checkKeys(c, ['id', 'title', 'text', 'tags', 'when', 'zone'], path, errors);
-      if (typeof c.title !== 'string') errors.push(err('clue_invalid', `${path}.title`, 'clue needs a title'));
-      checkPred(c.when, `${path}.when`, errors, ctx);
-    });
-    (Array.isArray(deds) ? deds : []).forEach((d, i) => {
-      const path = `plot.deductions[${i}]`;
-      checkKeys(d, ['id', 'title', 'clues', 'when', 'do', 'conclusion', 'wrong', 'auto'], path, errors);
-      if (!Array.isArray(d.clues) || !d.clues.length) errors.push(err('deduction_invalid', `${path}.clues`, 'deduction needs a non-empty clue list'));
-      else d.clues.forEach((c, j) => { if (!ids.has(c)) errors.push(err('ref_unknown', `${path}.clues[${j}]`, `unknown clue '${c}'`)); });
-      checkPred(d.when, `${path}.when`, errors, ctx); checkEffects(d.do, `${path}.do`, errors, ctx);
-    });
-    return errors;
-  },
+  // plot.clues and plot.deductions are declared (card.data): the kernel checks them; no rule here crosses fields.
   install(rt, config) {
     st(rt); // create the store at install: UI reads (view/list/known) must never write state
     const ready = d => { const s = st(rt); return !s.failed && !s.deduced[d.id] && d.clues.every(c => s.found[c]) && (!d.when || rt.test(d.when)); };

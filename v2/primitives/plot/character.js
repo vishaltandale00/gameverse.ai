@@ -5,10 +5,9 @@
 // them met, opens their first dialogue whose `when` holds (plot.dialogue) and
 // emits `talked` + `talked:<id>`. Liveness is tracked here (`alive`, `set_alive`)
 // and by the entity's health component.
-import { cached, zoneIndex, err, checkPred, checkRef, checkKeys, entityAlive, entityDistance, service } from './story-lib.js';
+import { cached, zoneIndex, err, entityAlive, entityDistance, service, isObj, NAME, TEXT, plotExample } from './story-lib.js';
 
 const ID = 'plot.character';
-const FIELDS = ['id', 'name', 'role', 'archetype', 'model', 'home', 'faction', 'bio', 'dialogue', 'schedule', 'shop', 'tags', 'at', 'space', 'spawn', 'player', 'components'];
 
 /** The character that is the player: `player: true`, a role starting with "player", or the player's archetype. */
 export const isPlayerCharacter = (c, doc) => c.player === true || /^player\b/i.test(c.role || '') || (c.archetype && c.archetype === doc.player?.archetype && c.player !== false);
@@ -72,14 +71,21 @@ export default {
     provides: { events: ['talked', 'talked:*', 'met', 'met:*', 'character_alive', 'character_alive:*'], services: ['character'], actions: ['talk'] },
     reads: ['plot.characters'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
-    data: { 'plot.characters': { type: 'list', of: { type: 'object', fields: {
-      id: { type: 'string', required: true }, name: { type: 'string', required: true }, role: { type: 'string' }, bio: { type: 'string' },
+    // An entry has only the fields declared here (open: false): any other key is a mistake the kernel reports.
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', open: false, fields: {
+      name: NAME({ required: true }), role: TEXT({ effect: 'what they are to the story, as a person reads it' }), bio: TEXT({ effect: 'a line about them a person reads' }),
       archetype: { type: 'ref', to: 'archetype' }, model: { type: 'ref', to: 'model' }, home: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' },
       faction: { type: 'ref', to: 'faction' }, shop: { type: 'ref', to: 'shop' }, tags: { type: 'list', of: { type: 'string' } },
       dialogue: { type: 'list', of: { type: 'object', fields: { id: { type: 'ref', to: 'dialogue', required: true }, when: { type: 'predicate' } } }, effect: 'the first entry whose when holds opens when the player talks' },
-      schedule: { type: 'list', of: { type: 'object', fields: { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' }, doing: { type: 'string' } } } },
-      at: { type: 'json', effect: 'a position, or a zone of a graph space' }, spawn: { type: 'boolean' }, player: { type: 'boolean' }, components: { type: 'object', open: true },
+      schedule: { type: 'list', of: { type: 'object', fields: { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json', effect: 'a position in the space' }, doing: { type: 'string' } } } },
+      at: { type: 'json', effect: 'a position in its space (a zone id on a graph space)' }, spawn: { type: 'boolean' }, player: { type: 'boolean' }, components: { type: 'object', open: true },
     } } } },
+    rules: {
+      schedule_invalid: { fields: ['plot.characters[].schedule[].zone', 'plot.characters[].schedule[].at'], message: 'a schedule entry gives a zone or an at',
+        example: plotExample({ characters: [{ id: 'guard', name: 'Guard', spawn: false, schedule: [{ from: 8, to: 18 }] }] }, 'plot.characters[0].schedule[0]') },
+      character_unspawnable: { fields: ['plot.characters[].archetype', 'plot.characters[].spawn', 'defaultArchetype', 'spawnAtStart'], message: 'a character spawned at start (not the player, spawn not false) has an archetype, or defaultArchetype is set',
+        example: plotExample({ characters: [{ id: 'ghost', name: 'Ghost' }] }, 'plot.characters[0]') },
+    },
   },
   logic(logic) {
     logic.predicate('met', { refs: p => [['character', p.met]], test: (p, rt) => Boolean(st(rt).met[p.met]) });
@@ -100,33 +106,15 @@ export default {
       rt.emitTyped('character_alive', e.character, { character: e.character, alive: e.alive });
     } });
   },
-  validate(config, doc, ctx) {
-    const errors = [], list = doc.plot?.characters;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [err('param_type', 'plot.characters', 'must be a list of characters')];
+  // The shape of plot.characters is declared (card.data); what is left are the rules across fields.
+  validate(config, doc) {
+    const list = doc.plot?.characters;
+    if (!Array.isArray(list)) return [];
+    const errors = [];
     list.forEach((c, i) => {
+      if (!isObj(c)) return;
       const path = `plot.characters[${i}]`;
-      checkKeys(c, FIELDS, path, errors);
-      if (typeof c.name !== 'string' || !c.name) errors.push(err('character_invalid', `${path}.name`, 'character needs a name'));
-      if (c.archetype !== undefined) checkRef(ctx, 'archetype', c.archetype, `${path}.archetype`, errors);
-      if (c.model !== undefined) checkRef(ctx, 'model', c.model, `${path}.model`, errors);
-      if (c.home !== undefined) checkRef(ctx, 'zone', c.home, `${path}.home`, errors);
-      if (c.space !== undefined) checkRef(ctx, 'space', c.space, `${path}.space`, errors);
-      if (c.faction !== undefined) checkRef(ctx, 'faction', c.faction, `${path}.faction`, errors);
-      if (c.shop !== undefined) checkRef(ctx, 'shop', c.shop, `${path}.shop`, errors);
-      if (c.dialogue !== undefined) {
-        if (!Array.isArray(c.dialogue)) errors.push(err('param_type', `${path}.dialogue`, 'must be a list of {when?, id}'));
-        else c.dialogue.forEach((d, j) => { checkRef(ctx, 'dialogue', d?.id, `${path}.dialogue[${j}].id`, errors); checkPred(d?.when, `${path}.dialogue[${j}].when`, errors, ctx); });
-      }
-      if (c.schedule !== undefined) {
-        if (!Array.isArray(c.schedule)) errors.push(err('param_type', `${path}.schedule`, 'must be a list of {from, to, zone|at, doing}'));
-        else c.schedule.forEach((s, j) => {
-          const sp = `${path}.schedule[${j}]`;
-          for (const k of ['from', 'to']) if (!(typeof s?.[k] === 'number' && s[k] >= 0 && s[k] <= 24)) errors.push(err('schedule_invalid', `${sp}.${k}`, `${k} must be an hour in [0, 24]`));
-          if (s?.zone === undefined && s?.at === undefined) errors.push(err('schedule_invalid', sp, 'schedule entry needs zone or at'));
-          if (s?.zone !== undefined) checkRef(ctx, 'zone', s.zone, `${sp}.zone`, errors);
-        });
-      }
+      if (Array.isArray(c.schedule)) c.schedule.forEach((s, j) => { if (isObj(s) && s.zone === undefined && s.at === undefined) errors.push(err('schedule_invalid', `${path}.schedule[${j}]`, 'schedule entry needs zone or at')); });
       if (!isPlayerCharacter(c, doc) && c.spawn !== false && config.spawnAtStart && !c.archetype && !config.defaultArchetype) errors.push(err('character_unspawnable', path, `character '${c.id}' has no archetype and no defaultArchetype is set`, 'give it an archetype, set spawn:false, or set defaultArchetype'));
     });
     return errors;

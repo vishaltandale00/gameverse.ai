@@ -15,12 +15,10 @@
 // Default for non-autoStart quests: script when any effect in the document
 // starts the quest, otherwise accept. start_quest always starts (story wins
 // over maxActive and gate); accept_quest respects maxActive.
-import { checkFields } from '../../kernel/params.js';
-import { err, checkPred, checkEffects, checkRef, checkKeys, cached, allEffects, service } from './story-lib.js';
+import { err, cached, allEffects, service, isObj, TEXT, LINE, KEY_ID, plotExample } from './story-lib.js';
 import { OBJECTIVES, BASE_FIELDS, needOf } from './story-objectives.js';
 
 const ID = 'plot.quest';
-const QUEST_FIELDS = ['id', 'title', 'kind', 'giver', 'zone', 'summary', 'gate', 'prereq', 'autoStart', 'offer', 'objectives', 'order', 'fail', 'timeLimit', 'onStart', 'onComplete', 'onFail', 'rewards', 'repeatable', 'branches', 'tags', 'hidden'];
 const KINDS = ['main', 'side', 'contract', 'bounty', 'challenge'];
 const STATES = ['locked', 'available', 'active', 'complete', 'failed'];
 const OBJ_STATES = ['inactive', 'active', 'done', 'failed'];
@@ -36,7 +34,7 @@ export const offerOf = (q, scripted) => q.offer ?? (q.autoStart ? 'auto' : scrip
 function rewardEffects(r = {}) {
   const fx = [];
   if (r.xp) fx.push({ do: 'give_xp', amount: r.xp });
-  if (r.money) fx.push(typeof r.money === 'number' ? { do: 'give_money', amount: r.money } : { do: 'give_money', amount: r.money.amount, ...(r.money.currency ? { currency: r.money.currency } : {}) });
+  if (r.money) fx.push({ do: 'give_money', amount: r.money.amount, ...(r.money.currency ? { currency: r.money.currency } : {}) });
   for (const it of r.items || []) fx.push({ do: 'give_item', item: it.item, count: it.count ?? 1 });
   for (const rep of r.rep || []) fx.push({ do: 'add_rep', faction: rep.faction, delta: rep.delta });
   return [...fx, ...(r.do || [])];
@@ -69,16 +67,31 @@ export default {
     reads: ['plot.quests'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
     // An objective's fields are its kind's (story-objectives.js, the same fields the validator checks): `variants`.
-    data: { 'plot.quests': { type: 'list', of: { type: 'object', fields: {
-      id: { type: 'string', required: true }, title: { type: 'string', required: true }, kind: { type: 'string', options: KINDS }, summary: { type: 'string' },
-      giver: { type: 'ref', to: 'character' }, zone: { type: 'ref', to: 'zone' }, gate: { type: 'predicate' }, prereq: { type: 'list', of: { type: 'ref', to: 'quest' } },
+    // An entry has only the fields declared here (open: false); an objective's fields are its kind's (story-objectives.js,
+    // `variants`: the kernel checks each objective against its kind's fields).
+    data: { 'plot.quests': { type: 'list', of: { type: 'object', open: false, fields: {
+      title: LINE({ required: true, effect: 'the quest\'s title a person reads' }), kind: { type: 'string', options: KINDS }, summary: TEXT({ effect: 'what the quest asks, as the quest log tells it' }),
+      giver: { type: 'ref', to: 'character' }, zone: { type: 'ref', to: 'zone' }, gate: { type: 'predicate' }, prereq: { type: 'list', of: { type: 'ref', to: 'quest' }, effect: 'other quests completed first' },
       autoStart: { type: 'boolean' }, offer: { type: 'string', options: ['auto', 'accept', 'script'] }, order: { type: 'string', options: ['sequential', 'any'] },
-      fail: { type: 'predicate' }, timeLimit: { type: 'number', min: 0 }, onStart: { type: 'effects' }, onComplete: { type: 'effects' }, onFail: { type: 'effects' },
-      rewards: { type: 'object', fields: { xp: { type: 'number', min: 0 }, money: { type: 'json' }, items: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } } }, rep: { type: 'list', of: { type: 'object', fields: { faction: { type: 'ref', to: 'faction', required: true }, delta: { type: 'number', required: true } } } }, do: { type: 'effects' } } },
-      repeatable: { type: 'boolean' }, branches: { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, label: { type: 'string' }, when: { type: 'predicate' }, do: { type: 'effects' } } } },
+      fail: { type: 'predicate' }, timeLimit: { type: 'number', min: 0, unit: 's', effect: 'the quest fails this long after it starts (0: no limit)' }, onStart: { type: 'effects' }, onComplete: { type: 'effects' }, onFail: { type: 'effects' },
+      rewards: { type: 'object', fields: { xp: { type: 'number', min: 0 }, money: { type: 'object', fields: { amount: { type: 'number', min: 0, required: true }, currency: { type: 'string', effect: 'an economy currency (default: the economy\'s first)' } } }, items: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } } }, rep: { type: 'list', of: { type: 'object', fields: { faction: { type: 'ref', to: 'faction', required: true }, delta: { type: 'number', required: true } } } }, do: { type: 'effects' } } },
+      repeatable: { type: 'boolean' }, branches: { type: 'list', of: { type: 'object', fields: { id: KEY_ID, label: TEXT({ effect: 'the outcome as a person reads it' }), when: { type: 'predicate' }, do: { type: 'effects' } } } },
       tags: { type: 'list', of: { type: 'string' } }, hidden: { type: 'boolean' },
       objectives: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { ...BASE_FIELDS, kind: { type: 'string', required: true, options: Object.keys(OBJECTIVES) } }, variants: { by: 'kind', of: Object.fromEntries(Object.entries(OBJECTIVES).map(([k, o]) => [k, o.fields || {}])) } } },
     } } } },
+    rules: {
+      quest_invalid: { fields: ['plot.quests[].objectives[].optional'], message: 'a quest has at least one objective that is not optional (else it could never complete)',
+        example: plotExample({ quests: [{ id: 'q', title: 'Wait', objectives: [{ id: 'wait', kind: 'until', when: { time: 0 }, optional: true }] }] }, 'plot.quests[0].objectives') },
+      quest_cycle: { fields: ['plot.quests[].prereq'], message: 'a quest never requires itself, directly or through other quests\' prereq',
+        example: plotExample({ quests: [{ id: 'q', title: 'Wait', prereq: ['q'], objectives: [{ id: 'wait', kind: 'until', when: { time: 0 } }] }] }, 'plot.quests[0].prereq[0]') },
+      objective_duplicate: { fields: ['plot.quests[].objectives[].id'], message: 'objective ids are unique within their quest',
+        example: plotExample({ quests: [{ id: 'q', title: 'Wait', objectives: [{ id: 'wait', kind: 'until', when: { time: 0 } }, { id: 'wait', kind: 'until', when: { time: 0 } }] }] }, 'plot.quests[0].objectives[1].id') },
+      objective_invalid: { fields: ['plot.quests[].objectives[]'], message: 'reach gives zone or at; defeat archetype or target; survive seconds or until; build block or structure; drive to or distance; use interactable or tag; talk gives dialogue when it gives node',
+        example: plotExample({ quests: [{ id: 'q', title: 'Hold on', objectives: [{ id: 'hold', kind: 'survive' }] }] }, 'plot.quests[0].objectives[0]') },
+      objective_target_unknown: { fields: ['plot.quests[].objectives[].to', 'plot.quests[].objectives[].who'], message: 'a deliver objective\'s to is a character or a zone id; an escort objective\'s who is a character or an archetype id',
+        example: plotExample({ quests: [{ id: 'q', title: 'Escort', objectives: [{ id: 'walk', kind: 'escort', who: 'nobody', to: 'harbour' }] }] }, 'plot.quests[0].objectives[0].who') },
+      dialogue_node_unknown: { fields: ['plot.quests[].objectives[].node', 'plot.quests[].objectives[].dialogue'], message: 'a talk objective\'s node is a node of its dialogue' },
+    },
   },
   logic(logic) {
     // `{quest, objective, state}` written quest-first is still an objective test.
@@ -123,57 +136,35 @@ export default {
       run: (e, rt) => svc(rt).setObjective(e.quest, e.objective, e.state ?? 'done'),
     });
   },
+  // The shape of plot.quests (and of each objective, by its kind) is declared (card.data); what is left are the rules
+  // across fields and entries: prerequisite cycles, objective ids, an objective kind's either/or fields.
   validate(config, doc, ctx) {
     const errors = [], list = doc.plot?.quests;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [err('param_type', 'plot.quests', 'must be a list of quests')];
-    const ids = new Set(list.map(q => q?.id));
+    if (!Array.isArray(list)) return errors;
     list.forEach((q, i) => {
+      if (!isObj(q)) return;
       const path = `plot.quests[${i}]`;
-      checkKeys(q, QUEST_FIELDS, path, errors);
-      if (typeof q.title !== 'string' || !q.title) errors.push(err('quest_invalid', `${path}.title`, 'quest needs a title'));
-      if (q.kind !== undefined && !KINDS.includes(q.kind)) errors.push(err('quest_invalid', `${path}.kind`, `kind must be ${KINDS.join('|')}`));
-      if (q.order !== undefined && !['sequential', 'any'].includes(q.order)) errors.push(err('quest_invalid', `${path}.order`, 'order must be sequential|any'));
-      if (q.offer !== undefined && !['auto', 'accept', 'script'].includes(q.offer)) errors.push(err('quest_invalid', `${path}.offer`, 'offer must be auto|accept|script'));
-      if (q.giver !== undefined) checkRef(ctx, 'character', q.giver, `${path}.giver`, errors);
-      if (q.zone !== undefined) checkRef(ctx, 'zone', q.zone, `${path}.zone`, errors);
-      for (const [k, v] of Object.entries({ timeLimit: q.timeLimit })) if (v !== undefined && !(typeof v === 'number' && v > 0)) errors.push(err('quest_invalid', `${path}.${k}`, `${k} must be a positive number of seconds`));
-      (Array.isArray(q.prereq) ? q.prereq : q.prereq === undefined ? [] : [null]).forEach((p, j) => {
-        if (!ids.has(p)) errors.push(err('ref_unknown', `${path}.prereq[${j}]`, `unknown quest '${p}'`));
-        else if (p === q.id) errors.push(err('quest_cycle', `${path}.prereq[${j}]`, 'a quest cannot require itself'));
-      });
-      checkPred(q.gate, `${path}.gate`, errors, ctx);
-      checkPred(q.fail, `${path}.fail`, errors, ctx);
-      for (const k of ['onStart', 'onComplete', 'onFail']) checkEffects(q[k], `${path}.${k}`, errors, ctx);
-      if (q.rewards !== undefined) {
-        checkKeys(q.rewards, ['xp', 'money', 'items', 'rep', 'do'], `${path}.rewards`, errors);
-        rewardEffects(q.rewards).forEach((e, j) => ctx.checkEffect(e, `${path}.rewards`, errors));
-      }
-      (q.branches || []).forEach((b, j) => {
-        const bp = `${path}.branches[${j}]`;
-        checkKeys(b, ['id', 'label', 'when', 'do'], bp, errors);
-        if (typeof b.id !== 'string') errors.push(err('quest_invalid', `${bp}.id`, 'branch needs an id'));
-        checkPred(b.when, `${bp}.when`, errors, ctx); checkEffects(b.do, `${bp}.do`, errors, ctx);
-      });
-      if (!Array.isArray(q.objectives) || !q.objectives.length) { errors.push(err('quest_invalid', `${path}.objectives`, 'quest needs at least one objective')); return; }
+      if (Array.isArray(q.prereq)) q.prereq.forEach((p, j) => { if (p === q.id) errors.push(err('quest_cycle', `${path}.prereq[${j}]`, 'a quest cannot require itself')); });
+      // The reward effects need their owners' vocabulary (give_xp, give_money, give_item, add_rep).
+      if (isObj(q.rewards)) rewardEffects({ ...q.rewards, money: isObj(q.rewards.money) ? q.rewards.money : undefined, items: Array.isArray(q.rewards.items) ? q.rewards.items : [], rep: Array.isArray(q.rewards.rep) ? q.rewards.rep : [], do: [] }).forEach(e => ctx.checkEffect(e, `${path}.rewards`, errors));
+      if (!Array.isArray(q.objectives) || !q.objectives.length) return;
       const oids = new Set();
       q.objectives.forEach((o, j) => {
-        const op = `${path}.objectives[${j}]`, def = OBJECTIVES[o?.kind];
-        if (oids.has(o?.id)) errors.push(err('id_duplicate', `${op}.id`, `duplicate objective id '${o.id}'`));
-        oids.add(o?.id);
-        if (!def) { errors.push(err('objective_kind_unknown', `${op}.kind`, `unknown objective kind '${o?.kind}'`, `kinds: ${Object.keys(OBJECTIVES).join(', ')}`)); return; }
-        checkFields({ ...BASE_FIELDS, ...def.fields }, o, op, errors, ctx);
-        def.check?.(o, op, errors, ctx);
+        if (!isObj(o)) return;
+        const op = `${path}.objectives[${j}]`;
+        if (oids.has(o.id)) errors.push(err('objective_duplicate', `${op}.id`, `duplicate objective id '${o.id}'`));
+        oids.add(o.id);
+        if (typeof o.kind === 'string' && Object.hasOwn(OBJECTIVES, o.kind)) OBJECTIVES[o.kind].check?.(o, op, errors, ctx);
       });
-      if (q.objectives.every(o => o.optional)) errors.push(err('quest_invalid', `${path}.objectives`, 'every objective is optional: the quest could never complete'));
+      if (q.objectives.every(o => isObj(o) && o.optional)) errors.push(err('quest_invalid', `${path}.objectives`, 'every objective is optional: the quest could never complete'));
     });
     // prereq cycles
-    const byId = new Map(list.map(q => [q.id, q])), color = new Map();
+    const byId = new Map(list.filter(isObj).map(q => [q.id, q])), color = new Map();
     const visit = (id, trail) => {
       if (color.get(id) === 2) return; if (color.get(id) === 1) { errors.push(err('quest_cycle', `plot.quests[${list.indexOf(byId.get(id))}].prereq`, `prerequisite cycle: ${[...trail, id].join(' -> ')}`)); return; }
-      color.set(id, 1); for (const p of byId.get(id)?.prereq || []) if (byId.has(p) && p !== id) visit(p, [...trail, id]); color.set(id, 2);
+      color.set(id, 1); for (const p of Array.isArray(byId.get(id)?.prereq) ? byId.get(id).prereq : []) if (byId.has(p) && p !== id) visit(p, [...trail, id]); color.set(id, 2);
     };
-    for (const q of list) visit(q.id, []);
+    for (const q of byId.values()) visit(q.id, []);
     return errors;
   },
   install(rt, config) {

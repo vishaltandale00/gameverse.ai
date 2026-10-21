@@ -2,6 +2,8 @@
 // holds and every beat in `after` has fired; it runs its effects. Acts are
 // sequential unless `parallel` is set. The verifier can solve this graph.
 // A beat named by a plot.gate lock (`beat:<id>`) waits until that gate opens.
+import { TEXT, ENTRY_ID, KEY_ID } from './story-lib.js';
+
 export default {
   id: 'plot.storyboard',
   solverKey, progress,
@@ -16,10 +18,14 @@ export default {
     provides: { events: ['say', 'beat', 'act_start', 'act_complete'] },
     reads: ['plot.storyboard', 'plot.characters', 'plot.endings'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
-    data: { 'plot.storyboard': { type: 'object', fields: { acts: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
-      id: { type: 'string', required: true }, title: { type: 'string' },
-      beats: { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string' }, when: { type: 'predicate' }, after: { type: 'list', of: { type: 'ref', to: 'beat' } }, optional: { type: 'boolean' }, do: { type: 'effects' } } } },
+    data: { 'plot.storyboard': { type: 'object', required: true, fields: { acts: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
+      id: KEY_ID, title: TEXT({ effect: 'the act\'s title a person reads' }),
+      beats: { type: 'list', of: { type: 'object', fields: { id: ENTRY_ID, title: TEXT({ effect: 'the beat\'s title a person reads' }), when: { type: 'predicate' }, after: { type: 'list', of: { type: 'ref', to: 'beat' } }, optional: { type: 'boolean' }, do: { type: 'effects' } } } },
     } } } } } },
+    rules: {
+      // The story is the model's to write: a document with the storyboard and no plot.storyboard is missing it.
+      plot_missing: { fields: ['plot.storyboard'], message: 'a document using plot.storyboard has a plot.storyboard section', example: { doc: { plot: {} }, at: 'plot.storyboard' } },
+    },
   },
   logic(logic) {
     logic.predicate('beat', { refs: p => [['beat', p.beat]], test: (p, rt) => Boolean(rt.store('plot.storyboard').fired?.[p.beat]) });
@@ -41,17 +47,9 @@ export default {
       run: (e, rt) => rt.emit('say', { character: e.character, text: e.text }),
     });
   },
-  validate(config, doc, ctx) {
-    const errors = [], acts = doc.plot?.storyboard?.acts;
-    if (!Array.isArray(acts) || !acts.length) return [{ code: 'plot_missing', path: 'plot.storyboard.acts', message: 'storyboard needs at least one act' }];
-    const beats = new Set(acts.flatMap(a => (a.beats || []).map(b => b.id)));
-    acts.forEach((a, i) => (a.beats || []).forEach((b, j) => {
-      const path = `plot.storyboard.acts[${i}].beats[${j}]`;
-      if (b.when) ctx.checkPredicate(b.when, `${path}.when`, errors);
-      (b.do || []).forEach((e, k) => ctx.checkEffect(e, `${path}.do[${k}]`, errors));
-      for (const dep of b.after || []) if (!beats.has(dep)) errors.push({ code: 'ref_unknown', path: `${path}.after`, message: `unknown beat '${dep}'` });
-    }));
-    return errors;
+  // The shape of plot.storyboard is declared (card.data); the kernel checks a section only when it is there.
+  validate(config, doc) {
+    return doc.plot?.storyboard === undefined ? [{ code: 'plot_missing', path: 'plot.storyboard', message: 'the story needs a storyboard with at least one act' }] : [];
   },
   install(rt, config) {
     rt.system('plot', rt => {

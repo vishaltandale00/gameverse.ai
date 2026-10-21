@@ -5,7 +5,7 @@
 // event is drawn by weight with rt.random(). An event without choices applies
 // its effects at once; one with choices waits for `event_choice: {index}`
 // (each open choice is a solver option). `then` chains into another event.
-import { err, checkKeys, checkPred, checkEffects, ticks, weightedPick, cached } from './story-lib.js';
+import { ticks, weightedPick, cached, ENTRY_ID, TEXT } from './story-lib.js';
 
 const ID = 'plot.events.random';
 const events = rt => cached(rt, 'plot.events.random.index', doc => new Map((doc.plot?.randomEvents || []).map(e => [e.id, e])));
@@ -28,32 +28,19 @@ export default {
     provides: { events: ['random_event', 'random_event:*', 'random_event_end', 'random_event_choice'], services: ['randomEvents'], actions: ['event_choice'] },
     reads: ['plot.randomEvents'],
     defines: [{ kind: 'random_event', at: 'plot.randomEvents' }],
+    // Section shapes this primitive reads (the kernel checks entries against them; forms and repair derive from them).
+    data: { 'plot.randomEvents': { type: 'list', of: { type: 'object', fields: {
+      id: ENTRY_ID, title: TEXT({ effect: 'the event\'s title a person reads' }), text: TEXT({ required: true, effect: 'what happens, as a person reads it' }),
+      weight: { type: 'number', min: 0 }, cooldown: { type: 'number', min: 0, unit: 's' }, once: { type: 'boolean' }, draw: { type: 'boolean', effect: 'false: only trigger_event starts it' },
+      when: { type: 'predicate' }, do: { type: 'effects' },
+      choices: { type: 'list', of: { type: 'object', fields: { text: TEXT({ required: true, effect: 'the choice as a person reads it' }), if: { type: 'predicate' }, do: { type: 'effects' }, then: { type: 'ref', to: 'random_event', effect: 'the event it leads to' } } } },
+    } } } },
   },
   logic(logic) {
     logic.effect('trigger_event', { refs: e => [['random_event', e.event]], run: (e, rt) => rt.service('randomEvents').trigger(e.event) });
     logic.predicate('random_event', { refs: p => [['random_event', p.random_event]], test: (p, rt) => { const n = st(rt).seen[p.random_event] || 0; return ['gte', 'gt', 'lte', 'lt', 'eq', 'ne'].some(k => p[k] !== undefined) ? ['gte', 'gt', 'lte', 'lt', 'eq', 'ne'].every(k => p[k] === undefined || (k === 'gte' ? n >= p[k] : k === 'gt' ? n > p[k] : k === 'lte' ? n <= p[k] : k === 'lt' ? n < p[k] : k === 'eq' ? n === p[k] : n !== p[k])) : n > 0; } });
   },
-  validate(config, doc, ctx) {
-    const errors = [], list = doc.plot?.randomEvents;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [err('param_type', 'plot.randomEvents', 'must be a list of events')];
-    const ids = new Set(list.map(e => e?.id));
-    list.forEach((e, i) => {
-      const path = `plot.randomEvents[${i}]`;
-      checkKeys(e, ['id', 'title', 'text', 'weight', 'when', 'once', 'cooldown', 'do', 'choices', 'draw'], path, errors);
-      if (typeof e.text !== 'string') errors.push(err('random_event_invalid', `${path}.text`, 'event needs text'));
-      for (const k of ['weight', 'cooldown']) if (e[k] !== undefined && !(typeof e[k] === 'number' && e[k] >= 0)) errors.push(err('random_event_invalid', `${path}.${k}`, `${k} must be a non-negative number`));
-      checkPred(e.when, `${path}.when`, errors, ctx); checkEffects(e.do, `${path}.do`, errors, ctx);
-      (e.choices || []).forEach((c, j) => {
-        const cp = `${path}.choices[${j}]`;
-        checkKeys(c, ['text', 'if', 'do', 'then'], cp, errors);
-        if (typeof c.text !== 'string') errors.push(err('random_event_invalid', `${cp}.text`, 'choice needs text'));
-        checkPred(c.if, `${cp}.if`, errors, ctx); checkEffects(c.do, `${cp}.do`, errors, ctx);
-        if (c.then !== undefined && !ids.has(c.then)) errors.push(err('ref_unknown', `${cp}.then`, `unknown event '${c.then}'`));
-      });
-    });
-    return errors;
-  },
+  // plot.randomEvents is declared (card.data): the kernel checks it; no rule here crosses fields.
   install(rt, config) {
     st(rt); // create the store at install: UI reads (view/list/known) must never write state
     const open = e => (e.choices || []).map((c, index) => ({ c, index })).filter(({ c }) => !c.if || rt.test(c.if));
