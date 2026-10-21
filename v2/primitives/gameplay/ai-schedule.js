@@ -10,10 +10,21 @@
 // schedule waits.
 import { v3, r6, round6, len, sub, spaceOf, can, continuous, distBetween, zonePoint, dead, moverOwned, ensureLocomotion } from './ai-lib.js';
 
+import { checkParam } from '../../kernel/params.js';
+import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
+
 const ID = 'gameplay.ai.schedule';
 const st = rt => rt.store(ID);
 
-export const SLOT = { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' }, doing: { type: 'string' }, space: { type: 'ref', to: 'space' } };
+export const SLOT = {
+  from: { type: 'number', min: 0, max: 24, required: true, effect: 'hour the slot starts' }, to: { type: 'number', min: 0, max: 24, required: true, effect: 'hour it ends (a slot may wrap past midnight)' },
+  zone: { type: 'ref', to: 'zone', effect: 'where the NPC goes' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'the spot it goes to (a 2D point on a 3D surface is ground x, z)' },
+  doing: { type: 'string', effect: 'the activity token the doing predicate reads' }, space: { type: 'ref', to: 'space', effect: 'the space of the place (default the NPC\'s)' },
+};
+/** A routine: the slots of a day. */
+const ROUTINE = { type: 'list', of: { type: 'object', fields: SLOT }, effect: 'daily routine slots by hour' };
+/** A rule example's slot: every field unset but the hours. @param {number} from @param {number} to */
+const slot = (from, to) => ({ from, to, zone: null, at: null, doing: null, space: null });
 
 /** Index of the slot covering hour h (wrap-around slots like 22→6 included), or -1. */
 export function slotAt(schedule, h) {
@@ -45,15 +56,33 @@ export default {
     provides: { events: ['departed', 'departed:*', 'arrived', 'arrived:*', 'schedule_changed'] },
     requires: { capabilities: ['position'] },
     reads: ['plot.characters'],
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', open: true, fields: { schedule: ROUTINE } } } },
+    rules: {
+      schedule_place: { fields: ['plot.characters[].schedule[].at', 'plot.characters[].schedule[].zone'], message: 'a slot names its place: at or zone' },
+      schedule_overlap: { fields: ['plot.characters[].schedule[].from', 'plot.characters[].schedule[].to'], message: 'the slots of a routine do not overlap (one slot per hour of the day)' },
+    },
   },
   logic(logic) {
     logic.predicate('doing', { test: (p, rt, c) => { const e = rt.resolve(p.who ?? p.character, c); const s = e?.components.schedule; return Boolean(s && s.doing === p.doing && (p.arrived === false || s.state === 'there')); } });
-    logic.effect('set_schedule', { refs: e => [['character', e.character]], check: (e, path, errs, ctx) => validateSchedule(e.schedule ?? [], `${path}.schedule`, errs, ctx),
+    // Effects carry no declared shape the kernel checks: the check holds the routine to ROUTINE and its rules.
+    logic.effect('set_schedule', { refs: e => [['character', e.character]],
+      codes: [
+        { code: 'schedule_place', fields: ['schedule[].at', 'schedule[].zone'], message: 'a slot names its place: at or zone', example: { do: 'set_schedule', character: 'nobody', schedule: [{ from: 1, to: 2 }] } },
+        { code: 'schedule_overlap', fields: ['schedule[].from', 'schedule[].to'], message: 'the slots of a routine do not overlap', example: { do: 'set_schedule', character: 'nobody', schedule: [{ from: 1, to: 5, at: [0, 0] }, { from: 2, to: 3, at: [0, 0] }] } },
+      ],
+      check: (e, path, errs, ctx) => { const p = `${path}.schedule`, list = e.schedule ?? []; checkParam(ROUTINE, list, p, errs, ctx); routineRules(list, p, errs); },
       run: (e, rt) => { (st(rt).overrides ??= {})[e.character] = e.schedule ?? null; const ent = rt.entity(e.character); if (ent?.components.schedule && !Array.isArray(ent.components.schedule)) { ent.components.schedule.slot = -2; if (e.schedule) ent.components.schedule.routine = structuredClone(e.schedule); } rt.emit('schedule_changed', { who: e.character }); } });
   },
   validate(config, doc, ctx) {
     const errors = [];
-    (doc.plot?.characters || []).forEach((c, i) => { if (c.schedule !== undefined) validateSchedule(c.schedule, `plot.characters[${i}].schedule`, errors, ctx, config); });
+    (doc.plot?.characters || []).forEach((c, i) => {
+      if (c?.schedule === undefined) return;
+      const path = `plot.characters[${i}].schedule`;
+      // The declared routine shape (card.data), checked as errors here only until preflight enforces declared shapes
+      // itself (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
+      if (!DECLARATIONS_ENFORCED) checkParam(ROUTINE, c.schedule, path, errors, ctx);
+      routineRules(c.schedule, path, errors);
+    });
     return errors;
   },
   install(rt, config) {
@@ -62,17 +91,10 @@ export default {
   },
 };
 
-function validateSchedule(list, path, errors, ctx, config) {
-  if (!Array.isArray(list)) { errors.push({ code: 'param_type', path, message: 'schedule must be a list of slots' }); return; }
-  list.forEach((s, j) => {
-    const p = `${path}[${j}]`;
-    if (!s || typeof s !== 'object') { errors.push({ code: 'param_type', path: p, message: 'slot must be an object' }); return; }
-    for (const k of Object.keys(s)) if (!(k in SLOT)) errors.push({ code: 'param_unknown', path: `${p}.${k}`, message: `unknown slot field '${k}'` });
-    for (const k of ['from', 'to']) if (!(Number.isFinite(s[k]) && s[k] >= 0 && s[k] <= 24)) errors.push({ code: 'schedule_hour', path: `${p}.${k}`, message: `${k} must be an hour 0–24` });
-    if (s.zone !== undefined && !ctx.indexes.zone?.has(s.zone)) errors.push({ code: 'ref_unknown', path: `${p}.zone`, message: `unknown zone '${s.zone}'` });
-    if (s.at === undefined && s.zone === undefined) errors.push({ code: 'schedule_place', path: p, message: 'a slot needs at or zone' });
-    if (s.at !== undefined && !(Array.isArray(s.at) ? s.at.every(Number.isFinite) : typeof s.at === 'string')) errors.push({ code: 'param_type', path: `${p}.at`, message: 'at must be a position or node id' });
-  });
+/** The cross-slot rules of a routine (its shape is ROUTINE): every slot has a place, no two slots overlap. */
+function routineRules(list, path, errors) {
+  if (!Array.isArray(list)) return;
+  list.forEach((s, j) => { if (s && typeof s === 'object' && s.at == null && s.zone == null) errors.push({ code: 'schedule_place', path: `${path}[${j}]`, message: 'a slot needs at or zone' }); });
   // Overlapping slots make the routine ambiguous.
   for (let h = 0; h < 24; h += 0.5) { const hits = list.filter(s => s && Number.isFinite(s.from) && (s.from <= s.to ? h >= s.from && h < s.to : h >= s.from || h < s.to)); if (hits.length > 1) { errors.push({ code: 'schedule_overlap', path, message: `slots overlap at hour ${h}` }); break; } }
 }
