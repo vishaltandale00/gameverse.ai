@@ -1,0 +1,58 @@
+{
+  "gameId": "3d-zelda-style-dungeon-inside-standin",
+  "version": 1,
+  "stage": "stand-in",
+  "provenance": { "note": "Stand-in for local-data/v2/games/3d-zelda-style-dungeon-inside-mvhectx1 v1 (deleted by the user): engine.space.mesh3d [2048, 2048], primary view 3p, zero generators, the v1 system list with move.fly replaced by ground locomotion (move.walk), archetypes hero (name, health, melee) and clockwork_guardian (health, ai, melee), no spawns." },
+  "doc": {
+    "schema": "gameverse.v2.game/0.2",
+    "id": "3d-zelda-style-dungeon-inside-a-giant-clock",
+    "title": "3D Zelda-style dungeon inside a giant clock",
+    "logline": "Explore a clockwork dungeon of gears and keys inside a giant clock.",
+    "seed": 424242,
+    "views": { "primary": "3p", "alternates": [] },
+    "spaces": [{
+      "id": "clock_dungeon", "use": "engine.space.mesh3d", "with": { "size": [2048, 2048] },
+      "zones": [
+        { "id": "pendulum_hall", "name": "Pendulum Hall", "description": "The entry hall where the great pendulum swings.", "rect": [0, 0, 409, 2048] },
+        { "id": "gear_gallery", "name": "Gear Gallery", "description": "Walkways between turning gears.", "rect": [410, 0, 818, 2048] },
+        { "id": "spring_vault", "name": "Spring Vault", "description": "Coiled springs guard a locked vault.", "rect": [819, 0, 1227, 2048] },
+        { "id": "escapement", "name": "Escapement", "description": "The ticking heart of the clock.", "rect": [1228, 0, 1636, 2048] },
+        { "id": "clock_face", "name": "Clock Face", "description": "Behind the great dial: the guardian waits.", "rect": [1637, 0, 2048, 2048] }
+      ]
+    }],
+    "systems": [
+      { "use": "engine.input.actions" },
+      { "use": "engine.physics.body" },
+      { "use": "engine.physics.character" },
+      { "use": "engine.spawner" },
+      { "use": "engine.stream" },
+      { "use": "gameplay.ai.attacks" },
+      { "use": "gameplay.combat.aim" },
+      { "use": "gameplay.combat.health" },
+      { "use": "gameplay.combat.melee" },
+      { "use": "gameplay.combat.status" },
+      { "use": "gameplay.combat.target" },
+      { "use": "gameplay.interact" },
+      { "use": "gameplay.inventory" },
+      { "use": "gameplay.mechanism" },
+      { "use": "gameplay.move.walk", "space": "clock_dungeon" },
+      { "use": "plot.storyboard", "with": { "sequentialActs": true } }
+    ],
+    "plot": {
+      "premise": "A 3D Zelda-style dungeon inside a giant clock: find the keys, open the gates and face the clockwork guardian.",
+      "characters": [{ "id": "keeper", "name": "The Clockkeeper", "role": "guide" }],
+      "storyboard": { "acts": [{ "id": "act_1", "title": "Into the clock", "beats": [
+        { "id": "reach_gear_gallery", "when": { "zone": "gear_gallery" } },
+        { "id": "finale", "after": ["reach_gear_gallery"], "when": { "zone": "clock_face" }, "do": [{ "do": "end_game", "ending": "victory" }] }
+      ] }] },
+      "endings": [{ "id": "victory", "title": "Victory", "text": "The clock ticks again.", "outcome": "won" }]
+    },
+    "content": {
+      "archetypes": [
+        { "id": "hero", "components": { "name": "Link", "health": { "hp": 6, "max": 6 }, "melee": {} } },
+        { "id": "clockwork_guardian", "components": { "name": "Clockwork Guardian", "health": { "hp": 4, "max": 4 }, "ai": {}, "melee": {} } }
+      ]
+    },
+    "player": { "archetype": "hero", "space": "clock_dungeon", "at": [16, 0, 16] }
+  }
+}

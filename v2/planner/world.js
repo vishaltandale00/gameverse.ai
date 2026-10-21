@@ -6,8 +6,10 @@
 //   - generator cards: `card.spaces: [space ids]` (the spaces it targets) and `card.provides.content:
 //     [kinds]` (what it builds: 'cells', 'terrain', 'road-network', 'structures', 'course', 'rooms',
 //     'zones', 'entities', 'water', 'props', 'biomes', 'caves', 'ores');
-//   - space cards: `card.needs: { content: [kinds] }`, the world content the space needs to be playable
-//     (every kind listed must be provided).
+//   - space cards: `card.needs: { content: [kinds], alternatives?: [[kinds]...] }`, the world content the space
+//     needs to be playable: every kind of `content` (the default), or every kind of one alternative set (a mesh3d
+//     world is terrain + a road network, or rooms). The idea chooses among declared sets only: an alternative is
+//     planned when a generator providing it is lexically relevant to the idea (the selection's own relevance).
 // generatorsFor and planWorld read only those declarations (plus the param schemas: a generator with
 // required params is usable only through its `scaffold(space, doc, ctx)` hook). furnishWorld covers a
 // space's unmet needs with the planned generators, each configured by its scaffold from the space's zones
@@ -17,6 +19,7 @@ import { preflight } from '../kernel/document.js';
 import { createWorld } from '../kernel/world.js';
 import { movementEnvelope } from '../primitives/gameplay/move-lib-envelope.js';
 import { defaultsOf, isGenerator } from './catalog.js';
+import { relevance, LEXICAL_ACCEPT } from './select.js';
 
 export const WORLD_VERSION = 'world/0.2';
 const MAX_CELLS_SCANNED = 4e6;
@@ -29,8 +32,12 @@ export function spaceCaps(registry, space) {
 }
 
 // ---------- static declarations ----------
-/** World content a space kind needs to be playable (space card `needs.content`). */
+/** World content a space kind needs to be playable by default (space card `needs.content`). */
 export const spaceNeeds = (registry, use) => registry.get(use)?.card.needs?.content || [];
+/** Every content set that makes a space kind playable: needs.content first, then needs.alternatives. */
+export const needSets = (registry, use) => { const n = registry.get(use)?.card.needs; return n?.content?.length ? [n.content, ...(n.alternatives || []).filter(a => Array.isArray(a) && a.length)] : []; };
+/** The idea a document states (title, logline, premise): text for choosing among declared need sets. */
+export const intentOf = doc => [doc?.title, doc?.logline, doc?.plot?.premise].filter(x => typeof x === 'string').join('. ');
 /** World content a generator builds (generator card `provides.content`). */
 export const contentOfGenerator = (registry, id) => registry.get(id)?.card.provides?.content || [];
 /** Whether a generator's card declares this space kind among its targets (generator card `spaces`). */
@@ -58,18 +65,34 @@ export function generatorsFor(registry, space, view = null, want = null) {
 const cmpRank = (a, b) => { for (let i = 0; i < a.rank.length; i++) if (a.rank[i] !== b.rank[i]) return b.rank[i] - a.rank[i]; return a.id.localeCompare(b.id); };
 
 /**
- * Static plan for a space kind: generators (greedy, by generatorsFor's ranking) until every need not in
- * `have` is covered. -> { generators: [ids], unmet: [kinds] }
+ * The need set a space's world aims at: the first set `have` already satisfies; else a declared alternative whose
+ * best generator is relevant to `intent` (≥ LEXICAL_ACCEPT and above the default's); else needs.content.
  */
-export function planWorld(registry, space, { view = null, have = [], exclude = [] } = {}) {
-  let left = spaceNeeds(registry, space.use).filter(c => !have.includes(c));
+export function needSetFor(registry, space, { have = [], intent = '' } = {}) {
+  const sets = needSets(registry, space.use);
+  if (!sets.length) return [];
+  const met = sets.find(set => set.every(k => have.includes(k)));
+  if (met) return met;
+  if (!intent || sets.length < 2) return sets[0];
+  const score = set => Math.max(0, ...generatorsFor(registry, space, null, set).filter(g => g.covers.length).map(g => relevance({ verb: '', description: intent }, { id: g.id, ...registry.get(g.id).card })));
+  const base = score(sets[0]), best = sets.slice(1).map(set => ({ set, s: score(set) })).sort((a, b) => b.s - a.s)[0];
+  return best && best.s >= LEXICAL_ACCEPT && best.s > base ? best.set : sets[0];
+}
+
+/**
+ * Static plan for a space: generators (greedy, by generatorsFor's ranking) until every kind of its need set
+ * (needSetFor) not in `have` is covered. -> { generators: [ids], unmet: [kinds], set: [kinds] }
+ */
+export function planWorld(registry, space, { view = null, have = [], exclude = [], intent = '' } = {}) {
+  const set = needSetFor(registry, space, { have, intent });
+  let left = set.filter(c => !have.includes(c));
   const picks = [];
   while (left.length) {
     const best = generatorsFor(registry, space, view, left).find(g => g.covers.length && !picks.includes(g.id) && !exclude.includes(g.id));
     if (!best) break;
     picks.push(best.id); left = left.filter(c => !best.covers.includes(c));
   }
-  return { generators: picks, unmet: left };
+  return { generators: picks, unmet: left, set };
 }
 /** A space kind whose needs the registered generators can cover (zones are authored by the outline). -> unmet kinds */
 export const unfurnishable = (registry, use) => planWorld(registry, { use }, { have: OUTLINE_AUTHORS }).unmet;
@@ -79,7 +102,7 @@ const hasEnvelope = p => Boolean(p && (p.card?.envelope || p.envelope));
 /** Whether a primitive moves things through a space: a movement envelope, or a continuous control (walk, steer, drive). */
 export const isMovement = (registry, id) => { const p = registry.get(id); return hasEnvelope(p) || Object.values(p?.card?.actionSpace || {}).some(a => a?.kind === 'continuous'); };
 /** A space kind that declares world needs. */
-export const needsWorld = (registry, space) => spaceNeeds(registry, space.use).length > 0;
+export const needsWorld = (registry, space) => needSets(registry, space.use).length > 0;
 /**
  * Spaces whose world must not be empty: spaces that declare needs and that a movement primitive moves
  * something through (bound to that space or to the first one). A board or card game with no movement
@@ -131,6 +154,8 @@ export function contentOf(rt, spaceId) {
     out.terrain = Boolean(m?.has?.('height'));
     out.objects = m?.objects?.length ?? 0;
     out.roads = m?.data?.roads?.edges?.length ?? 0;
+    out.fields = m?.fields?.size ?? 0; // height, water, biome... fields generators defined
+    out.layers = (m?.layers?.length ?? 0) + (m?.objectLayers?.length ?? 0); // voxel cell passes and lazy object layers (scatter...)
   }
   const zones = [...(rt.doc.spaces.find(s => s.id === spaceId)?.zones || []), ...(Array.isArray(rt.state.spaces[spaceId]?.zones) ? rt.state.spaces[spaceId].zones : [])];
   const linked = linkedZones(zones);
@@ -138,7 +163,7 @@ export function contentOf(rt, spaceId) {
   return out;
 }
 /** Nothing measured in the space. */
-export const isEmpty = c => !(c && (c.cells > 0 || c.entities > 0 || c.terrain || c.objects > 0 || c.roads > 0 || c.linked > 0));
+export const isEmpty = c => !(c && (c.cells > 0 || c.entities > 0 || c.terrain || c.objects > 0 || c.roads > 0 || c.linked > 0 || c.layers > 0));
 
 /** Generation problems for one booted space: 2D generators (the shared `generation` service) and the 3D world model. */
 export function generationProblems(rt, doc, spaceId) {
@@ -162,9 +187,9 @@ export function worldProblems(rt, doc, registry) {
   const out = extentProblems(doc, registry);
   for (const { space, index } of spacesNeedingWorld(doc, registry)) {
     const c = contentOf(rt, space.id); if (!c) continue;
-    const unmet = spaceNeeds(registry, space.use).filter(k => !worldContent(doc, registry, space, rt).includes(k));
+    const have = worldContent(doc, registry, space, rt), unmet = needSetFor(registry, space, { have, intent: intentOf(doc) }).filter(k => !have.includes(k));
     if (!unmet.length) continue;
-    const plan = planWorld(registry, space, { view: doc.views?.primary, have: worldContent(doc, registry, space, rt) });
+    const plan = planWorld(registry, space, { view: doc.views?.primary, have, intent: intentOf(doc) });
     const hint = plan.generators.length ? `add ${plan.generators.join(' + ')} in spaces[${index}].generators (it builds ${unmet.join(', ')})` : `no registered generator targets ${space.use} with ${unmet.join(', ')}: author that content`;
     if (isEmpty(c)) out.push({ code: 'world_empty', path: `spaces[${index}]`, severity: 'error', stage: 'world', space: space.id, missing: unmet,
       message: `space '${space.id}' (${space.use}) is empty: it needs ${unmet.join(' and ')} and nothing builds it, so the player moves through a void`, hint });
@@ -197,7 +222,8 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   let doc = structuredClone(input), current = pre.doc, world = rt;
   const added = [], fixes = [];
   for (const { space: s0, index } of spacesNeedingWorld(pre.doc, registry)) {
-    let left = spaceNeeds(registry, s0.use).filter(k => !worldContent(current, registry, current.spaces[index], world).includes(k));
+    const had = worldContent(current, registry, current.spaces[index], world);
+    let left = needSetFor(registry, s0, { have: had, intent: intentOf(current) }).filter(k => !had.includes(k));
     const tried = new Set();
     while (left.length) {
       const space = doc.spaces[index], before = contentOf(world, space.id);
@@ -234,7 +260,26 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   }
   return done(doc, added, fixes, worldProblems(world, current, registry));
 }
-const grows = (a, b) => ['cells', 'entities', 'objects', 'roads', 'linked'].some(k => (b[k] ?? 0) > (a[k] ?? 0)) || (Boolean(b.terrain) && !a.terrain);
+/** Whether measured content b has more of anything than a. */
+export const grows = (a, b) => ['cells', 'entities', 'objects', 'roads', 'linked', 'fields', 'layers'].some(k => (b?.[k] ?? 0) > (a?.[k] ?? 0)) || (Boolean(b?.terrain) && !a?.terrain);
+
+/**
+ * Add one generator instance to spaces[index] of a copy of doc: with `config`, or configured by its scaffold
+ * (null when the scaffold declines). -> doc | null
+ */
+export function addGenerator(input, registry, index, use, config = undefined) {
+  const doc = structuredClone(input), space = doc.spaces[index], p = registry.get(use);
+  if (!space || !p) return null;
+  const gen = { use };
+  (space.generators ??= []).push(gen);
+  if (config !== undefined) { gen.with = structuredClone(config); return doc; }
+  if (typeof p.scaffold !== 'function') return doc;
+  let made = null;
+  try { made = p.scaffold(space, doc, { envelope: envelopeFor(doc, registry, space), reserve: reservedRegions(doc, registry, space.id), registry }); } catch { made = null; }
+  if (!made) return null;
+  applyScaffold(doc, index, gen, made, { registry });
+  return doc;
+}
 
 /**
  * Cell regions of a space that other primitives own (a falling-piece board, a match grid...), as rects
