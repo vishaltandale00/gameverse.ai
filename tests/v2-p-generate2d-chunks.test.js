@@ -115,3 +115,17 @@ test('chunks: on a looped track the course is the circuit, laid out whole up to 
   assert.deepEqual(course(), laid);
   assert.equal(rt.state.counts.chunk_placed, placed);
 });
+
+test('chunks: the course owns the distance run; a goal wins once on reaching it and must end inside the space', () => {
+  const { rt } = compile(doc({ goal: 30, onGoal: [{ do: 'end_game', outcome: 'won' }] }), { primitives: ALL });
+  const goals = []; rt.on('course_goal', d => goals.push(d));
+  runForward(rt, 40);
+  assert.equal(rt.state.vars['course.distance'], 20, 'distance from where the follower started (0.5 a frame)');
+  assert.equal(rt.state.status, 'playing');
+  runForward(rt, 30);
+  assert.equal(rt.state.status, 'won');
+  assert.deepEqual(goals.map(g => g.goal), [30]);
+  const r = new Registry(ALL), logic = buildLogic(r, Logic), codes = d => preflight(d, r, logic).errors.map(e => e.code);
+  assert.ok(codes(doc({ goal: 512 })).includes('chunk_goal_outside'), 'a run of 512 from 0 leaves the 512-long space');
+  assert.ok(!codes(doc({ goal: 500 })).includes('chunk_goal_outside'));
+});

@@ -735,6 +735,7 @@ export function playerEnvelope(rt, e) {
  */
 export function reachableZones(rt, e, api) {
   const zones = rt.doc.spaces.find(s => s.id === e.space)?.zones || [];
+  if (!zones.length) return []; // nothing to travel to: no reachable() flood over the whole space
   const cellKey = at => (typeof api.cellOf === 'function' ? api.cellOf({ ...e, at }) : Array.isArray(at) ? at.map(v => Math.floor(v)).join(',') : at);
   const here = typeof api.cellOf === 'function' ? api.cellOf(e) : cellKey(e.at);
   const c = rt.caches, key = `${rt.state.frame}|${e.space}|${JSON.stringify(here)}`;

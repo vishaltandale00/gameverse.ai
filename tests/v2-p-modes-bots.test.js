@@ -130,6 +130,12 @@ const DOCS = {
     [{ use: 'gameplay.move.platformer' }, { use: 'gameplay.combat.health' }, { use: 'gameplay.hazard', with: { types: [{ id: 'spikes', damage: 1 }] } }, { use: 'gameplay.goal', with: { onReach: won } }],
     { archetypes: [{ id: 'hero', components: { health: { max: 3 }, body: { size: [0.8, 0.95] } } }, { id: 'flag', components: { goal: true, body: { size: [1, 2] } } }],
       blocks: [{ id: 'stone', solid: true }, { id: 'plank', solid: true }, { id: 'spikes', solid: false, tags: ['hazard'], hazard: 'spikes' }] }, { player: { archetype: 'hero', at: [2, 3] } }),
+  runner: () => base('runner', [{ id: 'run', use: 'engine.space.tilemap', with: { size: [256, 8], mode: 'side' },
+    generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'hop', rows: ['..o...', '......', '..#..^'] }], along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 8,
+      legend: { '.': {}, '#': { block: 'crate', blocks: true }, '^': { block: 'spikes', hazard: true }, o: { archetype: 'coin' } }, gap: { base: 4, min: 3 }, goal: 50, onGoal: won } }] }],
+    [{ use: 'gameplay.move.platformer', with: { preset: 'runner' } }, { use: 'gameplay.combat.health' }, { use: 'gameplay.hazard', with: { types: [{ id: 'spikes', damage: 1 }] } }],
+    { archetypes: [{ id: 'hero', components: { health: { max: 1 }, body: { size: [0.7, 1.1] } } }, { id: 'coin', components: { body: { size: [0.6, 0.6] } } }],
+      blocks: [{ id: 'crate', solid: true }, { id: 'spikes', solid: false, hazard: 'spikes' }] }, { player: { archetype: 'hero', at: [2, 0.55] } }),
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
@@ -149,7 +155,7 @@ const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loo
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
   placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {}, crawl: {},
-  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {}, platformer: {},
+  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {}, platformer: {}, beam: {},
 };
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
 const strip = runs => runs.map(({ budget, ...x }) => x);
@@ -229,7 +235,7 @@ test('mode creature-battle: the greedy battler wins the trainer battle the story
   assert.equal(a.metrics.rate, 1, JSON.stringify(a.metrics.runs));
 });
 
-for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl', 'platformer']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
+for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl', 'platformer', 'runner']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
 
 test('mode farm: the farming bot tills, plants, waters and harvests through the controls to the win', () => {
   const { runs } = playMode('farm');

@@ -72,7 +72,7 @@ import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 import { OUTLINE_AUTHORS } from './world.js';
-import { cardLoop, loopSpaceFits } from './loop.js';
+import { cardLoop, loopSpaceFits, loopExists } from './loop.js';
 import { list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -582,7 +582,10 @@ export function checkComposition(input, registry, opts = {}) {
       const md = /** @type {Record<string, any> | null} */ (cardLoop(c));
       if (!md) continue;
       const s = spaces.get(u.space);
-      const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || [])].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
+      const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || []), ...(docLike.spaces || []).flatMap((/** @type {any} */ sp) => (isObj(sp) && isList(sp.generators) ? sp.generators : []))].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
+      // In a document, a loop that exists only for one configuration (card.mode.applies: a course with a goal, a dungeon
+      // with a boss) is no loop of an instance configured otherwise: loop.js loopExists, as the loop check reads it.
+      if (inst && !loopExists(c, isObj(inst.with) ? inst.with : {})) continue;
       // needs.content: document sections (declared, non-empty) and world content (generators / adapters).
       for (const item of isList(md.needs?.content) ? md.needs.content : []) {
         if (typeof item !== 'string') continue;

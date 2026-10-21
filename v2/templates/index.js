@@ -8,6 +8,7 @@ import race from './race.js';
 import dungeon from './dungeon.js';
 import farm from './farm.js';
 import platformer from './platformer.js';
+import runner from './runner.js';
 
-export const TEMPLATES = Object.freeze([mazeChase, race, dungeon, farm, platformer]);
+export const TEMPLATES = Object.freeze([mazeChase, race, dungeon, farm, platformer, runner]);
 export const templateById = id => TEMPLATES.find(t => t.id === id) ?? null;

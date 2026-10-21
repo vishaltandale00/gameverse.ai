@@ -171,6 +171,18 @@ export function appliesTo(a, config) {
   return (a.field ? prop(v, a.field) : v) === a.is;
 }
 
+/**
+ * Does a card's loop exist for one instance config (card defaults applied)? A card whose only loop declaration is a
+ * card.mode with `applies` carries a loop only where the mode applies (a dungeon without a boss is a world, not a
+ * crawl; a course without a goal is not a run to win); every other declared loop always exists.
+ * @param {unknown} card @param {Record<string, unknown>} config
+ */
+export function loopExists(card, config) {
+  const own = prop(card, 'loop'), mode = prop(card, 'mode');
+  if (isObj(own) || !isObj(mode) || !isObj(mode.applies)) return Boolean(cardLoop(card));
+  return appliesTo(/** @type {any} */ (mode.applies), config);
+}
+
 /** Card defaults of a primitive's params. @param {any} card @returns {Record<string, unknown>} */
 const defaults = card => Object.fromEntries(Object.entries(card?.params || {}).filter(([, s]) => isObj(s) && 'default' in s).map(([k, s]) => [k, /** @type {any} */ (s).default]));
 
@@ -198,9 +210,10 @@ export function loopOf(doc, registry, { core = null } = {}) {
     const card = registry.get(use)?.card;
     const loop = cardLoop(card);
     if (!loop) return;
+    const config = { ...defaults(card), ...(isObj(prop(inst, 'with')) ? /** @type {Record<string, unknown>} */ (prop(inst, 'with')) : {}) };
+    if (!loopExists(card, config)) return;
     primitives.push({ use, path, loop });
     for (const e of loop.progress) progress.add(e);
-    const config = { ...defaults(card), ...(isObj(prop(inst, 'with')) ? /** @type {Record<string, unknown>} */ (prop(inst, 'with')) : {}) };
     if (loop.win && appliesTo(loop.win.applies, config)) win.push({ use, path, ...loop.win });
     if (loop.lose && appliesTo(loop.lose.applies, config)) lose.push({ use, path, ...loop.lose });
   };

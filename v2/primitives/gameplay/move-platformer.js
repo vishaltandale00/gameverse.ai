@@ -154,9 +154,13 @@ export default {
       const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
       // The solver repeats an option's actions for `steps` frames, so a jump held for its whole rise is a full jump.
       const rise = Math.max(1, Math.round((c.jump || c.flap.velocity || c.autoBounce.velocity || 1) / ((c.gravity || 60) * c.gravityScale) / rt.dt));
+      const lift = c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0, dashing = c.abilities.dash || hasAbility(rt, p, 'dash'), dashSteps = Math.max(1, Math.round(c.dash.sec / rt.dt));
+      // Auto-run (endless runners) sets the horizontal speed itself: left and right change nothing, so the choices are
+      // to run on, jump or dash ahead, and when: running on lasts half a cell of travel, so a jump can be timed to the cell.
+      if (c.autoRun > 0) return [{ label: 'run on', actions: {}, steps: Math.max(1, Math.ceil(0.5 / (c.autoRun * rt.dt))) }, ...(lift ? [{ label: 'jump', actions: { jump: true }, steps: rise }] : []), ...(dashing ? [{ label: 'dash', actions: { dash: true }, steps: dashSteps }] : [])];
       const out = [{ label: 'run right', actions: { right: true }, steps: 12 }, { label: 'run left', actions: { left: true }, steps: 12 }];
-      if (c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0) out.push({ label: 'jump', actions: { jump: true }, steps: rise }, { label: 'jump right', actions: { jump: true, right: true }, steps: rise }, { label: 'jump left', actions: { jump: true, left: true }, steps: rise });
-      if (c.abilities.dash || hasAbility(rt, p, 'dash')) out.push({ label: 'dash right', actions: { dash: true, right: true }, steps: Math.max(1, Math.round(c.dash.sec / rt.dt)) }, { label: 'dash left', actions: { dash: true, left: true }, steps: Math.max(1, Math.round(c.dash.sec / rt.dt)) });
+      if (lift) out.push({ label: 'jump', actions: { jump: true }, steps: rise }, { label: 'jump right', actions: { jump: true, right: true }, steps: rise }, { label: 'jump left', actions: { jump: true, left: true }, steps: rise });
+      if (dashing) out.push({ label: 'dash right', actions: { dash: true, right: true }, steps: dashSteps }, { label: 'dash left', actions: { dash: true, left: true }, steps: dashSteps });
       return out;
     });
   },
