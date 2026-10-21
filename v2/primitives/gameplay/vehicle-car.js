@@ -41,7 +41,9 @@ export default {
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
     // A car for the player to drive from the first frame; AI participants get one with a steady throttle (the vehicle.core AI interface).
-    engage: { player: { spawn: { role: 'vehicle', archetype: { id: 'car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: {} } } } },
+    // movement: the player's body moves by this primitive from the start: it moves the vehicle it spawns for the player,
+    // which vehicle.core seats the player in (its engage.player.enter) and carries the player along (loop-check.js movesPlayer).
+    engage: { player: { movement: true, spawn: { role: 'vehicle', archetype: { id: 'car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: {} } } } },
       actors: { spawn: { role: 'vehicle', archetype: { id: 'car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: {} } }, components: { drive: { control: { throttle: 0.9 } } } } } },
   },
   validate(config, doc) {

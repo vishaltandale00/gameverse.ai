@@ -127,12 +127,12 @@ const isObjLike = v => typeof v === 'object' && v !== null;
 
 /**
  * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
- * winOwner; `core` orders the loops as the planner does), with the comparison and target of the won plot ending that
+ * winOwner: `core` orders the loops as the planner does, else the win the document wires), with the comparison and target of the won plot ending that
  * tests it, when one does. null when no loop declares a game-ending win with reads.
  * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {WinQuantity | null}
  */
 export function winQuantity(doc, registry, core = null) {
-  const owner = winOwner(loopInstances(doc, registry), core);
+  const owner = winOwner(doc, registry, loopInstances(doc, registry), core);
   const reads = owner ? readsOf(owner.loop.win) : null;
   if (!owner || !reads) return null;
   /** @type {WinQuantity} */

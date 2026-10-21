@@ -14,6 +14,10 @@
 //     enter: [effects],                    run once at start; '$player' and '$<role>' are substituted, effects naming
 //                                          a role nobody spawned are dropped; skipped when the document already runs
 //                                          these effect kinds itself
+//     movement: true,                      the player's body moves by this primitive from the start, under the player's
+//                                          controls: it moves the entity it spawns (spawn), which a required primitive
+//                                          seats the player in (its enter) and carries along (vehicles); the loop check's
+//                                          player movement (loop-check.js movesPlayer)
 //   },
 //   actors: { components, spawn, enter },  the same, for each AI participant ('$actor' = the participant)
 //   participants: { param },               who the participants are: the instance param listing ids or archetypes;

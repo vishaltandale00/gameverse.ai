@@ -65,6 +65,11 @@ export interface Requires {
 
 /** Player/actor engagement contract (see v2/planner/engage.js). */
 export interface EngageSide {
+  /**
+   * The engaged entity's body moves by this primitive, under its controls, from the start: the primitive moves the
+   * entity it spawns for it (`spawn`), which a required primitive seats it in (its `enter`) and carries along (a vehicle).
+   */
+  movement?: boolean;
   components?: Record<string, unknown>;
   spawn?: { role: string; archetype: { id?: string; components?: Record<string, unknown>; [k: string]: unknown }; components?: Record<string, unknown> };
   enter?: Effect[];

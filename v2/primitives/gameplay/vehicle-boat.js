@@ -29,7 +29,9 @@ export default {
     provides: { events: ['docked', 'undocked', 'beached', 'refloated', 'crash'] },
     requires: { capabilities: ['position', 'surface'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
-    engage: { player: { spawn: { role: 'vehicle', archetype: { id: 'boat', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, boat: {} } } } },
+    // movement: the player's body moves by this primitive from the start: it moves the vehicle it spawns for the player,
+    // which vehicle.core seats the player in (its engage.player.enter) and carries the player along (loop-check.js movesPlayer).
+    engage: { player: { movement: true, spawn: { role: 'vehicle', archetype: { id: 'boat', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, boat: {} } } } },
       actors: { spawn: { role: 'vehicle', archetype: { id: 'boat', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, boat: {} } }, components: { drive: { control: { throttle: 0.9 } } } } } },
   },
   validate(config, doc) {

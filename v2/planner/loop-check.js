@@ -14,9 +14,11 @@
 //                 whether play can reach it is unknown. A provider only content could drive is pending content when
 //                 a player-driven primitive declares what its reads.by names (playerChanges), else an error; a wired
 //                 lose whose reads nothing in the document produces -> loop_lose_unproduced;
-//   wiring        the win of the loop that owns the game's win is wired to a won ending (an end_game effect in its
-//                 declared param, its `end` boolean, a `when` ending with its evaluator in the document, or a won
-//                 story ending), and its declared lose (and the core loops' losses) to a lost one;
+//   wiring        the win of the loop that owns the game's win (winOwner: the core order's, else the one the document
+//                 wires; another loop's declared win the document does not use is no problem) is wired to a won
+//                 ending (an end_game effect in its declared param, its `end` boolean, a plot ending filling its `when`
+//                 template with its evaluator in the document, or a won story ending), and its declared lose (and the
+//                 core loops' losses) to a lost one;
 //   opponents     AI-controlled participants act: a loop whose groups have AI control (a group not seating the player
 //                 whose engage.join.where field is 'ai'; with no `where`, the non-player participants of a loop whose
 //                 declared opponent is 'ai-*'), and a play spec whose opponent is 'ai-*' (options.opponent), need a
@@ -191,13 +193,18 @@ export function loopInstances(doc, registry) {
 }
 
 /**
- * The loop that owns the game's win: the first core loop (in `core` order) declaring a game-ending win, else the
- * first such loop of the document. @param {LoopInstance[]} loops @param {Iterable<string> | null} core @returns {LoopInstance | null}
+ * The loop that owns the game's win. A game is won one way (build-steps.js askWins): of the loops declaring a
+ * game-ending win, the planner's core order decides first (`core`: the decided win first, presets.js loopCore); among
+ * loops that order does not separate (none core, or no core known), the one whose win the document wires to a won
+ * ending owns it: the other declared wins are ways to win this document does not use. With none wired, the first
+ * declaring one owns it (and its unwired win is reported). @param {unknown} doc @param {RegistryLike} registry
+ * @param {LoopInstance[]} loops @param {Iterable<string> | null} core @returns {LoopInstance | null}
  */
-export function winOwner(loops, core) {
+export function winOwner(doc, registry, loops, core) {
   const order = core ? [...core] : [];
-  const ranked = [...loops].sort((a, b) => rank(order, a.use) - rank(order, b.use) || a.index - b.index);
-  return ranked.find(l => endsGame(l.loop.win)) || null;
+  const wins = loops.filter(l => endsGame(l.loop.win));
+  const wired = new Set(wins.filter(l => !unwired(doc, l, /** @type {LoopEnd} */ (l.loop.win), 'won', registry)));
+  return wins.sort((a, b) => rank(order, a.use) - rank(order, b.use) || Number(wired.has(b)) - Number(wired.has(a)) || a.index - b.index)[0] || null;
 }
 /** @param {string[]} order @param {string} id */
 const rank = (order, id) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
@@ -209,6 +216,13 @@ function ends(e, endings, outcome) {
   if (isStr(e.ending)) return (endings.get(e.ending)?.outcome ?? 'won') === outcome;
   return outcome === 'won';
 }
+
+/**
+ * Is an ending's `when` trigger this loop end's `when` template filled in: every key the template fixes (the count or
+ * var it tests) equal, every placeholder ('$target': a number the content picks) present?
+ * @param {Record<string, unknown>} template @param {Record<string, unknown>} when
+ */
+const fills = (template, when) => Object.entries(template).every(([k, v]) => (isStr(v) && v.startsWith('$') ? when[k] !== undefined : JSON.stringify(when[k]) === JSON.stringify(v)));
 
 /** The primitive that evaluates plot.endings `when` triggers: a loop that reads them and declares no win of its own. @param {unknown} card */
 export const evaluatesEndings = card => Boolean(card) && list(prop(card, 'reads')).includes('plot.endings') && Boolean(cardLoop(card)) && !cardLoop(card)?.win && !list(prop(prop(card, 'requires'), 'capabilities')).length;
@@ -232,7 +246,7 @@ export function unwired(doc, l, end, outcome, registry) {
   }
   if (isStr(end.end) && prop(w, end.end) === true) return null;
   if (isObj(end.when)) {
-    const has = [...endings.values()].some(e => isObj(e.when) && (e.outcome ?? 'won') === outcome);
+    const has = [...endings.values()].some(e => isObj(e.when) && (e.outcome ?? 'won') === outcome && fills(/** @type {Record<string, unknown>} */ (end.when), e.when));
     const evaluator = systems.some(s => evaluatesEndings(registry.get(String(prop(s, 'use')))?.card));
     if (has && evaluator) return null;
     if (has) return `its ending's \`when\` trigger has no evaluator in the document (a loop that reads plot.endings)`;
@@ -265,7 +279,8 @@ function placedMembers(doc, registry, P) {
 
 /**
  * The structural loop report of a document: problems (errors and warnings) and the loop that owns the win.
- * `core` orders the loops (the first core loop declaring a game-ending win owns it) and names the core losses;
+ * `core` orders the loops (the first core loop declaring a game-ending win owns it, else the wired one: winOwner) and
+ * names the core losses;
  * `opponent` is the play spec's opponent ('ai-*': AI-controlled participants play against the player).
  * @param {unknown} doc @param {RegistryLike} registry @param {LoopCheckOptions} [options]
  * @returns {{ problems: LoopProblem[], owner: string | null, loops: string[] }}
@@ -282,7 +297,7 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
   const arches = objects(prop(prop(doc, 'content'), 'archetypes'));
   const playerArch = prop(prop(doc, 'player'), 'archetype');
   const participants = participantsOf(doc, registry);
-  const owner = winOwner(loops, coreIds);
+  const owner = winOwner(doc, registry, loops, coreIds);
   // The primitives of the document that act for AI-controlled entities (card.drives), with the effects their action data runs.
   const drivers = driversIn(doc, registry);
   const rules = spawnRules(doc, registry);
@@ -471,9 +486,16 @@ export function runsEffects(card) {
 }
 
 /**
+ * Does a card move the player's body under the player's controls? A locomotion (card.locomotion) with player verbs, or a
+ * primitive that moves the entity the player is seated in from the start (card.engage.player.movement: a vehicle).
+ * The one source of "the player's movement" for the loop check (reads.by.movement). @param {any} card
+ */
+export const movesPlayer = card => Boolean(card) && ((isStr(card.locomotion) && (cardLoop(card)?.verbs || []).length > 0) || prop(prop(card.engage, 'player'), 'movement') === true);
+
+/**
  * Does a card, played by the player, declare a way to change what a loop end reads (its reads.by)? It is player-driven
- * (its own player verbs, or a space capability it needs while the collection moves the player's body) and provides
- * one of the actions or events `by` names (any event for '*'), moves the player's body when `by` names movement, or
+ * (its own player verbs, or a space capability it needs while the collection moves the player's body: movesPlayer) and
+ * provides one of the actions or events `by` names (any event for '*'), moves the player's body when `by` names movement, or
  * runs effects from its params when `by` names an effect a primitive of `used` (or the card itself) owns.
  * @param {RegistryLike} registry @param {any} card @param {import('./loop.js').ReadsBy} by @param {{ logic: LogicLike, used: Iterable<unknown> }} context
  */
@@ -481,12 +503,12 @@ export function playerChanges(registry, card, by, { logic, used }) {
   if (!card) return false;
   const ids = new Set([...used].map(String));
   const verbs = cardLoop(card)?.verbs || [];
-  const moves = [...ids, card.id].some(id => { const c = registry.get(id)?.card; return isStr(c?.locomotion) && (cardLoop(c)?.verbs || []).length > 0; });
-  if (!verbs.length && !(moves && (card.requires?.capabilities || []).length)) return false;
+  const moves = [...ids, card.id].some(id => movesPlayer(registry.get(id)?.card));
+  if (!verbs.length && !movesPlayer(card) && !(moves && (card.requires?.capabilities || []).length)) return false;
   const events = card.provides?.events || [];
   if ((by.actions || []).some(a => (card.provides?.actions || []).includes(a))) return true;
   if ((by.events || []).some(e => (e === '*' ? events.length > 0 : events.includes(e)))) return true;
-  if (by.movement && isStr(card.locomotion) && verbs.length) return true;
+  if (by.movement && movesPlayer(card)) return true;
   return (by.effects || []).some(e => { const o = logic.owners.effect.get(e); return isStr(o) && (o === card.id || ids.has(o)); }) && runsEffects(card);
 }
 
@@ -509,7 +531,7 @@ function changesComponent(doc, registry, logic, l, C, used) {
 
 /**
  * Does a player-driven primitive of the document produce the event (or var)? A provider is driven by the player
- * through its own player verbs, the player's movement (a primitive with card.locomotion and verbs) when it needs
+ * through its own player verbs, the player's movement (a primitive that moves the player's body: movesPlayer) when it needs
  * space capabilities (touching, passing), a primitive with player verbs that requires it, an effect it owns written
  * in the document's data, the document's data it plays out (a section of its card.reads the document has written:
  * story beats whose triggers play satisfies), or an event its config names that a driven primitive provides.
@@ -523,7 +545,7 @@ function changesSignal(doc, registry, logic, what, name, used) {
   const base = (/** @type {string} */ n) => n.split(':')[0];
   const emits = (/** @type {any} */ c, /** @type {string} */ n) => (c.provides?.events || []).some((/** @type {string} */ e) => e === n || e === base(n) || e === `${base(n)}:*`);
   const provides = (/** @type {any} */ c) => (what === 'event' ? emits(c, name) : (c.provides?.vars || []).some((/** @type {string} */ v) => v === name || name.startsWith(v + '.') || v.endsWith('*') && name.startsWith(v.slice(0, -1))));
-  const mover = cards.some(c => isStr(c?.locomotion) && (cardLoop(c)?.verbs || []).length);
+  const mover = cards.some(movesPlayer);
   const dataEffects = effectsIn([insts.map(s => s.with), prop(doc, 'plot')]).map(e => logic.owners.effect.get(String(e.do)));
   /** @type {Set<string>} */
   const seen = new Set();
