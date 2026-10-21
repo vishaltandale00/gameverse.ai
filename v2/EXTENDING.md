@@ -86,7 +86,7 @@ live (a new check is added there, with its code), run over every discovered temp
 | format | id, concept, doc and tune are well formed | `template_shape` `template_id_invalid` `template_id_reserved` `template_concept_invalid` `template_doc_invalid` `template_doc_id_mismatch` `template_tune_invalid` |
 | tune | each path names a scalar param a card declares, on exactly one instance | `tune_unknown` `tune_not_scalar` `tune_ambiguous` |
 | preflight | the document preflights | `preflight_failed` (cause: the preflight code) |
-| composition | the static composition check has no failure | `composition_failed` |
+| composition | the static composition check, judging the host document (`v2/web/host-doc.js`), has no failure: among them every loop verb has a control a person has in its interactions (the controls reading, `v2/verify/controls.js`) and every space's world content is there (`v2/planner/space-content.js`, the reading the gate's world check makes) | `composition_failed` |
 | loop | the loop check has no problem | `loop_problem` (cause: the loop code) |
 | gate | `verifyDocument` (on the host document: `v2/web/host-doc.js`) with the playtest budget finds it viable | `gate_not_viable` |
 | controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`) | `controls_missing` `projection_undeclared` `direction_mismatch` `direction_inert` |

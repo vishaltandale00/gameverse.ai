@@ -217,7 +217,7 @@ export default {
     // ----- turn flow -----
     function start(s) {
       if (s.active) return;
-      s.active = true; s.round = 0; s.defeated = {}; s.winner = null; s.ptr = {}; s.decisions = 0;
+      s.active = true; s.round = 0; s.defeated = {}; s.winner = null; s.ptr = {}; s.decisions = 0; s.waiting = false;
       if (config.modal) pushModal(rt, s, ID, [...TURN_VERBS, ...modalExtra(rt)], 'battle');
       gather(s);
       rt.emit('turns_start', { sides: config.sides.map(x => x.id), order: config.order });
@@ -295,6 +295,9 @@ export default {
       rt.emit('round_end', { round: s.round });
       for (const [id, u] of Object.entries(s.units)) if (u.downed && config.bleedout > 0 && --u.bleed <= 0) fall(s, id, u);
       if (checkOver(s)) return;
+      // No side has a unit that can take a turn (none fielded yet: they spawn after the start): the next round waits for
+      // them (the rules tick starts it) instead of starting rounds no one plays.
+      if (!config.sides.some(x => unitsOf(s, x.id).length)) { s.current = null; s.waiting = true; return; }
       roundStart(s);
     }
 
@@ -572,6 +575,7 @@ export default {
       if (!s.active) { rt.state.vars['turns.active'] = 0; return; }
       gather(s);
       if (checkOver(s)) return;
+      if (s.waiting) { if (!config.sides.some(x => unitsOf(s, x.id).length)) return; s.waiting = false; roundStart(s); }
       if (s.current && config.order !== 'simultaneous' && s.current.unit && !live(s, s.current.unit)) endTurn(s);
       if (s.current && config.order !== 'simultaneous' && !s.current.unit && !unitsOf(s, s.current.side).length) endTurn(s);
       if (s.autoEnd) { s.autoEnd = false; endTurn(s); }

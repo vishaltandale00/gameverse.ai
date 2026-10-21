@@ -39,7 +39,9 @@ const KEYS = {
 // Verbs that may share keys because they never apply at once (input-actions shareKeys), and the direction verbs that
 // mean the same as the move axis on the same keys.
 const SHARE = [['move', 'up', 'down', 'left', 'right'], ['interact', 'use', 'talk', 'grab', 'mount', 'climb', 'use_portal', 'enter_vehicle', 'exit_vehicle'], ['jump', 'glide', 'fly', 'ascend', 'launch'], ['move', 'drive', 'steer']];
-const FALLBACK = ['e', 'q', 'f', 'r', 'c', 'v', 'x', 'z', 'k', 'l', 'g', 'h', 'n', 'b', 'u', 'o', 'y', 'comma', 'period'];
+// Every keyboard key no axis source, UI hotkey or modal navigation takes, so a document with many press verbs (a fighter's
+// moveset united with another loop) still gets a key for each.
+const FALLBACK = ['e', 'q', 'f', 'r', 'c', 'v', 'x', 'z', 'k', 'l', 'g', 'h', 'n', 'b', 'u', 'o', 'y', 't', 'comma', 'period', 'semicolon', 'quote', 'slash', 'bracketleft', 'bracketright', 'minus', 'equal', 'backquote'];
 const AXIS_SOURCES = { move: [['arrows', 'wasd', 'dpad', 'lstick'], ['wasd', 'lstick']], drive: [['arrows', 'wasd', 'lstick'], ['wasd', 'lstick']], steer: [['arrows', 'wasd', 'lstick'], ['wasd', 'lstick']], look: [[], ['mouse', 'rstick']], aim: [['arrows', 'rstick'], ['rstick']] };
 // Conventional keys per value of a closed-set verb (card.actionSpace enum), keyed by verb name like KEYS.
 const VALUE_KEYS = {
