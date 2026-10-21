@@ -2,9 +2,9 @@
 
 The static composition checker (`v2/planner/compose-check.js`, `node v2/tools/composition-matrix.mjs`) decides
 from cards alone whether primitives compose on a space. Two kernel-side follow-ups would make preflight agree
-with it. Neither is implemented; the kernel is unchanged.
+with it. The first is implemented.
 
-1. **Adapters in preflight.** A card may declare `card.adapts = { provides: { capabilities?, content?, services? },
+1. **Adapters in preflight.** *Done:* `preflight` adds a fitting adapter's `adapts.provides` capabilities and services to its bound space, and a sub-space adapter instance (`card.adapts.subspace`, e.g. `engine.adapt.projection`) defines a region space of its id with the projected kind's capabilities. Original request: A card may declare `card.adapts = { provides: { capabilities?, content?, services? },
    from: { spaces?, capabilities? }, projection }`. The checker counts `adapts.provides.capabilities` as provided
    on the space an adapter instance is bound to (when the space matches `from`). `preflight` in
    `kernel/document.js` builds `spaceCaps` from space cards only, so a document that composes through an adapter
