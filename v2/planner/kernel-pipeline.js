@@ -23,6 +23,8 @@ import { contentGrowth } from './revision-check.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
 import { coreLoopProblems } from './core-loop.js';
+import { loopProblems } from './loop-check.js';
+import { loopCore } from './presets.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str } from '../kernel/guards.js';
@@ -150,6 +152,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       if (later.length) return { ok: /** @type {const} */ (false), stage: 'structure', problems: later.map(g => ({ code: `gap_${g.kind}`, path: 'systems', message: g.description })), doc: outline.doc, outline };
       // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
       const engaged = engageDocument(applySkins(outline.doc, registry), registry, logic);
+      // The static loop check of the document that will be played (loop-check.js): its declared win must be reachable.
+      const structural = loopProblems(engaged.doc, registry, { logic, core: loopCore(decomposition, sel, registry) });
+      if (structural.length) return { ok: /** @type {const} */ (false), stage: 'loop', problems: structural, doc: engaged.doc, outline, engaged };
       const keep = new Set((engaged.doc.systems || []).map(s => s.use));
       const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: keep, maxIsolations: 0 });
       if (!fp.ok) return { ok: /** @type {const} */ (false), stage: 'first_playable', problems: [...fp.errors, ...fp.problems], doc: engaged.doc, outline, engaged };
@@ -169,7 +174,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const entry = { attempt: n, systems: [...selection.systems], stage: built.ok ? 'published' : built.stage, problems: built.ok ? [] : built.problems.slice(0, 8).map(p => `${prop(p, 'code')} ${prop(p, 'path') ?? ''}: ${String(prop(p, 'message') ?? '').slice(0, 160)}`) };
       attempts.push(entry);
       if (built.ok) break;
-      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc });
+      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry) });
       Object.assign(entry, { diagnoses: diagnoses.map(d => ({ kind: d.kind, mechanic: d.mechanic ?? null, primitive: d.primitive ?? null, codes: d.codes })) });
       const fail = (/** @type {string[]} */ missing) => {
         checkpoint('figure', { attempts, missing });
