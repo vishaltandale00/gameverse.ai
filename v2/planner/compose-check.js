@@ -693,11 +693,12 @@ export function checkComposition(input, registry, opts = {}) {
       // played in (the play spec's, else every one it declares): a key of engine.input.actions when its card serves the
       // interaction, or a mounted UI primitive issuing the verb that serves it. The same reading as the controls the
       // template contract and the input driver check (v2/verify/controls.js uncontrolledVerbs).
-      if (docLike && played.length) {
+      if (docLike) {
         const verbs = instanceVerbs(c, inst, docLike);
-        for (const i of verbs.length ? played : []) {
+        // A loop that declares no interaction is played through any control (interaction null), as the controls read it.
+        for (const i of verbs.length ? (played.length ? played : [null]) : []) {
           const missing = uncontrolledVerbs(docLike, registry, verbs, /** @type {any} the interaction (controls.js is not type-checked) */ (i));
-          if (missing.length) fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no control a person has issues ${missing.map(x => `'${x}'`).join(', ')} in the '${i}' interaction`, hint: 'an input primitive serving the interaction with a binding for the verb, or a UI primitive whose card.controls issue it and whose card.interactions include it', adaptable: false });
+          if (missing.length) fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no control a person has issues ${missing.map(x => `'${x}'`).join(', ')}${i ? ` in the '${i}' interaction` : ''}`, hint: 'an input primitive serving the interaction with a binding for the verb, or a UI primitive whose card.controls issue it and whose card.interactions include it', adaptable: false });
         }
         continue;
       }
