@@ -71,6 +71,50 @@ export const nul = s => ({ anyOf: [s, { type: 'null' }] });
 export const obj = (properties, description) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties, ...(description ? { description } : {}) });
 /** @param {JsonSchema} items @param {string} [description] @returns {JsonSchema} */
 export const arr = (items, description) => ({ type: 'array', items, ...(description ? { description } : {}) });
+
+/**
+ * Where a value breaks a strict form schema (the dialect above: object, array, string with enum/pattern, number and
+ * integer with minimum/maximum, boolean, null, anyOf). The form a model fills and the check of its answer are this one
+ * schema (ARCHITECTURE §1.4): a writer that does not enforce the schema (writer.js claudeWriter) is held to it here.
+ * Paths are fieldForm paths ('a.b[0].c'; '' is the root). -> [{ path, message }]
+ * @param {JsonSchema} schema @param {unknown} value @param {string} [path] @returns {Array<{ path: string, message: string }>}
+ */
+export function answerProblems(schema, value, path = '') {
+  const at = (/** @type {string} */ k) => (path ? `${path}.${k}` : k);
+  const shown = (/** @type {unknown} */ v) => JSON.stringify(v)?.slice(0, 60) ?? String(v);
+  if (Array.isArray(schema.anyOf)) {
+    const branches = /** @type {JsonSchema[]} */ (schema.anyOf).map(s => answerProblems(s, value, path));
+    return branches.some(b => !b.length) ? [] : branches.sort((a, b) => a.length - b.length)[0] ?? [];
+  }
+  const type = schema.type;
+  if (type === 'null') return value === null ? [] : [{ path, message: `${shown(value)} is not null` }];
+  if (type === 'object') {
+    if (!isObj(value)) return [{ path, message: `${shown(value)} is not an object` }];
+    const props = isObj(schema.properties) ? /** @type {Record<string, JsonSchema>} */ (schema.properties) : {};
+    const out = Object.keys(value).filter(k => !(k in props) && schema.additionalProperties === false).map(k => ({ path: at(k), message: `'${k}' is not a field of this form` }));
+    for (const k of strings(schema.required)) if (!(k in value)) out.push({ path: at(k), message: 'required' });
+    for (const [k, s] of Object.entries(props)) if (k in value) out.push(...answerProblems(s, value[k], at(k)));
+    return out;
+  }
+  if (type === 'array') {
+    if (!Array.isArray(value)) return [{ path, message: `${shown(value)} is not a list` }];
+    return isObj(schema.items) ? value.flatMap((v, i) => answerProblems(/** @type {JsonSchema} */ (schema.items), v, `${path}[${i}]`)) : [];
+  }
+  if (Array.isArray(schema.enum) && !schema.enum.includes(value)) return [{ path, message: `${shown(value)} is not one of ${schema.enum.join(', ')}` }];
+  if (type === 'string') {
+    if (typeof value !== 'string') return [{ path, message: `${shown(value)} is not text` }];
+    return typeof schema.pattern === 'string' && !new RegExp(schema.pattern, 'u').test(value) ? [{ path, message: `${shown(value)} does not match ${schema.pattern}` }] : [];
+  }
+  if (type === 'boolean') return typeof value === 'boolean' ? [] : [{ path, message: `${shown(value)} is not true or false` }];
+  if (type === 'number' || type === 'integer') {
+    if (typeof value !== 'number' || !Number.isFinite(value) || (type === 'integer' && !Number.isInteger(value))) return [{ path, message: `${shown(value)} is not ${type === 'integer' ? 'an integer' : 'a number'}` }];
+    if (typeof schema.minimum === 'number' && value < schema.minimum) return [{ path, message: `${value} is below ${schema.minimum}` }];
+    if (typeof schema.maximum === 'number' && value > schema.maximum) return [{ path, message: `${value} is above ${schema.maximum}` }];
+    return [];
+  }
+  return [{ path, message: `the form declares no type here (${shown(type)})` }];
+}
+
 const JSON_HINT = 'JSON text (a JSON value encoded as a string), or null to leave it unset';
 /** @param {Spec} spec @returns {string | undefined} */
 const describe = spec => [spec.effect, spec.unit && `unit ${spec.unit}`, (spec.min !== undefined || spec.max !== undefined) && `range ${spec.min ?? ''}..${spec.max ?? ''}`, spec.default !== undefined && `default ${JSON.stringify(spec.default).slice(0, 60)}`].filter(Boolean).join('; ').slice(0, 200) || undefined;

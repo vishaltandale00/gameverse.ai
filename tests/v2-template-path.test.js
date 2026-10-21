@@ -9,8 +9,8 @@ import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import {
-  pickForm, checkPick, composeTemplates, namedSections, namesForm, frameTuneForm, writeContent, askPick, tuneTarget, offeredTemplates,
-  PICK_KINDS, RELATIONS, NAME_PATTERN,
+  pickForm, pickSystem, checkPick, composeTemplates, namedSections, namesForm, frameTuneForm, writeContent, askPick, narrowPick, tuneTarget, offeredTemplates, templateLoops,
+  LOOP_KINDS, THEME_KINDS, PICK_KINDS, PLAYED_RELATIONS, PICK_RULES, NAME_PATTERN,
 } from '../v2/planner/templates.js';
 import { fakeWriter, mazeWriter } from './v2-p-pipeline-fixtures.js';
 
@@ -27,8 +27,10 @@ const IDEAS = {
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 
 const pickOf = id => ({ title: `${IDEAS[id].game} Remix`, premise: `${IDEAS[id].idea}. Win the game.`,
-  concepts: [{ name: IDEAS[id].game, kind: 'game', template: id, relation: 'primary' }, ...IDEAS[id].themes.map(([name, kind]) => ({ name, kind, template: 'none', relation: 'theme' }))] });
-const concept = (name, kind, template, relation) => ({ name, kind, template, relation });
+  primary: { name: IDEAS[id].game, kind: 'game', template: id }, games: [], themes: IDEAS[id].themes.map(([name, kind]) => ({ name, kind })) });
+/** A pick from its parts (title and premise filled). */
+const pickWith = ({ primary, games = [], themes = [] }) => ({ title: 'T', premise: 'P.', primary, games, themes });
+const game = (name, kind, template, relation) => ({ name, kind, template, ...(relation ? { relation } : {}) });
 const theme = id => IDEAS[id].themes[0][0];
 /** A slot's tune path (its description starts with it). */
 const slotPath = p => String(p.description).split(':')[0];
@@ -84,45 +86,128 @@ function accepts(s, v) {
   return false;
 }
 
-test('pickForm: one strict form, every property required, enums exactly the kinds, template ids and relations, no free JSON', () => {
+test('pickForm: one strict form; one primary object, other games and themes in their own lists, enums by kind, no free JSON', () => {
   const f = pickForm(TEMPLATES);
   assert.equal(f.name, 'pick_templates');
   assert.deepEqual(strictProblems(f.schema), []);
-  assert.deepEqual(Object.keys(f.schema.properties), ['title', 'premise', 'concepts']);
-  const c = f.schema.properties.concepts.items.properties;
-  assert.deepEqual(Object.keys(c), ['name', 'kind', 'template', 'relation']);
-  assert.deepEqual(c.kind.enum, ['game', 'genre', 'theme', 'setting', 'character']);
-  assert.deepEqual(c.template.enum, [...TEMPLATES.map(t => t.id), 'none']);
-  assert.deepEqual(c.relation.enum, ['primary', 'nested', 'union', 'theme']);
-  assert.deepEqual([...PICK_KINDS], c.kind.enum); assert.deepEqual([...RELATIONS], c.relation.enum);
-  for (const k of ['title', 'premise']) assert.ok(f.schema.properties[k].pattern, `${k} must be written`);
+  const p = f.schema.properties, ids = [...TEMPLATES.map(t => t.id), 'none'];
+  assert.deepEqual(Object.keys(p), ['title', 'premise', 'primary', 'games', 'themes']);
+  assert.equal(p.primary.type, 'object', 'exactly one primary: an object, not a list');
+  assert.deepEqual(Object.keys(p.primary.properties), ['name', 'kind', 'template']);
+  assert.deepEqual(p.primary.properties.kind.enum, ['game', 'genre']);
+  assert.deepEqual(p.primary.properties.template.enum, ids);
+  assert.deepEqual(Object.keys(p.games.items.properties), ['name', 'kind', 'template', 'relation']);
+  assert.deepEqual(p.games.items.properties.kind.enum, ['game', 'genre']);
+  assert.deepEqual(p.games.items.properties.template.enum, ids);
+  assert.deepEqual(p.games.items.properties.relation.enum, ['nested', 'union']);
+  assert.deepEqual(Object.keys(p.themes.items.properties), ['name', 'kind'], 'a theme has no template and no relation');
+  assert.deepEqual(p.themes.items.properties.kind.enum, ['theme', 'setting', 'character']);
+  assert.deepEqual([...LOOP_KINDS], p.primary.properties.kind.enum); assert.deepEqual([...THEME_KINDS], p.themes.items.properties.kind.enum);
+  assert.deepEqual([...PICK_KINDS], [...LOOP_KINDS, ...THEME_KINDS]); assert.deepEqual([...PLAYED_RELATIONS], p.games.items.properties.relation.enum);
+  for (const k of ['title', 'premise']) assert.ok(p[k].pattern, `${k} must be written`);
+  for (const s of [p.primary, p.games.items, p.themes.items]) assert.ok(s.properties.name.pattern, 'a concept is named');
   // The templates offered are those the catalogue can compose.
   assert.deepEqual(offeredTemplates(TEMPLATES, registry).map(t => t.id), TEMPLATES.map(t => t.id));
   assert.deepEqual(offeredTemplates(TEMPLATES, { has: () => false }), []);
 });
 
-test('checkPick: stable codes for every rule, a none game concept goes to the step path', () => {
+/** Every concept value the pick form allows at one list: the product of its enums, named 'X'. */
+function allowedConcepts(itemSchema) {
+  const enums = Object.entries(itemSchema.properties).filter(([, s]) => s.enum);
+  return enums.reduce((acc, [k, s]) => acc.flatMap(c => s.enum.map(v => ({ ...c, [k]: v }))), [{ name: 'X' }]);
+}
+
+test('the pick form makes every structurally invalid pick inexpressible; every pick it allows passes the structural check', () => {
+  const f = pickForm(TEMPLATES), p = f.schema.properties, ctx = { templates: TEMPLATES, registry };
+  const ok = pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), themes: [{ name: 'library', kind: 'setting' }] });
+  assert.ok(accepts(f.schema, ok));
+  // Each structural mistake of the old flat concept list, written in the new form's terms: the form allows none of them.
+  const invalid = {
+    'two primaries': { ...ok, primary: [game('Mario', 'game', 'none'), game('platformer', 'genre', 'none')] },
+    'no primary': (({ primary, ...rest }) => rest)(ok),
+    'a theme as the primary': { ...ok, primary: game('library', 'setting', 'none') },
+    'the primary with a relation': { ...ok, primary: game('Pac-Man', 'game', 'maze-chase', 'primary') },
+    'a game only a theme (a game in themes)': { ...ok, themes: [{ name: 'Mario game', kind: 'game' }] },
+    'a genre only a theme': { ...ok, themes: [{ name: 'platformer', kind: 'genre' }] },
+    'a theme with a template': { ...ok, themes: [{ name: 'library', kind: 'setting', template: 'race' }] },
+    'a theme with a relation': { ...ok, themes: [{ name: 'library', kind: 'setting', relation: 'nested' }] },
+    'a setting played (in games)': { ...ok, games: [game('library', 'setting', 'none', 'nested')] },
+    'a character played': { ...ok, games: [game('Sonic', 'character', 'none', 'union')] },
+    'a second primary in games': { ...ok, games: [game('Mario Kart', 'game', 'race', 'primary')] },
+    'a game related as a theme': { ...ok, games: [game('Mario Kart', 'game', 'race', 'theme')] },
+    'a template that does not exist': { ...ok, primary: game('Pac-Man', 'game', 'pacman') },
+    'an unknown kind': { ...ok, primary: game('Pac-Man', 'arcade', 'maze-chase') },
+    'an unnamed concept': { ...ok, primary: game('', 'game', 'maze-chase') },
+    'no title': { ...ok, title: ' ' },
+  };
+  const EXTRA_FIELD = new Set(['the primary with a relation', 'a theme with a template', 'a theme with a relation']);
+  for (const [what, v] of Object.entries(invalid)) {
+    assert.equal(accepts(f.schema, v), false, `the form allows ${what}`);
+    // The reply as the pipeline narrows it: a field the form does not have (a relation on the primary, a template or
+    // relation on a theme) is dropped and never reaches composition; anything else the check (the same schema) rejects.
+    const narrowed = narrowPick(v);
+    if (EXTRA_FIELD.has(what)) assert.deepEqual(narrowed, narrowPick(ok), `${what}: narrowing drops the field`);
+    else assert.ok(checkPick(narrowed, ctx).problems.some(x => x.code === 'pick_form'), `the check rejects ${what}`);
+  }
+  // Every value the form allows at each slot passes the structural check (pick_form), for every slot combination.
+  for (const primary of allowedConcepts(p.primary)) for (const g of [null, ...allowedConcepts(p.games.items)]) for (const t of [null, ...allowedConcepts(p.themes.items)]) {
+    const v = pickWith({ primary, games: g ? [g] : [], themes: t ? [t] : [] });
+    assert.ok(accepts(f.schema, v));
+    assert.deepEqual(checkPick(v, ctx).problems.filter(x => x.code === 'pick_form'), [], JSON.stringify(v));
+  }
+});
+test('checkPick: the form\'s schema (pick_form) and the catalogue rules, each with a declared stable code; a none game goes to the step path', () => {
   const ctx = { templates: TEMPLATES, registry };
-  const codes = pick => checkPick({ title: 'T', premise: 'P.', ...pick }, ctx).problems.map(p => `${p.code}@${p.field}`);
-  assert.deepEqual(codes(pickOf('maze-chase')), []);
-  assert.deepEqual(codes({ concepts: [] }), ['pick_concepts_missing@concepts']);
-  assert.deepEqual(checkPick({ title: ' ', premise: '', concepts: pickOf('race').concepts }, ctx).problems.map(p => p.code), ['pick_title_missing', 'pick_premise_missing']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'theme')] }), ['pick_game_relation@concepts[0].relation', 'pick_primary_count@concepts']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('Mario Kart', 'game', 'race', 'primary')] }), ['pick_primary_count@concepts']);
-  assert.deepEqual(codes({ concepts: [concept('library', 'setting', 'none', 'primary')] }), ['pick_theme_relation@concepts[0].relation', 'pick_primary_kind@concepts[0]']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('library', 'setting', 'none', 'nested')] }), ['pick_theme_relation@concepts[1].relation']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('library', 'setting', 'race', 'theme')] }), ['pick_theme_template@concepts[1].template']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'pacman', 'primary')] }), ['pick_template_unknown@concepts[0].template']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'arcade', 'maze-chase', 'primary')] }), ['pick_kind_unknown@concepts[0].kind']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'main')] }), ['pick_relation_unknown@concepts[0].relation', 'pick_primary_count@concepts']);
-  assert.deepEqual(codes({ concepts: [concept('', 'game', 'maze-chase', 'primary')] }), ['pick_concept_name_missing@concepts[0].name']);
+  const codes = pick => checkPick(pick, ctx).problems.map(p => `${p.code}@${p.field}`);
+  assert.deepEqual(Object.keys(PICK_RULES), ['pick_form', 'pick_nested_no_entry']);
+  for (const id of Object.keys(IDEAS)) assert.deepEqual(codes(pickOf(id)), []);
+  // A writer that does not enforce the schema is held to it: each finding names its field.
+  assert.deepEqual(codes({ ...pickOf('race'), title: ' ', premise: '' }), ['pick_form@title', 'pick_form@premise']);
+  assert.deepEqual(codes(pickWith({ primary: game('library', 'setting', 'none') })), ['pick_form@primary.kind']);
+  assert.deepEqual(codes(pickWith({ primary: game('Pac-Man', 'game', 'pacman') })), ['pick_form@primary.template']);
+  assert.deepEqual(codes(pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), games: [game('Kart', 'game', 'race', 'theme')], themes: [{ name: 'Mario', kind: 'game' }] })), ['pick_form@games[0].relation', 'pick_form@themes[0].kind']);
   // nested only onto a primary whose loops declare an entry event (card.loop.involves): the race's declare none.
-  assert.deepEqual(codes({ concepts: [concept('Mario Kart', 'game', 'race', 'primary'), concept('Pac-Man', 'game', 'maze-chase', 'nested')] }), ['pick_nested_no_entry@concepts[1].relation']);
-  assert.deepEqual(codes({ concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('Mario Kart', 'game', 'race', 'nested')] }), []);
+  assert.deepEqual(codes(pickWith({ primary: game('Mario Kart', 'game', 'race'), games: [game('Pac-Man', 'game', 'maze-chase', 'nested')] })), ['pick_nested_no_entry@games[0].relation']);
+  assert.deepEqual(codes(pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), games: [game('Mario Kart', 'game', 'race', 'nested')] })), []);
+  assert.deepEqual(codes(pickWith({ primary: game('Mario Kart', 'game', 'race'), games: [game('Pac-Man', 'game', 'maze-chase', 'union')] })), []);
   // A game or genre no template is: the step path, not a problem.
-  const step = checkPick({ title: 'T', premise: 'P.', concepts: [concept('Tetris', 'game', 'none', 'primary'), concept('space', 'setting', 'none', 'theme')] }, ctx);
-  assert.deepEqual(step, { problems: [], stepPath: ['Tetris'] });
-  assert.deepEqual(checkPick({ title: 'T', premise: 'P.', concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('roguelike', 'genre', 'none', 'union')] }, ctx).stepPath, ['roguelike']);
+  assert.deepEqual(checkPick(pickWith({ primary: game('Tetris', 'game', 'none'), themes: [{ name: 'space', kind: 'setting' }] }), ctx), { problems: [], stepPath: ['Tetris'] });
+  assert.deepEqual(checkPick(pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), games: [game('roguelike', 'genre', 'none', 'union')] }), ctx).stepPath, ['roguelike']);
+});
+
+test('"a Mario game but with Sonic as the character": one primary (the game, with its genre\'s template), Sonic a character theme', () => {
+  const f = pickForm(TEMPLATES), ctx = { templates: TEMPLATES, registry };
+  // The answer the live pick failed with (Mario game and platformer both primary; the game marked theme) cannot be written.
+  assert.equal(accepts(f.schema, pickWith({ primary: [game('Mario game', 'game', 'none'), game('platformer', 'genre', 'none')], themes: [{ name: 'Sonic', kind: 'character' }] })), false);
+  assert.equal(accepts(f.schema, pickWith({ primary: game('platformer', 'genre', 'none'), themes: [{ name: 'Mario game', kind: 'game' }, { name: 'Sonic', kind: 'character' }] })), false);
+  // The answer the form asks for: no template is a platformer in this catalogue, so the game goes to the step path.
+  const pick = pickWith({ primary: game('Mario', 'game', 'none'), themes: [{ name: 'Sonic', kind: 'character' }] });
+  assert.ok(accepts(f.schema, pick));
+  assert.deepEqual(checkPick(pick, ctx), { problems: [], stepPath: ['Mario'] });
+  // With a template for the game's genre, the character themes it: no adapter, kept for the content forms.
+  const c = composeTemplates(pickWith({ primary: game('Mario', 'game', 'maze-chase'), themes: [{ name: 'Sonic', kind: 'character' }] }), ctx);
+  assert.deepEqual(c.problems, []); assert.equal(c.template.id, 'maze-chase');
+  assert.deepEqual(c.themes, [{ name: 'Sonic', kind: 'character' }]);
+  // The prompt says a named game and its genre are one concept.
+  assert.match(pickSystem(TEMPLATES, registry), /A named game and its genre are one concept/);
+});
+
+test('pickSystem lists every template under the loops its cards declare (card.mode loop, interaction, opponent), with its concept line', () => {
+  const system = pickSystem(TEMPLATES, registry);
+  const blocks = system.split('\nLoop ').slice(1).map(b => b.split('\n\n')[0].split('\n'));
+  const listed = blocks.flatMap(([header, ...lines]) => lines.map(line => ({ header, line })));
+  assert.deepEqual(listed.map(x => x.line.slice(2).split(':')[0]).sort(), TEMPLATES.map(t => t.id).sort(), 'each template once');
+  for (const t of TEMPLATES) {
+    const { header, line } = listed.find(x => x.line.startsWith(`- ${t.id}: `));
+    assert.ok(line.includes(t.concept), `${t.id}: its concept line`);
+    const { loops } = templateLoops(t, registry);
+    assert.ok(loops.length, `${t.id} carries a loop`);
+    for (const l of loops) for (const s of [l.loop, ...l.interactions, String(l.opponent)]) assert.ok(header.includes(s), `${t.id}: '${s}' from its card in '${header}'`);
+  }
+  // Grouping follows the cards: two templates whose cards declare the same loops share one header.
+  const twin = { ...templateById('race'), id: 'race-2', concept: 'Another race.' };
+  const twins = pickSystem([...TEMPLATES, twin], registry).split('\nLoop ').find(b => b.includes('- race-2:'));
+  assert.ok(twins.includes('- race: '), 'race and race-2 share the race loop header');
 });
 
 for (const t of TEMPLATES) test(`compose ${t.id} + theme: the template's document, the pick's title and premise, the theme kept for the content forms`, () => {
@@ -141,11 +226,11 @@ for (const t of TEMPLATES) test(`compose ${t.id} + theme: the template's documen
 
 test('nested and union fail loudly with composition_pending, naming the relation, both templates and the missing composition', () => {
   const ctx = { templates: TEMPLATES, registry };
-  const nested = composeTemplates({ title: 'T', premise: 'P.', concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('Mario Kart', 'game', 'race', 'nested'), concept('library', 'setting', 'none', 'theme')] }, ctx);
+  const nested = composeTemplates(pickWith({ primary: game('Pac-Man', 'game', 'maze-chase'), games: [game('Mario Kart', 'game', 'race', 'nested')], themes: [{ name: 'library', kind: 'setting' }] }), ctx);
   assert.equal(nested.doc, null);
-  assert.deepEqual(nested.problems.map(p => [p.code, p.path]), [['composition_pending', 'concepts[1]']]);
+  assert.deepEqual(nested.problems.map(p => [p.code, p.path]), [['composition_pending', 'games[0]']]);
   for (const s of ['nested', "'race'", "'maze-chase'", 'engine.adapt.nested', 'not yet implemented']) assert.ok(nested.problems[0].message.includes(s), `${s}: ${nested.problems[0].message}`);
-  const union = composeTemplates({ title: 'T', premise: 'P.', concepts: [concept('Mario Kart', 'game', 'race', 'primary'), concept('Pac-Man', 'game', 'maze-chase', 'union')] }, ctx);
+  const union = composeTemplates(pickWith({ primary: game('Mario Kart', 'game', 'race'), games: [game('Pac-Man', 'game', 'maze-chase', 'union')] }), ctx);
   assert.equal(union.doc, null);
   assert.deepEqual(union.problems.map(p => p.code), ['composition_pending']);
   for (const s of ['union', "'race'", "'maze-chase'", 'not yet implemented']) assert.ok(union.problems[0].message.includes(s), `${s}: ${union.problems[0].message}`);
@@ -234,20 +319,26 @@ test('tune slots conform to their card specs across all templates: every declare
 });
 
 test('the pick: a failing field is re-asked alone, then the escalation writer once, then 422 template_pick_failed with the problems', async () => {
-  const bad = { title: 'T', premise: 'P.', concepts: [concept('Pac-Man', 'game', 'maze-chase', 'primary'), concept('library', 'setting', 'none', 'primary')] };
-  const w = fakeWriter([JSON.stringify(bad)]), code = fakeWriter([JSON.stringify({ field_1: bad.concepts })], { model: 'escalation' });
+  // A catalogue rule the form cannot express (a nested game needs an entry event on the primary's loops).
+  const bad = pickWith({ primary: game('Mario Kart', 'game', 'race'), games: [game('Pac-Man', 'game', 'maze-chase', 'nested')] });
+  const w = fakeWriter([JSON.stringify(bad)]), code = fakeWriter([JSON.stringify({ field_1: 'nested' })], { model: 'escalation' });
   const calls = [];
-  await assert.rejects(askPick({ writer: w, escalate: code, attempts: 2, prompt: 'Pac-Man in a haunted library', templates: TEMPLATES, registry, calls, clock: { codeMs: 0 } }),
-    e => e.status === 422 && e.code === 'template_pick_failed' && e.problems.some(p => p.code === 'pick_theme_relation'));
-  // The failing fields are concepts[1].relation, concepts[1] and concepts: the list holds the others, so it is the one slot re-asked.
-  assert.deepEqual(calls.map(c => [c.fields ?? null, Boolean(c.escalated)]), [[null, false], [['concepts'], false], [['concepts'], true]]);
+  await assert.rejects(askPick({ writer: w, escalate: code, attempts: 2, prompt: 'Mario Kart with a Pac-Man maze', templates: TEMPLATES, registry, calls, clock: { codeMs: 0 } }),
+    e => e.status === 422 && e.code === 'template_pick_failed' && e.problems.some(p => p.code === 'pick_nested_no_entry' && p.path === 'games[0].relation'));
+  assert.deepEqual(calls.map(c => [c.fields ?? null, Boolean(c.escalated)]), [[null, false], [['games[0].relation'], false], [['games[0].relation'], true]]);
   assert.deepEqual(Object.keys(w.calls[1].schema.schema.properties), ['field_1'], 'the re-ask holds only the failing field');
+  assert.deepEqual(w.calls[1].schema.schema.properties.field_1.enum, ['nested', 'union'], 'with the values the form allows there');
   assert.match(w.calls[0].system, /- maze-chase: Maze chase/); assert.match(w.calls[0].system, /- race: Racing/);
   // A field re-ask that fixes it: the pick passes with the other answers kept.
-  const fixed = fakeWriter([JSON.stringify(bad), JSON.stringify({ field_1: [bad.concepts[0], { ...bad.concepts[1], relation: 'theme' }] })]);
+  const fixed = fakeWriter([JSON.stringify(bad), JSON.stringify({ field_1: 'union' })]);
   const ok = await askPick({ writer: fixed, escalate: null, attempts: 2, prompt: 'x', templates: TEMPLATES, registry, calls: [], clock: { codeMs: 0 } });
-  assert.deepEqual(ok.pick.concepts.map(c => c.relation), ['primary', 'theme']);
+  assert.deepEqual(ok.pick, { ...bad, games: [{ ...bad.games[0], relation: 'union' }] });
   assert.equal(ok.calls, 2);
+  // A writer that ignores the schema (a theme as the primary): the field is re-asked with the form's enum.
+  const loose = fakeWriter([JSON.stringify(pickWith({ primary: game('library', 'setting', 'none') })), JSON.stringify({ field_1: 'game' })]);
+  const r = await askPick({ writer: loose, escalate: null, attempts: 2, prompt: 'x', templates: TEMPLATES, registry, calls: [], clock: { codeMs: 0 } });
+  assert.deepEqual(loose.calls[1].schema.schema.properties.field_1.enum, ['game', 'genre']);
+  assert.equal(r.pick.primary.kind, 'game');
 });
 
 for (const id of Object.keys(IDEAS)) test(`create "${IDEAS[id].idea}": the template path publishes ${id} + theme in at most 6 calls and 2 rounds`, async () => {

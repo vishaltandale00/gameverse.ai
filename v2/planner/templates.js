@@ -5,8 +5,9 @@
 // re-asks only its failing fields, then that form alone goes once to the escalation writer, then the build fails
 // saying what is wrong. Nothing here reads the idea's words: structure comes from the templates' documents and the
 // cards in them, judgement from the model's small checked choices.
-import { specSchema, decode, fieldForm, formKey, obj as strictObj, arr as strictArr } from './outline-form.js';
+import { specSchema, decode, fieldForm, formKey, answerProblems, obj as strictObj, arr as strictArr } from './outline-form.js';
 import { cardLoop } from './loop.js';
+import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
 import { parseReply } from './writer.js';
 import { preflight } from '../kernel/document.js';
 import { isObj, isStr, objects, prop, messageOf } from '../kernel/guards.js';
@@ -17,8 +18,12 @@ import { isObj, isStr, objects, prop, messageOf } from '../kernel/guards.js';
 /** @typedef {import('./types.js').Writer} Writer */
 /** @typedef {import('./types.js').ReplySchema} ReplySchema */
 /** A template (v2/templates/<id>.js). @typedef {{ id: string, concept: string, doc: Record<string, any>, tune: string[] }} Template */
-/** @typedef {{ name: string, kind: string, template: string, relation: string }} PickConcept */
-/** The pick as the model wrote it (strings kept as written: the check reports an unknown value). @typedef {{ title: string, premise: string, concepts: PickConcept[] }} Pick */
+/** The primary: the one game or genre played. @typedef {{ name: string, kind: string, template: string }} PickPrimary */
+/** Another game or genre the idea plays, nested in or united with the primary. @typedef {PickPrimary & { relation: string }} PickGame */
+/**
+ * The pick as the model wrote it (strings kept as written: the check reports an unknown value).
+ * @typedef {{ title: string, premise: string, primary: PickPrimary, games: PickGame[], themes: Theme[] }} Pick
+ */
 /** A finding with the form field it names (a fieldForm path). @typedef {{ code: string, field: string, message: string }} FormProblem */
 /** @typedef {{ code: string, path: string, message: string }} TemplateProblem */
 /** One model call of the template path. @typedef {{ form: string, fields?: string[], model: string | null, ms: number, escalated?: boolean, problems?: string[], error?: string }} TemplateCall */
@@ -27,10 +32,13 @@ import { isObj, isStr, objects, prop, messageOf } from '../kernel/guards.js';
 /** Time spent in code (narrowing, checks, composition), excluding model calls. @typedef {{ codeMs: number }} Clock */
 
 export const TEMPLATE_PATH_VERSION = 'template-path/0.1';
-export const PICK_KINDS = Object.freeze(['game', 'genre', 'theme', 'setting', 'character']);
-/** The kinds that bring a loop of their own (§1.3); the others only theme the content forms. */
+/** The kinds that bring a loop of their own (§1.3): the primary and the other games are these. */
 export const LOOP_KINDS = Object.freeze(['game', 'genre']);
-export const RELATIONS = Object.freeze(['primary', 'nested', 'union', 'theme']);
+/** The kinds that only theme the content forms (§1.3): the themes are these. */
+export const THEME_KINDS = Object.freeze(['theme', 'setting', 'character']);
+export const PICK_KINDS = Object.freeze([...LOOP_KINDS, ...THEME_KINDS]);
+/** How another game joins the primary. */
+export const PLAYED_RELATIONS = Object.freeze(['nested', 'union']);
 /** A themed name: 1-40 characters, starting with a non-space. The form's pattern and the check are this one rule. */
 export const NAME_PATTERN = '^\\S.{0,39}$';
 const NAME_RE = new RegExp(NAME_PATTERN, 'u');
@@ -76,35 +84,94 @@ export function tuneTarget(doc, path, registry) {
 export const offeredTemplates = (templates, registry) => templates.filter(t => instancesIn(t.doc).every(i => registry.has(String(i.use))));
 
 // ---------------------------------------------------------------------------------------------------------------
-// 1. The pick: one strict form, checked by code.
+// 1. The pick: one strict form whose structure makes every structurally invalid pick inexpressible, checked by code
+//    against that same schema plus the rules that need the catalogue.
 // ---------------------------------------------------------------------------------------------------------------
 
-/** The template pick's strict form. @param {readonly Template[]} templates @returns {ReplySchema} */
+/**
+ * The pick's rules, each with its stable code. The form's schema guarantees the structure (exactly one primary, a
+ * game or genre; other games only nested or union; themes, settings and characters only themes, with no template);
+ * `pick_form` is that same schema held against the answer (outline-form answerProblems), for writers that do not
+ * enforce it. The template enum is the offered templates' ids, so a template that does not exist is a `pick_form`
+ * problem at its field. The rules below it need the catalogue.
+ */
+export const PICK_RULES = Object.freeze({
+  pick_form: 'the answer satisfies the pick form\'s schema: its fields, enums (kinds, template ids, relations) and patterns',
+  pick_nested_no_entry: 'a nested game needs a primary whose template\'s loops declare an entry event (card.loop.involves)',
+});
+
+/** The pick's strict form. @param {readonly Template[]} templates @returns {ReplySchema} */
 export function pickForm(templates) {
   const ids = [...templates.map(t => t.id), 'none'];
+  const template = (/** @type {string} */ what) => choice(ids, `the template whose concept IS ${what}; none when no template is (never the closest one)`);
   return { name: 'pick_templates', schema: strictObj({
     title: text('the game\'s title'),
     premise: text('two or three sentences: the world, the player, the goal'),
-    concepts: strictArr(strictObj({
-      name: text('the concept as the idea names it'),
-      kind: choice(PICK_KINDS, 'game or genre: brings its own way of playing; theme, setting, character: restyles the content'),
-      template: choice(ids, 'the template whose concept IS this game or genre; none when no template is it (never the closest one), and always none for a theme, setting or character'),
-      relation: choice(RELATIONS, 'primary: the one game the player plays; nested: a game entered from inside the primary; union: a game played alongside the primary on the same space; theme: restyles the primary (themes, settings, characters)'),
-    }), 'every concept the idea names or implies'),
+    primary: strictObj({
+      name: text('the one game or genre the player plays, as the idea names it; a named game and its genre are this one concept: name the game'),
+      kind: choice(LOOP_KINDS, 'game: a game the idea names; genre: a kind of game'),
+      template: template('this game or its genre'),
+    }, 'the primary: the one game or genre the player plays'),
+    games: strictArr(strictObj({
+      name: text('the game or genre as the idea names it'),
+      kind: choice(LOOP_KINDS, 'game: a game the idea names; genre: a kind of game'),
+      template: template('this game or genre'),
+      relation: choice(PLAYED_RELATIONS, 'nested: a game entered from inside the primary; union: a game played alongside the primary on the same space'),
+    }), 'every OTHER game or genre the idea also plays, each with its own loop (never the primary\'s own genre); [] when the idea plays one game'),
+    themes: strictArr(strictObj({
+      name: text('the theme, setting or character as the idea names it'),
+      kind: choice(THEME_KINDS, 'theme, setting or character: restyles the primary\'s content, never played'),
+    }), 'every theme, setting and character the idea names or implies; [] when none'),
   }) };
 }
 
-/** The pick's instructions: each template as `id: concept`. @param {readonly Template[]} templates */
-export const pickSystem = templates => `You pick how a game idea is built from verified game templates.
-Templates (id: concept):
-${templates.map(t => `- ${t.id}: ${t.concept}`).join('\n') || '- (none in this catalogue)'}
+/**
+ * The loops a template carries, as their cards declare them (card.mode via modesIn; how it is played and who plays
+ * against the player via cardLoop): its own loops, and the wrapper modes that sequence them. A template carrying no
+ * loop of its own is a template defect (422 'template_defect').
+ * @param {Template} template @param {RegistryLike} registry
+ * @returns {{ loops: Array<{ loop: string, interactions: string[], opponent: string | null }>, wrappers: string[] }}
+ */
+export function templateLoops(template, registry) {
+  const modes = modesIn(template.doc, registry).map(m => ({ m, loop: cardLoop(registry.get(m.use)?.card) }));
+  const loops = modes.filter(x => !x.m.mode.wraps).map(x => ({ loop: String(x.m.mode.loop), interactions: x.loop?.interactions ?? [], opponent: x.loop?.opponent ?? null }));
+  if (!loops.length) throw Object.assign(Error(`template '${template.id}' carries no loop of its own (card.mode)`), { status: 422, code: 'template_defect', problems: [{ code: 'template_loop_undeclared', path: template.id, message: 'a template carries at least one card.mode loop that is not a wrapper' }] });
+  return { loops, wrappers: modes.filter(x => x.m.mode.wraps).map(x => String(x.m.mode.loop)) };
+}
 
-List every concept the idea names or implies: games, genres, themes, settings, characters. For each, its kind; its template: the template whose concept IS that game or genre, or none when no template is it (never the closest one; themes, settings and characters always none); and its relation: exactly one primary (a game or genre: what the player plays), nested (a game entered from inside the primary), union (a game played alongside the primary), theme (every theme, setting and character). Also write the game's title and premise.`;
+/**
+ * The pick's instructions: the templates grouped by the loops their cards declare (loop id, how it is played, who
+ * plays against the player), each template as `id: concept`. Derived from the cards in the templates' documents.
+ * @param {readonly Template[]} templates @param {RegistryLike} registry
+ */
+export function pickSystem(templates, registry) {
+  /** @type {Map<string, string[]>} */
+  const groups = new Map();
+  for (const t of templates) {
+    const { loops, wrappers } = templateLoops(t, registry);
+    const family = loops.map(l => `${l.loop} (played ${l.interactions.join(' or ') || 'in the interaction it wraps'}; opponent: ${l.opponent ?? 'undeclared'})`).join(' + ');
+    groups.set(family, [...(groups.get(family) ?? []), `- ${t.id}: ${t.concept}${wrappers.length ? ` (sequenced by ${wrappers.join(', ')})` : ''}`]);
+  }
+  const listing = [...groups].map(([family, lines]) => `Loop ${family}:\n${lines.join('\n')}`).join('\n') || '(no templates in this catalogue)';
+  return `You pick how a game idea is built from verified game templates.
+Templates, grouped by the loop they are played with (the loop, how the player plays it, who plays against the player), each as id: concept:
+${listing}
 
+Fill the form:
+- primary: the ONE game or genre the player plays. A named game and its genre are one concept: a game named with its genre ("a Mario game", "a Zelda-style dungeon") is that game (kind game) with the template of its genre, never the game and its genre as two concepts. template: the template whose concept IS that game or its genre, or none when no template is (never the closest one).
+- games: every OTHER game or genre the idea also plays, with its own loop: nested (entered from inside the primary) or union (played alongside it on the same space); [] when the idea plays one game.
+- themes: every theme, setting and character the idea names or implies (a character the player plays as, a place, a look): it restyles the primary's content and is never played.
+Also write the game's title and premise.`;
+}
+
+/** @param {unknown} v @returns {PickPrimary} */
+const narrowPrimary = v => ({ name: String(prop(v, 'name') ?? ''), kind: String(prop(v, 'kind') ?? ''), template: String(prop(v, 'template') ?? '') });
 /** The pick as written, narrowed (strings kept as written; the check reports what is wrong). @param {unknown} v @returns {Pick} */
 export const narrowPick = v => ({
   title: String(prop(v, 'title') ?? ''), premise: String(prop(v, 'premise') ?? ''),
-  concepts: objects(prop(v, 'concepts')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? ''), template: String(c.template ?? ''), relation: String(c.relation ?? '') })),
+  primary: narrowPrimary(prop(v, 'primary')),
+  games: objects(prop(v, 'games')).map(c => ({ ...narrowPrimary(c), relation: String(c.relation ?? '') })),
+  themes: objects(prop(v, 'themes')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? '') })),
 });
 
 /** The entry events the loops of a document's instances declare (card.loop.involves). @param {Record<string, any>} doc @param {RegistryLike} registry */
@@ -113,39 +180,19 @@ export function entryEvents(doc, registry) {
 }
 
 /**
- * The pick's code checks (§5). Problems carry stable codes and the form field they name. A game or genre concept
+ * The pick's code checks (PICK_RULES). Problems carry stable codes and the form field they name. A game or genre
  * with template 'none' is not a problem: it goes to the step path (`stepPath`: those concepts' names).
  * @param {Pick} pick @param {{ templates: readonly Template[], registry: RegistryLike }} ctx
  * @returns {{ problems: FormProblem[], stepPath: string[] }}
  */
 export function checkPick(pick, { templates, registry }) {
   /** @type {FormProblem[]} */
-  const problems = [];
-  const add = (/** @type {string} */ code, /** @type {string} */ field, /** @type {string} */ message) => { problems.push({ code, field, message }); };
-  if (!TEXT_RE.test(pick.title)) add('pick_title_missing', 'title', 'the game needs a title');
-  if (!TEXT_RE.test(pick.premise)) add('pick_premise_missing', 'premise', 'the game needs a premise');
-  if (!pick.concepts.length) add('pick_concepts_missing', 'concepts', 'list the concepts the idea names, exactly one of them primary');
-  const ids = new Set(templates.map(t => t.id));
-  pick.concepts.forEach((c, i) => {
-    const at = `concepts[${i}]`;
-    if (!TEXT_RE.test(c.name)) add('pick_concept_name_missing', `${at}.name`, 'name the concept');
-    if (!PICK_KINDS.includes(c.kind)) add('pick_kind_unknown', `${at}.kind`, `kind '${c.kind}' is not one of ${PICK_KINDS.join(', ')}`);
-    if (c.template !== 'none' && !ids.has(c.template)) add('pick_template_unknown', `${at}.template`, `template '${c.template}' does not exist; one of ${[...ids, 'none'].join(', ')}`);
-    if (!RELATIONS.includes(c.relation)) add('pick_relation_unknown', `${at}.relation`, `relation '${c.relation}' is not one of ${RELATIONS.join(', ')}`);
-    const loop = LOOP_KINDS.includes(c.kind), themeKind = PICK_KINDS.includes(c.kind) && !loop;
-    if (themeKind && c.relation !== 'theme' && RELATIONS.includes(c.relation)) add('pick_theme_relation', `${at}.relation`, `'${c.name}' is a ${c.kind}: it restyles the game (relation theme); it is not played (${c.relation})`);
-    if (themeKind && c.template !== 'none') add('pick_theme_template', `${at}.template`, `'${c.name}' is a ${c.kind}: it has no template of its own (none); it themes the primary's content`);
-    if (loop && c.relation === 'theme') add('pick_game_relation', `${at}.relation`, `'${c.name}' is a ${c.kind}: it brings its own loop, so it is primary, nested or union, never only a theme`);
+  const problems = answerProblems(pickForm(templates).schema, pick).map(p => ({ code: 'pick_form', field: p.path, message: p.message }));
+  const outer = templates.find(t => t.id === pick.primary.template) ?? null;
+  if (outer && !entryEvents(outer.doc, registry).length) pick.games.forEach((g, i) => {
+    if (g.relation === 'nested') problems.push({ code: 'pick_nested_no_entry', field: `games[${i}].relation`, message: `'${g.name}' cannot be nested in '${outer.id}': no loop of its document declares an entry event (card.loop.involves)` });
   });
-  const primaries = pick.concepts.map((c, i) => ({ c, i })).filter(x => x.c.relation === 'primary');
-  if (pick.concepts.length && primaries.length !== 1) add('pick_primary_count', 'concepts', `exactly one concept is primary (found ${primaries.length}${primaries.length ? `: ${primaries.map(x => x.c.name).join(', ')}` : ''})`);
-  for (const { c, i } of primaries) if (PICK_KINDS.includes(c.kind) && !LOOP_KINDS.includes(c.kind)) add('pick_primary_kind', `concepts[${i}]`, `the primary '${c.name}' is a ${c.kind}; the primary is the game or genre the player plays`);
-  const primary = primaries.length === 1 ? primaries[0].c : null;
-  const outer = primary && primary.template !== 'none' ? templates.find(t => t.id === primary.template) ?? null : null;
-  if (outer && !entryEvents(outer.doc, registry).length) pick.concepts.forEach((c, i) => {
-    if (c.relation === 'nested') add('pick_nested_no_entry', `concepts[${i}].relation`, `'${c.name}' cannot be nested in '${outer.id}': no loop of its document declares an entry event (card.loop.involves)`);
-  });
-  const stepPath = pick.concepts.filter(c => LOOP_KINDS.includes(c.kind) && c.template === 'none').map(c => c.name);
+  const stepPath = [pick.primary, ...pick.games].filter(c => c.template === 'none').map(c => c.name);
   return { problems, stepPath };
 }
 
@@ -219,7 +266,7 @@ export async function askForm({ writer, escalate, attempts, calls, system, user,
  * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number }>}
  */
 export async function askPick({ writer, escalate, attempts, prompt, templates, registry, calls, clock }) {
-  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates), user: `Idea: ${prompt}`, schema: pickForm(templates), narrow: narrowPick,
+  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates), narrow: narrowPick,
     check: pick => checkPick(pick, { templates, registry }).problems, code: 'template_pick_failed', what: 'The template pick' });
   return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls };
 }
@@ -240,16 +287,15 @@ export function composeTemplates(pick, { templates, registry }) {
   const { problems: checks, stepPath } = checkPick(pick, { templates, registry });
   /** @type {TemplateProblem[]} */
   const problems = checks.map(p => ({ code: p.code, path: p.field, message: p.message }));
-  const themes = pick.concepts.filter(c => c.relation === 'theme').map(c => ({ name: c.name, kind: c.kind }));
+  const themes = pick.themes.map(c => ({ name: c.name, kind: c.kind }));
   if (stepPath.length || problems.length) return { doc: null, template: null, themes, stepPath, problems };
-  const primary = /** @type {PickConcept} */ (pick.concepts.find(c => c.relation === 'primary'));
+  const primary = pick.primary;
   const outer = /** @type {Template} */ (templates.find(t => t.id === primary.template));
-  pick.concepts.forEach((c, i) => {
-    if (c.relation !== 'nested' && c.relation !== 'union') return;
+  pick.games.forEach((c, i) => {
     const how = c.relation === 'nested'
       ? `engine.adapt.nested composition (the inner template appended with prefixed ids and entered on ${entryEvents(outer.doc, registry).map(e => e.event).join('/')})`
       : 'union composition (both templates on one space, proven by the composition check)';
-    problems.push({ code: 'composition_pending', path: `concepts[${i}]`, message: `'${c.name}' (template '${c.template}') is ${c.relation} in '${primary.name}' (template '${outer.id}'): ${how} is not yet implemented` });
+    problems.push({ code: 'composition_pending', path: `games[${i}]`, message: `'${c.name}' (template '${c.template}') is ${c.relation} in '${primary.name}' (template '${outer.id}'): ${how} is not yet implemented` });
   });
   if (problems.length) return { doc: null, template: outer, themes, stepPath, problems };
   const doc = structuredClone(outer.doc);
