@@ -8,7 +8,7 @@ import { createGameService } from '../v2/server/api.mjs';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { runBench } from '../v2/tools/kernel-bench.mjs';
-import { fakeWriter, buildAnswer, decomposer, planFrom, mazeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer, decomposer, planFrom, mazeWriter, stepPick } from './v2-p-pipeline-fixtures.js';
 
 const tmp = () => mkdtempSync(join(os.tmpdir(), 'gv-pipeline-'));
 
@@ -28,6 +28,8 @@ function scriptedModel() {
   const decompose = decomposer(planFrom({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: 'lighthouse mystery', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: 'tides', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
     core: { loop: 'collect', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } }, { lighthouse_mystery: { kind: 'genre', quote: 'a lighthouse mystery', keeps: ['clues'] }, tides: { kind: 'other', quote: 'tides' } }));
   return fakeWriter([(req) => {
+    // The template pick: no template is this idea, so the step path builds it (what this test exercises).
+    const picked = stepPick(req); if (picked) return picked;
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
     const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });

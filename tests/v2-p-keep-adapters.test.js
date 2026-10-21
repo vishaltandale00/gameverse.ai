@@ -21,7 +21,7 @@ import { preset, skinSections } from '../v2/planner/presets.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { keepMashupAdapters, mashupAdapterProblems } from '../v2/planner/adapters.js';
 import { outlineForm, fieldForm, objectSchema } from '../v2/planner/outline-form.js';
-import { fakeWriter, buildAnswer, decomposer } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer, decomposer, stepPick } from './v2-p-pipeline-fixtures.js';
 
 const cat = catalogue();
 const { registry, logic } = cat;
@@ -69,7 +69,7 @@ async function createWriter(f, { gap = [], extra = [], spawn = null } = {}) {
     if (section) { const [, root, key] = section.split('_'); return { [section]: scaffold[root]?.[key] ?? [] }; }
     return {};
   };
-  const writer = fakeWriter([req => decompose(req) ?? buildAnswer(req, state.outlining ? replanned : built) ?? JSON.stringify(outline(req))]);
+  const writer = fakeWriter([req => stepPick(req) ?? decompose(req) ?? buildAnswer(req, state.outlining ? replanned : built) ?? JSON.stringify(outline(req))]);
   return { writer, state };
 }
 /** Run a create job offline: what it published, its stages and checkpoints. */

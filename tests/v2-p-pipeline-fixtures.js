@@ -77,6 +77,15 @@ export function fakeWriter(replies, { model = 'fake-writer' } = {}) {
   };
 }
 
+/**
+ * Answers the template pick (v2/planner/templates.js pick_templates) with one game concept no template is, or null for
+ * any other request: the step path then builds the whole idea, as these pipeline tests script it.
+ */
+export function stepPick(req, { title = 'Test Game', premise = 'A test premise.', name = 'the idea' } = {}) {
+  if (String(req.schema?.name || '') !== 'pick_templates') return null;
+  return JSON.stringify({ title, premise, concepts: [{ name, kind: 'game', template: 'none', relation: 'primary' }] });
+}
+
 /** Decisions that answer from a function of the questions. */
 export function fakeDecisions(answer, provider = 'fake') {
   const calls = [];
@@ -128,7 +137,7 @@ export function buildAnswer(req, { space = [], picks = {}, steps = {}, covered =
 }
 
 /** A writer that only answers the build's questions (buildAnswer), e.g. for a selection with a model. */
-export const buildWriter = (options = {}) => fakeWriter([req => buildAnswer(req, options) ?? '{}']);
+export const buildWriter = (options = {}) => fakeWriter([req => stepPick(req) ?? buildAnswer(req, options) ?? '{}']);
 
 export const decomposition = (mechanics, extra = {}) => ({
   version: 'test', title: 'Test Game', premise: 'A test premise. Second sentence.', tone: 'brisk', references: [], views: [], spaces: [], acts: 2, zones: 4,
@@ -208,5 +217,5 @@ export function mazeWriter({ steps = { lose: ['gameplay.death'] } } = {}) {
       spawns: zones.map((zone, i) => ({ id: `coins_${i}`, archetype: 'coin', zone, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items: [], characters: [] });
     return null;
   };
-  return fakeWriter([req => decompose(req) ?? buildAnswer(req, { space: ['engine.space.grid'], picks: { collect: ['gameplay.move.grid'] }, steps }) ?? outline(req) ?? '{}']);
+  return fakeWriter([req => stepPick(req, { title: 'Coin Maze', name: 'coin maze' }) ?? decompose(req) ?? buildAnswer(req, { space: ['engine.space.grid'], picks: { collect: ['gameplay.move.grid'] }, steps }) ?? outline(req) ?? '{}']);
 }

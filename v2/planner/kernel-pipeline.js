@@ -28,12 +28,15 @@ import { loopCore } from './presets.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str } from '../kernel/guards.js';
+import { TEMPLATES } from '../templates/index.js';
+import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn } from './templates.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
 /** @typedef {import('./types.js').Writer} Writer */
+/** @typedef {import('./templates.js').Template} Template */
 /** @typedef {import('./verify-adapter.js').Verification} Verification */
 /** @typedef {import('./decisions.js').DecisionClient} DecisionClient */
 /** @typedef {import('./select.js').Selection} Selection */
@@ -100,6 +103,95 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
   const cfg = { ...PIPELINE_CONFIG, ...config };
   const spec = writers.spec || null;
 
+  /**
+   * The template path (ARCHITECTURE §5): pick (1 call) -> compose (code) -> content forms (parallel) -> preflight ->
+   * loop check -> first playable -> the publish gate -> publish. Templates are complete verified documents: a check
+   * failing after composition is a template defect and the build fails with its problems (never repaired around,
+   * never substituted). A pick naming a game or genre no template is routes the whole idea to the step path.
+   * Timings are measured (null when not): pickMs, contentMs, composeMs (code composing the pick into a document,
+   * content applied and checked, excluding model calls and the gate), gateMs, requestToFirstPlayableMs; modelCalls
+   * counts every call, modelRounds the sequential ones (the pick's calls, then the most calls any parallel content
+   * form made).
+   * @param {JobSpec} job @param {JobContext} ctx
+   * @param {{ registry: RegistryLike, logic: LogicLike, seed: number | string, prompt: string, t0: number, timings: Timings }} run
+   * @returns {Promise<{ path: 'template', result: Record<string, unknown> } | { path: 'step', pick: { pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } }>}
+   */
+  async function templateCreate(job, ctx, { registry, logic, seed, prompt, t0, timings }) {
+    const writer = /** @type {Writer} */ (spec), escalate = writers.code || null;
+    const checkpoint = (/** @type {string} */ name, /** @type {unknown} */ value) => ctx.checkpoint?.(name, value);
+    const templates = offeredTemplates(/** @type {readonly Template[]} */ (TEMPLATES), registry);
+    /** @type {import('./templates.js').TemplateCall[]} */
+    const calls = [];
+    const clock = { codeMs: 0 };
+    ctx.stage('picking_templates', { model: writer.model, templates: templates.map(t => t.id) });
+    let t = performance.now();
+    const picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
+    timings.pickMs = ms(t);
+    clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
+    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls });
+    if (picked.stepPath.length) {
+      const why = `no template is ${picked.stepPath.map(n => `'${n}'`).join(', ')}: the step path builds the whole idea`;
+      ctx.stage('templates_picked', { ms: timings.pickMs, path: 'step', why, stepPath: picked.stepPath, calls: calls.length });
+      return { path: 'step', pick: { pick: picked.pick, stepPath: picked.stepPath, why, calls: calls.length } };
+    }
+    const fail = (/** @type {string} */ code, /** @type {string} */ stage, /** @type {Array<{ code?: unknown, path?: unknown, message?: unknown }>} */ problems) => {
+      checkpoint('templateFailure', { stage, code, problems: problems.slice(0, 20), calls });
+      ctx.stage('not_buildable', { path: 'template', stage, code, missing: problems.slice(0, 8).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`) });
+      return Object.assign(Error(`This isn't the game you asked for yet: the template path failed at ${stage}: ${problems.slice(0, 4).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`).join('; ')}`), { status: 422, code, report: { path: 'template', stage, problems, calls } });
+    };
+    let tc = performance.now();
+    const composed = composeTemplates(picked.pick, { templates, registry });
+    clock.codeMs += performance.now() - tc;
+    if (!composed.doc || !composed.template) throw fail(composed.problems[0]?.code ?? 'template_composition_failed', 'composition', composed.problems);
+    const template = composed.template;
+    composed.doc.seed = seed;
+    // The composed document must preflight before the content forms change it: a failure here is the template's defect.
+    tc = performance.now();
+    const base = preflight(structuredClone(composed.doc), registry, logic);
+    clock.codeMs += performance.now() - tc;
+    if (!base.ok) throw fail('template_defect', 'preflight', base.errors);
+    ctx.stage('templates_picked', { ms: timings.pickMs, path: 'template', templates: [template.id], themes: composed.themes.map(x => x.name), calls: calls.length });
+    t = performance.now();
+    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick: picked.pick, themes: composed.themes, registry, logic, calls, clock });
+    timings.contentMs = ms(t);
+    ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
+    // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
+    // so nothing is engaged, furnished or isolated here.
+    tc = performance.now();
+    const pre = preflight(content.doc, registry, logic);
+    if (!pre.ok) throw fail('template_defect', 'preflight', pre.errors);
+    const loop = loopProblems(pre.doc, registry, { logic });
+    if (loop.length) throw fail('template_defect', 'loop', loop);
+    const fp = firstPlayable(pre.doc, registry, logic, { seed, protect: new Set(instancesIn(pre.doc).map(i => String(i.use))), maxIsolations: 0, furnish: false });
+    clock.codeMs += performance.now() - tc;
+    if (!fp.ok) throw fail('template_defect', 'first_playable', [...fp.errors, ...fp.problems]);
+    timings.composeMs = Math.round(clock.codeMs);
+    const tg = performance.now();
+    const v = await verifyDocument(fp.doc, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+    timings.gateMs = ms(tg);
+    if (!v.viable) throw fail('not_playable', 'gate', [{ code: 'not_playable', path: '$', message: String(v.viability || 'not viable') }, ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)]);
+    t = performance.now();
+    const quality = qualityReport(v, registry, logic, { budgetMs: cfg.qualityMs });
+    timings.qualityMs = quality ? ms(t) : null;
+    timings.firstPlayableBuildMs = fp.ms;
+    timings.requestToFirstPlayableMs = ms(t0);
+    const modelCalls = calls.length, modelRounds = picked.calls + content.rounds;
+    const doc = fp.doc;
+    await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
+    const report = { kind: 'kernel', path: 'template', templates: [template.id], pick: picked.pick, themes: composed.themes, content: content.forms, calls, modelCalls, modelRounds,
+      summary: doc.logline || picked.pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), playtest: v.playtest, quality,
+      firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } };
+    const provenance = { pipeline: KERNEL_PIPELINE_VERSION, templatePath: TEMPLATE_PATH_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null, code: escalate?.model || null },
+      seed, prompt: job.prompt, answers: job.answers || [], templates: [template.id], pickHash: hashOf(picked.pick), outlineHash: hashOf(doc) };
+    checkpoint('gate', { viable: Boolean(v.viable), viability: v.viability || null, playtest: v.playtest || null, problems: (v.problems || []).slice(0, 20) });
+    await ctx.publish({ doc, stage: 'first_playable', report, provenance });
+    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: fp.ms, gateMs: timings.gateMs, path: 'template', modelCalls, modelRounds, pickMs: timings.pickMs, contentMs: timings.contentMs, composeMs: timings.composeMs });
+    ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(v) });
+    timings.totalMs = ms(t0);
+    ctx.stage('complete', { timings, path: 'template', modelCalls, modelRounds });
+    return { path: 'template', result: { doc, path: 'template', templates: [template.id], pick: picked.pick, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
+  }
+
   /** @param {JobSpec} job @param {JobContext} ctx */
   async function create(job, ctx) {
     /** @type {Timings} */
@@ -112,6 +204,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // Checkpoints are what a failure record keeps to reproduce the run (server/jobs.js); hosts without them ignore them.
     const checkpoint = (/** @type {string} */ name, /** @type {unknown} */ value) => ctx.checkpoint?.(name, value);
     checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
+    // The template path first (ARCHITECTURE §5): with a writer, one pick decides whether templates build the idea.
+    // A game or genre concept no template is goes to the step path below, for the whole idea, and says so.
+    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } | null} */
+    let templatePick = null;
+    if (spec) {
+      const routed = await templateCreate(job, ctx, { registry, logic, seed, prompt, t0, timings });
+      if (routed.path === 'template') return routed.result;
+      templatePick = routed.pick;
+    }
     ctx.stage('decomposing', { model: spec?.model || 'offline' });
     let t = performance.now();
     const decomposition = await decomposeIdea({ writer: spec, escalate: writers.code || null, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts });
@@ -248,7 +349,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const quality = qualityReport(base, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
     timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
+    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, ...(templatePick ? { path: 'step', why: templatePick.why, templatePick } : {}), verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
     ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
 
