@@ -11,6 +11,7 @@ import { glyph, moveFocus, docBindings } from './ui-input.js';
 import { portrait, portraitColor } from './ui-portrait.js';
 import { icon } from './ui-icons.js';
 import * as S from './ui-sources.js';
+import { uiControls, unclaimedChoices, loopVerbs } from '../engine/runtime-lib-controls.js';
 
 const VERB_LABEL = { move: 'Move', look: 'Look', jump: 'Jump', sprint: 'Sprint', crouch: 'Crouch', use: 'Use', interact: 'Interact', attack: 'Attack', alt_attack: 'Heavy attack', block: 'Block', dodge: 'Dodge', aim: 'Aim', mine: 'Mine', place: 'Place', drive: 'Drive', brake: 'Brake', handbrake: 'Handbrake', talk: 'Talk', dash: 'Dash', heal: 'Heal', cast: 'Cast', lockon: 'Lock on', fire: 'Fire', shoot: 'Shoot' };
 const UI_VERBS = [['menu', 'Pause'], ['inventory', 'Inventory'], ['journal', 'Journal'], ['map', 'Map']];
@@ -21,13 +22,29 @@ export function titleParts(title = '') {
   return m ? [m[1], m[2]] : [String(title), ''];
 }
 
-/** Controls card rows from engine.input.actions bindings plus the UI keys whose primitives are present. */
-export function controlRows(doc, registryHas = () => true) {
+/**
+ * Controls card rows: every verb the primary view's engine.input.actions bindings give a key (one row per value of a
+ * verb bound per value), then, with the registry, every loop verb a UI primitive issues instead (its row names that
+ * control), then the UI keys whose primitives are present. Every verb a person plays the game's loops with is listed.
+ */
+export function controlRows(doc, registryHas = () => true, registry = null) {
   const b = docBindings(doc), rows = [];
-  const fmt = k => ({ arrows: '←↑↓→', wasd: 'WASD', space: 'Space', esc: 'Esc', shift: 'Shift', enter: 'Enter', up: '↑', down: '↓', left: '←', right: '→', tab: 'Tab' }[k] || String(k).toUpperCase());
+  const fmt = k => ({ arrows: '←↑↓→', wasd: 'WASD', space: 'Space', esc: 'Esc', shift: 'Shift', enter: 'Enter', up: '↑', down: '↓', left: '←', right: '→', tab: 'Tab', comma: ',', period: '.', lmb: 'LMB', rmb: 'RMB', mouse: 'Mouse' }[k] || String(k).toUpperCase());
   const input = (doc.systems || []).find(s => s.use === 'engine.input.actions')?.with;
-  const raw = Object.values(input?.bindings || {})[0] || {};
-  for (const [verb, keys] of Object.entries(raw)) if (!UI_VERBS.some(([v]) => v === verb)) rows.push({ verb, label: VERB_LABEL[verb] || titleCase(verb), keys: keys.map(fmt) });
+  const all = input?.bindings || {}, raw = all[doc.views?.primary] || Object.values(all)[0] || {};
+  for (const [verb, keys] of Object.entries(raw)) {
+    if (UI_VERBS.some(([v]) => v === verb)) continue;
+    if (Array.isArray(keys)) rows.push({ verb, label: VERB_LABEL[verb] || titleCase(verb), keys: keys.map(fmt) });
+    else for (const [value, ks] of Object.entries(keys || {})) rows.push({ verb, value, label: `${VERB_LABEL[verb] || titleCase(verb)}: ${titleCase(value)}`, keys: (ks || []).map(fmt) });
+  }
+  if (registry) {
+    const ui = uiControls(doc, registry), choice = ui.choice.length ? new Set(unclaimedChoices(doc, registry)) : new Set();
+    for (const verb of loopVerbs(doc, registry)) {
+      if (raw[verb] || UI_VERBS.some(([v]) => v === verb)) continue;
+      const by = ui.verbs.get(verb)?.[0] ?? (choice.has(verb) ? ui.choice[0] : null);
+      if (by) rows.push({ verb, label: VERB_LABEL[verb] || titleCase(verb), keys: [`${titleCase(by.split('.').pop())} panel`], via: by });
+    }
+  }
   if (!rows.length) rows.push({ verb: 'move', label: 'Move', keys: ['WASD', '←↑↓→'] }, { verb: 'interact', label: 'Interact', keys: ['E'] });
   for (const [verb, label] of UI_VERBS) {
     const owner = { menu: 'graphics.ui.menu', inventory: 'graphics.ui.inventory', journal: 'graphics.ui.journal', map: 'graphics.ui.map' }[verb];
@@ -238,7 +255,7 @@ export default {
 
     // ------------------------------------------------------------- helpers
     const hint = (verb, label) => el('span', {}, el('span.gv-kbd', { text: glyph(host, verb) }), label);
-    function controlsList() { return el('dl', {}, ...controlRows(rt.doc, id => rt.registry.has(id)).flatMap(r => [el('dt', { text: r.label }), el('dd', {}, ...r.keys.map(k => el('span.gv-kbd', { text: k })))])); }
+    function controlsList() { return el('dl', {}, ...controlRows(rt.doc, id => rt.registry.has(id), rt.registry).flatMap(r => [el('dt', { text: r.label }), el('dd', {}, ...r.keys.map(k => el('span.gv-kbd', { text: k })))])); }
     function controlsCard() { return el('aside.gv-controls.gv-panel', { aria: { label: 'Controls' } }, el('h4', { text: 'How to play' }), controlsList()); }
     function confirmThen(question, yes) {
       open('confirm', () => {

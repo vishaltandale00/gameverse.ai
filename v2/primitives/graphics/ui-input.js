@@ -34,7 +34,8 @@ const PAD = { 0: 'confirm', 1: 'back', 2: 'alt', 3: 'journal', 4: 'prev', 5: 'ne
 export function docBindings(doc) {
   const inst = (doc?.systems || []).find(s => s.use === 'engine.input.actions');
   const out = {};
-  for (const byVerb of Object.values(inst?.with?.bindings || {})) for (const [verb, keys] of Object.entries(byVerb || {})) (out[verb] ??= new Set()), (keys || []).flatMap(expand).forEach(k => out[verb].add(k));
+  // A verb bound per value (a map of value -> keys) has all its values' keys.
+  for (const byVerb of Object.values(inst?.with?.bindings || {})) for (const [verb, keys] of Object.entries(byVerb || {})) (out[verb] ??= new Set()), (Array.isArray(keys) ? keys : Object.values(keys || {}).flat()).flatMap(expand).forEach(k => out[verb].add(k));
   return out;
 }
 
