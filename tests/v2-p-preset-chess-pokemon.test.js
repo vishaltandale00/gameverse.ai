@@ -56,10 +56,10 @@ test('both sides are seated by the preset from the loop declarations, on the boa
   for (const r of seats) { const side = r.components?.turns?.side ?? p.doc.content.archetypes.find(a => a.id === r.archetype).components.turns.side; sides.set(side, [...(sides.get(side) || []), r]); }
   assert.deepEqual([...sides.keys()].sort(), ['enemy', 'player'], 'gameplay.turns sides (needs.participants) each get pieces');
   for (const [side, rs] of sides) assert.ok(rs.length >= 2, `${side}: ${rs.length} pieces`);
-  const cells = seats.map(r => r.at.join());
-  assert.equal(new Set(cells).size, cells.length, 'one piece per cell');
-  for (const r of seats) { assert.ok(r.at[0] >= 0 && r.at[0] < 8 && r.at[1] >= 0 && r.at[1] < 8, `${r.id} on the board`); assert.equal(r.unique, true); assert.equal(r.activation, 'always'); }
-  assert.ok(sides.get('player').every(r => r.at[1] === 7) && sides.get('enemy').every(r => r.at[1] === 0), 'each side at its own edge');
+  // The seats are declared edge bands (engine.spawner rule.band), resolved on the board as generated: a side's band is its
+  // own edge (side 0 the far row, side 1 the near row); the cells are the world's, read once it is built.
+  for (const r of seats) { assert.equal(r.at, undefined, `${r.id}: no position guessed before the world exists`); assert.equal(r.unique, true); assert.equal(r.activation, 'always'); }
+  assert.ok(sides.get('player').every(r => r.band === 0) && sides.get('enemy').every(r => r.band === 1), 'each side at its own edge band');
   assert.deepEqual(populateProblems(p.doc, registry).filter(x => x.code === 'content_unplaced'), []);
   // The document preflights and boots with both sides' units in the turn order.
   const pre = preflight(p.doc, registry, logic);
@@ -67,6 +67,14 @@ test('both sides are seated by the preset from the loop declarations, on the boa
   const rt = createWorld(pre.doc, registry, logic, { seed: FX.seed });
   for (let i = 0; i < 60; i++) rt.step();
   const units = Object.values(rt.state.prim['gameplay.turns'].units || {}).map(u => u.side);
+  // Every seat spawned, one piece per cell, on the board, each side at its own edge (the player's the far row, y 7).
+  const placed = seats.map(r => rt.entity(r.id));
+  assert.ok(placed.every(Boolean), 'every seated piece is in the world');
+  const cells = placed.map(e => e.at.join());
+  assert.equal(new Set(cells).size, cells.length, 'one piece per cell');
+  for (const e of placed) assert.ok(e.at[0] >= 0 && e.at[0] < 8 && e.at[1] >= 0 && e.at[1] < 8, `${e.id} on the board`);
+  const rows = side => seats.filter(r => sides.get(side).includes(r)).map(r => rt.entity(r.id).at[1]);
+  assert.ok(Math.min(...rows('player')) > Math.max(...rows('enemy')), `each side at its own edge: ${rows('player')} / ${rows('enemy')}`);
   assert.ok(units.filter(s => s === 'enemy').length >= 2 && units.filter(s => s === 'player').length >= 2, JSON.stringify(units));
 });
 
