@@ -19,6 +19,7 @@ function learn(rt, id) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['journal_added'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.entries", "min": 3, "why": "journal entries the player gains"},

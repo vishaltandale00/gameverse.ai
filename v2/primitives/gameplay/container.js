@@ -16,6 +16,7 @@ const parse = v => (typeof v === 'string' ? { item: v, count: 1 } : { item: v?.i
 export default {
   id: 'gameplay.container',
   card: {
+    loop: { verbs: ['take', 'store', 'take_all'], progress: ['opened', 'container_opened'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "container", "min": 1, "placed": 1, "why": "containers are entities with a container component {slots, table?}", "example": {"id": "chest", "kind": "prop", "components": {"container": {"slots": 6}}}},

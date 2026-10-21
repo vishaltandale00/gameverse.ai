@@ -21,6 +21,7 @@ const SPEC = { maxSpeed: 120, accel: 12, grip: 1, mass: 1200, steer: 32, brake: 
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['drift', 'boost'] },
     intent: 'Wheeled vehicle handling (cars, bikes, karts, minecarts) over any continuous space: throttle, brake, reverse, steering with speed falloff, grip and lateral slide, handbrake drifts, boosts and kart drift mini-turbos, gearbox (sim), ramp jumps and landings, surface grip, water stalls, wall crashes that damage the hull, bike lean and rail following.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
     params: {

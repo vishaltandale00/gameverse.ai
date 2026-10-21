@@ -96,7 +96,8 @@ test('unbounded allocation hits the heap limit; queued jobs still run and the se
 
 test('a normal job builds and publishes through the child process', async () => {
   const { call, done } = service({ heapMb: 512, timeoutMs: 60000 }, { maxDetailTasks: 1, solveBudgetMs: 300 });
-  const { json: created } = await call('POST', '/api/v2/games', { prompt: 'a mystery in a lighthouse: find the key' });
+  // Offline (no model writes a story or content): an idea the catalogue builds without them.
+  const { json: created } = await call('POST', '/api/v2/games', { prompt: 'collect coins in a maze' });
   const finished = await done(created.gameId);
   assert.equal(finished.type, 'job_done', finished.error);
   assert.equal(finished.runner.isolation, 'process');
@@ -122,9 +123,9 @@ test('a pipeline failure keeps decomposition, selection, outline, provenance, st
   // Fails where the live "first playable would not start" failure did: after the outline, at the first version.
   const pipeline = (job, ctx) => kernel(job, { ...ctx, publish: async () => { throw Object.assign(Error('The first playable would not start: test'), { status: 422 }); } });
   const jobs = createJobs({ store, pipeline });
-  await store.createGame({ id: 'lamp', prompt: 'a mystery in a lighthouse: find the key' });
+  await store.createGame({ id: 'lamp', prompt: 'collect coins in a maze' });
   const failed = new Promise(resolve => jobs.subscribe(e => { if (e.type === 'job_failed') resolve(e); }));
-  jobs.submit({ gameId: 'lamp', prompt: 'a mystery in a lighthouse: find the key', kind: 'create', seed: 7 });
+  jobs.submit({ gameId: 'lamp', prompt: 'collect coins in a maze', kind: 'create', seed: 7 });
   const e = await failed;
   assert.equal(e.failure, 1);
   const meta = await store.meta('lamp');

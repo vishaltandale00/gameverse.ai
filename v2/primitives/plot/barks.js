@@ -12,6 +12,7 @@ export default {
   id: ID,
   solverKey,
   card: {
+    loop: { verbs: [], progress: ['bark'] },
     intent: 'Ambient barks, radio and narrator lines from plot.barks on named channels, chosen by predicate, cooldown, once-only and weight; the bark effect speaks a scripted line.',
     views: ['any'],
     params: {

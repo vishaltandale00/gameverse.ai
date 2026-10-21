@@ -48,6 +48,7 @@ const agentOf = (rt, id) => ((st(rt).agents ??= {})[id] ??= { phase: 'idle', cd:
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['attack_launched', 'attack_hit'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { attacks: { type: 'list', min: 1, of: { type: 'object', fields: ATTACK }, effect: 'telegraphed attack patterns' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

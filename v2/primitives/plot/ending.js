@@ -12,6 +12,7 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['ending_reached'] },
     intent: 'One or more endings from plot.endings: the first ending whose condition holds plays its effects and cutscene, shows its epilogue and ends the game with its outcome.',
     views: ['any'],
     params: {

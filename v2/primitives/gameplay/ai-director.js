@@ -15,6 +15,7 @@ const PHASES = ['build', 'peak', 'relax', 'off'];
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['director_spawn'] },
     intent: 'Pacing director: player intensity from events (damage taken, nearby kills, alarms) with decay drives a build-up → peak → relax cycle; build-up spends a budget spawning enemies out of sight at reachable distances; vars director.intensity/director.phase for plot, music and UI.',
     views: ['any'],
     params: {

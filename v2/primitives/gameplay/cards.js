@@ -22,6 +22,7 @@ const DECAYS = ['vulnerable', 'weak', 'frail'];
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['play_card', 'attack_with', 'pick_card'], progress: ['card_played', 'card_damage', 'minion_died'] },
     // The player's starting deck: every card the document defines, when it named none.
     // Content pack: mechanically valid default content the planner starts from (the model themes it: names, flavour, which ones).
     pack: { 'content.cards': [{ id: 'strike', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'strike_b', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'guard', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'guard_b', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'heavy_blow', name: 'Heavy Blow', type: 'attack', cost: 2, target: 'enemy', effects: [{ do: 'card_damage', amount: 12, who: 'target' }] }, { id: 'quick_draw', name: 'Quick Draw', type: 'skill', cost: 0, target: 'self', effects: [{ do: 'draw_cards', count: 2 }] }, { id: 'focus', name: 'Focus', type: 'power', cost: 1, target: 'self', effects: [{ do: 'card_mod', mod: 'strength', amount: 2, who: 'owner' }] }, { id: 'spark', name: 'Spark', type: 'attack', cost: 1, target: 'all_enemies', effects: [{ do: 'card_damage', amount: 4, who: 'target' }] }] },

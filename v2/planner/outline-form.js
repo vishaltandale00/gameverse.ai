@@ -45,7 +45,8 @@ import { isObj, isList, isStr, list, strings, obj as asObject, prop } from '../k
 /** Component slots: the archetype components schema and each component's codec. @typedef {{ schema: ObjectSchema, codecs: Record<string, Codec> }} ComponentSlots */
 /**
  * The outline form: the strict schema, the converter of a filled form (model output) into a draft document, and what it was built from.
- * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], groups: FormGroup[], version: string }} OutlineForm
+ * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], groups: FormGroup[],
+ *   storyGroup: (cast: { characters?: string[], archetypes?: string[], items?: string[] }) => FormGroup | null, version: string }} OutlineForm
  */
 /**
  * One small part of the form, asked for on its own (in parallel with the others; `wave` 2 waits for wave 1's ids).
@@ -270,7 +271,7 @@ export function outlineForm({ registry, skeleton, selection = null }) {
       ? `${sec} as JSON text. REQUIRED by ${c.uses.join(', ')}: at least ${c.min || 1} entries in the shape the system prompt documents for ${sec}${c.why ? ` (${c.why})` : ''}; never "[]"`
       : `${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
   }
-  if (skeleton.plot?.storyboard) props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
+  if (reads.has('plot.storyboard')) props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
   props.endings = arr(obj({ id: str(), title: str(), text: str(), outcome: { type: 'string', enum: ['won', 'lost', 'neutral'] } }));
   // The player's body: one of the scaffold's player archetypes (kept in the document when chosen), or the cast's own player.
   const players = [...new Set(list(skeleton.content?.archetypes).filter(a => prop(a, 'kind') === 'player').map(a => prop(a, 'id')).filter(isStr))];
@@ -279,7 +280,16 @@ export function outlineForm({ registry, skeleton, selection = null }) {
 
   const schema = { name: 'game_outline', schema: obj(props) };
   const toDoc = (/** @type {unknown} */ form) => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout, sectionCodecs, offered });
-  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props), version: FORM_VERSION };
+  // The story form (wave 2) once the cast is written: its references to characters, archetypes, items and zones are
+  // enums of the ids wave 1 wrote, so beats, dialogue and quests name real ones.
+  const storyGroup = (/** @type {{ characters?: string[], archetypes?: string[], items?: string[] }} */ cast) => {
+    const story = GROUPS.find(g => g.id === 'story');
+    if (!story) return null;
+    const { props: again } = contentProps({ registry, used, hasQuests, hasDialogue, spawner, refs: refsFor('archetypes'), zones: zoneIds, cast });
+    const p = Object.fromEntries(story.keys.map(k => [k, k === 'acts' ? props.acts : again[k]]).filter(([, v]) => v));
+    return Object.keys(p).length ? { id: story.id, keys: Object.keys(p), wave: story.wave, schema: { name: `game_outline_${story.id}`, schema: obj(p) } } : null;
+  };
+  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props), storyGroup, version: FORM_VERSION };
 }
 
 // The small forms the outline is asked in: each a strict schema of a few top-level slots. The world frame, the
@@ -408,27 +418,31 @@ const listOf = v => (Array.isArray(v) ? v : []);
  * Form slots for content (shared by the outline and the per-zone detail form): archetypes with the component slots
  * of every primitive in `used`, spawns (when a spawner exists; `zone` fixes their zone), items, characters, and
  * dialogue / quests when a primitive reads them. -> { props, comps }
- * With `refs`, component fields that refer to other forms' collections are enums of the document's ids; with `zones`, zone fields are.
- * @param {{ registry: RegistryLike, used: string[], hasQuests: boolean, hasDialogue: boolean, spawner: string | null | undefined, zone?: string | null, refs?: RefContext | null, zones?: string[] | null }} args
+ * With `refs`, component fields that refer to other forms' collections are enums of the document's ids; with `zones`, zone fields are;
+ * with `cast` (the ids another form already wrote), the story's references to characters, archetypes and items are.
+ * @param {{ registry: RegistryLike, used: string[], hasQuests: boolean, hasDialogue: boolean, spawner: string | null | undefined, zone?: string | null, refs?: RefContext | null, zones?: string[] | null,
+ *   cast?: { characters?: string[], archetypes?: string[], items?: string[] } | null }} args
  * @returns {{ props: Record<string, JsonSchema>, comps: ComponentSlots }}
  */
-export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, zone = null, refs = null, zones = null }) {
+export function contentProps({ registry, used, hasQuests, hasDialogue, spawner, zone = null, refs = null, zones = null, cast = null }) {
   /** @type {Record<string, JsonSchema>} */
   const props = {};
   const comps = componentSlots(registry, used, refs);
   /** A zone reference: the document's zone ids when known. @param {string} d */
   const zoneRef = d => (zones?.length && zones.length <= MAX_ENUM ? idEnum(zones, d) : str(d));
+  /** A reference into the cast another form wrote: an enum of its ids when known. @param {'characters' | 'archetypes' | 'items'} kind @param {string} d */
+  const castRef = (kind, d) => { const ids = [...new Set(cast?.[kind] || [])]; return ids.length && ids.length <= MAX_ENUM ? idEnum(ids, d) : str(d); };
   props.archetypes = arr(obj({ id: str('lowercase slug'), kind: { type: 'string', enum: ARCH_KINDS }, name: str(), components: comps.schema }), 'every kind of entity: enemies, creatures, pickups, props, vehicles, NPC bodies; give each the components its role needs');
   if (spawner) props.spawns = arr(obj({ id: str('rule id'), archetype: str('archetype id'), ...(zone ? {} : { zone: nul(zoneRef('zone id where they appear (null on a space without zones)')), at_json: nul(str('where exactly, as JSON: a point [x, y] or a list of points (cells on a board); null to scatter them in the zone')) }), min: { type: 'integer' }, max: { type: 'integer' }, respawnSec: nul({ type: 'number', description: '0 = never respawn' }), when_json: nul(str(`predicate that must hold (${JSON_HINT})`)) }), zone ? `what appears in ${zone}: its own enemies, pickups and props` : 'what appears where: every enemy, pickup and prop archetype placed in the zones it belongs to');
   props.items = arr(obj({ id: str('lowercase slug'), name: str(), kind: { type: 'string', enum: ITEM_KINDS }, desc: str(), value: nul({ type: 'number' }), more_json: nul(str('other item fields as a JSON object (weapon, use, creature, stats...)')) }));
   props.characters = arr(obj({ id: str('lowercase slug'), name: str(), role: str(), bio: str(), ...(zone ? {} : { home: nul(zoneRef('zone id')) }), archetype: nul(str('archetype id for their body, if any')), dialogue: arr(str('dialogue id')) }));
-  if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: str('character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(str('character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
+  if (hasDialogue) props.dialogue = arr(obj({ id: str('dialogue id'), speaker: castRef('characters', 'character id'), start: str('first node id'), nodes: arr(obj({ id: str('node id'), who: nul(castRef('characters', 'character id; null = the speaker')), say: str(), next: nul(str('node id')), end: { type: 'boolean' }, choices: arr(obj({ text: str(), next: nul(str('node id')), do_json: nul(str(`effects list (${JSON_HINT})`)) })), do_json: nul(str(`effects list (${JSON_HINT})`)) })) }), 'conversations as node graphs');
   if (hasQuests) {
     // The plot primitive's objective kinds (program code): kind -> { fields }.
     const objectives = /** @type {Record<string, { fields?: object }>} */ (OBJECTIVES);
     const kinds = Object.keys(objectives);
-    props.quests = arr(obj({ id: str('lowercase slug'), title: str(), kind: { type: 'string', enum: ['main', 'side', 'contract', 'bounty', 'challenge'] }, giver: nul(str('character id')), ...(zone ? {} : { zone: nul(zoneRef('zone id')) }), summary: str(), autoStart: { type: 'boolean' },
-      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(zone ? str() : zoneRef('zone id')), item: nul(str()), character: nul(str()), archetype: nul(str()), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(objectives[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
+    props.quests = arr(obj({ id: str('lowercase slug'), title: str(), kind: { type: 'string', enum: ['main', 'side', 'contract', 'bounty', 'challenge'] }, giver: nul(castRef('characters', 'character id')), ...(zone ? {} : { zone: nul(zoneRef('zone id')) }), summary: str(), autoStart: { type: 'boolean' },
+      objectives: arr(obj({ id: str(), kind: { type: 'string', enum: kinds }, text: str(), zone: nul(zone ? str() : zoneRef('zone id')), item: nul(castRef('items', 'item id')), character: nul(castRef('characters', 'character id')), archetype: nul(castRef('archetypes', 'archetype id')), count: nul({ type: 'integer' }), more_json: nul(str(`other fields of this objective kind (${kinds.map(k => `${k}: ${Object.keys(objectives[k].fields || {}).join('/')}`).join('; ').slice(0, 500)})`)) })),
       rewards_json: nul(str('{"xp"?, "money"?, "items"?: [{"item","count"}]} as JSON')) }), 'quests the quest primitive runs; objectives use the goal kinds');
   }
   return { props, comps };
@@ -602,8 +616,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     const fx = parseJson(b.do_json); if (Array.isArray(fx)) beat.do = fx; else if (isObj(fx)) beat.do = [fx];
     return beat;
   }) }));
+  // The story is the model's: no acts written means no story (the content checks ask for it), never the scaffold's.
   if (acts.length) out.plot.storyboard = { acts };
-  else if (skeleton.plot?.storyboard) out.plot.storyboard = structuredClone(skeleton.plot.storyboard);
   const endings = listOf(f.endings).filter(isObj).map(e => ({ id: slug(e.id || e.title), title: String(e.title || e.id), text: String(e.text || ''), outcome: typeof e.outcome === 'string' && ['won', 'lost', 'neutral'].includes(e.outcome) ? e.outcome : 'won' }));
   if (endings.length) out.plot.endings = endings; else if (skeleton.plot?.endings) out.plot.endings = structuredClone(skeleton.plot.endings);
   // Spawns -> the spawner's rules.

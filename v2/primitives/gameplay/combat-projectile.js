@@ -66,6 +66,7 @@ const WEAPON = {
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['fire'], progress: ['fired', 'projectile_hit'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc", "prop"], "min": 1, "placed": 3, "zones": 2, "why": "shots need targets with health, placed in the world", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},

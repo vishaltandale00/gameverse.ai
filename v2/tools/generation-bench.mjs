@@ -24,7 +24,7 @@ import { loadOpenAIKey } from '../planner/openai.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
 import { census, kindViewPreserved } from '../planner/census.js';
 import { verify } from '../verify/index.js';
-import { isAvatar } from '../planner/modes.js';
+import { isAvatar } from '../planner/play-spec.js';
 import { catalogueForDoc } from '../experiments/primitive.js';
 import { memoryCtx } from './kernel-bench.mjs';
 

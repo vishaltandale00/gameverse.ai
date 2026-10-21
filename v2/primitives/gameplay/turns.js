@@ -43,6 +43,7 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { turns: { type: 'object', fields: { side: { type: 'string', required: true, effect: 'the sides[] id this unit fights for' }, ap: { type: 'integer', min: 0, max: 20 }, initiative: { type: 'number' }, speed: { type: 'number' }, aim: { type: 'number' }, defense: { type: 'number' }, actions: { type: 'list', of: { type: 'string' }, effect: 'action ids this unit may use (default: all)' } }, effect: 'a unit in turn-based play' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

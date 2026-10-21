@@ -18,6 +18,7 @@ export function xpToNext(curve, level) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['allocate'], progress: ['xp_gained', 'level_up'] },
     intent: 'XP and levels: an XP curve, level cap, stat points with per-point and per-level growth, XP sources keyed by events (with wildcards, level scaling and party sharing), level-up effects, and per-entity progress for party members.',
     views: ['any'],
     params: {

@@ -105,7 +105,7 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
   assert.equal(slime.components.faction, 'ooze', 'other_json components merge in');
   if (comps.health) assert.deepEqual(slime.components.health, { max: 5 }, 'nulls mean defaults and drop out');
   if (form.schema.schema.properties.spawns) assert.ok(doc.systems.some(s => (s.with?.rules || []).some(r => r.archetype === 'slime' && r.zone === zones.at(-1).id && r.count[1] === 3)));
-  assert.ok(doc.plot.storyboard.acts.length, 'an empty story keeps the scaffold\'s');
+  assert.equal(doc.plot.storyboard, undefined, 'no acts written means no story: never the scaffold\'s');
   const repaired = repairDocument(doc, { registry, logic });
   assert.ok(repaired.ok, JSON.stringify(repaired.errors.slice(0, 3)));
 });
@@ -147,8 +147,8 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   }
 });
 
-test('small forms: asked in parallel, only the failing form is re-asked, and a form failed twice escalates', async () => {
-  const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground' };
+test('small forms: asked in parallel; a repair re-asks only the failing fields (fieldForm); a form the default model fails twice escalates, even past the last round', async () => {
+  const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: '', narrative: true, mashup: [] } };
   const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
@@ -160,23 +160,34 @@ test('small forms: asked in parallel, only the failing form is re-asked, and a f
   const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } };
   const frame = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, player: { archetype: 'hero', zone: zones[0].id }, endings: [] };
   const items = [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }];
-  const reply = (cast, story = { acts: [] }) => req => {
+  // The story the model writes: reaching the second hall wins.
+  const story = { acts: [{ id: 'act_1', title: 'Escape', beats: [{ id: 'out', title: 'Out', when_json: JSON.stringify({ zone: zones[1].id }), after: [], optional: false, do_json: JSON.stringify([{ do: 'end_game', ending: 'victory' }]) }] }], dialogue: [], quests: [] };
+  const reply = cast => req => {
     const name = req.schema.name;
+    // A field form: each slot is one failing field, described by its form path.
+    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, cast[String(p.description).split(/[.[:]/)[0]] ?? null])));
     return JSON.stringify(name.endsWith('_frame') ? frame : name.endsWith('_systems') ? { systems: {}, extra_systems: [] } : name.endsWith('_cast') ? cast : story);
   };
-  // The cast is hollow twice: the frame, params and story are asked once, the cast three times (the third escalated).
+  // The cast is hollow twice (the whole form, then its failing field): the frame, params and story are asked once; the
+  // third try goes to the stronger writer, as a field form too. maxRounds 1 would end after the second try: the
+  // escalation still gets its round.
   const hollow = { archetypes: [], spawns: [], items, characters: [] };
   const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items, characters: [] };
   const writer = fakeWriter([reply(hollow)]), escalate = fakeWriter([reply(full)], { model: 'stronger' });
-  const r = await writeOutline({ writer, escalate, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false, maxRounds: 3 });
+  const r = await writeOutline({ writer, escalate, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false, maxRounds: 1 });
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
   const asked = writer.calls.map(c => c.schema.name.replace('game_outline_', ''));
   assert.deepEqual(asked.filter(n => n === 'frame').length, 1, 'the frame is written once');
-  assert.ok(asked.filter(n => n === 'cast').length === 2, `the cast is re-asked: ${asked.join(' ')}`);
-  assert.match(writer.calls.find((c, i) => i > 3 && c.schema.name.endsWith('_cast')).user, /\[content_missing\] content\.archetypes/, 'with only its problems');
-  assert.equal(escalate.calls.length, 1, 'the third try of the same form goes to the stronger writer');
+  assert.deepEqual(asked.filter(n => /^cast/.test(n)), ['cast', 'cast_fields'], `the cast, then only its failing field: ${asked.join(' ')}`);
+  const fieldCall = writer.calls.find(c => c.schema.name.endsWith('cast_fields'));
+  assert.deepEqual(Object.values(fieldCall.schema.schema.properties).map(p => p.description.split(':')[0]), ['archetypes'], 'only the failing path is sent back');
+  assert.match(fieldCall.user, /\[content_missing\] content\.archetypes/, 'with only its problems');
+  assert.doesNotMatch(fieldCall.user, /Fill ONLY this part/, 'not the whole small form');
+  assert.equal(escalate.calls.length, 1, 'after two failures of the default model the same field form goes to the stronger writer');
+  assert.match(escalate.calls[0].schema.name, /cast_fields$/);
   assert.equal(escalate.calls[0].effort, 'low');
   assert.ok(r.doc.content.archetypes.some(a => a.id === 'ghoul'));
+  assert.deepEqual(r.rounds.map(x => x.kind), ['procedural', 'model', 'model_repair', 'model_repair'], 'one round past maxRounds for the escalation');
   assert.ok(r.rounds.at(-1).groups.some(g => g.startsWith('cast*')), 'the round records the escalated form');
 });
 
@@ -252,12 +263,13 @@ test('repair synthesizes a required archetype component field from the owning ca
   assert.ok(Array.isArray(r.doc.content.archetypes.find(a => a.id === 'clockwork_guardian').components.ai.brain));
 });
 
-test('core mechanic primitives are never isolated: their errors reach the model, non-core ones may be isolated', () => {
+test('repair never removes a primitive to pass: a validate() error only the model can fix stays, for any primitive', () => {
   const { registry: reg, logic: lg } = testCatalogue([picky]);
   const doc = { schema: 'gameverse.v2.game/0.2', id: 'g', title: 'Plain', spaces: [{ id: 'w', use: 'engine.space.graph', zones: [{ id: 'a', exits: [] }] }], systems: [{ use: 'gameplay.test.picky' }, { use: 'plot.storyboard' }], plot: { storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'b', do: [{ do: 'end_game', ending: 'won' }] }] }] }, endings: [{ id: 'won', title: 'W', text: '', outcome: 'won' }] }, content: { archetypes: [{ id: 'hero', components: {} }] }, player: { archetype: 'hero', space: 'w', at: 'a' } };
-  const free = repairDocument(doc, { registry: reg, logic: lg, isolate: true });
-  assert.ok(free.ok && free.removed.some(r => r.use === 'gameplay.test.picky'));
-  const kept = repairDocument(doc, { registry: reg, logic: lg, isolate: true, protect: new Set(['gameplay.test.picky']) });
+  const free = repairDocument(doc, { registry: reg, logic: lg });
+  assert.ok(!free.ok && free.errors.some(e => e.code === 'picky_title'));
+  assert.deepEqual(free.removed, []);
+  const kept = repairDocument(doc, { registry: reg, logic: lg, protect: new Set(['gameplay.test.picky']) });
   assert.ok(!kept.ok && kept.errors.some(e => e.code === 'picky_title'));
   assert.ok(kept.doc.systems.some(s => s.use === 'gameplay.test.picky'));
   assert.deepEqual([...coreOf({ mechanics: [{ importance: 'core', primitives: ['gameplay.combat.melee'] }, { importance: 'supporting', primitives: ['gameplay.score'] }], systems: ['gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.score'] }, registry)].sort(), ['gameplay.combat.health', 'gameplay.combat.melee'], 'what a core primitive requires is core too');

@@ -24,6 +24,7 @@ export function respawn(rt, who) {
 export default {
   id: 'gameplay.checkpoint',
   card: {
+    loop: { verbs: ['fast_travel'], progress: ['checkpoint_set'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": true}}},

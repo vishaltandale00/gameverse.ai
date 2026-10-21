@@ -22,6 +22,7 @@ const FREE_MELEE = new Set(['idle', undefined]);
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['dash'], progress: ['counter_hit', 'knockdown', 'juggle_limit'] },
     intent: 'Fighting-game rules for one-on-one fighters on melee frame data: guard high/low/overhead by holding back, chip damage, counter hits, juggle limit, combo damage scaling, super meter, throws with tech and throw protection, wall push, screen separation, launches, knockdown and wakeup, and a walk/jump/dash fighter controller.',
     views: ['side'],
     params: {

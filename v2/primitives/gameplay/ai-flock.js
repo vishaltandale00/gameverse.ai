@@ -25,6 +25,7 @@ const FLOCK = {
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['flock_scatter'] },
     intent: 'Boids flocks (birds, fish, herds, swarms): separation, alignment, cohesion, wander, home leash, predator avoidance (player or archetypes) and look-ahead obstacle avoidance; ground herds or 3D flyers with an altitude band.',
     views: ['any'],
     params: {

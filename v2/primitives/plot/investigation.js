@@ -22,6 +22,7 @@ function find(rt, id) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['deduce'], progress: ['clue_found', 'deduced'] },
     // Section shapes this primitive reads (the planner's strict content form uses them).
     data: {
       'plot.clues': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } }, when: { type: 'predicate', effect: 'found automatically when this holds; else given by add_clue effects' } } } },

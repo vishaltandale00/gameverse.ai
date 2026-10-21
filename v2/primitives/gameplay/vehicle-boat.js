@@ -13,6 +13,7 @@ const SPEC = { maxSpeed: 60, accel: 8, turn: 35, drag: 0.7, draft: 0.4, planing:
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['docked', 'undocked'] },
     intent: 'Boat handling on water: buoyancy at the waterline with swell bob, planing above a speed, rudder authority that grows with flow, keel slip, beaching in shallows and docking in dock zones.',
     views: ['3p', 'td', 'iso'],
     params: {

@@ -18,6 +18,7 @@ function envelope(config, abilities = new Set()) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['dive', 'ascend', 'jump'], progress: ['swim_start', 'submerged'] },
     locomotion: 'modifier', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Swim, float and dive in liquid: buoyancy brings you to the surface, dive and ascend verbs move you underwater, breath runs down while the head is submerged and drowning damage follows, and jumping at the surface climbs out.',
     views: ['1p', '3p', 'side', 'td', 'iso'],

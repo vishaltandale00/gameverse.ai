@@ -13,6 +13,7 @@ const KEY = 'gameplay.combat.aim';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['aim', 'mark', 'execute'], progress: ['aim_shot', 'aim_marked'] },
     intent: 'Slow-motion aiming: enter aim mode (time.scale drops), queue or mark shots on targets with hit chances from distance, cover and aim stat, pay action points, then resolve them with seeded rolls (V.A.T.S. queue or Dead Eye marks).',
     views: ['1p', '3p', 'td'],
     params: {

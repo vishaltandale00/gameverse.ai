@@ -320,6 +320,7 @@ export function engine(ctx) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.species", "min": 4, "why": "battles are fought between species"},

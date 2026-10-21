@@ -14,6 +14,7 @@ const STATES = ['kickoff', 'play', 'goal', 'break', 'over', 'won', 'lost', 'draw
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
     // The player plays: it joins the first team when no team lists it.
     engage: { join: { param: 'teams', field: 'members' } },
     // Ball-sport mode: the player's team scores into goal zones against the other team before the clock runs out.

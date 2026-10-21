@@ -25,6 +25,7 @@ const maxDurability = def => def?.weapon?.durability ?? def?.armor?.durability ?
 export default {
   id: 'gameplay.equipment',
   card: {
+    loop: { verbs: ['equip', 'unequip'], progress: ['equipped'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "items", "min": 2, "why": "equipment needs gear items", "example": {"id": "iron_sword", "name": "Iron sword", "kind": "weapon", "weapon": {"damage": 3, "reach": 1.4, "arc": 90, "speed": 1}}},

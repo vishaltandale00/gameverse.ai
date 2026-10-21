@@ -18,6 +18,7 @@ const rotate = (v, a) => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.s
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'], progress: ['launched', 'explosion', 'contact'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "shots", "min": 3, "why": "the shot queue is what the player fires"},

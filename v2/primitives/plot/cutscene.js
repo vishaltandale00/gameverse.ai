@@ -18,6 +18,7 @@ export default {
   id: ID,
   solverKey,
   card: {
+    loop: { verbs: ['skip_cutscene'], progress: ['cutscene_end'] },
     intent: 'Scripted cutscenes from plot.cutscenes: camera moves, lines, scripted character moves, waits and effects, played by play_cutscene as timed steps (headless too) and skippable.',
     views: ['any'],
     params: {

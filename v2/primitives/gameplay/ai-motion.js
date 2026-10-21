@@ -35,6 +35,7 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['motion_step', 'motion_done', 'swallow'] },
     intent: 'Kinematic motion programs for movers (`motion` component): sequences of straight, sine, zigzag, dive, hover, turret, orbit, chase-steer, wander, split, snake, gravity-well, saucer, rock and spline-path steps, with arena/scroller variants and bounce/wrap/exit bounds. Ported from the shmup kit.',
     views: ['side', 'td', 'any'],
     params: {

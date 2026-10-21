@@ -4,10 +4,10 @@
 // procedurally from their params, the player and the first beat come up), so a
 // broken install is caught before publishing. A primitive whose install or early
 // step throws is identified directly (every install, system, event handler, action
-// and option provider is attributed to its primitive), removed with whatever
-// requires it, and the references it leaves dangling (story beats using its
-// vocabulary...) are neutralised by the deterministic repair, until the world
-// boots; it is reported as a gap. An empty cell world gets a fitting generator.
+// and option provider is attributed to its primitive) and reported as an error naming
+// it (install or step), for the model or the planner to fix: nothing is removed. Only
+// a caller that explicitly asks (maxIsolations > 0) gets the experimental removal of
+// the thrower with what requires it. An empty cell world gets a fitting generator.
 import { preflight } from '../kernel/document.js';
 import { createWorld } from '../kernel/world.js';
 import { hashOf } from '../server/store.js';
@@ -144,7 +144,7 @@ function withoutPrimitives(doc, registry, ids) {
  * @param {{ seed?: unknown, frames?: number, furnish?: boolean, maxIsolations?: number, protect?: Iterable<string> | null }} [opts]
  * @returns {FirstPlayable}
  */
-export function firstPlayable(input, registry, logic, { seed, frames = 3, furnish = true, maxIsolations = 6, protect = null } = {}) {
+export function firstPlayable(input, registry, logic, { seed, frames = 3, furnish = true, maxIsolations = 0, protect = null } = {}) {
   // protect: primitives of core mechanics, never isolated; a throw in one (or in what it needs) is an error for the model.
   const kept = new Set(protect || []);
   const started = performance.now();

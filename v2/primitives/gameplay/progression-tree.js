@@ -10,6 +10,7 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['unlock_perk'], progress: ['perk_unlocked'] },
     intent: 'Perk/skill tree: nodes with point costs, prerequisites, ranks and var modifiers (stat.*, hp.max, res.*.max); use-based nodes unlock from usage events; unlock_perk/reset_perks effects, `perk` predicate and an unlock verb.',
     views: ['any'],
     params: {

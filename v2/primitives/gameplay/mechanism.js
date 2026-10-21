@@ -85,6 +85,7 @@ const MECH_FIELDS = {
 export default {
   id: 'gameplay.mechanism',
   card: {
+    loop: { verbs: [], progress: ['triggered', 'opened', 'group_complete', 'timer_done'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "mechanisms", "min": 1, "why": "mechanisms (doors, lifts, switches) are what the player operates"},

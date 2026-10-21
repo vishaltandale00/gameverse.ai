@@ -9,6 +9,7 @@ const owned = (rt, who = 'player') => ((st(rt).owned ??= {})[who] ??= {});
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['ability_unlocked'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "abilities", "min": 2, "why": "abilities to unlock"},

@@ -11,6 +11,7 @@ const KEY = 'gameplay.combat.cover';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['cover'], progress: ['cover_enter'] },
     intent: 'Cover: snap to nearby walls, and ranged attacks from the covered side deal reduced damage at half cover and none at full cover (from the space los/coverAt cover levels).',
     views: ['3p', 'td', 'iso', 'board'],
     params: {

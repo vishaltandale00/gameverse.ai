@@ -1,29 +1,28 @@
 // @ts-check
-// Layer 1 of ARCHITECTURE.md §4: the outline document. A procedural skeleton is
-// built from the decomposition and the primitive selection (zero model calls;
-// valid by construction after deterministic repair). With a writer, the model
-// rewrites that skeleton into the real outline (premise, characters, act/beat
-// skeleton, zone graph, primitive instances and params), and each draft is
-// preflighted; errors go to the deterministic repair first and the rest back
-// to the model, by stable code, for a bounded number of rounds.
+// Layer 1 of ARCHITECTURE.md §4: the outline document. The preset composes the structure from what the selected
+// primitives declare (presets.js; zero model calls). With a writer, the model fills the content and tuning through
+// small strict forms, and each draft is preflighted, booted and gated; errors go to the deterministic repair first
+// (which fixes fields and never removes a primitive) and the rest back to the model, field by field, for a bounded
+// number of rounds. What still fails is reported exactly, for the planner to re-plan (replan.js).
 import { readFileSync, readdirSync } from 'node:fs';
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
 import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
-import { outlineForm, formPath, groupOfPath } from './outline-form.js';
+import { outlineForm, formPath, groupOfPath, fieldForm } from './outline-form.js';
 import { preset, coreOf, zoneStart, wireCore } from './presets.js';
-import { isAvatar, modeOf } from './modes.js';
+import { isAvatar } from './play-spec.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
+import { applySkins } from './adapters.js';
 import { parseReply } from './writer.js';
 import { configureGenerators, furnishWorld, worldProblems } from './world.js';
 import { coreLoopProblems } from './core-loop.js';
 import { verifyDocument, newErrors, newErrorCodes, newProblems, staticPlot } from './verify-adapter.js';
-import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.js';
+import { isObj, isList, isStr, obj, list, objects, str, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Effect} Effect */
@@ -59,18 +58,19 @@ import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.j
 /** @typedef {import('./world.js').WorldFix} WorldFix */
 /** @typedef {import('./world.js').WorldProblem} WorldProblem */
 /**
- * proceduralOutline's result: `doc` is a Doc exactly when `ok` (else the repaired draft).
- * @typedef {{ errors: import('../kernel/types.js').Problem[], fixes: Array<Fix | WorldFix>, removed: Removed[],
+ * proceduralOutline's result: `doc` is a Doc exactly when `ok` (else the repaired draft). `structure` reports what the
+ * collection composed; `st` is the composition itself (its win and losses, re-wired into every model draft).
+ * @typedef {{ errors: import('../kernel/types.js').Problem[], fixes: Array<Fix | WorldFix>, removed: Removed[], gaps: import('./presets.js').PresetGap[], structure: Record<string, unknown>, st: import('./presets.js').Structure,
  *   world: { added: Array<{ space: unknown, use: string, problems: string[] }>, problems: WorldProblem[] } | null } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} ProceduralOutline
  */
 /**
- * One model round's repaired draft. `ok` means `doc` passed repair, boot and isolation (it is then a Doc).
+ * One model round's repaired draft. `ok` means `doc` passed repair and boot (it is then a Doc).
  * @typedef {{ ok: boolean, doc: unknown, errors: Array<import('../kernel/types.js').Problem | PlayableProblem>, fixes: Fix[], removed: Array<Removed | Removal> }} DraftRepair
  */
 /**
  * writeOutline's result: `doc` is a Doc exactly when `ok`.
  * @typedef {{ source: string | null, rounds: OutlineRound[], firstPassOk: boolean | null, modelMs: number, removed: Array<Removed | Removal>, errors: ProblemLike[],
- *   verification?: Verification, isolated?: boolean, fellBack?: boolean, content?: ContentProblem[], contentComplete?: boolean, structure?: unknown } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
+ *   verification?: Verification, content?: ContentProblem[], contentComplete?: boolean, structure?: unknown } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
  */
 
 export const OUTLINE_VERSION = 'outline/0.1';
@@ -80,8 +80,9 @@ const STOP = new Set('a an the of in on with and or to for from by as at is are 
 const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 
 /**
- * The procedural skeleton: the preset the play spec and the chosen cards compose (presets.js). Without a play spec
- * it is the story preset (zones visited in act order, gated progression, a finale), as before.
+ * The procedural structure: the preset the selected primitives' declarations and the play spec compose (presets.js).
+ * It authors no story, cast or content: those are the model's (the offline mode publishes it only when the
+ * collection needs none).
  */
 /** @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec @returns {ProceduralOutline} */
 export function proceduralOutline(spec) { return /** @type {ProceduralOutline} */ (/** @type {unknown} */ (preset(spec))); }
@@ -99,7 +100,7 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
   const attempts = [];
   // Agency is an avatar's question: without one, the player acts through the mode (moves, cards, cells), whose options
   // exist once the model has written its content. Nothing to add here, and no reason to change the space.
-  if (decomposition.core && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
+  if (decomposition.core?.interaction && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
   let current = selection;
   /** @type {string[]} */
   let excluded = [];
@@ -107,7 +108,10 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
   const kept = (/** @type {{ systems: string[] }} */ sel) => new Set(sel.systems);
   for (let i = 0; i < tries; i++) {
     const o = proceduralOutline({ decomposition, selection: current, registry, logic, seed, prompt });
-    const fp = o.ok ? firstPlayable(engageDocument(o.doc, registry, logic).doc, registry, logic, { seed }) : null;
+    // A structure that does not validate yet lacks content the model writes (crops, pieces, a story): agency is then
+    // the publish gate's question on the written game (cannot_act), not a reason to change the world or report a gap.
+    if (!o.ok) return { selection: current, attempts: [...attempts, { spaces: current.spaces.map(s => s.use), options: null, ok: false }], agency: null };
+    const fp = firstPlayable(engageDocument(o.doc, registry, logic).doc, registry, logic, { seed });
     attempts.push({ spaces: current.spaces.map(s => s.use), options: fp?.options ?? null, ok: Boolean(fp?.ok) });
     if (fp?.ok && (fp.options ?? 0) > 0) return { selection: current, attempts, agency: true };
     // The space may be right and only movement missing: add the movement primitive that fits it best (a card with a
@@ -247,43 +251,47 @@ const isDocShape = x => isObj(x) && (Array.isArray(x.spaces) || x.schema === DOC
  *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms, ... }], firstPassOk, modelMs, removed, content, errors }
  * The model fills the outline form (strict schema from the chosen cards). Each draft is converted, repaired by code,
  * furnished, populated (deterministic placement), engaged, booted and gated by the playtest agent; what is still wrong
- * (preflight errors, crashes, static plot errors, missing content) goes back to the model as targeted problems.
- * The published outline is always the model's draft: when no draft can be made to run, the result is ok:false with the
- * reason (no substitution with the procedural skeleton). Without a writer the procedural outline is the explicit
- * offline mode. Primitives of core mechanics are never isolated.
+ * (preflight errors, crashes, static plot errors, missing content) goes back to the model as targeted problems: a
+ * repair round re-asks only the failing fields (fieldForm), or a small form whose failing parts have no field slot.
+ * Nothing is isolated, dropped or substituted to make a draft pass: every primitive of the collection is kept (repair
+ * fixes fields; a primitive that throws at boot is a problem for the model, naming it). When no draft passes within
+ * the rounds, the result is ok:false with the exact problems (and what of the core they leave missing), for the
+ * planner to re-plan. A form the default model fails twice is asked of the escalation writer (that form only), with
+ * a round to check its answer. Without a writer the preset is the explicit offline mode.
  * @param {{ writer?: Writer | null, prompt: string, answers?: Array<{ question?: unknown, answer?: unknown }>, decomposition: Decomposition, selection: Selection,
  *   registry: RegistryLike, logic: LogicLike, seed: number, maxRounds?: number, verify?: boolean, verifyBudgetMs?: number, playtestMs?: number,
  *   protect?: Set<string> | null, forms?: 'split' | 'single', escalate?: Writer | null }} args
  * @returns {Promise<OutlineResult>}
  */
 export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null, forms = 'split', escalate = null }) {
-  // The core: mechanics' gameplay/plot primitives and the play spec's mode (and the primitive its params live on).
-  const keep = protect || coreOf({ ...selection, mode: decomposition.core ? modeOf(registry, decomposition.core.mode) : null }, registry);
+  // The core: the core mechanics' gameplay/plot primitives (and what they require).
+  const core = protect || coreOf(selection, registry);
   /** @param {Doc} doc @returns {Promise<Gate & { problems: VerifyProblem[], v: Verification }>} */
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
-    const core = coreLoopProblems(doc, selection?.mechanics, registry);
+    const coreProblems = coreLoopProblems(doc, selection?.mechanics, registry);
     const v = await verifyDocument(doc, registry, logic, { budgetMs: verifyBudgetMs, playtestMs });
-    const problems = [...core, ...(v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability ?? 'verification reported no viability', severity: 'error', hint: 'the game must run without crashing' },
+    const problems = [...coreProblems, ...(v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability ?? 'verification reported no viability', severity: 'error', hint: 'the game must run without crashing, the player must act, and the loop its primitives declare must happen from play' },
       ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)])];
-    return { viable: Boolean(v.viable) && !core.length, problems, v };
+    return { viable: Boolean(v.viable) && !coreProblems.length, problems, v };
   };
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
   if (skeleton.ok) skeleton.doc = engageDocument(skeleton.doc, registry, logic).doc;
   /** @type {OutlineRound[]} */
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
-  if (!writer) return { ...(skeleton.ok ? { doc: skeleton.doc, ok: skeleton.ok } : { doc: skeleton.doc, ok: skeleton.ok }), source: 'procedural', rounds, firstPassOk: skeleton.ok, modelMs: 0, removed: skeleton.removed, errors: skeleton.errors };
-  // The skeleton is a Doc when it is ok; otherwise it is the repaired draft, read through guards.
-  const skeletonSpace = list(prop(skeleton.doc, 'spaces'))[0];
-  const fallbackSpace = { id: prop(skeletonSpace, 'id'), use: prop(skeletonSpace, 'use'), with: prop(skeletonSpace, 'with') || {} };
+  if (!writer) return { ...(skeleton.ok ? { doc: skeleton.doc, ok: skeleton.ok } : { doc: skeleton.doc, ok: skeleton.ok }), structure: skeleton.structure, source: 'procedural', rounds, firstPassOk: skeleton.ok, modelMs: 0, removed: skeleton.removed, errors: skeleton.errors };
   // The form and the prompts frame the model on the scaffold. The skeleton is built procedurally (never model output):
   // when repair rejected it, it is still the procedural draft, in the document's shape.
   const scaffold = /** @type {Doc} */ (skeleton.doc);
-  const form = outlineForm({ registry, skeleton: scaffold, selection });
+  // The form asks for every primitive of the collection, not those the structure took out for the play spec (with why).
+  const out = new Set(list(prop(skeleton.structure, 'removed')).map(r => prop(r, 'use')));
+  const form = outlineForm({ registry, skeleton: scaffold, selection: { ...selection, systems: selection.systems.filter(id => !out.has(id)) } });
   const system = outlineSystem(registry, logic, selection, form);
   const base = outlineUser({ prompt, answers, decomposition, selection, skeleton: scaffold });
-  const skeletonPlot = verify ? await staticPlot(scaffold, logic) : { problems: [] };
+  // The draft's static plot problems all count: the structure has no story of its own to compare against.
+  /** @type {{ problems: VerifyProblem[] }} */
+  const skeletonPlot = { problems: [] };
   let user = base, modelMs = 0;
   /** @type {boolean | null} */
   let firstPassOk = null;
@@ -296,34 +304,51 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   /** @type {ProblemLike[] | null} */
   let lastProblems = null;
   // Small forms (forms 'split'): every group is its own short strict call, all of a wave in parallel; a repair round
-  // re-asks only the groups its problems point at, with only those problems. A group the spec model fails twice is
-  // retried once on the escalation writer (effort low). forms 'single' asks the whole form in one call.
+  // re-asks only the failing fields of the groups its problems point at (fieldForm), or the whole small form when a
+  // failing part has no field slot. forms 'single' asks the whole form in one call.
   /** @type {Record<string, unknown>} */
   let merged = {};
   /** @type {Record<string, number>} */
   const failures = {};
-  /** @type {Array<{ group: string, ms: number, model: string | null, escalated?: boolean, error?: string }>} */
+  /** @type {Set<string>} */
+  const escalated = new Set();
+  /** @type {Array<{ group: string, ms: number, model: string | null, escalated?: boolean, fields?: number, error?: string }>} */
   let calls = [];
   const groups = forms === 'split' ? form.groups : [];
   /** Ids the other parts use, so a small form keeps references consistent. */
-  const known = () => JSON.stringify({ zones: list(prop(merged, 'spaces')).length ? null : undefined, archetypes: list(prop(merged, 'archetypes')).map(a => prop(a, 'id')), items: list(prop(merged, 'items')).map(a => prop(a, 'id')), characters: list(prop(merged, 'characters')).map(a => prop(a, 'id')),
+  const known = () => JSON.stringify({ archetypes: list(prop(merged, 'archetypes')).map(a => prop(a, 'id')), items: list(prop(merged, 'items')).map(a => prop(a, 'id')), characters: list(prop(merged, 'characters')).map(a => prop(a, 'id')),
     zonesByScaffold: scaffold.spaces.map(sp => ({ space: sp.id, zones: (sp.zones || []).map(z => z.id) })) });
-  /** @param {import('./outline-form.js').FormGroup} g @param {ProblemLike[]} problems */
-  const askGroup = async (g, problems) => {
+  /** The cast wave 1 wrote (and the scaffold's own), for the story form's enums. */
+  const cast = () => ({
+    characters: [...list(prop(merged, 'characters')).map(a => prop(a, 'id')), ...list(scaffold.plot?.characters).map(a => prop(a, 'id'))].filter(isStr),
+    archetypes: [...list(prop(merged, 'archetypes')).map(a => prop(a, 'id')), ...list(scaffold.content?.archetypes).map(a => prop(a, 'id'))].filter(isStr),
+    items: [...list(prop(merged, 'items')).map(a => prop(a, 'id')), ...list(scaffold.content?.items).map(a => prop(a, 'id'))].filter(isStr),
+  });
+  /** @param {import('./outline-form.js').FormGroup} g0 @param {ProblemLike[]} problems @param {Doc | unknown} draft the draft the problems' paths are in */
+  const askGroup = async (g0, problems, draft) => {
     const t0 = performance.now();
+    const g = g0.id === 'story' ? form.storyGroup(cast()) || g0 : g0;
     const w = (failures[g.id] || 0) >= 2 && escalate ? escalate : writer;
+    if (w === escalate) escalated.add(g.id);
     const current = Object.fromEntries(g.keys.map(k => [k, prop(merged, k)]).filter(([, v]) => v !== undefined));
+    // Field-level repair: only the failing fields go back (each slot holds that field's schema, its enums included).
+    const paths = problems.map(p => formPath(p.path, draft)).filter(fp => fp && groupOfPath([g], fp));
+    const ff = problems.length && paths.length === problems.length ? fieldForm(g.schema, paths) : null;
+    const fields = ff && ff.slots.length && !ff.unresolved.length ? ff : null;
     // Sections a content pack already fills: the model themes them (names, flavour, which ones), keeping the numbers valid.
     const pack = g.keys.filter(k => k.startsWith('section_')).map(k => { const [root, key] = k.slice(8).split('_'); return prop(prop(scaffold, root), key); }).find(v => v !== undefined);
-    const ask = `${base}
+    const ask = fields
+      ? `${base}\n\nFix ONLY these fields of the outline (use these ids where you refer to other parts: ${known()}). Each failed checks:\n${describeProblems(problems, null)}\nCurrent values:\n${JSON.stringify(Object.fromEntries(fields.slots.map(s => [s.path, valueAt(merged, s.path)]))).slice(0, 8000)}`
+      : `${base}
 
 Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are written separately; keep zone ids from the scaffold and use these ids where you refer to other parts: ${known()}).${pack !== undefined ? `\nA mechanically valid default is provided; keep its ids and numbers valid, theme its names and flavour to the idea, and add or drop entries only as the idea needs:\n${JSON.stringify(pack).slice(0, 6000)}` : ''}${problems.length ? `\n\nYour previous answer for this part failed checks (fix each one):\n${describeProblems(problems, null)}\nPrevious answer:\n${JSON.stringify(current).slice(0, 12000)}` : ''}`;
     try {
-      const reply = await /** @type {Writer} */ (w).complete({ system, user: ask, schema: g.schema, ...(w === escalate ? { effort: 'low' } : {}) });
+      const reply = await /** @type {Writer} */ (w).complete({ system, user: ask, schema: fields ? fields.schema : g.schema, ...(w === escalate ? { effort: 'low' } : {}) });
       const part = parseReply(reply.text);
       model = reply.model;
-      if (isObj(part)) for (const k of g.keys) if (part[k] !== undefined) merged[k] = part[k];
-      calls.push({ group: g.id, ms: reply.ms ?? Math.round(performance.now() - t0), model: reply.model || null, ...(w === escalate ? { escalated: true } : {}) });
+      if (fields) merged = fields.apply(merged, part);
+      else if (isObj(part)) for (const k of g.keys) if (part[k] !== undefined) merged[k] = part[k];
+      calls.push({ group: g.id, ms: reply.ms ?? Math.round(performance.now() - t0), model: reply.model || null, ...(w === escalate ? { escalated: true } : {}), ...(fields ? { fields: fields.slots.length } : {}) });
       return { ok: true, value: part };
     } catch (error) {
       calls.push({ group: g.id, ms: Math.round(performance.now() - t0), model: null, error: String(prop(error, 'message') || error).slice(0, 120) });
@@ -332,7 +357,10 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
   };
   /** @type {Map<string, ProblemLike[]>} */
   let pending = new Map();
-  for (let round = 0; round <= maxRounds; round++) {
+  /** @type {unknown} */
+  let pendingDraft = null;
+  let limit = maxRounds;
+  for (let round = 0; round <= limit; round++) {
     /** @type {unknown} */
     let value;
     const t = performance.now();
@@ -340,7 +368,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     if (groups.length) {
       // Round 0 asks every group (wave 1 in parallel, then wave 2); later rounds only the groups with problems.
       const todo = round === 0 ? groups : groups.filter(g => pending.has(g.id));
-      for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [])));
+      for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [], pendingDraft)));
       const ms = calls.reduce((m, c) => Math.max(m, c.ms), 0);
       modelMs += ms;
       // A writer that answers with a whole document (older prompts and fakes) is a draft as is.
@@ -369,12 +397,15 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
     keepPlayer(draft, skeleton.doc);
-    // The core loop's wiring is code's: whatever the model wrote, the mode applies and its win/lose end the game.
-    Object.assign(draft, wireCore(draft, decomposition, registry).doc);
+    keepCollection(draft, skeleton.doc);
+    // The collection's loop wiring is code's: whatever the model wrote, the declared win and losses end the game.
+    Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
     for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
-    const result = repairDocument(draft, { registry, logic, fallbackSpace, protect: keep });
+    // Every primitive the draft uses is kept: repair fixes fields; what it cannot fix goes back as a problem.
+    const keep = new Set([...core, ...list(draft.systems).map(x => prop(x, 'use')).filter(isStr).filter(id => registry.has(id))]);
+    const result = repairDocument(applySkins(/** @type {any} */ (draft), registry), { registry, logic, protect: keep });
     /** @type {DraftRepair} */
     const repaired = result;
     /** The draft while it is still valid (repaired.ok), for the gate. @type {Doc | null} */
@@ -392,18 +423,16 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
       // Archetypes the draft defines but never puts in the world are placed zone by zone (deterministic).
       const p = placeContent(doc, registry); doc = p.doc; placed = p.added;
       doc = engageDocument(doc, registry, logic).doc;
-      // Boot it (ms): a primitive that throws is isolated with what pointed at it, unless it is a core mechanic's;
-      // then the error (naming the primitive, install or step) goes to the model.
-      const fp = firstPlayable(doc, registry, logic, { seed, furnish: false, protect: keep });
-      if (fp.ok && fp.removed.length && fp.doc) { doc = fp.doc; repaired.removed = [...(repaired.removed || []), ...fp.removed]; }
-      else if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
+      // Boot it (ms): a primitive that throws is never isolated; the error (naming the primitive, install or step) goes to the model.
+      const fp = firstPlayable(doc, registry, logic, { seed, furnish: false, protect: keep, maxIsolations: 0 });
+      if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
       repaired.doc = doc;
       if (repaired.ok) playable = doc;
     }
     const fixes = repaired.fixes.length;
     if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
     /** @type {OutlineRound} */
-    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}${c.fields ? `[${c.fields}]` : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
     rounds.push(entry);
     last = repaired;
     /** @type {ProblemLike[]} */
@@ -433,18 +462,22 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
       problems = g.viable ? [...staticNew, ...unfinished, ...content] : [...(g.problems || []), ...staticNew];
     } else problems = [...repaired.errors, ...populateProblems(repaired.doc, registry).slice(0, 8)];
     lastProblems = problems;
-    if (round === maxRounds) break;
     if (groups.length) {
       // Field-level repair: each problem goes to the small form that owns its slot; unplaced problems to the cast and params.
       pending = new Map();
+      pendingDraft = repaired.doc;
       for (const pr of problems) {
         const g = groupOfPath(groups, formPath(pr.path || '', repaired.doc)) || null;
         const ids = g ? [g.id] : ['cast', 'systems'];
         for (const id of ids) if (groups.some(x => x.id === id)) pending.set(id, [...(pending.get(id) || []), pr]);
       }
       for (const id of pending.keys()) failures[id] = (failures[id] || 0) + 1;
+      // A form the default model failed twice goes to the escalation writer; it gets that round even after the last one.
+      if (round === limit && escalate && limit === maxRounds && [...pending.keys()].some(id => (failures[id] || 0) >= 2 && !escalated.has(id))) limit++;
+      if (round === limit) break;
       continue;
     }
+    if (round === limit) break;
     user = `${base}
 
 Your previous outline failed ${repaired.ok ? (entry.viable === false ? 'verification' : 'the content and plot checks') : 'preflight'} with these problems (stable codes; fix each one in the form):
@@ -453,29 +486,31 @@ Previous outline (your form):
 ${JSON.stringify(value).slice(0, 30000)}
 Return the corrected complete form.`;
   }
-  if (best) return { doc: best.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
-  // The model's last draft is often one non-core primitive away from running: isolate it (reported as a gap), but
-  // never a core mechanic's primitive, and keep it only if it passes the same gate.
-  if (last?.doc) {
-    const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true, protect: keep });
-    const fp = isolated.ok ? firstPlayable(isolated.doc, registry, logic, { seed, furnish: false, protect: keep }) : null;
-    const loss = isolated.ok && fp?.ok ? coreLossProblems(fp.doc ?? isolated.doc, [...(last.removed || []), ...isolated.removed, ...(fp.removed || [])], selection?.mechanics, keep, last.errors) : [];
-    if (loss.length) { rounds.push({ kind: 'isolate', ok: false }); lastProblems = loss; }
-    else if (isolated.ok && fp?.ok) {
-      /** @type {Gate} */
-      const g = verify ? await gate(isolated.doc) : { viable: true };
-      rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
-      if (g.viable) return { doc: isolated.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
-      lastProblems = g.problems || null;
-    } else rounds.push({ kind: 'isolate', ok: false });
-  }
-  // No substitution: the procedural skeleton is a scaffold, never the shipped game. Nothing playable came out.
-  // What the last draft could not keep of the core is named (mechanic, primitive, failing fields), not just the raw errors.
-  if (last?.doc && !lastProblems?.some(p => prop(p, 'code') === 'core_degraded')) {
-    const loss = coreLossProblems(last.doc, last.removed || [], selection?.mechanics, keep, last.errors);
-    if (loss.length) lastProblems = [...loss, ...(lastProblems || last.errors || [])];
-  }
-  return { doc: last?.doc || skeleton.doc, ok: false, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || [], errors: lastProblems?.length ? lastProblems : (last?.errors || [{ code: 'no_draft', path: '$', message: 'the model returned no usable outline' }]) };
+  if (best) return { doc: best.doc, ok: true, structure: skeleton.structure, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
+  // No substitution, no isolation: the procedural skeleton is a scaffold, never the shipped game. Nothing playable
+  // came out, so the problems are reported as they are, with what of the core the last draft could not keep
+  // (mechanic, primitive, failing fields) named first for the planner to re-plan.
+  const loss = last?.doc ? coreLossProblems(last.doc, last.removed || [], selection?.mechanics, core, last.errors) : [];
+  const errors = [...loss, ...(lastProblems?.length ? lastProblems : last?.errors?.length ? last.errors : [{ code: 'no_draft', path: '$', message: 'the model returned no usable outline' }])];
+  return { doc: last?.doc || skeleton.doc, ok: false, structure: skeleton.structure, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || [], errors };
+}
+
+/** The value at a form path in a filled form (for a field-form re-ask). @param {unknown} form @param {string} path */
+function valueAt(form, path) {
+  /** @type {unknown} */
+  let v = form;
+  String(path).replace(/\["([^"]*)"\]|\[(\d+)\]|([^.[\]]+)/g, (_, q, i, n) => { v = i !== undefined ? (Array.isArray(v) ? v[Number(i)] : undefined) : prop(v, q !== undefined ? q : n); return ''; });
+  return v;
+}
+/**
+ * The collection is code's: a draft that leaves out a primitive the structure chose (a core loop, an adapter that
+ * realises a mashup relation, the win owner) gets the structure's instance back, with its configuration.
+ * @param {Record<string, unknown>} draft the model's draft (unchecked) @param {unknown} skeleton
+ */
+function keepCollection(draft, skeleton) {
+  if (!Array.isArray(draft.systems)) return;
+  const have = new Set(draft.systems.map(s => prop(s, 'use')));
+  for (const s of list(prop(skeleton, 'systems'))) if (!have.has(prop(s, 'use'))) draft.systems.push(structuredClone(s));
 }
 
 /**

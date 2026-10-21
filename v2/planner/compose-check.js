@@ -42,8 +42,9 @@
 //              adapts.relation = 'union' | 'nested' | 'skin' names the play-spec mashup relation it realises.
 //              Preflight (v2/kernel/document.js) applies the same rules. planner/adapters.js resolveAdapters
 //              turns an incompatible-needs-adapter verdict into adapter instances (or adapterSignature gaps).
-//   mode       card.mode = { loop, interaction, opponent, space, needs: { content, participants }, win: { param },
-//                lose: { param }, bot } on a mechanic's primitive. The `mode` check confirms, for a selection or
+//   mode       card.loop = { verbs, progress, win, lose, needs } and card.mode = { loop, interaction, opponent, space,
+//                needs: { content, participants }, win: { param }, lose: { param }, bot } (the richer form), read
+//                merged (loop.js cardLoop) on any primitive that declares either. The `mode` check confirms, for a selection or
 //                a document: every core mechanic (selection.mechanics importance 'core') has a primitive;
 //                mode.needs.content document sections ('content.cards') are declared by a card and non-empty in
 //                the document (or opts.content, the content form), while entries without a '.' are world
@@ -69,6 +70,7 @@ import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 import { OUTLINE_AUTHORS } from './world.js';
+import { cardLoop } from './loop.js';
 import { list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
@@ -551,9 +553,12 @@ export function checkComposition(input, registry, opts = {}) {
     const nonEmpty = (/** @type {unknown} */ v) => isList(v) ? v.length > 0 : isObj(v) ? Object.keys(v).length > 0 : false;
     const inputs = known.filter(u => u.use.startsWith('engine.input.'));
     for (const u of known) {
-      const c = /** @type {Card} */ (cardOf(registry, u.use)), md = /** @type {Record<string, any> | undefined} */ (c.mode);
+      // The loop declaration: card.loop merged over card.mode (the richer form), as loop.js reads it.
+      const c = /** @type {Card} */ (cardOf(registry, u.use));
+      const malformed = ['loop', 'mode'].find(k => c[k] !== undefined && !isObj(c[k]));
+      if (malformed) { hole('mode', { card: u.use, field: `card.${malformed}`, code: 'mode_malformed', message: `card.${malformed} must be an object` }); continue; }
+      const md = /** @type {Record<string, any> | null} */ (cardLoop(c));
       if (!md) continue;
-      if (!isObj(md)) { hole('mode', { card: u.use, field: 'card.mode', code: 'mode_malformed', message: 'card.mode must be an object' }); continue; }
       const s = spaces.get(u.space);
       const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || [])].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
       // needs.content: document sections (declared, non-empty) and world content (generators / adapters).

@@ -29,6 +29,7 @@ export function toPoint(api, at) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['departed', 'arrived'] },
     intent: 'NPC daily routines: character schedule slots by hour (zone, spot, activity); NPCs walk to each slot (through the brain `work` behavior or on their own), are placed there instantly when offscreen, report arrivals and departures, and expose the activity through the `doing` predicate; set_schedule replaces a routine.',
     views: ['any'],
     params: {

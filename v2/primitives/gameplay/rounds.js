@@ -13,6 +13,7 @@ const PHASES = ['waiting', 'intro', 'fight', 'ko', 'round_end', 'match_end'];
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['ko', 'round_end', 'match_end'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "fighters", "min": 2, "why": "a match needs the player and an opponent (entity ids or archetypes)", "example": ["player", "rival"]},

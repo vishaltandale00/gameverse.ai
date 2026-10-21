@@ -24,6 +24,7 @@ function envelope(config, abilities = new Set(), ctx = {}) {
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['mount', 'call', 'sprint'], progress: ['mounted'] },
     intent: 'Mounts: ride creatures with walk/trot/gallop gaits and a stamina meter, build bond while riding (untamed mounts buck until bonded), jump while mounted, and call your mount to you from within range. Any entity with a `mount` component can be ridden.',
     views: ['3p', 'td', 'iso', 'side'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

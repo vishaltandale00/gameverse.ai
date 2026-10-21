@@ -8,7 +8,8 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
-import { modeOf } from './modes.js';
+import { cardLoop } from './loop.js';
+import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
 
@@ -25,12 +26,12 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
 /** A decomposed mechanic with what selection made of it. @typedef {Mechanic & { candidates: Candidate[], primitives: string[], source: string, score: number }} SelectedMechanic */
 /** A chosen space: instance id, primitive, its configuration, the role it plays and the capabilities it then provides. @typedef {{ id: string, use: string, with: Record<string, unknown>, role: string, caps: string[] }} SpaceChoice */
 /** @typedef {{ id: string, missing: string[], why: string }} Unmet */
-/** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/** @typedef {import('./compose-check.js').AdapterInstance} AdapterInstance */
 /**
- * An uncovered mechanic. 'adapter' gaps name the primitive no chosen space can host and the adapter that would
+ * An uncovered mechanic ('win': the collection declares no way to win). 'adapter' gaps name the primitive no chosen space can host and the adapter that would
  * project it (`signature` a one-line description; `adapter` compose-check's adapter card when it produced one).
- * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
+ * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter' | 'win', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
  */
 /** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null, gap?: string }} LocomotionResult */
 /** @typedef {{ mechanic: string, added?: string, removed?: string, gap?: boolean, why: string }} MappingChange */
@@ -54,6 +55,7 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null }} completeness
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
+ * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
  * @property {number} ms
  */
 
@@ -262,15 +264,34 @@ const DECIDE = 'Which listed primitive implements this mechanic as the game need
  * Whole-catalogue mapping: the model sees every gameplay/engine/plot card (id + intent) and maps each
  * mechanic to the primitives that implement it. Word overlap can't know that "rings" are collectibles or
  * that "tetromino" means falling pieces; the model can, so it is the primary selector when available.
- * Returns { [mechanicId]: { primitives: [ids], covered: bool, why } } or null.
- * @param {{ writer?: Writer | null, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
+ * Returns { [mechanicId]: { primitives: [ids], covered: bool, why } }; null without a writer (the offline mode). A writer that
+ * fails every attempt throws (status 422, code selection_failed): the lexical ranking never stands in for it.
+ * @param {{ writer?: Writer | null, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void, attempts?: number }} options
  * @returns {Promise<Record<string, MechanicMapping> | null>}
  */
-export async function mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log = () => {} }) {
+export async function mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log = () => {}, attempts = 2 }) {
   if (!writer?.complete) return null;
+  /** @type {string[]} */
+  const failed = [];
+  for (let i = 0; i < Math.max(1, attempts); i++) {
+    const r = await mapOnce({ writer, decomposition, mechanics, cards, registry, log, retry: failed[failed.length - 1] || null });
+    if (r.ok) return r.mapping;
+    failed.push(r.error);
+  }
+  // A connected model that cannot map the mechanics fails selection with what it said; the lexical ranking is the
+  // offline mode only, never a substitute for a failing model.
+  throw Object.assign(Error(`Mapping the mechanics onto the catalogue failed after ${failed.length} attempt(s): ${failed.join('; ')}`), { status: 422, code: 'selection_failed', attempts: failed });
+}
+
+/**
+ * One mapping call. -> { ok: true, mapping } | { ok: false, error }
+ * @param {{ writer: Writer, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log: (msg: string) => void, retry: string | null }} options
+ * @returns {Promise<{ ok: true, mapping: Record<string, MechanicMapping> } | { ok: false, error: string }>}
+ */
+async function mapOnce({ writer, decomposition, mechanics, cards, registry, log, retry }) {
   const index = cards.map(c => `${c.id}: ${String(c.intent || '').replace(/\s+/g, ' ').slice(0, 170)}`).join('\n');
   const system = 'You map game mechanics onto a fixed catalogue of composable game primitives. Each primitive is general: "collectible" covers rings, coins, pellets, gems; "falling.pieces" covers Tetris/tetrominoes/falling blocks; "move.lanes" covers endless-runner lanes; a space covers travel inside it. For every mechanic, list the primitive ids (exact ids from the catalogue) that together implement it, most important first. Only say covered=false when no combination of catalogue primitives could implement it. Use only ids that appear in the catalogue.';
-  const user = `Game idea: ${decomposition.premise}\n\nMechanics:\n${mechanics.map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nCatalogue:\n${index}`;
+  const user = `Game idea: ${decomposition.premise}\n\nMechanics:\n${mechanics.map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nCatalogue:\n${index}${retry ? `\n\nYour previous answer failed (${retry}): map every mechanic by its id.` : ''}`;
   const schema = { name: 'mechanic_map', schema: { type: 'object', additionalProperties: false, required: ['mappings'], properties: { mappings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'primitives', 'covered', 'why'], properties: { mechanic: { type: 'string' }, primitives: { type: 'array', items: { type: 'string' } }, covered: { type: 'boolean' }, why: { type: 'string' } } } } } } };
   try {
     const reply = await writer.complete({ system, user, schema });
@@ -281,22 +302,24 @@ export async function mapWithCatalogue({ writer, decomposition, mechanics, cards
       const ids = strings(m.primitives).filter(id => registry.has(id) && !isGraphics(id));
       out[String(m.mechanic)] = { primitives: [...new Set(ids)], covered: Boolean(m.covered) && ids.length > 0, why: String(m.why || '').slice(0, 200) };
     }
-    return Object.keys(out).length ? out : null;
-  } catch (error) { log(`catalogue mapping failed: ${messageOf(error)}`); return null; }
+    const unmapped = mechanics.filter(m => !out[m.id]).map(m => m.id);
+    if (!Object.keys(out).length || unmapped.length) return { ok: false, error: `no mapping for ${unmapped.join(', ') || 'any mechanic'}` };
+    return { ok: true, mapping: out };
+  } catch (error) { log(`catalogue mapping failed: ${messageOf(error)}`); return { ok: false, error: String(messageOf(error) || error).slice(0, 160) }; }
 }
 
 /**
- * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[] }} options
+ * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[], attempts?: number }} options
  * @returns {Promise<Selection>}
  */
-export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [] }) {
+export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [], attempts = 2 }) {
   const started = performance.now();
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
   // primitives, source and score are set for every mechanic in the loop below (in this key order).
   /** @type {SelectedMechanic[]} */
   const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
-  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log });
+  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log, attempts });
   /** @type {Record<string, DecisionAnswer> | null} */
   let decided = null;
   /** @type {string | null} */
@@ -343,9 +366,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     m.primitives.forEach(id => chosen.add(id));
     if (!pick) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: m.candidates.length ? `closest primitives (${m.candidates.slice(0, 3).map(c => c.id).join(', ')}) don't implement it` : 'no primitive covers it' });
   }
-  // Foundations every document can use: the story runner (reads plot.storyboard) and whatever registers the item vocabulary.
+  // Foundations: the story runner (reads plot.storyboard) only when the play spec says the idea has a story told in
+  // acts (an undecided spec leaves it to the mechanics' mapping), and whatever registers the item vocabulary.
   const vocab = vocabIndex(registry);
-  for (const c of cards) if ((c.reads || []).includes('plot.storyboard')) { chosen.add(c.id); break; }
+  if (decomposition.core?.narrative === true) for (const c of cards) if ((c.reads || []).includes('plot.storyboard')) { chosen.add(c.id); break; }
   for (const k of ['give_item']) if (vocab.effects[k]) chosen.add(vocab.effects[k]);
   // Requirements closure and conflicts.
   for (let changed = true; changed;) {
@@ -362,14 +386,16 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     if (input) chosen.add(input.id);
   }
 
-  // The play spec's mode declares the spaces its loop is made for. When one of them shows the idea's views (a card table
-  // for a ui-only card battle, a board for chess), it is the world: primitives it cannot host become adapter gaps below
-  // rather than pulling the game into another space. A mode space that does not show the idea's views (a 3D game
-  // whose mode lists tile spaces) is not forced.
-  const modeSpaces = /** @type {any[]} */ (decomposition.core?.mode ? modeOf(registry, decomposition.core.mode)?.space : null) || [];
+  // The core loops declare the spaces they are made for (card.loop / card.mode space). The first core primitive (in the
+  // idea's order) played the way the play spec says (its declared interaction) and declaring a registered space that
+  // shows the idea's views (a card table for a ui-only card battle, a board for chess) makes it the world: primitives
+  // it cannot host become adapter gaps below rather than pulling the game into another space. A declared space that
+  // does not show the idea's views, or a loop the spec does not say is played that way, is not forced.
   const wantViews = decomposition.views || [];
-  const modeSpace = (Array.isArray(modeSpaces) ? modeSpaces : []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
-    && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)));
+  const playedAs = decomposition.core?.interaction || null;
+  const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(l => l && playedAs && l.interaction === playedAs);
+  const modeSpace = coreLoops.map(l => (l?.space || []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
+    && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)))).find(Boolean);
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
   const lockOut = modeSpace ? registry.ids('engine').filter(id => isSpace(id) && id !== modeSpace) : [];
@@ -377,22 +403,28 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // A primitive no chosen space can host stays the user's intent: a core mechanic's primitive becomes an adapter gap
   // (the gap layer writes the adapter that projects it onto the space, gated by tests and the playtest agent), never
   // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
-  const composition = unmet.length ? await compositionCheck() : null;
+  /** @type {AdapterInstance[]} */
+  const adapters = [];
   for (const u of unmet) {
     chosen.delete(u.id);
+    // A registered adapter that projects what the space lacks keeps the primitive: its instance (with its config)
+    // joins the selection and the primitive is bound to the adapter's region (adapters.js resolveAdapters).
+    /** @type {import('./adapters.js').AdapterResolution | null} */
+    let r = null;
+    try { r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind, adapters }, registry); } catch { r = null; }
+    if (r?.verdict === 'compatible-via-adapter') {
+      chosen.add(u.id); Object.assign(bind, r.bind);
+      for (const a of r.adapters) if (!adapters.some(x => x.use === a.use && x.space === a.space && x.id === a.id)) adapters.push(a);
+      continue;
+    }
     // An adapter projects a primitive onto a space that lacks what it needs; when NO registered space provides it,
     // the missing piece is a space capability (a capability gap), not an adapter.
     const hostable = registry.ids('engine').filter(isSpace).some(id => spaceVariants(registry, id).some(v => u.missing.every(c => v.caps.has(c))));
     const core = hostable && mechanics.some(m => m.importance === 'core' && m.primitives.includes(u.id));
-    /** @type {CompositionResult | null} */
-    let verdict = null;
-    /** @type {import('./compose-check.js').Selection & { primitive: string }} */
-    const probe = { spaces, systems: [...chosen, u.id], primitive: u.id };
-    if (core && composition) try { verdict = composition(probe, registry); } catch { verdict = null; }
-    // compose-check's signature is an adapter card (AdapterSpec), not text: the gap keeps it as `adapter` and
-    // describes the adapter in one line.
-    const adapter = verdict?.signature || undefined;
-    const signature = isStr(adapter) ? adapter : `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})`;
+    // The adapter that would fix it (adapterSignature, an AdapterSpec card) goes to the gap layer; it is described in one line.
+    const adapter = r?.gaps[0] || r?.before.signature || undefined;
+    const signature = `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})${adapter?.id ? ` as ${adapter.id}` : ''}`;
+    const verdict = r ? { verdict: r.verdict } : null;
     for (const m of mechanics) if (m.primitives.includes(u.id)) {
       m.primitives = m.primitives.filter(x => x !== u.id);
       if (core && m.importance === 'core') gaps.push({ mechanic: m.id, description: `needs adapter: ${signature}`, importance: 'core', kind: 'adapter', primitive: u.id, signature, ...(adapter ? { adapter } : {}), verdict: verdict?.verdict || 'incompatible-needs-adapter', why: `${u.id} needs ${u.missing.join(', ')}, which ${spaces[0]?.use || 'the space'} does not provide; an adapter primitive can project it` });
@@ -448,7 +480,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
@@ -456,15 +488,6 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
 const order = id => id.startsWith('engine.') ? 0 : id.startsWith('gameplay.') ? 1 : 2;
 
 // ---------- selection completeness ----------
-
-/** compose-check.js (v2-static-composition) when present: checkComposition(selection, registry) -> { verdict, missing, adapter, signature }. */
-/** @type {typeof import('./compose-check.js') | null | undefined} */
-let composeMod;
-/** @returns {Promise<typeof import('./compose-check.js').checkComposition | null>} */
-async function compositionCheck() {
-  if (composeMod === undefined) composeMod = await import('./compose-check.js').catch(() => null);
-  return typeof composeMod?.checkComposition === 'function' ? composeMod.checkComposition : null;
-}
 
 /** @param {{ views?: string[] }} decomposition @returns {string | null} */
 const primaryOf = decomposition => (decomposition.views || []).find(v => v !== 'ui') || null;
@@ -512,7 +535,7 @@ export function baseLocomotion(registry, { caps = [], view = null, medium = null
  * locomotion in the wrong medium (flying through a walking dungeon) is replaced by one in the right medium; an idea
  * whose avatar moves but has no base locomotion gets one. movement 'none' (cards, boards, falling pieces) adds nothing.
  * Mutates `chosen` and the mechanics' primitive lists; returns what it did.
- * @param {{ decomposition: { views?: string[], movement?: string, core?: { interaction?: string } | null }, registry: RegistryLike, chosen: Set<string>, space: SpaceChoice | undefined, mechanics?: SelectedMechanic[] }} options
+ * @param {{ decomposition: { views?: string[], movement?: string, core?: { interaction?: string | null } | null }, registry: RegistryLike, chosen: Set<string>, space: SpaceChoice | undefined, mechanics?: SelectedMechanic[] }} options
  * @returns {LocomotionResult}
  */
 export function locomotionCompleteness({ decomposition, registry, chosen, space, mechanics = [] }) {
@@ -540,7 +563,9 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
   const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => cardOf(id).medium && cardOf(id).medium !== medium));
   if (medium === 'none' || (left.length && !wrongMedium)) return out;
   const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left, interaction }).find(c => !medium || c.medium === medium || !c.medium);
-  if (!best) { if (!left.length) out.gap = `no base movement fits ${space.id || 'the space'}${interaction ? ` for ${interaction}` : ''}${medium ? ` (${medium})` : ''}`; return out; }
+  // A space that navigates its own places (travel between zones) moves the avatar itself; agency is then checked on the
+  // built game (ensureAgency, the publish gate). Otherwise no fitting base movement is a gap.
+  if (!best) { if (!left.length && !space.caps.includes('navigate')) out.gap = `no base movement fits ${space.id || 'the space'}${interaction ? ` for ${interaction}` : ''}${medium ? ` (${medium})` : ''}`; return out; }
   if (wrongMedium) for (const id of left) drop(id);
   chosen.add(best.id); out.added = best.id;
   const host = mechanics.find(m => m.importance === 'core' && /\b(move|walk|run|jump|explor|navigat|travel|climb|platform|roam|fly|swim|drive)\w*/i.test(`${m.verb} ${m.description}`)) || mechanics.find(m => m.importance === 'core');

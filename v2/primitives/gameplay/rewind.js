@@ -12,6 +12,7 @@ const ID = 'gameplay.rewind';
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['rewind'], progress: ['rewind_start'] },
     intent: 'Time rewind: hold rewind to step the world back through a bounded history (positions, components, spawns, vars, flags, cell edits), with per-entity immunity, a shadow echo that replays undone movement, charges and cooldowns.',
     views: ['any'],
     params: {

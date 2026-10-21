@@ -62,6 +62,7 @@ const countCheck = (field) => (e, path, errors) => { if (e.count !== undefined &
 export default {
   id: 'gameplay.inventory',
   card: {
+    loop: { verbs: [], progress: ['item_gained', 'item_transferred'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "items", "min": 2, "why": "an inventory needs items to hold", "example": {"id": "brass_key", "name": "Brass key", "kind": "key"}},

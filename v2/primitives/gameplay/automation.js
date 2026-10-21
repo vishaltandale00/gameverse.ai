@@ -16,6 +16,7 @@ const dirOf = d => (typeof d === 'string' ? DIRS[d] : v3(d));
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['item_produced', 'item_delivered'] },
     intent: 'Factory automation on editable cells: conveyor belts with item spacing and back-pressure, inserters, recipe machines with buffers, item sources and sinks, layout read from the cell grid and its edit log, and per-item throughput vars.',
     views: ['td', 'iso', '3p'],
     params: {

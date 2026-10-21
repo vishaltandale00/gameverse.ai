@@ -174,6 +174,7 @@ function reachedBy(set, sp, e) {
 export default {
   id: 'gameplay.interact',
   card: {
+    loop: { verbs: ['interact'], progress: ['interacted', 'used', 'read'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { interact: { type: 'object', fields: { prompt: { type: 'string' }, range: { type: 'number', min: 0 }, kind: { type: 'string' }, id: { type: 'string', effect: 'interactable id (used:<id> events)' } }, effect: 'something the player can use' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

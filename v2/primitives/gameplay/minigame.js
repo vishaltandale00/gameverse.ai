@@ -20,6 +20,7 @@ const RESULTS = ['won', 'lost', 'quit'];
 export default {
   id: ID,
   card: {
+    loop: { verbs: ['mg_press', 'mg_input'], progress: ['minigame_hit', 'minigame_end'], win: { param: 'games.onWin', scope: 'encounter' }, lose: { param: 'games.onLose', scope: 'encounter' } },
     intent: 'Sub-mode launcher: starts a minigame (timing bar, input sequence, button mash, or a custom mode in its own space), freezes the main world while it runs, and returns the player with win/lose effects. Fishing, lockpicking, hacking, QTEs, card duels and battle screens.',
     views: ['any'],
     params: {

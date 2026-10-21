@@ -10,6 +10,7 @@ const KEY = 'gameplay.combat.target';
 export default {
   id: KEY,
   card: {
+    loop: { verbs: ['lock', 'cycle'], progress: ['locked', 'target_switched'] },
     intent: 'Lock-on targeting: pick the best hostile in range and view with line of sight, cycle targets, keep facing the locked target for strafing, switch on death and break with distance.',
     views: ['3p', '1p', 'td', 'side'],
     params: {
