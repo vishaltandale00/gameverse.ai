@@ -112,7 +112,8 @@ function pixelCanvas(H, key, spec, anim, f, outline, white) {
   H.pixelCache ??= new Map();
   const k = `${key}|${anim}|${f}|${outline}|${white ? 1 : 0}`;
   if (H.pixelCache.has(k)) return H.pixelCache.get(k);
-  const fr = pixelFrame(spec, anim, f, { outline, shading: H.cfg.sprite?.shading !== false, flash: white ? 1 : 0 });
+  const sp = H.cfg.sprite || {};
+  const fr = pixelFrame(spec, anim, f, { outline, shading: sp.shading !== false, flash: white ? 1 : 0, outlineWidth: sp.outlineWidth, bands: sp.bands, palette: sp.palette });
   const c = surface(fr.w, fr.h), g = ctx2d(c);
   let out = null;
   if (g) {

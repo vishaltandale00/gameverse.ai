@@ -165,7 +165,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   return ctx.publish({
     doc: painted ? { ...doc, art: painted.art } : doc,
     stage: previousContent ? `revision: ${job.change}` : 'playable',
-    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: [...renamedNote, ...(unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' }))], route: route || null, revisionCheck, changes: revisionCheck?.summary || [], artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
+    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: [...renamedNote, ...(unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' }))], route: route || null, revisionCheck, changes: revisionCheck?.summary || [], artDesign: inputs.design, ...(painted ? { art: painted.report, quality: { art: painted.quality } } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
     provenance: { pipeline: KIT_PIPELINE_VERSION, kit: kit.id, kitVersion: kit.version, model: reply?.model || 'offline', seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, contentHash: hashOf(content) },
   });
 }

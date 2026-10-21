@@ -8,8 +8,9 @@ import { MATERIALS, SURFACES, PLATFORMS } from './tiles.js';
 import { THEMES, TIMES } from './scenery.js';
 import { FEATURES, DEPTHS, normalizeFeatures } from './features.js';
 import { hex } from './color.js';
+import { LOOK_SCHEMA, LOOK_PRESET_NAMES, resolveLook, presetFor } from './look.js';
 
-export const DIRECTION_SCHEMA_ID = 'gameverse.v2.art-direction/0.1';
+export const DIRECTION_SCHEMA_ID = 'gameverse.v2.art-direction/0.2';
 export const TARGETS = ['style', 'scenery', 'tiles', 'player', 'enemy', 'pickup', 'hazard', 'goal'];
 export const FONTS = ['pixel', 'rounded', 'bold', 'serif', 'hand'];
 
@@ -30,6 +31,7 @@ const prop = role => obj({ kind: en(PROPS[role]), color });
 export const DIRECTION_SCHEMA = obj({
   style: en(['pixel', 'vector']),
   styleLabel: { type: 'string' },
+  look: LOOK_SCHEMA,
   font: en(FONTS),
   scenery: obj({ theme: en(THEMES), time: en(TIMES), sky: { type: 'array', items: color }, land: color,
     features: { type: 'array', description: 'Parts of the environment, composed on the theme: e.g. leafy-forest (dense, far and mid) with falling-leaves; street with traffic and pedestrians in front of a skyline with neon-signs.', items: obj({ kind: en(FEATURES), density: { type: 'number', description: '0.05 sparse … 1 packed' }, depth: en(DEPTHS) }) } }),
@@ -42,6 +44,7 @@ export const DIRECTION_SCHEMA = obj({
 export const DIRECTION_PROMPT = `You are the art director for a 2D game. Code draws every asset from your description, so choose parts and colors that make each thing instantly recognizable at small size and cohesive as a set.
 
 - style: "pixel" for pixel-art or retro requests (16-bit, 8-bit, SNES), otherwise "vector" (clean cartoon). styleLabel: a short phrase like "crisp 16-bit pixel art".
+- look: the art style as rules every asset follows. Pick look.preset from the idea, theme and any style the player asked for: ${LOOK_PRESET_NAMES.join(', ')}. 8-bit for NES-era or chiptune retro; 16-bit for SNES-era or plain "pixel art"; coarse-pixel for lo-fi chunky pixels; monochrome-pixel for four-shade handheld looks; layered-silhouette for moody, misty or shadowy worlds; minimal-geometric for abstract, calm or puzzle ideas; neon-vector for synthwave, cyber, space-arcade or glowing worlds; bold-comic for punchy cartoon action (the default for clean cartoon); rubber-hose for 1930s vintage cartoons; black-figure for ancient Greek myth and pottery. style must agree: pixel presets are "pixel", the rest "vector". Leave every other look field null unless the player asked for something specific (a palette, thicker outlines, no outlines, more glow); then set only that field.
 - font: title typography that fits the tone.
 - scenery: the background world. Compose it from features on top of the theme: static ones (leafy-forest, pine-forest, palms, bushes, flowers, tall-grass, skyline, houses, street, street-lamps, neon-signs, bridge, mountains, hills, cliffs, river, lake, ocean, waterfall, castle, ruins, windmills, fences, market-stalls) and moving ones animated live (traffic, pedestrians, birds, falling-leaves, fireflies, rain, snow, fog, drifting-clouds, embers, bubbles, train). Requests about environments map here: "leafy forests" → leafy-forest dense at far and mid plus falling-leaves; "busy city streets" → street, traffic dense, pedestrians, skyline, street-lamps. sky: three hex colors top, middle, horizon. land: the main color of distant hills, rock or buildings (an earthy or stone color that differs clearly from the sky, never another sky blue).
 - tiles: material is the soil or wall body; surface is the walkable top layer; platform is floating blocks. Ground and platforms must contrast with each other and with the sky.
@@ -64,9 +67,12 @@ export function normalizeDirection(input = {}) {
   const d = input || {};
   const pick = (v, list, def) => list.includes(v) ? v : def;
   const propOf = (role, def) => ({ kind: pick(d[role]?.kind, PROPS[role], def), color: hex(d[role]?.color, undefined) });
+  // The look decides pixel or vector when it names a preset; otherwise the style picks the look's preset.
+  const look = resolveLook(d.look, { style: d.style });
   return {
     schema: DIRECTION_SCHEMA_ID,
-    style: pick(d.style, ['pixel', 'vector'], 'vector'),
+    style: d.look?.preset && LOOK_PRESET_NAMES.includes(d.look.preset) ? (look.pixel ? 'pixel' : 'vector') : pick(d.style, ['pixel', 'vector'], look.pixel ? 'pixel' : 'vector'),
+    look,
     styleLabel: typeof d.styleLabel === 'string' && d.styleLabel ? d.styleLabel.slice(0, 80) : 'clean cartoon vector art',
     font: pick(d.font, FONTS, 'rounded'),
     scenery: { features: normalizeFeatures(d.scenery?.features), theme: pick(d.scenery?.theme, THEMES, 'meadow'), time: pick(d.scenery?.time, TIMES, 'day'), sky: Array.isArray(d.scenery?.sky) && d.scenery.sky.length === 3 && d.scenery.sky.every(c => hex(c)) ? d.scenery.sky.map(c => hex(c)) : null, land: hex(d.scenery?.land, undefined) },
@@ -82,7 +88,7 @@ export function mergeDirection(previous, revised, forced = []) {
   const next = { ...previous };
   const incoming = normalizeDirection(revised);
   for (const t of changed) {
-    if (t === 'style') { next.style = incoming.style; next.styleLabel = incoming.styleLabel; next.font = incoming.font; }
+    if (t === 'style') { next.style = incoming.style; next.styleLabel = incoming.styleLabel; next.font = incoming.font; next.look = incoming.look; }
     else next[t] = incoming[t];
   }
   return { direction: next, changed: [...changed] };
@@ -132,8 +138,10 @@ export function fallbackDirection(design = {}) {
   const cast = design.cast || {}, text = `${design.title} ${design.pitch} ${design.artStyle}`.toLowerCase();
   const theme = THEMES.find(t => text.includes(t)) || (/ice|frost|winter|penguin/.test(text) ? 'snow' : /lava|fire|volcan/.test(text) ? 'volcano' : /dungeon|cave|mine/.test(text) ? 'cave' : /space|star|galax/.test(text) ? 'space' : /city|urban|street/.test(text) ? 'city' : /spook|haunt|ghost/.test(text) ? 'haunted' : /sand|desert/.test(text) ? 'desert' : 'meadow');
   const tiles = { snow: ['snow', 'snow', 'ice'], volcano: ['lava-rock', 'stone', 'stone'], cave: ['stone', 'moss', 'stone'], space: ['tech', 'metal', 'tech'], city: ['brick', 'stone', 'metal'], haunted: ['stone', 'moss', 'wood'], desert: ['sand', 'sand', 'wood'], factory: ['metal', 'metal', 'metal'], candy: ['candy', 'frosting', 'cloud'] }[theme] || ['dirt', 'grass', 'brick'];
+  const preset = presetFor(`${design.artStyle} ${design.title} ${design.pitch} ${theme}`);
   return normalizeDirection({
     style: /pixel|8-bit|16-bit|retro/.test(text) ? 'pixel' : 'vector', styleLabel: design.artStyle,
+    look: preset ? { preset } : null,
     font: /pixel|retro/.test(text) ? 'pixel' : 'rounded',
     scenery: { theme, time: /night|dark|spook/.test(text) ? 'night' : /sunset|dusk/.test(text) ? 'sunset' : 'day' },
     tiles: { material: tiles[0], surface: tiles[1], platform: tiles[2], groundColor: design.palette?.ground, surfaceColor: undefined, platformColor: design.palette?.platform },

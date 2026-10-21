@@ -32,12 +32,16 @@ export default {
       outline: { type: 'string', default: 'auto', effect: "outline color: a hex, 'auto' (a dark of the sprite's own color) or 'none'" },
       shadow: { type: 'boolean', default: true, effect: 'soft ground shadow under every entity' },
       shading: { type: 'boolean', default: true, effect: 'top-left light ramp on each part' },
+      outlineWidth: { type: 'integer', default: 1, min: 1, max: 2, unit: 'px', effect: "outline rings around each sprite (an art look's outline width)" },
+      bands: { type: 'integer', default: 3, min: 1, max: 4, effect: "shading tones per part (an art look's bands; 1 = flat)" },
+      palette: { type: 'list', default: [], of: { type: 'string' }, effect: "a locked palette (an art look's colors) every sprite pixel snaps to" },
     },
     reads: ['content.models'],
   },
   validate(config, doc) {
     const errs = [];
     if (!['auto', 'none'].includes(config.outline) && !isHex(config.outline)) errs.push({ code: 'flat_color', path: 'outline', message: `'${config.outline}' is not a hex color, 'auto' or 'none'` });
+    (config.palette || []).forEach((c, i) => { if (!isHex(c)) errs.push({ code: 'flat_color', path: `palette[${i}]`, message: `'${c}' is not a hex color` }); });
     return errs.concat(checkPixelModels(doc));
   },
   install(rt, config) {

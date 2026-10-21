@@ -6,7 +6,7 @@
 // Units: a 100×100 box, facing right, feet on y = 97. Angles are degrees from
 // straight down; positive swings forward (toward +x).
 import { defs as makeDefs, document, f, pt, smoothPath } from './svg.js';
-import { hex, light, shade, outlineOf, mix } from './color.js';
+import { hex, light, shade, outlineOf, mix, inkOf } from './color.js';
 
 export const BODIES = ['biped', 'quadruped', 'blob', 'flyer', 'robot', 'ghost'];
 export const PARTS = {
@@ -84,10 +84,11 @@ const rad = d => d * Math.PI / 180;
 const dirOf = a => [Math.sin(rad(a)), Math.cos(rad(a))];
 function joint([x, y], angle, length) { const [dx, dy] = dirOf(angle); return [x + dx * length, y + dy * length]; }
 
-function painter(look, { soft = false, outlineWidth = 2.4 } = {}) {
-  const d = makeDefs('c');
-  const O = outlineOf(mix(look.colors.primary, '#000000', 0.35));
-  const W = outlineWidth;
+/** opts.ink: an art look's outline { mode, width (box units) }; opts.shading: its cel bands (svg.js defs). */
+function painter(look, { soft = false, outlineWidth = 2.4, ink = null, shading = null } = {}) {
+  const d = makeDefs('c', shading);
+  const O = ink ? inkOf(ink.mode, look.colors.primary) : outlineOf(mix(look.colors.primary, '#000000', 0.35));
+  const W = ink ? ink.width : outlineWidth;
   const fill = color => d.cel(color, { soft });
   return {
     d, O, W,
@@ -434,10 +435,11 @@ const PLANS = { biped, quadruped, blob, flyer, robot, ghost };
 /**
  * Paint one character pose as an SVG document.
  * `pixel` renders at a small natural size with crisp edges for the pixel-art look.
+ * An art look (art/look.js paintOptions) adds `size`, `ink` (outline mode and width) and `shading` (cel bands).
  */
-export function paintCharacter(lookInput, pose = 'idle', { pixel = false, size } = {}) {
+export function paintCharacter(lookInput, pose = 'idle', { pixel = false, size, ink = null, shading = null } = {}) {
   const look = normalizeLook(lookInput);
-  const { P, body } = PLANS[look.body](look, pose, { soft: false, outlineWidth: pixel ? 3.2 : 2.4 });
+  const { P, body } = PLANS[look.body](look, pose, { soft: false, outlineWidth: pixel ? 3.2 : 2.4, ink, shading });
   const px = size || (pixel ? 64 : 256);
   return document({ width: px, height: px, viewBox: '0 0 100 100', defs: P.d.toString(), body: `<g>${body}</g>`, crisp: pixel });
 }

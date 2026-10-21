@@ -37,7 +37,7 @@ export function paintFeatures(features, ctx) {
 }
 
 const n = (density, max) => Math.max(1, Math.round(max * density));
-const tint = (c, ctx) => mix(c, ctx.haze, ctx.atmos);
+const tint = (c, ctx) => mix(c, ctx.haze, Math.min(0.95, ctx.atmos * (ctx.hazeK ?? 1)));
 
 function canopy(r, x, y, size, color, night) {
   // A broadleaf crown: overlapping lobes with a lit upper side and a shaded underside.

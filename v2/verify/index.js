@@ -111,6 +111,7 @@ export { verifyPlot, staticPlot, beatStructure, solverProblems } from './plot.js
 export { verifySpatial, movementEnvelope } from './spatial.js';
 export { playtest, replayPlay, progressTimeline } from './playtest.js';
 export { quality, QUALITY_CODES, QUALITY_THRESHOLDS } from './quality.js';
+export { artQuality, ART_QUALITY_CODES, ART_QUALITY_TOLERANCE } from './art-quality.js';
 export { checkInvariants, stepChecker, findNonFinite } from './invariants.js';
 export { strategies, register as registerStrategy, select as selectStrategies } from './strategies/index.js';
 export { runArc, arcScore, levelScore, AGENTS as ARC_AGENTS } from './arc.js';

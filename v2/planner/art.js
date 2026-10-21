@@ -6,6 +6,7 @@
 import { createHash } from 'node:crypto';
 import { tilesetTemplate } from './png.js';
 import { isStr, messageOf, obj, objects, prop, str } from '../kernel/guards.js';
+import { resolveLook, describeLook } from '../art/look.js';
 
 /** @typedef {import('./arcade-pipeline.js').PipelineContext} PipelineContext */
 /** @typedef {{ kind: string, target: string, transparent: boolean, size: string, prompt: string, template?: boolean }} ArtPrompt */
@@ -27,10 +28,18 @@ export const TILESET_LAYOUT = { cols: 2, rows: 2, inset: 0.06, cells: { groundTo
 /** @type {Record<string, string>} */
 const ROLES = { player: 'player', collectible: 'pickup', enemy: 'enemy', hazard: 'hazard', goal: 'goal' };
 
-/** @param {unknown} input the game design (model output, DESIGN_SCHEMA) @param {ArtSpecInput} spec @returns {Record<string, ArtPrompt>} */
+/** The style text for image prompts: the design's art style, plus the declared look's rules when the design carries one
+ * (art/look.js). Image models cannot be palette-locked afterwards, so the look is spelled out.
+ * @param {Record<string, unknown>} design */
+export function styleText(design) {
+  const style = str(design.artStyle) || 'crisp 16-bit pixel art';
+  return design.look ? `${style}. Art rules: ${describeLook(resolveLook(design.look))}` : style;
+}
+
+/** @param {unknown} input the game design (model output, DESIGN_SCHEMA; an optional `look` adds its rules) @param {ArtSpecInput} spec @returns {Record<string, ArtPrompt>} */
 export function artPrompts(input, spec) {
   const design = obj(input);
-  const style = design.artStyle || 'crisp 16-bit pixel art';
+  const style = styleText(design);
   const side = design.view !== 'topdown';
   const cast = obj(design.cast);
   const facing = side ? 'side view, facing right, full body' : 'top-down view seen from above at a slight angle, full body';
@@ -146,7 +155,7 @@ export function createArtGenerator({ apiKey, model = 'gpt-image-1-mini', quality
     const artRecord = await ctx.publish({ doc: { ...spec, art: result }, stage: 'art', report: { ...obj(record.report), art: { model, generated: done, reused: Object.keys(prompts).length - todo.length } }, provenance: { ...obj(record.provenance), art: { model, quality } } });
 
     // Animation: pose frames for the player and enemies, edited from their base sprites.
-    const style = obj(design).artStyle || 'crisp 16-bit pixel art';
+    const style = styleText(obj(design));
     const facing = obj(design).view !== 'topdown' ? 'Side view, facing right' : 'Top-down view at a slight angle';
     /** @type {{ kind: string, name: string, posePrompt: string, file: string, hash: string }[]} */
     const jobs = [];

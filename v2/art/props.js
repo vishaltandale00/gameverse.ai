@@ -1,7 +1,7 @@
 // Procedural props: pickups, hazards and goals, in the same outlined,
 // cel-shaded style as the characters. Units: a 64×64 box.
 import { defs as makeDefs, document, f, pt } from './svg.js';
-import { hex, light, shade, outlineOf } from './color.js';
+import { hex, light, shade, outlineOf, inkOf } from './color.js';
 
 export const PROPS = {
   pickup: ['ring', 'coin', 'gem', 'star', 'heart', 'fruit', 'key', 'orb', 'mushroom', 'crystal', 'feather', 'battery', 'flower', 'scroll', 'candy', 'acorn', 'shell', 'note'],
@@ -18,8 +18,8 @@ const PROP_DEFAULT_COLOR = {
   flag: '#e8402a', goalpost: '#3a7bd5', door: '#9a6a3a', portal: '#9b5cff', chest: '#b0763a', trophy: '#f5c542', castle: '#b9c3cf', beacon: '#3ad0e8', 'exit-sign': '#3fbf5a', nest: '#9a6a3a',
 };
 
-function kit(color, soft) {
-  const d = makeDefs('p'), O = outlineOf(color), W = 2;
+function kit(color, soft, ink = null, shading = null) {
+  const d = makeDefs('p', shading), O = ink ? inkOf(ink.mode, color) : outlineOf(color), W = ink ? ink.width : 2;
   return {
     d, O, W,
     s: (path, c = color, extra = '') => `<path d="${path}" fill="${d.cel(c, { soft })}" stroke="${O}" stroke-width="${W}" stroke-linejoin="round"${extra}/>`,
@@ -85,11 +85,11 @@ const DRAW = {
   nest: (k, c) => k.s('M6 40Q32 66 58 40Q50 50 32 50Q14 50 6 40Z') + k.s('M24 26A9 12 0 1 1 23.9 26Z', '#fff4e0') + k.s('M38 28A8 11 0 1 1 37.9 28Z', '#e8f4ff'),
 };
 
-/** Paint a prop. kind is one of PROPS[role]; color overrides the default. */
-export function paintProp(kind, { color, pixel = false, size } = {}) {
+/** Paint a prop. kind is one of PROPS[role]; color overrides the default. An art look adds size, ink and shading. */
+export function paintProp(kind, { color, pixel = false, size, ink = null, shading = null } = {}) {
   const draw = DRAW[kind] || DRAW.gem;
   const c = hex(color, PROP_DEFAULT_COLOR[kind] || '#f5c542');
-  const k = kit(c, false);
+  const k = kit(c, false, ink, shading);
   const body = draw(k, c);
   const px = size || (pixel ? 32 : 128);
   return document({ width: px, height: px, viewBox: '0 0 64 64', defs: k.d.toString(), body, crisp: pixel });

@@ -69,12 +69,15 @@ function skyline(r, baseY, color, lit, n) {
 /**
  * Paint a background. opts.theme ∈ THEMES, opts.time ∈ TIMES; colors optional.
  * Returns a standalone SVG string (natural size 1536×1024, or 384×256 for pixel style).
+ * An art look adds `size` (natural width), `shading` and `depth` ({ layers 2..6, haze 0..1, fog 0..1 }).
  */
-export function paintScenery(input = {}, { pixel = false, seed = 'scenery' } = {}) {
+export function paintScenery(input = {}, { pixel = false, seed = 'scenery', size: natural, shading = null, depth = null } = {}) {
   const theme = THEMES.includes(input.theme) ? input.theme : 'meadow';
   let time = TIMES.includes(input.time) ? input.time : 'day';
   if (theme === 'space' || theme === 'cave') time = 'night';
-  const r = rng(`${seed}|${theme}|${time}`), d = makeDefs('s');
+  const r = rng(`${seed}|${theme}|${time}`), d = makeDefs('s', shading);
+  // An art look's depth: how many layers are drawn (sky + 1..5) and how strongly distance hazes them (0.5 = the default ramp).
+  const layers = depth ? Math.max(2, Math.min(6, Math.round(depth.layers))) : 6, hazeK = depth ? Math.min(1.9, Math.max(0, depth.haze) * 2) : 1;
   const sky = input.sky?.length === 3 ? input.sky.map((c, i) => hex(c, SKIES[time][i])) : (THEME_SKY[theme] || SKIES[time]);
   // Land must read as land: reject a land color whose hue sits on the sky's (blue hills under a blue sky).
   const hsl = c => rgbToHsl(hexToRgb(c));
@@ -83,8 +86,8 @@ export function paintScenery(input = {}, { pixel = false, seed = 'scenery' } = {
   const land = input.land && !(hueGap < 35 && ls > 0.25 && ss > 0.25 && !['ocean', 'sky', 'space', 'snow'].includes(theme)) ? hex(input.land, THEME_LAND[theme]) : THEME_LAND[theme];
   const foliage = FOLIAGE[theme] || land;
   const haze = sky[2];
-  const far = (k) => mix(land, haze, k); // atmospheric perspective
-  const farFoliage = (k) => mix(foliage, haze, k);
+  const far = (k) => mix(land, haze, Math.min(0.95, k * hazeK)); // atmospheric perspective
+  const farFoliage = (k) => mix(foliage, haze, Math.min(0.95, k * hazeK));
   const out = [`<rect width="${W}" height="${H}" fill="${d.linear([[0, sky[0]], [0.55, sky[1]], [1, sky[2]]])}"/>`];
   const night = time === 'night';
 
@@ -126,19 +129,23 @@ export function paintScenery(input = {}, { pixel = false, seed = 'scenery' } = {
   }
 
   // Mid and near layers.
+  // Layers past the look's count are skipped (each still draws its random numbers, so the rest stay put).
+  const layer = (n, svg) => (n <= layers ? svg : '');
   if (!['cave', 'space', 'ocean', 'sky', 'city', 'factory'].includes(theme)) {
-    out.push(`<path d="${ridge(r, H * 0.66, 14)}" fill="${far(0.45)}"/>`);
+    out.push(layer(3, `<path d="${ridge(r, H * 0.66, 14)}" fill="${far(0.45)}"/>`));
     const treeKind = { snow: 'pine', forest: 'pine', desert: 'cactus', haunted: 'dead', jungle: 'palm', candy: 'lollipop', volcano: 'dead' }[theme] || 'round';
-    out.push(trees(r, H * 0.7, farFoliage(0.42), treeKind, 9, 34, mix('#5a3a22', haze, 0.45)));
-    out.push(`<path d="${ridge(r, H * 0.8, 8)}" fill="${far(0.22)}"/>`);
-    out.push(trees(r, H * 0.84, farFoliage(0.18), treeKind, 6, 46, mix('#5a3a22', haze, 0.2)));
+    out.push(layer(4, trees(r, H * 0.7, farFoliage(0.42), treeKind, 9, 34, mix('#5a3a22', haze, Math.min(0.95, 0.45 * hazeK)))));
+    out.push(layer(3, `<path d="${ridge(r, H * 0.8, 8)}" fill="${far(0.22)}"/>`));
+    out.push(layer(5, trees(r, H * 0.84, farFoliage(0.18), treeKind, 6, 46, mix('#5a3a22', haze, Math.min(0.95, 0.2 * hazeK)))));
   }
   if (theme === 'city' || theme === 'factory') out.push(`<rect y="${f(H * 0.86)}" width="${W}" height="${f(H * 0.14)}" fill="${far(0.2)}"/>`);
-  out.push(clouds(r, H * 0.28, mix(cloudColor, haze, 0.05), 3, 0.8, theme === 'cave' || theme === 'space' ? 0 : 0.95));
+  out.push(layer(6, clouds(r, H * 0.28, mix(cloudColor, haze, 0.05), 3, 0.8, theme === 'cave' || theme === 'space' ? 0 : 0.95)));
   // Composed features ("leafy forest, dense", "street") on top of the theme's own layers.
-  if (Array.isArray(input.features) && input.features.length) out.push(paintFeatures(input.features, { r: rng(`${seed}|features`), haze, night, land, foliage, d }));
+  if (Array.isArray(input.features) && input.features.length) out.push(paintFeatures(input.features, { r: rng(`${seed}|features`), haze, hazeK, night, land, foliage, d }));
+  // Ground fog: a band of the haze color over the horizon.
+  if (depth?.fog > 0) out.push(`<rect y="${f(H * 0.45)}" width="${W}" height="${f(H * 0.55)}" fill="${d.linear([[0, haze, 0], [0.5, haze, Math.min(1, depth.fog) * 0.7], [1, haze, Math.min(1, depth.fog) * 0.35]])}"/>`);
   // A soft vignette keeps edges calm.
   out.push(`<rect width="${W}" height="${H}" fill="${d.radial([[0.6, '#000000', 0], [1, '#000000', 0.28]], { r: 0.75 })}"/>`);
-  const scale = pixel ? 1 : 4;
-  return document({ width: W * scale, height: H * scale, viewBox: `0 0 ${W} ${H}`, defs: d.toString(), body: out.join(''), crisp: false });
+  const scale = pixel ? 1 : 4, px = natural || W * scale;
+  return document({ width: px, height: Math.round(px * H / W), viewBox: `0 0 ${W} ${H}`, defs: d.toString(), body: out.join(''), crisp: false });
 }
