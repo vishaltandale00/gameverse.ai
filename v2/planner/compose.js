@@ -31,6 +31,9 @@ import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
 import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, ZONES, SECTIONS } from './content.js';
 import { declaredOutcomes, wireOutcomes, configureInner, configureEncounters, skinSections } from './presets.js';
 import { checkComposition } from './compose-check.js';
+import { loopProblems } from './loop-check.js';
+import { preflight } from '../kernel/document.js';
+import { modeApplies } from '../primitives/gameplay/modes-lib-mode.js';
 import { adaptersFor, adapterInstanceId, uniqueId, instanceIds, applySkins } from './adapters.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
@@ -51,7 +54,10 @@ export const COMPOSE_RULES = Object.freeze({
   nested_no_inner: 'the inner template has no loop that declares an encounter outcome (card.loop.outcome) and how an encounter starts it (card.engage.encounter.start)',
   nested_unwired: 'an inner result or an outer effect of the encounter cannot be derived from the declarations',
   union_zone_unbound: 'a reference to a zone of the secondary\'s space has no zone on the primary\'s space to re-bind to',
+  union_world_loop: 'a loop of the secondary is carried by the world it generates (a generator\'s card.mode): on the primary\'s space it would need a second world',
   union_needs_adapter: 'the united loops do not compose on the primary\'s space: the composition check names the adapter that would fix it',
+  union_loop_problem: 'the united document fails the loop check',
+  compose_preflight: 'the composed document fails preflight',
 });
 
 const PROBE = '\u0001ref';
@@ -267,7 +273,10 @@ export function mergeDocuments(host, add, { registry, keepSpaces, bind }) {
     const placed = { ...structuredClone(s), ...(bind && s.space === undefined && !card?.adapts ? { space: bind } : {}) };
     if (!twin) { doc.systems.push(placed); continue; }
     if (card?.mode) { problems.push(problem('compose_loop_shared', `systems[${doc.systems.indexOf(twin)}]`, `${s.use} carries a loop of each document (card.mode); one instance carries one loop (its state is keyed by its primitive id)`)); continue; }
-    if ((twin.space ?? null) !== (placed.space ?? null) && !list(card?.params ? Object.values(card.params) : []).some(p => isObj(p) && isObj(p.of) && prop(prop(p.of.fields, 'space'), 'type') === 'ref'))
+    // One instance runs on one space: that matters only to a primitive that needs capabilities of it, unless its entries
+    // say where each of them lives (a list param whose entries declare a space field).
+    const located = list(card?.params ? Object.values(card.params) : []).some(p => isObj(p) && isObj(p.of) && prop(prop(p.of.fields, 'space'), 'type') === 'ref');
+    if ((twin.space ?? null) !== (placed.space ?? null) && (card?.requires?.capabilities || []).length && !located)
       problems.push(problem('compose_param_conflict', `systems[${doc.systems.indexOf(twin)}].space`, `${s.use} runs on '${twin.space ?? doc.spaces[0]?.id}' in one document and '${placed.space}' in the other`));
     twin.with = joinConfig(card?.params || {}, isObj(twin.with) ? twin.with : {}, isObj(s.with) ? s.with : {}, `systems[${doc.systems.indexOf(twin)}].with`, problems, bind);
   }
@@ -358,8 +367,7 @@ export function composeNested(outer, inner, { registry, logic }) {
   problems.push(...merged.problems);
   const doc = merged.doc;
   const id = prefixOf(inner.id).slice(0, -1).slice(0, 40);
-  // The inner loops wait for the encounter (card.engage.encounter.config) and their results end it, not the game.
-  configureInner(registry, /** @type {any} */ (doc.systems));
+  // The inner loops' results end the encounter, not the game; they wait for it once the encounter is added below.
   for (const u of loops) {
     const inst = doc.systems.find((/** @type {any} */ s) => s.use === u), o = cardLoop(registry.get(u)?.card)?.outcome;
     if (inst && o) for (const r of Object.values(o.results)) if (registry.get(u)?.card.params?.[r.param.split('.')[0]]) endsEncounter(inst, r.param);
@@ -374,11 +382,16 @@ export function composeNested(outer, inner, { registry, logic }) {
   const outerSpace = doc.systems.find((/** @type {any} */ s) => s.use === trigger.use)?.space ?? doc.spaces[0]?.id;
   const participants = loops.some(u => { const c = registry.get(u)?.card; return Boolean(cardLoop(c)?.needs.participants || c?.engage?.participants?.param); });
   const carry = innerSpace && innerSpace !== outerSpace && participants ? Object.keys(trigger.roles).map(role => ({ role })) : [];
+  // While inside, the outer world is held: every primitive the outer document runs that the inner one does not share.
+  const innerUses = new Set(objects(inner.doc.systems).map(s => String(s.use)));
+  const hold = [...new Set(objects(outer.doc.systems).map(s => String(s.use)))].filter(u => !innerUses.has(u) && !registry.get(u)?.card.adapts);
   /** @type {Record<string, any>} */
-  const w = { id, on: trigger.event, roles: trigger.roles, inner: [...loops], start: loops.flatMap(u => structuredClone(list(registry.get(u)?.card.engage?.encounter?.start))),
+  const w = { id, on: trigger.event, roles: trigger.roles, inner: [...loops], hold, start: loops.flatMap(u => structuredClone(list(registry.get(u)?.card.engage?.encounter?.start))),
     outcomes: declared.outcomes.filter(o => wired.wired.includes(o.on)), ...(carry.length ? { space: innerSpace, carry } : {}) };
   const taken = new Set(instanceIds(doc));
   doc.systems.push({ use, id: uniqueId(adapterInstanceId(registry, { use, with: w }, String(doc.spaces[0]?.id ?? 'world')), taken), with: w });
+  // The inner loops wait for the encounter: each gets the config its card declares for being entered (card.engage.encounter.config).
+  configureInner(registry, /** @type {any} */ (doc.systems));
   for (const m of configureEncounters(doc, registry, [{ id, outer: trigger.use }])) problems.push(problem('nested_unwired', 'systems', m));
   const skin = skinFor(doc, registry, { owners: [...new Set([trigger.use, ...playedLoops(outer.doc, registry)])], joined: [...new Set(objects(inner.doc.systems).map(s => String(s.use)))], taken });
   const out = skin ? applySkins(/** @type {any} */ (doc), registry) : doc;
@@ -429,19 +442,37 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
   const rename = (/** @type {string} */ d, /** @type {string} */ id) => (d === 'spaces' && own.spaces.has(id) ? String(host?.id) : d === ZONES && own.zones.has(id) ? `${UNBOUND}${id}` : (ids.get(d) || []).includes(id) ? `${prefix}${id}` : id);
   const relist = (/** @type {string} */ d, /** @type {string[]} */ v) => (d === ZONES && v.length && v.every(x => x.startsWith(UNBOUND)) && hostZones.length ? [...hostZones] : v);
   rewrite(doc2, { registry, logic, rename, define: (d, id) => (d === 'spaces' || d === ZONES ? id : `${prefix}${id}`), list: relist });
-  const unbound = JSON.stringify(doc2).match(new RegExp(`${UNBOUND}[a-z0-9_-]+`, 'g')) || [];
+  /** @type {string[]} */
+  const unbound = [];
+  const scan = (/** @type {unknown} */ v) => { if (isStr(v)) { if (v.startsWith(UNBOUND)) unbound.push(v); } else if (Array.isArray(v)) v.forEach(scan); else if (isObj(v)) Object.values(v).forEach(scan); };
+  scan(doc2);
   for (const z of [...new Set(unbound)]) problems.push(problem('union_zone_unbound', z.slice(UNBOUND.length), `'${secondary.id}' refers to its zone '${z.slice(UNBOUND.length)}', which has no counterpart on '${primary.id}''s space '${host?.id}'`));
-  // The secondary's world is the primary's: its spaces (with their generators) are re-homed onto the host.
+  // The secondary's world is the primary's: its spaces (with the generators that build them) are replaced by the host's.
+  // A loop its world carries (a generator whose card.mode applies) cannot be: it would need a second world.
+  const world = objects(doc2.spaces).flatMap(sp => objects(sp.generators).map(g => ({ g, sp })));
+  for (const { g } of world) {
+    const mode = registry.get(String(g.use))?.card.mode;
+    if (mode && modeApplies(mode, isObj(g.with) ? g.with : {})) problems.push(problem('union_world_loop', String(g.use), `'${secondary.id}' plays its ${mode.loop} loop through the world ${g.use} generates; on '${primary.id}''s space ${host?.use} that is a second world`));
+  }
+  /** @type {{ spaces: string[], generators: string[], endings?: string[] }} */
+  const replaced = { spaces: objects(secondary.doc.spaces).map(x => `${x.id} (${x.use})`), generators: world.map(({ g }) => String(g.use)) };
   doc2.spaces = [];
   // The game's win is the primary's: the secondary's game-ending win ends nothing.
   for (const u of playedLoops(doc2, registry)) {
     const win = cardLoop(registry.get(u)?.card)?.win, inst = doc2.systems.find((/** @type {any} */ s) => s.use === u);
     if (inst && win?.param && registry.get(u)?.card.params?.[win.param.split('.')[0]]) endsEncounter(inst, win.param);
   }
+  // ... and so are the endings it wins by (a plot ending with a won outcome).
+  if (isObj(doc2.plot) && Array.isArray(doc2.plot.endings)) {
+    const won = objects(doc2.plot.endings).filter(e => (e.outcome ?? 'won') === 'won');
+    replaced.endings = won.map(e => String(e.id));
+    const kept = objects(doc2.plot.endings).filter(e => !won.includes(e));
+    if (kept.length) doc2.plot.endings = kept; else delete doc2.plot.endings;
+  }
   for (const s of objects(doc2.systems)) if (s.space === host?.id) delete s.space;
   const merged = mergeDocuments(primary.doc, doc2, { registry, keepSpaces: false, bind: null });
   problems.push(...merged.problems);
-  return { doc: merged.doc, problems, loops: playedLoops(doc2, registry) };
+  return { doc: merged.doc, problems, loops: playedLoops(doc2, registry), replaced };
 }
 
 /**
@@ -455,11 +486,15 @@ export function composeUnion(primary, secondary, { registry, logic }) {
   const problems = [...u.problems];
   if (problems.length) return { doc: null, problems, union: null, united: u.doc };
   const merged = u;
+  const pre = preflight(structuredClone(merged.doc), registry, logic);
+  if (!pre.ok) return { doc: null, problems: pre.errors.slice(0, 8).map(e => problem('compose_preflight', e.path, `[${e.code}] ${e.message}`)), union: null, united: u.doc };
   const check = checkComposition(merged.doc, registry, { logic });
   if (check.failures.length) {
     const sig = check.signature;
     problems.push({ ...problem('union_needs_adapter', 'systems', `'${secondary.id}' on '${primary.id}''s space ${host?.use}: ${check.failures.slice(0, 4).map(f => `[${f.code}] ${f.message}`).join('; ')}${sig ? `; the adapter that would fix it: ${sig.id} (${JSON.stringify(sig.card.adapts.provides)})` : ''}`), ...(sig ? { signature: sig } : {}) });
     return { doc: null, problems, union: null, united: u.doc };
   }
-  return { doc: merged.doc, problems, union: { space: host?.id, loops: u.loops }, united: u.doc };
+  const loop = loopProblems(merged.doc, registry, { logic });
+  if (loop.length) return { doc: null, problems: loop.map(p => problem('union_loop_problem', p.path, `[${p.code}] ${p.message}`)), union: null, united: u.doc };
+  return { doc: merged.doc, problems, union: { space: host?.id, loops: u.loops, replaced: u.replaced }, united: u.doc };
 }
