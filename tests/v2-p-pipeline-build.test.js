@@ -23,13 +23,15 @@ const score = loopCard('gameplay.test.score', 'Score points for every hop landed
 const wormholes = loopCard('gameplay.test.wormholes', 'Warp through wormholes between distant stars.', { verbs: ['warp'], progress: ['warped'] }, { requires: { capabilities: ['wormholes'] } });
 const catalogue = () => testCatalogue([hop, glide, lift, float, score, wormholes]);
 
-const spec = () => normalize({ title: 'Hopper', premise: 'Hop, glide and score across a flat field.', tone: 'bright', references: [{ name: 'hopper', kind: 'game', keeps: [] }],
+const spec = () => ({ ...normalize({ title: 'Hopper', premise: 'Hop, glide and score across a flat field.', tone: 'bright', references: [{ name: 'hopper', kind: 'game', keeps: [] }],
   mechanics: [
     { id: 'score', verb: 'score', description: 'score points for every hop landed', from: 'hopper', importance: 'supporting' },
     { id: 'hop', verb: 'hop', description: 'hop over gaps between platforms', from: 'hopper', importance: 'core' },
     { id: 'glide', verb: 'glide', description: 'glide down slowly', from: 'hopper', importance: 'core' },
     { id: 'warp', verb: 'warp', description: 'warp through wormholes between distant stars', from: 'hopper', importance: 'supporting' },
-  ], spaces: [{ role: 'field', kind: 'continuous-2d', description: '' }], views: ['td'], movement: 'ground', acts: 1, zones: 2 }, 'hopper');
+  ], spaces: [{ role: 'field', kind: 'continuous-2d', description: '' }], views: ['td'], movement: 'ground', acts: 1, zones: 2 }, 'hopper'),
+  // normalize keeps a play spec only with a registry; this one names the core loop mechanic the game is built around.
+  core: { loop: 'hop', interaction: null, opponent: 'none', win: '', lose: '', theme: 'bright', narrative: null, mashup: [] } });
 
 const picks = { hop: ['gameplay.test.hop'], glide: ['gameplay.test.glide', 'gameplay.test.float'], score: ['gameplay.test.score'], warp: ['gameplay.test.wormholes'] };
 /** The scripted model: the flat field, then per mechanic the first preferred id still on offer. */
@@ -129,13 +131,13 @@ test('selectPrimitives with a model builds iteratively, keeps the space it built
 // (e) The same machinery on unrelated ideas, real catalogue: nothing here knows a genre.
 const IDEAS = {
   sides: { premise: 'Two armies take turns moving pieces on a board to capture the enemy king.', ref: 'chess', views: ['board'], kind: 'board', movement: 'none',
-    core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'capture the king', lose: 'lose the king', theme: 'war', narrative: false, mashup: [] },
+    core: { loop: 'move_pieces', interaction: 'pieces-turns', opponent: 'ai-side', win: 'capture the king', lose: 'lose the king', theme: 'war', narrative: false, mashup: [] },
     mechanics: [['move_pieces', 'core', 'move pieces across the board in turns'], ['capture', 'core', 'capture enemy pieces by moving onto them'], ['promote', 'supporting', 'promote a piece that reaches the far side']] },
   collect: { premise: 'Run around a maze collecting gems while ghosts chase you.', ref: 'gem maze', views: ['td'], kind: 'tiles-topdown', movement: 'ground',
-    core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'collect every gem', lose: 'caught by a ghost', theme: 'neon', narrative: false, mashup: [] },
+    core: { loop: 'collect_gems', interaction: 'avatar-realtime', opponent: 'hazards', win: 'collect every gem', lose: 'caught by a ghost', theme: 'neon', narrative: false, mashup: [] },
     mechanics: [['collect_gems', 'core', 'collect every gem in the maze'], ['evade', 'core', 'avoid the chasing ghosts'], ['power', 'supporting', 'eat power pellets to turn the tables']] },
   race: { premise: 'Race shopping carts around a supermarket track against rival racers.', ref: 'kart racing', views: ['3p'], kind: 'continuous-3d', movement: 'track',
-    core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'finish first', lose: '', theme: 'supermarket', narrative: false, mashup: [] },
+    core: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'finish first', lose: '', theme: 'supermarket', narrative: false, mashup: [] },
     mechanics: [['race', 'core', 'race laps around a track against rival racers'], ['drive', 'core', 'drive and steer a cart'], ['items', 'supporting', 'pick up and use items to hinder rivals']] },
 };
 const ideaSpec = (x, registry) => normalize({ title: x.ref, premise: x.premise, tone: x.core.theme, references: [{ name: x.ref, kind: 'game', keeps: [] }], views: x.views, movement: x.movement, acts: 1, zones: 3,

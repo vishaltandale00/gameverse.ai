@@ -64,6 +64,7 @@
   "acts": 1,
   "zones": 2,
   "core": {
+   "loop": "turn_based_piece_movement",
    "interaction": "pieces-turns",
    "opponent": "ai-rival",
    "win": "checkmate the opponent's king Pok\u00e9mon",
