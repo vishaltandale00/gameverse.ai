@@ -78,8 +78,12 @@ test('rts: deterministic replay and preflight codes', () => {
   const registry = new Registry(P), logic = buildLogic(registry, Logic);
   const bad = rtsDoc({ factions: [{ id: 'blue', control: 'boss', start: { gold: 3 } }] });
   bad.content.archetypes.push({ id: 'odd', components: { rts: { faction: 'green', produces: [{ archetype: 'ghost', cost: { gas: 1 } }], node: { resource: 'wood' }, attack: { range: 0 } } } });
-  const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['param_option', 'rts_resource', 'rts_faction', 'ref_unknown', 'rts_unit']) assert.ok(codes.has(c), c);
+  const r = preflight(bad, registry, logic), codes = new Set(r.errors.map(e => e.code));
+  for (const c of ['param_option', 'rts_resource', 'rts_faction']) assert.ok(codes.has(c), c);
+  // The rts component's references and ranges are its declared shape (preflight's section shapes): an unknown produced
+  // archetype is ref_unknown, an attack without range > 0 param_range (was rts_unit).
+  const at = `content.archetypes[${bad.content.archetypes.length - 1}].components.rts`, shaped = new Set([...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`));
+  for (const c of [`ref_unknown@${at}.produces[0].archetype`, `param_range@${at}.attack.range`]) assert.ok(shaped.has(c), c);
 });
 
 test('rts: progress counts what the player paid for in production, armed units above others', () => {
