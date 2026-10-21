@@ -109,15 +109,23 @@ export function driver(rt, registry) {
     }
     return { dev, acts, missing };
   }
+  /**
+   * The two channels of an intent: `device`, the kernel input sampled from the devices as the browser samples them
+   * (what the host reads through view.input), and `ui`, the actions mounted UI primitives send through view.act.
+   */
+  function parts(intent) {
+    const { dev, acts, missing } = device(intent);
+    if (missing.length) throw new ControlsMissing(missing);
+    return { device: sample(c.map, dev, { ...opts, dt: rt.dt }), ui: acts };
+  }
   return {
     controls: c,
     missing: intent => device(intent).missing,
-    /** The kernel input for an intent, sampled from the devices as the browser samples them, plus the UI actions. */
+    parts,
+    /** The kernel input for an intent: the devices' sample plus the UI actions, merged as the host merges them. */
     input(intent) {
-      const { dev, acts, missing } = device(intent);
-      if (missing.length) throw new ControlsMissing(missing);
-      const live = sample(c.map, dev, { ...opts, dt: rt.dt });
-      return { ...live, actions: { ...live.actions, ...acts } };
+      const { device: live, ui } = parts(intent);
+      return { ...live, actions: { ...live.actions, ...ui } };
     },
     /** The key names the controls card shows for a verb (bindings of the primary view). */
     keysFor: verb => c.map?.keys?.[verb] || [],

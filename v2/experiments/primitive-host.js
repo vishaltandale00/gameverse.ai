@@ -101,7 +101,8 @@ export function hostPrimitive(experiment, { box: makeBox }) {
       if (actions.length) rt.options(rt => (stats.disabled ? [] : actions.map(a => ({ label: `${experiment.label}: ${a}`, actions: { [a]: true } }))));
       rt.system(card.phase, rt => {
         if (stats.disabled) return;
-        box ??= makeBox(experiment.code);
+        // The box belongs to this world: a browser Worker box is terminated when the host unloads or rebuilds it.
+        if (!box) { box = makeBox(experiment.code); const made = box; rt.view?.onDispose?.(() => made.dispose?.()); }
         if (box.error) return disable(`it did not load (${box.error})`);
         const s = rt.store(key);
         const input = { actions: s.pressed || {}, axes: rt.input?.axes || {} };
