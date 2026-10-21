@@ -5,13 +5,17 @@
 // cards no template document hosts; exits 1 when there is any. The catalogue conformance test runs the same sampling.
 import { TEMPLATES } from '../templates/registry.js';
 import { liveCatalogue } from '../planner/catalog.js';
-import { sampleCatalogue } from '../planner/schema-sampler.js';
+import { sampleCatalogue, sampleExamples, PROBE } from '../planner/schema-sampler.js';
 
 const args = process.argv.slice(2), json = args.includes('--json'), wanted = args.filter(a => !a.startsWith('--'));
-const { registry, logic } = await liveCatalogue();
+const { registry, logic } = await liveCatalogue({ extra: [/** @type {any} */ (PROBE)] });
 const ids = registry.ids().filter(id => !wanted.length || wanted.some(w => id === w || id.startsWith(`${w}.`) || id.startsWith(w)));
 const t0 = performance.now();
-const r = sampleCatalogue({ corpus: TEMPLATES.map(t => ({ id: t.id, doc: t.doc })), registry, logic, ids });
+const corpus = TEMPLATES.map(t => ({ id: t.id, doc: t.doc }));
+const r = sampleCatalogue({ corpus, registry, logic, ids });
+// The declared examples of the kernel's codes and of the vocabulary kinds the sampled cards own.
+const ex = sampleExamples({ corpus, registry, logic });
+r.findings.push(...ex.findings.filter(f => f.use === 'kernel' || ids.includes(f.use)));
 const ms = Math.round(performance.now() - t0);
 if (json) console.log(JSON.stringify({ ms, ...r }));
 else {

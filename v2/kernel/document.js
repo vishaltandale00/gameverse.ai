@@ -7,7 +7,7 @@ import { checkFields, checkParam, REF_KINDS } from './params.js';
 import { sectionShape, BASE_SECTIONS } from './sections.js';
 import { KERNEL_EVENTS } from './world.js';
 import { isObj } from './guards.js';
-import { declaresCode } from './rules.js';
+import { declaresCode, kindDeclares } from './rules.js';
 
 /** @typedef {import('./types.js').Doc} Doc */
 /** @typedef {import('./types.js').Instance} Instance */
@@ -202,7 +202,15 @@ export function preflight(input, registry, logic) {
   /** @param {string | undefined} owner @param {Problem} e */
   const owned = (owner, e) => { if (!owner || owner === 'kernel' || declaresCode(registry.get(owner)?.card, e.code)) return; undeclared.push({ code: 'rule_undeclared', path: e.path, message: `'${owner}' emits '${e.code}', which its card does not declare (card.rules)`, hint: 'declare the rule on the card: its fields and the values it allows' }); };
   /** @param {'predicate' | 'effect'} type @param {string | undefined} kind @param {Problem[]} errs @param {number} from */
-  const vocabFound = (type, kind, errs, from) => { for (const e of errs.slice(from)) { if (isObj(e)) delegated.add(e); owned(kind === undefined ? undefined : logic.owners?.[type]?.get(kind), e); } };
+  const vocabFound = (type, kind, errs, from) => {
+    const def = kind === undefined ? undefined : (type === 'predicate' ? logic.predicates : logic.effects).get(kind);
+    for (const e of errs.slice(from)) {
+      // A finding a nested kind's check made is that kind's, already judged.
+      if (!isObj(e) || delegated.has(e)) continue;
+      delegated.add(e);
+      if (kind !== undefined && !kindDeclares(def, e.code)) undeclared.push({ code: 'rule_undeclared', path: e.path, message: `${type} '${kind}' (${logic.owners?.[type]?.get(kind) ?? 'kernel'}) emits '${e.code}', which its registration does not declare (codes)`, hint: 'declare it with the kind: logic.' + type + '(kind, { codes: [{ code, fields, example }] })' });
+    }
+  };
   /** @type {ValidateContext} */
   const ctx = {
     doc, registry, indexes,

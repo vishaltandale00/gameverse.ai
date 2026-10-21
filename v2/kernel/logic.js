@@ -52,7 +52,7 @@ export class Logic {
     this.effect('clear_flag', { refs: e => [['flag', e.flag]], run: (e, rt) => { delete rt.state.flags[e.flag]; } });
     this.effect('set_var', { refs: e => [['var', e.var]], run: (e, rt) => { rt.state.vars[e.var] = e.value; } });
     this.effect('add_var', { refs: e => [['var', e.var]], run: (e, rt) => { rt.state.vars[e.var] = (rt.state.vars[e.var] ?? 0) + (e.value ?? 1); } });
-    this.effect('emit', { run: (e, rt) => rt.emit(e.event, e.data || {}) });
+    this.effect('emit', { check: (e, path, errors) => { if (typeof e.event !== 'string' || !e.event) errors.push({ code: 'effect_invalid', path: `${path}.event`, message: 'emit needs the event name to emit' }); }, run: (e, rt) => rt.emit(e.event, e.data || {}) });
     // Spatial vocabulary shared by every space. The kernel dispatches to the
     // subject's space API (KERNEL_API.md §3), so no space registers these itself.
     this.predicate('zone', { refs: p => [['zone', p.zone]], test: (p, rt, c) => { const e = rt.resolve(p.who, c); return Boolean(e?.space) && rt.space(/** @type {string} */ (e?.space)).inZone(/** @type {Entity} */ (e), p.zone, rt); } });

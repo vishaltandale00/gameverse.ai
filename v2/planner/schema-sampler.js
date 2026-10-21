@@ -24,7 +24,7 @@ import { docRefs } from './content.js';
 import { instancesWithPaths } from './templates.js';
 import { requiredBy } from './bundles.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
-import { isObj, prop } from '../kernel/guards.js';
+import { isObj, isStr, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -231,23 +231,41 @@ export function sampleCard(id, { corpus, registry, logic, limit = 12 }) {
       });
     }
   }
-  // Declared rule examples (card.rules[code].example): params of the instance and sections, written together; each value
-  // is one its form allows.
+  // Declared rule examples (card.rules[code].example): a document fragment merged into the card's host document
+  // ({ doc, at? }: for logic-written fields, fields deeper than the forms, open maps and cross-instance rules), or
+  // values the forms allow, written together ({ <param>: v, 'content.<x>': entries, 'components.<name>': v }). Proven
+  // when preflight reports exactly that code (at `at` when declared).
   for (const rule of rulesOf(card)) {
     const example = /** @type {Record<string, unknown> | undefined} */ (prop(prop(card.rules, rule.code), 'example'));
     if (!isObj(example)) continue;
-    const bad = exampleProblems(card, example, base, registry, refs);
+    const fragment = isFragment(example);
+    const bad = fragment ? [] : exampleProblems(card, example, base, registry, refs);
     if (bad.length) { for (const m of bad) findings.push({ code: 'example_invalid', use: id, form: 'rules', field: rule.code, value: shown(example), path: '', message: m }); continue; }
-    const at = { emitted: false };
     const d = structuredClone(base);
-    writeExample(d, path, example);
+    if (fragment) mergeFragment(d, /** @type {Record<string, any>} */ (example.doc)); else writeExample(d, path, example);
     samples++;
     const r = preflight(d, registry, logic);
-    for (const e of [...r.errors, ...r.warnings]) if (!before.has(`${e.code}|${e.path}`) && !KERNEL.has(e.code) && e.code !== 'rule_undeclared') { reached.add(e.code); if (e.code === rule.code) at.emitted = true; }
-    if (!at.emitted) findings.push({ code: 'example_invalid', use: id, form: 'rules', field: rule.code, value: shown(example), path: '', message: `the example does not emit ${rule.code}` });
+    const fresh = [...r.errors, ...r.warnings].filter(e => !before.has(`${e.code}|${e.path}`) && e.code !== 'data_unused');
+    for (const e of fresh) if (!KERNEL.has(e.code) && e.code !== 'rule_undeclared') reached.add(e.code);
+    const codes = [...new Set(fresh.map(e => e.code))];
+    const where = isStr(example.at) ? fresh.some(e => e.code === rule.code && e.path === example.at) : true;
+    if (codes.length !== 1 || codes[0] !== rule.code || !where) findings.push({ code: 'example_invalid', use: id, form: 'rules', field: rule.code, value: shown(example), path: '', message: `the example emits ${fresh.map(e => `${e.code} at ${e.path}`).join('; ').slice(0, 300) || 'nothing'}, not exactly ${rule.code}${isStr(example.at) ? ` at ${example.at}` : ''}` });
   }
   const declared = rulesOf(card).map(r => r.code);
   return { id, host: hosted.host, samples, findings, reached: [...reached].sort(), unreached: declared.filter(c => !reached.has(c)) };
+}
+
+/** An example that is a document fragment: { doc, at? }. @param {Record<string, unknown>} example */
+const isFragment = example => isObj(example.doc) && Object.keys(example).every(k => k === 'doc' || k === 'at');
+
+/**
+ * Merge a document fragment into a document: each top-level section the fragment names (systems, spaces, graphics,
+ * content, plot, player, ...) replaces that section; the sections it does not name are kept. An example writes the whole
+ * section it means (one instance with the field, or two instances for a cross-instance rule).
+ * @param {Record<string, any>} target @param {Record<string, any>} fragment
+ */
+export function mergeFragment(target, fragment) {
+  for (const [k, v] of Object.entries(fragment)) target[k] = structuredClone(v);
 }
 
 /** Where an example's key writes: a param of the instance, a section path, or 'components.<name>' (a probe archetype's). @param {string} key */
@@ -287,12 +305,84 @@ function exampleProblems(card, example, doc, registry, refs) {
 }
 
 /**
+ * The sampler's probe: an ambient stand-in whose declared params take every kernel shape (a ranged number, a closed
+ * set, a pattern, a reserved value, a list with a minimum, a ref, a list defining a kind, a predicate, effects), so each
+ * kernel code and each vocabulary kind's declared example can be preflighted in a document. Never in a game: the
+ * conformance builds its catalogue with it.
+ */
+export const PROBE = Object.freeze({
+  id: 'engine.sampler.probe',
+  card: { intent: 'The schema sampler\'s probe: params of every kernel shape, to preflight declared examples in a document.', ambient: true,
+    params: { req: { type: 'boolean', required: true }, n: { type: 'integer', min: 0, max: 4, multipleOf: 2 }, s: { type: 'string', options: ['a', 'b'] }, p: { type: 'string', pattern: '^[a-z]+$', reserved: ['player'] },
+      l: { type: 'list', min: 1, of: { type: 'number' } }, r: { type: 'ref', to: 'archetype' }, entries: { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true } } } },
+      j: { type: /** @type {any} */ ('unknown_type') }, crash: { type: 'boolean' }, when: { type: 'predicate' }, do: { type: 'effects' } },
+    defines: [{ kind: 'sampled_entry', in: 'entries' }], provides: {}, requires: {} },
+  /** @param {Record<string, any>} config */
+  validate(config) { if (config.crash) throw Error('the probe crashes when asked to'); return []; },
+});
+
+/**
+ * The declared example of every kernel code (kernel/rules.js KERNEL_CODES): the probe's `with` that emits exactly it,
+ * or the template change that does.
+ */
+export const KERNEL_EXAMPLES = Object.freeze({
+  param_type: { with: { req: true, n: 'two' } }, param_range: { with: { req: true, n: 3 } }, param_option: { with: { req: true, s: 'c' } }, param_unknown: { with: { req: true, zz: 1 } },
+  param_missing: { with: {} }, param_reserved: { with: { req: true, p: 'player' } }, param_pattern: { with: { req: true, p: 'A1' } }, schema_invalid: { with: { req: true, j: 1 } },
+  ref_unknown: { with: { req: true, r: 'no_such_archetype' } }, id_invalid: { with: { req: true, entries: [{ id: 'Not A Slug' }] } }, id_duplicate: { with: { req: true, entries: [{ id: 'a' }, { id: 'a' }] } },
+  predicate_unknown: { with: { req: true, when: { no_such_kind: 1 } } }, predicate_invalid: { with: { req: true, when: { all: [] } } },
+  effect_unknown: { with: { req: true, do: [{ do: 'no_such_effect' }] } }, effect_invalid: { with: { req: true, do: [{ do: 'emit' }] } },
+  event_ref_type: { with: { req: true, when: { count: 3, gte: 1 } } }, validator_crashed: { with: { req: true, crash: true } },
+});
+
+/**
+ * The declared examples of the kernel's codes and of every vocabulary kind's codes (logic.predicate/effect(kind,
+ * { codes })), each preflighted in a document: the template hosting the kind's owner (kernel kinds: the first template)
+ * with the probe carrying the example. Each must emit exactly its code. -> { checked, findings }
+ * @param {{ corpus: ReadonlyArray<{ id: string, doc: Record<string, any> }>, registry: RegistryLike, logic: LogicLike }} ctx
+ */
+export function sampleExamples({ corpus, registry, logic }) {
+  /** @type {Finding[]} */
+  const findings = [];
+  let checked = 0;
+  /** @param {Record<string, any>} doc @param {Record<string, unknown>} w @param {string} code @param {string} use @param {string} field @param {Record<string, any> | null} [fragment] */
+  const prove = (doc, w, code, use, field, fragment = null) => {
+    const base = structuredClone(doc);
+    (base.systems ||= []).push({ use: PROBE.id, with: { req: true } });
+    const before = preflight(structuredClone(base), registry, logic);
+    const seen = new Set([...before.errors, ...before.warnings].map(e => `${e.code}|${e.path}`));
+    const d = structuredClone(base);
+    d.systems[d.systems.length - 1].with = structuredClone(w);
+    if (fragment) mergeFragment(d, fragment);
+    const r = preflight(d, registry, logic);
+    const fresh = [...new Set([...r.errors, ...r.warnings].filter(e => !seen.has(`${e.code}|${e.path}`) && e.code !== 'data_unused').map(e => e.code))];
+    checked++;
+    if (fresh.length !== 1 || fresh[0] !== code) findings.push({ code: 'example_invalid', use, form: 'example', field, value: shown(w), path: '', message: `the example of ${code} emits ${fresh.join(', ') || 'nothing'}` });
+  };
+  const first = corpus[0]?.doc;
+  if (!first) return { checked, findings: [{ code: 'card_unhosted', use: PROBE.id, form: 'example', field: '', value: '', path: '', message: 'no template document' }] };
+  for (const [code, ex] of Object.entries(KERNEL_EXAMPLES)) prove(first, ex.with, code, 'kernel', code);
+  for (const code of KERNEL_CODES) if (!(code in KERNEL_EXAMPLES)) findings.push({ code: 'rule_unreached', use: 'kernel', form: 'example', field: code, value: '', path: '', message: `the kernel code ${code} has no declared example` });
+  for (const type of /** @type {const} */ (['predicate', 'effect'])) {
+    for (const [kind, def] of (type === 'predicate' ? logic.predicates : logic.effects)) {
+      const owner = logic.owners?.[type]?.get(kind) ?? 'kernel';
+      const host = owner === 'kernel' || !registry.has(owner) ? { host: 'kernel', doc: first } : hostFor(owner, corpus, registry, logic);
+      for (const c of Array.isArray(def.codes) ? def.codes : []) {
+        if (!host.host) { findings.push({ code: 'card_unhosted', use: owner, form: 'example', field: `${kind}.${c.code}`, value: '', path: '', message: /** @type {any} */ (host).why }); continue; }
+        if (isObj(c.example) && isFragment(c.example)) prove(/** @type {any} */ (host).doc, { req: true }, c.code, owner, `${type} ${kind}`, /** @type {any} */ (c.example).doc);
+        else prove(/** @type {any} */ (host).doc, type === 'predicate' ? { req: true, when: c.example } : { req: true, do: [c.example] }, c.code, owner, `${type} ${kind}`);
+      }
+    }
+  }
+  return { checked, findings };
+}
+
+/**
  * Sample every card of the registry (or `ids`). Codes a card's sampling reached count for every card that declares
  * them (a rule of one card is often reached through another card's form). -> { cards, findings, unreached }
  * @param {{ corpus: ReadonlyArray<{ id: string, doc: Record<string, any> }>, registry: RegistryLike, logic: LogicLike, ids?: string[], limit?: number }} ctx
  */
 export function sampleCatalogue({ corpus, registry, logic, ids = registry.ids(), limit }) {
-  const cards = ids.map(id => sampleCard(id, { corpus, registry, logic, limit }));
+  const cards = ids.filter(id => id !== PROBE.id).map(id => sampleCard(id, { corpus, registry, logic, limit }));
   const reached = new Set(cards.flatMap(c => c.reached));
   const unreached = cards.flatMap(c => c.unreached.filter(code => !reached.has(code)).map(code => ({ use: c.id, code })));
   return { cards, findings: cards.flatMap(c => c.findings), unreached, unhosted: cards.filter(c => !c.host).map(c => ({ use: c.id, why: c.unhosted })) };
