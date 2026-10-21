@@ -257,15 +257,13 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
  * other's, equal values are kept, lists (and effects) are joined (entries with an id must not collide), objects with
  * declared fields join field by field, and anything else that differs is a conflict. `space`: the added side's host
  * space, written on its list entries that declare a space field and leave it out (they keep where they spawn).
- * `own`: `b` alone is written into an empty `a` with `space` on its located entries (the host's own entries).
- * @param {Record<string, any>} params @param {Record<string, any>} a @param {Record<string, any>} b @param {string} path @param {ComposeProblem[]} problems @param {string | null} space @param {boolean} [own]
+ * @param {Record<string, any>} params @param {Record<string, any>} a @param {Record<string, any>} b @param {string} path @param {ComposeProblem[]} problems @param {string | null} space
  */
-function joinConfig(params, a, b, path, problems, space, own = false) {
+function joinConfig(params, a, b, path, problems, space) {
   /** @type {Record<string, any>} */
   const out = { ...a };
   for (const [k, v] of Object.entries(b)) {
     const spec = params?.[k], cur = out[k];
-    if (cur === undefined && own && Array.isArray(v)) { out[k] = joinConfig(params, { [k]: [] }, { [k]: v }, path, problems, space)[k]; continue; }
     if (cur === undefined) { out[k] = structuredClone(v); continue; }
     if (same(cur, v)) continue;
     if (Array.isArray(cur) && Array.isArray(v)) {
@@ -294,15 +292,11 @@ export function mergeDocuments(host, add, { registry, keepSpaces, bind }) {
   /** @type {ComposeProblem[]} */
   const problems = [];
   doc.systems = objects(doc.systems);
-  // The host's list entries that leave their space implicit (spawn rules: the space the instance is bound to, else the
-  // player's) live in the host's space; once the added document's spaces (and maybe its player) join, they would follow
-  // the player into another world: the host's space is written on them, as the added document's is on its own.
+  // The host's instances that name no space run on the host's first space (a spawner's rules: the space it is bound to,
+  // else the player's); once the added document's spaces (and maybe its player) join, they would follow the player into
+  // another world: they are bound to the host's space, as the added document's are to its own (`bind`).
   const home = objects(doc.spaces)[0]?.id;
-  if (keepSpaces && isStr(home)) for (const x of doc.systems) {
-    const card = registry.get(String(x.use))?.card;
-    if (!card?.params || !isObj(x.with)) continue;
-    x.with = joinConfig(card.params, {}, x.with, '', problems, isStr(x.space) ? x.space : home, true);
-  }
+  if (keepSpaces && bind && isStr(home)) for (const x of doc.systems) if (x.space === undefined && !registry.get(String(x.use))?.card.adapts && (registry.get(String(x.use))?.card.requires?.capabilities || []).length) x.space = home;
   if (keepSpaces) doc.spaces = [...objects(doc.spaces), ...structuredClone(objects(add.spaces))];
   for (const s of objects(add.systems)) {
     const card = registry.get(String(s.use))?.card;
