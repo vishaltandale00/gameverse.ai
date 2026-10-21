@@ -53,7 +53,7 @@ function absolutePath(path, instancePath) {
 }
 
 /** True when `name` is provided directly or by a `prefix:*` wildcard. */
-export function provided(set, name) { return set.has(name) || (name.includes(':') && set.has(name.slice(0, name.indexOf(':')) + ':*')); }
+export function provided(set, name) { return typeof name === 'string' && (set.has(name) || (name.includes(':') && set.has(name.slice(0, name.indexOf(':')) + ':*'))); }
 
 export function preflight(doc, registry, logic) {
   const started = performance.now();
@@ -147,7 +147,9 @@ export function preflight(doc, registry, logic) {
     if (doc.player.space && !indexes.space.has(doc.player.space)) errors.push({ code: 'ref_unknown', path: 'player.space', message: `unknown space '${doc.player.space}'` });
   }
   for (const [id, path] of refs.flag.read) if (!refs.flag.write.has(id)) warnings.push({ code: 'flag_never_set', path, message: `flag '${id}' is read but nothing sets it` });
-  for (const [id, path] of refs.event.read) if (!provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
+  // An event reference must be an event name: anything else is a fixable error at its path, never a crash.
+  for (const [id, path] of refs.event.read) if (typeof id !== 'string') errors.push({ code: 'event_ref_type', path, message: `an event name must be a string, got ${JSON.stringify(id)?.slice(0, 60)}`, hint: "write the event's name, e.g. 'defeated:boss'" });
+  for (const [id, path] of refs.event.read) if (typeof id === 'string' && !provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
 
   const ok = !errors.length;
   const out = ok ? { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with,

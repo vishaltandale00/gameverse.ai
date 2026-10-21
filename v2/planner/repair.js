@@ -138,11 +138,29 @@ function safePreflight(doc, registry, logic) {
  * repairDocument(doc, { registry, logic, rounds }) -> { doc, ok, checked, errors, fixes, removed, rounds }
  * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
  */
+// Models often wrap a whole condition in `count` ({count: {var: 'x', gte: 5}}); `count` takes an event name.
+// When the value is itself a registered predicate, the intended condition is that predicate: unwrap it.
+function unwrapCountPredicates(doc, logic, fixes) {
+  const kinds = new Set([...Object.keys(logic?.predicates || {}), 'all', 'any', 'not', 'var', 'flag', 'time', 'zone', 'near', 'cell']);
+  const walk = (node, path) => {
+    if (Array.isArray(node)) { node.forEach((x, i) => walk(x, `${path}[${i}]`)); return; }
+    if (!node || typeof node !== 'object') return;
+    const inner = node.count;
+    if (inner && typeof inner === 'object' && !Array.isArray(inner) && Object.keys(inner).some(k => kinds.has(k))) {
+      delete node.count; Object.assign(node, inner);
+      fixes.push({ code: 'count_unwrapped', path, action: 'used the condition written inside count' });
+    }
+    for (const [k, v] of Object.entries(node)) walk(v, path ? `${path}.${k}` : k);
+  };
+  walk(doc, '');
+}
+
 export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false, exclude = new Set() } = {}) {
   const doc = structuredClone(input);
   const fixes = [], removed = [];
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
   normalizeShape(doc, fixes);
+  unwrapCountPredicates(doc, logic, fixes);
   const vocab = vocabIndex(registry);
   const ctx = {
     ensureId(kind) {
