@@ -3,9 +3,11 @@
 // execution: schema, id indexes and duplicates, primitive params, references,
 // space capabilities, predicate/effect vocabularies, and data sections that
 // no primitive reads. Errors carry stable codes, paths and fix hints.
-import { checkFields, REF_KINDS } from './params.js';
+import { checkFields, checkParam, REF_KINDS } from './params.js';
+import { sectionShape, BASE_SECTIONS } from './sections.js';
 import { KERNEL_EVENTS } from './world.js';
 import { isObj } from './guards.js';
+import { declaresCode } from './rules.js';
 
 /** @typedef {import('./types.js').Doc} Doc */
 /** @typedef {import('./types.js').Instance} Instance */
@@ -21,6 +23,12 @@ import { isObj } from './guards.js';
 /** @typedef {Instance & { with: Record<string, any>, _p?: RegisteredPrimitive, _path: string, _space?: string, _paramErrors: number }} Normalized (an unknown primitive's instance is kept as written, without _p) */
 
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
+/**
+ * Whether the declaration checks fail a document: the data sections against their declared shapes (kernel/sections.js)
+ * and every emitted code against card.rules (kernel/rules.js). While the catalogue's declarations are completed they
+ * are reported as warnings with the same codes.
+ */
+export const DECLARATIONS_ENFORCED = false;
 const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 /** @type {Array<{ kind: string, at: string }>} */
@@ -65,6 +73,8 @@ function buildIndexes(doc, errors, registry, instances) {
   for (const id of registry.ids()) for (const d of /** @type {RegisteredPrimitive} */ (registry.get(id)).card.defines || []) if (d.at && !docDefines.some(x => x.kind === d.kind && x.at === d.at)) docDefines.push(/** @type {{ kind: string, at: string }} */ (d));
   for (const d of docDefines) addAll(d.kind, get(doc, d.at), d.at);
   for (const { inst, path } of instances) for (const d of registry.get(inst?.use)?.card.defines || []) if (d.in) addAll(d.kind, inst.with?.[d.in], `${path}.with.${d.in}`);
+  // The kernel kind 'section': the document's content and plot sections that hold entries, by path (a skin's source).
+  indexes.section = new Set(['content', 'plot'].flatMap(root => Object.entries(isObj(doc[root]) ? doc[root] : {}).filter(([, v]) => (Array.isArray(v) && v.length > 0) || (isObj(v) && Object.keys(v).length > 0)).map(([k]) => `${root}.${k}`)));
   return indexes;
 }
 
@@ -133,6 +143,30 @@ function shapeErrors(d, registry) {
   return errs;
 }
 
+/** Every primitive instance of a document with its path, the family its slot takes and its space. @param {Doc} doc @returns {InstanceEntry[]} */
+function instanceEntries(doc) {
+  /** @type {InstanceEntry[]} */
+  const instances = [];
+  (doc.spaces || []).forEach((s, i) => {
+    instances.push({ inst: s, path: `spaces[${i}]`, family: 'engine.space', space: s.id });
+    (s.generators || []).forEach((g, j) => instances.push({ inst: g, path: `spaces[${i}].generators[${j}]`, family: 'engine.generate', space: s.id }));
+  });
+  (doc.systems || []).forEach((s, i) => instances.push({ inst: s, path: `systems[${i}]`, family: null, space: s.space }));
+  (doc.graphics || []).forEach((g, i) => instances.push({ inst: g, path: `graphics[${i}]`, family: 'graphics', space: g.space }));
+  return instances;
+}
+
+/**
+ * The ids of every reference kind in a document, as preflight indexes them (base kinds, card.defines `at` and `in`):
+ * what a `ref` field may name. A document whose containers are malformed has none.
+ * @param {unknown} input @param {RegistryLike} registry @returns {Record<string, Set<string>>}
+ */
+export function referenceIndexes(input, registry) {
+  if (!isObj(input) || shapeErrors(input, registry).length) return Object.fromEntries(REF_KINDS.map(k => [k, new Set()]));
+  const doc = /** @type {Doc} */ (input);
+  return buildIndexes(doc, [], registry, instanceEntries(doc));
+}
+
 /**
  * The only way external data (a model reply, a stored version, a request body) becomes a `Doc`: the result's
  * `doc` is the normalized document when `ok`, null otherwise. Every check is derived from the cards.
@@ -152,26 +186,30 @@ export function preflight(input, registry, logic) {
   if (typeof doc.title !== 'string' || !doc.title) errors.push({ code: 'schema', path: 'title', message: 'title is required' });
   if (!Array.isArray(doc.spaces) || !doc.spaces.length) errors.push({ code: 'schema', path: 'spaces', message: 'at least one space is required', hint: `space primitives: ${registry.ids('engine').filter(id => id.startsWith('engine.space.')).join(', ') || 'none registered'}` });
 
-  /** @type {InstanceEntry[]} */
-  const instances = [];
-  (doc.spaces || []).forEach((s, i) => {
-    instances.push({ inst: s, path: `spaces[${i}]`, family: 'engine.space', space: s.id });
-    (s.generators || []).forEach((g, j) => instances.push({ inst: g, path: `spaces[${i}].generators[${j}]`, family: 'engine.generate', space: s.id }));
-  });
-  (doc.systems || []).forEach((s, i) => instances.push({ inst: s, path: `systems[${i}]`, family: null, space: s.space }));
-  (doc.graphics || []).forEach((g, i) => instances.push({ inst: g, path: `graphics[${i}]`, family: 'graphics', space: g.space }));
+  const instances = instanceEntries(doc);
   const indexes = buildIndexes(doc, errors, registry, instances);
   /** @type {Array<['predicate' | 'effect', string, string]>} */
   const vocab = [];
   /** @type {Record<string, { read: Map<unknown, string>, write: Map<unknown, string> }>} */
   const refs = { flag: { read: new Map(), write: new Map() }, var: { read: new Map(), write: new Map() }, event: { read: new Map(), write: new Map() } };
+  // Every problem code a primitive emits is declared on its card (card.rules, kernel/rules.js): a validate's own codes
+  // by its card, a vocabulary kind's checks by the card of the primitive that registers the kind. A finding the
+  // vocabulary checks made inside a validate (ctx.checkPredicate/checkEffect) is the kind owner's, not the validate's.
+  /** @type {WeakSet<object>} */
+  const delegated = new WeakSet();
+  /** @type {Problem[]} */
+  const undeclared = [];
+  /** @param {string | undefined} owner @param {Problem} e */
+  const owned = (owner, e) => { if (!owner || owner === 'kernel' || declaresCode(registry.get(owner)?.card, e.code)) return; undeclared.push({ code: 'rule_undeclared', path: e.path, message: `'${owner}' emits '${e.code}', which its card does not declare (card.rules)`, hint: 'declare the rule on the card: its fields and the values it allows' }); };
+  /** @param {'predicate' | 'effect'} type @param {string | undefined} kind @param {Problem[]} errs @param {number} from */
+  const vocabFound = (type, kind, errs, from) => { for (const e of errs.slice(from)) { if (isObj(e)) delegated.add(e); owned(kind === undefined ? undefined : logic.owners?.[type]?.get(kind), e); } };
   /** @type {ValidateContext} */
   const ctx = {
     doc, registry, indexes,
     /** Validators push non-fatal findings here: ctx.warn({code, path, message, hint}). */
     warn: w => warnings.push(w),
-    checkPredicate: (p, path, errs) => { const k = logic.kindOf(p); if (k) vocab.push(['predicate', k, path]); logic.checkPredicate(p, path, errs, ctx); },
-    checkEffect: (e, path, errs) => { if (e?.do) vocab.push(['effect', e.do, path]); logic.checkEffect(e, path, errs, ctx); },
+    checkPredicate: (p, path, errs) => { const k = logic.kindOf(p), n = errs.length; if (k) vocab.push(['predicate', k, path]); logic.checkPredicate(p, path, errs, ctx); vocabFound('predicate', k, errs, n); },
+    checkEffect: (e, path, errs) => { const n = errs.length; if (e?.do) vocab.push(['effect', e.do, path]); logic.checkEffect(e, path, errs, ctx); vocabFound('effect', typeof e?.do === 'string' ? e.do : undefined, errs, n); },
     noteRef(kind, id, path, mode) {
       if (refs[kind]) { const m = refs[kind][mode]; if (!m.has(id)) m.set(id, path); return; }
       if (indexes[kind] && (typeof id !== 'string' || !indexes[kind].has(id))) errors.push({ code: 'ref_unknown', path, message: `unknown ${kind} '${id}'` });
@@ -234,9 +272,26 @@ export function preflight(input, registry, logic) {
       try { found = p.validate(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []; }
       catch (error) { found = n._paramErrors ? [] : [{ code: 'validator_crashed', path: n._path, message: `'${p.id}' could not check this instance: ${String(/** @type {any} */ (error)?.message || error).slice(0, 160)}`, hint: 'a field has the wrong shape; compare it with the card params' }]; }
       // Paths are document-absolute: a validator may report relative to its own config ('rooms[0].rect').
-      for (const err of found) errors.push({ ...err, path: absolutePath(err.path, n._path) });
+      for (const err of found) {
+        const at = { ...err, path: absolutePath(err.path, n._path) };
+        errors.push(at);
+        if (!delegated.has(err)) owned(p.id, at);
+      }
     }
   }
+
+  // Data sections hold the shape the kernel's base and the used cards declare for them (kernel/sections.js): the same
+  // schema the content forms are derived from.
+  const declaredSections = new Set([...BASE_SECTIONS, ...[...used].flatMap(id => Object.keys(registry.get(id)?.card.data || {}))]);
+  /** @type {Problem[]} */
+  const shaped = [];
+  for (const section of declaredSections) {
+    const { shape } = sectionShape(registry, used, section);
+    if (!shape) continue;
+    if (section === 'zones') (doc.spaces || []).forEach((s, i) => { if (s.zones !== undefined) checkParam(shape, s.zones, `spaces[${i}].zones`, shaped, ctx); });
+    else { const v = get(doc, section); if (v !== undefined && v !== null) checkParam(shape, v, section, shaped, ctx); }
+  }
+  (DECLARATIONS_ENFORCED ? errors : warnings).push(...shaped);
 
   // Vocabulary in the document must be owned by the kernel or by a primitive the document uses.
   const reported = new Set();
@@ -261,6 +316,7 @@ export function preflight(input, registry, logic) {
   for (const [id, path] of refs.event.read) if (typeof id !== 'string') errors.push({ code: 'event_ref_type', path, message: `an event name must be a string, got ${JSON.stringify(id)?.slice(0, 60)}`, hint: "write the event's name, e.g. 'defeated:boss'" });
   for (const [id, path] of refs.event.read) if (typeof id === 'string' && !provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
 
+  (DECLARATIONS_ENFORCED ? errors : warnings).push(...undeclared);
   const ok = !errors.length;
   const out = !ok ? null : /** @type {Doc} */ ( { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with,
       ...(s.generators ? { generators: s.generators.map((g, j) => ({ ...g, with: normalized.find(n => n._path === `spaces[${i}].generators[${j}]`)?.with ?? g.with })) } : {}) })),

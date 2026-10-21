@@ -26,6 +26,8 @@ export interface ParamSchema {
   /** Values a string param may never take (ids the primitive itself uses). */
   reserved?: readonly string[];
   maxLength?: number;
+  /** `string`: text a person reads (a name, title, line, description): the content forms theme it. */
+  display?: boolean;
   /** `string`: a regular expression (u flag) every value matches (ids of indexed entries: kernel/sections.js ID_PATTERN). */
   pattern?: string;
   /** `ref`: the reference kind (base REF_KINDS or a card.defines kind). */
