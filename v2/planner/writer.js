@@ -1,11 +1,17 @@
+// @ts-check
 // Writers: the generative models behind the layered pipeline, one interface for
 // every provider. A writer is { provider, model, complete({ system, user, schema?, effort?, maxTokens? }) -> { text, ms, model, usage } }.
 // Roles follow ARCHITECTURE.md §4 (outline/detail/revise: the spec model; gaps: the code model).
 // Decisions (yes/no/choice/score) stay on v2/planner/decisions.js; writers only write text.
 import { createOpenAIClient } from './openai.js';
 import { modelRouting, hasClaudeCredentials } from './models.js';
+import { messageOf } from '../kernel/guards.js';
 
-/** Adapt the OpenAI Responses client. `schema` is { name, schema } (strict) or omitted for a JSON object. */
+/** @typedef {import('./types.js').Writer} Writer */
+/** @typedef {import('./types.js').Writers} Writers */
+
+/** Adapt the OpenAI Responses client. `schema` is { name, schema } (strict) or omitted for a JSON object.
+ * @param {{ client: import('./openai.js').OpenAIClient, model: string, effort?: string }} options @returns {Writer} */
 export function openAIWriter({ client, model, effort }) {
   return {
     provider: 'openai', model,
@@ -16,7 +22,8 @@ export function openAIWriter({ client, model, effort }) {
   };
 }
 
-/** Adapt the Claude client (models.js). Strict schemas are described in the prompt; the reply is parsed as JSON by callers. */
+/** Adapt the Claude client (models.js). Strict schemas are described in the prompt; the reply is parsed as JSON by callers.
+ * @param {{ client: import('./models.js').ClaudeClient, model: string, effort?: string, maxTokens?: number }} options @returns {Writer} */
 export function claudeWriter({ client, model, effort, maxTokens = 16000 }) {
   return {
     provider: 'anthropic', model,
@@ -33,6 +40,7 @@ export function claudeWriter({ client, model, effort, maxTokens = 16000 }) {
  * Writers for this environment: Claude (Sonnet for specs, Opus for code) when Anthropic
  * credentials and the SDK are present, else OpenAI when a key is present, else none
  * (the pipeline then runs procedurally and says so). V2_WRITER=off disables both.
+ * @param {Record<string, string | undefined>} [env] @param {{ openaiKey?: string | null }} [options] @returns {Promise<Writers>}
  */
 export async function createWriters(env = process.env, { openaiKey = env.OPENAI_API_KEY } = {}) {
   if (env.V2_WRITER === 'off') return { spec: null, code: null };
@@ -54,11 +62,15 @@ export async function createWriters(env = process.env, { openaiKey = env.OPENAI_
   return { spec: null, code: null };
 }
 
-/** Parse a writer reply into an object, tolerating fences and prose around it. */
+/**
+ * Parse a writer reply into an object, tolerating fences and prose around it. The result is model output:
+ * `unknown` until narrowed (kernel/guards.js) or validated (kernel/document.js preflight for documents).
+ * @param {string} text @returns {unknown}
+ */
 export function parseReply(text) {
   try { return JSON.parse(text); } catch {}
   const start = String(text).indexOf('{'), end = String(text).lastIndexOf('}');
   if (start < 0 || end <= start) throw Object.assign(Error('the model reply has no JSON object'), { code: 'model_output_not_json' });
   try { return JSON.parse(text.slice(start, end + 1)); }
-  catch (error) { throw Object.assign(Error(`the model reply is not valid JSON: ${error.message}`), { code: 'model_output_not_json' }); }
+  catch (error) { throw Object.assign(Error(`the model reply is not valid JSON: ${messageOf(error)}`), { code: 'model_output_not_json' }); }
 }

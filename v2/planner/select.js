@@ -1,3 +1,4 @@
+// @ts-check
 // Primitive selection (ARCHITECTURE.md §4): decomposed mechanics -> primitives
 // from registry.cards(), then spaces chosen to provide what the chosen
 // primitives require (capability-aware, including space configurations whose
@@ -8,13 +9,61 @@ import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
+import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
+
+/** @typedef {import('../kernel/types.js').CardInput} CardInput */
+/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
+/** @typedef {import('../kernel/types.js').RegisteredPrimitive} RegisteredPrimitive */
+/** @typedef {import('./types.js').Writer} Writer */
+/** @typedef {import('./decompose.js').Decomposition} Decomposition */
+/** @typedef {import('./decompose.js').Mechanic} Mechanic */
+/** @typedef {import('./decisions.js').DecisionClient} DecisionClient */
+/** @typedef {import('./decisions.js').DecisionAnswer} DecisionAnswer */
+/** @typedef {CardInput & { id: string }} IdCard */
+/** @typedef {{ id: string, score: number }} Candidate */
+/** A decomposed mechanic with what selection made of it. @typedef {Mechanic & { candidates: Candidate[], primitives: string[], source: string, score: number }} SelectedMechanic */
+/** A chosen space: instance id, primitive, its configuration, the role it plays and the capabilities it then provides. @typedef {{ id: string, use: string, with: Record<string, unknown>, role: string, caps: string[] }} SpaceChoice */
+/** @typedef {{ id: string, missing: string[], why: string }} Unmet */
+/** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
+/** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/**
+ * An uncovered mechanic. 'adapter' gaps name the primitive no chosen space can host and the adapter that would
+ * project it (`signature` a one-line description; `adapter` compose-check's adapter card when it produced one).
+ * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
+ */
+/** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null }} LocomotionResult */
+/** @typedef {{ mechanic: string, added?: string, removed?: string, why: string }} MappingChange */
+/** @typedef {{ checked: string[], changes: MappingChange[], ms?: number | null, error?: string }} MappingCheck */
+/** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
+/** @typedef {{ primitives: string[], covered: boolean, why: string }} MechanicMapping */
+/** A space kind not offered because no registered generator can furnish what it needs. @typedef {{ use: string, missing: string[], why: string }} ExcludedSpace */
+/** A generator a mechanic named that targets none of the chosen spaces. @typedef {{ id: string, why: string }} DroppedGenerator */
+/**
+ * selectPrimitives()'s result.
+ * @typedef {object} Selection
+ * @property {string} version
+ * @property {SelectedMechanic[]} mechanics
+ * @property {string[]} systems
+ * @property {GeneratorChoice[]} generators
+ * @property {Array<{ id: string, space?: string }>} graphics
+ * @property {SpaceChoice[]} spaces
+ * @property {Record<string, string>} bind  primitive id -> space id (primitives not on the first space)
+ * @property {Gap[]} gaps
+ * @property {string | null} provider
+ * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null }} completeness
+ * @property {DroppedGenerator[]} [droppedGenerators]
+ * @property {ExcludedSpace[]} [excludedSpaces]
+ * @property {number} ms
+ */
 
 export const SELECT_VERSION = 'select/0.1';
 export const LEXICAL_ACCEPT = 0.75;    // calibrated in tests/v2-p-pipeline-select.test.js
 export const DECISION_ACCEPT = 0.4;
 
 const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this their them they you your player players game games can each every any one two three when where which who what than then there these those over under up down out about via per such so not no only also more most some between'.split(' '));
+/** @param {string} w */
 const stem = w => w.length > 4 ? w.replace(/(ings|ing|ers|er|ed|es|ions|ion|ments|ment|ies|s)$/, m => m === 'ies' ? 'y' : '') : w;
+/** @param {unknown} text @returns {string[]} */
 export const tokens = text => (String(text || '').toLowerCase().match(/[a-z][a-z0-9]*/g) || []).filter(w => !STOP.has(w) && w.length > 1).map(stem);
 
 // Generic semantic neighbours (mechanic words, not genres): lets "talk to villagers" reach a dialogue card.
@@ -39,12 +88,16 @@ const GROUPS = [
   'grow level xp ability upgrade progression stat skill',
   'farm crop plant harvest',
 ].map(g => g.split(' ').map(stem));
+/** @param {string} t */
 const neighbours = t => [...new Set(GROUPS.filter(g => g.includes(t)).flat())].filter(x => x !== t);
 
+/** @type {WeakMap<object, Map<string, number>>} */
 const cardWeights = new WeakMap();
+/** @param {IdCard} card @returns {Map<string, number>} */
 function weightsOf(card) {
-  if (cardWeights.has(card)) return cardWeights.get(card);
-  const w = new Map(), put = (text, weight) => { for (const t of tokens(text)) w.set(t, Math.max(w.get(t) || 0, weight)); };
+  const cached = cardWeights.get(card); if (cached) return cached;
+  /** @type {Map<string, number>} */
+  const w = new Map(), put = (/** @type {string} */ text, /** @type {number} */ weight) => { for (const t of tokens(text)) w.set(t, Math.max(w.get(t) || 0, weight)); };
   put(card.id.split('.').slice(1).join(' '), 3);
   put((card.provides?.actions || []).join(' '), 3);
   put(card.intent, 1);
@@ -56,7 +109,10 @@ function weightsOf(card) {
   return w;
 }
 
-/** Lexical relevance of a card to a mechanic (0 = unrelated; ≥ LEXICAL_ACCEPT = a match). */
+/**
+ * Lexical relevance of a card to a mechanic (0 = unrelated; ≥ LEXICAL_ACCEPT = a match).
+ * @param {{ verb: string, description: string }} mechanic @param {IdCard} card @returns {number}
+ */
 export function relevance(mechanic, card) {
   const direct = [...new Set(tokens(`${mechanic.verb} ${mechanic.description}`))];
   if (!direct.length) return 0;
@@ -66,18 +122,22 @@ export function relevance(mechanic, card) {
   return +(total / Math.sqrt(direct.length)).toFixed(3);
 }
 
+/** @param {{ verb: string, description: string }} mechanic @param {IdCard[]} cards @param {number} [limit] @returns {Candidate[]} */
 export function rankCandidates(mechanic, cards, limit = 6) {
   return cards.map(card => ({ id: card.id, score: relevance(mechanic, card) })).filter(c => c.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit);
 }
 
-/** Which primitive registers each predicate and effect kind (kernel built-ins excluded). */
+/** @typedef {{ predicates: Record<string, string>, effects: Record<string, string> }} VocabIndex */
+/** @type {WeakMap<object, VocabIndex>} */
 const vocabCache = new WeakMap();
+/** Which primitive registers each predicate and effect kind (kernel built-ins excluded). @param {RegistryLike} registry @returns {VocabIndex} */
 export function vocabIndex(registry) {
-  if (vocabCache.has(registry)) return vocabCache.get(registry);
+  const cached = vocabCache.get(registry); if (cached) return cached;
   const base = new Logic(), builtinP = new Set(base.predicates.keys()), builtinE = new Set(base.effects.keys());
+  /** @type {VocabIndex} */
   const out = { predicates: {}, effects: {} };
   for (const id of registry.ids()) {
-    const p = registry.get(id); if (!p.logic) continue;
+    const p = /** @type {RegisteredPrimitive} */ (registry.get(id)); if (!p.logic) continue;
     const l = new Logic();
     try { p.logic(l); } catch { continue; }
     for (const k of l.predicates.keys()) if (!builtinP.has(k)) out.predicates[k] ??= id;
@@ -88,6 +148,7 @@ export function vocabIndex(registry) {
 }
 
 // Structural hints for a decomposed space kind: capabilities and views it implies (generic, not genre).
+/** @type {Record<string, { caps: string[], views: string[] }>} */
 const KIND_HINTS = {
   'continuous-3d': { caps: ['surface', 'raycast', 'gravity'], views: ['1p', '3p', 'iso'] },
   'continuous-2d': { caps: ['overlap'], views: ['td', 'side'] },
@@ -98,42 +159,59 @@ const KIND_HINTS = {
   none: { caps: [], views: ['ui'] },
 };
 
+/** @param {unknown} role @param {number} i */
 const spaceSlug = (role, i) => ((String(role || 'world').toLowerCase().match(/[a-z0-9]+/g) || ['world']).join('_').slice(0, 30) || 'world') + (i ? `_${i}` : '');
 
 /**
  * Choose spaces so every chosen primitive's required capabilities are provided. The primary
  * space satisfies the most primitives; primitives it can't host are bound to a second space
  * (a variant of any space primitive) that can, and only then reported as unmet.
+ * @param {RegistryLike} registry @param {string[]} primitiveIds
+ * @param {{ views?: string[], spaces?: Decomposition['spaces'] }} [decomposition]
+ * @param {string[]} [prefer] @param {string[]} [exclude]
+ * @returns {{ spaces: SpaceChoice[], bind: Record<string, string>, unmet: Unmet[], excluded: ExcludedSpace[] }}
  */
 export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer = [], exclude = []) {
   let spaceIds = registry.ids('engine').filter(id => isSpace(id) && !exclude.includes(id));
   // Something moves through the world: a space kind whose declared needs (card.needs.content) no registered
   // generator can build would be a void, so it is not offered (when another space kind can be).
+  /** @type {ExcludedSpace[]} */
   const excluded = [];
   if (primitiveIds.some(id => isMovement(registry, id))) {
     const ok = spaceIds.filter(id => { const missing = unfurnishable(registry, id); if (missing.length) excluded.push({ use: id, missing, why: `no registered generator builds ${missing.join(', ')} for ${id}` }); return !missing.length; });
     if (ok.length) spaceIds = ok; else excluded.length = 0;
   }
-  const variants = spaceIds.flatMap(id => spaceVariants(registry, id).map(v => ({ use: id, ...v, card: registry.get(id).card })));
+  const variants = spaceIds.flatMap(id => spaceVariants(registry, id).map(v => ({ use: id, ...v, card: /** @type {RegisteredPrimitive} */ (registry.get(id)).card })));
+  /** @typedef {typeof variants[number]} Variant */
+  /** @typedef {{ id: string, caps: string[] }} Needer */
   const needers = primitiveIds.filter(id => !isSpace(id)).map(id => ({ id, caps: requirementsOf(registry, id).capabilities }));
   const wantViews = new Set([...(decomposition.views || []), ...(decomposition.spaces || []).flatMap(s => KIND_HINTS[s.kind]?.views || [])]);
   const hint = decomposition.spaces?.[0] ? KIND_HINTS[decomposition.spaces[0].kind] : null;
+  /** @param {Variant} v @param {Needer} n */
   const fits = (v, n) => n.caps.every(c => v.caps.has(c));
+  /** @param {Variant} v @param {Needer[]} pool @param {string | undefined} kind */
   const score = (v, pool, kind) => {
     const k = kind ? KIND_HINTS[kind] : hint;
     const views = (v.card.views || []).filter(x => wantViews.has(x) || x === 'any').length;
     const kindFit = k ? k.caps.filter(c => v.caps.has(c)).length - (k.caps.length && !k.caps.some(c => v.caps.has(c)) ? 2 : 0) : 0;
     return pool.filter(n => fits(v, n)).length * 10 + views * 2 + kindFit * 3 + (prefer.includes(v.use) ? 6 : 0) - v.caps.size * 0.05 - Object.keys(v.with).length * 0.5;
   };
+  /** @param {Needer[]} pool @param {string | undefined} kind */
   const pick = (pool, kind) => variants.map(v => ({ v, s: score(v, pool, kind) })).sort((a, b) => b.s - a.s || a.v.use.localeCompare(b.v.use))[0]?.v || null;
-  const spaces = [], bind = {}, unmet = [];
+  /** @type {SpaceChoice[]} */
+  const spaces = [];
+  /** @type {Record<string, string>} */
+  const bind = {};
+  /** @type {Unmet[]} */
+  const unmet = [];
   if (!variants.length) return { spaces, bind, excluded, unmet: needers.map(n => ({ id: n.id, missing: n.caps, why: 'no space primitive is registered' })) };
-  const primary = pick(needers, decomposition.spaces?.[0]?.kind);
+  // pick() returns null only when there are no variants, handled above.
+  const primary = /** @type {Variant} */ (pick(needers, decomposition.spaces?.[0]?.kind));
   spaces.push({ id: spaceSlug(decomposition.spaces?.[0]?.role, 0), use: primary.use, with: primary.with, role: decomposition.spaces?.[0]?.role || 'world', caps: [...primary.caps] });
   let rest = needers.filter(n => !fits(primary, n));
   for (let i = 1; rest.length && i < 3; i++) {
     const role = decomposition.spaces?.[i];
-    const next = pick(rest, role?.kind);
+    const next = /** @type {Variant} */ (pick(rest, role?.kind));
     const hosted = rest.filter(n => fits(next, n));
     if (!hosted.length) break;
     const id = spaceSlug(role?.role || hosted[0].id.split('.').pop(), spaces.some(s => s.id === spaceSlug(role?.role || hosted[0].id.split('.').pop(), 0)) ? i : 0);
@@ -149,9 +227,14 @@ export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer 
   return { spaces, bind, unmet, excluded };
 }
 
-/** Best renderer per space and overlay UI: graphics cards that name the space, then view overlap. */
+/**
+ * Best renderer per space and overlay UI: graphics cards that name the space, then view overlap.
+ * @param {RegistryLike} registry @param {SpaceChoice[]} spaces @returns {Array<{ id: string, space?: string }>}
+ */
 export function chooseGraphics(registry, spaces) {
-  const out = [], cards = registry.cards('graphics');
+  /** @type {Array<{ id: string, space?: string }>} */
+  const out = [];
+  const cards = registry.cards('graphics');
   spaces.forEach((s, i) => {
     const views = new Set(registry.get(s.use)?.card.views || []);
     const ranked = cards.map(c => {
@@ -179,6 +262,8 @@ const DECIDE = 'Which listed primitive implements this mechanic as the game need
  * mechanic to the primitives that implement it. Word overlap can't know that "rings" are collectibles or
  * that "tetromino" means falling pieces; the model can, so it is the primary selector when available.
  * Returns { [mechanicId]: { primitives: [ids], covered: bool, why } } or null.
+ * @param {{ writer?: Writer | null, decomposition: { premise: string }, mechanics: Array<{ id: string, description: string }>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
+ * @returns {Promise<Record<string, MechanicMapping> | null>}
  */
 export async function mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log = () => {} }) {
   if (!writer?.complete) return null;
@@ -188,33 +273,47 @@ export async function mapWithCatalogue({ writer, decomposition, mechanics, cards
   const schema = { name: 'mechanic_map', schema: { type: 'object', additionalProperties: false, required: ['mappings'], properties: { mappings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'primitives', 'covered', 'why'], properties: { mechanic: { type: 'string' }, primitives: { type: 'array', items: { type: 'string' } }, covered: { type: 'boolean' }, why: { type: 'string' } } } } } } };
   try {
     const reply = await writer.complete({ system, user, schema });
+    /** @type {Record<string, MechanicMapping>} */
     const out = {};
-    for (const m of parseReply(reply.text)?.mappings || []) {
-      const ids = (m.primitives || []).filter(id => registry.has(id) && !isGraphics(id));
-      out[m.mechanic] = { primitives: [...new Set(ids)], covered: Boolean(m.covered) && ids.length > 0, why: String(m.why || '').slice(0, 200) };
+    // Model output: only object mappings and string ids are read.
+    for (const m of objects(prop(parseReply(reply.text), 'mappings'))) {
+      const ids = strings(m.primitives).filter(id => registry.has(id) && !isGraphics(id));
+      out[String(m.mechanic)] = { primitives: [...new Set(ids)], covered: Boolean(m.covered) && ids.length > 0, why: String(m.why || '').slice(0, 200) };
     }
     return Object.keys(out).length ? out : null;
-  } catch (error) { log(`catalogue mapping failed: ${error.message}`); return null; }
+  } catch (error) { log(`catalogue mapping failed: ${messageOf(error)}`); return null; }
 }
 
+/**
+ * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[] }} options
+ * @returns {Promise<Selection>}
+ */
 export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [] }) {
   const started = performance.now();
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
-  const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards) }));
+  // primitives, source and score are set for every mechanic in the loop below (in this key order).
+  /** @type {SelectedMechanic[]} */
+  const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
   const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log });
-  let decided = null, provider = mapped ? 'catalogue-model' : null;
+  /** @type {Record<string, DecisionAnswer> | null} */
+  let decided = null;
+  /** @type {string | null} */
+  let provider = mapped ? 'catalogue-model' : null;
   if (!mapped && decisions && mechanics.some(m => m.candidates.length)) {
     try {
       const questions = Object.fromEntries(mechanics.filter(m => m.candidates.length).map(m => [m.id, { type: 'choice', instructions: `${DECIDE}\nMechanic: ${m.description}`,
-        criteria: { ...Object.fromEntries(m.candidates.map(c => [c.id, registry.get(c.id).card.intent.slice(0, 300)])), none: 'None of these implements it.' } }]));
+        criteria: { ...Object.fromEntries(m.candidates.map(c => [c.id, /** @type {RegisteredPrimitive} */ (registry.get(c.id)).card.intent.slice(0, 300)])), none: 'None of these implements it.' } }]));
       const r = await decisions.decide({ state: `Game idea: ${decomposition.premise}`, questions });
       decided = r.answers; provider = r.provider;
-    } catch (error) { log(`selection decisions failed: ${error.message}`); }
+    } catch (error) { log(`selection decisions failed: ${messageOf(error)}`); }
   }
   // Selection completeness: each core mechanic must have the primitive that defines it (a model check, when a writer is connected).
   const checked = mapped ? await checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log }) : null;
-  const chosen = new Set(), gaps = [];
+  /** @type {Set<string>} */
+  const chosen = new Set();
+  /** @type {Gap[]} */
+  const gaps = [];
   for (const m of mechanics) {
     const map = mapped?.[m.id];
     if (map) {
@@ -226,9 +325,11 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     }
     const top = m.candidates[0];
     const answer = decided?.[m.id];
+    /** @type {string | null} */
     let pick = null, source = 'lexical';
     if (answer?.choice) {
-      const p = answer.probabilities?.[answer.choice] ?? answer.confidence ?? 0;
+      const probabilities = answer.probabilities; // choice answers carry { option: p }
+      const p = (probabilities && !Array.isArray(probabilities) ? probabilities[answer.choice] : undefined) ?? answer.confidence ?? 0;
       source = provider || 'decision';
       if (answer.choice !== 'none' && p >= DECISION_ACCEPT && registry.has(answer.choice)) pick = answer.choice;
       else if (answer.choice === 'none' && p >= 0.5) pick = null;
@@ -273,12 +374,18 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     // the missing piece is a space capability (a capability gap), not an adapter.
     const hostable = registry.ids('engine').filter(isSpace).some(id => spaceVariants(registry, id).some(v => u.missing.every(c => v.caps.has(c))));
     const core = hostable && mechanics.some(m => m.importance === 'core' && m.primitives.includes(u.id));
+    /** @type {CompositionResult | null} */
     let verdict = null;
-    if (core && composition) try { verdict = composition({ spaces, systems: [...chosen, u.id], primitive: u.id }, registry); } catch { verdict = null; }
-    const signature = verdict?.signature || `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})`;
+    /** @type {import('./compose-check.js').Selection & { primitive: string }} */
+    const probe = { spaces, systems: [...chosen, u.id], primitive: u.id };
+    if (core && composition) try { verdict = composition(probe, registry); } catch { verdict = null; }
+    // compose-check's signature is an adapter card (AdapterSpec), not text: the gap keeps it as `adapter` and
+    // describes the adapter in one line.
+    const adapter = verdict?.signature || undefined;
+    const signature = isStr(adapter) ? adapter : `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})`;
     for (const m of mechanics) if (m.primitives.includes(u.id)) {
       m.primitives = m.primitives.filter(x => x !== u.id);
-      if (core && m.importance === 'core') gaps.push({ mechanic: m.id, description: `needs adapter: ${signature}`, importance: 'core', kind: 'adapter', primitive: u.id, signature, verdict: verdict?.verdict || 'incompatible-needs-adapter', why: `${u.id} needs ${u.missing.join(', ')}, which ${spaces[0]?.use || 'the space'} does not provide; an adapter primitive can project it` });
+      if (core && m.importance === 'core') gaps.push({ mechanic: m.id, description: `needs adapter: ${signature}`, importance: 'core', kind: 'adapter', primitive: u.id, signature, ...(adapter ? { adapter } : {}), verdict: verdict?.verdict || 'incompatible-needs-adapter', why: `${u.id} needs ${u.missing.join(', ')}, which ${spaces[0]?.use || 'the space'} does not provide; an adapter primitive can project it` });
       else if (!m.primitives.length) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'capability', why: `${u.id} needs ${u.missing.join(', ')}, which no registered space provides` });
     }
   }
@@ -288,7 +395,8 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // model once for every no-primitive gap, else fall back to lexical relevance against the space card.
   const noPrim = gaps.filter(g => g.kind === 'no_primitive');
   if (noPrim.length && spaces.length) {
-    const spaceCards = spaces.map(s => ({ id: s.use, ...registry.get(s.use).card }));
+    const spaceCards = spaces.map(s => ({ id: s.use, .../** @type {RegisteredPrimitive} */ (registry.get(s.use)).card }));
+    /** @type {Set<string>} */
     let covered = new Set();
     if (decisions) {
       try {
@@ -304,10 +412,13 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   // A generator a mechanic named goes to the first chosen space its card targets (card.spaces); one that targets
   // none of them is dropped, never bound to a space it can't build.
-  const generators = [], dropped = [];
+  /** @type {GeneratorChoice[]} */
+  const generators = [];
+  /** @type {DroppedGenerator[]} */
+  const dropped = [];
   for (const id of [...chosen].filter(isGenerator)) {
     const s = spaces.find(x => targets(registry, id, x.use));
-    if (s) generators.push({ id, space: s.id }); else { dropped.push({ id, why: `targets ${(registry.get(id).card.spaces || []).join(', ') || 'no space'}; chosen: ${spaces.map(x => x.use).join(', ')}` }); chosen.delete(id); }
+    if (s) generators.push({ id, space: s.id }); else { dropped.push({ id, why: `targets ${(/** @type {RegisteredPrimitive} */ (registry.get(id)).card.spaces || []).join(', ') || 'no space'}; chosen: ${spaces.map(x => x.use).join(', ')}` }); chosen.delete(id); }
   }
   for (const d of dropped) for (const m of mechanics) m.primitives = m.primitives.filter(x => x !== d.id);
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
@@ -330,30 +441,39 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
+/** @param {string} id */
 const order = id => id.startsWith('engine.') ? 0 : id.startsWith('gameplay.') ? 1 : 2;
 
 // ---------- selection completeness ----------
 
 /** compose-check.js (v2-static-composition) when present: checkComposition(selection, registry) -> { verdict, missing, adapter, signature }. */
+/** @type {typeof import('./compose-check.js') | null | undefined} */
 let composeMod;
+/** @returns {Promise<typeof import('./compose-check.js').checkComposition | null>} */
 async function compositionCheck() {
   if (composeMod === undefined) composeMod = await import('./compose-check.js').catch(() => null);
   return typeof composeMod?.checkComposition === 'function' ? composeMod.checkComposition : null;
 }
 
+/** @param {{ views?: string[] }} decomposition @returns {string | null} */
 const primaryOf = decomposition => (decomposition.views || []).find(v => v !== 'ui') || null;
+/** @param {{ views?: string[] }} card @param {string | null} view */
 const supportsView = (card, view) => !view || (card.views || []).includes(view) || (card.views || []).includes('any');
 
 /**
  * Base locomotion cards that fit a space, a primary view and a medium, best first. Hard filters: base locomotion,
  * capabilities the space provides, the primary view. Preference: the wanted medium, then specialisation.
+ * Cards declare `locomotion` and `medium` outside the kernel's CardInput fields (read through its index signature).
+ * @param {RegistryLike} registry
+ * @param {{ caps?: string[], view?: string | null, medium?: string | null, exclude?: string[] }} [options]
+ * @returns {Array<{ id: string, medium: string | null, score: number }>}
  */
 export function baseLocomotion(registry, { caps = [], view = null, medium = null, exclude = [] } = {}) {
   const have = new Set(caps);
   return registry.cards('gameplay').filter(c => c.locomotion === 'base' && !exclude.includes(c.id) && (c.requires?.capabilities || []).every(x => have.has(x)) && supportsView(c, view))
     // Specialisation breaks ties: a card that needs more of what this space provides (gravity for jumping) and is made
     // for fewer views fits it better than a general one (the side-view platformer over walking, on a side-view tilemap).
-    .map(c => ({ id: c.id, medium: c.medium || null, score: ((c.views || []).includes(view) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) + (c.requires?.capabilities || []).length + 2 / Math.max(1, (c.views || []).length) }))
+    .map(c => ({ id: c.id, medium: str(c.medium) || null, score: ((c.views || []).includes(/** @type {string} */ (view)) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) + (c.requires?.capabilities || []).length + 2 / Math.max(1, (c.views || []).length) }))
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 }
 
@@ -362,15 +482,21 @@ export function baseLocomotion(registry, { caps = [], view = null, medium = null
  * locomotion in the wrong medium (flying through a walking dungeon) is replaced by one in the right medium; an idea
  * whose avatar moves but has no base locomotion gets one. movement 'none' (cards, boards, falling pieces) adds nothing.
  * Mutates `chosen` and the mechanics' primitive lists; returns what it did.
+ * @param {{ decomposition: { views?: string[], movement?: string }, registry: RegistryLike, chosen: Set<string>, space: SpaceChoice | undefined, mechanics?: SelectedMechanic[] }} options
+ * @returns {LocomotionResult}
  */
 export function locomotionCompleteness({ decomposition, registry, chosen, space, mechanics = [] }) {
-  const view = primaryOf(decomposition), medium = decomposition.movement || null, out = { view, medium, removed: [], added: null };
+  const view = primaryOf(decomposition), medium = decomposition.movement || null;
+  /** @type {LocomotionResult} */
+  const out = { view, medium, removed: [], added: null };
+  // ids below come from `chosen`, which holds registered ids only.
+  const cardOf = (/** @type {string} */ id) => /** @type {RegisteredPrimitive} */ (registry.get(id)).card;
   if (!space) return out;
   const present = [...chosen].filter(id => registry.get(id)?.card.locomotion === 'base');
-  const drop = id => { chosen.delete(id); out.removed.push(id); for (const m of mechanics) if (Array.isArray(m.primitives)) m.primitives = m.primitives.filter(x => x !== id); };
-  for (const id of present) if (!supportsView(registry.get(id).card, view)) drop(id);
+  const drop = (/** @type {string} */ id) => { chosen.delete(id); out.removed.push(id); for (const m of mechanics) if (Array.isArray(m.primitives)) m.primitives = m.primitives.filter(x => x !== id); };
+  for (const id of present) if (!supportsView(cardOf(id), view)) drop(id);
   const left = present.filter(id => chosen.has(id));
-  const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => registry.get(id).card.medium && registry.get(id).card.medium !== medium));
+  const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => cardOf(id).medium && cardOf(id).medium !== medium));
   if (medium === 'none' || (left.length && !wrongMedium)) return out;
   const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left }).find(c => !medium || c.medium === medium || !c.medium);
   if (!best) return out;
@@ -386,12 +512,14 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
  * platformer needs the platformer movement, not grid steps)? The model sees the mapped primitives and the closest
  * alternatives (lexical candidates and siblings of what was mapped) and names the central one and any wrong ones.
  * Applies its answer to `mapped` (adds the central primitive, removes wrong ones). -> { checked, changes } or null.
+ * @param {{ writer?: Writer | null, decomposition: { premise: string, views?: string[], movement?: string }, mechanics: SelectedMechanic[], mapped: Record<string, MechanicMapping>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
+ * @returns {Promise<MappingCheck | null>}
  */
 export async function checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log = () => {} }) {
   const core = mechanics.filter(m => m.importance === 'core' && mapped[m.id]);
   if (!writer?.complete || !core.length) return null;
   const byId = new Map(cards.map(c => [c.id, c]));
-  const line = id => `${id}: ${String(byId.get(id)?.intent || '').replace(/\s+/g, ' ').slice(0, 160)}`;
+  const line = (/** @type {string} */ id) => `${id}: ${String(byId.get(id)?.intent || '').replace(/\s+/g, ' ').slice(0, 160)}`;
   const blocks = core.map(m => {
     const have = mapped[m.id].primitives;
     const domains = new Set(have.map(id => id.split('.').slice(0, 2).join('.')));
@@ -403,15 +531,18 @@ export async function checkMapping({ writer, decomposition, mechanics, mapped, c
   const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why'], properties: { mechanic: { type: 'string' }, central: { type: 'string' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' } } } } } } };
   try {
     const reply = await writer.complete({ system, user, schema });
+    /** @type {MappingChange[]} */
     const changes = [];
-    for (const c of parseReply(reply.text)?.checks || []) {
-      const entry = mapped[c.mechanic]; if (!entry) continue;
-      const m = core.find(x => x.id === c.mechanic); if (!m) continue;
-      const central = registry.has(c.central) && !isGraphics(c.central) ? c.central : null;
+    // Model output: only object checks, string ids and a string list of wrong ids are read.
+    for (const c of objects(prop(parseReply(reply.text), 'checks'))) {
+      const mechanic = str(c.mechanic), named = str(c.central);
+      const entry = Object.hasOwn(mapped, mechanic) ? mapped[mechanic] : undefined; if (!entry) continue;
+      const m = core.find(x => x.id === mechanic); if (!m) continue;
+      const central = registry.has(named) && !isGraphics(named) ? named : null;
       if (central && !entry.primitives.includes(central)) { entry.primitives = [central, ...entry.primitives]; entry.covered = true; changes.push({ mechanic: m.id, added: central, why: String(c.why || '').slice(0, 160) }); }
-      for (const w of c.wrong || []) if (w !== central && entry.primitives.includes(w)) { entry.primitives = entry.primitives.filter(x => x !== w); changes.push({ mechanic: m.id, removed: w, why: String(c.why || '').slice(0, 160) }); }
+      for (const w of strings(c.wrong)) if (w !== central && entry.primitives.includes(w)) { entry.primitives = entry.primitives.filter(x => x !== w); changes.push({ mechanic: m.id, removed: w, why: String(c.why || '').slice(0, 160) }); }
       if (!entry.primitives.length) entry.covered = false;
     }
     return { checked: core.map(m => m.id), changes, ms: reply.ms ?? null };
-  } catch (error) { log(`mapping check failed: ${error.message}`); return { checked: [], changes: [], error: String(error.message || error).slice(0, 120) }; }
+  } catch (error) { log(`mapping check failed: ${messageOf(error)}`); return { checked: [], changes: [], error: String(messageOf(error) || error).slice(0, 120) }; }
 }

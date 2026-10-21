@@ -1,20 +1,32 @@
+// @ts-check
 // Child-process side of an isolated generation job (forked by isolate.js with a
 // heap limit). It imports a runner module (default: job-runner.mjs), builds the
 // pipeline from its environment here, and runs exactly one job. Progress (stage,
 // draft, checkpoint) is sent to the parent; every store access (publish,
 // updateMeta, version, ...) is a request the parent answers, so all writes stay
 // in the parent.
-import { serializeError } from './jobs.js';
+import { serializeError, jobSpecOf } from './jobs.js';
+import { isStr, num, obj, prop, str } from '../kernel/guards.js';
+
+/** @typedef {import('./jobs.js').JobSpec} JobSpec */
+/** @typedef {import('./jobs.js').JobContext} JobContext */
+/**
+ * A runner module (default: job-runner.mjs; tests load their own). Code, not data: the parent names it.
+ * @typedef {{ createJobRunner(options: { env: NodeJS.ProcessEnv, repoRoot?: string, config: Record<string, unknown> }): Promise<{ run(job: JobSpec, ctx: JobContext): Promise<unknown> }> }} RunnerModule
+ */
 
 const t0 = performance.now();
+/** @type {Map<number, { resolve: (value: unknown) => void, reject: (error: unknown) => void }>} */
 const pending = new Map();
 let nextId = 0;
 
+/** @param {unknown} message */
 const send = message => {
-  try { process.send(message); }
+  try { process.send?.(message); }
   // Anything the serializer refuses (functions, class instances) goes as its JSON form, as the store would write it.
-  catch { process.send(JSON.parse(JSON.stringify(message))); }
+  catch { process.send?.(JSON.parse(JSON.stringify(message))); }
 };
+/** @param {string} method @param {unknown[]} args @returns {Promise<unknown>} */
 const call = (method, ...args) => new Promise((resolve, reject) => {
   const id = ++nextId;
   pending.set(id, { resolve, reject });
@@ -25,7 +37,11 @@ const memory = () => {
   return { heapUsedMb: Math.round(m.heapUsed / 1048576), rssMb: Math.round(m.rss / 1048576), maxRssMb: Math.round(process.resourceUsage().maxRSS / 1024) };
 };
 
-async function start({ job, runner, repoRoot, config }) {
+/** @param {Record<string, unknown>} message the parent's start message: { job, runner, repoRoot, config } */
+async function start(message) {
+  const job = jobSpecOf(message.job), runner = str(message.runner), config = obj(message.config);
+  const repoRoot = isStr(message.repoRoot) ? message.repoRoot : undefined;
+  /** @type {JobContext} */
   const ctx = {
     job,
     stage: (name, detail = {}) => send({ type: 'stage', name, detail }),
@@ -42,7 +58,7 @@ async function start({ job, runner, repoRoot, config }) {
     },
   };
   try {
-    const mod = await import(runner);
+    const mod = /** @type {RunnerModule} */ (await import(runner));
     const built = await mod.createJobRunner({ env: process.env, repoRoot, config });
     send({ type: 'ready', setupMs: Math.round(performance.now() - t0) });
     await built.run(job, ctx);
@@ -52,12 +68,13 @@ async function start({ job, runner, repoRoot, config }) {
   }
 }
 
-process.on('message', message => {
-  if (message?.type === 'start') { start(message); return; }
-  if (message?.type !== 'reply') return;
-  const p = pending.get(message.id); if (!p) return;
-  pending.delete(message.id);
-  if (message.ok) p.resolve(message.value); else p.reject(Object.assign(Error(message.error?.message || 'store call failed'), message.error || {}));
+process.on('message', received => {
+  const message = obj(received);
+  if (message.type === 'start') { start(message); return; }
+  if (message.type !== 'reply') return;
+  const id = num(message.id), p = pending.get(id); if (!p) return;
+  pending.delete(id);
+  if (message.ok) p.resolve(message.value); else p.reject(Object.assign(Error(str(prop(message.error, 'message')) || 'store call failed'), obj(message.error)));
 });
 // The server went away (or killed the job): stop rather than run on unsupervised.
 process.on('disconnect', () => process.exit(1));

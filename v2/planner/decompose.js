@@ -1,12 +1,39 @@
+// @ts-check
 // Idea decomposition (ARCHITECTURE.md §4, step 0): a request names games,
 // genres, settings and characters; each reference contributes mechanics. The
 // result is catalogue-independent on purpose (mechanics are written as verbs
 // and structures, not primitive ids), so a mechanic no primitive covers shows
 // up as a gap instead of being silently bent into something that exists.
 import { parseReply } from './writer.js';
+import { obj, list, objects, isStr, messageOf } from '../kernel/guards.js';
+
+/** @typedef {import('./types.js').Writer} Writer */
+/** @typedef {{ question: string, answer: string }} Answer */
+/** @typedef {{ name: string, kind: string, keeps: string[] }} Reference */
+/** @typedef {'core' | 'supporting' | 'flavor'} Importance */
+/** @typedef {{ id: string, verb: string, description: string, from: string, importance: Importance }} Mechanic */
+/** @typedef {{ role: string, kind: string, description: string }} SpaceRole */
+/**
+ * normalize()'s result: catalogue-independent and safe to read (every field narrowed from model output).
+ * @typedef {object} Decomposition
+ * @property {string} version
+ * @property {string} title
+ * @property {string} premise
+ * @property {string} tone
+ * @property {Reference[]} references
+ * @property {Mechanic[]} mechanics
+ * @property {SpaceRole[]} spaces
+ * @property {string[]} views
+ * @property {string} movement  ground | air | water | track | none (MOVEMENT)
+ * @property {number} acts
+ * @property {number} zones
+ */
+/** decomposeIdea()'s result: the decomposition plus where it came from. @typedef {Decomposition & { source: string, ms: number, error?: string }} DecompositionResult */
 
 export const DECOMPOSITION_VERSION = 'decompose/0.1';
+/** @type {readonly unknown[]} */
 const SPACE_KINDS = ['continuous-3d', 'continuous-2d', 'tiles-side', 'tiles-topdown', 'board', 'locations', 'none'];
+/** @type {readonly unknown[]} */
 const VIEWS = ['1p', '3p', 'td', 'side', 'iso', 'board', 'ui', 'text'];
 // How the player's avatar moves (movement cards declare the same `medium`); none = no avatar moves (cards, boards, menus).
 export const MOVEMENT = ['ground', 'air', 'water', 'track', 'none'];
@@ -38,7 +65,11 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
 
-/** Decompose with a writer (strict schema), falling back to the offline decomposition on any failure. */
+/**
+ * Decompose with a writer (strict schema), falling back to the offline decomposition on any failure.
+ * @param {{ writer?: Writer | null, prompt: string, answers?: Answer[] }} options
+ * @returns {Promise<DecompositionResult>}
+ */
 export async function decomposeIdea({ writer = null, prompt, answers = [] }) {
   const started = performance.now();
   const user = `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
@@ -48,44 +79,55 @@ export async function decomposeIdea({ writer = null, prompt, answers = [] }) {
       const d = normalize(parseReply(reply.text), prompt);
       return { ...d, source: reply.model, ms: Math.round(performance.now() - started) };
     } catch (error) {
-      return { ...decomposeOffline(prompt, answers), ms: Math.round(performance.now() - started), error: String(error.message || error).slice(0, 160) };
+      return { ...decomposeOffline(prompt, answers), ms: Math.round(performance.now() - started), error: String(messageOf(error) || error).slice(0, 160) };
     }
   }
   return { ...decomposeOffline(prompt, answers), ms: Math.round(performance.now() - started) };
 }
 
+/** @param {unknown} s */
 const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_').slice(0, 40);
-const clampInt = (v, lo, hi, d) => Number.isInteger(v) ? Math.max(lo, Math.min(hi, v)) : d;
+/** @param {unknown} v @param {number} lo @param {number} hi @param {number} d @returns {number} */
+const clampInt = (v, lo, hi, d) => typeof v === 'number' && Number.isInteger(v) ? Math.max(lo, Math.min(hi, v)) : d;
 
-export function normalize(d, prompt = '') {
+/**
+ * A decomposition from model output (or the offline path): `d` is unknown and narrowed field by field.
+ * @param {unknown} input @param {string} [prompt] @returns {Decomposition}
+ */
+export function normalize(input, prompt = '') {
+  const d = obj(input);
   const seen = new Set();
-  const mechanics = (Array.isArray(d?.mechanics) ? d.mechanics : []).map(m => {
+  /** @type {readonly unknown[]} */
+  const IMPORTANCE = ['core', 'supporting', 'flavor'];
+  const mechanics = objects(d.mechanics).map(m => {
     let id = slug(m.id || m.verb || m.description);
     while (seen.has(id)) id += '_';
     seen.add(id);
-    return { id, verb: String(m.verb || '').slice(0, 60), description: String(m.description || m.verb || '').slice(0, 240), from: String(m.from || '').slice(0, 80), importance: ['core', 'supporting', 'flavor'].includes(m.importance) ? m.importance : 'supporting' };
+    return { id, verb: String(m.verb || '').slice(0, 60), description: String(m.description || m.verb || '').slice(0, 240), from: String(m.from || '').slice(0, 80), importance: IMPORTANCE.includes(m.importance) ? /** @type {Importance} */ (m.importance) : 'supporting' };
   });
   return {
     version: DECOMPOSITION_VERSION,
-    title: String(d?.title || titleFrom(prompt)).slice(0, 80),
-    premise: String(d?.premise || prompt).slice(0, 600),
-    tone: String(d?.tone || '').slice(0, 80),
-    references: (Array.isArray(d?.references) ? d.references : []).slice(0, 8).map(r => ({ name: String(r.name || '').slice(0, 80), kind: r.kind || 'other', keeps: (r.keeps || []).map(String).slice(0, 8) })),
+    title: String(d.title || titleFrom(prompt)).slice(0, 80),
+    premise: String(d.premise || prompt).slice(0, 600),
+    tone: String(d.tone || '').slice(0, 80),
+    references: objects(d.references).slice(0, 8).map(r => ({ name: String(r.name || '').slice(0, 80), kind: String(r.kind || 'other'), keeps: list(r.keeps).map(String).slice(0, 8) })),
     mechanics: mechanics.slice(0, 16),
-    spaces: (Array.isArray(d?.spaces) ? d.spaces : []).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? s.kind : 'locations', description: String(s.description || '').slice(0, 200) })),
-    views: (Array.isArray(d?.views) ? d.views : []).filter(v => VIEWS.includes(v)),
-    movement: MOVEMENT.includes(d?.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
-    acts: clampInt(d?.acts, 1, 6, 3), zones: clampInt(d?.zones, 2, 12, 5),
+    spaces: objects(d.spaces).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? String(s.kind) : 'locations', description: String(s.description || '').slice(0, 200) })),
+    views: list(d.views).filter(v => VIEWS.includes(v)).map(String),
+    movement: isStr(d.movement) && MOVEMENT.includes(d.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
+    acts: clampInt(d.acts, 1, 6, 3), zones: clampInt(d.zones, 2, 12, 5),
   };
 }
 
-/** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. */
+/** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */
 export const movementFrom = text => /\b(fly|flying|flight|soar\w*|jetpack|airship|plane)\b/.test(text) ? 'air' : /\b(swim\w*|underwater|dive|diving|sail\w*)\b/.test(text) ? 'water' : /\b(runner|lanes?)\b/.test(text) ? 'track' : 'ground';
 
+/** @param {string} prompt */
 const titleFrom = prompt => (prompt.match(/[A-Za-z0-9']+/g) || ['Untitled']).slice(0, 5).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 
 // A generic verb vocabulary for the offline path: what a sentence asks the player to DO.
 // It is not a genre table; each entry is a mechanic any game may combine with any other.
+/** @type {Array<[string, string, RegExp]>} */
 const VERBS = [
   ['explore', 'explore places and travel between them', /\b(explor\w*|wander\w*|travel\w*|journey\w*|adventur\w*|map|world|roam\w*)\b/],
   ['talk', 'talk to characters', /\b(talk\w*|dialog\w*|conversation\w*|chat\w*|npcs?|villagers?|interrogat\w*|persuad\w*)\b/],
@@ -108,7 +150,10 @@ const VERBS = [
   ['farm', 'grow crops and tend animals', /\b(farm\w*|crops?|harvest\w*|garden\w*|plant\w*)\b/],
 ];
 
-/** Offline decomposition: references split from the sentence, mechanics from the verb vocabulary. Deterministic. */
+/**
+ * Offline decomposition: references split from the sentence, mechanics from the verb vocabulary. Deterministic.
+ * @param {string} prompt @param {Answer[]} [answers] @returns {Decomposition & { source: string }}
+ */
 export function decomposeOffline(prompt, answers = []) {
   const text = `${prompt} ${answers.map(a => a.answer).join(' ')}`;
   const lower = text.toLowerCase();

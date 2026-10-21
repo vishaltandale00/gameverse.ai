@@ -60,6 +60,8 @@ import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
+import { OUTLINE_AUTHORS } from './world.js';
+import { list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -72,11 +74,11 @@ import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 /** @typedef {{ card: string, field: string, code: string, message: string }} Hole */
 /** @typedef {{ check: CheckName, code: string, unit: string, space?: string, message: string, hint?: string, adaptable: boolean }} Failure */
 /** @typedef {{ capabilities: string[], content: string[], services: string[] }} Needs */
-/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string> }} SpaceUnit */
+/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string>, zones: number }} SpaceUnit */
 /** @typedef {{ use: string, space: string, slot: 'space' | 'generator' | 'system' | 'graphics', added?: string }} Unit */
 /**
  * @typedef {object} Selection  a planner selection (select.js output) or a compact composition
- * @property {Array<{ id?: string, use: string, with?: Record<string, any> }>} [spaces]
+ * @property {Array<{ id?: string, use: string, with?: Record<string, any>, zones?: unknown }>} [spaces]
  * @property {{ use: string, with?: Record<string, any> }} [space]   compact: a single space
  * @property {Array<string | { use?: string, id?: string, space?: string }>} [systems]
  * @property {Array<string | { use?: string, id?: string, space?: string }>} [generators]
@@ -285,7 +287,7 @@ function normalize(input, registry) {
   const spaceList = isList(sel.spaces) ? sel.spaces : sel.space ? [{ id: 'world', ...sel.space }] : [];
   spaceList.forEach((s, i) => {
     const id = s.id || `space${i}`, base = capsOf(registry, s.use, s.with || {});
-    spaces.set(id, { use: s.use, with: s.with || {}, base, caps: new Set(base) });
+    spaces.set(id, { use: s.use, with: s.with || {}, base, caps: new Set(base), zones: list(s.zones).length });
     units.push({ use: s.use, space: id, slot: 'space' });
     for (const g of /** @type {any} */ (s).generators || []) if (g?.use) units.push({ use: g.use, space: id, slot: 'generator' });
   });
@@ -414,39 +416,56 @@ export function checkComposition(input, registry, opts = {}) {
       fail({ check: 'services', code: 'service_missing', unit: u.use, space: u.space, message: `'${u.use}' needs service '${sv}'`, hint: providers.length ? `providers: ${providers.join(', ')}${resolve ? ` (none fits ${short(s.use)})` : ''}` : 'no card provides it', adaptable: true });
     }
 
-    // Content: each space's card.needs.content, plus any bound card's own needs.content, covered on that space.
+    // Content: each space's needs (card.needs.content, or any one of card.needs.alternatives), plus any bound
+    // card's own needs.content, covered on that space. Outline-authored kinds (world.js OUTLINE_AUTHORS: zones)
+    // need no generator; in a document the space must have them.
     for (const [sid, s] of spaces) {
       const sc = cardOf(registry, s.use); if (!sc) continue;
+      const here = known.filter(u => u.space === sid);
+      const gens = resolve ? registry.ids('engine').filter(isGenerator) : here.filter(u => u.slot === 'generator').map(u => u.use);
+      const fitsCaps = (/** @type {string} */ id) => (cardOf(registry, id)?.requires.capabilities || []).every(x => s.caps.has(x));
+      const declared = gens.filter(id => { const c = cardOf(registry, id); return c && isList(c.spaces) && isList(c.provides.content); });
+      /**
+       * How `item` is covered on this space: 'have' (already), a generator or adapter id to add, 'holes' (an
+       * undeclared generator might cover it), or null (nothing can).
+       * @param {string} item @returns {{ how: 'have' } | { how: 'add', id: string, adapter: boolean } | { how: 'holes', ids: string[] } | null}
+       */
+      const coverOf = item => {
+        if ((sc.provides.content || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course)
+        if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
+        if (here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); })) return { how: 'have' };
+        const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
+        if (cand && resolve) return { how: 'add', id: cand, adapter: false };
+        const a = adapterFor(x => x.provides.content, item, s);
+        if (a && resolve) return { how: 'add', id: a, adapter: true };
+        const unknown = gens.filter(id => !declared.includes(id) && fitsCaps(id) && (!isList(cardOf(registry, id)?.spaces) || /** @type {string[]} */ (cardOf(registry, id)?.spaces).includes(s.use)));
+        return unknown.length ? { how: 'holes', ids: unknown } : null;
+      };
       /** @type {Array<{ item: string, by: string }>} */
       const wanted = [];
       if (!sc.needs || !isList(sc.needs.content)) hole('content', { card: s.use, field: 'card.needs.content', code: 'space_needs_undeclared', message: 'space does not declare the content it needs (card.needs.content; [] for none)' });
-      else for (const item of sc.needs.content) wanted.push({ item, by: s.use });
-      for (const u of known) if (u.space === sid && u.slot !== 'space') for (const item of cardOf(registry, u.use)?.needs?.content || []) wanted.push({ item, by: u.use });
-      const here = known.filter(u => u.space === sid);
+      else {
+        const sets = [sc.needs.content, ...list(prop(sc.needs, 'alternatives')).filter(/** @returns {a is string[]} */ a => isList(a) && a.length > 0 && a.every(x => typeof x === 'string'))];
+        // The first set every item of which can be covered; else the first set, whose gaps are then reported.
+        const pick = sets.find(set => set.every(item => { const c = coverOf(item); return c !== null && c.how !== 'holes'; })) || sets[0];
+        for (const item of pick) wanted.push({ item, by: s.use });
+      }
+      for (const u of here) if (u.slot !== 'space') for (const item of cardOf(registry, u.use)?.needs?.content || []) wanted.push({ item, by: u.use });
       for (const { item, by } of wanted) {
-        // A space may carry content itself (a track is a course): its own provides.content covers it.
-        if ((sc.provides.content || []).includes(item)) continue;
-        const covered = here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); });
-        if (covered) continue;
-        // Declared candidates; and generators that might cover it but don't say (holes).
-        const gens = resolve ? registry.ids('engine').filter(isGenerator) : here.filter(u => u.slot === 'generator').map(u => u.use);
-        const fitsCaps = (/** @type {string} */ id) => (cardOf(registry, id)?.requires.capabilities || []).every(x => s.caps.has(x));
-        const declared = gens.filter(id => { const c = cardOf(registry, id); return c && isList(c.spaces) && isList(c.provides.content); });
-        const cand = declared.filter(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
-        if (cand[0] && propose(cand[0], sid, `generates ${item} for ${by}`)) continue;
-        const a = adapterFor(x => x.provides.content, item, s);
-        if (a && propose(a, sid, `adapts content ${item} for ${by}`)) continue;
-        const unknown = gens.filter(id => !declared.includes(id) && fitsCaps(id) && (!isList(cardOf(registry, id)?.spaces) || /** @type {string[]} */ (cardOf(registry, id)?.spaces).includes(s.use)));
-        if (unknown.length) {
-          for (const g of unknown) {
-            const c = /** @type {Card} */ (cardOf(registry, g));
-            if (!isList(c.spaces)) hole('content', { card: g, field: 'card.spaces', code: 'generator_spaces_undeclared', message: 'generator does not declare which spaces it fills (card.spaces)' });
-            if (!isList(c.provides.content)) hole('content', { card: g, field: 'card.provides.content', code: 'generator_content_undeclared', message: 'generator does not declare the content it provides (card.provides.content)' });
+        const c = coverOf(item);
+        if (c?.how === 'have') continue;
+        if (c?.how === 'add' && propose(c.id, sid, `${c.adapter ? 'adapts content' : 'generates'} ${item} for ${by}`)) continue;
+        if (c?.how === 'holes') {
+          for (const g of c.ids) {
+            const gc = /** @type {Card} */ (cardOf(registry, g));
+            if (!isList(gc.spaces)) hole('content', { card: g, field: 'card.spaces', code: 'generator_spaces_undeclared', message: 'generator does not declare which spaces it fills (card.spaces)' });
+            if (!isList(gc.provides.content)) hole('content', { card: g, field: 'card.provides.content', code: 'generator_content_undeclared', message: 'generator does not declare the content it provides (card.provides.content)' });
           }
           continue;
         }
         need(sid, 'content', item, by);
-        fail({ check: 'content', code: 'content_missing', unit: by, space: sid, message: `no generator provides '${item}' on ${short(s.use)} (needed by ${by})`, hint: declared.filter(id => (cardOf(registry, id)?.provides.content || []).includes(item)).map(id => `${id} provides it on ${(cardOf(registry, id)?.spaces || []).map(short).join(', ')}`).join('; ') || `no generator declares '${item}'`, adaptable: true });
+        const authoredMsg = OUTLINE_AUTHORS.includes(item) ? `the document gives ${short(s.use)} no ${item}` : `no generator provides '${item}' on ${short(s.use)}`;
+        fail({ check: 'content', code: 'content_missing', unit: by, space: sid, message: `${authoredMsg} (needed by ${by})`, hint: declared.filter(id => (cardOf(registry, id)?.provides.content || []).includes(item)).map(id => `${id} provides it on ${(cardOf(registry, id)?.spaces || []).map(short).join(', ')}`).join('; ') || `no generator declares '${item}'`, adaptable: !OUTLINE_AUTHORS.includes(item) });
       }
     }
 

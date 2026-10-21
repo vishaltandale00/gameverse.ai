@@ -1,4 +1,6 @@
+// @ts-check
 // Deterministic PRNG kept inside game state, so snapshots replay exactly.
+/** @param {unknown} value @returns {number} a non-zero uint32 seed */
 export function seedFrom(value) {
   let h = 2166136261 >>> 0;
   for (const c of String(value)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
@@ -6,6 +8,7 @@ export function seedFrom(value) {
 }
 
 // mulberry32 advancing state.rng in place; returns [0, 1).
+/** @param {{ rng: number }} state @returns {number} */
 export function random(state) {
   let t = (state.rng = (state.rng + 0x6d2b79f5) >>> 0);
   t = Math.imul(t ^ (t >>> 15), t | 1);
