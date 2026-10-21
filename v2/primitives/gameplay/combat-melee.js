@@ -61,7 +61,7 @@ export default {
   id: KEY,
   card: {
     // The player's presses come from its moveset (playerPresses): no heavy key without a heavy move.
-    loop: { verbs: ['attack', 'heavy', 'special', 'super', 'throw', 'block'], verbsOf: (config, doc) => playerPresses(config, doc), progress: ['hit', 'combo', 'parried', 'staggered', 'guard_up'] },
+    loop: { verbs: ['attack', 'heavy', 'special', 'super', 'throw', 'block'], verbsOf: (config, doc) => playerPresses(config, doc), progress: ['hit', 'combo', 'parried', 'staggered', 'guard_up', 'move_denied'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc"], "min": 1, "placed": 3, "zones": 2, "why": "melee needs opponents with health to hit, placed where the player meets them", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},
@@ -98,7 +98,7 @@ export default {
       friendlyFire: { type: 'boolean', default: false },
       moves: { type: 'list', default: [], of: { type: 'object', fields: MOVE_FIELDS, open: true }, effect: 'move library: frame-data records any archetype can list in components.melee.moves' },
     },
-    provides: { events: ['attack_started', 'guard_up', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
+    provides: { events: ['attack_started', 'guard_up', 'move_denied', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
     defines: [{ kind: 'move', in: 'moves' }],
@@ -237,7 +237,8 @@ export default {
       const m = st(e);
       if (!force && (stunned(e) || e.components.health?.dead)) return false;
       if (mv.air && grounded(e) && !mv.airOk) return false;
-      for (const fn of mhooks().canStart) if (fn(e, mv) === false) return false;
+      // A rule another primitive adds refuses the move (a super without the meter for it): the press is answered.
+      for (const fn of mhooks().canStart) if (fn(e, mv) === false) { if (m.buffer?.at !== m.deniedAt) { m.deniedAt = m.buffer?.at ?? rt.state.frame; rt.emit('move_denied', { who: e.id, move: id }); } return false; }
       if (mv.stamina > 0 && service(rt, 'resources')?.has(e, config.staminaTag)) {
         if (!rt.service('resources').spend(e, config.staminaTag, mv.stamina)) { rt.emit('exhausted_attack', { who: e.id, move: id }); m.buffer = null; return false; }
       }

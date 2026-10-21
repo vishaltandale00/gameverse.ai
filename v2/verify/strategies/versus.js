@@ -31,27 +31,32 @@ const nearestFoe = rt => {
 const toward = (rt, p, f) => { const at = posOf(rt, p); return Array.isArray(at) && Array.isArray(f.e.at) ? [Math.sign(f.e.at[0] - at[0]) || 1, Math.sign(Math.round(f.e.at[1] - at[1]))] : [0, 0]; };
 
 /**
- * Does a press damage the nearest opponent? Through the controls: walk to it with the held move axis until it is
- * within reach (or `approach` frames pass), face it, press, and watch for its health to drop.
+ * Does a press damage the nearest opponent? Through the controls: walk toward it with the held move axis and, every
+ * few frames of the approach, try the press on a snapshot (face it, press, watch its health), so the press is tried at
+ * every distance its reach may need, never from a placed position.
  */
-export function connects(rt, press, { frames = 90, reach = 1.2, approach = 240 } = {}) {
+export function connects(rt, press, { frames = 45, approach = 240, every = 4 } = {}) {
   const snap = rt.snapshot();
   const f0 = nearestFoe(rt); if (!rt.player() || !f0) { rt.restore(snap); return false; }
-  const id = f0.e.id, hp0 = hpOf(f0.e);
+  const id = f0.e.id;
+  const tryHere = () => {
+    const here = rt.snapshot(), p = rt.player(), f = nearestFoe(rt), hp0 = hpOf(rt.entity(id));
+    let hit = false;
+    if (p && f) {
+      hold(rt, { axes: { move: [toward(rt, p, f)[0], 0] }, actions: { [press.verb]: press.value } }, 1);
+      for (let i = 0; i < frames && rt.state.status === 'playing' && !hit; i++) { const e = rt.entity(id); hit = !e || (hpOf(e) ?? hp0) < hp0; if (!hit) hold(rt, {}, 1); }
+      const e = rt.entity(id); hit = hit || !e || (hpOf(e) ?? hp0) < hp0;
+    }
+    rt.restore(here);
+    return hit;
+  };
   for (let i = 0; i < approach && rt.state.status === 'playing'; i++) {
-    const p = rt.player(), f = nearestFoe(rt); if (!p || !f || f.e.id !== id || f.d <= reach) break;
+    if (i % every === 0 && tryHere()) { rt.restore(snap); return true; }
+    const p = rt.player(), f = nearestFoe(rt); if (!p || !f || f.e.id !== id) break;
     hold(rt, { axes: { move: toward(rt, p, f) } }, 1);
   }
-  const p = rt.player(), f = nearestFoe(rt);
-  if (p && f) hold(rt, { axes: { move: [toward(rt, p, f)[0], 0] }, actions: { [press.verb]: press.value } }, 1);
-  for (let i = 0; i < frames && rt.state.status === 'playing'; i++) {
-    const e = rt.entity(id);
-    if (!e || (hpOf(e) ?? hp0) < hp0) { rt.restore(snap); return true; }
-    hold(rt, {}, 1);
-  }
-  const e = rt.entity(id), hit = !e || (hpOf(e) ?? hp0) < hp0;
   rt.restore(snap);
-  return hit;
+  return false;
 }
 
 /** A scripted fighter: approach, attack in turn, step back from an opponent mid-attack. presses: [{ verb, value }]. */
@@ -89,8 +94,7 @@ export default {
     const rt = ready(ctx.make(ctx.seed)), problems = [], proven = [];
     const { verbs, presses, declared } = combatVerbs(ctx, rt);
     // 1. Every combat verb connects (walked up to through the controls, then pressed).
-    const reach0 = 1.2 * (rt.player()?.components.body?.size?.[0] ?? 1);
-    const hitting = presses.filter(x => connects(rt, x, { reach: reach0 })), hits = hitting.map(x => x.verb);
+    const hitting = presses.filter(x => connects(rt, x)), hits = hitting.map(x => x.verb);
     if (!hits.length) problems.push(problem('no_attack_connects', 'systems', `none of the player's verbs (${verbs.join(', ')}) damage an opponent beside the player`, { hint: 'check attack reach and hitboxes against opponent size' }));
     else if (declared) for (const v of verbs.filter(x => !hits.includes(x))) problems.push(problem('whiff', 'systems', `combat verb '${v}' never damages an opponent beside the player`, { severity: 'warning', hint: 'raise its reach or fix its hitbox' }));
     if (hits.length === verbs.length) proven.push(`every combat verb connects (${verbs.join(', ')})`);

@@ -33,7 +33,8 @@ function envelope(config, abilities = new Set(), ctx = {}) {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['move', 'jump', 'sprint', 'run', 'crouch', 'walk', 'travel'], progress: ['jumped', 'travelled', 'arrived'] },
+    // Running is the pace the move axis gives (walk slows it, sprint speeds it): there is no run press to declare.
+    loop: { verbs: ['move', 'jump', 'sprint', 'crouch', 'walk', 'travel'], progress: ['jumped', 'travelled', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).

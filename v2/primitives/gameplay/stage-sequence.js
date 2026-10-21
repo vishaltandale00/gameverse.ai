@@ -13,6 +13,7 @@
 // lazily see it). Config writes are re-applied after restore() and extend().
 import { compare } from '../../kernel/logic.js';
 import { alive, matchesAny, sortedEntities, has, err, runBound, r6 } from './modes-lib-util.js';
+import { allowInTurnModal } from './turns.js';
 
 const ID = 'gameplay.stage.sequence';
 export const GOALS = ['lines', 'score', 'survive', 'chain', 'viruses', 'blockers', 'jelly', 'collect', 'tile', 'when', 'none'];
@@ -305,6 +306,8 @@ function install(rt, config) {
   const totalStars = s => Object.values(s.best).reduce((t, b) => t + b.stars, 0);
   const unlocked = (s, i) => config.unlockAll || i <= (s.highest ?? -1) + 1;
 
+  // Skipping a stage's intro or clear screen works while the stages' loop holds a turn modal open (a card battle's).
+  allowInTurnModal(rt, ['next_stage']);
   rt.action('select_stage', v => {
     const s = st(); if (!config.select) return;
     const i = config.stages.findIndex(x => x.id === v); if (i < 0 || !unlocked(s, i) || s.phase === 'play' || s.phase === 'intro') return;

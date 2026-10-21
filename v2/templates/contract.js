@@ -113,7 +113,9 @@ function botProblems(checked, registry, logic, evidence) {
   for (const id of named) {
     const bot = strategies.get(id), opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] };
     const t0 = performance.now();
-    const a = bot.run(ctx, opts), b = bot.run(ctx, opts);
+    let a, b;
+    // A bot that asks for a verb no control issues, or that throws, fails here with what it needed.
+    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
     const runs = runsOf(a);
     evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), ms: Math.round(performance.now() - t0) });
     if (a.ok !== true) out.push(problem('bot_failed', `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`, { bot: id }));

@@ -6,7 +6,8 @@
 //                 controls.js uncontrolledVerbs);
 //   works         pressing each verb's control (through the controls: controls.js), from states the gate's play
 //                 reached (the bots' play and the explorer's archive), produces one of the primitive's declared progress
-//                 or provided events more than not pressing it does from the same state; alone, or while holding a
+//                 or provided events more than not pressing it does from the same state (a held axis: moves the player,
+//                 or the vehicle it sits in, further than idling does); alone, or while holding a
 //                 direction when the move axis is bound (a run or dash modifies a move). A choice verb is pressed with
 //                 the values the game offers for it in that state.
 // A failing feature is a problem `feature_<code>` naming the primitive and verb; the table of every feature goes into
@@ -28,6 +29,8 @@ function contentMet(doc, path) {
   const v = path.split('.').reduce((o, k) => o?.[k], doc);
   return Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.keys(v).length > 0 : Boolean(v);
 }
+/** The pseudo event a run records for how far the player moved (axis verbs are checked by movement, not by events). */
+const MOVED = '(moved)';
 const matches = (declared, name) => declared.some(d => d === name || (d.endsWith(':*') && name.startsWith(d.slice(0, -1))) || (d.endsWith(':') && name.startsWith(d)));
 
 /** The loop features of a document: [{ use, path, card, loop, config }]. */
@@ -55,8 +58,11 @@ export function featuresOf(doc, registry) {
 export function featureChecks(doc, registry, make, { seed = 1, states = [], frames = 60, maxStates = 12, stepsPerVerb = 40000 } = {}) {
   const rt = make(seed), table = [], problems = [];
   const start = rt.snapshot();
-  // Reached states, spread over the order they were reached in, the start first.
-  const pool = [start, ...states.filter(Boolean)], picked = [];
+  // Reached states, spread over the order they were reached in: the start, the first second of play (intros and
+  // countdowns run then), then the states the play reached.
+  const early = [2, 30, 60].map(n => { rt.restore(start); for (let i = 0; i < n && rt.state.status === 'playing'; i++) rt.step({}); return rt.state.status === 'playing' ? rt.snapshot() : null; }).filter(Boolean);
+  rt.restore(start);
+  const pool = [start, ...early, ...states.filter(Boolean)], picked = [];
   for (let i = 0; i < Math.min(maxStates, pool.length); i++) picked.push(pool[Math.floor((i * pool.length) / Math.min(maxStates, pool.length))]);
   const moves = (rt.controls.controls.map?.axes?.move || []).length ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [];
   for (const f of featuresOf(doc, registry)) {
@@ -86,14 +92,23 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
 /** Does pressing `verb` from one of `states` make a declared event fire more than not pressing it? */
 function works(rt, verb, declared, states, moves, frames, budget) {
   let steps = 0, tried = 0;
+  // What the player steers (the vehicle it sits in, else itself) and where it is: a held axis's effect is movement.
+  const where = () => { const p = rt.player(), seat = p?.components.seat, e = seat ? rt.entity(seat.vehicle) ?? p : p; return Array.isArray(e?.at) ? e.at.slice() : null; };
+  // One run: after each frame, the declared events fired so far (an event fired sooner counts, not only more often),
+  // and in the end how far the player moved.
   const run = (snap, first, rest, n) => {
     rt.restore(snap);
-    const c0 = { ...rt.state.counts };
-    for (let i = 0; i < n && rt.state.status === 'playing'; i++) { rt.step(i === 0 ? first : rest); steps++; }
-    const out = {};
-    for (const [k, v] of Object.entries(rt.state.counts)) if (v > (c0[k] || 0)) out[k] = v - (c0[k] || 0);
-    return out;
+    const c0 = { ...rt.state.counts }, a = where(), trace = [];
+    for (let i = 0; i < n && rt.state.status === 'playing'; i++) {
+      rt.step(i === 0 ? first : rest); steps++;
+      const at = {};
+      for (const [k, v] of Object.entries(rt.state.counts)) if (v > (c0[k] || 0) && matches(declared, k)) at[k] = v - (c0[k] || 0);
+      trace.push(at);
+    }
+    const z = where();
+    return { trace, moved: a && z ? Math.hypot(...z.map((v, i) => v - (a[i] ?? 0))) : 0 };
   };
+  const sooner = (p, q) => { for (let i = 0; i < p.trace.length; i++) { const k = Object.keys(p.trace[i]).find(e => p.trace[i][e] > (q.trace[Math.min(i, q.trace.length - 1)]?.[e] || 0)); if (k) return k; } return undefined; };
   const axis = (rt.controls.controls.map?.axes?.[verb] || []).length > 0;
   for (const snap of states) {
     rt.restore(snap);
@@ -111,7 +126,11 @@ function works(rt, verb, declared, states, moves, frames, budget) {
       let pressed, idle;
       try { pressed = run(snap, first, rest, n); idle = run(snap, base, base, n); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
       tried++;
-      const event = Object.keys(pressed).find(k => matches(declared, k) && pressed[k] > (idle[k] || 0));
+      // A held axis works when it moves the player (or its vehicle) further than idling does; a press when one of the
+      // primitive's declared events fires sooner or more often than without it, or, pressed while moving (a run, a
+      // crouch, a focus), when it changes how far the move takes the player.
+      const event = axis ? (pressed.moved > idle.moved + 0.05 ? MOVED : undefined)
+        : sooner(pressed, idle) ?? (ctx && Math.abs(pressed.moved - idle.moved) > 0.05 ? MOVED : undefined);
       if (event) { rt.restore(snap); return { works: true, event, tried }; }
     }
   }

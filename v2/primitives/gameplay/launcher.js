@@ -47,7 +47,7 @@ export default {
       bomb: { type: 'object', default: { r: 3.6, strength: 15, fuse: 0.9 }, fields: { r: { type: 'number', default: 3.6, min: 0.1, max: 100 }, strength: { type: 'number', default: 15, min: 0, max: 1000 }, fuse: { type: 'number', default: 0.9, min: 0, max: 30 } }, effect: 'bomb blast radius, strength, fuse after first hit (s)' },
       onEmpty: { type: 'effects', default: [], effect: 'run when the last shot has ended' },
     },
-    provides: { events: ['launched', 'launched:*', 'ability_used', 'ability_used:*', 'shot_end', 'shots_empty', 'explosion', 'contact', 'move'], vars: ['launcher.shots', 'launcher.aim', 'launcher.power'], actions: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'] },
+    provides: { events: ['aimed', 'launched', 'launched:*', 'ability_used', 'ability_used:*', 'shot_end', 'shots_empty', 'explosion', 'contact', 'move'], vars: ['launcher.shots', 'launcher.aim', 'launcher.power'], actions: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'] },
     requires: { capabilities: ['position'] },
     actionSpace: { aim: { type: 'number', min: -3.2, max: 3.2 }, power: { type: 'number', min: 0.2, max: 1 }, pull: { type: 'vector', min: -50, max: 50 } },
   },
@@ -96,16 +96,18 @@ export default {
       } else if (s.shot === 'bomb') { rt.despawn(b.id); s.active = s.active.filter(id => id !== b.id); explode(rt, spaceId, c, config.bomb.r, config.bomb.strength, 'bomb'); }
     }
     init();
-    rt.action('aim', v => { const s = st(); if (Number.isFinite(v)) { s.aim = clampAim(v); vars(s); } });
-    rt.action('aim_left', () => { const s = st(); s.aim = clampAim(s.aim + config.aimSpeed * rt.dt); vars(s); });
-    rt.action('aim_right', () => { const s = st(); s.aim = clampAim(s.aim - config.aimSpeed * rt.dt); vars(s); });
-    rt.action('power', v => { const s = st(); if (Number.isFinite(v)) { s.power = Math.max(0.2, Math.min(1, v)); vars(s); } });
+    // Aiming is observable: a change of aim or power emits `aimed` (the aim keys, the aim and power values, a pull).
+    const aimed = (s, a0, p0) => { if (s.aim !== a0 || s.power !== p0) rt.emit('aimed', { aim: +s.aim.toFixed(4), power: +s.power.toFixed(4) }); };
+    rt.action('aim', v => { const s = st(), a0 = s.aim, p0 = s.power; if (Number.isFinite(v)) { s.aim = clampAim(v); vars(s); aimed(s, a0, p0); } });
+    rt.action('aim_left', () => { const s = st(), a0 = s.aim; s.aim = clampAim(s.aim + config.aimSpeed * rt.dt); vars(s); aimed(s, a0, s.power); });
+    rt.action('aim_right', () => { const s = st(), a0 = s.aim; s.aim = clampAim(s.aim - config.aimSpeed * rt.dt); vars(s); aimed(s, a0, s.power); });
+    rt.action('power', v => { const s = st(), p0 = s.power; if (Number.isFinite(v)) { s.power = Math.max(0.2, Math.min(1, v)); vars(s); aimed(s, s.aim, p0); } });
     rt.action('pull', v => {
       const s = st(); if (!Array.isArray(v) || !Number.isFinite(v[0]) || !Number.isFinite(v[1])) return; // malformed pulls are ignored
       const l = Math.hypot(v[0], v[1]); if (l < 1e-6) return;
       const dir = [-v[0] / l, -v[1] / l]; // launch opposite to the pull
       const ang = Math.atan2(config.forward[0] * dir[1] - config.forward[1] * dir[0], config.forward[0] * dir[0] + config.forward[1] * dir[1]);
-      s.aim = clampAim(ang); s.power = Math.max(0.2, Math.min(1, l / config.maxPull)); vars(s);
+      const a0 = s.aim, p0 = s.power; s.aim = clampAim(ang); s.power = Math.max(0.2, Math.min(1, l / config.maxPull)); vars(s); aimed(s, a0, p0);
     });
     rt.action('fire', () => fire(st()));
     rt.action('ability', () => { const s = st(); if (s.phase === 'flight' && s.flightT > 0.08) useAbility(s); });

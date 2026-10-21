@@ -21,7 +21,8 @@ function envelope(config) { return { mode: 'ship', run: config.mode === 'inertia
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['move', 'thrust', 'focus', 'hyperspace', 'aim'], progress: ['thrust_start', 'hyperspace'] },
+    // The verbs one instance offers: thrust in inertial flight, aim in twin-stick, hyperspace when it is on.
+    loop: { verbs: ['move', 'thrust', 'focus', 'hyperspace', 'aim'], verbsOf: config => ['move', ...(config.mode === 'inertial' ? ['thrust'] : []), 'focus', ...(config.hyperspace?.enabled ? ['hyperspace'] : []), ...(config.mode === 'twinstick' ? ['aim'] : [])], progress: ['thrust_start', 'hyperspace'] },
     locomotion: 'base', medium: 'air', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).

@@ -49,7 +49,8 @@ export default {
     },
     provides: { events: ['super', 'guard', 'counter_hit', 'juggle_limit', 'knockdown', 'wakeup', 'jump', 'dash', 'wall_push'], vars: ['meter'], actions: ['dash'] },
     requires: { primitives: ['gameplay.combat.melee', 'gameplay.combat.health'] },
-    actionSpace: { dash: { type: 'enum', options: ['fwd', 'back'] } },
+    // Fighters walk with the move axis (and crouch, jump by its y): it reads axes.move, so it declares it.
+    actionSpace: { dash: { type: 'enum', options: ['fwd', 'back'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
   },
   validate(config, doc) {
     const errors = [];
