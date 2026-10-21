@@ -53,7 +53,7 @@ test('world_empty: the stored platformer is flagged as an empty world (error), a
   const problems = worldProblems(rt, doc, registry);
   assert.deepEqual(problems.map(p => [p.code, p.path, p.severity]), [['world_empty', 'spaces[0]', 'error']]);
   assert.match(problems[0].hint, /engine\.generate\.tilemap\.rooms/, 'the hint names generators that fit');
-  const v = await verifyDocument(stored(), registry, logic, { budgetMs: 400 });
+  const v = await verifyDocument(stored(), registry, logic, { budgetMs: 100 });
   assert.ok(v.problems.some(p => p.code === 'world_empty' && p.severity === 'error'));
   assert.notEqual(v.verified, true);
 });
