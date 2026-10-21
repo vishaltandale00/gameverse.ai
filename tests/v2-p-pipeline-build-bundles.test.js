@@ -68,7 +68,8 @@ test('(a) a mechanic whose only fitting primitive needs an adapter on the chosen
   // One enum option, labelled with its members and why the adapter is there.
   const ask = offeredFor(w, 'soar')[0];
   assert.ok(ask.schema.schema.properties.pick.enum.includes('gameplay.test.soar'));
-  assert.match(ask.user, /- gameplay\.test\.soar \+ engine\.adapt\.test\.updraft \(adapts updraft onto engine\.space\.flatx: rising air columns over cells\): Soar high/);
+  // The instance carries its deterministic id (adapters.js adapterInstanceId) though its adapt() hook gives none.
+  assert.match(ask.user, /- gameplay\.test\.soar \+ engine\.adapt\.test\.updraft#updraft-on-field \(adapts updraft onto engine\.space\.flatx: rising air columns over cells\): Soar high/);
   // Picked, it composes through the adapter with the configuration its adapt() hook gave.
   assert.equal(step.outcome, 'added');
   assert.ok(['compatible-via-adapter', 'undeclared'].includes(step.checks.compose), step.checks.compose);

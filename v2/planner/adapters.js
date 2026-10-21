@@ -12,7 +12,8 @@
 //     const r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind }, registry);
 //     if (r.verdict === 'compatible-via-adapter') { chosen.add(u.id); Object.assign(bind, r.bind); adapters.push(...r.adapters); }
 //     else gaps.push(...r.gaps.map(adapter => ({ mechanic, kind: 'adapter', adapter, ... })));
-// and the selection carries `adapters` (instances: { use, id?, space, with }) for the outline/preset stage to
+// and the selection carries `adapters` (instances: { use, id, space, with }; the id from the adapt() hook, else from the
+// adapter's declaration: adapterInstanceId) for the outline/preset stage to
 // write into doc.systems. A document works too: resolveAdapters(doc, registry).composition is the document with
 // the instances appended to systems and the needy instances re-bound (instance.space) to the region.
 import { checkComposition, compositionSpaces, adapterFits, adapterSignature } from './compose-check.js';
@@ -92,7 +93,7 @@ export function resolveAdapters(composition, registry, opts = {}) {
   const bind = {};
   /** @type {AdapterSpec[]} */
   const gaps = [];
-  const taken = new Set([...spaces.map(s => s.id)]);
+  const taken = new Set([...spaces.map(s => s.id), ...instanceIds(composition)]);
   for (const [sid, need] of lacking) {
     const space = spaces.find(s => s.id === sid); if (!space) continue;
     const unit = { use: space.use, with: space.with, caps: new Set(space.caps), base: new Set(space.caps), zones: 0 };
@@ -113,11 +114,12 @@ export function resolveAdapters(composition, registry, opts = {}) {
         ? p.adapt({ space: { id: sid, use: space.use, with: space.with, caps: space.caps }, missing, neededBy: users.map(use => ({ use, card: /** @type {Card} */ (registry.get(use)?.card) })).filter(n => n.card), registry })
         : { with: {} };
       if (!proposal) continue;
-      let id = proposal.id;
-      if (id !== undefined) { let n = 2; const base = id; while (taken.has(id)) id = `${base}-${n++}`; taken.add(id); }
-      adapters.push({ use: pick, ...(id !== undefined ? { id } : {}), space: sid, with: isObj(proposal.with) ? proposal.with : {} });
+      const w = isObj(proposal.with) ? proposal.with : {};
+      // Every instance gets its id: the hook's, else the deterministic one its declaration gives (adapterInstanceId).
+      const id = uniqueId(typeof proposal.id === 'string' && proposal.id ? proposal.id : adapterInstanceId(registry, { use: pick, space: sid, with: w }), taken);
+      adapters.push({ use: pick, id, space: sid, with: w });
       // Primitives whose every lack this adapter covers move onto its region (sub-space adapters).
-      if (id !== undefined && p.card.adapts?.subspace) for (const use of users) if ([...(need.by.get(use) || [])].every(x => got.includes(x))) bind[use] = id;
+      if (p.card.adapts?.subspace) for (const use of users) if ([...(need.by.get(use) || [])].every(x => got.includes(x))) bind[use] = id;
       open = new Set([...open].filter(x => !got.includes(x)));
     }
     if (open.size) {
@@ -160,4 +162,96 @@ export function applySkins(doc, registry) {
     if (p?.card.adapts?.relation === 'skin' && typeof p.skin === 'function') out = p.skin(out, inst.with || {});
   }
   return out;
+}
+
+// Instance-level fields of adapter instances (id, the host space binding) are the planner's, never the model's:
+// every instance the planner adds (resolveAdapters, a build step, the preset) carries them, derived from its
+// declaration, and repair (repair.js) fills them by code when a document lacks them. A document form never asks for them.
+const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+/** @param {unknown} s */
+const idSlug = s => (String(s || '').toLowerCase().match(/[a-z0-9_]+/g) || ['x']).join('-').replace(/^[_-]+/, '').slice(0, 64) || 'x';
+/** The last segment of a primitive id ('engine.space.grid' -> 'grid'). @param {unknown} id */
+const lastOf = id => String(id || '').split('.').pop() || 'x';
+
+/**
+ * The instance fields an adapter's declaration requires: every adapter instance has an `id`; a sub-space adapter
+ * (card.adapts.subspace) is also bound to its host space (`space`). [] for a primitive that is no adapter.
+ * @param {Card | null | undefined} card @returns {Array<'id' | 'space'>}
+ */
+export const requiredInstanceFields = card => (!card?.adapts ? [] : card.adapts.subspace ? ['id', 'space'] : ['id']);
+
+/**
+ * The deterministic id of an adapter instance, from its declaration: a sub-space adapter's is the projected kind and
+ * the host space ('grid-on-world'); any other's is the adapter and what it configures (its `with.id`, else its host:
+ * 'nested-duel', 'skin-on-board'). Not yet unique: uniqueId makes it so within a document.
+ * @param {RegistryLike} registry @param {{ use: string, space?: string, with?: Record<string, any> }} inst @param {string} [host] the host when the instance names none
+ */
+export function adapterInstanceId(registry, inst, host = 'world') {
+  const a = registry.get(inst.use)?.card.adapts;
+  const w = isObj(inst.with) ? inst.with : {};
+  const on = typeof inst.space === 'string' && inst.space ? inst.space : host;
+  if (a?.subspace) return idSlug(`${lastOf(typeof w[a.subspace.kind] === 'string' ? w[a.subspace.kind] : inst.use)}-on-${on}`);
+  return idSlug(typeof w.id === 'string' && w.id ? `${lastOf(inst.use)}-${w.id}` : `${lastOf(inst.use)}-on-${on}`);
+}
+/** `id`, or `id-2`, `id-3`... the first not taken; marks it taken. @param {string} id @param {Set<string>} taken */
+export function uniqueId(id, taken) {
+  let out = id, n = 2;
+  while (taken.has(out)) { const suffix = `-${n++}`; out = `${id.slice(0, 64 - suffix.length)}${suffix}`; }
+  taken.add(out);
+  return out;
+}
+/** Ids a document or selection already uses for spaces and instances (a new instance id must differ). @param {unknown} composition @returns {string[]} */
+export function instanceIds(composition) {
+  const c = isObj(composition) ? composition : {};
+  return [...(Array.isArray(c.spaces) ? c.spaces : []), ...(Array.isArray(c.systems) ? c.systems : []), ...(Array.isArray(c.adapters) ? c.adapters : [])]
+    .map(x => (isObj(x) ? x.id : undefined)).filter(/** @returns {x is string} */ x => typeof x === 'string');
+}
+
+/**
+ * Adapter instances lacking a required instance field (requiredInstanceFields), in a document's systems or a
+ * selection's adapters: the check that no planner-added instance goes without one.
+ * @param {unknown} composition @param {RegistryLike} registry @returns {Array<{ at: string, use: string, field: string, message: string }>}
+ */
+export function instanceFieldProblems(composition, registry) {
+  const c = isObj(composition) ? composition : {};
+  const spaces = new Set((Array.isArray(c.spaces) ? c.spaces : []).map(s => (isObj(s) ? s.id : undefined)));
+  /** @type {Array<{ at: string, use: string, field: string, message: string }>} */
+  const out = [];
+  for (const key of ['systems', 'adapters']) {
+    const items = Array.isArray(c[key]) ? c[key] : [];
+    items.forEach((/** @type {unknown} */ s, /** @type {number} */ i) => {
+      if (!isObj(s) || typeof s.use !== 'string') return;
+      for (const field of requiredInstanceFields(registry.get(s.use)?.card)) {
+        const v = s[field];
+        if (field === 'id' && !(typeof v === 'string' && SLUG.test(v))) out.push({ at: `${key}[${i}].id`, use: s.use, field, message: `${s.use} instance has no id (a lowercase slug)` });
+        if (field === 'space' && !(typeof v === 'string' && (!spaces.size || spaces.has(v)))) out.push({ at: `${key}[${i}].space`, use: s.use, field, message: `${s.use} instance is bound to no host space of the document` });
+      }
+    });
+  }
+  return out;
+}
+
+/**
+ * Fill the instance fields the planner owns on a document's adapter instances (repair by code, never the model):
+ * a missing or malformed id gets the deterministic one (adapterInstanceId, unique in the document); a sub-space
+ * adapter bound to no document space is bound to the first one (the host the adapter defaults to). Mutates `doc`.
+ * @param {any} doc @param {RegistryLike} registry @returns {Array<{ code: string, path: string, action: string }>} the fixes
+ */
+export function ensureInstanceFields(doc, registry) {
+  /** @type {Array<{ code: string, path: string, action: string }>} */
+  const fixes = [];
+  if (!isObj(doc) || !Array.isArray(doc.systems)) return fixes;
+  const spaces = (Array.isArray(doc.spaces) ? doc.spaces : []).filter(isObj);
+  const host = typeof spaces[0]?.id === 'string' ? spaces[0].id : undefined;
+  const taken = new Set(instanceIds(doc).filter(id => SLUG.test(id)));
+  doc.systems.forEach((/** @type {unknown} */ s, /** @type {number} */ i) => {
+    if (!isObj(s) || typeof s.use !== 'string') return;
+    const need = requiredInstanceFields(registry.get(s.use)?.card);
+    if (need.includes('space') && host && !(typeof s.space === 'string' && spaces.some(x => x.id === s.space))) { s.space = host; fixes.push({ code: 'instance_space', path: `systems[${i}].space`, action: `bound ${s.use} to host space '${host}'` }); }
+    if (need.includes('id') && !(typeof s.id === 'string' && SLUG.test(s.id))) {
+      s.id = uniqueId(adapterInstanceId(registry, /** @type {any} */ (s), host), taken);
+      fixes.push({ code: 'instance_id', path: `systems[${i}].id`, action: `gave ${s.use} the id '${s.id}'` });
+    }
+  });
+  return fixes;
 }
