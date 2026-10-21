@@ -397,10 +397,16 @@ function follow(rt, e, api, fr, opts) {
   const key = JSON.stringify([mt.zone ?? null, mt.at ?? null]);
   if (!m.path || m.path.key !== key) m.path = { key, pts: null, i: 0, best: null, stuck: 0, tries: 0 };
   const P = m.path, tol = opts.tol ?? 0.35;
-  // AI intents (by:'ai') are rewritten every frame: their behaviour owns arrival and clearing, so stay quiet.
-  if (mt.by === 'ai' && P.quiet === key) return out;
+  // AI intents (by:'ai') are rewritten every frame: their behaviour owns arrival and clearing, so stay quiet, but mark
+  // the intent with how it ended (moveTo.reached, or moveTo.failed with move_failed {by: 'ai', at} once per goal), so
+  // the behaviour moves on by the same arrival and reach this controller applies.
+  if (mt.by === 'ai' && P.quiet === key) { if (P.failed) mt.failed = P.failed; return out; }
   const done = ok => {
-    if (mt.by === 'ai') { if (ok !== true) P.quiet = key; return out; }
+    if (mt.by === 'ai') {
+      if (ok === true) mt.reached = true;
+      else { P.quiet = key; P.failed = mt.failed = ok === false ? 'no_path' : ok; rt.emit('move_failed', { who: e.id, at: mt.at ?? null, zone: mt.zone ?? null, by: 'ai', reason: mt.failed }); }
+      return out;
+    }
     delete e.components.moveTo; m.path = null; if (ok === true) rt.emitTyped('arrived', mt.zone ?? null, { who: e.id, zone: mt.zone ?? null }); else rt.emit('move_failed', { who: e.id, zone: mt.zone ?? null, reason: ok === false ? 'no_path' : ok }); return out; };
   if (mt.zone && api?.inZone?.(e, mt.zone, rt) && !mt.at) return done(true);
   const target = mt.at ?? zoneAnchor(rt, e, mt.zone);
@@ -484,14 +490,16 @@ export function discreteNext(rt, e, api) {
   const key = JSON.stringify(goal);
   const arrived = () => (mt.zone && api.inZone?.(e, mt.zone, rt)) || (mt.at != null && JSON.stringify(e.at) === JSON.stringify(mt.at)) || (!dimsOf(e) && e.at === goal);
   const quiet = mt.by === 'ai';
-  if (arrived()) { if (!quiet) { delete e.components.moveTo; m.path = null; rt.emitTyped('arrived', mt.zone ?? null, { who: e.id, zone: mt.zone ?? null }); } return null; }
+  if (arrived()) { if (!quiet) { delete e.components.moveTo; m.path = null; rt.emitTyped('arrived', mt.zone ?? null, { who: e.id, zone: mt.zone ?? null }); } else mt.reached = true; return null; }
   if (!m.path || m.path.key !== key || !m.path.pts) {
     let pts = null;
     const inGoal = goal == null && mt.zone ? c => Boolean(api.inZone?.({ ...e, at: c }, mt.zone, rt)) : null;
     if (typeof api.path === 'function' && dimsOf(e) && (goal != null || api.zones?.has?.(mt.zone))) pts = pathFor(rt, e, api, mt, goal);
     else if (typeof api.neighbors === 'function' && (goal != null || inGoal)) pts = bfs(rt, e, api, goal, inGoal);
-    if (!pts || pts.length < 2) { if (quiet) return null; delete e.components.moveTo; m.path = null; rt.emit('move_failed', { who: e.id, zone: mt.zone ?? null, reason: 'no_path' }); return null; }
-    m.path = { key, pts: structuredClone(pts), i: 1 };
+    if (!pts || pts.length < 2) {
+      if (quiet) { mt.failed = 'no_path'; if (m.failedKey !== key) { m.failedKey = key; rt.emit('move_failed', { who: e.id, at: mt.at ?? null, zone: mt.zone ?? null, by: 'ai', reason: 'no_path' }); } return null; }
+      delete e.components.moveTo; m.path = null; rt.emit('move_failed', { who: e.id, zone: mt.zone ?? null, reason: 'no_path' }); return null; }
+    m.path = { key, pts: structuredClone(pts), i: 1 }; delete m.failedKey;
   }
   const P = m.path;
   while (P.i < P.pts.length && JSON.stringify(P.pts[P.i]) === JSON.stringify(e.at)) P.i++;

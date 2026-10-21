@@ -23,6 +23,9 @@ export default {
   card: {
     loop: { verbs: ['move', 'thrust', 'focus', 'hyperspace', 'aim'], progress: ['thrust_start', 'hyperspace'] },
     locomotion: 'base', medium: 'air', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
+    // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
+    body: { size: [0.8, 0.8, 0.8] },
     intent: 'Ship controls for shmups and arena shooters: rail (side to side), eight-way, twin-stick (separate aim with auto-aim) or inertial Asteroids flight (rotate, thrust, drag, wraparound), with a slow focus mode and hyperspace jumps, clamped to or wrapping around the play bounds.',
     views: ['td', 'side'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, aim: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

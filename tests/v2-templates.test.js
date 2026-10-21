@@ -73,4 +73,17 @@ for (const t of TEMPLATES) {
       assert.deepEqual(strip(b.metrics.runs ?? b.metrics.matches), strip(runs), `${t.id}: the same document and seed replay to the same result`);
     }
   });
+
+  // A generated world is a different level on every seed: the generators prove it for the player's movement and body,
+  // and the bot wins each one, not one lucky layout (world seed 1 is the test above).
+  if ((t.doc.spaces || []).some(s => (s.generators || []).length)) test(`template ${t.id}: the bot wins its generated world on world seeds 2 and 3`, () => {
+    for (const seed of [2, 3]) {
+      const r = checked({ doc: { ...structuredClone(t.doc), seed }, id: t.id }), make = maker(r.doc, registry, logic);
+      const ctx = { doc: r.doc, registry, logic, make, seed, capabilities: r.capabilities, used: usedPrimitives(r.doc), playerSpace: make(seed).player()?.space ?? r.doc.spaces[0].id };
+      for (const { s } of modeBots(ctx)) {
+        const res = strategies.get(s.id).run(ctx, { budgetMs: 60000, ...BOT_OPTS[s.id], seeds: [seed] }), runs = res.metrics.runs ?? res.metrics.matches;
+        assert.ok(res.ok && runs[0].won, `${t.id} ${s.id} world seed ${seed}: ${JSON.stringify(runs[0]).slice(0, 300)} ${JSON.stringify(res.problems).slice(0, 300)}`);
+      }
+    }
+  });
 }

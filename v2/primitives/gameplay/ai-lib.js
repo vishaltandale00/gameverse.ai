@@ -312,7 +312,9 @@ export const dead = e => { const h = e?.components?.health; return Boolean(h && 
  * Install (once per runtime) the 'movement' system that carries out steer/moveTo
  * intents for non-player entities that no move.* primitive owns. Arrival of a
  * scripted moveTo (not written by AI itself) clears it and emits `arrived`
- * {who, zone?} + `arrived:<zone>`; an unreachable one emits `move_failed`.
+ * {who, zone?} + `arrived:<zone>`; an unreachable one emits `move_failed`. An AI intent (by:'ai') is never cleared
+ * here; how it ended is marked on it (moveTo.reached, or moveTo.failed and `move_failed {who, at, by: 'ai'}` once), as
+ * move.* controllers mark theirs, and kept while the behaviour rewrites the same goal.
  */
 export function ensureLocomotion(rt) {
   if (rt.caches.aiLocomotion) return;
@@ -329,7 +331,13 @@ export function ensureLocomotion(rt) {
       if (m.zone && m.at == null && api.inZone?.(e, m.zone, rt)) goal = e.at;
       const speed = m.speed ?? (c.ai?.speed ?? 2) * (m.run ? (c.ai?.run ?? 1.6) : 1);
       const r = goal == null ? 'blocked' : seek(rt, e, goal, { speed, plane: c.ai?.plane, fly: m.fly });
-      if (m.by === 'ai') continue;
+      // AI intents: the behaviour owns arrival; a goal it stays blocked from is reported once (move_failed {by: 'ai'}).
+      if (m.by === 'ai') {
+        if (r === 'arrived') m.reached = true;
+        else if (r === 'blocked') { m.fails = (m.fails ?? 0) + 1; if ((goal == null || m.fails > 30) && !m.failed) { m.failed = goal == null ? 'no_point' : 'no_path'; rt.emit('move_failed', { who: e.id, at: m.at ?? null, zone: m.zone ?? null, by: 'ai', reason: m.failed }); } }
+        else m.fails = 0;
+        continue;
+      }
       if (r === 'arrived') { delete c.moveTo; if (m.zone) rt.emitTyped('arrived', m.zone, { who: e.id, zone: m.zone }); else rt.emit('arrived', { who: e.id }); }
       else if (r === 'blocked') { m.fails = (m.fails ?? 0) + 1; if (goal == null || m.fails > 30) { delete c.moveTo; rt.emit('move_failed', { who: e.id, reason: goal == null ? 'no_point' : 'no_path' }); } }
       else m.fails = 0;

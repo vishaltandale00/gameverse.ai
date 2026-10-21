@@ -31,7 +31,7 @@ test('generate2d: every instance in v2/games preflights with zero param errors',
     checkFields(card.params, g.with || {}, `${path}.with`, errors, null);
     assert.deepEqual(errors, [], `${f} ${path}`);
     const config = checkFields(card.params, g.with || {}, '', [], null);
-    assert.deepEqual(registry.get(g.use).validate?.(config, doc, { checkPredicate() {}, checkEffect() {} }, { path, space: s.id, use: g.use }) || [], [], `${f} ${path} validate`);
+    assert.deepEqual(registry.get(g.use).validate?.(config, doc, { registry, checkPredicate() {}, checkEffect() {} }, { path, space: s.id, use: g.use }) || [], [], `${f} ${path} validate`);
     // The full preflight reports nothing against these instances either (other workstreams' errors are theirs).
     // Not ours: a space primitive that is not registered yet (provides nothing) and gate predicates whose
     // owning primitive (e.g. `ability`) has not landed in the catalogue yet.

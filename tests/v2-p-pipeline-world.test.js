@@ -74,11 +74,15 @@ test('furnishWorld fills the empty tilemap with a proven rooms layout built from
   assert.deepEqual(gen.rooms.map(r => r.zone), ['ground_floor', 'piece_sanctum', 'pixel_wilds', 'increasingly_hollow', 'crisp_yard'], 'one room per zone');
   assert.ok(gen.rooms.every(r => r.style === 'shaft'), 'tall zones become climbable shafts');
   assert.deepEqual(gen.rooms[1].exits.map(e => e.to).sort(), ['ground_floor', 'pixel_wilds']);
-  // Platformer: jump 28 at gravity 140 → 2.8 tiles high, 5.6 across; the proof assumes no more than that.
-  assert.deepEqual(gen.movement, { jumpHeight: 2, jumpDistance: 5 }, 'tagged climbing is not assumed on every wall');
+  // The proof's mover is the document's own (card.traversal), not a copy in the config: platformer jump 28 at gravity
+  // 140 → 2.8 tiles high, 5.6 across, in whole tiles the controller makes; tagged climbing is not assumed on every wall.
+  assert.equal(gen.movement, undefined, 'no movement copied into the generator');
   assert.equal(gen.palette.wall, 'solid_block', "the document's own block");
   assert.ok(f.doc.content.blocks.some(b => b.tags?.includes('one_way')), 'a one-way rung block is declared');
   const { rt } = boot(f.doc);
+  const m = rt.store('spaces.main.generators[0]').mover;
+  // Tagged climbing (move.climb surfaces 'tagged') is navigation's climb: climbable-tagged tiles only, never any wall (wallJump).
+  assert.deepEqual([m.abilities.jumpHeight, m.abilities.jumpDistance, Boolean(m.abilities.wallJump)], [2, 5, false], 'the proof walked the envelope in whole tiles');
   assert.ok(solidCells(rt) > 300, 'walls, ground and platforms');
   assert.deepEqual((rt.service('generation').problems() || []).filter(p => p.severity === 'error'), [], 'every room proven traversable');
   assert.ok(rt.player().components.body.grounded || rt.player().at[1] > 2, 'the player starts above the built floor');
@@ -122,13 +126,13 @@ test('first playable furnishes an empty world it is handed and reports world_emp
 // frame 1, and first-playable still said ok (ended_at_start was only a problem), so it published as ready.
 const shafts = () => {
   const xs = [[0, 12], [12, 24], [24, 36], [36, 48], [48, 64]], ids = ['becomes_yard', 'fast_sanctum', 'difficult_wilds', 'becomes_hollow', 'difficult_yard'];
-  return ids.map((id, i) => ({ id, zone: id, rect: [xs[i][0], 0, xs[i][1], 32], style: 'shaft', exits: [...(i ? [{ side: 'l', to: ids[i - 1] }] : []), ...(i < 4 ? [{ side: 'r', to: ids[i + 1] }] : [])] }));
+  return ids.map((id, i) => ({ id, zone: id, rect: [xs[i][0], 0, xs[i][1], 32], style: 'shaft', platforms: 6, exits: [...(i ? [{ side: 'l', to: ids[i - 1] }] : []), ...(i < 4 ? [{ side: 'r', to: ids[i + 1] }] : [])] }));
 };
 const tetrisTower = () => {
   const doc = stored();
   doc.spaces[0].id = 'tower_climb'; doc.player.space = 'tower_climb'; doc.player.at = [2.5, 3];
   doc.spaces[0].zones = shafts().map(r => ({ id: r.zone, name: r.zone, rect: r.rect }));
-  doc.spaces[0].generators = [{ use: 'engine.generate.tilemap.rooms', with: { mode: 'side', rooms: shafts(), movement: { jumpHeight: 4, jumpDistance: 6 }, palette: { wall: 'solid_block', ground: 'solid_block', platform: 'solid_block', rung: 'ledge' } } }];
+  doc.spaces[0].generators = [{ use: 'engine.generate.tilemap.rooms', with: { mode: 'side', rooms: shafts(), palette: { wall: 'solid_block', ground: 'solid_block', platform: 'solid_block', rung: 'ledge' } } }];
   doc.content.blocks.push({ id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] });
   doc.systems = [
     { use: 'engine.input.actions', with: { verbs: ['move', 'jump', 'rotate_cw', 'hard_drop'], axes: ['move'] } },
