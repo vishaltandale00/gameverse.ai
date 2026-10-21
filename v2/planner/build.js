@@ -91,11 +91,12 @@ import { isStr, prop } from '../kernel/guards.js';
 
 export const BUILD_VERSION = 'build/0.4';
 /**
- * Loop-check needs a pick's own declarations must answer (loop-check.js LoopNeed kinds): its participants, the player's
- * seat, an opponent, a group to seat, the component its win reads. No later step adds them, so a pick that lacks one is
- * dropped from its step and the step asked again without it.
+ * Loop-check needs a pick's own declarations must answer (loop-check.js LoopNeed kinds), whatever content the model
+ * writes later: its participants (the preset fills them from the card's default or example), the player's seat and an
+ * opponent among them (card.engage.join.where). No later step adds them, so a pick that lacks one is dropped from its
+ * step and the step asked again without it. A group's pieces and the component its win reads are content (pending).
  */
-export const OWN_NEEDS = new Set(['participants', 'seat', 'opponent', 'group', 'component']);
+export const OWN_NEEDS = new Set(['participants', 'seat', 'opponent']);
 /** Options are never cut (over MAX_LIST a category question comes first). */
 export { MAX_LIST };
 
@@ -402,8 +403,8 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
         break;
       }
       const cand = /** @type {BuildCandidate} */ (open.find(c => c.id === a.pick));
-      // The pick's own loop must be playable from its declarations: a need no later step can answer (its participants,
-      // the player's seat, an opponent, a group, the component its win reads) drops it, and the step is asked again
+      // The pick's own loop must be playable from its declarations: a need no later step or content can answer (its
+      // participants, the player's seat, an opponent: OWN_NEEDS) drops it, and the step is asked again
       // without it (the step path retries the step, never re-plans the collection afterwards).
       const holes = ownHoles(cand, m.id);
       const t = holes.length ? { ok: /** @type {const} */ (false), why: holes.slice(0, 2).map(p => `[${p.code}] ${p.message}`).join('; ') } : tryAdd(cand);

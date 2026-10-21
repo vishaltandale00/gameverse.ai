@@ -21,20 +21,18 @@ import { createWorld } from '../kernel/world.js';
 import { movementEnvelope } from '../primitives/gameplay/move-lib-envelope.js';
 import { defaultsOf, isGenerator } from './catalog.js';
 import { isList, isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
-import { OUTLINE_AUTHORS, linkedZones, spaceContent, carriedContent, unitGives } from './space-content.js';
+import { OUTLINE_AUTHORS, linkedZones, spaceContent, carriedContent } from './space-content.js';
 
 export { OUTLINE_AUTHORS };
 
 /**
- * The world content a selected space already has before any generator is planned (space-content.js, the composition
- * check's reading): what the space carries itself or through params the document will write, the outline's zones, and
- * what a primitive of the collection gives that space kind. @param {RegistryLike} registry @param {SpaceLike} space
- * @param {string[]} systems the collection's primitives @returns {string[]}
+ * The world content a selected space already has before any generator is planned: what the space carries itself or
+ * through params the document will write, and the outline's zones (space-content.js carriedContent, the composition
+ * check's reading). A mechanic on the space is not counted: a board it fills is a region of the space, not its world.
+ * @param {RegistryLike} registry @param {SpaceLike} space @returns {string[]}
  */
-export function selectedContent(registry, space, systems) {
-  const card = registry.get(str(space.use))?.card;
-  const kinds = [...new Set(needSets(registry, space.use).flat())];
-  return [...new Set([...carriedContent(card, /** @type {any} */ (space), { written: false }), ...kinds.filter(k => systems.some(id => unitGives(registry.get(id)?.card, k, String(space.use))))])];
+export function selectedContent(registry, space) {
+  return carriedContent(registry.get(str(space.use))?.card, /** @type {any} */ (space), { written: false });
 }
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */

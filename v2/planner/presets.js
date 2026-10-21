@@ -835,7 +835,7 @@ export function preset({ decomposition, selection, registry, logic, seed }) {
   const worldFor = (/** @type {typeof selSpaces[number]} */ s, /** @type {number} */ si) => {
     const named = (selection.generators || []).filter(g => g.space === s.id && !g.auto).map(g => g.id);
     if (!needSets(registry, s.use).length) return named;
-    const have = [...selectedContent(registry, s, st.systems), ...named.flatMap(id => contentOfGenerator(registry, id))];
+    const have = [...selectedContent(registry, s), ...named.flatMap(id => contentOfGenerator(registry, id))];
     return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, exclude: named, set: selection.worlds?.[s.id] ?? null }).generators];
   };
   /** @type {OutlineSpace[]} */

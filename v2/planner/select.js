@@ -216,7 +216,7 @@ export async function selectPrimitives({ decomposition, registry, writer = null,
   for (const d of dropped) for (const m of mechanics) m.primitives = m.primitives.filter(x => x !== d.id);
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
   // Every space gets the world its card declares it needs (card.needs.content), as the composition check reads it
-  // (space-content.js): what it lacks once what it carries, the outline's zones and the collection give it are counted
+  // (space-content.js): what it lacks once what it carries and the outline's zones are counted
   // is built by the generators whose cards declare that content (planWorld), even when no mechanic named one; the
   // outline's scaffold pass fills each generator's params. A space that declares
   // alternative worlds (card.needs.alternatives: terrain and roads, or rooms) none of which the collection already
@@ -227,7 +227,7 @@ export async function selectPrimitives({ decomposition, registry, writer = null,
   for (const s of spaces) {
     const sets = needSets(registry, s.use);
     if (!sets.length) continue;
-    const have = [...selectedContent(registry, s, systems), ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
+    const have = [...selectedContent(registry, s), ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
     const exclude = generators.filter(g => g.space === s.id).map(g => g.id);
     let set = sets.find(x => x.every(k => have.includes(k))) ?? null;
     if (!set && sets.length > 1) {
