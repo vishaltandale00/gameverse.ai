@@ -316,18 +316,24 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   /** Mechanics a step's bundle already covered: mechanic id -> the covering step's mechanic and member. @type {Map<string, { by: string, primitive: string }>} */
   const covered = new Map();
   /**
-   * The later mechanics a bundle's companions cover (never by the seed itself): a companion whose declared loop does what
-   * the mechanic says (its verbs or progress events name it) and that is that mechanic's best declared fit.
-   * @param {string[]} extras @param {number} at the current worklist index @returns {Array<{ mechanic: string, by: string }>}
+   * The later mechanics a bundle's companions cover (never by the seed itself): a mechanic of the same source concept as
+   * the seed's (mechanic.from; a joined idea's mechanics are never covered from the other side), whose best declared fit
+   * is the companion, whose declared loop does what the mechanic says (its verbs or progress events name it), and, when
+   * that best fit declares its own loop win, a companion that declares one too.
+   * @param {string[]} extras @param {number} at the current worklist index @param {Mechanic} m the seed's mechanic
+   * @returns {Array<{ mechanic: string, by: string }>}
    */
-  const coverage = (extras, at) => {
+  const coverage = (extras, at, m) => {
     /** @type {Array<{ mechanic: string, by: string }>} */
     const out = [];
+    const wins = (/** @type {Card | null | undefined} */ c) => Boolean(cardLoop(c ?? null)?.win);
     for (const m2 of mechanicsInOrder.slice(at + 1)) {
-      if (covered.has(m2.id)) continue;
+      if (covered.has(m2.id) || ideaOf(m2.from) !== ideaOf(m.from) || joined(m2) !== joined(m)) continue;
+      const best = fitsFor(m2)[0];
+      const bestCard = best ? pool.find(c => c.id === best.id) : undefined;
       const by = extras.find(id => {
         const card = pool.find(c => c.id === id);
-        return card && fitsFor(m2)[0]?.id === id && (declaredFit(m2, card) ?? 0) - relevance(m2, card) > 0;
+        return card && best?.id === id && (declaredFit(m2, card) ?? 0) - relevance(m2, card) > 0 && (!wins(bestCard) || wins(card));
       });
       if (by) out.push({ mechanic: m2.id, by });
     }
@@ -345,20 +351,20 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     // Candidates: each fitting card as a single card or the smallest bundle that composes with the collection (bundles.js),
     // ranked by declarations less a penalty per extra primitive; only options that compose are offered.
     /** @type {Array<BuildCandidate & { related: number, rel: number }>} */
-    let ranked = [];
+    const ranked = [];
     /** @type {Array<{ id: string, why: string }>} */
     const rejected = [];
+    // The seeds offered are the best-ranked fits that compose (alone or bundled), as for single cards: the bundle
+    // penalty only orders the options, so a seed is never pushed off the list by fits less related to the mechanic.
     for (const f of fitsFor(m)) {
-      // Fits come best first and a bundle only loses score: once MAX_CANDIDATES are kept, a fit that cannot outrank the
-      // last of them ends the search.
-      if (ranked.length >= MAX_CANDIDATES && order(f, ranked[MAX_CANDIDATES - 1]) >= 0) break;
+      if (ranked.length >= MAX_CANDIDATES) break;
       const b = formBundle({ registry, seed: f.id, systems, space: use, adapters, composes, resolve: resolveWith });
       if (!b.ok) { rejected.push({ id: f.id, why: b.why }); continue; }
       const size = b.members.length + b.adapters.length;
       ranked.push({ id: f.id, score: +(f.score - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters,
-        covers: size > 1 ? coverage(b.extra.map(x => x.id), at) : [], related: f.related, rel: f.rel });
-      ranked = ranked.sort(order).slice(0, MAX_CANDIDATES);
+        covers: size > 1 ? coverage(b.extra.map(x => x.id), at, m) : [], related: f.related, rel: f.rel });
     }
+    ranked.sort(order);
     /** @type {BuildCandidate[]} */
     const candidates = ranked.map(({ related, rel, ...c }) => c);
     // The space itself may be what a mechanic is (travelling between its places): offered when its card relates to it.
