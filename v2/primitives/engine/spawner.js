@@ -23,7 +23,7 @@ export default {
       rules: { type: 'list', default: [], effect: 'population rules',
         of: { type: 'object', fields: {
           id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
-          space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' },
+          space: { type: 'ref', to: 'space', effect: 'the space to spawn in (default: the zone\'s, else the space the spawner is bound to, else the player\'s)' }, zone: { type: 'ref', to: 'zone' },
           at: { type: 'json', scale: 'world', effect: 'a point or a list of points to spawn at, in its space\'s coordinates' }, near: { type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
           spread: { type: 'number', default: 0, min: 0, effect: 'scatter radius around at/near/group anchor' },
           count: pair('[min, max] alive target, rolled each time the rule activates', [1, 1]),
@@ -99,7 +99,7 @@ export default {
     });
     return errors;
   },
-  install(rt, config) {
+  install(rt, config, instance = {}) {
     const period = Math.max(1, frames(config.intervalSec));
     const rules = Object.fromEntries(config.rules.map(r => [r.id, r]));
     const st = () => { const s = rt.store(ID); s.rules ??= {}; s.pending ??= []; s.culling ??= null; return s; };
@@ -115,7 +115,9 @@ export default {
     // Candidate position for a rule-like spec; null when no valid position was found.
     const place = (r, anchor = null) => {
       const p = rt.player(), z = r.zone ? zoneDef(rt.doc, r.zone) : null;
-      const space = r.space ?? z?.space ?? p?.space ?? rt.doc.spaces[0].id, api = rt.space(space);
+      // The rule's space, its zone's, the space the spawner is bound to (a composed document binds an inner template's
+      // spawner to the inner space), else the player's.
+      const space = r.space ?? z?.space ?? instance?.space ?? p?.space ?? rt.doc.spaces[0].id, api = rt.space(space);
       for (let attempt = 0; attempt < 8; attempt++) {
         let at = null, teleportZone = null, sampled = true;
         if (anchor) at = scatter(anchor, r.spread || 2, rt.random);
