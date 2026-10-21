@@ -166,10 +166,10 @@ export function mount(gameDoc, { primitives, seed, before } = {}) {
     for (let i = 0; i < n; i++) {
       if (held) { if (pending.length) rt.step({ actions: pending.shift() }); }
       else { const live = view.input?.() || {}; rt.step({ ...live, ...input, actions: { ...(live.actions || {}), ...(input.actions || {}), ...(pending.shift() || {}) } }); }
-      clock += 1000 / 60; for (const fn of frames) fn(1);
+      clock += 1000 / 60; rt.read(() => { for (const fn of frames) fn(1); });
     }
   };
-  for (const fn of frames) fn(1); // first display frame, as player.js does
+  rt.read(() => { for (const fn of frames) fn(1); }); // first display frame, as player.js does (drawing is a read)
   const dispose = () => { for (const fn of disposers.splice(0).reverse()) fn(); container.replaceChildren(); };
   const q = s => container.querySelector(s), qa = s => container.querySelectorAll(s);
   return { rt, checked: compiled.checked, doc, view, tick: s => { clock += s * 1000; }, container, acts, frame, q, qa, text: s => q(s)?.textContent ?? null, key: (k, init) => doc.key(k, init), dispose };

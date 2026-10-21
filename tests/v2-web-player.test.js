@@ -13,7 +13,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { installBrowser } from './v2-web-host.js';
 import { TEMPLATES, templateById } from '../v2/templates/registry.js';
 import * as labDocs from '../v2/primitives/graphics/ui-lab-docs.js';
-import { docBindings, openKeys } from '../v2/primitives/graphics/ui-input.js';
+import { docBindings, openKeys, MODAL_KEYS } from '../v2/primitives/graphics/ui-input.js';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { hostPreflight } from '../v2/verify/controls.js';
 
@@ -218,11 +218,16 @@ function probeInput(g) {
 /** Press the pause menu's key and then Esc: -> { paused, screen, resumed } or null (no pause menu). */
 function probeMenu(g) {
   if (!(g.rt.doc.graphics || []).some(x => x.use === 'graphics.ui.menu' && x.with?.pause !== false) || g.rt.state.status !== 'playing') return null;
-  const k = openKeys(g.rt.doc).menu[0], name = k === 'esc' ? 'Escape' : k;
+  // A menu key that is no UI navigation key (Esc is also 'back': a screen with something to go back from takes it first).
+  const nav = new Set(Object.values(MODAL_KEYS).flat()), keys = openKeys(g.rt.doc).menu, k = keys.find(x => !nav.has(x)) ?? keys[0], name = k === 'esc' ? 'Escape' : k;
   B.key(name); B.keyup(name); B.frame();
   const paused = g.rt.view.paused, screen = Boolean(B.container.querySelector('[aria-label="Paused"]'));
   B.key('Escape'); B.keyup('Escape'); B.frame();
-  return { paused, screen, resumed: !g.rt.view.paused };
+  const resumed = !g.rt.view.paused;
+  // Esc goes back on screens that have somewhere to go back to, and pauses from the rest: a few presses reach the pause.
+  let esc = null;
+  if (keys.includes('esc')) { esc = false; for (let i = 0; i < 4 && !esc; i++) { B.key('Escape'); B.keyup('Escape'); B.frame(); esc = g.rt.view.paused; } if (esc) { B.key('Escape'); B.keyup('Escape'); B.frame(); } }
+  return { paused, screen, resumed, esc };
 }
 const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', space: ' ', enter: 'Enter', shift: 'Shift' };
 const reachedVerb = (input, verb) => Boolean(input?.actions?.[verb] || input?.held?.[verb] || (Array.isArray(input?.axes?.[verb]) && input.axes[verb].some(Boolean)));
@@ -251,7 +256,7 @@ for (const [name, doc] of cases) {
       // Input works after the hot-load exactly as before it: the same key reaches the game, the menu key pauses.
       assert.deepEqual(probeInput(g), before.input, 'a gameplay key does after the hot-load what it did before');
       assert.deepEqual(probeMenu(g), before.menu, 'the menu key does after the hot-load what it did before');
-      if (before.menu) assert.deepEqual(before.menu, { paused: true, screen: true, resumed: true }, 'the menu key pauses, shows the pause screen, and resumes');
+      if (before.menu) assert.deepEqual({ ...before.menu, esc: before.menu.esc ?? true }, { paused: true, screen: true, resumed: true, esc: true }, 'the menu key pauses, shows the pause screen, and resumes; Esc reaches the pause');
     } finally { g.dispose(); }
     assert.deepEqual(B.held(), [], 'nothing remains after dispose');
   });

@@ -111,8 +111,9 @@ export function mountGame(container, record, { onState, primitives = null, now =
         rt.step({ ...input, actions: { ...(input.actions || {}), ...(pending.shift() || {}) } }); acc -= DT;
       }
     }
-    for (const fn of cur.frames) fn(acc / DT);
-    onState?.(rt.state);
+    // Drawing is a read: graphics never change the state (rt.read keeps their service reads from creating any).
+    const alpha = acc / DT;
+    rt.read(() => { for (const fn of cur.frames) fn(alpha); onState?.(rt.state); });
   }
   const loop = () => { if (disposed) return; tick(now()); if (!disposed) raf = requestAnimationFrame(loop); };
 

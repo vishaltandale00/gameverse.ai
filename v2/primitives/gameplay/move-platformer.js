@@ -158,7 +158,7 @@ export default {
     rt.on('stomped', d => { const e = d.by && rt.entity(d.by); if (e && ownedBy(rt, e, owner)) state(e, 'plat').stomp = true; });
     rt.system('movement', rt => { for (const e of driven(rt, c, instance)) if (ownedBy(rt, e, owner)) stepPlatformer(rt, e, c); }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       // The solver repeats an option's actions for `steps` frames, so a jump held for its whole rise is a full jump.
       const rise = Math.max(1, Math.round((c.jump || c.flap.velocity || c.autoBounce.velocity || 1) / ((c.gravity || 60) * c.gravityScale) / rt.dt));
       const lift = c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0, dashing = c.abilities.dash || hasAbility(rt, p, 'dash'), dashSteps = Math.max(1, Math.round(c.dash.sec / rt.dt));

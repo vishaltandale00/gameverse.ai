@@ -63,7 +63,7 @@ export default {
     const machine = createDialogueMachine({ cps: config.cps });
     const messages = [];
     let view = null, cats = [], level = 'root', cat = null, items = [], index = 0, targeting = null, unitNodes = new Map(), lastUnitsSig = '', lastMenuSig = '', lastT = host.now(), waitingSince = lastT;
-    const layer = { id: 'battle', modal: true, onVerb: verb => press(verb) };
+    const layer = { id: 'battle', modal: false, takesInput: true, onVerb: verb => press(verb) }; // the turn screen is where play happens: keys the game binds still reach it
 
     rt.on('battle_message', e => say(e.text));
     rt.on('battle_log', e => { if (e.text) say(e.text); });

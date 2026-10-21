@@ -40,7 +40,8 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | Member | Use |
 | --- | --- |
 | `rt.state` | The JSON game state: `frame time status ending rng vars flags counts events entities spaces prim`. Everything that must survive a snapshot lives here. |
-| `rt.store(key)` | Per-primitive JSON state at `state.prim[key]`. Fetch it inside each call; never hold it across calls, because `restore()` replaces it. Key it by primitive id, or by `instance.key` when several instances are allowed. |
+| `rt.store(key)` | Per-primitive JSON state at `state.prim[key]`. Fetch it inside each call; never hold it across calls, because `restore()` replaces it. Key it by primitive id, or by `instance.key` when several instances are allowed. Inside a read (`rt.read`, option listing) an absent store is not created: it reads as a fresh empty object. |
+| `rt.read(fn)` | Run `fn` as a read of the world. Option listing is one; hosts draw frames and handle UI keys inside one. Reads never change state, however often presentation and bots read, so lazily initialised state is made by the steps alone, at the same moment in every host. |
 | `rt.caches` | Non-JSON derived data (indexes, meshes). Rebuild it in `rt.onRestore(fn)` and when `rt.doc` changes. |
 | `rt.system(phase, fn, owner)` | Per-step system. Phases run in this order: `input ai movement physics interaction rules plot late`. |
 | `rt.on(name, fn)` | Event handler. `'*'` receives every event. |
@@ -58,7 +59,9 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.random()` | The only randomness allowed. It is seeded and stored in state. Never use `Math.random`, `Date` or `performance` in simulation. |
 | `rt.input` | This step's input: `{actions:{verb:value}, axes:{move:[x,y], look:[x,y]}, held:{verb:true}}`. |
 | `rt.headless` / `rt.view` | `view` exists only in the browser (§6). Simulation must never depend on it. |
-| `rt.step(input)`, `rt.snapshot()`, `rt.restore(s)`, `rt.extend(doc, added)` | Driven by hosts, solvers and the planner. |
+| `rt.step(input)`, `rt.snapshot()`, `rt.restore(s)`, `rt.extend(doc, added)` | Driven by hosts, solvers and the planner. While a modal is open, the step's input (`rt.input`, as every system reads it) is only the modal's actions, as actions, held verbs or axes, in every host. |
+
+Each world owns a copy of the document it is created from (`createWorld` clones it): a primitive that sets params at run time changes only its own world's `rt.doc`.
 
 **Entities** are plain JSON: `{id, archetype, space, at, zone?, components:{...}}`. Components are keyed by the owning primitive (catalog §0): `health melee ranged ai attacks schedule vehicle mount interact shop container equipment loot level resources status model body`. Continuous spaces keep kinematics in `components.body` = `{size, vel, grounded, facing, layer}`. A primitive owns only its own component and reads others' through their documented fields.
 
@@ -148,7 +151,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 
 ## 6. Graphics and hosts
 
-Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input()}`. A renderer:
+Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input(), onDispose(fn), pause(on), paused, restart(), load(snapshot), setTimeScale(s), now(), continuing}`: `now()` is the display clock in ms; `onDispose(fn)` releases anything a primitive holds outside the container (listeners on window or document, timers, audio, GL, workers) when the host unloads or replaces the world; `continuing` is true for a world a hot-load builds to carry on a game in play. Frames are drawn inside `rt.read`. A renderer:
 - draws entities of the space it is bound to (`instance.space`, default first space), and only while the player is in that space;
 - interpolates with `alpha`;
 - never writes `rt.state`.

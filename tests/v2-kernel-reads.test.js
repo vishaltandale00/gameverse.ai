@@ -1,0 +1,61 @@
+// Kernel contract (KERNEL_API.md §2): what keeps headless verification and the browser host on the same simulation.
+// - Reads never change state: rt.read, and option listing, never create a primitive's store.
+// - While a modal is open, the step's input is only its actions (as actions, held verbs or axes), in every host.
+// - Each world owns a copy of its document: changing one world's rt.doc never reaches another world.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { catalogue } from '../v2/primitives/index.js';
+import { preflight } from '../v2/kernel/document.js';
+import { createWorld } from '../v2/kernel/world.js';
+
+const probe = {
+  id: 'gameplay.test.reads', card: { intent: 'Kernel read and modal fixture: lazily made state, an option, a modal.', views: ['any'], params: {}, provides: { actions: ['ask', 'answer', 'poke'] } },
+  install(rt) {
+    const st = () => { const s = rt.store('gameplay.test.reads'); s.made ??= rt.random(); return s; };
+    rt.options(() => [{ label: `poke ${st().made.toFixed(3)}`, actions: { poke: true } }]);
+    rt.action('poke', () => { st().pokes = (st().pokes || 0) + 1; });
+    rt.action('ask', () => rt.openModal('gameplay.test.reads', { actions: ['answer'] }));
+    rt.action('answer', () => rt.closeModal('gameplay.test.reads'));
+    rt.system('rules', r => { st().seen = { held: Object.keys(r.input.held || {}), axes: Object.keys(r.input.axes || {}) }; }, 'gameplay.test.reads');
+  },
+};
+const { registry, logic } = catalogue([probe]);
+const doc = () => ({
+  schema: 'gameverse.v2.game/0.2', id: 'reads', title: 'Reads', seed: 3,
+  spaces: [{ id: 'room', use: 'engine.space.graph', zones: [{ id: 'hall', name: 'Hall' }] }],
+  systems: [{ use: 'gameplay.test.reads' }],
+  content: { archetypes: [{ id: 'hero', components: {} }] }, player: { archetype: 'hero', space: 'room', at: 'hall' },
+});
+const world = () => { const c = preflight(doc(), registry, logic); assert.ok(c.ok, JSON.stringify(c.errors)); return createWorld(c.doc, registry, logic); };
+
+test('reads: listing options and rt.read create no store and consume no randomness', () => {
+  const rt = world(), before = structuredClone(rt.state);
+  assert.equal(rt.availableOptions().length, 1);
+  rt.read(() => rt.store('gameplay.test.reads').x = 1);
+  assert.deepEqual(rt.state, before, 'a read leaves the state as it was');
+  rt.step({});
+  const listed = world(); listed.availableOptions(); listed.step({});
+  assert.deepEqual(listed.state, rt.state, 'a world that was read before its first step equals one that was not');
+  assert.ok(rt.state.prim['gameplay.test.reads'].made !== undefined, 'the step makes the state');
+});
+
+test('modal: while a modal is open the step input is only its actions, as actions, held verbs or axes', () => {
+  const rt = world();
+  rt.step({ actions: { ask: true } });
+  assert.equal(rt.modal?.owner, 'gameplay.test.reads');
+  rt.step({ actions: { poke: true }, held: { poke: true, answer: true }, axes: { move: [1, 0] } });
+  assert.equal(rt.state.prim['gameplay.test.reads'].pokes, undefined, 'an action the modal does not take is not dispatched');
+  assert.deepEqual(rt.state.prim['gameplay.test.reads'].seen, { held: ['answer'], axes: [] }, 'systems see only the modal\'s verbs');
+  rt.step({ actions: { answer: true } });
+  assert.equal(rt.modal, null);
+  rt.step({ held: { poke: true }, axes: { move: [1, 0] } });
+  assert.deepEqual(rt.state.prim['gameplay.test.reads'].seen, { held: ['poke'], axes: ['move'] }, 'and everything once it closes');
+});
+
+test('documents: each world owns a copy of its document', () => {
+  const c = preflight(doc(), registry, logic);
+  const a = createWorld(c.doc, registry, logic), b = createWorld(c.doc, registry, logic);
+  a.doc.systems[0].with.changed = true;
+  assert.equal(b.doc.systems[0].with.changed, undefined);
+  assert.equal(c.doc.systems[0].with.changed, undefined, 'nor the document it was made from');
+});

@@ -58,7 +58,7 @@ export default {
     host.layer('screen').append(screen);
     let view = null, focus = 0, targeting = null, handSig = '', foeSig = '', boardSig = '';
     const cardNodes = [], foeNodes = new Map();
-    const layer = { id: 'cards', modal: true, onVerb: verb => press(verb) };
+    const layer = { id: 'cards', modal: false, takesInput: true, onVerb: verb => press(verb) }; // the turn screen is where play happens: keys the game binds still reach it
     const focusables = () => [...cardNodes, endBtn];
 
     function press(verb) {
