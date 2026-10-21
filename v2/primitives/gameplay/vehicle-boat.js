@@ -30,6 +30,15 @@ export default {
     provides: { events: ['docked', 'undocked', 'beached', 'refloated', 'crash'] },
     requires: { capabilities: ['position', 'surface'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
+    components: {
+      boat: { type: 'object', effect: 'boat handling of a vehicle', fields: {
+        maxSpeed: { type: 'number', min: 1, unit: 'km/h' }, accel: { type: 'number', min: 0.1, unit: 'm/s²' }, turn: { type: 'number', min: 0, unit: 'deg/s' },
+        drag: { type: 'number', min: 0, effect: 'water drag' }, draft: { type: 'number', min: 0, unit: 'm', effect: 'depth the hull needs to float' }, planing: { type: 'number', min: 0, unit: 'km/h', effect: 'speed above which the hull planes' },
+      } },
+    },
+    rules: {
+      boat_no_vehicle: { fields: ['content.archetypes[].components.boat', 'content.archetypes[].components.vehicle'], message: 'an archetype with a boat component also has a vehicle component' },
+    },
     // movement: the player's body moves by this primitive from the start: it moves the vehicle it spawns for the player,
     // which vehicle.core seats the player in (its engage.player.enter) and carries the player along (loop-check.js movesPlayer).
     engage: { player: { movement: true, spawn: { role: 'vehicle', archetype: { id: 'boat', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, boat: {} } } } },
@@ -41,8 +50,6 @@ export default {
       const b = a.components?.boat; if (!b) return;
       const path = `content.archetypes[${i}].components.boat`;
       if (!a.components.vehicle) errors.push(err('boat_no_vehicle', path, `archetype '${a.id}' has boat but no vehicle component`));
-      for (const k of ['maxSpeed', 'accel']) if (b[k] !== undefined && !(b[k] > 0)) errors.push(err('boat_invalid', `${path}.${k}`, `${k} must be > 0`));
-      if (b.drag !== undefined && !(b.drag >= 0)) errors.push(err('boat_invalid', `${path}.drag`, 'drag must be >= 0'));
     });
     return errors;
   },

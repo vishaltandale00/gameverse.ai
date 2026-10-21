@@ -2358,7 +2358,7 @@
       "size": [8,8],
       "hits": 5,
       "persist": true,
-      "gate": "foundation_vault_gate",
+      "gate": {"gate":"foundation_vault_gate"},
       "hitsWith": {"vault_key":1}
      },
      {"id":"rail_fuse_box","kind":"lever","at":[-80,24,-400],"size":[1,2],"signal":"fuse","persist":true},
@@ -3264,7 +3264,7 @@
     "components": {
      "model": "motorbike",
      "health": {"max":60},
-     "vehicle": {"seats":2,"health":60,"fuel":100,"open":true},
+     "vehicle": {"seats":2,"health":60,"fuel":100},
      "car": {"maxSpeed":160,"accel":24,"grip":1.2,"mass":220,"steer":40,"brake":1,"drift":true,"lean":true}
     }
    },

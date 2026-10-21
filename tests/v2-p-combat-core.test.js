@@ -72,7 +72,7 @@ test('resource: deterministic replay and bad configs', () => {
   same(() => make(resDoc()), Array.from({ length: 90 }, (_, i) => ({ actions: {} })));
   const bad = resDoc(); bad.systems[0].with.pools.push({ id: 'stamina', max: 5 }, { id: 'mana', max: 5, start: 10 });
   const c = codes(bad);
-  assert.ok(c.includes('resource_duplicate'), c);
+  assert.ok(c.includes('id_duplicate'), c); // pools define the kind 'pool': a repeated id is the kernel's id_duplicate (was resource_duplicate)
   assert.ok(c.includes('resource_start_invalid'), c);
   const missing = resDoc(); missing.systems[0].with.pools.push({ max: 3 });
   assert.ok(codes(missing).includes('param_missing'));

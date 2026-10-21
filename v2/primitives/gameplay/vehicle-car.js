@@ -27,7 +27,7 @@ export default {
     params: {
       preset: { type: 'string', options: ['arcade', 'sim', 'kart'], default: 'arcade', effect: 'handling model; archetype car.preset overrides' },
       plane: { type: 'string', options: ['auto', 'xz', 'xy'], default: 'auto', effect: 'ground plane: xz = 3D y-up, xy = 2D top-down; auto from the space' },
-      surfaces: { type: 'object', open: true, default: {}, effect: 'material id -> {grip, drag, maxSpeed} multipliers (e.g. sand {grip:0.6, drag:3, maxSpeed:0.6})' },
+      surfaces: { type: 'object', default: {}, values: { type: 'object', fields: { grip: { type: 'number', min: 0 }, drag: { type: 'number', min: 0 }, maxSpeed: { type: 'number', min: 0 } }, effect: 'multipliers on this material' }, effect: 'material id -> {grip, drag, maxSpeed} multipliers (e.g. sand {grip:0.6, drag:3, maxSpeed:0.6})' },
       stallDepth: { type: 'number', default: 0.6, min: 0, max: 10, unit: 'm', effect: 'water deeper than this floods the engine' },
       restitution: { type: 'number', default: 0.2, min: 0, max: 1, effect: 'bounce off walls' },
       crashEvent: { type: 'number', default: 2, min: 0, max: 100, unit: 'm/s', effect: 'impacts above this emit crash' },
@@ -40,6 +40,20 @@ export default {
     provides: { events: ['crash', 'drift', 'drift_end', 'drift_boost', 'boost', 'landed', 'airborne', 'rail_end', 'stalled', 'gear'], vars: [] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
+    components: {
+      car: { type: 'object', effect: 'wheeled handling of a vehicle', fields: {
+        preset: { type: 'string', options: Object.keys(CAR_PRESETS), effect: 'handling model, overriding the param' },
+        maxSpeed: { type: 'number', min: 1, unit: 'km/h', effect: 'top speed' }, accel: { type: 'number', min: 0.1, unit: 'm/s²' }, mass: { type: 'number', min: 1, unit: 'kg' },
+        grip: { type: 'number', min: 0, max: 2 }, steer: { type: 'number', min: 0, max: 80, unit: 'deg', effect: 'steering lock' }, brake: { type: 'number', min: 0, effect: 'braking multiplier' },
+        drift: { type: 'boolean', effect: 'handbrake drifts (karts always drift)' },
+        boost: { type: 'object', effect: 'a timed speed boost', fields: { sec: { type: 'number', min: 0.05, required: true, unit: 's' }, mult: { type: 'number', min: 1, required: true, effect: 'top speed multiplier' }, cooldown: { type: 'number', min: 0, unit: 's' } } },
+        rail: { type: 'boolean', effect: 'follows rail cells (minecarts)' }, lean: { type: 'boolean', effect: 'leans into turns (bikes)' },
+        wheelbase: { type: 'number', min: 0.1, unit: 'm' },
+      } },
+    },
+    rules: {
+      car_no_vehicle: { fields: ['content.archetypes[].components.car', 'content.archetypes[].components.vehicle'], message: 'an archetype with a car component also has a vehicle component' },
+    },
     // A car for the player to drive from the first frame; AI participants get one with a steady throttle (the vehicle.core AI interface).
     // movement: the player's body moves by this primitive from the start: it moves the vehicle it spawns for the player,
     // which vehicle.core seats the player in (its engage.player.enter) and carries the player along (loop-check.js movesPlayer).
@@ -52,11 +66,6 @@ export default {
       const c = a.components?.car; if (!c) return;
       const path = `content.archetypes[${i}].components.car`;
       if (!a.components.vehicle) errors.push(err('car_no_vehicle', path, `archetype '${a.id}' has car but no vehicle component`, 'add components.vehicle {seats, health, fuel}'));
-      for (const k of ['maxSpeed', 'accel', 'mass']) if (c[k] !== undefined && !(c[k] > 0)) errors.push(err('car_invalid', `${path}.${k}`, `${k} must be > 0`));
-      if (c.grip !== undefined && !(c.grip >= 0 && c.grip <= 2)) errors.push(err('car_invalid', `${path}.grip`, 'grip must be within 0..2'));
-      if (c.steer !== undefined && !(c.steer >= 0 && c.steer <= 80)) errors.push(err('car_invalid', `${path}.steer`, 'steer must be within 0..80 deg'));
-      if (c.preset !== undefined && !CAR_PRESETS[c.preset]) errors.push(err('car_invalid', `${path}.preset`, `unknown preset '${c.preset}'`, Object.keys(CAR_PRESETS).join('|')));
-      if (c.boost && !(c.boost.sec > 0 && c.boost.mult >= 1)) errors.push(err('car_invalid', `${path}.boost`, 'boost needs sec > 0 and mult >= 1'));
     });
     return errors;
   },

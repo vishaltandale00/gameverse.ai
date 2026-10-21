@@ -67,5 +67,6 @@ test('minigame: deterministic replay and preflight codes', () => {
   const bad = mg([{ id: 'a', kind: 'custom' }, { id: 'a', kind: 'quiz', zone: 'ring' }]);
   bad.systems.push({ use: 'gameplay.stage.sequence', with: { stages: [{ id: 's', clear: { minigame: 'nope', state: 'done' } }] } });
   const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['minigame_kind', 'minigame_duplicate', 'param_option', 'minigame_place', 'ref_unknown', 'minigame_state']) assert.ok(codes.has(c), c);
+  // Game ids are the kind 'minigame': a repeated id is the kernel's id_duplicate (was minigame_duplicate).
+  for (const c of ['minigame_kind', 'id_duplicate', 'param_option', 'minigame_place', 'ref_unknown', 'minigame_state']) assert.ok(codes.has(c), c);
 });

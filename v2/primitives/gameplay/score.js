@@ -22,9 +22,9 @@ export default {
     views: ['any'],
     params: {
       var: { type: 'string', default: 'score' },
-      points: { type: 'list', default: [], of: { type: 'object', fields: { on: { type: 'string', required: true }, points: { type: 'json', default: 'data', effect: 'a number, or "data" for the event’s points field' }, when: { type: 'predicate' }, mult: { type: 'boolean', default: true }, chain: { type: 'string', effect: 'chain whose value this award uses (geometric chains)' } } } },
+      points: { type: 'list', default: [], of: { type: 'object', fields: { on: { type: 'string', required: true }, points: { type: 'number', effect: 'points per event; omitted: the event’s own points field' }, when: { type: 'predicate' }, mult: { type: 'boolean', default: true }, chain: { type: 'ref', to: 'score_chain', effect: 'the chains[] chain whose value this award uses (geometric chains)' } } } },
       chains: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, on: { type: 'list', of: { type: 'string' }, min: 1 }, kind: { type: 'string', options: KINDS, default: 'step' },
+        id: { type: 'string', required: true }, on: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'events that link the chain' }, kind: { type: 'string', options: KINDS, default: 'step' },
         base: { type: 'number', default: 200 }, growth: { type: 'number', default: 2 }, cap: { type: 'number', default: 8 }, divisor: { type: 'number', default: 6, min: 1 },
         window: { type: 'number', default: 0, min: 0, unit: 's', effect: 'the chain breaks after this long without a link (0 = never)' },
         resetOn: { type: 'list', of: { type: 'string' }, default: [] },
@@ -38,18 +38,16 @@ export default {
       combo: { type: 'object', fields: { window: { type: 'number', default: 1.4, min: 0.05 }, every: { type: 'integer', default: 5, min: 1 } }, effect: 'counts scored events in quick succession; emits combo every N' },
     },
     provides: { events: ['scored', 'chain', 'chain_broken', 'near_miss', 'high_score', 'stars', 'combo'], vars: ['score', 'score.high', 'stars', 'score.chain', 'score.mult.chain'] },
+    defines: [{ kind: 'score_chain', in: 'chains' }],
+    rules: { score_stars_order: { fields: ['stars'], message: 'star thresholds increase' } },
   },
   logic(logic) {
     // Frozen contract (KERNEL_API §2): add_score {amount, reason?, who?}; `mult: false` skips multipliers.
     logic.effect('add_score', { check: (e, path, errors) => { if (!Number.isFinite(e.amount)) errors.push(err('effect_invalid', `${path}.amount`, 'amount must be a number')); }, run: (e, rt, c) => rt.service('score').add(e.amount, { mult: e.mult !== false, on: e.reason ?? 'effect', who: e.who ?? c.self ?? null }) });
   },
   validate(config) {
-    const errors = [], ids = new Set();
-    config.chains.forEach((c, i) => { if (ids.has(c.id)) errors.push(err('score_chain_duplicate', `with.chains[${i}].id`, `duplicate chain '${c.id}'`)); ids.add(c.id); if (!c.on?.length) errors.push(err('score_chain_invalid', `with.chains[${i}].on`, 'a chain needs at least one event')); });
-    config.points.forEach((p, i) => {
-      if (p.points !== 'data' && !Number.isFinite(p.points)) errors.push(err('score_points_invalid', `with.points[${i}].points`, 'points must be a number or "data"'));
-      if (p.chain && !ids.has(p.chain)) errors.push(err('score_chain_unknown', `with.points[${i}].chain`, `unknown chain '${p.chain}'`));
-    });
+    // Chain ids are a kind the card defines (unique; points[].chain refers to one): the kernel checks them.
+    const errors = [];
     if (config.stars.some((v, i, a) => i && v <= a[i - 1])) errors.push(err('score_stars_order', 'with.stars', 'star thresholds must increase'));
     return errors;
   },
@@ -104,8 +102,8 @@ export default {
     for (const p of config.points) rt.on(p.on, d => {
       if (p.when && !rt.test(p.when, { self: d.who ?? d.by })) return;
       const c = p.chain ? defs.get(p.chain) : null;
-      let pts = p.points === 'data' ? Number(d.points) || 0 : p.points;
-      if (c?.kind === 'geometric') pts = (p.points === 'data' && d.points ? pts : c.base) * Math.pow(c.growth, Math.min(chainOf(c.id).pending ?? 0, c.cap));
+      let pts = p.points === undefined ? Number(d.points) || 0 : p.points;
+      if (c?.kind === 'geometric') pts = (p.points === undefined && d.points ? pts : c.base) * Math.pow(c.growth, Math.min(chainOf(c.id).pending ?? 0, c.cap));
       api.add(pts, { mult: p.mult, on: p.on });
     });
     if (config.timeBonus) {

@@ -28,9 +28,9 @@ export default {
       speed: { type: 'number', min: 0, unit: 'cells/s' }, sight: { type: 'number', min: 0 },
       worker: { type: 'boolean', effect: 'gathers from nodes and builds' }, carry: { type: 'number', min: 0 }, gatherRate: { type: 'number', min: 0, unit: 'per s' },
       dropoff: { type: 'boolean', effect: 'workers deposit resources here' }, building: { type: 'boolean' },
-      attack: { type: 'object', fields: { range: { type: 'number', min: 0 }, cooldown: { type: 'number', min: 0, unit: 's' }, effects: { type: 'effects' } } },
-      produces: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', open: true }, time: { type: 'number', min: 0, unit: 's' } } } },
-      builds: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', open: true }, time: { type: 'number', min: 0, unit: 's' } } } },
+      attack: { type: 'object', fields: { range: { type: 'number', min: 0.1, required: true }, cooldown: { type: 'number', min: 0, unit: 's' }, effects: { type: 'effects' } } },
+      produces: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', values: { type: 'number', min: 0 }, effect: 'resource → amount' }, time: { type: 'number', min: 0, unit: 's' } } } },
+      builds: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', values: { type: 'number', min: 0 }, effect: 'resource → amount' }, time: { type: 'number', min: 0, unit: 's' } } } },
       node: { type: 'object', effect: 'a resource node workers gather from', fields: { resource: { type: 'string', required: true }, amount: { type: 'number', min: 0 } } },
       supply: { type: 'integer', min: 0 }, supplyCap: { type: 'integer', min: 0 },
     } } },
@@ -44,7 +44,7 @@ export default {
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {
-      factions: { type: 'list', min: 1, default: [{ id: 'player', control: 'player', start: {} }], of: { type: 'object', fields: { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, start: { type: 'object', open: true, default: {} } } } },
+      factions: { type: 'list', min: 1, default: [{ id: 'player', control: 'player', start: {} }], of: { type: 'object', fields: { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, start: { type: 'object', default: {}, values: { type: 'number', min: 0 }, effect: 'resource → starting amount' } } } },
       resources: { type: 'list', of: { type: 'string' }, default: ['minerals'], min: 1 },
       fog: { type: 'boolean', default: true, effect: 'track visible and explored cells per faction (needs los or distance)' },
       sight: { type: 'number', default: 6, min: 0, max: 1000, effect: 'default sight radius' },
@@ -67,6 +67,10 @@ export default {
     // Units and buildings are destroyed through their health (the win reads it; attacks run its damage effect).
     requires: { capabilities: ['position'], primitives: ['gameplay.combat.health'] },
     reads: ['content.archetypes'],
+    rules: {
+      rts_faction: { fields: ['content.archetypes[].components.rts.faction', 'factions'], message: 'a unit\'s faction is a factions[] id' },
+      rts_resource: { fields: ['resources', 'factions[].start', 'content.archetypes[].components.rts.produces[].cost', 'content.archetypes[].components.rts.builds[].cost', 'content.archetypes[].components.rts.node.resource'], message: 'every resource a start, cost or node names is in resources' },
+    },
   },
   logic(logic) {
     logic.predicate('rts_visible', {
@@ -82,11 +86,9 @@ export default {
       const path = `content.archetypes[${i}].components.rts`;
       if (r.faction && !ids.has(r.faction)) errors.push(err('rts_faction', `${path}.faction`, `unknown faction '${r.faction}'`, [...ids].join(', ')));
       for (const k of ['produces', 'builds']) (r[k] || []).forEach((p, j) => {
-        if (!(doc.content.archetypes || []).some(x => x.id === p.archetype)) errors.push(err('ref_unknown', `${path}.${k}[${j}].archetype`, `unknown archetype '${p.archetype}'`));
         for (const res of Object.keys(p.cost || {})) if (!config.resources.includes(res)) errors.push(err('rts_resource', `${path}.${k}[${j}].cost.${res}`, `unknown resource '${res}'`, config.resources.join(', ')));
       });
       if (r.node && !config.resources.includes(r.node.resource)) errors.push(err('rts_resource', `${path}.node.resource`, `unknown resource '${r.node.resource}'`));
-      if (r.attack && !(r.attack.range > 0)) errors.push(err('rts_unit', `${path}.attack.range`, 'attack needs range > 0'));
     });
     config.factions.forEach((f, i) => { for (const r of Object.keys(f.start)) if (!config.resources.includes(r)) errors.push(err('rts_resource', `with.factions[${i}].start.${r}`, `unknown resource '${r}'`)); });
     return errors;

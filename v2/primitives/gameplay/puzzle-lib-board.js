@@ -37,7 +37,13 @@ export const boardParam = (size = [10, 20], name = 'board') => ({
   },
 });
 
-/** Preflight checks shared by board primitives. Codes: board_fall, board_axes. */
+/** The rules validateBoard enforces (card.rules of every card with a boardParam named `board`). */
+export const BOARD_RULES = Object.freeze({
+  board_fall: { fields: ['board.fall'], message: 'board.fall is -1 or 1 (the space-axis direction pieces fall)', example: { board: { name: null, at: null, size: null, axes: null, fall: 0, layer: null } } },
+  board_axes: { fields: ['board.axes', 'board.at'], message: 'board.axes names two different space axes, each an index of board.at' },
+});
+
+/** Preflight checks shared by board primitives. Codes: board_fall, board_axes (BOARD_RULES). */
 export function validateBoard(board, path = 'with.board') {
   const errors = [];
   if (!board) return errors;

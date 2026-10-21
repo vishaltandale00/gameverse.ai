@@ -17,10 +17,10 @@ export default {
     views: ['any'],
     params: {
       nodes: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string' }, desc: { type: 'string' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, desc: { type: 'string', display: true, effect: 'the description a person reads' },
         cost: { type: 'integer', default: 1, min: 0, max: 100 },
-        requires: { type: 'list', default: [], of: { type: 'string' }, effect: 'node ids that must be unlocked first' },
-        mods: { type: 'object', open: true, default: {}, effect: 'var → delta applied per rank' },
+        requires: { type: 'list', default: [], of: { type: 'ref', to: 'perk' }, effect: 'nodes that must be unlocked first' },
+        mods: { type: 'object', default: {}, values: { type: 'number', effect: 'delta per rank' }, effect: 'var → delta applied per rank' },
         ranks: { type: 'integer', default: 1, min: 1, max: 20 },
         when: { type: 'predicate', effect: 'extra unlock condition (level gate, quest...)' },
         use: { type: 'object', fields: { event: { type: 'string', required: true }, count: { type: 'integer', default: 1, min: 1 } }, effect: 'use-based: unlock (free) after this many matching events' },
@@ -35,6 +35,10 @@ export default {
     provides: { events: ['perk_blocked', 'perk_unlocked', 'perk_unlocked:*', 'perks_reset'], vars: ['perk.*'], actions: ['unlock_perk'] },
     defines: [{ kind: 'perk', in: 'nodes' }],
     reads: [],
+    rules: {
+      perk_cycle: { fields: ['nodes[].requires'], message: 'prerequisites form no cycle (every node is obtainable)', example: { doc: { systems: [{ use: ID, with: { nodes: [{ id: 'a', requires: ['b'] }, { id: 'b', requires: ['a'] }] } }] } } },
+      perk_use_missing: { fields: ['useBased', 'nodes[].use'], message: 'useBased needs at least one node with use' },
+    },
   },
   logic(logic) {
     logic.predicate('perk', { refs: p => [['perk', p.perk]], test: (p, rt) => (st(rt).ranks?.[p.perk] ?? 0) >= (p.rank ?? 1) });
@@ -42,11 +46,8 @@ export default {
     logic.effect('reset_perks', { run: (e, rt) => resetPerks(rt) });
   },
   validate(config) {
+    // Node ids are the kind 'perk' (unique slugs) and requires refers to them: the kernel checks both.
     const errors = [], ids = new Map(config.nodes.map((nd, i) => [nd.id, i]));
-    config.nodes.forEach((nd, i) => {
-      if (ids.get(nd.id) !== i) errors.push({ code: 'perk_duplicate', path: `nodes[${i}].id`, message: `duplicate node '${nd.id}'` });
-      nd.requires.forEach((r, j) => { if (!ids.has(r)) errors.push({ code: 'ref_unknown', path: `nodes[${i}].requires[${j}]`, message: `unknown node '${r}'` }); });
-    });
     // Prerequisite cycles make nodes unobtainable.
     const state = new Map(), byId = new Map(config.nodes.map(nd => [nd.id, nd]));
     const visit = (id, path) => {

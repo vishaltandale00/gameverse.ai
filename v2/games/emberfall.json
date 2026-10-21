@@ -2320,7 +2320,7 @@
      {"id":"seal_stone","kind":"lever","at":[3200,2000],"size":[2,2],"signal":"seal","persist":true},
      {"id":"feed_trough","kind":"lever","at":[3135,4765],"size":[2,1],"signal":"feed","persist":false},
      {"id":"cook_off_table","kind":"lever","at":[4590,3580],"size":[3,1],"signal":"cook","persist":false},
-     {"id":"titan_ledge","kind":"door","at":[3250,2400],"size":[8,2],"gate":"titan_ledge"}
+     {"id":"titan_ledge","kind":"door","at":[3250,2400],"size":[8,2],"gate":{"gate":"titan_ledge"}}
     ]
    }
   },

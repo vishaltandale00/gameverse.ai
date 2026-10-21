@@ -834,6 +834,16 @@ export const COMMON_PARAMS = {
   npcs: { type: 'boolean', default: true, effect: 'drive NPCs that carry components.move (input, steer or moveTo intents)' },
   plane: { type: 'string', options: ['auto', 'x', 'xy', 'xz'], default: 'auto', effect: 'ground plane axes; auto derives it from gravity and the space size' },
 };
+/**
+ * The component every movement primitive reads (card.components, one declaration shared by the move cards): an NPC
+ * carrying it is driven by gameplay.move.*; per-mode runtime state (mode, held, path, pools, <mode>: {...}) lives in it.
+ */
+export const MOVE_COMPONENTS = {
+  move: { type: 'object', open: true, effect: 'driven by the movement primitives (gameplay.move.*); runtime state lives here', fields: {
+    base: { type: 'string', effect: 'the base controller that drives this entity: a move primitive id, its mode (walk, platformer, ship, lanes, grid) or its instance; default the first for the space' },
+    abilities: { type: 'object', values: { type: 'boolean' }, effect: 'movement abilities by name (doubleJump, dash, glide...): true gives one, false denies it' },
+  } },
+};
 export const MACRO_PARAMS = {
   macro: { type: 'object', default: {}, effect: 'solver macro options: travel to zones', fields: {
     max: { type: 'integer', min: 0, max: 64, default: 16, effect: 'travel options offered at once (0 disables)' },

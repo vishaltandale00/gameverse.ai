@@ -4,6 +4,7 @@
 // portal comes out of its partner with its velocity rotated from the entry
 // face to the exit face, so speed is conserved ("speedy thing goes in, speedy
 // thing comes out"). Fixed portal pairs can be authored too.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { err, has, spaceOf, r6, r6v, v3, add, sub, mul, dot, len, norm, cross, matchesAny, sortedEntities, cellKey } from './modes-lib-util.js';
 
 const ID = 'gameplay.portal';
@@ -34,14 +35,18 @@ export default {
       surfaces: { type: 'list', of: { type: 'string' }, default: [], effect: 'cell ids portals stick to (empty = any solid surface)' },
       minExitSpeed: { type: 'number', default: 0, min: 0, max: 1000, effect: 'bodies leave at least this fast along the exit normal' },
       cooldownSec: { type: 'number', default: 0.25, min: 0, max: 10, unit: 's' },
-      shooters: { type: 'list', of: { type: 'string' }, default: ['player'], effect: 'who can fire portals (ids/archetypes/tags)' },
-      through: { type: 'list', of: { type: 'string' }, default: [], effect: 'who can pass (empty = anything with a body)' },
-      fixed: { type: 'list', default: [], of: { type: 'object', fields: { color: { type: 'string', required: true }, at: { type: 'json', required: true }, normal: { type: 'json', required: true } } }, effect: 'portals placed at start' },
+      shooters: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: ['player'], effect: 'who can fire portals (ids/archetypes/tags)' },
+      through: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'who can pass (empty = anything with a body)' },
+      fixed: { type: 'list', default: [], of: { type: 'object', fields: { color: { type: 'string', required: true }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true, effect: 'position in space coordinates' }, normal: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true, effect: 'the face direction, a non-zero vector' } } }, effect: 'portals placed at start' },
     },
     provides: { events: ['portal_placed', 'portal_fizzle', 'portal_entered', 'portal_closed'], actions: ['fire_portal', 'close_portals'] },
     actionSpace: { fire_portal: { kind: 'impulse', params: { yaw: { min: -3.1416, max: 3.1416 }, pitch: { min: -1.5, max: 1.5 } } } },
     requires: { capabilities: ['position', 'raycast'] },
     reads: [],
+    rules: {
+      portal_colors: { fields: ['colors', 'fixed[].color'], message: 'the two colors differ, and each fixed portal\'s color is one of them' },
+      portal_normal: { fields: ['fixed[].normal'], message: 'a fixed portal\'s normal is a non-zero vector', example: { fixed: [{ color: 'blue', at: [0, 0, 0], normal: [0, 0, 0] }] } },
+    },
   },
   validate(config) {
     const errors = [];

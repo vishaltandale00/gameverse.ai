@@ -104,7 +104,9 @@ test('preflight rejects bad progression configs with stable codes', () => {
     { use: 'gameplay.progression.tree', with: { useBased: true, nodes: [{ id: 'a', requires: ['b'] }, { id: 'b', requires: ['a'] }, { id: 'c', requires: ['zz'] }] } },
   ]);
   const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['level_curve_table', 'param_range', 'stat_duplicate', 'level_trigger', 'ref_unknown', 'ability_duplicate', 'perk_cycle', 'perk_use_missing']) assert.ok(codes.includes(c), c);
+  // Stats, abilities and perks are kinds the cards define: repeated ids are the kernel's id_duplicate (were stat_duplicate,
+  // ability_duplicate); start above maxLevel has its own code (level_start, was param_range).
+  for (const c of ['level_curve_table', 'level_start', 'id_duplicate', 'level_trigger', 'ref_unknown', 'perk_cycle', 'perk_use_missing']) assert.ok(codes.includes(c), c);
 });
 
 test('every progression instance in v2/games preflights without param errors', () => {

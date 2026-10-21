@@ -83,7 +83,7 @@ const scoreDoc = (s = {}) => base([
   { use: 'gameplay.combat.status' },
   { use: 'gameplay.combat.projectile' },
   { use: 'gameplay.score', with: {
-    points: [{ on: 'defeated:imp', points: 100 }, { on: 'defeated:ghost', chain: 'eat' }, { on: 'stage_clear', points: 'data', mult: false }],
+    points: [{ on: 'defeated:imp', points: 100 }, { on: 'defeated:ghost', chain: 'eat' }, { on: 'stage_clear', mult: false }],
     chains: [{ id: 'eat', on: ['defeated:ghost'], kind: 'geometric', base: 200, growth: 2, cap: 3, resetOn: ['status_applied:fright'] }, { id: 'kills', on: ['defeated:imp'], kind: 'step', divisor: 6, cap: 8, window: 1 }],
     nearMiss: { radius: 1, points: 50, of: 'projectiles', slowmoSec: 0.3, slowmo: 0.5 },
     zones: [{ zone: 'gold', mult: 3 }], timeBonus: { on: 'stage_clear', parSec: 10, perSec: 10 }, stars: [500, 2000, 5000], high: 1000, ...s,
@@ -150,7 +150,10 @@ test('score: a puzzle line clear scores through add_score', () => {
 test('score: deterministic replay and bad configs', () => {
   same(() => { const r = make(scoreDoc()); r.service('combat').kill(r.spawn('ghost', { at: [9, 5, 0] }), { by: 'player' }); return r; }, Array.from({ length: 70 }, () => ({})));
   const c = codes(scoreDoc({ chains: [{ id: 'a', on: ['x'] }, { id: 'a', on: [] }], points: [{ on: 'x', points: 'lots' }, { on: 'y', chain: 'zzz' }], stars: [10, 5] }));
-  for (const code of ['score_chain_duplicate', 'score_chain_invalid', 'score_points_invalid', 'score_chain_unknown', 'score_stars_order']) assert.ok(c.includes(code), `${code} in ${c}`);
+  // Chains are a kind the card defines and the fields are typed: a repeated chain is id_duplicate, a chain without events
+  // param_range (on: min 1), points that are no number param_type, an unknown chain ref_unknown (they were
+  // score_chain_duplicate / score_chain_invalid / score_points_invalid / score_chain_unknown).
+  for (const code of ['id_duplicate', 'param_range', 'param_type', 'ref_unknown', 'score_stars_order']) assert.ok(c.includes(code), `${code} in ${c}`);
   const eff = scoreDoc(); eff.systems.push({ use: 'gameplay.combat.boss', with: { bosses: [{ id: 'b', archetype: 'imp', phases: [{}], onDefeat: [{ do: 'add_score', points: 5 }] }] } });
   assert.ok(codes(eff).includes('effect_invalid'), 'add_score needs amount (frozen contract)');
 });

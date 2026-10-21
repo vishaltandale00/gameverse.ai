@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { compile, testSpace } from '../v2/kernel/testing.js';
 import { preflight } from '../v2/kernel/document.js';
+import { checkParam } from '../v2/kernel/params.js';
 import { Registry } from '../v2/kernel/registry.js';
 import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
@@ -225,7 +226,11 @@ test('vehicles: preflight rejects bad configs with stable codes', () => {
   bad.systems.push({ use: 'gameplay.vehicle.boat' }, { use: 'gameplay.vehicle.aircraft', with: { ceiling: -5 } });
   bad.content.archetypes.push({ id: 'bad_plane', components: { vehicle: {}, aircraft: { stall: 200, maxSpeed: 100 } } });
   const r = preflight(bad, registry, logic), codes = new Set(r.errors.map(e => e.code));
-  for (const c of ['param_option', 'vehicle_invalid', 'car_invalid', 'car_no_vehicle', 'boat_no_vehicle', 'boat_invalid', 'aircraft_invalid', 'param_range']) assert.ok(codes.has(c), c);
+  for (const c of ['param_option', 'car_no_vehicle', 'boat_no_vehicle', 'aircraft_invalid', 'param_range']) assert.ok(codes.has(c), c);
+  // The components' single-field rules are their declared shapes (card.components), checked by preflight's section
+  // shapes: reported as warnings until the catalogue's declarations are enforced (document.js DECLARATIONS_ENFORCED).
+  const shaped = new Set([...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`)), at = id => `content.archetypes[${bad.content.archetypes.findIndex(a => a.id === id)}].components`;
+  for (const c of [`param_range@${at('junk')}.vehicle.seats`, `param_range@${at('junk')}.vehicle.health`, `param_range@${at('junk')}.car.grip`, `param_option@${at('junk')}.car.preset`, `param_range@${at('bad_boat')}.boat.maxSpeed`]) assert.ok(shaped.has(c), c);
   const nodeps = doc({ systems: [{ use: 'gameplay.vehicle.car' }] });
   assert.ok(preflight(nodeps, registry, logic).errors.some(e => e.code === 'requires_unmet'));
   const g = new Registry([...P, spaceGraph]), gl = buildLogic(g, Logic);
@@ -239,9 +244,11 @@ test('vehicles: every instance in v2/games/*.json has zero param errors', () => 
   const found = gameInstanceErrors(games, modes);
   assert.ok(found.filter(f => f.name === 'blockport.json').length >= 4, 'blockport uses vehicle.core/car/boat/aircraft (and race)');
   for (const f of found) assert.deepEqual(f.errors, [], `${f.name} ${f.use}`);
-  // Archetype specs in the games validate too.
+  // Archetype specs in the games hold the components' declared shapes (card.components) and pass the cross-field rules.
   for (const [name, d] of games) for (const id of ['gameplay.vehicle.core', 'gameplay.vehicle.car', 'gameplay.vehicle.boat', 'gameplay.vehicle.aircraft']) {
     if (!(d.systems || []).some(s => s.use === id)) continue;
-    assert.deepEqual(ids(id).validate({}, d, {}), [], `${name} ${id} archetypes`);
+    const card = ids(id).card, errs = [];
+    (d.content?.archetypes || []).forEach((a, i) => { for (const [k, spec] of Object.entries(card.components || {})) if (a.components?.[k] !== undefined) checkParam(spec, a.components[k], `content.archetypes[${i}].components.${k}`, errs, null); });
+    assert.deepEqual([...errs, ...(ids(id).validate?.({}, d, {}) || [])], [], `${name} ${id} archetypes`);
   }
 });

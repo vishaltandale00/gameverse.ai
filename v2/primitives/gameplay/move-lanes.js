@@ -9,7 +9,7 @@
 // space.slide; without gravity the jump height is virtual (body.lift).
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS,
+  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.lanes';
@@ -63,9 +63,13 @@ export default {
       onCaught: { type: 'effects', default: [], effect: 'effects when the chaser catches you (an `caught` event is always emitted)' },
       ...COMMON_PARAMS, npcs: { ...COMMON_PARAMS.npcs, default: false }, ...MACRO_PARAMS,
     },
+    rules: {
+      lanes_speed_order: { fields: ['maxSpeed', 'speed'], message: 'maxSpeed is 0 (no ramp) or at least the starting speed' },
+    },
     provides: { events: ['evaded', 'crashed', 'lane_switch', 'jumped', 'landed', 'slide', 'stumble', 'caught'], vars: ['move.speed', 'move.distance'], actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'editCells'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

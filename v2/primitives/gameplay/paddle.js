@@ -49,6 +49,11 @@ export default {
     requires: { capabilities: ['position'] },
     actionSpace: { launch: { type: 'number', min: -1, max: 1, from: 'options', emits: ['ball_launched'] } },
     reads: [],
+    rules: {
+      paddle_up: { fields: ['up'], message: 'up is a unit vector (length 1 within 0.01)' },
+      paddle_bounds: { fields: ['bounds'], message: 'bounds is [] or [min, max] with min < max' },
+      paddle_break_cells: { fields: ['breakCells', 'motion'], message: "breakCells needs motion 'self'" },
+    },
   },
   logic(logic) {
     logic.effect('paddle_multiball', { run: (e, rt) => rt.emit('paddle_request', { kind: 'multiball', count: e.count ?? 2 }) });

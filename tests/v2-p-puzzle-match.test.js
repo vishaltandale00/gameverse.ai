@@ -15,6 +15,8 @@ const doc = (systems, size = [5, 5, 1]) => ({
   schema: 'gameverse.v2.game/0.2', id: 'gems', title: 'Gems', seed: 3,
   spaces: [{ id: 'b', use: 'engine.space.test', with: { size } }],
   systems,
+  // The gem colours are board cells: content.blocks ids (gameplay.match colors are block references).
+  content: { blocks: [...new Set(systems.flatMap(s => (s.use === 'gameplay.match' ? s.with?.colors ?? [] : [])))].map(id => ({ id })) },
 });
 const swapDoc = (w = {}, size = [5, 5]) => doc([{ use: 'gameplay.match', with: { board: board(...size), colors: COLORS, ...w } }], [...size, 1]);
 const cellAt = (rt, x, y) => rt.space('b').getCell([x, y, 0]);
@@ -152,7 +154,9 @@ test('match: preflight rejects bad configs with stable codes', () => {
   const registry = new Registry(PRIMS), logic = buildLogic(registry, Logic);
   const codes = w => preflight(swapDoc(w), registry, logic).errors.map(e => e.code);
   assert.ok(codes({ layout: ['111'] }).includes('match_layout_size'));
-  assert.ok(codes({ layout: ['1111z', '11111', '11111', '11111', '11111'] }).includes('match_layout_char'));
+  // Layout characters are the layout's declared pattern (param_pattern); a colour index beyond colors is match_layout_char.
+  assert.ok(codes({ layout: ['1111z', '11111', '11111', '11111', '11111'] }).includes('param_pattern'));
+  assert.ok(codes({ layout: ['11115', '11111', '11111', '11111', '11111'] }).includes('match_layout_char'));
   assert.ok(codes({ rule: 'group' }).includes('match_rule_trigger'));
   assert.ok(codes({ rule: 'group', trigger: ['land'] }).includes('match_rule_scoring'));
   assert.ok(codes({ rule: 'diagonal' }).includes('param_option'));

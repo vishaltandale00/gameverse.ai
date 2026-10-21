@@ -69,7 +69,7 @@ test('slide: preflight rejects bad configs with stable codes', () => {
   const registry = new Registry(PRIMS), logic = buildLogic(registry, Logic);
   const codes = w => preflight(doc(w), registry, logic).errors.map(e => e.code);
   assert.ok(codes({ layout: ['11'] }).includes('slide_layout_size'));
-  assert.ok(codes({ layout: ['1z..', '....', '....', '....'] }).includes('slide_layout_char'));
+  assert.ok(codes({ layout: ['1z..', '....', '....', '....'] }).includes('param_pattern'), 'layout characters are the declared pattern');
   assert.ok(codes({ rocks: 5 }).includes('slide_rocks'));
   assert.ok(codes({ target: 100 }).includes('slide_target'));
   assert.ok(codes({ spawnFour: 2 }).includes('param_range'));

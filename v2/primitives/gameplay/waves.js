@@ -13,9 +13,9 @@ const ID = 'gameplay.waves';
 const PATTERNS = ['point', 'line', 'v', 'ring', 'random'];
 const SPAWN = { type: 'object', fields: {
   archetype: { type: 'ref', to: 'archetype', required: true }, count: { type: 'integer', default: 1, min: 1, max: 200 },
-  lane: { type: 'string', effect: 'named lane spawn point' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json', effect: 'explicit position' }, around: { type: 'string', effect: "'player' or an entity id: anchor on it" },
+  lane: { type: 'ref', to: 'wave_lane', effect: 'a lanes[] spawn point' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'explicit position in space coordinates' }, around: { type: 'string', effect: "'player' or an entity id: anchor on it" },
   pattern: { type: 'string', options: PATTERNS, default: 'point' }, spacing: { type: 'number', default: 1, min: 0, max: 1000 },
-  entry: { type: 'string', effect: 'entry path id' }, telegraph: { type: 'number', min: 0, max: 30, unit: 's' }, stagger: { type: 'number', min: 0, max: 30, unit: 's' },
+  entry: { type: 'ref', to: 'wave_entry', effect: 'an entries[] flight path' }, telegraph: { type: 'number', min: 0, max: 30, unit: 's' }, stagger: { type: 'number', min: 0, max: 30, unit: 's' },
   hpMult: { type: 'number', default: 1, min: 0.01, max: 100 }, components: { type: 'object', open: true, default: {} },
 } };
 
@@ -43,10 +43,10 @@ export default {
       generate: { type: 'object', default: { count: 0, every: 15, size: 2, grow: 'more', cap: 8, archetypes: [], lanes: [], pattern: 'line', spacing: 1.5 }, fields: {
         count: { type: 'integer', default: 0, min: 0, max: 99 }, every: { type: 'number', default: 15, min: 0.5, max: 600, unit: 's' }, size: { type: 'integer', default: 2, min: 1, max: 50 },
         grow: { type: 'string', options: ['none', 'more', 'tougher', 'both'], default: 'more' }, cap: { type: 'integer', default: 8, min: 1, max: 200 },
-        archetypes: { type: 'list', of: { type: 'ref', to: 'archetype' }, default: [] }, lanes: { type: 'list', of: { type: 'string' }, default: [] }, entry: { type: 'string' }, pattern: { type: 'string', options: PATTERNS, default: 'line' }, spacing: { type: 'number', default: 1.5 },
+        archetypes: { type: 'list', of: { type: 'ref', to: 'archetype' }, default: [] }, lanes: { type: 'list', of: { type: 'ref', to: 'wave_lane' }, default: [] }, entry: { type: 'ref', to: 'wave_entry' }, pattern: { type: 'string', options: PATTERNS, default: 'line' }, spacing: { type: 'number', default: 1.5 },
       }, effect: 'procedural waves appended after the script (mods/waves port: size grows by one per wave and/or hp by +1 every two waves)' },
-      lanes: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, at: { type: 'json', required: true } } }, effect: 'named spawn points' },
-      entries: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, points: { type: 'list', of: { type: 'json' }, min: 1, required: true }, speed: { type: 'number', default: 4, min: 0.01, max: 1000 }, relative: { type: 'boolean', default: true }, mirror: { type: 'boolean', default: false, effect: 'odd spawns fly the mirrored path (x flipped)' } } }, effect: 'entry flight paths' },
+      lanes: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true, effect: 'position in space coordinates' } } }, effect: 'named spawn points' },
+      entries: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, points: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, min: 1, required: true, effect: 'path points (relative to the spawn, with relative)' }, speed: { type: 'number', default: 4, min: 0.01, max: 1000 }, relative: { type: 'boolean', default: true }, mirror: { type: 'boolean', default: false, effect: 'odd spawns fly the mirrored path (x flipped)' } } }, effect: 'entry flight paths' },
       stagger: { type: 'number', default: 0.2, min: 0, max: 30, unit: 's', effect: 'gap between spawns of one wave' },
       telegraph: { type: 'number', default: 0, min: 0, max: 30, unit: 's', effect: 'warning time before each spawn appears' },
       maxAlive: { type: 'integer', default: 12, min: 1, max: 1000, effect: 'live wave enemies above this hold the queue' },
@@ -61,9 +61,19 @@ export default {
     provides: { events: ['wave_start', 'wave_start:*', 'wave_telegraph', 'wave_spawn', 'wave_entered', 'wave_clear', 'wave_clear:*', 'waves_complete', 'waves_loop'], vars: ['waves.wave', 'waves.alive', 'waves.next'] },
     requires: { capabilities: ['position'] },
     reads: [],
+    defines: [{ kind: 'wave_lane', in: 'lanes' }, { kind: 'wave_entry', in: 'entries' }],
+    rules: {
+      waves_empty: { fields: ['waves', 'generate.count'], message: 'there are scripted waves or generate.count is above 0', example: { doc: { systems: [{ use: ID, with: {} }] } } },
+      waves_generate: { fields: ['generate.count', 'generate.archetypes'], message: 'generated waves (generate.count > 0) name archetypes to send' },
+      waves_spawn_place: { fields: ['waves[].spawn[].lane', 'waves[].spawn[].zone', 'waves[].spawn[].at', 'waves[].spawn[].around'], message: 'a spawn is placed by at most one of lane, zone, at or around',
+        example: { doc: { systems: [{ use: ID, with: { lanes: [{ id: 'top', at: [150, 380] }], waves: [{ spawn: [{ archetype: 'drone', lane: 'top', at: [150, 380] }] }] } }] } } },
+      waves_duplicate: { fields: ['id'], message: 'each gameplay.waves instance of a document has its own id',
+        example: { doc: { systems: [{ use: ID, with: { waves: [{ spawn: [{ archetype: 'drone' }] }] } }, { use: ID, with: { waves: [{ spawn: [{ archetype: 'drone' }] }] } }] } } },
+    },
   },
   logic(logic) {
     logic.predicate('wave', {
+      codes: [{ code: 'wave_state', fields: ['state'], message: 'state is one of idle, running, complete', example: { wave: 'waves', state: 'paused' } }],
       check: (p, path, errors) => { if (p.state !== undefined && !['idle', 'running', 'complete'].includes(p.state)) errors.push(err('wave_state', `${path}.state`, 'state must be idle|running|complete')); },
       test: (p, rt) => {
         const s = rt.state.prim[`${ID}:${typeof p.wave === 'string' ? p.wave : 'waves'}`]; if (!s) return false;
@@ -76,17 +86,13 @@ export default {
     logic.effect('stop_waves', { run: (e, rt) => { rt.store(`${ID}:${e.waves ?? 'waves'}`).request = 'stop'; } });
   },
   validate(config, doc) {
-    const errors = [], lanes = new Set(config.lanes.map(l => l.id)), entries = new Set(config.entries.map(e => e.id));
+    const errors = [];
     if (!config.waves.length && !config.generate.count) errors.push(err('waves_empty', 'with.waves', 'no scripted waves and generate.count is 0'));
     if (config.generate.count && !config.generate.archetypes.length) errors.push(err('waves_generate', 'with.generate.archetypes', 'generated waves need archetypes'));
     const checkSpawn = (sp, path) => {
-      if (sp.lane && !lanes.has(sp.lane)) errors.push(err('waves_lane_unknown', `${path}.lane`, `unknown lane '${sp.lane}'`, `lanes: ${[...lanes].join(', ') || 'none'}`));
-      if (sp.entry && !entries.has(sp.entry)) errors.push(err('waves_entry_unknown', `${path}.entry`, `unknown entry path '${sp.entry}'`));
       if ([sp.lane, sp.zone, sp.at, sp.around].filter(x => x !== undefined).length > 1) errors.push(err('waves_spawn_place', path, 'use one of lane, zone, at or around'));
     };
     config.waves.forEach((w, i) => (w.spawn || []).forEach((sp, j) => checkSpawn(sp, `with.waves[${i}].spawn[${j}]`)));
-    config.generate.lanes.forEach((l, i) => { if (!lanes.has(l)) errors.push(err('waves_lane_unknown', `with.generate.lanes[${i}]`, `unknown lane '${l}'`)); });
-    if (config.generate.entry && !entries.has(config.generate.entry)) errors.push(err('waves_entry_unknown', 'with.generate.entry', `unknown entry path '${config.generate.entry}'`));
     const ids = instancesOf(doc, ID).map(x => x.s.with?.id ?? 'waves');
     if (ids.filter(i => i === config.id).length > 1) errors.push(err('waves_duplicate', 'with.id', `two wave instances share id '${config.id}'`));
     return errors;

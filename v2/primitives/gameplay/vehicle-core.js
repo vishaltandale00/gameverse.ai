@@ -4,7 +4,7 @@
 // Motion primitives (vehicle.car / boat / aircraft) read driver controls and
 // fuel through the 'vehicles' service; AI drivers write components.drive.control, or the movement intents AI writes
 // for any entity (steer / moveTo), which the vehicle they sit in carries out (intentControl).
-import { alive, dist, spaceOf, bindRoles, planeFor, planeUW, fromPlane, matches, sortedEntities, err, needFields, clamp, r6 } from './modes-lib-util.js';
+import { alive, dist, spaceOf, bindRoles, planeFor, planeUW, fromPlane, matches, sortedEntities, needFields, clamp, r6 } from './modes-lib-util.js';
 import { zonePoint } from './ai-lib.js';
 import { spaceFrame, turnSign } from '../engine/runtime-lib-frame.js';
 
@@ -103,6 +103,23 @@ export default {
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    components: {
+      vehicle: { type: 'object', effect: 'a vehicle anyone can enter; its motion comes from a car, boat or aircraft component', fields: {
+        kind: { type: 'string', effect: 'what in_vehicle { kind } matches (default its motion component: car, boat, aircraft)' },
+        seats: { type: 'integer', min: 1, max: 64, effect: 'seats, the first the driver\'s' },
+        health: { type: 'number', min: 1, effect: 'hull points' },
+        fuel: { type: 'number', min: 0, effect: 'tank size (0 = no fuel system)' },
+        fuelUse: { type: 'number', min: 0, max: 100, unit: 'fuel/s', effect: 'fuel burned per second at full throttle, overriding fuelUse' },
+        owner: { type: 'string', effect: 'the entity id that owns it (entering someone else\'s is theft)' },
+        locked: { type: 'boolean', effect: 'entering takes breaking in' },
+      } },
+      drive: { type: 'object', open: true, effect: 'an AI-driven vehicle\'s controls; the motion primitives keep its motion state here at runtime', fields: {
+        control: { type: 'object', effect: 'driver controls an AI writes', fields: {
+          throttle: { type: 'number', min: -1, max: 1 }, steer: { type: 'number', min: -1, max: 1 }, pitch: { type: 'number', min: -1, max: 1 }, roll: { type: 'number', min: -1, max: 1 },
+          brake: { type: 'boolean' }, handbrake: { type: 'boolean' }, boost: { type: 'boolean' }, jump: { type: 'boolean' }, up: { type: 'boolean' }, down: { type: 'boolean' },
+        } },
+      } },
+    },
     // The player sits in the vehicle a motion primitive provides (role 'vehicle'); AI participants likewise.
     engage: { player: { enter: [{ do: 'enter_vehicle', vehicle: '$vehicle', force: true }] }, actors: { enter: [{ do: 'enter_vehicle', who: '$actor', vehicle: '$vehicle', force: true }] } },
   },
@@ -125,17 +142,6 @@ export default {
     logic.effect('repair_vehicle', { run: (e, rt, c) => { const v = target(e, rt, c); if (v) svc(rt).repair(v, e.amount); } });
     logic.effect('refuel_vehicle', { run: (e, rt, c) => { const v = target(e, rt, c); if (v) svc(rt).refuel(v, e.amount); } });
     logic.effect('lock_vehicle', { run: (e, rt, c) => { const v = target(e, rt, c); if (v?.components.vehicle) { ensure(v).locked = e.locked ?? true; if (e.owner !== undefined) v.components.vehicle.owner = e.owner; } } });
-  },
-  validate(config, doc) {
-    const errors = [];
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const v = a.components?.vehicle; if (!v) return;
-      const path = `content.archetypes[${i}].components.vehicle`;
-      if (v.seats !== undefined && (!Number.isInteger(v.seats) || v.seats < 1 || v.seats > 64)) errors.push(err('vehicle_invalid', `${path}.seats`, 'seats must be an integer 1..64'));
-      if (v.health !== undefined && !(v.health > 0)) errors.push(err('vehicle_invalid', `${path}.health`, 'health must be > 0'));
-      if (v.fuel !== undefined && !(v.fuel >= 0)) errors.push(err('vehicle_invalid', `${path}.fuel`, 'fuel must be >= 0 (0 = no fuel system)'));
-    });
-    return errors;
   },
   install(rt, config) {
     const vehicles = () => sortedEntities(rt).filter(e => e.components.vehicle);

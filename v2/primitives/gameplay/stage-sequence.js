@@ -42,8 +42,8 @@ function parseUse(target, instances) {
 const GOAL_FIELDS = {
   kind: { type: 'string', options: GOALS, default: 'none' }, target: { type: 'number', default: 1, min: 0 },
   moves: { type: 'integer', default: 0, min: 0, max: 100000, effect: 'move limit (0 = none)' }, timeSec: { type: 'number', default: 0, min: 0, max: 36000, unit: 's', effect: 'time limit; for survive, the time to survive' },
-  event: { type: 'string' }, field: { type: 'string' }, var: { type: 'string' }, block: { type: 'json', effect: 'cell id(s) counted by remaining goals; a token matches by id or any /-separated part' },
-  archetype: { type: 'string' }, tag: { type: 'string' }, area: { type: 'json', effect: '[[min],[max]] cell box for block goals (default: the space size)' }, when: { type: 'predicate' },
+  event: { type: 'string' }, field: { type: 'string' }, var: { type: 'string' }, block: { type: 'list', of: { type: 'string' }, effect: 'cell ids counted by remaining goals; a token matches by id or any /-separated part' },
+  archetype: { type: 'string', selects: ENTITY_KINDS }, tag: { type: 'string' }, area: { type: 'list', of: { type: 'list', of: { type: 'integer' }, min: 2, max: 3 }, min: 2, max: 2, effect: '[[min], [max]] cell box for block goals (default: the space size)' }, when: { type: 'predicate' },
   movesEvent: { type: 'string', default: 'move' },
 };
 
@@ -68,16 +68,16 @@ export default {
     params: {
       id: { type: 'string', default: 'stages', effect: 'name used by the stage predicate' },
       stages: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string' }, intro: { type: 'string' },
-        params: { type: 'object', open: true, default: {}, effect: 'target -> value applied at stage start (see targets)' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the stage name a person reads' }, intro: { type: 'string', display: true, effect: 'the intro line a person reads' },
+        params: { type: 'object', default: {}, values: { type: 'json', effect: 'the value written' }, effect: 'target -> value applied at stage start (see targets)' },
         goal: { type: 'object', fields: GOAL_FIELDS }, stars: { type: 'list', of: { type: 'number' }, default: [] },
         clear: { type: 'predicate' }, fail: { type: 'predicate' },
         onStart: { type: 'effects', default: [] }, onClear: { type: 'effects', default: [] }, onFail: { type: 'effects', default: [] },
-        space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' },
-        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'json' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' } } } },
+        space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' },
+        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' } } } },
         clearOut: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'despawn entities (id/archetype/tag) at stage start, e.g. the previous opponent' },
       } } },
-      apply: { type: 'list', default: [], of: { type: 'object', fields: { target: { type: 'string', required: true }, table: { type: 'list', of: { type: 'json' }, min: 1, required: true }, op: { type: 'string', options: ['set', 'mul', 'add'], default: 'set' }, loopScale: { type: 'number', default: 0, min: 0, max: 10, effect: 'numeric values grow by this fraction per loop' } } }, effect: 'per-stage columns: stage i uses table[min(i, last)]' },
+      apply: { type: 'list', default: [], of: { type: 'object', fields: { target: { type: 'string', pattern: TARGET.source, required: true, effect: "'var:<name>', 'flag:<name>' or 'use:<primitive id>[#n].<param path>'" }, table: { type: 'list', of: { type: 'json' }, min: 1, required: true }, op: { type: 'string', options: ['set', 'mul', 'add'], default: 'set' }, loopScale: { type: 'number', default: 0, min: 0, max: 10, effect: 'numeric values grow by this fraction per loop' } } }, effect: 'per-stage columns: stage i uses table[min(i, last)]' },
       introSec: { type: 'number', default: 1.5, min: 0, max: 60, unit: 's' },
       clearSec: { type: 'number', default: 2, min: 0, max: 60, unit: 's' },
       failSec: { type: 'number', default: 2, min: 0, max: 60, unit: 's' },
@@ -85,7 +85,7 @@ export default {
       lives: { type: 'integer', default: 0, min: 0, max: 999, effect: 'retries before game over (0 = unlimited)' },
       loop: { type: 'boolean', default: false, effect: 'after the last stage, start again harder' },
       endless: { type: 'boolean', default: false, effect: 'after the last stage, keep replaying it harder' },
-      loopScale: { type: 'object', open: true, default: {}, effect: 'target -> fractional growth per loop for numeric stage params' },
+      loopScale: { type: 'object', default: {}, values: { type: 'number', min: 0, max: 10 }, effect: 'target -> fractional growth per loop for numeric stage params' },
       scoreVar: { type: 'string', default: 'score' },
       starsBy: { type: 'string', options: ['score', 'moves', 'time'], default: 'score', effect: 'what star thresholds compare (stage score, moves left, seconds left)' },
       select: { type: 'boolean', default: false, effect: 'allow the select_stage action (unlocked stages only)' },
@@ -104,9 +104,18 @@ export default {
     requires: {},
     defines: [{ kind: 'stage', in: 'stages' }],
     reads: [],
+    rules: {
+      stage_target: { fields: ['stages[].params', 'apply[].target', 'loopScale'], message: "a target is 'var:<name>', 'flag:<name>' or 'use:<primitive id>[#n].<param>' naming an instance of the document and one of its params",
+        example: { doc: { systems: [{ use: ID, with: { stages: [{ id: 'one' }], apply: [{ target: 'use:gameplay.nothing.speed', table: [1] }] } }] } } },
+      stage_goal: { fields: ['stages[].goal.kind', 'stages[].goal.when', 'stages[].goal.timeSec', 'stages[].goal.target'], message: "goal 'when' has a when predicate; 'survive' has timeSec > 0; lines, score, chain, collect and tile have target > 0; a tile target is a power of two" },
+      stage_stars: { fields: ['stages[].stars'], message: 'star thresholds ascend', example: { doc: { systems: [{ use: ID, with: { stages: [{ id: 'one', stars: [3, 2] }] } }] } } },
+      stage_loop: { fields: ['loop', 'endless'], message: 'loop and endless are not both on', example: { loop: true, endless: true } },
+      stage_start_at: { fields: ['startAt', 'stages'], message: 'startAt is an index of stages (below its length)' },
+    },
   },
   logic(logic) {
     logic.predicate('stage', {
+      codes: [{ code: 'stage_phase', fields: ['phase'], message: `phase is one of ${PHASES.join(', ')}`, example: { stage: true, phase: 'party' } }],
       refs: p => (typeof p.stage === 'string' ? [['stage', p.stage]] : []),
       check: (p, path, errors) => { if (p.phase !== undefined && !PHASES.includes(p.phase)) errors.push(err('stage_phase', `${path}.phase`, `phase must be ${PHASES.join('|')}`)); },
       test: (p, rt) => {
@@ -126,7 +135,8 @@ export default {
     logic.effect('goto_stage', { refs: e => [['stage', e.stage]], run: (e, rt) => req(e, rt, { kind: 'goto', stage: e.stage }) });
   },
   validate(config, doc, ctx) {
-    const errors = [], ids = new Set();
+    const errors = [];
+    // apply[].target holds the pattern as its declared shape; the keys of params and loopScale are checked here.
     const checkTarget = (t, path) => {
       if (!TARGET.test(t)) { errors.push(err('stage_target', path, `bad target '${t}'`, "use 'var:<name>', 'flag:<name>' or 'use:<primitive>[#n].<path>'")); return; }
       if (t.startsWith('use:')) {
@@ -137,20 +147,19 @@ export default {
       }
     };
     config.stages.forEach((st, i) => {
-      if (ids.has(st.id)) errors.push(err('stage_duplicate', `with.stages[${i}].id`, `duplicate stage '${st.id}'`)); ids.add(st.id);
       for (const t of Object.keys(st.params || {})) checkTarget(t, `with.stages[${i}].params.${t}`);
+      if ((st.stars || []).some((t, k, a) => k && t <= a[k - 1])) errors.push(err('stage_stars', `with.stages[${i}].stars`, 'star thresholds must ascend'));
       const g = st.goal; if (!g) return;
       const path = `with.stages[${i}].goal`;
       if (g.kind === 'when' && !g.when) errors.push(err('stage_goal', path, "goal 'when' needs a when predicate"));
       if (g.kind === 'survive' && !(g.timeSec > 0)) errors.push(err('stage_goal', `${path}.timeSec`, "goal 'survive' needs timeSec"));
       if (['lines', 'score', 'chain', 'collect', 'tile'].includes(g.kind) && !(g.target > 0)) errors.push(err('stage_goal', `${path}.target`, `goal '${g.kind}' needs target > 0`));
       if (g.kind === 'tile' && g.target > 0 && Math.log2(g.target) % 1) errors.push(err('stage_goal', `${path}.target`, 'tile targets are powers of two'));
-      if ((st.stars || []).some((t, k, a) => k && t <= a[k - 1])) errors.push(err('stage_stars', `with.stages[${i}].stars`, 'star thresholds must ascend'));
     });
-    config.apply.forEach((a, i) => checkTarget(a.target, `with.apply[${i}].target`));
+    config.apply.forEach((a, i) => { if (TARGET.test(a.target)) checkTarget(a.target, `with.apply[${i}].target`); });
     for (const t of Object.keys(config.loopScale)) checkTarget(t, `with.loopScale.${t}`);
     if (config.loop && config.endless) errors.push(err('stage_loop', 'with.endless', 'choose loop or endless, not both'));
-    if (config.startAt >= config.stages.length) errors.push(err('param_range', 'with.startAt', `startAt ${config.startAt} has no stage`));
+    if (config.startAt >= config.stages.length) errors.push(err('stage_start_at', 'with.startAt', `startAt ${config.startAt} has no stage`));
     return errors;
   },
   /** Solver progress: stages cleared plus the current stage's goal progress. */
@@ -217,8 +226,7 @@ function install(rt, config) {
     if (g.block !== undefined) {
       const api = rt.space(); if (!has(api, 'cellsIn')) return undefined;
       const box = g.area ?? (api.size ? [[0, 0, 0], api.size.map(n => n - 1)] : null); if (!box) return undefined;
-      const list = Array.isArray(g.block) ? g.block : [g.block];
-      return api.cellsIn(box).filter(c => tokenMatch(c.block, list)).length;
+      return api.cellsIn(box).filter(c => tokenMatch(c.block, g.block)).length;
     }
     const sel = g.archetype ?? g.tag;
     return sortedEntities(rt).filter(e => matchesAny(e, [sel]) && alive(e)).length;

@@ -9,7 +9,7 @@
 // which combat.projectile can read for twin-stick fire.
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey,
-  controls, verbs, ensureShared, motor, settle, v3, setFacing, spaceWraps, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
+  controls, verbs, ensureShared, motor, settle, v3, setFacing, spaceWraps, COMMON_PARAMS, MACRO_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.ship';
@@ -54,6 +54,7 @@ export default {
     provides: { events: ['evaded', 'hyperspace', 'thrust_start', 'thrust_end'], actions: ['move', 'thrust', 'focus', 'hyperspace', 'aim'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['bounds', 'wrap', 'overlap', 'distance'] },
+    components: MOVE_COMPONENTS,
     envelope,
   },
   envelope,

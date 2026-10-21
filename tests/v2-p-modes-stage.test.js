@@ -122,7 +122,9 @@ test('stage.sequence: preflight rejects bad configs with stable codes', () => {
   const bad = seq({ loop: true, endless: true, startAt: 7, apply: [{ target: 'nonsense', table: [1] }, { target: 'use:gameplay.nothing.speed', table: [1] }, { target: 'use:gameplay.stage.sequence.bogus', table: [1] }],
     stages: [{ id: 'a', goal: { kind: 'when' }, stars: [3, 2] }, { id: 'a', goal: { kind: 'survive' } }, { id: 'c', goal: { kind: 'tile', target: 100 } }, { id: 'd', goal: { kind: 'sparkle' } }] });
   bad.systems.push({ use: 'gameplay.race', with: { checkpoints: ['a'], startWhen: { stage: 'zzz', phase: 'party' } } });
-  const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['stage_target', 'stage_goal', 'stage_duplicate', 'stage_stars', 'stage_loop', 'param_option', 'param_range', 'stage_phase', 'ref_unknown']) assert.ok(codes.has(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = new Set(errors.map(e => e.code));
+  // A repeated stage id is the kernel's id_duplicate (stages define the kind 'stage'); a target that is not
+  // var:/flag:/use: is apply[].target's declared pattern (param_pattern); startAt past the stages is stage_start_at.
+  for (const c of ['stage_target', 'stage_goal', 'id_duplicate', 'stage_stars', 'stage_loop', 'stage_start_at', 'param_option', 'param_pattern', 'stage_phase', 'ref_unknown']) assert.ok(codes.has(c), c);
   assert.ok(preflight(seq({ stages: [{ id: 'ok', goal: { kind: 'score', target: 10 } }] }), registry, logic).ok);
 });

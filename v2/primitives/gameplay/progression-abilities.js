@@ -18,7 +18,7 @@ export default {
     views: ['any'],
     params: {
       abilities: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string' }, desc: { type: 'string' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, desc: { type: 'string', display: true, effect: 'the description a person reads' },
         grants: { type: 'list', default: [], of: { type: 'string' }, effect: 'verbs this ability enables' },
         requires: { type: 'predicate', effect: 'must hold to unlock (unless forced)' },
         onUnlock: { type: 'effects', default: [] },
@@ -35,11 +35,6 @@ export default {
     logic.predicate('grants', { test: (p, rt, c) => { const e = rt.resolve(p.who, c); return Boolean(e && grants(rt, e.id, p.grants)); } });
     logic.effect('unlock_ability', { refs: e => [['ability', e.ability]], run: (e, rt, c) => { const w = rt.resolve(e.who, c); if (w) unlock(rt, w.id, e.ability, Boolean(e.force)); } });
     logic.effect('lock_ability', { refs: e => [['ability', e.ability]], run: (e, rt, c) => { const w = rt.resolve(e.who, c); if (w) lock(rt, w.id, e.ability); } });
-  },
-  validate(config) {
-    const errors = [], ids = new Set();
-    config.abilities.forEach((a, i) => { if (ids.has(a.id)) errors.push({ code: 'ability_duplicate', path: `abilities[${i}].id`, message: `duplicate ability '${a.id}'` }); ids.add(a.id); });
-    return errors;
   },
   install(rt, config) {
     rt.caches.abilitiesCfg = config;

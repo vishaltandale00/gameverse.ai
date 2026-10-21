@@ -54,6 +54,12 @@ export default {
     },
     requires: { capabilities: ['position'] },
     reads: [],
+    rules: {
+      race_duplicate: { fields: ['id'], message: 'each gameplay.race instance of a document has its own id',
+        example: { doc: { systems: [{ use: ID, with: { checkpoints: ['start_line', 'first_bend'] } }, { use: ID, with: { checkpoints: ['start_line', 'first_bend'] } }] } } },
+      race_checkpoints: { fields: ['checkpoints'], message: 'checkpoints name each zone once', example: { checkpoints: ['start_line', 'start_line'] } },
+      race_racers: { fields: ['includePlayer', 'racers'], message: 'the player races (includePlayer) or racers names at least one rival', example: { includePlayer: false, racers: [] } },
+    },
     // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
     // As an encounter's inner loop: the race waits (autoStart off) and the encounter starts it.
     engage: { participants: { param: 'racers' }, encounter: { start: [{ do: 'start_race' }], config: { autoStart: false } } },
@@ -63,6 +69,10 @@ export default {
   },
   logic(logic) {
     logic.predicate('race', {
+      codes: [
+        { code: 'race_state', fields: ['race.state'], message: `state is one of ${STATES.join(', ')}`, example: { race: 'race', state: 'flying' } },
+        { code: 'race_metric', fields: ['race.metric'], message: 'metric is one of position, lap, time, best', example: { race: 'race', metric: 'speed' } },
+      ],
       check: (p, path, errors, ctx) => {
         if (p.state !== undefined && !STATES.includes(p.state)) errors.push(err('race_state', `${path}.state`, `state must be ${STATES.join('|')}`));
         if (p.metric !== undefined && !['position', 'lap', 'time', 'best'].includes(p.metric)) errors.push(err('race_metric', `${path}.metric`, 'metric must be position|lap|time|best'));
@@ -86,7 +96,6 @@ export default {
   validate(config, doc) {
     const errors = [], ids = instancesOf(doc, ID).map(x => x.s.with?.id ?? 'race');
     if (ids.filter(i => i === config.id).length > 1) errors.push(err('race_duplicate', 'with.id', `two races share id '${config.id}'`, 'give each gameplay.race a distinct id'));
-    if (config.checkpoints?.length === 1 && config.laps < 1) errors.push(err('race_checkpoints', 'with.laps', 'a single checkpoint needs laps'));
     if (new Set(config.checkpoints || []).size !== (config.checkpoints || []).length) errors.push(err('race_checkpoints', 'with.checkpoints', 'checkpoints repeat a zone'));
     if (!config.includePlayer && !config.racers.length) errors.push(err('race_racers', 'with.racers', 'a race needs the player or racers'));
     return errors;

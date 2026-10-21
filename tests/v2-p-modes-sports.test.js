@@ -80,6 +80,10 @@ test('sports: deterministic replay and preflight codes', () => {
   const registry = new Registry(P), logic = buildLogic(registry, Logic);
   const bad = field({ teams: [{ id: 'a' }, { id: 'a' }], goals: [{ zone: 'moon', scores: 'z' }], ballAt: 3, overtime: 'penalties' });
   bad.systems.push({ use: 'gameplay.stage.sequence', with: { stages: [{ id: 's', clear: { sports: 'halftime' } }] } });
-  const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['sports_teams', 'sports_ball', 'ref_unknown', 'param_option', 'sports_state']) assert.ok(codes.has(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = new Set(errors.map(e => e.code));
+  for (const c of ['ref_unknown', 'param_option', 'sports_state']) assert.ok(codes.has(c), c);
+  // Teams are a kind the card defines and ballAt a typed position: a repeated team is id_duplicate, a goal naming no team
+  // ref_unknown, a ballAt that is no position param_type (they were sports_teams / sports_ball).
+  const at = new Set(errors.map(e => `${e.code}@${e.path.replace(/^systems\[\d+\]\.with\./, '')}`));
+  for (const c of ['id_duplicate@teams[1].id', 'ref_unknown@goals[0].scores', 'param_type@ballAt']) assert.ok(at.has(c), c);
 });

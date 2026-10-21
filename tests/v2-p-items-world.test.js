@@ -12,7 +12,7 @@ const camp = () => doc({ combat: true, resources: [{ id: 'stamina', max: 50, sta
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.rest', with: { skipTo: 'dawn', safeRequired: true, safeRadius: 6, respawnsEnemies: true } },
     { use: 'gameplay.checkpoint', with: { restoreAll: true, fastTravelBetween: true } }],
   content: { archetypes: [hero,
-    { id: 'bed', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Sleep' }, rest: true, checkpoint: true } },
+    { id: 'bed', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Sleep' }, rest: {}, checkpoint: true } },
     { id: 'flag', kind: 'prop', components: { body: { size: [1, 1, 1] }, checkpoint: { id: 'flag_east', touch: true } } },
     { id: 'wolf', kind: 'enemy', components: { body: { size: [1, 1, 1] } } }] },
 });
@@ -58,7 +58,7 @@ test('rest/checkpoint: replay is deterministic and bad configs are rejected', ()
   d.systems[3].with.restoreAll = 'yes';
   d.systems.push({ use: 'gameplay.rest', with: { hours: -2 } });
   const c = codes(checkWith(d));
-  for (const code of ['rest_invalid', 'param_type', 'param_range']) assert.ok(c.includes(code), code);
+  for (const code of ['rest_skip_to', 'param_type', 'param_range']) assert.ok(c.includes(code), code);
 });
 
 test('rest/checkpoint: v2/games instances preflight without param errors', () => {
