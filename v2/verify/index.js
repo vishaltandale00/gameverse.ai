@@ -36,6 +36,7 @@ export const PROBLEM_CODES = {
   '<kind>_unreachable': 'a declared place (portal, interactable, station…) is never reachable',
   // playtest
   trivially_won: 'won with no input', instant_loss: 'lost within 2 s with no input', goal_not_reached: 'playtest found no ending (budget-limited)', event_never_seen: 'a referenced event never happened',
+  option_uncontrolled: 'the game offers an option whose actions no control a person has issues (warning)', controls_missing: 'a bot or the explorer needed a verb no control issues',
   // strategies
   level_too_hard: 'placement bot topped out', goal_unreached: 'bots met the goal below the pass rate', no_start_move: 'the board starts with no move', too_hard: 'a bot could not make enough progress',
   bot_failed: 'the dodger died early', chunk_impassable: 'no line through a zone of a scrolling course', no_attack_connects: 'no verb damages an adjacent opponent', whiff: 'a combat verb never connects',

@@ -275,7 +275,9 @@ export function playtest(doc, registry, logic, opts = {}) {
   } else if (!problems.some(p => p.severity === 'error') && (doc.plot?.endings || []).length) {
     problems.push(problem('goal_not_reached', 'plot.endings', `the playtest did not reach an ending within its budget (${archive.size} cells, ${rounds} rounds, stopped by ${b.hit || 'limit'})`, { severity: 'warning', hint: 'budget-limited: not a proof of a softlock' }));
   }
-  for (const [label, missing] of uncontrolled) problems.push(problem('controls_missing', 'systems', `the game offers '${label}', which no control a person has can take: ${missing.map(m => `${m.verb} (${m.why})`).join('; ')}`, { missing, hint: 'every option the game offers must be issuable through a key, an axis or a mounted UI' }));
+  // A warning, not a block: the option is a hint (ARCHITECTURE §6.3), and the person may still play what it means through
+  // other controls (a run hint as the held move axis); the option's provider or the host's bindings must make it issuable.
+  for (const [label, missing] of uncontrolled) problems.push(problem('option_uncontrolled', 'systems', `the game offers '${label}', which no control a person has can take: ${missing.map(m => `${m.verb} (${m.why})`).join('; ')}`, { severity: 'warning', missing, hint: 'every option the game offers must be issuable through a key, an axis or a mounted UI' }));
   // Events the document refers to (count predicates) that never happened in play.
   const referenced = new Map();
   walkJson(doc.plot || {}, (o, path) => { if (typeof o.count === 'string' && !referenced.has(o.count)) referenced.set(o.count, `plot.${path}`); });

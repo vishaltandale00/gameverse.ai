@@ -1,0 +1,25 @@
+// The playtest explorer plays through the controls a person has (ARCHITECTURE.md §6.3), catalogue-wide over the
+// discovered templates: its worlds are the host document's controlled worlds (v2/verify/controls.js), every verb it
+// pressed has a control in that document (a key, an axis or a mounted UI), it never asked for one that has none
+// (controls_missing), and its winning path, when it found one, replays to the win on fresh controlled worlds. Options
+// the game offers that no control can take are never taken; they are reported (option_uncontrolled, a warning) and
+// listed here as a diagnostic.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { TEMPLATES } from '../v2/templates/registry.js';
+import { buildCatalogue } from '../v2/planner/catalog.js';
+import { playtest, explorerWorlds } from '../v2/verify/playtest.js';
+import { hostPreflight, uncontrolledVerbs } from '../v2/verify/controls.js';
+
+const { registry, logic } = buildCatalogue();
+
+for (const t of TEMPLATES) test(`explorer: ${t.id} is explored only through the controls a person has`, tc => {
+  const host = hostPreflight(t.doc, registry, logic).doc, seed = host.seed ?? 1;
+  const w = explorerWorlds(host, registry, logic, { seed });
+  assert.ok(w.ok && w.make(seed).controls, 'controlled worlds of the host document');
+  const r = playtest(t.doc, registry, logic, { seed, maxRounds: 40, maxFrames: 1500 });
+  assert.deepEqual(r.problems.filter(p => p.code === 'controls_missing' || p.code === 'runtime_error').map(p => p.message), [], t.id);
+  assert.deepEqual(uncontrolledVerbs(host, registry, Object.keys(r.verbsUsed)), [], `${t.id}: every verb the explorer pressed has a control`);
+  if (r.win) assert.equal(r.win.replayed, true, `${t.id}: the win replays`);
+  for (const p of r.problems.filter(x => x.code === 'option_uncontrolled')) tc.diagnostic(p.message);
+});
