@@ -14,6 +14,7 @@ import { pixelFrame, resolveAnim, animInfo, frameIndex } from './flat-pixel.js';
 import { drawVector, glow, PRESETS } from './flat-vector.js';
 import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, drawBones, rigFrom, isFighterSpec, RIG_HEIGHT } from './flat-rig.js';
 import { roleOf, presentationOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
+import { sideOf } from './allegiance.js';
 
 export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win', 'dazed'];
 
@@ -35,13 +36,18 @@ export function lookOf(H, e, view = 'side') {
   const doc = H.rt.doc;
   const found = modelSpec(doc, e);
   const { key, arch } = found, spec = found.spec || H.vectorModels?.[e.archetype] || (H.cfg.rig?.archetypes?.[e.archetype] ? { kind: 'rig', rig: H.cfg.rig.archetypes[e.archetype] } : null);
-  const ck = `${key}|${view}|${e.id === 'player' ? 'p' : ''}`;
+  // Whose side it is on (graphics/allegiance.js: card.sides): one archetype can fight for either side (rts workers).
+  const side = e.id === 'player' ? null : sideOf(H.rt, e);
+  const ck = `${key}|${view}|${e.id === 'player' ? 'p' : ''}|${side ? (side.mine ? 'mine' : 'theirs') : ''}`;
   H.looks ??= new Map();
   if (H.looks.has(ck)) return H.looks.get(ck);
   // Components the entity was spawned with (a key's pickup item) present as much as its archetype's.
   const carried = { ...arch, components: { ...(arch.components || {}), ...(e.components || {}) } }, reg = H.rt.registry;
-  const role = e.id === 'player' ? 'player' : roleOf(carried, e.archetype, reg, null, doc);
-  const declaredVector = presentationOf(carried, reg, null, doc)?.vector;
+  const declared = presentationOf(carried, reg, null, doc), declaredVector = declared?.vector;
+  // An entity on a side reads as an ally on the player's side and an enemy on the other, unless it declares a more
+  // specific role (a building, a boss, a vehicle).
+  const sided = side && (!declared || declared.role === 'npc' || declared.role === 'enemy');
+  const role = e.id === 'player' ? 'player' : sided ? (side.mine ? 'npc' : 'enemy') : roleOf(carried, e.archetype, reg, null, doc);
   const light2 = arch.components?.light || e.components?.light;
   let L;
   const kind = spec?.kind;
@@ -69,7 +75,9 @@ export function lookOf(H, e, view = 'side') {
     else if (['pickup', 'hazard', 'goal', 'prop'].includes(role)) L = { type: 'prop', prop: propFor(carried, role, reg, doc) };
     else L = { type: 'character', look: lookFor(arch, role) };
   }
-  L.role = role; L.key = key; L.glow = spec?.glow || (light2 ? { color: light2.color || '#ffd890', radius: 0.5 } : null);
+  // A sided prop (a faction's building) takes its side's color.
+  if (side && L.type === 'prop' && !L.color) L.color = side.mine ? '#3a7bd5' : '#d8352a';
+  L.role = role; L.key = key; L.side = side ? side.mine : null; L.glow = spec?.glow || (light2 ? { color: light2.color || '#ffd890', radius: 0.5 } : null);
   L.boss = role === 'boss';
   H.looks.set(ck, L);
   return L;

@@ -97,3 +97,24 @@ test('farm: the crops a person plants are drawn on the field (card.marks)', () =
   // drawMark: a stem and two leaves per plot.
   assert.ok(ellipses(planted) >= ellipses(idle) + 2, `the plot is drawn (${ellipses(planted)} ellipses with it, ${ellipses(idle)} without)`);
 });
+
+// Whose side an entity is on is drawn (graphics/allegiance.js, from card.sides): over every template whose primitives put
+// entities on sides, the player's side reads as allies and the other side as enemies.
+test('sides: the player\'s side and the other side are drawn apart, in every template with sides', async () => {
+  const { sideOf } = await import('../v2/primitives/graphics/allegiance.js');
+  const { lookOf } = await import('../v2/primitives/graphics/flat-models.js');
+  let n = 0;
+  for (const t of TEMPLATES) {
+    const host = hostDocument(t.doc, registry);
+    if (!host.systems.some(s => registry.get(s.use)?.card?.sides)) continue;
+    const m = play(t.doc, 5), H = m.rt.caches.flat;
+    if (!H) continue; // drawn by the DOM scene card only
+    const sided = Object.values(m.rt.state.entities).filter(e => e.id !== 'player').map(e => ({ e, side: sideOf(m.rt, e) })).filter(x => x.side);
+    const mine = sided.filter(x => x.side.mine), theirs = sided.filter(x => !x.side.mine);
+    assert.ok(theirs.length, `${t.id}: entities on the other side`);
+    for (const { e } of theirs) { const L = lookOf(H, e, 'td'); assert.ok(L.role === 'enemy' || L.side === false, `${t.id}: ${e.id} is on the other side and reads as ${L.role}`); }
+    for (const { e } of mine) { const L = lookOf(H, e, 'td'); assert.ok(L.role !== 'enemy' && L.side === true, `${t.id}: ${e.id} is on the player's side and reads as ${L.role}`); }
+    n++;
+  }
+  assert.ok(n >= 3, `templates with sides checked: ${n}`);
+});
