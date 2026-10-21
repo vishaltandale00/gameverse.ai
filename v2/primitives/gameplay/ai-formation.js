@@ -6,6 +6,7 @@
 // leaders peel off on curved dives with up to two escorts of their kind and
 // rejoin. Positions live in a 2D plane of the space, in the kit's screen
 // convention (y grows toward the player); `bounds` sets the playfield.
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { r6, round6, clamp, steerAng, spaceOf, continuous, moverOwned, dead, between, cleanupOnDespawn, add, sub, mul, norm, len, dot, v3 } from './ai-lib.js';
 import { followPath } from './ai-motion.js';
 
@@ -24,10 +25,10 @@ export default {
     intent: 'Shmup formations: waves enter on spline paths into slots; Galaga sway/breathing or Invaders march-step (faster as the formation thins, reverse and drop at edges, overrun line); timed dives by a leader with escorts (dive, swoop, zigzag, homing chase) that rejoin; a `formation_front` predicate lets only column fronts fire.',
     views: ['side', 'td'],
     params: {
-      bounds: { type: 'object', required: true, fields: { min: { type: 'list', of: { type: 'number' }, required: true }, max: { type: 'list', of: { type: 'number' }, required: true } }, effect: 'playfield rectangle in the plane; kit paths scale from 300×400' },
+      bounds: { type: 'object', required: true, fields: { min: { type: 'list', of: { type: 'number' }, min: 2, required: true }, max: { type: 'list', of: { type: 'number' }, min: 2, required: true } }, effect: 'playfield rectangle in the plane; kit paths scale from 300×400' },
       plane: { type: 'string', default: 'xy', options: ['xy', 'xz'] },
       formations: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, cols: { type: 'integer', default: 10, min: 1, max: 32 }, rows: { type: 'integer', default: 4, min: 1, max: 16 },
+        id: { type: 'string', pattern: ID_PATTERN, required: true }, cols: { type: 'integer', default: 10, min: 1, max: 32 }, rows: { type: 'integer', default: 4, min: 1, max: 16 },
         spacing: { type: 'list', of: { type: 'number' }, default: [24, 22], min: 2, max: 2 }, top: n(62, { effect: 'first row distance from the top of the bounds' }),
         march: { type: 'boolean', default: false, effect: 'Invaders march instead of Galaga sway + breathing' },
         sway: n(26, { min: 0 }), swayRate: n(0.018, { min: 0, unit: 'rad/frame' }), breathe: { type: 'boolean', default: true },
@@ -37,7 +38,7 @@ export default {
         speed: n(120, { min: 1, effect: 'member speed (units/s); entries use max(150, 1.2×speed)' }),
       } } },
       waves: { type: 'list', default: [], of: { type: 'object', fields: {
-        formation: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
+        formation: { type: 'ref', to: 'formation', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
         count: { type: 'integer', default: 8, min: 1, max: 64 }, at: n(0, { min: 0, unit: 's' }), entry: { type: 'string', default: 'left-arc', options: ENTRIES },
         dive: { type: 'string', default: 'dive', options: DIVES, effect: 'how members of this wave dive' },
       } } },
@@ -45,6 +46,10 @@ export default {
     provides: { events: ['formation_join', 'formation_full', 'march', 'dive', 'formation_overrun', 'formation_clear'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    defines: [{ kind: 'formation', in: 'formations' }],
+    rules: {
+      formation_bounds: { fields: ['bounds.min', 'bounds.max'], message: 'bounds.max is above bounds.min in both plane axes' },
+    },
   },
   logic(logic) {
     logic.predicate('formation_front', { test: (p, rt, c) => {
@@ -55,9 +60,8 @@ export default {
     } });
   },
   validate(config) {
-    const errors = [], ids = new Set(config.formations.map(f => f.id));
-    config.waves.forEach((w, i) => { if (!ids.has(w.formation)) errors.push({ code: 'ref_unknown', path: `waves[${i}].formation`, message: `unknown formation '${w.formation}'` }); });
-    const b = config.bounds; if (b && (b.min.length < 2 || b.max.length < 2 || b.max[0] <= b.min[0] || b.max[1] <= b.min[1])) errors.push({ code: 'formation_bounds', path: 'bounds', message: 'bounds need min < max in two axes' });
+    const errors = [];
+    const b = config.bounds; if (Array.isArray(b?.min) && Array.isArray(b?.max) && (b.max[0] <= b.min[0] || b.max[1] <= b.min[1])) errors.push({ code: 'formation_bounds', path: 'bounds', message: 'bounds need min < max in two axes' });
     return errors;
   },
   install(rt, config) {

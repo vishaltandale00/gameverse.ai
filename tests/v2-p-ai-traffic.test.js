@@ -117,7 +117,8 @@ test('preflight: bad traffic/crowd configs and a missing road graph are rejected
   const { registry, logic } = catalogue([testSpace, roads]);
   const bad = doc({ traffic: { spawnRadius: [50, 10], despawnRadius: 5, archetypes: [{ archetype: 'tank' }] }, crowd: { spawnRadius: [5, 100], despawnRadius: 50 } });
   const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['param_range', 'traffic_despawn_radius', 'ref_unknown', 'crowd_despawn_radius']) assert.ok(codes.includes(c), c);
+  // spawnRadius [inner, outer] out of order is the card's cross-field rule traffic_spawn_radius (was the kernel's param_range).
+  for (const c of ['traffic_spawn_radius', 'traffic_despawn_radius', 'ref_unknown', 'crowd_despawn_radius']) assert.ok(codes.includes(c), c);
   const noRoads = doc({ traffic: {} }); delete noRoads.spaces[0].generators;
   assert.ok(preflight(noRoads, registry, logic).errors.some(e => e.code === 'service_missing'));
 });

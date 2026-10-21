@@ -5,6 +5,7 @@
 // resolved through the space's overlap/raycast capabilities. Bullet `emitter`
 // patterns (aimed, spread, ring, spiral, burst, flower) are ported from the
 // shmup kit with live-bullet caps per mode and difficulty multipliers.
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, centerOf, distBetween, facingOf, headingOf, clearLine, selfRelative, weighted, applyHit, dead, cleanupOnDespawn, ensureLocomotion, upAt, planar, between, TAU } from './ai-lib.js';
 import { hostile } from './ai-brain.js';
 import { PATTERNS, DIFF, MODE_CAPS, volley, fireShot, liveShots, ensureShots } from './ai-lib-bullets.js';
@@ -31,16 +32,24 @@ const MOVES = ['lunge', 'dash', 'charge', 'leap', 'dive', 'teleport_behind', 're
 
 const n = (extra = {}) => ({ type: 'number', min: 0, ...extra });
 export const ATTACK = {
-  id: { type: 'string', required: true }, range: n({ effect: 'reach / trigger distance' }), minRange: n(),
+  id: { type: 'string', pattern: ID_PATTERN, required: true }, range: n({ effect: 'reach / trigger distance' }), minRange: n(),
   windup: n({ unit: 's', effect: 'telegraph time before the hit' }), active: n({ unit: 's' }), recover: n({ unit: 's' }), cooldown: n({ unit: 's' }),
-  damage: n(), type: { type: 'string' }, shape: { type: 'string' }, radius: n(), arc: n({ max: 360 }), tick: n({ unit: 's' }), knockback: { type: 'number' },
-  move: { type: 'string', options: MOVES }, moveSpeed: n(), status: { type: 'string' }, statusSec: n(),
+  damage: n(), type: { type: 'string', effect: 'damage type' }, shape: { type: 'string', effect: `a built-in shape (${Object.keys(SHAPES).join(', ')}) or a name of the shapes param` }, radius: n(), arc: n({ max: 360 }), tick: n({ unit: 's' }), knockback: { type: 'number' },
+  move: { type: 'string', options: MOVES }, moveSpeed: n(), status: { type: 'ref', to: 'status', effect: 'a status applied on hit (or to itself for a self shape)' }, statusSec: n(),
   weight: n(), when: { type: 'predicate' }, phase: { type: 'integer', min: 1 },
   summon: { type: 'ref', to: 'archetype' }, count: { type: 'integer', min: 1, max: 64 },
   projectile: { type: 'object', fields: { speed: n(), gravity: { type: 'number' }, count: { type: 'integer', min: 1, max: 64 }, spread: n({ max: 360 }), radius: n(), life: n(), homing: n(), pierce: { type: 'integer', min: 0 }, archetype: { type: 'ref', to: 'archetype' } } },
   emitter: { type: 'object', fields: { pattern: { type: 'string', options: PATTERNS, required: true }, rate: n({ effect: 'volleys/s during active' }), speed: n(), count: { type: 'integer', min: 1, max: 64 }, step: n(), boss: { type: 'boolean' }, radius: n(), life: n() } },
   selfDestruct: { type: 'boolean' }, blastBlocks: n({ effect: 'clear solid cells within this radius (editCells spaces)' }),
 };
+/** The archetype component this primitive owns: its attack patterns. */
+const ATTACKS = { type: 'list', min: 1, of: { type: 'object', fields: ATTACK }, effect: 'telegraphed attack patterns' };
+/** An extra hit shape (the shapes param): the geometry the built-in SHAPES entries use. */
+const SHAPE = { type: 'object', fields: {
+  kind: { type: 'string', options: KINDS, required: true }, at: { type: 'string', options: ['self', 'target'], effect: 'where the volume is centred (default self)' },
+  r: n({ effect: 'radius (default the attack range)' }), angle: n({ max: 360 }), width: n(), tick: n({ unit: 's' }), count: { type: 'integer', min: 1, max: 64 }, spread: n({ max: 360 }),
+  knockback: { type: 'number' }, rain: { type: 'boolean', effect: 'projectiles drop from above the target' },
+} };
 
 const st = rt => rt.store(ID);
 const agentOf = (rt, id) => ((st(rt).agents ??= {})[id] ??= { phase: 'idle', cd: {}, gcd: 0 });
@@ -52,7 +61,7 @@ export default {
     // It acts for every non-player entity with an `attacks` component: hits run damage/apply_status (ai-lib applyHit), lunges move it.
     drives: { control: 'ai', components: ['attacks'], effects: ['damage', 'apply_status'], events: ['attack_hit', 'shot_hit'], movement: true },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { attacks: { type: 'list', min: 1, of: { type: 'object', fields: ATTACK }, effect: 'telegraphed attack patterns' } },
+    components: { attacks: ATTACKS },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "attacks", "min": 1, "placed": 1, "why": "attack patterns run on archetypes with an attacks component", "example": {"id": "warden", "kind": "enemy", "components": {"health": {"max": 20}, "attacks": [{"id": "slam", "range": 2, "windup": 0.6, "active": 0.2, "recover": 0.8, "damage": 2, "shape": "arc", "weight": 2}]}}},
@@ -65,28 +74,33 @@ export default {
       difficulty: { type: 'string', default: 'normal', options: Object.keys(DIFF), effect: 'bullet speed and fire-rate multipliers' },
       difficultyVar: { type: 'string', effect: 'var holding easy|normal|hard (overrides difficulty when set)' },
       bulletCap: { type: 'integer', default: 140, min: 1, max: 2000, effect: 'max live hostile bullets' },
-      capBy: { type: 'object', fields: { var: { type: 'string', required: true }, caps: { type: 'object', open: true, default: MODE_CAPS } }, effect: 'per-mode caps: the cap is caps[var value] (fixed 24, vertical 140, twinstick 80, asteroids 16)' },
+      capBy: { type: 'object', fields: { var: { type: 'string', required: true }, caps: { type: 'object', values: { type: 'integer', min: 1, max: 2000 }, default: MODE_CAPS, effect: 'var value -> live hostile bullet cap' } }, effect: 'per-mode caps: the cap is caps[var value] (fixed 24, vertical 140, twinstick 80, asteroids 16)' },
       bullet: objectParam({ type: 'object', fields: { speed: n({ default: 8 }), radius: n({ default: 0.25 }), life: n({ default: 6 }), damage: n({ default: 1 }) }, effect: 'emitter bullet defaults (space units)' }),
-      shapes: { type: 'object', open: true, default: {}, effect: 'extra shape names → {kind: cone|sphere|box|ray|projectile|summon|self, at?: self|target, r?, angle?, width?, tick?, count?, spread?}' },
+      shapes: { type: 'object', values: SHAPE, default: {}, effect: 'extra shape names → their hit geometry' },
       maxSummons: { type: 'integer', default: 4, min: 0, max: 64, effect: 'live summons per summoner' },
       interruptOn: { type: 'list', of: { type: 'string' }, default: ['staggered'], effect: 'events {who} that cancel the victim\'s attack' },
     },
     provides: { events: ['self_destruct', 'enemy_shoot', 'telegraph', 'attack_launched', 'attack_hit', 'attack_end', 'attack_cancelled', 'summoned', 'shot_hit', 'shot_blocked', 'attack_buff'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
+    rules: {
+      attack_duplicate: { fields: ['content.archetypes[].components.attacks[].id'], message: "each attack of an archetype has its own id" },
+      attack_shape_unknown: { fields: ['content.archetypes[].components.attacks[].shape', 'shapes'], message: `shape is a built-in shape (${Object.keys(SHAPES).join(', ')}) or a name the shapes param defines` },
+      attack_summon_missing: { fields: ['content.archetypes[].components.attacks[].summon', 'content.archetypes[].components.attacks[].shape'], message: 'a summon attack (shape summon, or a shapes entry of kind summon) names the archetype it summons',
+        example: { 'components.attacks': [{ id: 'call', range: null, minRange: null, windup: null, active: null, recover: null, cooldown: null, damage: null, type: null, shape: 'summon', radius: null, arc: null, tick: null, knockback: null, move: null, moveSpeed: null, statusSec: null, weight: null, phase: null, summon: null, count: null, projectile: null, emitter: null, selfDestruct: null, blastBlocks: null }] } },
+    },
   },
   validate(config, doc, ctx) {
-    const errors = [], shapes = { ...SHAPES, ...config.shapes };
-    for (const [name, s] of Object.entries(config.shapes || {})) if (!KINDS.includes(s?.kind)) errors.push({ code: 'attack_shape_kind', path: `shapes.${name}.kind`, message: `shape kind must be one of ${KINDS.join('|')}` });
+    const errors = [], shapes = { ...SHAPES, ...(config.shapes && typeof config.shapes === 'object' ? config.shapes : {}) };
     (doc.content?.archetypes || []).forEach((a, i) => {
-      const list = a.components?.attacks; if (list === undefined) return;
+      const list = a?.components?.attacks; if (list === undefined) return;
       const path = `content.archetypes[${i}].components.attacks`;
-      if (!Array.isArray(list)) { errors.push({ code: 'param_type', path, message: 'attacks must be a list of patterns' }); return; }
+      // The component's shape is its declaration (card.components.attacks), which preflight enforces.
+      if (!Array.isArray(list)) return;
       const ids = new Set();
       list.forEach((atk, j) => {
         const p = `${path}[${j}]`;
-        if (!atk || typeof atk !== 'object') { errors.push({ code: 'param_type', path: p, message: 'attack must be an object' }); return; }
-        checkFieldsInto(ATTACK, atk, p, errors, ctx);
+        if (!atk || typeof atk !== 'object') return;
         if (ids.has(atk.id)) errors.push({ code: 'attack_duplicate', path: `${p}.id`, message: `duplicate attack '${atk.id}'` });
         ids.add(atk.id);
         if (atk.shape !== undefined && !shapes[atk.shape]) errors.push({ code: 'attack_shape_unknown', path: `${p}.shape`, message: `unknown shape '${atk.shape}'`, hint: `built in: ${Object.keys(SHAPES).join(', ')}; add more with the shapes param` });
@@ -127,22 +141,6 @@ export default {
     }, ID);
   },
 };
-
-function checkFieldsInto(fields, value, path, errors, ctx) {
-  for (const k of Object.keys(value)) if (!(k in fields)) errors.push({ code: 'param_unknown', path: `${path}.${k}`, message: `unknown attack field '${k}'`, hint: `known: ${Object.keys(fields).join(', ')}` });
-  for (const [k, schema] of Object.entries(fields)) {
-    const v = value[k];
-    if (v === undefined) { if (schema.required) errors.push({ code: 'param_missing', path: `${path}.${k}`, message: `required ${schema.type}` }); continue; }
-    if (schema.type === 'number' || schema.type === 'integer') {
-      if (!Number.isFinite(v) || (schema.type === 'integer' && !Number.isInteger(v))) errors.push({ code: 'param_type', path: `${path}.${k}`, message: `must be ${schema.type === 'integer' ? 'an integer' : 'a number'}` });
-      else if ((schema.min !== undefined && v < schema.min) || (schema.max !== undefined && v > schema.max)) errors.push({ code: 'param_range', path: `${path}.${k}`, message: `${v} outside [${schema.min ?? '-∞'}, ${schema.max ?? '∞'}]` });
-    } else if (schema.type === 'string') { if (typeof v !== 'string') errors.push({ code: 'param_type', path: `${path}.${k}`, message: 'must be a string' }); else if (schema.options && !schema.options.includes(v)) errors.push({ code: 'param_option', path: `${path}.${k}`, message: `'${v}' is not one of ${schema.options.join('|')}` }); }
-    else if (schema.type === 'boolean') { if (typeof v !== 'boolean') errors.push({ code: 'param_type', path: `${path}.${k}`, message: 'must be true or false' }); }
-    else if (schema.type === 'predicate') ctx.checkPredicate(v, `${path}.${k}`, errors);
-    else if (schema.type === 'ref') { if (!ctx.indexes[schema.to]?.has(v)) errors.push({ code: 'ref_unknown', path: `${path}.${k}`, message: `unknown ${schema.to} '${v}'` }); }
-    else if (schema.type === 'object') { if (!v || typeof v !== 'object' || Array.isArray(v)) errors.push({ code: 'param_type', path: `${path}.${k}`, message: 'must be an object' }); else checkFieldsInto(schema.fields, v, `${path}.${k}`, errors, ctx); }
-  }
-}
 
 // ---------- choice ----------
 function targetOf(rt, e) {

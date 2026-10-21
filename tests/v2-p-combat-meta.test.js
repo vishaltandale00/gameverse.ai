@@ -263,5 +263,6 @@ test('ability.active: shield costs mana, hyperspace jumps clear of foes, blink, 
   risky.step({ actions: { hyperspace: true } }); assert.equal(risky.player().components.health.dead, true, 'risk 1 always fails re-entry');
   same(() => { const r = make(abilityDoc()); r.spawn('imp', { at: [5, 5, 0] }); return r; }, [{ actions: { hyperspace: true } }, {}, { actions: { bomb: true } }, { actions: { blink: true } }]);
   const c = codes(abilityDoc([{ id: 'a', kind: 'bomb', charges: 9, maxCharges: 2 }, { id: 'b', kind: 'blink', action: 'a' }, { id: 'c', kind: 'hyperspace', area: [1, 2] }]));
-  for (const code of ['ability_charges_invalid', 'ability_action_duplicate', 'ability_area_invalid']) assert.ok(c.includes(code), `${code} in ${c}`);
+  // area is typed on the card (a [[min],[max]] list of points): a malformed one is the kernel's param_type at its path.
+  for (const code of ['ability_charges_invalid', 'ability_action_duplicate', 'param_type']) assert.ok(c.includes(code), `${code} in ${c}`);
 });

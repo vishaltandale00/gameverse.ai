@@ -6,6 +6,7 @@
 import { compare } from '../../kernel/logic.js';
 import { give, take, count } from './inventory.js';
 import { items as allItems, add, v3, whoKey } from './items-lib.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 
 const KEY = 'gameplay.build.structure';
 const box = (w, h, d) => { const out = []; for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) for (let z = 0; z < d; z++) out.push([x, y, z]); return out; };
@@ -14,6 +15,8 @@ export const LIBRARY = {
   door: { cells: box(1, 2, 1), block: 'door' }, stairs: { cells: [[0, 0, 0], [0, 1, 1], [0, 2, 2]] },
   lamp: { cells: [[0, 0, 0]], block: 'lamp' }, pillar: { cells: box(1, 3, 1) }, fence: { cells: box(3, 1, 1) },
 };
+/** A cell offset or a size: three integers. */
+const XYZ = { type: 'list', of: { type: 'integer' }, min: 3, max: 3 };
 const rotate = ([x, y, z], r) => [[x, y, z], [z, y, -x], [-x, y, -z], [-z, y, x]][((r % 4) + 4) % 4];
 
 export default {
@@ -25,14 +28,21 @@ export default {
     intent: 'Snap-together building: pieces (cell shapes of a block with an item cost) placed on a grid with rotation, only inside owned plots when ownership is on, demolish for a refund, and settlement slots that complete when built in.',
     views: ['1p', '3p', 'td', 'iso'],
     params: {
-      pieces: { type: 'list', default: ['wall', 'floor'], of: { type: 'json' }, effect: `library names (${Object.keys(LIBRARY).join(', ')}) or { id, cells: [[x,y,z]...] | size: [w,h,d], block?, cost?: [{item,count}], lift? }` },
+      pieces: { type: 'list', default: ['wall', 'floor'], of: { type: 'string', options: Object.keys(LIBRARY) }, effect: 'the library pieces offered' },
+      custom: { type: 'list', default: [], of: { type: 'object', fields: {
+        id: { type: 'string', pattern: ID_PATTERN, required: true, effect: 'its id (a library name overrides that library piece)' },
+        cells: { type: 'list', of: XYZ, min: 1, effect: 'the cells it fills, offsets from its anchor' }, size: { ...XYZ, effect: '[w, h, d]: a box of cells, when cells is not given' },
+        block: { type: 'ref', to: 'block', effect: 'its block (default with.block)' },
+        cost: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1, required: true } } }, effect: 'items it costs (default costPerCell of its block item per cell)' },
+        lift: { type: 'integer', min: 0, effect: 'cells its anchor is raised' },
+      } }, effect: 'pieces of the document: cell shapes with a block and a cost, offered beside the library pieces' },
       block: { type: 'ref', to: 'block', effect: 'block for pieces that do not name one' },
       costPerCell: { type: 'integer', default: 1, min: 0, max: 64, effect: 'pieces without a cost use this many of the item that places their block, per cell' },
       grid: { type: 'integer', default: 1, min: 1, max: 16, effect: 'anchor cells snap to multiples of this' },
       reach: { type: 'number', default: 8, min: 1, max: 64, unit: 'cells', effect: 'max distance from the builder to the anchor' },
       ownership: { type: 'boolean', default: false, effect: 'building only inside plots whose predicate holds' },
       plots: { type: 'list', default: [], of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, when: { type: 'predicate', effect: "default {flag: 'owns.<zone>'}" } } }, effect: 'buildable plots when ownership is on' },
-      slots: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, zone: { type: 'ref', to: 'zone', required: true }, piece: { type: 'string', effect: 'piece required (default any)' }, onFilled: { type: 'effects', default: [] } } }, effect: 'settlement slots filled by building in them' },
+      slots: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, zone: { type: 'ref', to: 'zone', required: true }, piece: { type: 'string', effect: 'piece required (a pieces name or a custom id; default any)' }, onFilled: { type: 'effects', default: [] } } }, effect: 'settlement slots filled by building in them' },
       refund: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'fraction of the cost returned on demolish' },
     },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
@@ -40,34 +50,43 @@ export default {
     provides: { events: ['built', 'built:*', 'build_denied', 'demolished', 'slot_filled', 'slot_filled:*'], actions: ['build', 'demolish'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.blocks', 'content.items'],
+    defines: [{ kind: 'piece', in: 'custom' }],
+    rules: {
+      piece_duplicate: { fields: ['pieces', 'custom[].id'], message: 'each piece is offered once: a library name is listed once and a custom id is not also in pieces', example: { pieces: ['wall', 'wall'] } },
+      piece_invalid: { fields: ['custom[].cells', 'custom[].size', 'custom[].block', 'block'], message: 'a custom piece gives cells or size (unless it overrides a library piece), and every piece has a block: its own, its library piece\'s or with.block' },
+      piece_block_unknown: { fields: ['pieces', 'block'], message: 'the block a piece uses is a content.blocks id (when the document declares blocks)' },
+      piece_unknown: { fields: ['slots[].piece', 'pieces', 'custom[].id'], message: 'a slot\'s piece is one of the pieces offered (pieces or custom ids)',
+        example: { doc: { spaces: [{ id: 'yard', use: 'engine.space.grid', with: { size: [8, 8] }, zones: [{ id: 'lot', name: 'Lot', rect: [0, 0, 4, 4] }] }], systems: [{ use: 'gameplay.build.structure', with: { block: 'pillar', slots: [{ id: 'gate', zone: 'lot', piece: 'tower' }] } }] } } },
+    },
   },
   logic(logic) {
     logic.predicate('structures', { test: (p, rt, c) => compare(Object.values(rt.store(KEY).built || {}).filter(s => (p.structures === '*' || s.piece === p.structures) && (!p.who || s.owner === whoKey(p.who, c))).length, p) });
     logic.predicate('slot_filled', { test: (p, rt) => Boolean(rt.store(KEY).slots?.[p.slot_filled]) });
   },
-  validate(config, doc, ctx, inst = {}) {
-    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], blocksIn = new Set((doc.content?.blocks || []).map(b => b.id)), items = new Set((doc.content?.items || []).map(i => i.id)), ids = new Set();
-    config.pieces.forEach((p, i) => {
-      const id = typeof p === 'string' ? p : p?.id;
-      if (typeof p === 'string' && !LIBRARY[p]) errors.push({ code: 'piece_unknown', path: P, message: `pieces[${i}]: '${p}' is not a library piece`, hint: Object.keys(LIBRARY).join(', ') });
-      if (typeof p === 'object' && (!p?.id || (!Array.isArray(p.cells) && !Array.isArray(p.size)))) errors.push({ code: 'piece_invalid', path: P, message: `pieces[${i}] needs an id and cells or size` });
-      if (ids.has(id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate piece '${id}'` }); ids.add(id);
-      const blk = (typeof p === 'object' && p?.block) || LIBRARY[id]?.block || config.block;
-      if (!blk) errors.push({ code: 'piece_invalid', path: P, message: `piece '${id}' has no block (set with.block)` });
-      else if (blocksIn.size && !blocksIn.has(blk)) errors.push({ code: 'ref_unknown', path: P, message: `piece '${id}' uses unknown block '${blk}'` });
-      for (const c of (typeof p === 'object' && p?.cost) || []) if (!items.has(c.item)) errors.push({ code: 'ref_unknown', path: P, message: `piece '${id}' costs unknown item '${c.item}'` });
+  validate(config, doc) {
+    const errors = [], blocksIn = new Set((doc.content?.blocks || []).map(b => b?.id)), ids = new Set();
+    const list = v => (Array.isArray(v) ? v : []), customs = list(config.custom).filter(p => p && typeof p === 'object');
+    list(config.pieces).forEach((name, i) => {
+      if (ids.has(name)) errors.push({ code: 'piece_duplicate', path: `pieces[${i}]`, message: `'${name}' is listed twice` }); ids.add(name);
+      if (!LIBRARY[name]?.block && !config.block && !customs.some(c => c.id === name)) errors.push({ code: 'piece_invalid', path: `pieces[${i}]`, message: `piece '${name}' has no block (set with.block)` });
     });
-    for (const s of config.slots) if (s.piece && !ids.has(s.piece)) errors.push({ code: 'piece_unknown', path: P, message: `slot '${s.id}' wants unknown piece '${s.piece}'` });
+    customs.forEach((p, i) => {
+      const at = `custom[${i}]`;
+      if (list(config.pieces).includes(p.id)) errors.push({ code: 'piece_duplicate', path: `${at}.id`, message: `'${p.id}' is also listed in pieces` });
+      ids.add(p.id);
+      if (!LIBRARY[p.id] && !Array.isArray(p.cells) && !Array.isArray(p.size)) errors.push({ code: 'piece_invalid', path: at, message: `piece '${p.id}' needs cells or size` });
+      if (!p.block && !LIBRARY[p.id]?.block && !config.block) errors.push({ code: 'piece_invalid', path: at, message: `piece '${p.id}' has no block (set its block or with.block)` });
+    });
+    // A library piece's own block (door, lamp) is no declared reference: it must be one of the document's blocks.
+    list(config.pieces).forEach((name, i) => { const blk = LIBRARY[name]?.block; if (blk && blocksIn.size && !blocksIn.has(blk) && !customs.some(c => c.id === name)) errors.push({ code: 'piece_block_unknown', path: `pieces[${i}]`, message: `piece '${name}' uses block '${blk}', which content.blocks does not declare` }); });
+    list(config.slots).forEach((s, i) => { if (s?.piece && !ids.has(s.piece)) errors.push({ code: 'piece_unknown', path: `slots[${i}].piece`, message: `slot '${s.id}' wants unknown piece '${s.piece}'` }); });
     return errors;
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.built ??= {}; s.next ??= 1; s.slots ??= {}; return s; };
     st(); // created at install, so reads later never add state
-    const pieces = new Map(config.pieces.map(p => {
-      const base = typeof p === 'string' ? { id: p, ...LIBRARY[p] } : { ...LIBRARY[p.id], ...p };
-      return [base.id, { ...base, cells: base.cells ?? box(...v3(base.size)), block: base.block ?? config.block }];
-    }));
+    const pieces = new Map([...config.pieces.map(id => ({ id, ...LIBRARY[id] })), ...config.custom.map(p => ({ ...LIBRARY[p.id], ...p }))].map(base =>
+      [base.id, { ...base, cells: base.cells ?? box(...v3(base.size)), block: base.block ?? config.block }]));
     const placer = blk => [...allItems(rt).values()].find(i => i.block === blk)?.id;
     const costOf = p => p.cost ?? (placer(p.block) && config.costPerCell ? [{ item: placer(p.block), count: p.cells.length * config.costPerCell }] : []);
     const snap = at => v3(at).map(v => Math.round(v / config.grid) * config.grid);

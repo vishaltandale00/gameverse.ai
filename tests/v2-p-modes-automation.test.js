@@ -58,8 +58,11 @@ test('automation: preflight rejects bad configs with stable codes', () => {
   const registry = new Registry(P), logic = buildLogic(registry, Logic);
   assert.ok(preflight(factoryDoc(), registry, logic).ok);
   const bad = factoryDoc({ belts: { belt_e: { speed: 2 }, belt_x: { dir: 'sideways' } }, machines: { press: { recipes: ['widget'] } }, sources: { drill: { item: 'iron' } }, sinks: { belt_e: {} }, inserters: { arm: { from: 'w' } } });
-  const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['automation_dir', 'automation_recipe', 'automation_source', 'automation_role']) assert.ok(codes.has(c), c);
+  const errors = preflight(bad, registry, logic).errors, at = (code, path) => errors.some(e => e.code === code && e.path.endsWith(path));
+  assert.ok(at('automation_role', 'with.sinks.belt_e'), JSON.stringify(errors));
+  // The role maps are typed (card params): directions are declared options and required, recipes and items references,
+  // so the kernel reports them at their fields (were automation_dir, automation_recipe and automation_source).
+  for (const [code, path] of [['param_missing', 'belts.belt_e.dir'], ['param_option', 'belts.belt_x.dir'], ['ref_unknown', 'machines.press.recipes[0]'], ['param_missing', 'machines.press.out'], ['param_missing', 'sources.drill.every'], ['param_missing', 'sources.drill.out'], ['param_missing', 'inserters.arm.to']]) assert.ok(at(code, path), `${code} at ${path}: ${JSON.stringify(errors)}`);
   const empty = doc({ systems: [{ use: 'gameplay.automation' }] });
   assert.ok(preflight(empty, registry, logic).errors.some(e => e.code === 'automation_empty'));
 });

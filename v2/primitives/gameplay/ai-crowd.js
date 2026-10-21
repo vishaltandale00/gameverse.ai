@@ -32,10 +32,14 @@ export default {
     provides: { events: ['crowd_spawn', 'crowd_panic'], vars: ['crowd.peds'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    rules: {
+      crowd_spawn_radius: { fields: ['spawnRadius'], message: 'spawnRadius is [inner, outer] with inner at most outer' },
+      crowd_despawn_radius: { fields: ['despawnRadius', 'spawnRadius'], message: 'despawnRadius is at least the outer spawn radius (spawnRadius[1])' },
+    },
   },
   validate(config) {
     const errors = [];
-    if (config.spawnRadius[0] > config.spawnRadius[1]) errors.push({ code: 'param_range', path: 'spawnRadius', message: 'min above max' });
+    if (config.spawnRadius[0] > config.spawnRadius[1]) errors.push({ code: 'crowd_spawn_radius', path: 'spawnRadius', message: 'min above max' });
     if (config.despawnRadius < config.spawnRadius[1]) errors.push({ code: 'crowd_despawn_radius', path: 'despawnRadius', message: 'despawnRadius must be at least the outer spawn radius' });
     return errors;
   },

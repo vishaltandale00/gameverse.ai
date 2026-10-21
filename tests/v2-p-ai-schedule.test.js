@@ -84,8 +84,10 @@ test('preflight rejects bad schedules with stable codes', () => {
   const { registry, logic } = catalogue([testSpace]);
   const d = doc();
   d.plot.characters[0].schedule = [{ from: 25, to: 3, at: [1, 1, 0] }, { from: 1, to: 4, zone: 'nowhere' }, { from: 5, to: 6 }, { from: 7, to: 8, at: [1, 1, 0], mood: 'x' }];
-  const codes = preflight(d, registry, logic).errors.map(e => e.code);
-  for (const c of ['schedule_hour', 'ref_unknown', 'schedule_place', 'schedule_overlap', 'param_unknown']) assert.ok(codes.includes(c), c);
+  const errors = preflight(d, registry, logic).errors, codes = errors.map(e => e.code);
+  for (const c of ['ref_unknown', 'schedule_place', 'schedule_overlap', 'param_unknown']) assert.ok(codes.includes(c), c);
+  // A slot's hours are declared 0..24 (card.data plot.characters schedule): hour 25 is the kernel's param_range at it (was schedule_hour).
+  assert.ok(errors.some(e => e.code === 'param_range' && e.path === 'plot.characters[0].schedule[0].from'), JSON.stringify(errors));
 });
 
 test('every character schedule and ai.schedule instance in v2/games preflights without errors', () => {

@@ -80,8 +80,10 @@ test('blocks.mine: replay and bad config codes', () => {
   assert.deepEqual(play(), play());
   const bad = world([{ use: 'gameplay.blocks.mine', with: { reach: 0, protect: ['moon'] } }]);
   bad.content.blocks[0].hardness = -1; bad.content.blocks[2].drops = [{ item: 'pearl', p: 3 }];
-  const c = codes(checkWith(bad));
-  for (const code of ['param_range', 'ref_unknown', 'block_invalid']) assert.ok(c.includes(code), code);
+  const r = checkWith(bad), c = codes(r);
+  for (const code of ['param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // Block hardness and drop chances are declared (card.data content.blocks): out of range is the kernel's param_range at them (was block_invalid).
+  for (const path of ['content.blocks[0].hardness', 'content.blocks[2].drops[0].p']) assert.ok(r.errors.some(e => e.code === 'param_range' && e.path === path), path);
   for (const x of gameInstances('gameplay.blocks.mine')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -186,7 +188,7 @@ test('farming: internal day clock, replay and bad config codes', () => {
 });
 
 // ---------- build.structure ----------
-const town = () => world([{ use: 'gameplay.build.structure', with: { pieces: ['wall', 'door', { id: 'hut', size: [2, 2, 1], cost: [{ item: 'stick', count: 2 }] }], block: 'planks', ownership: true, plots: [{ zone: 'lot', when: { item: 'deed' } }, { zone: 'yard' }], slots: [{ id: 'gate', zone: 'yard', piece: 'door', onFilled: [{ do: 'set_flag', flag: 'gate_built' }] }], refund: 0.5 } }], [{ item: 'b_planks', count: 20 }, { item: 'stick', count: 2 }]);
+const town = () => world([{ use: 'gameplay.build.structure', with: { pieces: ['wall', 'door'], custom: [{ id: 'hut', size: [2, 2, 1], cost: [{ item: 'stick', count: 2 }] }], block: 'planks', ownership: true, plots: [{ zone: 'lot', when: { item: 'deed' } }, { zone: 'yard' }], slots: [{ id: 'gate', zone: 'yard', piece: 'door', onFilled: [{ do: 'set_flag', flag: 'gate_built' }] }], refund: 0.5 } }], [{ item: 'b_planks', count: 20 }, { item: 'stick', count: 2 }]);
 
 test('build.structure: pieces, rotation, costs, plots, slots and demolish refunds', () => {
   assert.ok(checkWith(town()).ok, JSON.stringify(checkWith(town()).errors));
@@ -226,10 +228,13 @@ test('build.structure: replay and bad config codes', () => {
   assert.deepEqual(play(), play());
   const bad = town();
   const w = bad.systems[1].with;
-  w.pieces.push('castle', { id: 'blob' }, { id: 'wall', size: [1, 1, 1], block: 'marble' });
+  // Pieces have one shape each (DECISIONS 7): library names in pieces (a declared option), the document's own pieces in
+  // custom (typed objects). An unknown library name is the kernel's param_option (was piece_unknown); a custom piece
+  // also listed in pieces is piece_duplicate (was id_duplicate); its unknown block the kernel's ref_unknown.
+  w.pieces.push('castle'); w.custom.push({ id: 'blob' }, { id: 'wall', size: [1, 1, 1], block: 'marble' });
   w.slots.push({ id: 's2', zone: 'yard', piece: 'tower' });
   w.grid = 0;
-  const c = codes(checkWith(bad));
-  for (const code of ['piece_unknown', 'piece_invalid', 'id_duplicate', 'ref_unknown', 'param_range']) assert.ok(c.includes(code), code);
+  const r = checkWith(bad), at = (code, path) => r.errors.some(e => e.code === code && e.path.endsWith(path));
+  for (const [code, path] of [['param_option', 'with.pieces[2]'], ['piece_invalid', 'with.custom[1]'], ['piece_duplicate', 'with.custom[2].id'], ['ref_unknown', 'with.custom[2].block'], ['piece_unknown', 'with.slots[1].piece'], ['param_range', 'with.grid']]) assert.ok(at(code, path), `${code} at ${path}: ${JSON.stringify(r.errors)}`);
   for (const x of gameInstances('gameplay.build.structure')) assert.deepEqual(x.paramErrors, [], x.game);
 });

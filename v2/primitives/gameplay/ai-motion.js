@@ -29,6 +29,13 @@ export const MOTION_COMPONENT = {
   program: { type: 'list', of: { type: 'object', fields: STEP }, min: 1 },
   loop: { type: 'boolean' }, target: { type: 'string', effect: "entity the motion reacts to (default 'player')" },
 };
+/**
+ * Rule examples' fields left unset (null): every field of the strict form (predicates and nested point lists are not
+ * asked there). @param {Record<string, unknown>} fields @param {string[]} unasked
+ */
+const unset = (fields, unasked) => Object.fromEntries(Object.keys(fields).filter(k => !unasked.includes(k)).map(k => [k, null]));
+/** The archetype component this primitive owns. */
+const MOTION = { type: 'object', fields: MOTION_COMPONENT, effect: 'a motion program (program: steps) or one step written inline (kind and its fields)' };
 
 const st = rt => rt.store(ID);
 
@@ -38,13 +45,14 @@ export default {
     loop: { verbs: [], progress: ['motion_step', 'motion_done', 'swallow'] },
     // It moves every entity with a `motion` component through its motion program.
     drives: { control: 'ai', components: ['motion'], movement: true, events: ['motion_step', 'swallow'] },
+    components: { motion: MOTION },
     intent: 'Kinematic motion programs for movers (`motion` component): sequences of straight, sine, zigzag, dive, hover, turret, orbit, chase-steer, wander, split, snake, gravity-well, saucer, rock and spline-path steps, with arena/scroller variants and bounce/wrap/exit bounds. Ported from the shmup kit.',
     views: ['side', 'td', 'any'],
     params: {
       plane: { type: 'string', default: 'xy', options: ['xy', 'xz'], effect: 'the 2D plane motion runs in' },
       down: { type: 'list', of: { type: 'number' }, default: [0, 1], min: 2, max: 2, effect: 'plane vector of "down the screen" (scrollers advance this way)' },
       arena: { type: 'boolean', default: false, effect: 'arena variants (twin-stick/asteroids) instead of scroller variants' },
-      bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, required: true }, max: { type: 'list', of: { type: 'number' }, required: true } }, effect: 'plane rectangle used by hover, bounce, wrap and exit' },
+      bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 2, required: true }, max: { type: 'list', of: { type: 'number' }, min: 2, required: true } }, effect: 'plane rectangle used by hover, bounce, wrap and exit' },
       edges: { type: 'string', default: 'none', options: ['none', 'bounce', 'wrap', 'exit'], effect: 'what happens at the bounds' },
       scroll: n({ default: 40, min: 0, effect: 'scroll speed carried by turrets in scroller mode (units/s)' }),
       speed: n({ default: 60, min: 0, effect: 'default mover speed (units/s)' }),
@@ -53,16 +61,22 @@ export default {
     provides: { events: ['motion_step', 'motion_exit', 'motion_done', 'swallow', 'burst'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    rules: {
+      motion_bounds_missing: { fields: ['edges', 'bounds'], message: 'edges bounce, wrap and exit act at the bounds: set bounds with them', example: { doc: { systems: [{ use: ID, with: { edges: 'wrap' } }] } } },
+      motion_program_missing: { fields: ['content.archetypes[].components.motion.program', 'content.archetypes[].components.motion.kind'], message: 'a motion component has a program or an inline step kind', example: { 'components.motion': unset(MOTION_COMPONENT, ['until']) } },
+      motion_path_points: { fields: ['content.archetypes[].components.motion.program[].pts'], message: 'a path step has pts (its spline points)', example: { 'components.motion': { ...unset(MOTION_COMPONENT, ['until']), program: [{ ...unset(STEP, ['until', 'pts', 'vel']), kind: 'path' }] } } },
+    },
   },
   validate(config, doc, ctx) {
     const errors = [];
     if (['bounce', 'wrap', 'exit'].includes(config.edges) && !config.bounds) errors.push({ code: 'motion_bounds_missing', path: 'edges', message: `edges '${config.edges}' needs bounds` });
     (doc.content?.archetypes || []).forEach((a, i) => {
-      const m = a.components?.motion; if (m === undefined) return;
+      const m = a?.components?.motion; if (m === undefined) return;
       const path = `content.archetypes[${i}].components.motion`;
-      checkObj(MOTION_COMPONENT, m, path, errors, ctx);
+      // The component's shape is its declaration (card.components.motion), which preflight enforces.
+      if (!m || typeof m !== 'object' || Array.isArray(m)) return;
       if (!m.program && !m.kind) errors.push({ code: 'motion_program_missing', path, message: 'motion needs a program or a kind' });
-      (m.program || []).forEach((s, j) => { if (s?.kind === 'path' && !s.pts) errors.push({ code: 'motion_path_points', path: `${path}.program[${j}].pts`, message: 'a path step needs pts' }); });
+      (Array.isArray(m.program) ? m.program : []).forEach((s, j) => { if (s?.kind === 'path' && !s.pts) errors.push({ code: 'motion_path_points', path: `${path}.program[${j}].pts`, message: 'a path step needs pts' }); });
     });
     return errors;
   },
@@ -79,19 +93,6 @@ export default {
     rt.provide('motion', { state: id => st(rt).agents?.[id] ?? null, segments: id => st(rt).agents?.[id]?.segs ?? null });
   },
 };
-
-function checkObj(fields, v, path, errors, ctx) {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) { errors.push({ code: 'param_type', path, message: 'must be an object' }); return; }
-  for (const k of Object.keys(v)) if (!(k in fields)) errors.push({ code: 'param_unknown', path: `${path}.${k}`, message: `unknown field '${k}'`, hint: Object.keys(fields).join(', ') });
-  for (const [k, s] of Object.entries(fields)) {
-    const x = v[k]; if (x === undefined) { if (s.required) errors.push({ code: 'param_missing', path: `${path}.${k}`, message: `required ${s.type}` }); continue; }
-    if (s.type === 'number' || s.type === 'integer') { if (!Number.isFinite(x) || (s.type === 'integer' && !Number.isInteger(x)) || (s.min !== undefined && x < s.min) || (s.max !== undefined && x > s.max)) errors.push({ code: 'param_range', path: `${path}.${k}`, message: `bad ${k}` }); }
-    else if (s.type === 'string' && (typeof x !== 'string' || (s.options && !s.options.includes(x)))) errors.push({ code: 'param_option', path: `${path}.${k}`, message: `'${x}' is not one of ${s.options?.join('|')}` });
-    else if (s.type === 'predicate') ctx.checkPredicate(x, `${path}.${k}`, errors);
-    else if (s.type === 'ref' && !ctx.indexes[s.to]?.has(x)) errors.push({ code: 'ref_unknown', path: `${path}.${k}`, message: `unknown ${s.to} '${x}'` });
-    else if (s.type === 'list' && s.of?.type === 'object') { if (!Array.isArray(x)) errors.push({ code: 'param_type', path: `${path}.${k}`, message: 'must be a list' }); else x.forEach((y, j) => checkObj(s.of.fields, y, `${path}.${k}[${j}]`, errors, ctx)); }
-  }
-}
 
 // ---------- plane helpers ----------
 function planeOf(config) {

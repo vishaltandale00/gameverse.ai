@@ -8,6 +8,7 @@
 //               clear of hostiles, with a `risk` of dying on re-entry
 //   blink       short teleport along facing, stopped by walls
 //   effects     runs `fx` only
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { frames, grantInvuln, v3, add, mul, len, sub, posOf, facingOf, like, spaceOf, distance, hostile, teamOf, resolveWho, combat, service, displace, round, err } from './combat-lib.js';
 
 const KEY = 'gameplay.ability.active';
@@ -20,20 +21,25 @@ export default {
     intent: 'Active abilities on a button with cooldowns, charges and resource costs: screen-clearing bombs with i-frames, timed shields, hyperspace jumps with risk, blinks, or any effects.',
     views: ['any'],
     params: {
-      abilities: { type: 'list', min: 1, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, kind: { type: 'string', options: KINDS, required: true }, action: { type: 'string', effect: 'player verb (default: the id)' },
+      abilities: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
+        id: { type: 'string', pattern: ID_PATTERN, required: true }, kind: { type: 'string', options: KINDS, required: true }, action: { type: 'string', pattern: ID_PATTERN, effect: 'player verb (default: the id)' },
         cooldown: { type: 'number', default: 1, min: 0, max: 600, unit: 's' }, charges: { type: 'integer', default: 0, min: 0, max: 99, effect: 'starting charges; 0 = unlimited (cooldown only)' },
         maxCharges: { type: 'integer', default: 5, min: 1, max: 99 }, rechargeSec: { type: 'number', default: 0, min: 0, max: 3600, unit: 's', effect: 'one charge back every N seconds (0 = only from pickups)' },
-        cost: { type: 'object', fields: { resource: { type: 'string', required: true }, amount: { type: 'number', default: 10, min: 0 } } },
+        cost: { type: 'object', fields: { resource: { type: 'ref', to: 'pool', required: true, effect: 'the gameplay.resource pool spent' }, amount: { type: 'number', default: 10, min: 0 } } },
         iframes: { type: 'number', default: 0, min: 0, max: 30, unit: 's' }, sec: { type: 'number', default: 2, min: 0, max: 60, unit: 's' },
         radius: { type: 'number', default: 0, min: 0, max: 10000, unit: 'units' }, damage: { type: 'number', default: 8, min: 0 }, bossFrac: { type: 'number', default: 0.05, min: 0, max: 1 },
         cancelBullets: { type: 'boolean', default: true }, distance: { type: 'number', default: 3, min: 0, max: 1000 }, risk: { type: 'number', default: 0, min: 0, max: 1 },
-        area: { type: 'json', effect: '[[x0,y0(,z0)],[x1,y1(,z1)]] for hyperspace' }, safeRadius: { type: 'number', default: 3, min: 0 },
+        area: { type: 'list', min: 2, max: 2, of: { type: 'list', min: 2, max: 3, of: { type: 'number' } }, effect: '[[x0,y0(,z0)],[x1,y1(,z1)]] for hyperspace' }, safeRadius: { type: 'number', default: 3, min: 0 },
         fx: { type: 'effects', default: [] },
       } } },
     },
     provides: { events: ['ability_used', 'ability_used:*', 'ability_empty', 'ability_ready', 'bomb', 'shield_up', 'hyperspace', 'blink'], vars: ['ability.*'], services: ['abilities'] },
     defines: [{ kind: 'active_ability', in: 'abilities' }],
+    rules: {
+      ability_action_duplicate: { fields: ['abilities[].action', 'abilities[].id'], message: 'each ability has its own player verb (its action, else its id): no two abilities share one' },
+      ability_charges_invalid: { fields: ['abilities[].charges', 'abilities[].maxCharges'], message: 'charges (the starting charges) is at most maxCharges',
+        example: { abilities: [{ id: 'bomb', kind: 'bomb', action: null, cooldown: null, charges: 3, maxCharges: 1, rechargeSec: null, iframes: null, sec: null, radius: null, damage: null, bossFrac: null, cancelBullets: null, distance: null, risk: null, safeRadius: null }] } },
+    },
   },
   logic(logic) {
     logic.effect('use_ability', { refs: e => [['active_ability', e.ability]], run: (e, rt, c) => { const t = resolveWho(rt, e.who, c); if (t) rt.service('abilities').use(t, e.ability, { free: Boolean(e.free) }); } });
@@ -41,11 +47,11 @@ export default {
   },
   validate(config) {
     const errors = [], actions = new Set();
-    config.abilities.forEach((a, i) => {
+    (Array.isArray(config.abilities) ? config.abilities : []).forEach((a, i) => {
+      if (!a || typeof a !== 'object') return;
       const verb = a.action ?? a.id;
       if (actions.has(verb)) errors.push(err('ability_action_duplicate', `with.abilities[${i}].action`, `two abilities on '${verb}'`)); actions.add(verb);
       if (a.charges > a.maxCharges) errors.push(err('ability_charges_invalid', `with.abilities[${i}].charges`, 'charges exceed maxCharges'));
-      if (a.area !== undefined && !(Array.isArray(a.area) && a.area.length === 2 && a.area.every(p => Array.isArray(p) && p.every(Number.isFinite)))) errors.push(err('ability_area_invalid', `with.abilities[${i}].area`, 'area must be [[min...],[max...]]'));
     });
     return errors;
   },

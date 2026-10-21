@@ -8,6 +8,10 @@ import { take, bag } from './inventory.js';
 import { item as itemDef, lookDir, eyeOf, cellDist, cellOf, isVec, api as spaceApi, inBox, add, v3 } from './items-lib.js';
 
 const KEY = 'gameplay.blocks.place';
+/** The part of content.items placing reads (over the kernel's base entries). */
+const ITEMS = { type: 'list', of: { type: 'object', open: true, fields: {
+  block: { type: 'ref', to: 'block', effect: 'the block it places (and that drops it by default)' }, place: { type: 'ref', to: 'archetype', effect: 'the prop it places instead of a block' },
+} } };
 const N6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
 
 export default {
@@ -32,6 +36,7 @@ export default {
     provides: { events: ['block_placed', 'block_placed:*', 'prop_placed', 'prop_placed:*', 'place_denied', 'blocks_set', 'item_selected'], actions: ['place', 'select_item'] },
     requires: { capabilities: ['editCells', 'raycast'] },
     reads: ['content.items', 'content.blocks'],
+    data: { 'content.items': ITEMS },
   },
   logic(logic) {
     logic.effect('set_blocks', {
@@ -46,14 +51,6 @@ export default {
         rt.emit('blocks_set', { space: sid, block: e.block ?? null, box: e.box ?? null, cells: e.cells?.length ?? null });
       },
     });
-  },
-  validate(config, doc) {
-    const errors = [], bl = new Set((doc.content?.blocks || []).map(b => b.id)), arch = new Set((doc.content?.archetypes || []).map(a => a.id));
-    (doc.content?.items || []).forEach((it, i) => {
-      if (it.block != null && !bl.has(it.block)) errors.push({ code: 'ref_unknown', path: `content.items[${i}].block`, message: `unknown block '${it.block}'` });
-      if (it.place != null && !arch.has(it.place)) errors.push({ code: 'ref_unknown', path: `content.items[${i}].place`, message: `unknown archetype '${it.place}'` });
-    });
-    return errors;
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.selected ??= {}; s.ghost ??= {}; return s; };

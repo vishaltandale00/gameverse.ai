@@ -7,11 +7,24 @@
 // Players build the factory with any cell-editing primitive; the layout is
 // discovered from the space (cellsIn) and kept current from its edit log.
 // Throughput is published per item as vars (delivered, produced, per-minute rate).
-import { err, r6, cellKey, keyCell, v3, has } from './modes-lib-util.js';
+import { err, r6, cellKey, keyCell, has } from './modes-lib-util.js';
 
 const ID = 'gameplay.automation';
 const DIRS = { e: [1, 0, 0], w: [-1, 0, 0], n: [0, 1, 0], s: [0, -1, 0], u: [0, 0, 1], d: [0, 0, -1] };
-const dirOf = d => (typeof d === 'string' ? DIRS[d] : v3(d));
+const dirOf = d => DIRS[d];
+/** A neighbour direction: east, west, north, south, up, down. */
+const DIR = { type: 'string', options: Object.keys(DIRS), required: true };
+/** A role map: cell (content.blocks) id -> its settings. @param {Record<string, any>} fields @param {string} effect */
+const roleMap = (fields, effect) => ({ type: 'object', default: {}, values: { type: 'object', fields }, effect });
+const ROLES = ['belts', 'inserters', 'machines', 'sources', 'sinks'];
+/** The recipe fields a machine reads (content.recipes, kernel kind 'recipe'). */
+const RECIPES = { type: 'list', of: { type: 'object', open: true, fields: {
+  inputs: { type: 'list', of: { type: 'object', open: true, fields: { item: { type: 'ref', to: 'item' }, count: { type: 'integer', min: 1 } } } },
+  output: { type: 'object', open: true, fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } },
+  time: { type: 'number', min: 0, unit: 's' },
+} } };
+/** A rule example: the document's systems replaced by one automation instance with these params. @param {Record<string, unknown>} w */
+const alone = w => ({ doc: { systems: [{ use: ID, with: w }] } });
 
 export default {
   id: ID,
@@ -20,12 +33,12 @@ export default {
     intent: 'Factory automation on editable cells: conveyor belts with item spacing and back-pressure, inserters, recipe machines with buffers, item sources and sinks, layout read from the cell grid and its edit log, and per-item throughput vars.',
     views: ['td', 'iso', '3p'],
     params: {
-      belts: { type: 'object', open: true, default: {}, effect: 'cell id -> {dir: e|w|n|s|u|d|[dx,dy,dz], speed cells/s}' },
-      inserters: { type: 'object', open: true, default: {}, effect: 'cell id -> {from: dir, to: dir, swingSec, stack}' },
-      machines: { type: 'object', open: true, default: {}, effect: 'cell id -> {recipes: [recipe ids], speed, out: dir, buffer}' },
-      sources: { type: 'object', open: true, default: {}, effect: 'cell id -> {item, every s, out: dir, count}' },
-      sinks: { type: 'object', open: true, default: {}, effect: 'cell id -> {accept: [items] (all when omitted), capacity}' },
-      area: { type: 'json', effect: '[[min],[max]] cell box to scan at start (default: the whole space)' },
+      belts: roleMap({ dir: DIR, speed: { type: 'number', min: 0, default: 2, unit: 'cells/s' } }, 'cell id -> the belt: the way it carries items and how fast'),
+      inserters: roleMap({ from: DIR, to: DIR, swingSec: { type: 'number', min: 0, default: 0.5, unit: 's' }, stack: { type: 'integer', min: 1, default: 1, effect: 'items per swing' } }, 'cell id -> the inserter: where it takes from and puts to'),
+      machines: roleMap({ recipes: { type: 'list', of: { type: 'ref', to: 'recipe' }, min: 1, required: true }, speed: { type: 'number', min: 0, default: 1, effect: 'crafting speed multiplier' }, out: DIR, buffer: { type: 'integer', min: 1, default: 10, effect: 'input and output buffer per item' } }, 'cell id -> the machine: the recipes it crafts and where it pushes outputs'),
+      sources: roleMap({ item: { type: 'ref', to: 'item', required: true }, every: { type: 'number', min: 0.01, required: true, unit: 's' }, out: DIR, count: { type: 'integer', min: 1, default: 1 } }, 'cell id -> the source: the item it emits, how often and where'),
+      sinks: roleMap({ accept: { type: 'list', of: { type: 'ref', to: 'item' }, effect: 'the items it takes (all when omitted)' }, capacity: { type: 'integer', min: 1, effect: 'items it stores (unlimited when omitted)' } }, 'cell id -> the sink (chest, delivery point)'),
+      area: { type: 'list', min: 2, max: 2, of: { type: 'list', of: { type: 'integer' }, min: 2, max: 3 }, effect: '[[min],[max]] cell box to scan at start (default: the whole space)' },
       beltCapacity: { type: 'integer', default: 4, min: 1, max: 16, effect: 'items per belt cell' },
       spacing: { type: 'number', default: 0.25, min: 0.05, max: 1, effect: 'minimum gap between items on a belt (cells)' },
       rateWindowSec: { type: 'number', default: 60, min: 1, max: 3600, unit: 's' },
@@ -33,24 +46,25 @@ export default {
     provides: { events: ['item_produced', 'item_produced:*', 'item_delivered', 'item_delivered:*', 'machine_started', 'item_lost'], vars: ['auto.delivered.*', 'auto.produced.*', 'auto.rate.*', 'auto.items'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.recipes'],
+    data: { 'content.recipes': RECIPES },
+    rules: {
+      automation_empty: { fields: ROLES, message: 'at least one cell id is mapped to a role (belts, inserters, machines, sources or sinks)', example: alone({}) },
+      automation_role: { fields: ROLES, message: 'a cell id has one role: it is a key of one role map only', example: { doc: { systems: [{ use: ID, with: { belts: { conveyor: { dir: 'e' } }, sinks: { conveyor: {} } } }], content: { blocks: [{ id: 'conveyor', name: 'Conveyor' }] }, player: null } } },
+      automation_block_unknown: { fields: ROLES, message: 'the role maps\' keys are content.blocks ids (when the document declares blocks)', example: { doc: { systems: [{ use: ID, with: { sinks: { crate: {} } } }], content: { blocks: [{ id: 'stone', name: 'Stone' }] }, player: null } } },
+    },
   },
   logic(logic) {
     logic.effect('insert_item', { check: (e, path, errors) => { if (!e.item || !Array.isArray(e.at)) errors.push(err('effect_invalid', path, 'insert_item needs item and at')); }, run: (e, rt) => { for (let i = 0; i < (e.count ?? 1); i++) rt.service('automation').insert(e.at, e.item); } });
   },
   validate(config, doc) {
-    const errors = [], recipes = new Set((doc.content?.recipes || []).map(r => r.id)), blocks = doc.content?.blocks ? new Set(doc.content.blocks.map(b => b.id)) : null;
-    const roles = ['belts', 'inserters', 'machines', 'sources', 'sinks'];
-    if (roles.every(r => !Object.keys(config[r]).length)) errors.push(err('automation_empty', 'with', 'map at least one cell id to a role'));
+    const errors = [], blocks = Array.isArray(doc.content?.blocks) ? new Set(doc.content.blocks.map(b => b?.id)) : null;
+    const map = role => (config[role] && typeof config[role] === 'object' ? config[role] : {});
+    if (ROLES.every(r => !Object.keys(map(r)).length)) errors.push(err('automation_empty', 'with', 'map at least one cell id to a role'));
     const seen = new Map();
-    for (const role of roles) for (const [id, d] of Object.entries(config[role])) {
+    for (const role of ROLES) for (const id of Object.keys(map(role))) {
       const path = `with.${role}.${id}`;
       if (seen.has(id)) errors.push(err('automation_role', path, `cell '${id}' is already a ${seen.get(id)}`)); seen.set(id, role);
-      if (blocks && !blocks.has(id)) errors.push(err('ref_unknown', path, `unknown block '${id}'`));
-      for (const k of ['dir', 'from', 'to', 'out']) if (d[k] !== undefined && !(typeof d[k] === 'string' ? DIRS[d[k]] : Array.isArray(d[k]) && d[k].every(Number.isInteger) && d[k].some(Boolean))) errors.push(err('automation_dir', `${path}.${k}`, `${k} must be e|w|n|s|u|d or a non-zero integer offset`));
-      if (role === 'belts' && d.dir === undefined) errors.push(err('automation_dir', `${path}.dir`, 'belts need dir'));
-      if (role === 'inserters' && (d.from === undefined || d.to === undefined)) errors.push(err('automation_dir', path, 'inserters need from and to'));
-      if (role === 'machines') { if (!Array.isArray(d.recipes) || !d.recipes.length) errors.push(err('automation_recipe', `${path}.recipes`, 'machines need recipes')); for (const r of d.recipes || []) if (!recipes.has(r)) errors.push(err('automation_recipe', `${path}.recipes`, `unknown recipe '${r}'`)); if (d.out === undefined) errors.push(err('automation_dir', `${path}.out`, 'machines need out')); }
-      if (role === 'sources' && (!d.item || !(d.every > 0) || d.out === undefined)) errors.push(err('automation_source', path, 'sources need item, every > 0 and out'));
+      if (blocks && !blocks.has(id)) errors.push(err('automation_block_unknown', path, `unknown block '${id}'`, `blocks: ${[...blocks].slice(0, 20).join(', ')}`));
     }
     return errors;
   },
@@ -59,7 +73,7 @@ export default {
     const space = () => rt.space(sid);
     const st = () => { const s = rt.store(ID); s.items ??= {}; s.mach ??= {}; s.ins ??= {}; s.src ??= {}; s.sink ??= {}; s.delivered ??= {}; s.produced ??= {}; s.window ??= []; return s; };
     const recipe = id => (rt.doc.content?.recipes || []).find(r => r.id === id);
-    const outputsOf = r => (r.outputs || (r.output ? [r.output] : [])).map(o => ({ item: o.item, count: o.count ?? 1 }));
+    const outputsOf = r => (r.output ? [{ item: r.output.item, count: r.output.count ?? 1 }] : []);
     const inputsOf = r => (r.inputs || []).map(i => ({ item: i.item, count: i.count ?? 1 }));
     const roleOf = block => (config.belts[block] ? 'belt' : config.inserters[block] ? 'inserter' : config.machines[block] ? 'machine' : config.sources[block] ? 'source' : config.sinks[block] ? 'sink' : null);
     const defOf = (role, block) => ({ belt: config.belts, inserter: config.inserters, machine: config.machines, source: config.sources, sink: config.sinks })[role][block];

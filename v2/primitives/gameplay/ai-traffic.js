@@ -37,10 +37,14 @@ export default {
     provides: { events: ['traffic_spawn', 'traffic_collision', 'traffic_panic', 'light_changed'], vars: ['traffic.cars'] },
     requires: { capabilities: ['position'], services: ['roadgraph'] },
     reads: ['content.archetypes'],
+    rules: {
+      traffic_spawn_radius: { fields: ['spawnRadius'], message: 'spawnRadius is [inner, outer] with inner at most outer' },
+      traffic_despawn_radius: { fields: ['despawnRadius', 'spawnRadius'], message: 'despawnRadius is at least the outer spawn radius (spawnRadius[1])' },
+    },
   },
   validate(config) {
     const errors = [];
-    if (config.spawnRadius[0] > config.spawnRadius[1]) errors.push({ code: 'param_range', path: 'spawnRadius', message: 'min above max' });
+    if (config.spawnRadius[0] > config.spawnRadius[1]) errors.push({ code: 'traffic_spawn_radius', path: 'spawnRadius', message: 'min above max' });
     if (config.despawnRadius < config.spawnRadius[1]) errors.push({ code: 'traffic_despawn_radius', path: 'despawnRadius', message: 'despawnRadius must be at least the outer spawn radius' });
     return errors;
   },
