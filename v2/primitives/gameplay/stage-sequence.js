@@ -48,6 +48,8 @@ const GOAL_FIELDS = {
 export default {
   id: ID,
   card: {
+    // Levels mode: a wrapper that sequences the stages of another mode; its bot plays the wrapped mode stage by stage.
+    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete' }, lose: { param: null, end: 'endOnGameOver' }, bot: 'stages' },
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {

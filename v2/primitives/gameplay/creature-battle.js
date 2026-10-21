@@ -320,6 +320,8 @@ export function engine(ctx) {
 export default {
   id: ID,
   card: {
+    // Creature-battle mode: menu turns against wild or trainer creatures, started by start_battle (encounters, beats).
+    mode: { loop: 'creature-battle', interaction: 'menu', opponent: 'ai-rival', space: ['engine.space.none'], needs: { content: ['content.species', 'content.moves', 'content.types'], participants: null }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'balance' },
     intent: 'Turn-based creature battles (wild, trainer, leader, champion) entered from any overworld into a battle space: moves, type chart, STAB, crits, stat stages, statuses, priority/speed order, switching, items, capture, escape, experience, move learning and evolution.',
     views: ['ui', 'any'],
     params: {

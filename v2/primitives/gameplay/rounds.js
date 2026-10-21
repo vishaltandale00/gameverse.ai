@@ -13,6 +13,8 @@ const PHASES = ['waiting', 'intro', 'fight', 'ko', 'round_end', 'match_end'];
 export default {
   id: ID,
   card: {
+    // Versus mode: rounds against AI fighters, won on the match result.
+    mode: { loop: 'versus', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.arena2d', ['position', 'distance', 'overlap']], needs: { content: ['content.archetypes'], participants: 'fighters' }, win: { param: 'onWin', end: 'endGame' }, lose: { param: 'onLose', end: 'endGame' }, bot: 'versus' },
     intent: 'Versus match rules: round intro, round timer, KO (health or a predicate), double KO, time over decided by health, perfect rounds, best-of-N rounds with draws, or stock mode with respawns; match result effects and scoring. Fighting, arena and duel games of any space use it.',
     views: ['any'],
     params: {

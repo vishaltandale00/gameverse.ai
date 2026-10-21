@@ -45,6 +45,8 @@ export default {
   card: {
     // The player's units take turns: the player joins the player-controlled side when no side lists it.
     engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },
+    // Tactics mode: the player's side against AI sides, won when one side remains.
+    mode: { loop: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.none', ['position']], needs: { content: ['content.archetypes'], participants: 'sides' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },
     intent: 'Turn order for any turn-based mode: alternate side or unit turns, initiative order, or simultaneous commit-then-resolve; action points, phases, data-defined actions with range, line of sight, cover-aware hit and crit chance, cooldowns, overwatch reactions, AI sides, downed/bleed-out or permadeath, victory when one side remains. Works on grids, continuous spaces and engine.space.none.',
     views: ['board', 'td', 'iso', 'ui', '3p'],
     params: {

@@ -6,6 +6,8 @@ export default {
   id: 'plot.storyboard',
   solverKey, progress,
   card: {
+    // Story mode: beats fire as the player explores and talks; an ending (or an end_game effect) wins.
+    mode: { loop: 'story', interaction: 'avatar-realtime', opponent: 'none', space: ['engine.space.tilemap', 'engine.space.graph', ['position']], needs: { content: ['plot.storyboard'], participants: null }, win: { ending: 'plot.endings' }, lose: { param: null }, bot: 'story' },
     intent: 'Runs the story: acts made of beats that fire when their trigger predicate holds (after prerequisite beats) and apply effects such as dialogue, items, flags, quests and endings.',
     views: ['any'],
     params: { sequentialActs: { type: 'boolean', default: true, effect: 'beats in act N+1 wait until every non-optional beat in act N has fired' } },
