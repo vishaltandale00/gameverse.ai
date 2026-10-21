@@ -146,6 +146,7 @@ export function playtest(doc, registry, logic, opts = {}) {
   // The objective score doing nothing reaches (intro beats, ambient events): progress is only what play adds to it.
   let idleScore = null;
   try { idleScore = round(goal.score(idle)); } catch {}
+  const idleCounts = { ...idle.state.counts };
   if (idle.state.status === 'won') problems.push(problem('trivially_won', 'plot.endings', `the game is won after ${idle.state.time.toFixed(1)} s with no input`, { hint: 'endings must require player action' }));
   if (idle.state.status === 'lost' && idle.state.time < 2) problems.push(problem('instant_loss', 'systems', `the game is lost after ${idle.state.time.toFixed(2)} s with no input`, { hint: 'give the player a grace period: spawn hazards away from the start' }));
 
@@ -227,7 +228,7 @@ export function playtest(doc, registry, logic, opts = {}) {
     ok: !problems.some(p => p.severity === 'error'),
     winnable: Boolean(win),
     win: win ? { frames: win.frames, seconds: +(win.frames * DT).toFixed(2), ending: win.ending, path: win.path.map(r => r.o ?? `${r.label}×${r.n}`), replayed } : null,
-    idle: { status: idle.state.status, seconds: +idle.state.time.toFixed(2), score: idleScore },
+    idle: { status: idle.state.status, seconds: +idle.state.time.toFixed(2), score: idleScore, counts: idleCounts },
     explored: archive.size, rounds, framesSimulated: b.usedSteps, bestScore: best.score, travel: travel ? 'steer' : null,
     losses, eventsFired: fired, verbsUsed: verbs, timeline, sample, exhaustive: false, budget: b.report(), problems,
   };

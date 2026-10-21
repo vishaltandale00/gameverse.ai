@@ -39,7 +39,9 @@ function fraction(value, { c, target }) {
  * Build the objective of a document: { score(rt) → number, leaves, hooks }.
  * Primitives may contribute `progress(rt, config, instance) → number` (top level or on the card).
  */
-export function objective(doc, registry, logic, { weights = PROGRESS_EVENTS } = {}) {
+export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENTS } = {}) {
+  // The document's primitives declare what their loop's progress is (card.loop.progress): those events count too.
+  const weights = { ...Object.fromEntries(loopEvents(doc, registry).map(e => [e, 2])), ...base };
   const leaves = goalLeaves(doc, logic);
   const hooks = instancesOf(doc).map(x => ({ x, p: registry.get(x.inst?.use) })).map(({ x, p }) => ({ x, fn: p?.progress || p?.card?.progress })).filter(h => typeof h.fn === 'function');
   const wild = Object.entries(weights).filter(([k]) => k.endsWith(':'));
@@ -76,4 +78,17 @@ export function plotZones(doc) {
   (doc.plot?.quests || []).forEach((q, i) => (q.objectives || []).forEach((o, j) => visit(o, `plot.quests[${i}].objectives[${j}]`)));
   (doc.plot?.endings || []).forEach((e, i) => visit(e.when, `plot.endings[${i}].when`));
   return out;
+}
+
+/**
+ * The progress events the document's primitives declare for their loops (card.loop.progress, and card.mode's
+ * when it lists them): the game's core loop, as its collection of primitives defines it. Wildcards end in ':'.
+ */
+export function loopEvents(doc, registry) {
+  const out = new Set();
+  for (const x of instancesOf(doc)) {
+    const card = registry.get(x.inst?.use)?.card;
+    for (const e of [...(card?.loop?.progress || []), ...(card?.mode?.progress || [])]) if (typeof e === 'string' && e) out.add(e);
+  }
+  return [...out];
 }

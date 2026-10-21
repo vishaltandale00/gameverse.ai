@@ -6,6 +6,7 @@
 // Problems from v2/verify carry { code, path, message, hint, severity, stage } (PROBLEM_CODES).
 import { preflight } from '../kernel/document.js';
 import { solve } from '../verify/solve.js';
+import { loopEvents } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { prop } from '../kernel/guards.js';
@@ -66,45 +67,44 @@ async function verifyModule() {
 
 // The publish gate (ARCHITECTURE.md §1.5, §6.2): the game runs and is viable. A playtest agent plays it headless;
 // any thrown step, NaN state, runaway entities or event storm, or a game that is lost the moment it starts, blocks
-// publishing. When the playbots' report is given, the game must also be playable: the player can act, the bot its
-// modes name (card.mode.bot) plays it, and progress toward a win happens. No time-to-finish requirement.
+// publishing. When the playbots' report is given, the game must also be playable: the player can act, the loop its
+// primitives declare (card.loop.progress) happens from play, and play makes progress beyond what idling reaches.
+// Bots the cards name are stronger players when present, never a requirement. No time-to-finish requirement.
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss']);
 // Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
 /** @type {Set<string | undefined>} */
 const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
 /** A strategy run as v2/verify reports it. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string }} BotRun */
-/** @param {unknown} v @returns {v is { score?: { high?: unknown } }} */
-const isTimeline = v => typeof v === 'object' && v !== null;
 /**
  * @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems]
  * @param {{ ran?: BotRun[] } | null} [strategies] the strategies stage's report; given, the playability checks apply
+ * @param {string[]} [loop] the progress events the document's primitives declare (verify/objective.js loopEvents)
  * @returns {{ viable: boolean, viability: string | null }}
  */
-export function viability(play, problems = [], strategies) {
+export function viability(play, problems = [], strategies, loop = []) {
   const why = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage)).map(p => `${p.code}: ${p.message}`);
-  if (strategies !== undefined && !why.length) why.push(...unplayable(play, problems, strategies));
+  if (strategies !== undefined && !why.length) why.push(...unplayable(play, problems, strategies, loop));
   return why.length ? { viable: false, viability: why.slice(0, 3).join('; ') } : { viable: true, viability: null };
 }
 
-/** @param {unknown} play @param {VerifyProblem[]} problems @param {{ ran?: BotRun[] } | null} strategies @returns {string[]} */
-function unplayable(play, problems, strategies) {
-  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: unknown, idle?: unknown } | null} */ (isObjLike(play) ? play : null);
+/** @param {unknown} play @param {VerifyProblem[]} problems @param {{ ran?: BotRun[] } | null} strategies @param {string[]} loop @returns {string[]} */
+function unplayable(play, problems, strategies, loop) {
+  const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: { score?: { high?: unknown } } | null, idle?: { score?: unknown, counts?: Record<string, number> }, eventsFired?: Record<string, number> } | null} */ (isObjLike(play) ? play : null);
   if (!pt) return ['not_played: the playtest agent did not play the game'];
   const stuck = problems.find(p => p.code === 'stuck_state');
   if (stuck || (typeof pt.explored === 'number' && pt.explored <= 1)) return [`cannot_act: ${stuck?.message || 'no input moves the game past its first state'}`];
-  const bots = (strategies?.ran || []).filter(r => String(r.reason || '').startsWith('mode '));
-  if (!bots.length) return ['no_mode_bot: nothing in the game declares its core loop (card.mode), so no bot can prove it plays'];
-  // Progress is objective score play reaches beyond what doing nothing reaches (an intro beat is not progress).
-  const high = isTimeline(pt.timeline) ? Number(/** @type {{ score?: { high?: unknown } }} */ (pt.timeline).score?.high ?? NaN) : NaN;
-  const idle = Number(/** @type {{ idle?: { score?: unknown } }} */ (pt).idle?.score ?? 0);
-  const progressed = Boolean(pt.winnable) || (Number.isFinite(high) && high > idle);
   /** @type {string[]} */
   const out = [];
-  for (const b of bots) {
-    if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);
-    else if (b.metrics && 'skipped' in b.metrics) out.push(`mode_absent: the ${b.id} bot (${b.reason}) found nothing to play (${b.metrics.skipped})`);
-    else if (!(b.proven || []).length && !progressed) out.push(`no_progress: the ${b.id} bot (${b.reason}) and the explorer made no progress toward a win`);
-  }
+  for (const b of strategies?.ran || []) if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);
+  // The core loop happens: an event the primitives declare as their loop's progress fires from play (more than idling fires it).
+  const fired = pt.eventsFired || {}, idle = pt.idle?.counts || {};
+  const played = (/** @type {string} */ e) => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0));
+  if (!loop.length) out.push('loop_undeclared: no primitive in the game declares its loop (card.loop.progress), so nothing defines what playing it is');
+  else if (!loop.some(played)) out.push(`loop_absent: none of the loop's events (${loop.slice(0, 6).join(', ')}) happened from play`);
+  // Progress is objective score play reaches beyond what doing nothing reaches (an intro beat is not progress).
+  const high = Number(pt.timeline?.score?.high ?? NaN), idleScore = Number(pt.idle?.score ?? 0);
+  const won = Boolean(pt.winnable) || (strategies?.ran || []).some(b => (b.proven || []).length);
+  if (!won && !(Number.isFinite(high) && high > idleScore)) out.push('no_progress: play makes no progress toward a win beyond what idling reaches');
   return out;
 }
 /** @param {unknown} v @returns {v is Record<string, unknown>} */
@@ -136,7 +136,7 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
       /** @type {Verification} */
       const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
         playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })) } : null,
-        ...(playtestMs ? viability(pt, problems, r?.strategies ?? null) : viability(pt, problems)),
+        ...(playtestMs ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
       // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.
