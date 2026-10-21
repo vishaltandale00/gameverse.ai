@@ -244,6 +244,7 @@ export default {
   card: {
     intent: 'Generates a mirrored, one-tile-wide, dead-end-free maze with hunter houses, wrapping tunnels and pellets, and proves every corridor and pellet reachable from the start.',
     views: ['td', 'board'],
+    spaces: ['engine.space.grid'],
     params: {
       size: { type: 'string', default: 'classic', effect: `maze size: ${Object.keys(SIZES).join('|')} or a key of params.sizes` },
       style: { type: 'string', default: 'classic', effect: `corridor shape: ${Object.keys(STYLES).join('|')} or a key of params.styles` },
@@ -262,7 +263,7 @@ export default {
       placePlayer: { type: 'boolean', default: true, effect: 'move the player to the maze start when it spawns' },
       attempts: { type: 'integer', min: 0, max: 16, default: 4, effect: 'sub-seeds before the complete-lattice fallback' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
+    provides: { content: ['cells', 'entities'], events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
     validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],

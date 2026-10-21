@@ -12,6 +12,7 @@ const range = { type: 'list', of: { type: 'number', min: 0, max: 1 }, min: 2, ma
 const card = {
   intent: 'Assigns biomes (plains, forest, desert, snow, swamp...) from temperature and moisture, with zones pinned to chosen biomes. Biomes set surface blocks/materials and tree density, and are queryable with biomeAt and the biome predicate.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     biomes: {
       type: 'list', min: 1, required: true, effect: 'biome table',
@@ -31,7 +32,7 @@ const card = {
     climateScale: { type: 'number', min: 32, max: 20000, default: 600, unit: 'm', effect: 'size of climate cells (larger = broader biomes)' },
     lapse: { type: 'number', min: 0, max: 2, default: 0.35, effect: 'temperature drop per terrain amplitude of altitude above sea' },
   },
-  provides: { services: ['biomeAt'], events: [] },
+  provides: { content: ['biomes'], services: ['biomeAt'], events: [] },
   defines: [{ kind: 'biome', in: 'biomes' }],
   reads: [],
 };

@@ -13,6 +13,7 @@ import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 const card = {
   intent: 'Scatters props by density: forests, rocks, crops, bushes, debris or pickups such as chests and campfires, filtered by zone, biome, slope and water, clumped or evenly spaced, kept off roads and buildings.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     props: {
       type: 'list', min: 1, required: true, effect: 'prop kinds',
@@ -31,7 +32,7 @@ const card = {
     avoid: { type: 'boolean', default: true, effect: 'keep props off roads, built lots and structures' },
     maxPerTile: { type: 'integer', min: 1, max: 1000000, default: 20000, effect: 'cap per generated tile (bounds lazy generation cost)' },
   },
-  provides: { events: [] },
+  provides: { content: ['props'], events: [] },
   reads: [],
 };
 

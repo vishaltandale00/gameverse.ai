@@ -13,6 +13,7 @@ import { addBridgeObjects } from './worlds3d-lib-prefab.js';
 const card = {
   intent: 'Builds a road network linking zones: terrain-following roads with lanes, bridges over water and grade limits; feeds the road graph that traffic, crowds and route finding use.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     links: {
       type: 'list', min: 1, required: true, effect: 'roads to build',
@@ -33,13 +34,44 @@ const card = {
     sidewalkBlock: { type: 'string', default: 'concrete', effect: 'voxel: sidewalk block' },
     deckBlock: { type: 'string', default: 'planks', effect: 'voxel: bridge deck block' },
   },
-  provides: { services: ['roadgraph'], events: [] },
+  provides: { content: ['road-network'], services: ['roadgraph'], events: [] },
   reads: [],
 };
+
+const ROAD_BLOCKS = [['asphalt', '#3a3a3a'], ['road_line', '#e8e2c8'], ['concrete', '#a9a9a9'], ['planks', '#a0763f']];
 
 export default {
   id: 'engine.generate.roads',
   card,
+  /**
+   * Planner hook (v2/planner/world.js): roads linking the space's zones in order: the order of a route another
+   * primitive declares (a list param of zone refs, such as race checkpoints) when it names at least two of them,
+   * else the zone order; zones off the route join their nearest routed zone. null with fewer than two zones.
+   */
+  scaffold(space, doc, { registry = null } = {}) {
+    if (!card.spaces.includes(space.use)) return null;
+    const zones = (space.zones || []).filter(z => zoneCenter(z)), ids = new Set(zones.map(z => z.id));
+    if (zones.length < 2) return null;
+    let route = null;
+    for (const inst of doc.systems || []) {
+      for (const [k, sch] of Object.entries(registry?.get(inst.use)?.card.params || {})) {
+        const v = inst.with?.[k];
+        if (sch.type === 'list' && sch.of?.type === 'ref' && sch.of.to === 'zone' && Array.isArray(v) && v.filter(x => ids.has(x)).length >= 2) { route = v.filter(x => ids.has(x)); break; }
+      }
+      if (route) break;
+    }
+    route ??= zones.map(z => z.id);
+    const links = [], linked = (a, b) => links.some(l => (l.from === a && l.to === b) || (l.from === b && l.to === a));
+    for (let i = 1; i < route.length; i++) if (route[i] !== route[i - 1] && !linked(route[i - 1], route[i])) links.push({ from: route[i - 1], to: route[i], width: 8 });
+    const at = id => zoneCenter(zones.find(z => z.id === id));
+    for (const z of zones) if (!route.includes(z.id)) {
+      const c = zoneCenter(z), near = route.reduce((b, id) => (Math.hypot(at(id)[0] - c[0], at(id)[1] - c[1]) < Math.hypot(at(b)[0] - c[0], at(b)[1] - c[1]) ? id : b));
+      links.push({ from: near, to: z.id, width: 6 });
+    }
+    const out = { with: { links } }, known = new Set((doc.content?.blocks || []).map(b => b?.id));
+    if (space.use === 'engine.space.voxel' && known.size) { const add = ROAD_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id.replace('_', ' '), solid: true, color })); if (add.length) out.content = { blocks: add }; }
+    return out;
+  },
   validate(config) {
     return (config.links || []).flatMap((l, i) => (l.from === l.to ? [{ code: 'road_link_self', path: `with.links[${i}]`, message: `link from '${l.from}' to itself` }] : []));
   },

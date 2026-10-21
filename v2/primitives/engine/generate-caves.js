@@ -11,6 +11,7 @@ const B = 16; // feature bucket size (cells)
 const card = {
   intent: 'Carves caves into a voxel world: noise caverns, winding worm tunnels, big chambers, lava at depth, and pinned rooms for zones (optionally tunnelled to the surface so they can be reached).',
   views: ['any'],
+  spaces: ['engine.space.voxel'],
   params: {
     density: { type: 'number', min: 0, max: 1, default: 0.3, effect: 'how much of the underground the noise caverns hollow out' },
     minY: { type: 'integer', min: 1, max: 512, default: 4, unit: 'cells', effect: 'lowest carved cell' },
@@ -28,7 +29,7 @@ const card = {
     cavernRadius: { type: 'list', of: { type: 'number', min: 2, max: 64 }, min: 2, max: 2, default: [6, 14], unit: 'cells' },
     crust: { type: 'integer', min: 0, max: 32, default: 4, unit: 'cells', effect: 'noise caverns stay this far below the surface (worms may break through)' },
   },
-  provides: { services: ['caves'], events: [] },
+  provides: { content: ['caves'], services: ['caves'], events: [] },
   reads: [],
 };
 

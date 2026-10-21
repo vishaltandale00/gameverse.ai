@@ -21,6 +21,7 @@ export default {
   card: {
     intent: 'Generates a room-and-corridor dungeon with keys always placed before their locks, a boss room, loot in dead ends, and proves it solvable from the start.',
     views: ['td', '3p', 'iso', 'side'],
+    spaces: ['engine.space.tilemap', 'engine.space.grid'],
     params: {
       rooms: { type: 'integer', min: 3, max: 80, default: 12 },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },
@@ -40,11 +41,30 @@ export default {
       placePlayer: { type: 'boolean', default: true },
       attempts: { type: 'integer', min: 0, max: 16, default: 6 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
+    provides: { content: ['cells', 'rooms', 'entities'], events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
     defines: [],
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],
     validates: ['dungeon_area_missing', 'dungeon_area_small', 'dungeon_keys_many'],
+  },
+  /**
+   * Planner hook (v2/planner/world.js), grid and top-down tilemap spaces: as many rooms as the space's slot grid
+   * holds (3..12, room sides shrunk until at least three fit), walls of the document's first plain solid block
+   * (else a declared 'stone'), chests declared when the document has none. null on a side-view tilemap.
+   */
+  scaffold(space, doc, { registry = null } = {}) {
+    if (!this.card.spaces.includes(space.use)) return null;
+    const config = { ...(registry ? Object.fromEntries(Object.entries(registry.get(space.use)?.card.params || {}).filter(([, v]) => v.default !== undefined).map(([k, v]) => [k, v.default])) : {}), ...(space.with || {}) };
+    if (space.use === 'engine.space.tilemap' && config.mode !== 'topdown') return null;
+    const [W, H] = Array.isArray(config.size) ? config.size : [0, 0];
+    let pick = null;
+    for (const max of [9, 7, 5, 4]) { const slot = max + 3, cap = Math.floor(W / slot) * Math.floor(H / slot); if (cap >= 3) { pick = { roomSize: [Math.min(5, max), max], rooms: Math.min(12, cap) }; break; } }
+    if (!pick) return null;
+    const blocks = doc.content?.blocks || [], add = { blocks: [], archetypes: [] };
+    const wall = blocks.find(b => b?.id && b.solid !== false && !(b.tags || []).some(t => ['hazard', 'liquid', 'one_way', 'oneway'].includes(t)))?.id ?? (add.blocks.push({ id: 'stone', name: 'Stone', solid: true }), 'stone');
+    if (!(doc.content?.archetypes || []).some(a => a?.id === 'chest')) add.archetypes.push({ id: 'chest', components: { name: 'Chest' } });
+    const content = Object.fromEntries(Object.entries(add).filter(([, v]) => v.length));
+    return { with: { ...pick, palette: { wall } }, ...(Object.keys(content).length ? { content } : {}) };
   },
   logic(logic) {
     logic.effect('open_lock', { run: (e, rt) => rt.caches.dungeonLocks?.get(e.lock)?.(rt) });

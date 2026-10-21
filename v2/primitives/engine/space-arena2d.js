@@ -19,6 +19,7 @@ export default {
   card: {
     intent: 'A bounded continuous 2D arena with kinematic box bodies: solid blocks, one-way platforms, wrap-around or kill edges, a moving scroll window, blast zones, and per-pose hurt/hit/push box sets for fighting. For fighters, shmups, asteroids-likes and side runners.',
     views: ['side', 'td'],
+    needs: { content: ['structures'] },
     params: {
       size: { type: 'list', of: { type: 'number', min: 1, max: 1e6 }, min: 2, max: 2, default: [16, 9], unit: 'u', effect: 'arena width and height from the origin' },
       gravity: { type: 'number', default: 0, unit: 'u/s²', effect: 'vertical gravity for ballistic bodies and gravityAt (negative pulls down; 0 for top-down)' },

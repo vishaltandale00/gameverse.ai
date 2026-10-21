@@ -10,6 +10,7 @@ import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks, z
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     octaves: { type: 'integer', min: 1, max: 8, default: 5, effect: 'noise detail layers' },
     scale: { type: 'number', min: 16, max: 4096, default: 256, unit: 'm', effect: 'horizontal size of the largest hills' },
@@ -38,7 +39,7 @@ const card = {
       },
     },
   },
-  provides: { events: ['generated'], services: ['surface'] },
+  provides: { content: ['terrain'], events: ['generated'], services: ['surface'] },
   reads: [],
 };
 
@@ -74,9 +75,23 @@ function erode(hm, N, cellM, passes, seed, amplitude) {
   }
 }
 
+const TERRAIN_BLOCKS = [['bedrock', '#2b2b2b'], ['stone', '#7d7d7d'], ['dirt', '#7a5532'], ['grass', '#5f9e3a'], ['sand', '#d8c78a'], ['gravel', '#8a8580']];
+
 export default {
   id: 'engine.generate.terrain.noise',
   card,
+  /**
+   * Planner hook (v2/planner/world.js): rolling ground for a mesh3d or voxel space, every zone kept dry land, gentle
+   * enough for roads and vehicles. On a voxel document that lists its blocks, the terrain blocks it lacks are declared.
+   */
+  scaffold(space, doc) {
+    if (!card.spaces.includes(space.use)) return null;
+    const voxel = space.use === 'engine.space.voxel', land = (space.zones || []).filter(z => zoneBox(z)).map(z => z.id);
+    const out = { with: { amplitude: voxel ? 10 : 12, scale: voxel ? 96 : 256, landBias: 0.6, ...(land.length ? { land } : {}) } };
+    const known = new Set((doc.content?.blocks || []).map(b => b?.id));
+    if (voxel && known.size) { const add = TERRAIN_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), solid: true, color })); if (add.length) out.content = { blocks: add }; }
+    return out;
+  },
   validate(config, doc, ctx, inst) {
     const errors = checkBlocks(doc, inst, Object.entries(config.blocks || {}).map(([k, id]) => [`with.blocks.${k}`, id]));
     if (config.extent && !(config.extent[2] > config.extent[0] && config.extent[3] > config.extent[1])) errors.push({ code: 'terrain_extent_invalid', path: 'with.extent', message: 'extent must be [x0, z0, x1, z1] with x1 > x0 and z1 > z0' });

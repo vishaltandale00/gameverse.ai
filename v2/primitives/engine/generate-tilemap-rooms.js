@@ -56,6 +56,7 @@ export default {
   card: {
     intent: 'Fills authored 2D room rects (side view or top-down) with walls, platforms, pits, water, hazards and features, and proves every room traversable for the stated movement abilities.',
     views: ['side', 'td'],
+    spaces: ['engine.space.tilemap'],
     params: {
       rooms: { type: 'list', of: room, min: 1, required: true },
       requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities the proof assumes everywhere' },
@@ -75,7 +76,7 @@ export default {
       doorWarp: { type: 'boolean', default: true, effect: 'stepping onto a door tile moves the player to the paired door (exit gates apply)' },
       keepClear: { type: 'list', default: [], of: { type: 'list', of: { type: 'integer' }, min: 4, max: 4 }, effect: 'rects [x0,y0,x1,y1) in tiles left empty (regions other primitives own, e.g. a falling-piece board); each must be reachable from the start' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
+    provides: { content: ['cells', 'rooms'], events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],

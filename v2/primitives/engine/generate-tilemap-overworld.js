@@ -45,6 +45,7 @@ export default {
   card: {
     intent: 'Generates a top-down RPG overworld from an area graph: towns with buildings and interiors, winding routes and caves with grass, ledges, trainers and items, gyms with switch puzzles, leagues; warps link them and every map and warp is proven reachable.',
     views: ['td'],
+    spaces: ['engine.space.tilemap'],
     params: {
       areas: { type: 'list', of: area, min: 1, required: true },
       start: { type: 'string', effect: 'starting area id (default the first)' },
@@ -61,7 +62,7 @@ export default {
       autoWarp: { type: 'boolean', default: true, effect: 'stepping on an exit or door tile moves the walker to its pair' },
       placePlayer: { type: 'boolean', default: true },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
+    provides: { content: ['cells', 'rooms', 'zones', 'entities'], events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
     defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
     problems: ['exit_unreachable', 'door_unreachable', 'switch_unreachable', 'trainer_unreachable', 'item_unreachable', 'npc_unreachable', 'leader_unreachable', 'champion_unreachable', 'map_unreachable', 'warp_unpaired', 'area_too_big'],

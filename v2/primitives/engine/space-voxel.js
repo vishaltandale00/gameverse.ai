@@ -17,6 +17,7 @@ export default {
   card: {
     intent: 'Chunked editable 3D block world (Minecraft-like). Terrain, caves, ores, water, roads, cities and structures come from its generators lazily per chunk; only edits are saved. Supports walking/jumping pathfinding, voxel raycasts, collide-and-slide bodies, light and optional flowing fluids.',
     views: ['1p', '3p', 'iso'],
+    needs: { content: ['terrain'] },
     params: {
       chunk: { type: 'list', of: { type: 'integer', min: 8, max: 128 }, min: 3, max: 3, default: [16, 64, 16], effect: 'chunk size in cells [x, y, z]; generation and meshing work per chunk' },
       height: { type: 'integer', min: 32, max: 512, default: 128, unit: 'cells', effect: 'world height; y is in [0, height)' },

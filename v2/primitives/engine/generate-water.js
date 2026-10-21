@@ -11,6 +11,7 @@ import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDist
 const card = {
   intent: 'Water: sea up to a level, inland lakes carved into basins, and river water (with flow direction). Fills voxel worlds with water blocks; answers waterDepthAt for swimming, boats and navigation.',
   views: ['any'],
+  spaces: ['engine.space.mesh3d', 'engine.space.voxel'],
   params: {
     level: { type: 'number', min: -1000, max: 10000, unit: 'm', effect: 'sea surface height (default: the terrain/space sea level)' },
     lakes: { type: 'integer', min: 0, max: 256, default: 0, effect: 'inland lakes placed in local low ground above sea level' },
@@ -21,7 +22,7 @@ const card = {
     flowSpeed: { type: 'number', min: 0, max: 20, default: 1.5, unit: 'm/s', effect: 'river current speed at the source (slows toward the mouth)' },
     block: { type: 'string', default: 'water', effect: 'voxel block used for water cells' },
   },
-  provides: { services: ['waterDepthAt'], events: [] },
+  provides: { content: ['water'], services: ['waterDepthAt'], events: [] },
   reads: [],
 };
 
