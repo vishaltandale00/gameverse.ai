@@ -51,7 +51,6 @@ function scripted({ title = 'Torch Show' } = {}) {
     // A field-level re-ask: the title field gets fixed.
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, /^title/.test(p.description) ? `The ${title}` : null])));
     if (name.endsWith('_frame')) return JSON.stringify({ title, logline: 'Juggle.', premise: 'Juggle for a crowd.', spaces: {}, player: { archetype: req.schema.schema.properties.player.properties.archetype.enum?.[0] ?? 'player_side', zone: '' }, endings: [] });
-    if (name.endsWith('_systems')) return JSON.stringify({ systems: {}, extra_systems: [] });
     if (name.endsWith('_cast')) return JSON.stringify({ archetypes: [], items: [], characters: [] });
     if (name.startsWith('game_outline')) return '{}';
     return '{}';

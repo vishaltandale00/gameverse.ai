@@ -95,7 +95,6 @@ test('chess with creatures: a model wrong once on species types is corrected by 
       return [k, m ? scaffold.content.species[Number(m[1])].types : null];
     })));
     if (name === 'frame') return JSON.stringify({ title: 'Pocket Gambit', logline: 'l', premise: 'p', spaces: {}, player: req.schema.schema.properties.player ? { archetype: req.schema.schema.properties.player.properties.archetype.enum?.[0] ?? 'hero', zone: req.schema.schema.properties.player.properties.zone.enum?.[0] ?? '' } : undefined, endings: [] });
-    if (name === 'systems') return JSON.stringify({ systems: {}, extra_systems: [] });
     if (name === 'cast') return JSON.stringify({ archetypes: pack('archetypes').filter(a => a.kind !== 'player').map(a => ({ id: a.id, kind: a.kind, name: a.id, components: { other_json: JSON.stringify(a.components || {}) } })), spawns: [], items: [], characters: [] });
     if (name === 'section_content_species') return JSON.stringify({ section_content_species: speciesForm(scaffold, /use only the document's content\.types ids/.test(req.user) ? s => s.types : invented, 6) });
     if (name === 'section_content_moves') return JSON.stringify({ section_content_moves: pack('moves').map(m => ({ accuracy: null, priority: null, effect: null, ...m })) });

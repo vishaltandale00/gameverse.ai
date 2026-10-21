@@ -89,7 +89,7 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
   const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
   const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
   const value = {
-    title: 'Mossdeep', logline: 'x', premise: 'y', spaces: { [space.id]: { zones } }, systems: {}, extra_systems: [],
+    title: 'Mossdeep', logline: 'x', premise: 'y', spaces: { [space.id]: { zones } }, systems: {},
     archetypes: [{ id: 'slime', kind: 'enemy', name: 'Slime', components: { ...blank, ...(comps.health ? { health: { max: 5, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } : {}), other_json: '{"faction":"ooze"}' } }],
     ...(form.schema.schema.properties.spawns ? { spawns: [{ id: 'slimes', archetype: 'slime', zone: zones.at(-1).id, min: 2, max: 3, respawnSec: null, when_json: null }] } : {}),
     items: [{ id: 'gem', name: 'Gem', kind: 'misc', desc: 'shiny', value: 5, more_json: null }],
@@ -129,7 +129,7 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
   const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
   const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const base = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, systems: {}, extra_systems: [], items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }], characters: [], acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id }, archetypes: [] };
+  const base = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, systems: {}, items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k', value: null, more_json: null }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p', value: null, more_json: null }], characters: [], acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id }, archetypes: [] };
   const hollow = { ...base };
   const full = { ...base, archetypes: [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { ...blank, health: comps.health ? { max: 4, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } : null, other_json: comps.health ? null : '{"health":{"max":4}}' } }],
     spawns: zones.slice(1).map((z, i) => ({ id: `ghouls_${i}`, archetype: 'ghoul', zone: z.id, min: 2, max: 2, respawnSec: 0, when_json: null })) };
@@ -147,7 +147,7 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   }
 });
 
-test('small forms: asked in parallel; a repair re-asks only the failing fields (fieldForm); a form the default model fails twice escalates, even past the last round', async () => {
+test('small forms: each checked as soon as it is written; a repair re-asks only the failing fields (fieldForm); a form the default model fails twice escalates', async () => {
   const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: '', narrative: true, mashup: [] } };
   const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
@@ -166,11 +166,11 @@ test('small forms: asked in parallel; a repair re-asks only the failing fields (
     const name = req.schema.name;
     // A field form: each slot is one failing field, described by its form path.
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, cast[String(p.description).split(/[.[:]/)[0]] ?? null])));
-    return JSON.stringify(name.endsWith('_frame') ? frame : name.endsWith('_systems') ? { systems: {}, extra_systems: [] } : name.endsWith('_cast') ? cast : story);
+    return JSON.stringify(name.endsWith('_frame') ? frame : name.endsWith('_cast') ? cast : story);
   };
-  // The cast is hollow twice (the whole form, then its failing field): the frame, params and story are asked once; the
-  // third try goes to the stronger writer, as a field form too. maxRounds 1 would end after the second try: the
-  // escalation still gets its round.
+  // The cast is hollow twice (the whole form, then its failing field), each time caught by its content contract right
+  // after it was written: the frame, params and story are asked once; the third try goes to the stronger writer, as a
+  // field form too, all within the first round.
   const hollow = { archetypes: [], spawns: [], items, characters: [] };
   const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items, characters: [] };
   const writer = fakeWriter([reply(hollow)]), escalate = fakeWriter([reply(full)], { model: 'stronger' });
@@ -187,8 +187,13 @@ test('small forms: asked in parallel; a repair re-asks only the failing fields (
   assert.match(escalate.calls[0].schema.name, /cast_fields$/);
   assert.equal(escalate.calls[0].effort, 'low');
   assert.ok(r.doc.content.archetypes.some(a => a.id === 'ghoul'));
-  assert.deepEqual(r.rounds.map(x => x.kind), ['procedural', 'model', 'model_repair', 'model_repair'], 'one round past maxRounds for the escalation');
-  assert.ok(r.rounds.at(-1).groups.some(g => g.startsWith('cast*')), 'the round records the escalated form');
+  assert.deepEqual(r.rounds.map(x => x.kind), ['procedural', 'model'], 'the cast settled within the first round');
+  assert.ok(r.rounds[1].groups.some(g => g.startsWith('cast*')), 'the round records the escalated form');
+  assert.deepEqual(r.rounds[1].checks.find(c => c.group === 'cast'), { group: 'cast', phase: 'content', asks: 3, problems: [] });
+  // Params are one form per primitive, never one form for all of them, and nothing adds primitives there.
+  assert.ok(!asked.includes('systems'));
+  assert.deepEqual(asked.filter(n => n.startsWith('params_')).sort(), form.groups.filter(g => g.phase === 'params').map(g => g.id).sort());
+  assert.ok(!JSON.stringify(writer.calls.map(c => c.schema)).includes('extra_systems'));
 });
 
 test('content packs: the preset ships valid species, moves, types and cards; the model only themes them', async () => {

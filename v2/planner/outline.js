@@ -5,15 +5,16 @@
 // (which fixes fields and never removes a primitive) and the rest back to the model, field by field, for a bounded
 // number of rounds. What still fails is reported exactly, for the planner to re-plan (replan.js).
 import { readFileSync, readdirSync } from 'node:fs';
-import { DOC_SCHEMA } from '../kernel/document.js';
+import { DOC_SCHEMA, preflight } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
 import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
-import { outlineForm, formPath, groupOfPath, fieldForm } from './outline-form.js';
+import { outlineForm, formPath, groupOfPath, fieldForm, paramsGroupId } from './outline-form.js';
+import { dependencyLayers, loopMechanicOf } from './build.js';
 import { preset, coreOf, zoneStart, wireCore } from './presets.js';
 import { isAvatar } from './play-spec.js';
-import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
+import { populateProblems, placeContent, unreadReaders, contractText, contractsFor } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
@@ -42,9 +43,13 @@ import { isObj, isList, isStr, obj, list, objects, str, prop } from '../kernel/g
 /** @typedef {{ id: string, title?: string, when?: Record<string, unknown>, after?: string[], do: Effect[] }} OutlineBeat */
 /** @typedef {{ id: string, title: string, beats: OutlineBeat[] }} OutlineAct */
 /**
+ * One small form of the first round, checked as soon as it was written: how many times it was asked (the first ask,
+ * field re-asks, the escalation) and the problem codes left. @typedef {{ group: string, phase: string, asks: number, problems: string[] }} FormCheck
+ */
+/**
  * One entry of writeOutline's round log.
  * @typedef {{ kind: string, ok?: boolean, errors?: number, error?: string, codes?: string[], fixes?: number, form?: boolean, worldAdded?: string[], placed?: number,
- *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number }} OutlineRound
+ *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number, checks?: FormCheck[] }} OutlineRound
  */
 /** A problem as repair feedback reads it (preflight, boot, verification, content). @typedef {{ code: string, path?: string, message: string, hint?: unknown }} ProblemLike */
 /** @typedef {import('./content.js').ContentProblem} ContentProblem */
@@ -136,6 +141,8 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
       }
       if (moved) return { selection: moved, attempts, agency: true };
     }
+    // A collection built on its space (build.js) keeps it: no offline re-selection swaps the world; the lack is a gap.
+    if (selection.build) break;
     excluded = [...excluded, current.spaces[0].use];
     const next = await selectPrimitives({ decomposition, registry, decisions: null, excludeSpaces: excluded });
     if (!next.spaces.length || [...kept(selection)].some(id => !kept(next).has(id))) break;
@@ -207,9 +214,6 @@ ${[...chosen].filter(id => registry.has(id)).map(id => cardText({ id, .../** @ty
 
 Shapes of the document sections these primitives read:
 ${dataShapes(registry, [...chosen]).join('\n')}
-
-Other primitives (add through extra_systems only if the idea needs one):
-${registry.cards().filter(c => !chosen.has(c.id) && !c.id.startsWith('graphics.') && !c.id.startsWith('engine.space.') && !c.id.startsWith('engine.generate.')).map(c => `${c.id}: ${String(c.intent || '').slice(0, 110)}`).join('\n') || '(none)'}
 
 Example documents (excerpts; the form maps onto this shape):
 ${fewShot(registry, { maxChars: 6000 }).join('\n')}`;
@@ -330,7 +334,9 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     const g = g0.id === 'story' ? form.storyGroup(cast()) || g0 : g0;
     const w = (failures[g.id] || 0) >= 2 && escalate ? escalate : writer;
     if (w === escalate) escalated.add(g.id);
-    const current = Object.fromEntries(g.keys.map(k => [k, prop(merged, k)]).filter(([, v]) => v !== undefined));
+    // A params form is one primitive's slot: its current value is that slot only.
+    const current = g.sub ? { systems: { [g.sub]: prop(prop(merged, 'systems'), g.sub) } } : Object.fromEntries(g.keys.map(k => [k, prop(merged, k)]).filter(([, v]) => v !== undefined));
+    const part = g.use ? `the params of ${g.use} (systems.${g.sub})` : g.keys.join(', ');
     // Field-level repair: only the failing fields go back (each slot holds that field's schema, its enums included).
     const paths = problems.map(p => formPath(p.path, draft)).filter(fp => fp && groupOfPath([g], fp));
     const ff = problems.length && paths.length === problems.length ? fieldForm(g.schema, paths) : null;
@@ -341,19 +347,103 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       ? `${base}\n\nFix ONLY these fields of the outline (use these ids where you refer to other parts: ${known()}). Each failed checks:\n${describeProblems(problems, null)}\nCurrent values:\n${JSON.stringify(Object.fromEntries(fields.slots.map(s => [s.path, valueAt(merged, s.path)]))).slice(0, 8000)}`
       : `${base}
 
-Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are written separately; keep zone ids from the scaffold and use these ids where you refer to other parts: ${known()}).${pack !== undefined ? `\nA mechanically valid default is provided; keep its ids and numbers valid, theme its names and flavour to the idea, and add or drop entries only as the idea needs:\n${JSON.stringify(pack).slice(0, 6000)}` : ''}${problems.length ? `\n\nYour previous answer for this part failed checks (fix each one):\n${describeProblems(problems, null)}\nPrevious answer:\n${JSON.stringify(current).slice(0, 12000)}` : ''}`;
+Fill ONLY this part of the outline now: ${part} (other parts are written separately; keep zone ids from the scaffold and use these ids where you refer to other parts: ${known()}).${pack !== undefined ? `\nA mechanically valid default is provided; keep its ids and numbers valid, theme its names and flavour to the idea, and add or drop entries only as the idea needs:\n${JSON.stringify(pack).slice(0, 6000)}` : ''}${problems.length ? `\n\nYour previous answer for this part failed checks (fix each one):\n${describeProblems(problems, null)}\nPrevious answer:\n${JSON.stringify(current).slice(0, 12000)}` : ''}`;
     try {
       const reply = await /** @type {Writer} */ (w).complete({ system, user: ask, schema: fields ? fields.schema : g.schema, ...(w === escalate ? { effort: 'low' } : {}) });
-      const part = parseReply(reply.text);
+      const answer = parseReply(reply.text);
       model = reply.model;
-      if (fields) merged = fields.apply(merged, part);
-      else if (isObj(part)) for (const k of g.keys) if (part[k] !== undefined) merged[k] = part[k];
+      if (fields) merged = fields.apply(merged, answer);
+      else if (g.sub) { const slot = prop(prop(answer, 'systems'), g.sub); if (slot !== undefined) merged.systems = { ...obj(merged.systems), [g.sub]: slot }; }
+      else if (isObj(answer)) for (const k of g.keys) if (answer[k] !== undefined) merged[k] = answer[k];
       calls.push({ group: g.id, ms: reply.ms ?? Math.round(performance.now() - t0), model: reply.model || null, ...(w === escalate ? { escalated: true } : {}), ...(fields ? { fields: fields.slots.length } : {}) });
-      return { ok: true, value: part };
+      return { ok: true, value: answer };
     } catch (error) {
       calls.push({ group: g.id, ms: Math.round(performance.now() - t0), model: null, error: String(prop(error, 'message') || error).slice(0, 120) });
       return { ok: false, error };
     }
+  };
+  /**
+   * The draft a filled (or partly filled) form makes, as every round builds it before repair: the player and the
+   * collection are the structure's, and so is the loop's wiring. @param {unknown} value
+   */
+  const draftOf = value => {
+    const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
+    draft.schema = DOC_SCHEMA; draft.seed = seed;
+    keepPlayer(draft, skeleton.doc);
+    keepCollection(draft, skeleton.doc);
+    // The collection's loop wiring is code's: whatever the model wrote, the declared win and losses end the game.
+    Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
+    return draft;
+  };
+  // The core loop's primitives: their params forms come first, and problems no form owns go back to them and the cast.
+  const loopMechanic = loopMechanicOf(decomposition);
+  const loopIds = (selection.mechanics.find(m => m.id === loopMechanic)?.primitives || []).filter(id => groups.some(g => g.use === id));
+  /** References into sections the content forms write later: a params form is not asked to fix those yet. */
+  const LATER = /^unknown (archetype|item|character|quest|dialogue|recipe|beat|model|block) /;
+  /**
+   * One primitive's params, checked once its form is written: its instance against its card params (and its validator)
+   * in a preflight of the partial document, and its param content contracts. Structure (capabilities, requirements,
+   * vocabulary owners) is the collection's and is not the form's to fix. @param {string} id
+   * @returns {{ problems: ProblemLike[], draft: unknown }}
+   */
+  const paramsCheck = id => {
+    const draft = draftOf(merged);
+    const i = list(draft.systems).findIndex(x => prop(x, 'use') === id);
+    if (i < 0) return { problems: [], draft };
+    const at = `systems[${i}].with`;
+    const own = preflight(draft, registry, logic).errors.filter(e => (e.path === at || e.path.startsWith(`${at}.`) || e.path.startsWith(`${at}[`)) && e.code !== 'vocabulary_owner_missing' && !(e.code === 'ref_unknown' && LATER.test(e.message)));
+    const contracts = contractsFor(registry, [id]).filter(c => c.need === 'param');
+    return { problems: [...own, ...(contracts.length ? populateProblems(draft, registry, { contracts }) : [])], draft };
+  };
+  /**
+   * A content form, checked once it is written: the content contracts whose section it writes (the cast: archetypes and
+   * items; a section form: its section; the story: quests and the plot sections it writes), after the deterministic
+   * placement of defined archetypes. @param {import('./outline-form.js').FormGroup} g @returns {{ problems: ProblemLike[], draft: unknown }}
+   */
+  const contentCheck = g => {
+    const draft = placeContent(draftOf(merged), registry).doc;
+    const contracts = form.contracts.filter(c => c.need !== 'param' && groupOfPath([g], formPath(c.need === 'section' ? String(c.at) : `content.${c.need}`, draft)));
+    return { problems: contracts.length ? populateProblems(draft, registry, { contracts }) : [], draft };
+  };
+  /** @type {FormCheck[]} */
+  const checks = [];
+  /**
+   * Ask one small form and check it at once; on problems re-ask only its failing fields (fieldForm), and a form the
+   * default model failed twice goes to the escalation writer (that form only). What is left goes to the round's gate.
+   * @param {import('./outline-form.js').FormGroup} g @param {(() => { problems: ProblemLike[], draft: unknown }) | null} check
+   */
+  const settle = async (g, check) => {
+    /** @type {ProblemLike[]} */
+    let problems = [];
+    /** @type {unknown} */
+    let draft = null;
+    let asks = 0;
+    while (asks < 2 + (escalate ? 1 : 0)) {
+      asks++;
+      const r = await askGroup(g, problems, draft);
+      // A call that failed leaves the form as it was: the round's gate reports what is missing.
+      if (!r.ok) { problems = [{ code: 'model_failed', path: '$', message: String(prop(r.error, 'message') || r.error).slice(0, 160) }]; break; }
+      if (!check) break;
+      ({ problems, draft } = check());
+      if (!problems.length) break;
+      failures[g.id] = (failures[g.id] || 0) + 1;
+    }
+    checks.push({ group: g.id, phase: g.phase, asks, problems: [...new Set(problems.map(p => p.code))] });
+  };
+  /**
+   * The first round, built form by form: the frame; each primitive's params in dependency order (the loop's first, then
+   * what it requires or what reads its outputs; independent ones in parallel), each checked before the next layer; then
+   * each content contract section, checked at once; then the story.
+   */
+  const buildForms = async () => {
+    const of = (/** @type {string} */ phase) => groups.filter(g => g.phase === phase);
+    const frame = Promise.all(of('frame').map(g => settle(g, null)));
+    const params = of('params');
+    for (const layer of dependencyLayers(registry, params.map(g => String(g.use)), loopIds))
+      await Promise.all(layer.flatMap(id => params.filter(g => g.use === id).map(g => settle(g, () => paramsCheck(id)))));
+    await frame;
+    await Promise.all(of('content').map(g => settle(g, () => contentCheck(g))));
+    for (const g of of('story')) await settle(g, () => contentCheck(g));
   };
   /** @type {Map<string, ProblemLike[]>} */
   let pending = new Map();
@@ -366,11 +456,15 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     const t = performance.now();
     calls = [];
     if (groups.length) {
-      // Round 0 asks every group (wave 1 in parallel, then wave 2); later rounds only the groups with problems.
-      const todo = round === 0 ? groups : groups.filter(g => pending.has(g.id));
-      for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [], pendingDraft)));
-      const ms = calls.reduce((m, c) => Math.max(m, c.ms), 0);
-      modelMs += ms;
+      // Round 0 builds the forms one checked step at a time (buildForms); later rounds re-ask only the groups with
+      // problems (wave 1 in parallel, then wave 2).
+      if (round === 0) await buildForms();
+      else {
+        const todo = groups.filter(g => pending.has(g.id));
+        for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [], pendingDraft)));
+      }
+      // Round 0's forms run in sequence (its wall time); a repair round's in parallel (its longest call).
+      modelMs += round === 0 ? Math.round(performance.now() - t) : calls.reduce((m, c) => Math.max(m, c.ms), 0);
       // A writer that answers with a whole document (older prompts and fakes) is a draft as is.
       const docShaped = calls.length && isDocShape(merged) ? merged : null;
       if (!calls.some(c => !c.error) && round === 0) {
@@ -394,12 +488,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
       }
     }
     // A reply in the document's own shape (older prompts, some writers) is a draft as is; otherwise it is the form.
-    const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
-    draft.schema = DOC_SCHEMA; draft.seed = seed;
-    keepPlayer(draft, skeleton.doc);
-    keepCollection(draft, skeleton.doc);
-    // The collection's loop wiring is code's: whatever the model wrote, the declared win and losses end the game.
-    Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
+    const draft = draftOf(value);
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
     for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
@@ -432,7 +521,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     const fixes = repaired.fixes.length;
     if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
     /** @type {OutlineRound} */
-    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}${c.fields ? `[${c.fields}]` : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    const entry = { kind: round ? 'model_repair' : 'model', ...(round === 0 && checks.length ? { checks } : {}), ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}${c.fields ? `[${c.fields}]` : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
     rounds.push(entry);
     last = repaired;
     /** @type {ProblemLike[]} */
@@ -468,7 +557,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
       pendingDraft = repaired.doc;
       for (const pr of problems) {
         const g = groupOfPath(groups, formPath(pr.path || '', repaired.doc)) || null;
-        const ids = g ? [g.id] : ['cast', 'systems'];
+        const ids = g ? [g.id] : ['cast', ...loopIds.map(paramsGroupId)];
         for (const id of ids) if (groups.some(x => x.id === id)) pending.set(id, [...(pending.get(id) || []), pr]);
       }
       for (const id of pending.keys()) failures[id] = (failures[id] || 0) + 1;
