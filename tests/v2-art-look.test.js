@@ -11,6 +11,7 @@ import { quantizeToPalette } from '../v2/primitives/graphics/post.js';
 import { pixelFrame, opaqueBox } from '../v2/primitives/graphics/flat-pixel.js';
 import post from '../v2/primitives/graphics/post.js';
 import spritePixel from '../v2/primitives/graphics/sprite-pixel.js';
+import { checkFields } from '../v2/kernel/params.js';
 
 const spec = { id: 'look-test', title: 'Look Test', entities: { ground: { solid: true }, hero: { tags: ['player'] }, ring: { tags: ['collectible'] }, bot: { tags: ['enemy'] }, spikes: { tags: ['hazard'] }, flag: { tags: ['goal'] } } };
 const design = { title: 'Look Test', pitch: 'a hedgehog runs through hills', view: 'side', artStyle: 'bright cartoon', cast: { player: { name: 'Hog', glyph: '🦔' }, enemy: { name: 'Bot', glyph: '🤖' }, pickup: { name: 'Ring', glyph: '💍' }, hazard: { name: 'Spikes', glyph: '⚔️' }, goal: { name: 'Flag', glyph: '🚩' } } };
@@ -162,9 +163,12 @@ test('runtime primitives take the look: locked palette, dithering, outline width
   const cfg = lookPrimitives(look);
   assert.deepEqual(cfg['graphics.post'].palette, look.palette.colors);
   assert.equal(cfg['graphics.post'].dither, 'bayer4');
-  assert.deepEqual(post.validate(cfg['graphics.post']), []);
+  // The look's params pass the cards' declared params (colors are a hex pattern on the card, no longer a validate rule).
+  const paramErrors = (p, w) => { const errors = []; checkFields(p.card.params, w, '', errors, null); return errors; };
+  assert.deepEqual(paramErrors(post, cfg['graphics.post']), []);
+  assert.deepEqual(paramErrors(spritePixel, cfg['graphics.sprite.pixel']), []);
   assert.deepEqual(spritePixel.validate({ ...cfg['graphics.sprite.pixel'] }, { content: {} }), []);
-  assert.equal(post.validate({ palette: ['red'] })[0].code, 'flat_color');
+  assert.equal(paramErrors(post, { palette: ['red'] })[0].code, 'param_pattern');
   // Palette quantization: only palette colors come out; a mid gray dithers between two shades.
   const w = 8, h = 8, data = new Uint8ClampedArray(w * h * 4).fill(128);
   quantizeToPalette(data, w, h, look.palette.colors, 'bayer4');

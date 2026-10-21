@@ -7,8 +7,9 @@
 // positions are hollowed out. Spawns appear at game start; the `structures`
 // service lists ids, bounds, doors, rooms, loot tables and tags.
 import { Rng, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneYRange } from './worlds3d-lib-world.js';
-import { prefab, addStamp, clearFootprint, footprintsOverlap, KINDS, DEFAULT_SIZE, toWorld, toLocal } from './worlds3d-lib-prefab.js';
+import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneYRange, rangeRule, reversedRanges } from './worlds3d-lib-world.js';
+import { prefab, addStamp, clearFootprint, footprintsOverlap, KINDS, DEFAULT_SIZE, toWorld, toLocal, paletteShape, PART_SHAPE } from './worlds3d-lib-prefab.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 
 const card = {
@@ -27,9 +28,9 @@ const card = {
         floors: { type: 'list', of: { type: 'integer', min: 1, max: 200 }, min: 2, max: 2, effect: '[min, max] storeys for houses/towers' },
         interior: { type: 'boolean', default: false, effect: 'hollow, enterable inside with a door and floors' },
         rot: { type: 'number', min: -360, max: 360, unit: 'deg', effect: 'facing (default: toward the nearest road, else seeded)' },
-        loot: { type: 'string', effect: 'loot table id for containers inside' }, spawns: { type: 'list', of: { type: 'ref', to: 'archetype' }, default: [] },
-        tags: { type: 'list', of: { type: 'string' }, default: [] }, prefab: { type: 'string', effect: 'id in content.structures whose parts replace the built-in prefab' },
-        palette: { type: 'object', open: true, default: {}, effect: 'voxel role -> block overrides (wall, roof, floor, window, trim...)' },
+        loot: { type: 'ref', to: 'table', effect: 'loot table for containers inside' }, spawns: { type: 'list', of: { type: 'ref', to: 'archetype' }, default: [] },
+        tags: { type: 'list', of: { type: 'string' }, default: [] }, prefab: { type: 'ref', to: 'prefab', effect: 'the content.structures entry whose parts replace the built-in prefab' },
+        palette: paletteShape({ default: {}, effect: 'voxel role -> block overrides (wall, roof, floor, window, trim...)' }),
       } },
     },
     spacing: { type: 'number', min: 0, max: 200, default: 6, unit: 'm', effect: 'minimum gap between structures' },
@@ -40,22 +41,47 @@ const card = {
   },
   provides: { content: ['structures'], extent: 'overlay', services: ['structures'], events: [] },
   reads: ['content.structures', 'content.tables'],
+  // Authored prefabs: content.structures is this card's section (its entries are the 'prefab' kind place[].prefab names).
+  defines: [{ kind: 'prefab', at: 'content.structures' }],
+  data: {
+    'content.structures': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', pattern: ID_PATTERN, required: true, effect: 'a lowercase slug, unique in its section' },
+      name: { type: 'string', display: true, effect: 'the name a person reads' },
+      parts: { type: 'list', of: PART_SHAPE, min: 1, required: true, effect: 'the parts that replace the built-in prefab, in structure-local metres' },
+      height: { type: 'number', min: 0, unit: 'm', effect: 'overall height (default: the highest part top)' },
+      door: { type: 'list', of: { type: 'number' }, min: 3, max: 3, unit: 'm', effect: 'door position [x, y, z], structure-local' },
+      rooms: { type: 'list', default: [], effect: 'walk-in rooms, structure-local boxes', of: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 3, max: 3, required: true }, max: { type: 'list', of: { type: 'number' }, min: 3, max: 3, required: true } } } },
+    } } },
+  },
+  rules: {
+    structure_position_missing: { fields: ['place[].at', 'place[].count'], message: 'each structure gives at (pinned) or count (scattered)', example: { place: [{ id: 'hut', kind: 'hut', zone: 'home_goal', count: null, at: null, style: null, size: null, floors: null, interior: null, rot: null, spawns: null, tags: null }] } },
+    structure_position_ambiguous: { fields: ['place[].at', 'place[].count'], message: 'each structure gives at or count, not both' },
+    structure_duplicate: { fields: ['place[].id'], message: 'structure ids are unique within the instance' },
+    range_reversed: rangeRule(['place[].count', 'place[].floors']),
+    // Parts are deeper than the forms ask: the example is a document fragment (the host's content, with one prefab).
+    prefab_part_shape: { fields: ['content.structures[].parts'], message: 'each part is a box (size) or a cylinder (r): exactly one of the two', example: { at: 'content.structures[0].parts[0]', doc: { content: {
+      archetypes: [{ id: 'hero', name: 'Captain', components: { body: { size: [1, 1] } } }, { id: 'teammate', name: 'Teammate', components: { body: { size: [1, 1] } } }, { id: 'opponent', name: 'Opponent', components: { body: { size: [1, 1] } } }, { id: 'ball', name: 'Ball', components: { body: { size: [0.6, 0.6] } } }],
+      structures: [{ id: 'shed', name: 'Shed', parts: [{ role: 'wall', c: [0, 0], y: [0, 3] }] }],
+    } } } },
+  },
 };
 
 export default {
   id: 'engine.generate.structures',
   card,
   validate(config, doc) {
-    const errors = [], tables = new Set((doc.content?.tables || []).map(t => t.id)), prefabs = new Set((doc.content?.structures || []).map(s => s.id)), ids = new Set();
-    (config.place || []).forEach((p, i) => {
+    const errors = [], ids = new Set();
+    (Array.isArray(config.place) ? config.place : []).forEach((p, i) => {
       const path = `with.place[${i}]`;
-      if (ids.has(p.id)) errors.push({ code: 'id_duplicate', path: `${path}.id`, message: `duplicate structure id '${p.id}'` }); ids.add(p.id);
+      if (ids.has(p.id)) errors.push({ code: 'structure_duplicate', path: `${path}.id`, message: `duplicate structure id '${p.id}'` }); ids.add(p.id);
       if (!p.at && !p.count) errors.push({ code: 'structure_position_missing', path, message: `structure '${p.id}' needs at or count` });
       if (p.at && p.count) errors.push({ code: 'structure_position_ambiguous', path, message: `structure '${p.id}' has both at and count` });
-      if (p.count && p.count[0] > p.count[1]) errors.push({ code: 'param_range', path: `${path}.count`, message: 'count must be [min, max]' });
-      if (p.loot && doc.content?.tables && !tables.has(p.loot)) errors.push({ code: 'ref_unknown', path: `${path}.loot`, message: `unknown loot table '${p.loot}'` });
-      if (p.prefab && !prefabs.has(p.prefab)) errors.push({ code: 'ref_unknown', path: `${path}.prefab`, message: `unknown prefab '${p.prefab}' (content.structures)` });
+      errors.push(...reversedRanges([[`${path}.count`, p.count], [`${path}.floors`, p.floors]]));
     });
+    const prefabs = doc.content?.structures;
+    (Array.isArray(prefabs) ? prefabs : []).forEach((s, i) => (Array.isArray(s?.parts) ? s.parts : []).forEach((q, k) => {
+      if ((q?.size == null) === (q?.r == null)) errors.push({ code: 'prefab_part_shape', path: `content.structures[${i}].parts[${k}]`, message: 'a part has size (a box) or r (a cylinder), exactly one' });
+    }));
     return errors;
   },
   install(rt, raw, instance) {

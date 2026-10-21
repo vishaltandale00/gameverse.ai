@@ -20,8 +20,8 @@ const template = { type: 'object', fields: {
   zone: { type: 'ref', to: 'zone', effect: 'bind this existing zone as the (single) node of this kind' },
   layers: { type: 'list', of: { type: 'number', min: 0, max: 1 }, min: 2, max: 2, default: [0, 1], effect: 'allowed progression range (fractions of start→end)' },
   min: { type: 'integer', min: 0, default: 0 }, max: { type: 'integer', min: 0 },
-  archetype: { type: 'string', effect: 'spawned at each node of this kind' },
-  name: { type: 'string', effect: 'node name prefix' },
+  archetype: { type: 'ref', to: 'archetype', effect: 'spawned at each node of this kind' },
+  name: { type: 'string', display: true, effect: 'node name prefix' },
   tags: { type: 'list', of: { type: 'string' }, default: [] },
 } };
 
@@ -40,8 +40,8 @@ export default {
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: 'web: extra edges; linear: side branches' },
       templates: { type: 'list', of: template, default: [{ kind: 'battle', weight: 5 }, { kind: 'event', weight: 2 }, { kind: 'shop', weight: 1, layers: [0.2, 0.9] }, { kind: 'rest', weight: 1, layers: [0.3, 1] }, { kind: 'elite', weight: 1, layers: [0.35, 1] }] },
       start: { type: 'object', default: {}, fields: { kind: { type: 'string', default: 'start' }, zone: { type: 'ref', to: 'zone' } } },
-      end: { type: 'object', default: {}, fields: { kind: { type: 'string', default: 'boss' }, zone: { type: 'ref', to: 'zone' }, archetype: { type: 'string' } } },
-      gates: { type: 'list', default: [], of: { type: 'object', fields: { at: { type: 'number', min: 0, max: 1, required: true, effect: 'progression fraction; edges entering it are gated' }, gate: { type: 'predicate', required: true }, label: { type: 'string' } } } },
+      end: { type: 'object', default: {}, fields: { kind: { type: 'string', default: 'boss' }, zone: { type: 'ref', to: 'zone' }, archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the end node' } } },
+      gates: { type: 'list', default: [], of: { type: 'object', fields: { at: { type: 'number', min: 0, max: 1, required: true, effect: 'progression fraction; edges entering it are gated' }, gate: { type: 'predicate', required: true }, label: { type: 'string', display: true, effect: 'what the gate is called' } } } },
       noRepeat: { type: 'list', of: { type: 'string' }, default: ['elite', 'rest', 'shop'], effect: 'kinds that may not follow themselves along an edge' },
       twoWay: { type: 'string', options: ['auto', 'yes', 'no'], default: 'auto', effect: 'auto: layered one-way, web/linear two-way' },
       prefix: { type: 'string', default: 'node' },
@@ -51,7 +51,11 @@ export default {
     provides: { content: ['zones'], extent: 'space', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'worldgraph'] },
     requires: { capabilities: ['position'] },
     problems: ['node_unreachable', 'node_dead_end', 'edge_crossing', 'template_min', 'repeat_kind', 'graph_fallback'],
-    validates: ['template_zone_reused', 'template_range_invalid', 'graph_too_small'],
+    rules: {
+      template_range_invalid: { fields: ['templates[].layers', 'templates[].min', 'templates[].max'], message: 'layers is [low, high] with low ≤ high, and max (when given) is at least min' },
+      template_zone_reused: { fields: ['templates[].zone'], message: 'each zone binds at most one template' },
+      graph_too_small: { fields: ['templates[].min', 'nodes', 'layers', 'width'], message: "the templates' min counts sum to at most the nodes the map holds (layered: layers × width, else nodes)", example: { templates: [{ kind: 'battle', weight: null, zone: null, layers: null, min: 100, max: null, archetype: null, name: null, tags: null }] } },
+    },
   },
   /**
    * Planner hook (v2/planner/world.js), graph spaces: a linear, two-way chain through the space's own zones in order

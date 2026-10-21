@@ -182,11 +182,11 @@ test('physics2d: deterministic replay and exact restore mid-simulation', () => {
 test('physics2d: preflight rejects bad configs with stable codes', () => {
   const { registry, logic } = catalogue();
   const codes = w => preflight(doc(w), registry, logic).errors.map(e => e.code);
-  assert.ok(codes({ joints: [{ id: 'j', kind: 'distance', b: 'ghost' }] }).includes('joint_body_unknown'));
+  assert.ok(codes({ joints: [{ id: 'j', kind: 'distance', b: 'ghost' }] }).includes('ref_unknown'));
   assert.ok(codes({ bodies: [{ id: 'x', at: [1, 1] }], joints: [{ id: 'j', kind: 'revolute', b: 'x' }] }).includes('joint_anchor_missing'));
   assert.ok(codes({ bodies: [{ id: 'x', at: [1, 1] }], joints: [{ id: 'j', kind: 'revolute', b: 'x', anchor: [1, 1], limit: true, lower: 1, upper: 0 }] }).includes('joint_limit_invalid'));
   assert.ok(codes({ walls: [{ kind: 'seg', points: [[0, 0]] }] }).includes('wall_invalid'));
-  assert.ok(codes({ bodies: [{ id: 'x', at: [1, 1], body: { shape: { kind: 'blob' } } }] }).includes('shape_invalid'));
+  assert.ok(codes({ bodies: [{ id: 'x', at: [1, 1], body: { shape: { kind: 'blob' } } }] }).includes('param_option'));
   assert.ok(codes({ edges: { left: 'wrap', right: 'open', bottom: 'solid', top: 'solid' } }).includes('edges_wrap_unpaired'));
   assert.ok(codes({ substeps: 9 }).includes('param_range'));
   assert.ok(codes({ joints: [{ id: 'j', kind: 'spring', b: 'x' }] }).includes('param_option'));

@@ -2,6 +2,7 @@
 // sockets) sized from height and proportions, fitted to a model's tagged parts
 // (voxel part boxes or lowpoly bone tags) and skinned to its generated mesh.
 import { joinStage, presentationOnly } from './three-stage.js';
+import { modelsData } from './model-lib.js';
 
 export const HUMANOID_BONES = ['hips', 'spine', 'chest', 'neck', 'head',
   'shoulderL', 'upperArmL', 'lowerArmL', 'handL', 'shoulderR', 'upperArmR', 'lowerArmR', 'handR',
@@ -105,11 +106,13 @@ export default {
       attach: { type: 'list', default: [], effect: 'models or equipment slots shown on bones', of: { type: 'object', fields: {
         bone: { type: 'string', required: true, options: [...HUMANOID_BONES, ...SOCKETS], effect: 'bone or socket' },
         slot: { type: 'string', effect: 'equipment slot whose equipped item is drawn here (weapon, backpack, torch...)' },
-        model: { type: 'string', effect: 'a fixed model to always show: a content.models id, an item id, or a plain name (sword, lantern, shield...) generated procedurally' },
+        model: { type: 'string', effect: 'a fixed model to always show, by name: a content.models id or an item id draws that model, any other name (sword, lantern, shield...) is generated procedurally' },
       } } },
     },
     provides: {},
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'parts', 'rig', 'height', 'proportions', 'build']) },
+    rules: { attach_empty: { fields: ['attach[].slot', 'attach[].model'], message: 'an attachment names a slot, a model, or both' } },
   },
   validate(config) {
     const errs = [];

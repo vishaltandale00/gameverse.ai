@@ -7,7 +7,8 @@
 // view.act({ turn_act: {action,target} }) and end_turn.
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, setText, setStyle, setClass, pulse, titleCase, clamp, isNum, fmtInt } from './ui-lib.js';
-import { portrait, portraitColor } from './ui-portrait.js';
+import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
+import { modelsData } from './model-lib.js';
 import { moveFocus } from './ui-input.js';
 import { createDialogueMachine } from './ui-dialogue.js';
 import * as S from './ui-sources.js';
@@ -53,6 +54,7 @@ export default {
       showLevels: { type: 'boolean', default: true },
     },
     reads: ['content.archetypes', 'content.models'],
+    data: { 'content.models': modelsData(PORTRAIT_MODEL_FIELDS) },
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;

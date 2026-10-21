@@ -51,7 +51,7 @@ export default {
       motions: { type: 'list', effect: 'motions to recognize (default: the classic library)', default: LIBRARY.map(m => structuredClone(m)),
         of: { type: 'object', fields: {
           id: { type: 'string', required: true },
-          steps: { type: 'list', of: { type: 'string' }, effect: 'direction sets in order: digits 1-9 or set names (down fwd back up fwdish backish notDown notFwd notBack notUp dpStart rdpStart, or custom sets)' },
+          steps: { type: 'list', of: { type: 'string' }, min: 1, effect: 'direction sets in order: digits 1-9 or set names (down fwd back up fwdish backish notDown notFwd notBack notUp dpStart rdpStart, or custom sets)' },
           window: { type: 'integer', default: 16, min: 1, max: 120, unit: 'frames', effect: 'first step to press' },
           last: { type: 'integer', default: 6, min: 0, max: 30, unit: 'frames', effect: 'how long before the press the last direction may be' },
           noAfter: { type: 'list', of: { type: 'integer', min: 1, max: 9 }, effect: 'directions that cancel the motion between its last step and the press' },
@@ -61,7 +61,7 @@ export default {
           priority: { type: 'integer', default: 0, effect: 'higher wins on the same press' },
         } } },
       buttons: { type: 'list', of: { type: 'string' }, default: ['attack', 'alt_attack'], min: 1, max: 8, effect: 'verbs that can complete motions' },
-      sets: { type: 'object', open: true, default: {}, effect: 'extra named direction sets: name -> [digits]' },
+      sets: { type: 'object', default: {}, values: { type: 'list', min: 1, of: { type: 'integer', min: 1, max: 9 }, effect: 'numpad digits 1-9' }, effect: 'extra named direction sets: name -> [digits]' },
       buffer: { type: 'integer', default: 40, min: 8, max: 240, unit: 'frames', effect: 'input history length' },
       pressBuffer: { type: 'integer', default: 4, min: 0, max: 30, unit: 'frames', effect: 'a press this recent still completes a motion' },
       chargeFrames: { type: 'integer', default: 40, min: 1, max: 240, unit: 'frames' },
@@ -71,6 +71,12 @@ export default {
     },
     provides: { events: ['motion', 'motion:*'], services: ['motions'] },
     requires: {},
+    rules: {
+      motion_duplicate: { fields: ['motions[].id'], message: 'motion ids are distinct' },
+      motion_invalid: { fields: ['motions[].steps', 'motions[].charge', 'motions[].buttons'], message: 'a motion has steps or a charge (with release), not both; a charge motion has a button (buttons is not [])' },
+      motion_set_unknown: { fields: ['motions[].steps', 'motions[].charge', 'motions[].release'], message: 'steps, charge and release name direction sets: digits 1-9, down fwd fwdish back backish up neutral notDown notFwd notBack notUp dpStart rdpStart, or a name in sets' },
+      motion_button_unknown: { fields: ['motions[].buttons', 'buttons'], message: 'a motion button is one of buttons', example: { motions: [{ id: 'qcf', steps: ['2', '3', 'fwd'], window: null, last: null, noAfter: null, charge: null, release: null, chargeFrames: null, buttons: ['kick'], priority: null }] } },
+    },
   },
   logic(logic) {
     // {motion: id, who?, within?: frames}: that motion completed within the last `within` frames (default 0 = this step).
@@ -78,12 +84,10 @@ export default {
   },
   validate(config) {
     const errors = [], sets = { ...SETS, ...config.sets }, ids = new Set();
-    for (const [k, v] of Object.entries(config.sets)) if (!Array.isArray(v) || !v.length || !v.every(d => Number.isInteger(d) && d >= 1 && d <= 9)) errors.push({ code: 'motion_set_invalid', path: `sets.${k}`, message: 'a direction set is a list of numpad digits 1-9' });
     config.motions.forEach((m, i) => {
       const path = `motions[${i}]`;
       if (ids.has(m.id)) errors.push({ code: 'motion_duplicate', path: `${path}.id`, message: `duplicate motion '${m.id}'` }); ids.add(m.id);
       if (!m.steps === !m.charge) errors.push({ code: 'motion_invalid', path, message: 'a motion has steps or charge (+ release), not both' });
-      if (m.steps && m.steps.length < 1) errors.push({ code: 'motion_invalid', path: `${path}.steps`, message: 'steps needs at least one direction set' });
       for (const [j, s] of (m.steps || []).entries()) if (!setOf(s, sets)) errors.push({ code: 'motion_set_unknown', path: `${path}.steps[${j}]`, message: `unknown direction set '${s}'` });
       if (m.charge && (!setOf(m.charge, sets) || !setOf(m.release ?? '', sets))) errors.push({ code: 'motion_set_unknown', path, message: 'charge and release must be direction sets' });
       for (const [j, b] of (m.buttons || []).entries()) if (!config.buttons.includes(b)) errors.push({ code: 'motion_button_unknown', path: `${path}.buttons[${j}]`, message: `'${b}' is not in buttons` });

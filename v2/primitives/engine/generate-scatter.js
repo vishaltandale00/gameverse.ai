@@ -7,7 +7,7 @@
 // object tiles and voxel chunks generate lazily and identically. Voxel props
 // can be single cells, columns, trees (trunk + crown), bushes or boulders.
 import { hash3, fbm2, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, zoneHas, checkBlocks } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, zoneHas } from './worlds3d-lib-world.js';
 import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 
 const card = {
@@ -24,7 +24,7 @@ const card = {
         slopeMax: { type: 'number', min: 0, max: 90, default: 90, unit: 'deg' }, clump: { type: 'number', min: 0, max: 1, default: 0, effect: '0 even, 1 tight clumps' },
         minSpacing: { type: 'number', min: 0, max: 2000, default: 1, unit: 'm' }, scale: { type: 'list', of: { type: 'number', min: 0.05, max: 20 }, min: 2, max: 2, default: [1, 1] },
         shape: { type: 'string', options: ['cell', 'column', 'tree', 'bush', 'boulder'], default: 'cell', effect: 'voxel: how a block prop is built' },
-        crown: { type: 'string', default: 'leaves', effect: 'voxel: crown block for trees and bushes' },
+        crown: { type: 'ref', to: 'block', default: 'leaves', effect: 'voxel: crown block for trees and bushes' },
         collide: { type: 'boolean', default: false, effect: 'mesh3d: props are cylinder colliders' },
         water: { type: 'boolean', default: false, effect: 'allow props under water' },
       } },
@@ -34,16 +34,14 @@ const card = {
   },
   provides: { content: ['props'], extent: 'overlay', events: [] },
   reads: [],
+  rules: { scatter_prop_kind: { fields: ['props[].model', 'props[].block'], message: 'each prop names exactly one of model (mesh3d) or block (voxel)' } },
 };
 
 export default {
   id: 'engine.generate.scatter',
   card,
-  validate(config, doc, ctx, inst) {
-    return (config.props || []).flatMap((p, i) => [
-      ...(!p.model === !p.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []),
-      ...(p.block && ['tree', 'bush'].includes(p.shape) ? checkBlocks(doc, inst, [[`with.props[${i}].crown`, p.crown]]) : []),
-    ]);
+  validate(config) {
+    return (Array.isArray(config.props) ? config.props : []).flatMap((p, i) => (!p?.model === !p?.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []));
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

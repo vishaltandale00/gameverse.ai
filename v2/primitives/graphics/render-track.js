@@ -10,10 +10,11 @@
 // just past the line is ahead of a player about to cross it), and the bends, hills and scenery repeat every lap, so
 // the course is the same circuit each time round.
 import { ensureJuice } from './flat-juice.js';
-import { hubOf, bindSpace, ORDER, checkBinding } from './flat-stage.js';
-import { drawEntity, lookOf } from './flat-models.js';
+import { hubOf, bindSpace, ORDER, checkBinding, bindingRules } from './flat-stage.js';
+import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { sceneryImage, themeFor } from './flat-art.js';
-import { TAU, mix, clamp, lerp, rgba, hash, seedOf, roundRect, col, isHex } from './flat-util.js';
+import { TAU, mix, clamp, lerp, rgba, hash, seedOf, roundRect, col } from './flat-util.js';
+import { modelsData, MODEL_COMPONENT, color } from './model-lib.js';
 
 const FAR = 95, SEG = 2.5, BACK = 5.2;
 const OBSTACLE = /obstacle|barrier|wall|train|car|truck|block|gate|crate|hurdle|fence|cone/;
@@ -63,15 +64,16 @@ export default {
       curvature: { type: 'number', default: 1, min: 0, max: 3, effect: 'how much the track bends' },
       hills: { type: 'number', default: 1, min: 0, max: 3, effect: 'how much the track rolls' },
       rails: { type: 'boolean', default: true, effect: 'sleepers and rails per lane (off: a road with lane markings)' },
-      groundColor: { type: 'string', default: '', effect: 'hex override for the verge' },
+      groundColor: color({ effect: 'verge color override' }),
       speedLines: { type: 'boolean', default: true, effect: 'speed lines from the vanishing point at high speed' },
     },
     reads: ['content.models', 'content.archetypes'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }) },
+    components: { model: MODEL_COMPONENT },
+    rules: { ...bindingRules('graphics.render.track', ['engine.space.track']) },
   },
   validate(config, doc, ctx, info) {
-    const errs = checkBinding(doc, info, 'graphics.render.track', ['engine.space.track']);
-    if (config.groundColor && !isHex(config.groundColor)) errs.push({ code: 'flat_color', path: `${info?.path || ''}.with.groundColor`, message: `'${config.groundColor}' is not a hex color` });
-    return errs;
+    return checkBinding(doc, info, 'graphics.render.track', ['engine.space.track']);
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

@@ -176,8 +176,8 @@ test('grid: preflight rejects bad configs with stable codes', () => {
   const { registry, logic } = catalogue([painter]);
   const codes = (w, d = mazeDoc) => preflight(d(w), registry, logic).errors.map(e => e.code);
   assert.ok(codes({ topology: 'triangle' }).includes('param_option'));
-  assert.ok(codes({ rules: { door: { pass: ['ghost'], glow: 1 } } }).includes('rule_invalid'));
-  assert.ok(codes({ rules: { noup: { noExit: ['north'] } } }).includes('rule_direction'));
+  assert.ok(codes({ rules: { door: { pass: ['ghost'], glow: 1 } } }).includes('param_unknown'));
+  assert.ok(codes({ rules: { noup: { noExit: ['north'] } } }).includes('param_option'));
   assert.ok(codes({ topology: 'hex', diagonals: true }).includes('grid_hex_diagonals'));
   assert.ok(codes({ topology: 'hex', wrap: 'y' }).includes('grid_hex_wrap'));
   const bad = mazeDoc(); bad.spaces[0].zones.push({ id: 'oops', rect: [3, 3, 2, 2] }, { id: 'big', rect: [0, 0, 20, 2] }, { id: 'none' });

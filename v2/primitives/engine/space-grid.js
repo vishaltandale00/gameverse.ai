@@ -6,6 +6,7 @@
 // no-up tiles), speed and cost modifiers (tunnel slowdown, rough terrain),
 // cover and opacity (tactics). settle() is column gravity for falling and
 // match puzzles. Tactics, puzzle, maze and ARC-style games all live here.
+import { zonesData } from './runtime-lib.js';
 import { cellStore, zoneIndex, zoneTracker, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, inSpace, key2, unkey, mod, astar, Heap, shapeHitsRect, BOUNDS_CAPS } from './spaces2d-lib.js';
 
 const SQ = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0], 'up-left': [-1, 1], 'up-right': [1, 1], 'down-left': [-1, -1], 'down-right': [1, -1] };
@@ -14,7 +15,19 @@ const HEX = {
   even: { e: [1, 0], w: [-1, 0], ne: [0, 1], nw: [-1, 1], se: [0, -1], sw: [-1, -1] },
   odd: { e: [1, 0], w: [-1, 0], ne: [1, 1], nw: [0, 1], se: [1, -1], sw: [0, -1] },
 };
-const RULE_FIELDS = ['pass', 'noExit', 'noEnter', 'speed', 'cost', 'cover', 'opaque', 'fixed', 'appliesTo', 'except'];
+const DIRS = [...new Set([...Object.keys(SQ), ...Object.keys(HEX.even)])];
+const CLASSES = effect => ({ type: 'list', of: { type: 'string' }, effect: `${effect} (classes: entity id, archetype, body.layer, body.tags)` });
+/** A block's cell rule (params.rules values). */
+const CELL_RULE = { type: 'object', effect: 'rules of the cells holding the block', fields: {
+  pass: CLASSES('only entities of these classes may enter the cell'),
+  noExit: { type: 'list', of: { type: 'string', options: DIRS }, effect: 'directions no one leaves the cell in (square/iso: up down left right and diagonals; hex: e w ne nw se sw)' },
+  noEnter: { type: 'list', of: { type: 'string', options: DIRS }, effect: 'directions no one enters the cell moving in' },
+  speed: { type: 'number', min: 0, effect: 'movement speed factor (> 0)' }, cost: { type: 'number', min: 0, effect: 'path cost of entering' },
+  cover: { type: 'integer', min: 0, max: 2, effect: '0 none, 1 half, 2 full' }, opaque: { type: 'boolean', effect: 'blocks line of sight' }, fixed: { type: 'boolean', effect: 'settle never moves it' },
+  appliesTo: CLASSES('noExit, noEnter and speed apply only to these classes'), except: CLASSES('noExit, noEnter and speed never apply to these classes'),
+} };
+/** A rule example: a board document whose spaces are one grid with these params and zones. */
+const board = (with_, zones) => ({ doc: { spaces: [{ id: 'board', use: 'engine.space.grid', with: { size: [8, 8], ...with_ }, ...(zones ? { zones } : {}) }] } });
 
 export default {
   id: 'engine.space.grid',
@@ -32,7 +45,7 @@ export default {
       wrap: { type: 'string', options: ['none', 'x', 'y', 'both'], default: 'none', effect: 'wrap-around edges (maze tunnels, toroidal boards); distances take the short way round' },
       yAxis: { type: 'string', options: ['up', 'down'], default: 'up', effect: "which way rows increase on screen; 'up' and 'down' directions follow it" },
       layers: { type: 'list', of: { type: 'string' }, min: 1, default: ['terrain'], effect: 'cell layers; the first is the default for getCell/setCell' },
-      rules: { type: 'object', open: true, default: {}, effect: 'blockId → {pass: bool | [classes], noExit: [dirs], noEnter: [dirs], speed: n, cost: n, cover: 0|1|2, opaque: bool, fixed: bool, appliesTo: [classes], except: [classes]}. Classes match entity id, archetype, body.layer and body.tags' },
+      rules: { type: 'object', default: {}, values: CELL_RULE, effect: 'blockId → its cell rule' },
       exclusive: { type: 'boolean', default: false, effect: 'at most one blocking entity per cell (tactics units); body.blocking=false opts out' },
       cover: { type: 'boolean', default: false, effect: 'compute cover from rules (tactics); off means coverAt is always 0' },
     },
@@ -42,6 +55,18 @@ export default {
       events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'blocked', 'moved', 'settled', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     reads: ['content.blocks'],
+    data: {
+      ...zonesData('rect', 'cells', 'spawn', 'tags'),
+      'content.blocks': { type: 'list', of: { type: 'object', open: true, fields: { solid: { type: 'boolean', effect: 'blocks movement (default true)' }, opaque: { type: 'boolean', effect: 'blocks line of sight (default: solid)' } } } },
+    },
+    rules: {
+      grid_hex_diagonals: { fields: ['topology', 'diagonals'], message: 'diagonals is for square and iso boards (hex cells already have six neighbours)' },
+      grid_hex_wrap: { fields: ['topology', 'wrap', 'size'], message: 'a hex board wraps vertically (wrap y or both) only with an even number of rows', example: { topology: 'hex', wrap: 'y', size: [8, 7], diagonals: false } },
+      rule_invalid: { fields: ['rules'], message: 'a cell rule speed is > 0', example: board({ rules: { mud: { speed: 0 } } }) },
+      rule_direction: { fields: ['rules', 'topology'], message: 'noExit and noEnter name directions of the topology: up down left right up-left up-right down-left down-right (square, iso), e w ne nw se sw (hex)', example: board({ rules: { arrow: { noExit: ['ne'] } } }) },
+      zone_rect_invalid: { fields: ['zones[].rect', 'zones[].cells'], message: 'a board zone has rect [c0, r0, c1, r1) with c1 > c0 and r1 > r0, or cells', example: board({}, [{ id: 'camp', rect: [4, 4, 2, 6] }]) },
+      zone_outside: { fields: ['zones[].rect', 'size'], message: 'a board zone rect lies inside the board', example: board({}, [{ id: 'camp', rect: [0, 0, 4, 12] }]) },
+    },
     at: 'At = [col, row] (integers are cell centres; square/iso may hold fractional positions while lane-moving; the cell is the rounded position). Hex uses odd-r offset coordinates. cellCenter(cell) gives layout coordinates.',
     zones: 'Zone = {id, name?, rect:[c0,r0,c1,r1) half-open, or cells:[[c,r]..], spawn?:[c,r], tags?, rules?}',
     state: 'rt.state.spaces[id] = {palette, cells:{layer:[rowString|null]}, log:[{t,at,layer,from,to,by}], inside:{entity:[zones]}, zones?:[runtime zones]}',
@@ -57,17 +82,15 @@ export default {
     if (config.topology === 'hex' && config.diagonals) errors.push({ code: 'grid_hex_diagonals', path: 'with.diagonals', message: 'hex cells already have six neighbours; diagonals applies to square/iso' });
     if (config.topology === 'hex' && (config.wrap === 'y' || config.wrap === 'both') && H % 2) errors.push({ code: 'grid_hex_wrap', path: 'with.wrap', message: 'hex boards wrap vertically only with an even number of rows' });
     for (const [b, r] of Object.entries(config.rules || {})) {
-      if (!r || typeof r !== 'object' || Array.isArray(r)) { errors.push({ code: 'rule_invalid', path: `with.rules.${b}`, message: 'a cell rule must be an object' }); continue; }
-      for (const k of Object.keys(r)) if (!RULE_FIELDS.includes(k)) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.${k}`, message: `unknown rule field '${k}'`, hint: `fields: ${RULE_FIELDS.join(', ')}` });
+      if (!r || typeof r !== 'object' || Array.isArray(r)) continue; // the declared shape (an object per block) is preflight's
       const dirs = config.topology === 'hex' ? Object.keys(HEX.even) : Object.keys(SQ);
-      for (const k of ['noExit', 'noEnter']) for (const d of r[k] || []) if (!dirs.includes(d)) errors.push({ code: 'rule_direction', path: `with.rules.${b}.${k}`, message: `unknown direction '${d}'`, hint: dirs.join(', ') });
-      if (r.speed !== undefined && !(r.speed > 0)) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.speed`, message: 'speed must be > 0' });
-      if (r.cover !== undefined && ![0, 1, 2].includes(r.cover)) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.cover`, message: 'cover is 0, 1 or 2' });
+      for (const k of ['noExit', 'noEnter']) for (const d of Array.isArray(r[k]) ? r[k] : []) if (DIRS.includes(d) && !dirs.includes(d)) errors.push({ code: 'rule_direction', path: `with.rules.${b}.${k}`, message: `direction '${d}' is not one of the ${config.topology} board's`, hint: dirs.join(', ') });
+      if (r.speed === 0) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.speed`, message: 'speed must be > 0' });
     }
     for (const [s, i] of ownSpaces(doc, 'engine.space.grid', config, inst)) (s.zones || []).forEach((z, j) => {
       const path = `spaces[${i}].zones[${j}]`, r = z.rect;
-      if (r && (!Array.isArray(r) || r.length !== 4 || r[2] <= r[0] || r[3] <= r[1])) errors.push({ code: 'zone_rect_invalid', path: `${path}.rect`, message: `zone '${z.id}' rect must be [c0,r0,c1,r1) with c1>c0, r1>r0` });
-      else if (r && (r[0] < 0 || r[1] < 0 || r[2] > W || r[3] > H)) errors.push({ code: 'zone_outside', path: `${path}.rect`, message: `zone '${z.id}' extends outside the ${W}×${H} board` });
+      if (r && Array.isArray(r) && (r[2] <= r[0] || r[3] <= r[1])) errors.push({ code: 'zone_rect_invalid', path: `${path}.rect`, message: `zone '${z.id}' rect must be [c0,r0,c1,r1) with c1>c0, r1>r0` });
+      else if (Array.isArray(r) && (r[0] < 0 || r[1] < 0 || r[2] > W || r[3] > H)) errors.push({ code: 'zone_outside', path: `${path}.rect`, message: `zone '${z.id}' extends outside the ${W}×${H} board` });
       if (!r && !Array.isArray(z.cells)) errors.push({ code: 'zone_rect_invalid', path, message: `zone '${z.id}' needs rect or cells` });
     });
     return errors;
@@ -122,7 +145,7 @@ export default {
       if (!out) {
         out = config.layers.map(l => cells.get(c, l)).filter(b => b != null).map(b => {
           const r = config.rules[b], d = def(b);
-          return { block: b, rule: r || {}, solid: r?.pass !== undefined ? r.pass === false : d ? d.solid === true : true, opaque: r?.opaque ?? (d ? d.opaque ?? d.solid === true : true) };
+          return { block: b, rule: r || {}, solid: Array.isArray(r?.pass) ? false : d ? d.solid === true : true, opaque: r?.opaque ?? (d ? d.opaque ?? d.solid === true : true) };
         });
         memo.set(k, out);
       }
@@ -130,9 +153,7 @@ export default {
     };
     const passFor = (x, cls) => {
       const p = x.rule.pass;
-      if (Array.isArray(p)) return p.some(c => cls.includes(c));
-      if (p === true || p === false) return p;
-      return !x.solid;
+      return Array.isArray(p) ? p.some(c => cls.includes(c)) : !x.solid;
     };
     /** Whether e (or a generic walker when e is null) may stand in cell c. */
     const enterable = (c, e) => { if (!inBounds(c)) return false; const cls = classesOf(e); return rulesIn(c).every(x => passFor(x, cls)); };

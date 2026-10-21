@@ -73,6 +73,18 @@ export function spaceOf(rt, instance) {
   return { sid, api, entry, size, zones, zone: id => zones().find(z => z.id === id) };
 }
 
+/**
+ * validate: the document space a generator instance fills (inst.space, else the space listing it) and that space's
+ * params with its card's defaults, so a check reads the size the space has when the document gives none.
+ * -> { space, config } (space null when the document has none).
+ */
+export function docSpace(doc, ctx, inst, id) {
+  const spaces = Array.isArray(doc?.spaces) ? doc.spaces : [];
+  const space = spaces.find(s => s.id === inst?.space) || spaces.find(s => (s.generators || []).some(g => g.use === id)) || null;
+  const card = space ? ctx.registry.get(space.use)?.card : null;
+  return { space, config: card ? withDefaults(card, space.with || {}) : {} };
+}
+
 /** A zone's 2D rect [x0,y0,x1,y1) on a plane ('xy' or 'xz'), from rect or bounds. */
 export function zoneRect(z, plane = 'xy') {
   if (!z) return null;

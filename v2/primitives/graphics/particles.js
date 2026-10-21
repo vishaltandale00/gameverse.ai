@@ -7,11 +7,12 @@
 // spaces hand the same config to the three workstream's adapter.
 import { hubOf, ORDER, subjectOf, kindOfSpace } from './flat-stage.js';
 import { createParticles, SHAPES, DEFAULT_PRESETS, DEFAULT_BINDS } from './flat-particles.js';
-import { isHex, col, clamp, rng } from './flat-util.js';
+import { col, clamp, rng } from './flat-util.js';
+import { color } from './model-lib.js';
 
 const FLAT = ['tilemap', 'grid', 'physics2d', 'arena2d', 'track'];
 const preset = { type: 'object', fields: {
-  id: { type: 'string', required: true }, shape: { type: 'string', default: 'dust', options: SHAPES }, color: { type: 'string', default: '#ffffff' },
+  id: { type: 'string', required: true }, shape: { type: 'string', default: 'dust', options: SHAPES }, color: color({ default: '#ffffff' }),
   count: { type: 'integer', default: 8, min: 1, max: 2000 }, life: { type: 'number', default: 0.6, min: 0.02, max: 30, unit: 's' }, speed: { type: 'number', default: 3, min: 0, max: 200, unit: 'units/s' },
   gravity: { type: 'number', default: 0, min: -100, max: 200, unit: 'units/s² (+ falls)' }, size: { type: 'number', min: 0.005, max: 4, unit: 'units' }, drag: { type: 'number', min: 0, max: 20 },
 } };
@@ -100,10 +101,13 @@ export default {
       defaults: { type: 'boolean', default: true, effect: 'built-in juice: landing/jump/run dust, pickup sparkles, impact sparks, defeat debris, block-break debris, goal confetti' },
       ambient: { type: 'list', default: [], of: { type: 'object', fields: { preset: { type: 'string', required: true }, rate: { type: 'number', default: 20, min: 0, max: 2000, unit: '/s' }, zone: { type: 'ref', to: 'zone' }, area: { type: 'string', default: 'top', options: ['top', 'view', 'bottom'] } } }, effect: 'continuous emitters across the view (weather, motes)' },
     },
+    rules: {
+      flat_preset_unknown: { fields: ['bind[].preset', 'ambient[].preset', 'presets[].id', 'defaults'], message: `a bound or ambient preset is a presets[] id, or (with defaults) a built-in one: ${DEFAULT_PRESETS.map(p => p.id).join(', ')}` },
+    },
   },
   validate(config) {
     const errs = [], ids = new Set([...(config.defaults ? DEFAULT_PRESETS.map(p => p.id) : [])]);
-    config.presets.forEach((p, i) => { if (!isHex(p.color)) errs.push({ code: 'flat_color', path: `presets[${i}].color`, message: `'${p.color}' is not a hex color` }); ids.add(p.id); });
+    for (const p of config.presets) ids.add(p.id);
     config.bind.forEach((b, i) => { if (!ids.has(b.preset)) errs.push({ code: 'flat_preset_unknown', path: `bind[${i}].preset`, message: `unknown preset '${b.preset}'`, hint: [...ids].join(', ') }); });
     config.ambient.forEach((a, i) => { if (!ids.has(a.preset)) errs.push({ code: 'flat_preset_unknown', path: `ambient[${i}].preset`, message: `unknown preset '${a.preset}'` }); });
     return errs;

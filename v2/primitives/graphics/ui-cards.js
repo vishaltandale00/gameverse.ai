@@ -6,7 +6,8 @@
 // end_turn through view.act.
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, setText, setStyle, setClass, pulse, titleCase, clamp, hashHue, fmtInt } from './ui-lib.js';
-import { portrait, portraitColor } from './ui-portrait.js';
+import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
+import { modelsData } from './model-lib.js';
 import { icon } from './ui-icons.js';
 import { moveFocus } from './ui-input.js';
 import * as S from './ui-sources.js';
@@ -45,6 +46,7 @@ export default {
       maxHand: { type: 'integer', default: 12, min: 1, max: 20, effect: 'cards laid out before the fan compresses' },
     },
     reads: ['content.cards', 'content.models'],
+    data: { 'content.models': modelsData(PORTRAIT_MODEL_FIELDS) },
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;

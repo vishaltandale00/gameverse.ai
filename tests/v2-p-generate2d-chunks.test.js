@@ -21,7 +21,7 @@ const CHUNKS = [
 const doc = (w = {}, seed = 5) => ({
   schema: 'gameverse.v2.game/0.2', id: 'runner', title: 'Runner', seed,
   spaces: [{ id: 'run', use: 'engine.space.test', with: { size: [3, 512, 1] }, generators: [{ use: 'engine.generate.chunks', with: { chunks: CHUNKS, legend: LEGEND, axis: 'y', cross: 'x', ahead: 40, behind: 8, speed: { start: 10, max: 30, rampSeconds: 3 }, gap: { base: 4, min: 2 }, ...w } }] }],
-  content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }, { id: 'barrier', components: {} }] },
+  content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }, { id: 'barrier', components: {} }], blocks: [{ id: 'crate', solid: true }] },
   player: { archetype: 'hero', at: [1, 0, 0] },
 });
 // Run forward at a steady 0.5 units per frame (30 units/s), as a movement primitive would.
@@ -70,7 +70,7 @@ test('chunks: tier and eligibility rules match the runner port', () => {
 test('chunks: side view on the tilemap writes cells along x and spawns at cell centres', () => {
   const d = { schema: 'gameverse.v2.game/0.2', id: 'side', title: 'Side', seed: 2,
     spaces: [{ id: 'run', use: 'engine.space.tilemap', with: { size: [400, 12], mode: 'side' }, generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'floor', rows: ['..o.', '....', '####'] }], legend: LEGEND, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], ahead: 30, chunkZones: true } }] }],
-    content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }], blocks: [{ id: 'crate', solid: true }] }, player: { archetype: 'hero', at: [2.5, 5.5] } };
+    content: { archetypes: [{ id: 'hero', components: {} }, { id: 'coin', components: {} }, { id: 'barrier', components: {} }], blocks: [{ id: 'crate', solid: true }] }, player: { archetype: 'hero', at: [2.5, 5.5] } };
   const { rt } = compile(d, { primitives: ALL });
   run(rt, 1);
   const api = rt.space('run');
@@ -91,7 +91,8 @@ test('chunks: same seed and run replay exactly; another seed differs', () => {
 test('chunks: preflight rejects bad configs with stable codes', () => {
   const r = new Registry(ALL), logic = buildLogic(r, Logic), codes = d => preflight(d, r, logic).errors.map(e => e.code);
   const bad = doc({ chunks: [{ id: 'a', rows: ['ab', '...'] }, { id: 'a', rows: ['.'] }], cross: 'y', axis: 'y', legend: { '.': {}, ab: {} } });
-  for (const c of ['chunk_rows_ragged', 'chunk_char_unknown', 'chunk_duplicate', 'chunk_axis_invalid', 'chunk_legend_invalid']) assert.ok(codes(bad).includes(c), c);
+  for (const c of ['chunk_rows_ragged', 'chunk_char_unknown', 'chunk_duplicate', 'chunk_axis_invalid']) assert.ok(codes(bad).includes(c), c);
+  assert.ok(codes(doc({ legend: { '.': {}, o: 'coin' } })).includes('param_type'), 'a legend entry is an object (card legend values)');
   assert.ok(codes(doc({ density: 9 })).includes('param_range'));
 });
 

@@ -42,8 +42,23 @@ export function checkBinding(doc, info, id, uses) {
   if (!spaces.some(s => uses.includes(s.use))) return [{ code: 'flat_no_space', path: info?.path, message: `${id} needs a ${uses.join(' or ')} space`, hint: 'add the space, or use the renderer for your space kind' }];
   return [];
 }
+/**
+ * The rules checkBinding enforces for a renderer drawing `uses` spaces, with examples: self-contained documents over a
+ * space of another kind (`other`). The missing-space example puts the renderer second, so its finding is new over a
+ * host that already lacks the space.
+ * @param {string} id @param {string[]} uses @param {{ id: string, use: string, with?: object }} [other]
+ */
+export function bindingRules(id, uses, other = { id: 'other', use: 'engine.space.none' }) {
+  const base = { systems: [], player: { archetype: 'probe' }, content: { archetypes: [{ id: 'probe', name: 'Probe' }] }, spaces: [other] };
+  return {
+    flat_no_space: { fields: ['space'], message: `the document has a ${uses.join(' or ')} space for ${id} to draw`, example: { doc: { ...base, graphics: [{ use: 'graphics.ui.feedback' }, { use: id }] }, at: 'graphics[1]' } },
+    flat_space_kind: { fields: ['space'], message: `the space ${id} is bound to is a ${uses.join(' or ')} space`, example: { doc: { ...base, graphics: [{ use: id, space: other.id }] }, at: 'graphics[0].space' } },
+  };
+}
+/** Document paths a validator reports as they are (content.models.x, spaces[0]...): never under the instance. */
+const DOC_ROOT = /^(spaces|systems|graphics|plot|content|player)(\.|\[|$)/;
 /** Prefix relative validator paths with the instance path. */
-export const withPath = (errs, info) => errs.map(e => ({ ...e, path: info?.path && e.path && !e.path.startsWith(info.path) ? `${info.path}.with.${e.path}` : e.path || info?.path }));
+export const withPath = (errs, info) => errs.map(e => ({ ...e, path: info?.path && e.path && !e.path.startsWith(info.path) && !DOC_ROOT.test(e.path) ? `${info.path}.with.${e.path}` : e.path || info?.path }));
 /** Normalize space bounds: {min,max,wrap} or [x0,y0,x1,y1] → {min,max,wrap}. */
 export function boundsOf(api) {
   const b = typeof api?.bounds === 'function' ? api.bounds() : null;

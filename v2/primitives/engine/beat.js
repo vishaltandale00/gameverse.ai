@@ -33,14 +33,19 @@ export default {
     },
     provides: { events: ['beat', 'beat:*', 'bar', 'sub_beat', 'beat_hit', 'beat_hit:*', 'beat_miss', 'tempo_changed'], vars: ['beat.bpm', 'beat.index', 'beat.bar', 'beat.in_bar', 'beat.phase', 'beat.combo', 'beat.grade'], services: ['beat'] },
     requires: {},
+    rules: {
+      beat_tempo_invalid: { fields: ['tempoChanges[].bar'], message: 'at most one tempo change per bar', example: { tempoChanges: [{ bar: 2, bpm: 100 }, { bar: 2, bpm: 140 }] } },
+      beat_grades_invalid: { fields: ['grades[].ms'], message: 'grades widen: each window (ms) is wider than the one before it, tightest first' },
+    },
   },
   logic(logic) {
     // {beat_window: 'beat'|'bar'|'sub', ms?: n, in_bar?: n}: now is within ms of the nearest grid point.
     logic.predicate('beat_window', {
+      codes: [{ code: 'beat_predicate_invalid', fields: ['beat_window'], message: "beat_window is 'beat', 'bar' or 'sub'", example: { beat_window: 'measure' } }],
       check: (p, path, errors) => { if (!['beat', 'bar', 'sub'].includes(p.beat_window)) errors.push({ code: 'beat_predicate_invalid', path, message: 'beat_window is beat, bar or sub' }); },
       test: (p, rt) => { const b = rt.service('beat'), n = b.nearest(p.beat_window); return b.running() && Math.abs(n.offsetMs) <= (p.ms ?? b.windowMs) && (p.in_bar === undefined || n.inBar === p.in_bar); },
     });
-    logic.effect('set_tempo', { check: (e, path, errors) => { if (!(e.bpm >= 20 && e.bpm <= 400)) errors.push({ code: 'beat_effect_invalid', path, message: 'bpm must be in [20, 400]' }); }, run: (e, rt) => rt.service('beat').setTempo(e.bpm) });
+    logic.effect('set_tempo', { codes: [{ code: 'beat_effect_invalid', fields: ['bpm'], message: 'bpm is a number in [20, 400]', example: { do: 'set_tempo', bpm: 1000 } }], check: (e, path, errors) => { if (!(e.bpm >= 20 && e.bpm <= 400)) errors.push({ code: 'beat_effect_invalid', path, message: 'bpm must be in [20, 400]' }); }, run: (e, rt) => rt.service('beat').setTempo(e.bpm) });
     logic.effect('start_beat', { run: (e, rt) => rt.service('beat').start(e.restart !== false) });
     logic.effect('stop_beat', { run: (e, rt) => rt.service('beat').stop() });
   },

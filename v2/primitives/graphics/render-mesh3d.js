@@ -12,6 +12,7 @@ import { roadRibbon, roadMask } from './three-buildings.js';
 import { createObjectLayer } from './three-objects.js';
 import { ensureDefaultCamera } from './three-camera.js';
 import thirdPerson from './camera-third-person.js';
+import { modelsData } from './model-lib.js';
 
 export { objectRole } from './three-objects.js';
 
@@ -30,6 +31,7 @@ export default {
     provides: { services: ['camera'] },
     requires: { capabilities: ['surface'] },
     reads: ['content.models'],
+    data: { 'content.models': modelsData(['kind', 'palette', 'parts', 'size', 'rig', 'height', 'length', 'species', 'alpha', 'saddle']) },
   },
   install(rt, config, instance) {
     if (presentationOnly(rt)) return;

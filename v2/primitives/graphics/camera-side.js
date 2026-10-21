@@ -20,7 +20,7 @@ export default {
       roomLock: { type: 'boolean', default: true, effect: 'keep the view inside the current room (generator rooms, then zones)' },
       deadzone: { type: 'list', default: [1, 1.5], of: { type: 'number', min: 0, max: 40 }, min: 2, max: 2, unit: 'tiles', effect: 'box around the center the target moves in freely' },
       target: { type: 'string', selects: ENTITY_KINDS, default: 'player', effect: 'entity id, archetype or tag to follow' },
-      frameTargets: { type: 'list', default: [], of: { type: 'string' }, effect: 'ids/archetypes/tags kept in shot together (versus fighters); zooms out as they separate' },
+      frameTargets: { type: 'list', default: [], of: { type: 'string', selects: ENTITY_KINDS }, effect: 'ids/archetypes/tags kept in shot together (versus fighters); zooms out as they separate' },
       frameMargin: { type: 'number', default: 3, min: 0, max: 40, unit: 'tiles', effect: 'space kept around framed targets' },
       minZoom: { type: 'number', default: 0.45, min: 0.1, max: 1, effect: 'farthest zoom-out when framing targets (fraction of zoom)' },
       risesOnly: { type: 'boolean', default: false, effect: 'never scroll down (vertical climbers)' },

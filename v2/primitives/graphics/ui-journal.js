@@ -5,7 +5,8 @@
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, titleCase, charName, itemName, zoneName, isNum, fmtInt } from './ui-lib.js';
 import { icon } from './ui-icons.js';
-import { portrait, portraitColor } from './ui-portrait.js';
+import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
+import { modelsData } from './model-lib.js';
 import { createSheet } from './ui-sheet.js';
 import * as S from './ui-sources.js';
 
@@ -96,6 +97,8 @@ export default {
       key: { type: 'string', default: 'journal', options: ['journal', 'map', 'inventory', 'none'], effect: 'which UI hotkey opens it' },
     },
     reads: ['plot.quests', 'plot.entries', 'plot.characters', 'content.models'],
+    data: { 'content.models': modelsData(PORTRAIT_MODEL_FIELDS) },
+    rules: { ui_tab_duplicate: { fields: ['tabs'], message: 'each tab is listed once', example: { tabs: ['quests', 'quests'] } } },
   },
   validate(config) {
     const seen = new Set(), errors = [];

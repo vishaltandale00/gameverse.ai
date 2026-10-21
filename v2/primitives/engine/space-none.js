@@ -4,6 +4,7 @@
 // slots: zones are slots such as hand, deck, table or office; e.at is the slot
 // an entity is in (or null). Order within a slot is entity insertion order.
 import { zoneIndex, zoneEditor, inSpace } from './spaces2d-lib.js';
+import { zonesData } from './runtime-lib.js';
 
 export default {
   id: 'engine.space.none',
@@ -18,6 +19,11 @@ export default {
     at: 'At = a slot (zone) id or null',
     zones: 'Zone = {id, name?, tags?} — a named slot',
     state: 'rt.state.spaces[id] = {zones?: runtime slots}; positions live on entities',
+    data: zonesData('tags'),
+    rules: {
+      zone_shape_unsupported: { fields: ['zones[].rect', 'zones[].cells', 'zones[].range', 'zones[].exits'], message: 'a slot has no shape: no rect, cells, range or exits',
+        example: { doc: { spaces: [{ id: 'table', use: 'engine.space.none', zones: [{ id: 'hand', name: 'Hand' }, { id: 'arena', name: 'Arena', rect: [0, 0, 4, 4] }] }] } } },
+    },
   },
   validate(config, doc) {
     const errors = [];

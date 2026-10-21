@@ -5,7 +5,7 @@
 // pure functions of (seed, region), so chunks place them lazily and veins
 // that straddle a chunk border come out whole.
 import { hash3, Rng } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, rangeRule, reversedRanges } from './worlds3d-lib-world.js';
 
 const R = 16; // vein region size (cells)
 const card = {
@@ -18,19 +18,21 @@ const card = {
       of: { type: 'object', fields: {
         block: { type: 'ref', to: 'block', required: true }, minY: { type: 'integer', min: 0, max: 512, default: 1 }, maxY: { type: 'integer', min: 0, max: 512, default: 64 },
         size: { type: 'integer', min: 1, max: 64, default: 8, unit: 'cells' }, perChunk: { type: 'number', min: 0, max: 40, default: 2, effect: 'veins per 16x16 column' },
-        biome: { type: 'ref', to: 'biome', effect: 'only under this biome' }, replace: { type: 'list', of: { type: 'string' }, default: ['stone'], effect: 'host blocks the vein may replace' },
+        biome: { type: 'ref', to: 'biome', effect: 'only under this biome' }, replace: { type: 'list', of: { type: 'ref', to: 'block' }, default: ['stone'], effect: 'host blocks the vein may replace' },
       } },
     },
   },
   provides: { content: ['ores'], extent: 'space', events: [] },
   reads: [],
+  rules: { range_reversed: rangeRule(['veins[].minY', 'veins[].maxY']) },
 };
 
 export default {
   id: 'engine.generate.ores',
   card,
   validate(config) {
-    return (config.veins || []).flatMap((v, i) => (v.minY > v.maxY ? [{ code: 'param_range', path: `with.veins[${i}].minY`, message: 'minY must be at most maxY' }] : []));
+    const veins = withDefaults(card, config).veins || [];
+    return reversedRanges(veins.map((v, i) => [`with.veins[${i}].minY`, [v.minY, v.maxY]]));
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

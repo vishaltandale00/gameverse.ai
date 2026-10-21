@@ -6,13 +6,18 @@
 // primitive uses: solid tiles, one-way platforms (drop-through), slopes and
 // step-ups. Gravity exists only in side mode. Navigation is ability-aware
 // (spaces2d-tilenav.js) and powers path, reachable and canReach.
-import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
+import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, EDGES_RULES, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
+import { zonesData, ZONE_FIELDS } from './runtime-lib.js';
 import { makeNav, DEFAULT_ABILITIES, navOptions } from './spaces2d-tilenav.js';
 
 const EPS = 1e-4;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far (tiles) since the last slide
 const KIND_RANK = { none: 0, oneway: 1, slope: 2, solid: 3 };
 const LIQUID_TAGS = ['liquid', 'water'];
+const SLOPE = { type: 'list', of: { type: 'number', min: 0, max: 1 }, min: 2, max: 2, effect: "slope surface heights [hl, hr] at the tile's left and right edges (0..1)" };
+/** A rule example: the platformer's map as one plain space (its zones kept) with these zones added. */
+const LEVEL_ZONES = [{ id: 'start_area', name: 'Start area', rect: [0, 0, 30, 16] }, { id: 'lowlands', name: 'Lowlands', rect: [30, 0, 60, 16] }, { id: 'high_road', name: 'High road', rect: [60, 0, 90, 16] }, { id: 'finish', name: 'Finish', rect: [90, 0, 120, 16] }];
+const levelWith = (...zones) => ({ doc: { spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { size: [120, 16], mode: 'side', gravity: -60 }, zones: [...LEVEL_ZONES, ...zones] }] } });
 
 export default {
   id: 'engine.space.tilemap',
@@ -30,7 +35,7 @@ export default {
       gravity: { type: 'number', min: -400, max: 400, unit: 'tiles/s²', default: -60, effect: 'vertical gravity in side mode (negative pulls down); zone rules.gravity overrides it' },
       layers: { type: 'list', of: { type: 'string' }, min: 1, default: ['bg', 'solid', 'fg'], effect: 'tile layers back to front' },
       collisionLayers: { type: 'list', of: { type: 'string' }, min: 1, default: ['solid'], effect: 'layers whose blocks collide; tags (liquid, hazard, climbable) are read from every layer' },
-      collision: { type: 'object', open: true, default: {}, effect: "per-block collision override: blockId → 'solid' | 'oneway' | 'none' | [hl, hr] (slope surface heights 0..1 at the tile's left and right edges)" },
+      collision: { type: 'object', default: {}, values: { type: 'object', fields: { kind: { type: 'string', options: ['solid', 'oneway', 'none', 'slope'], required: true }, slope: SLOPE } }, effect: 'per-block collision override: blockId → { kind, slope? } (a slope without heights uses the block\'s slope, else [0, 1])' },
       edges: edgesParam('solid'),
     },
     provides: {
@@ -39,6 +44,16 @@ export default {
       events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'out_of_bounds', 'landed', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     reads: ['content.blocks'],
+    data: {
+      ...zonesData('rect', 'spawn', 'tags'),
+      'content.blocks': { type: 'list', of: { type: 'object', open: true, fields: { solid: { type: 'boolean', effect: 'blocks movement (default true)' }, oneWay: { type: 'boolean', effect: 'solid from above only' }, slope: SLOPE, tags: ZONE_FIELDS.tags } } },
+    },
+    rules: {
+      ...EDGES_RULES,
+      layer_unknown: { fields: ['collisionLayers', 'layers'], message: 'collision layers are layers of layers' },
+      zone_rect_invalid: { fields: ['zones[].rect'], message: 'a map zone has a rect [x0, y0, x1, y1] with x1 > x0 and y1 > y0', example: levelWith({ id: 'pit', rect: [5, 5, 2, 8] }) },
+      zone_outside: { fields: ['zones[].rect', 'size'], message: 'a map zone lies inside the map (0 ≤ x0, 0 ≤ y0, x1 ≤ width, y1 ≤ height)', example: levelWith({ id: 'sky', rect: [0, 10, 4, 40] }) },
+    },
     at: 'At = [x, y] in tiles, y up; the center of the body box (components.body.size, default [1,1]). Cell [i,j] covers [i,i+1)×[j,j+1).',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1) in tiles, spawn?:[x,y], tags?, rules?:{gravity?}}; nested zones are all entered, entity.zone is the smallest.',
     state: 'rt.state.spaces[id] = {palette, cells:{layer:[rowString|null]}, log:[{t,at,layer,from,to,by}], inside:{entity:[zones]}, out:{entity:edge}, zones?:[runtime zones]}',
@@ -53,10 +68,6 @@ export default {
   validate(config, doc, ctx, inst) {
     const errors = [];
     for (const l of config.collisionLayers || []) if (!(config.layers || []).includes(l)) errors.push({ code: 'layer_unknown', path: 'with.collisionLayers', message: `collision layer '${l}' is not in layers`, hint: `layers: ${(config.layers || []).join(', ')}` });
-    for (const [b, v] of Object.entries(config.collision || {})) {
-      const ok = ['solid', 'oneway', 'none'].includes(v) || (Array.isArray(v) && v.length === 2 && v.every(n => Number.isFinite(n) && n >= 0 && n <= 1));
-      if (!ok) errors.push({ code: 'collision_invalid', path: `with.collision.${b}`, message: `collision for '${b}' must be solid|oneway|none or [hl, hr] in 0..1` });
-    }
     errors.push(...checkEdges(config.edges, 'with.edges'));
     const [W, H] = config.size || [64, 32];
     for (const [s, i] of ownSpaces(doc, 'engine.space.tilemap', config, inst)) (s.zones || []).forEach((z, j) => {
@@ -84,11 +95,11 @@ export default {
       def(b); if (kindCache.has(b)) return kindCache.get(b);
       const o = config.collision[b], d = defs.get(b);
       let k = 'solid';
-      if (o !== undefined) k = Array.isArray(o) ? 'slope' : o;
+      if (o !== undefined) k = o.kind;
       else if (d) k = Array.isArray(d.slope) ? 'slope' : (d.oneWay || (d.tags || []).some(t => t === 'one_way' || t === 'oneway')) ? 'oneway' : d.solid === false ? 'none' : 'solid';
       kindCache.set(b, k); return k;
     };
-    const slopeOf = b => { const o = config.collision[b]; return Array.isArray(o) ? o : def(b)?.slope || [0, 1]; };
+    const slopeOf = b => config.collision[b]?.slope ?? def(b)?.slope ?? [0, 1];
     const outKind = (x, y) => { const m = x < 0 ? E.left : x >= W ? E.right : y < 0 ? E.bottom : y >= H ? E.top : null; return m === 'solid' ? 'solid' : 'none'; };
     const nx = x => (wrapX ? mod(x, W) : x), ny = y => (wrapY ? mod(y, H) : y);
     const inMap = (x, y) => x >= 0 && y >= 0 && x < W && y < H;

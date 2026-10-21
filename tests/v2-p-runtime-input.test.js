@@ -128,7 +128,7 @@ test('preflight rejects bad input configs with stable codes', () => {
     { use: 'engine.input.motions', with: { motions: [{ id: 'x', steps: ['2', 'sideways'], buttons: ['kick'] }, { id: 'x', charge: 'down' }, { id: 'y' }], sets: { bad: [0, 12] } } },
   ]);
   const c = codes(bad);
-  for (const code of ['input_verb_invalid', 'input_key_unknown', 'input_verb_unknown', 'motion_set_unknown', 'motion_button_unknown', 'motion_duplicate', 'motion_invalid', 'motion_set_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['param_pattern', 'input_key_unknown', 'input_verb_unknown', 'motion_set_unknown', 'motion_button_unknown', 'motion_duplicate', 'motion_invalid', 'param_range']) assert.ok(c.includes(code), code);
   const conflict = doc([{ use: 'engine.input.actions', with: { verbs: ['move', 'jump'], bindings: { td: { jump: ['w'], move: ['wasd'] } } } }]);
   assert.ok(codes(conflict).includes('input_binding_conflict'));
 });

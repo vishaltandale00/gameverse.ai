@@ -276,12 +276,14 @@ export function generatorModel(rt, instance) {
 
 /** The document space an instance belongs to (validate's 4th argument, KERNEL_API §3). */
 export const spaceOf = (doc, inst) => (doc.spaces || []).find(s => s.id === (inst?.space ?? doc.spaces?.[0]?.id)) || null;
-/** Preflight: block ids a voxel generator uses must exist in content.blocks (when the document lists blocks). */
-export function checkBlocks(doc, inst, entries) {
-  const sp = spaceOf(doc, inst), known = new Set((doc.content?.blocks || []).map(b => b.id));
-  if (sp?.use !== 'engine.space.voxel' || !known.size) return [];
-  return entries.filter(([, id]) => id != null && !known.has(id)).map(([path, id]) => ({ code: 'block_unknown', path, message: `block '${id}' is not in content.blocks`, hint: `blocks: ${[...known].slice(0, 20).join(', ')}` }));
-}
+/**
+ * A [low, high] pair (list min 2 max 2) is a cross-field rule the params dialect cannot state: this card rule, declared
+ * by every generator with such pairs under one code, and its check.
+ * @param {string[]} fields the pair params ('lakeRadius', 'districts[].floors')
+ */
+export const rangeRule = fields => ({ fields, message: 'each [low, high] pair has low ≤ high' });
+/** Problems for reversed [low, high] pairs: entries [path, pair]. */
+export const reversedRanges = entries => entries.filter(([, v]) => Array.isArray(v) && v.length === 2 && v[0] > v[1]).map(([path, v]) => ({ code: 'range_reversed', path, message: `[${v[0]}, ${v[1]}] is not [low, high]` }));
 /** Block definitions from content.blocks: unknown ids are solid and opaque. */
 export function blockTable(doc) {
   const defs = new Map();

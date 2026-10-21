@@ -11,7 +11,7 @@
 // key). Failing sub-seeds retry; the fallback is a straight chain.
 // Works on any space with `position`: cells are carved when the space has
 // editCells; positions map onto the 'xy' or 'xz' plane.
-import { withDefaults, bodyCells, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, vocabulary, problem, inRect } from './generate2d-lib.js';
+import { withDefaults, bodyCells, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, vocabulary, problem, inRect, docSpace } from './generate2d-lib.js';
 
 const ID = 'engine.generate.dungeon.rooms';
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -33,7 +33,7 @@ export default {
       rooms: { type: 'integer', min: 3, max: 80, default: 12, scale: 'world', per: 'area' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },
       keys: { type: 'list', of: { type: 'ref', to: 'item' }, default: [], effect: 'one lock per key, in order along the path to the boss' },
-      loot: { type: 'string', effect: 'loot table id recorded on dead-end chests' },
+      loot: { type: 'ref', to: 'table', effect: 'loot table recorded on dead-end chests' },
       boss: { type: 'ref', to: 'archetype', effect: 'spawned in the boss room' },
       zone: { type: 'ref', to: 'zone', effect: 'area to fill (rect or bounds); default the whole space' },
       area: { type: 'list', of: { type: 'number' }, min: 4, max: 4, scale: 'world', effect: '[x0,y0,x1,y1) on the plane, overrides zone' },
@@ -45,8 +45,8 @@ export default {
       guardsPerRoom: { type: 'integer', min: 0, max: 8, default: 1 },
       roomSize: { type: 'list', of: { type: 'integer', min: 3 }, min: 2, max: 2, default: [5, 9], effect: 'room side range in cells' },
       corridor: { type: 'integer', min: 1, max: 4, default: 1, effect: 'corridor width in cells' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'stone', effect: 'a content.blocks id' }, door: { type: 'string', default: 'locked_door', effect: 'a content.blocks id' } } },
-      archetypes: { type: 'object', default: {}, fields: { key: { type: 'string', default: 'key' }, lock: { type: 'string', default: 'locked_door' }, chest: { type: 'string', default: 'chest' } } },
+      palette: { type: 'object', default: {}, fields: { wall: { type: 'ref', to: 'block', default: 'stone', effect: 'dungeon walls' }, door: { type: 'ref', to: 'block', default: 'locked_door', effect: 'locked doors' } } },
+      archetypes: { type: 'object', default: {}, fields: { key: { type: 'ref', to: 'archetype', default: 'key', effect: 'spawned for each key' }, lock: { type: 'ref', to: 'archetype', default: 'locked_door', effect: 'spawned at each lock' }, chest: { type: 'ref', to: 'archetype', default: 'chest', effect: 'spawned in dead ends' } } },
       autoPickup: { type: 'boolean', default: true, effect: 'the player picks up a key by stepping on it (give_item if the inventory exists, else flag has:<item>)' },
       autoUnlock: { type: 'boolean', default: true, effect: 'a lock opens when the player reaches it holding its key' },
       placePlayer: { type: 'boolean', default: true },
@@ -54,13 +54,13 @@ export default {
     },
     provides: { content: ['cells', 'rooms', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
+    reads: ['content.tables'], // loot names a table
     defines: [],
     // The guarantee: the published `targets` (every room centre) are reachable from `from` by the player's body, keys
     // before their locks.
     traversal: { mover: 'player', problems: ['cells_unreachable', 'dungeon_unsolvable', 'room_unreachable'] },
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],
     rules: {
-      dungeon_area_missing: { fields: ['area', 'zone'], message: 'the dungeon has an area to fill: area, a zone with a rect or bounds, or a space with a size' },
       dungeon_area_small: { fields: ['rooms', 'roomSize', 'area'], message: 'rooms is at most the room slots the area holds (each slot is roomSize[1] + 3 cells a side)' },
       dungeon_keys_many: { fields: ['rooms', 'keys'], message: 'rooms is at least the number of keys + 2 (a lock per key needs a room before it and the boss room after it)' },
     },
@@ -112,12 +112,12 @@ export default {
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID));
-    const mesh = sp?.use === 'engine.space.mesh3d', plane = mesh ? 'xz' : config.plane, size = mesh ? sp?.with?.size ?? [2048, 2048] : sp?.with?.size;
-    const metres = config.area || zoneRect((sp?.zones || []).find(z => z.id === config.zone), plane) || (size ? [0, 0, size[0], mesh ? size[1] : size[plane === 'xz' ? 2 : 1] ?? size[1]] : null);
+    // The area: area, else its zone's rect, else the whole space (every space it fills has a size, declared or default).
+    const errors = [], { space: sp, config: spc } = docSpace(doc, ctx, inst, ID);
+    const mesh = sp?.use === 'engine.space.mesh3d', plane = mesh ? 'xz' : config.plane, size = spc.size;
+    const metres = config.area || zoneRect((sp?.zones || []).find(z => z.id === config.zone), plane) || (Array.isArray(size) ? [0, 0, size[0], mesh ? size[1] : size[plane === 'xz' ? 2 : 1] ?? size[1]] : null);
     const area = metres && mesh ? metres.map(v => v / config.cell) : metres;
-    if (!area) errors.push(problem('dungeon_area_missing', 'zone', 'give area, a zone with a rect/bounds, or a space with a size'));
-    else { const slot = config.roomSize[1] + 3, cap = Math.floor((area[2] - area[0]) / slot) * Math.floor((area[3] - area[1]) / slot); if (cap < config.rooms && !config.zone) errors.push(problem('dungeon_area_small', 'rooms', `the area fits ${cap} room slots; ${config.rooms} rooms requested`, { hint: 'enlarge the area or shrink roomSize' })); }
+    if (area) { const slot = config.roomSize[1] + 3, cap = Math.floor((area[2] - area[0]) / slot) * Math.floor((area[3] - area[1]) / slot); if (cap < config.rooms && !config.zone) errors.push(problem('dungeon_area_small', 'rooms', `the area fits ${cap} room slots; ${config.rooms} rooms requested`, { hint: 'enlarge the area or shrink roomSize' })); }
     if (config.keys.length > config.rooms - 2) errors.push(problem('dungeon_keys_many', 'keys', `${config.keys.length} keys need at least ${config.keys.length + 2} rooms`));
     return errors;
   },

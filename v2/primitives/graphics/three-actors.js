@@ -66,7 +66,7 @@ export function syncActors(stage, spaceId, root, opts = {}) {
   const seen = new Set(), dt = stage.dt * (stage.timeScale ?? 1); // hit-stop / slow-mo (graphics.fx.feedback)
   const pending = animator.pending.splice(0);
   for (const e of Object.values(rt.state.entities)) {
-    if (e.space !== spaceId || e.components?.model === false || e.components?.hidden) continue;
+    if (e.space !== spaceId || e.components?.hidden) continue;
     seen.add(e.id);
     let actor = stage.actors.get(e.id);
     if (!actor) {

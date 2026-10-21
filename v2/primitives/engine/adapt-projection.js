@@ -36,6 +36,14 @@ const union = (/** @type {string[][]} */ lists) => [...new Set(lists.flat())].so
 /** Every capability some projectable kind provides: what the adapter can project, declared statically. */
 export const PROJECTABLE_CAPS = union(Object.values(KINDS).map(k => k.space.card.provides.capabilities));
 const EVENTS = union(Object.values(KINDS).map(k => k.space.card.provides.events || []));
+/**
+ * The projectable kinds' own rules, as this adapter reports them: the kind validates its config (with.config) and the
+ * region's zones (with.zones) as if the region were one of its spaces (validate below), so its codes are this card's.
+ */
+const KIND_RULES = Object.fromEntries(Object.values(KINDS).flatMap(k => Object.entries(k.space.card.rules || {}).map(([code, r]) => [code, {
+  fields: r.fields.map(f => (f === 'zones' || f.startsWith('zones[') || f.startsWith('zones.') ? f : `config.${f}`)),
+  message: `${r.message} (the projected kind's rule, ${k.space.id})`,
+}])));
 
 const r6 = x => Math.round(x * 1e6) / 1e6 + 0;
 const dot = (a, b) => a.reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
@@ -130,7 +138,13 @@ export default {
     provides: { events: EVENTS },
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'zone', in: 'zones' }],
-    components: { projected: { type: 'object', fields: { space: { type: 'string' }, at: { type: 'json' } }, effect: 'host space and host position of an entity living in a projected region (owned by engine.adapt.projection)' } },
+    components: { projected: { type: 'object', fields: { space: { type: 'ref', to: 'space', effect: 'the host space' }, at: { type: 'json', effect: 'the host position' } }, effect: 'host space and host position of an entity living in a projected region (owned by engine.adapt.projection)' } },
+    rules: {
+      ...KIND_RULES,
+      projection_id: { fields: ['id'], message: 'the instance has an id (a lowercase slug) naming the region space, and no document space has that id', example: { doc: { systems: [{ use: ID, with: { kind: 'engine.space.grid', config: { size: [4, 4] } } }] } } },
+      projection_path: { fields: ['path', 'kind'], message: 'a kind laid along a host path (engine.space.track) has a path of at least two points' },
+      projection_frame: { fields: ['axes', 'path', 'origin'], message: 'every axis, and every path point, has the same number of components; origin has the dimension of the axes', example: { doc: { systems: [{ use: ID, id: 'board', with: { kind: 'engine.space.grid', config: { size: [4, 4] }, axes: [[1, 0], [0, 1, 0]] } }] } } },
+    },
     adapts: {
       provides: { capabilities: PROJECTABLE_CAPS, content: [], services: [] },
       from: { capabilities: ['position'] },
@@ -162,9 +176,8 @@ export default {
   validate(config, doc, ctx, inst) {
     const errors = [];
     const id = inst?.id, host = inst?.space ?? doc.spaces?.[0]?.id;
-    if (typeof id !== 'string' || !SLUG.test(id)) errors.push({ code: 'projection_id', path: 'id', message: 'a projection instance needs an id: the region space id primitives and entities bind to', hint: 'add "id": "board" (a lowercase slug)' });
-    else if ((doc.spaces || []).some(s => s.id === id)) errors.push({ code: 'projection_id', path: 'id', message: `region id '${id}' is already a document space` });
-    if (inst?.space !== undefined && !(doc.spaces || []).some(s => s.id === inst.space)) errors.push({ code: 'projection_host', path: 'space', message: `host space '${inst.space}' is not a document space`, hint: 'a region is projected onto a document space (instance.space)' });
+    if (typeof id !== 'string' || !SLUG.test(id)) errors.push({ code: 'projection_id', path: `${inst?.path ?? 'systems'}.id`, message: 'a projection instance needs an id: the region space id primitives and entities bind to', hint: 'add "id": "board" (a lowercase slug)' });
+    else if ((doc.spaces || []).some(s => s.id === id)) errors.push({ code: 'projection_id', path: `${inst?.path ?? 'systems'}.id`, message: `region id '${id}' is already a document space` });
     const K = KINDS[config.kind]; if (!K) return errors;
     const full = checkFields(K.space.card.params || {}, config.config || {}, 'with.config', errors, ctx);
     if (K.path && config.path.length < 2) errors.push({ code: 'projection_path', path: 'with.path', message: `a ${config.kind} region runs along a host path: give at least two points` });

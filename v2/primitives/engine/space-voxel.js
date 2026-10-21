@@ -7,6 +7,7 @@
 // floored world coordinates of standable feet cells (cellOf gives the same key).
 import { nearestRoad } from './worlds3d-lib-roads.js';
 import { worldModel, zoneHas, zoneCenter, zoneYRange, blockTable, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
+import { ZONES3D } from './space-mesh3d.js';
 
 const DIRS6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
 const H8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
@@ -34,7 +35,7 @@ export default {
       gravity: { type: 'number', min: -100, max: 0, default: -9.8, unit: 'm/s²', effect: 'gravity vector y returned by gravityAt' },
       body: { type: 'list', of: { type: 'number', min: 0.05, max: 32 }, min: 3, max: 3, default: [0.6, 1.8, 0.6], unit: 'm', effect: 'default body size [w, h, d] for entities without components.body.size' },
       ground: { type: 'integer', min: 0, max: 512, default: 0, unit: 'cells', effect: 'when no terrain generator is present, cells below this y are groundBlock' },
-      groundBlock: { type: 'string', default: 'stone', effect: 'block used for the fallback flat ground' },
+      groundBlock: { type: 'ref', to: 'block', default: 'stone', effect: 'block used for the fallback flat ground' },
       cacheChunks: { type: 'integer', min: 16, max: 65536, default: 1024, effect: 'generated chunks kept in memory (evicted chunks regenerate identically)' },
       logMax: { type: 'integer', min: 16, max: 1000000, default: 4096, effect: 'edit-log entries kept (the edit map itself is never truncated)' },
       maxFill: { type: 'integer', min: 1, max: 4194304, default: 65536, unit: 'cells', effect: 'largest volume fill() or cellsIn() will touch' },
@@ -49,14 +50,22 @@ export default {
       services: ['surface'],
     },
     reads: ['content.blocks'],
+    data: {
+      ...ZONES3D,
+      'content.blocks': { type: 'list', of: { type: 'object', open: true, fields: { solid: { type: 'boolean', effect: 'blocks movement (default true)' }, transparent: { type: 'boolean' }, fluid: { type: 'boolean', effect: 'flows (default: non-solid blocks named like water, lava, acid, oil)' }, color: { type: 'string', effect: 'CSS colour of the block (default #888888)' }, tags: { type: 'list', of: { type: 'string' } } } } },
+    },
+    rules: {
+      voxel_height_chunk: { fields: ['height', 'chunk'], message: 'height is a multiple of the chunk height (chunk[1])' },
+      voxel_level_range: { fields: ['seaLevel', 'ground', 'height'], message: 'seaLevel and ground are below height' },
+      voxel_chunk_size: { fields: ['chunk'], message: 'a chunk holds at most 1,048,576 cells (chunk[0] × chunk[1] × chunk[2])', example: { chunk: [128, 128, 128] } },
+    },
   },
   validate(config) {
     const errors = [];
     const [sx, sy, sz] = config.chunk || [];
     if (config.height % sy) errors.push({ code: 'voxel_height_chunk', path: 'with.height', message: `height ${config.height} must be a multiple of chunk y ${sy}`, hint: `try ${Math.ceil(config.height / sy) * sy}` });
-    if (config.height / sy > 64) errors.push({ code: 'voxel_chunk_count', path: 'with.chunk', message: 'at most 64 chunks per column', hint: 'use a taller chunk' });
-    if (config.seaLevel >= config.height) errors.push({ code: 'param_range', path: 'with.seaLevel', message: 'seaLevel must be below height' });
-    if (config.ground >= config.height) errors.push({ code: 'param_range', path: 'with.ground', message: 'ground must be below height' });
+    if (config.seaLevel >= config.height) errors.push({ code: 'voxel_level_range', path: 'with.seaLevel', message: 'seaLevel must be below height' });
+    if (config.ground >= config.height) errors.push({ code: 'voxel_level_range', path: 'with.ground', message: 'ground must be below height' });
     if (sx * sy * sz > 1 << 20) errors.push({ code: 'voxel_chunk_size', path: 'with.chunk', message: 'chunks larger than 1M cells' });
     return errors;
   },

@@ -143,7 +143,7 @@ export function specSchema(spec, depth = 0, refs = null) {
   if (t === 'number' || t === 'integer') return { schema: { type: t, ...(typeof spec.min === 'number' ? { minimum: spec.min } : {}), ...(typeof spec.max === 'number' ? { maximum: spec.max } : {}), ...(typeof spec.multipleOf === 'number' ? { multipleOf: spec.multipleOf } : {}), ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'boolean') return { schema: { type: 'boolean', ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'string' && Array.isArray(spec.reserved) && spec.reserved.length) d = `${d ? d + '; ' : ''}never ${spec.reserved.join(', ')} (reserved)`;
-  if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : { ...str(d), ...(typeof spec.pattern === 'string' ? { pattern: spec.pattern } : {}) }, codec: 'raw' };
+  if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : { ...str(d), ...(typeof spec.pattern === 'string' ? { pattern: spec.pattern, ...(typeof spec.example === 'string' ? { [WITNESS]: spec.example } : {}) } : {}) }, codec: 'raw' };
   if (t === 'ref') return { schema: str(`id of a ${spec.to}${d ? `; ${d}` : ''}`), codec: 'raw' };
   if (t === 'list' && depth < MAX_DEPTH) {
     const inner = specSchema(spec.of || { type: 'json' }, depth + 1, refs);
@@ -232,6 +232,12 @@ export function objectSchema(fields, depth = 0, description, refs = null) {
   if (more) props.more_json = nul(str(`other fields as one JSON object: ${entries.filter(e => !keep.includes(e)).map(([k]) => k).join(', ').slice(0, 300)}`));
   return { schema: obj(props, description), codec: { fields: codecs, more } };
 }
+
+/**
+ * The declared example of a patterned string, kept on its form slot under a symbol (never serialized into a model's
+ * schema): the schema sampler's witness of a value the pattern allows.
+ */
+export const WITNESS = Symbol('witness');
 
 /** A list declaration's entry counts as the form's minItems/maxItems (the card's min/max of a list). @param {Spec} spec @returns {Record<string, number>} */
 export const itemCounts = spec => ({ ...(typeof spec.min === 'number' && spec.min > 0 ? { minItems: spec.min } : {}), ...(typeof spec.max === 'number' ? { maxItems: spec.max } : {}) });

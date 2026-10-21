@@ -8,6 +8,7 @@
 import { joinStage, presentationOnly } from './three-stage.js';
 import { quadtreePatches, splatSample, buildPatch, scatterPoints } from './three-terrain.js';
 import { colorOf, hash3 } from './three-util.js';
+import { color6 } from './model-lib.js';
 
 const DEFAULTS = { lodLevels: 4, patch: 64, resolution: 32, splat: [], grass: { density: 0.6, height: 0.45, windSway: 0.3, radius: 42 }, water: null, fog: null, budgetMs: 3 };
 
@@ -224,7 +225,7 @@ export default {
         biome: { type: 'string' }, material: { type: 'string' },
         slope: { type: 'list', of: { type: 'number', min: 0, max: 90 }, min: 2, max: 2, unit: 'deg' },
         height: { type: 'list', of: { type: 'number' }, min: 2, max: 2, unit: 'm' },
-        color: { type: 'string', required: true }, roughness: { type: 'number', min: 0, max: 1, default: 0.9 },
+        color: color6({ required: true }), roughness: { type: 'number', min: 0, max: 1, default: 0.9 },
       } } },
       grass: { type: 'object', default: {}, effect: 'instanced grass near the camera', fields: {
         density: { type: 'number', default: 0.6, min: 0, max: 4, unit: '/m²' }, height: { type: 'number', default: 0.45, min: 0.05, max: 3, unit: 'm' },
@@ -238,13 +239,17 @@ export default {
     },
     provides: {},
     requires: { capabilities: ['surface'] },
+    rules: {
+      splat_rule: { fields: ['splat[].biome', 'splat[].material', 'splat[].slope', 'splat[].height'], message: 'a splat rule names at least one of biome, material, slope and height', example: { doc: { graphics: [{ use: 'graphics.terrain.procedural', with: { splat: [{ color: '#557744' }] } }] } } },
+      splat_range: { fields: ['splat[].slope', 'splat[].height'], message: 'a slope or height range is [low, high] with low < high' },
+      fog_range: { fields: ['fog.near', 'fog.far'], message: 'fog near is below fog far' },
+    },
   },
   validate(config) {
     const errs = [];
     (config.splat || []).forEach((r, i) => {
       if (!r.biome && !r.material && !r.slope && !r.height) errs.push({ code: 'splat_rule', path: `splat[${i}]`, message: 'a splat rule needs biome, material, slope or height' });
-      if (!/^#[0-9a-f]{6}$/i.test(r.color || '')) errs.push({ code: 'color_invalid', path: `splat[${i}].color`, message: `'${r.color}' is not a #rrggbb color` });
-      for (const k of ['slope', 'height']) if (r[k] && !(r[k][0] < r[k][1])) errs.push({ code: 'splat_range', path: `splat[${i}].${k}`, message: `${k} range must be [low, high]` });
+      for (const k of ['slope', 'height']) if (Array.isArray(r[k]) && !(r[k][0] < r[k][1])) errs.push({ code: 'splat_range', path: `splat[${i}].${k}`, message: `${k} range must be [low, high]` });
     });
     if (config.fog && !(config.fog.near < config.fog.far)) errs.push({ code: 'fog_range', path: 'fog', message: 'fog near must be below far' });
     return errs;

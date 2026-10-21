@@ -8,13 +8,17 @@
 // preflight runs (nested effect lists included); everything else is dropped
 // and counted. Script state and its RNG seed live in rt.state, so runs replay
 // and snapshots restore exactly. A script that keeps failing is disabled.
-import { moduleBody, createHost, syntaxError, sandboxKind } from './runtime-lib-sandbox.js';
-import { hasEffect, zoneDef, SLUG } from './runtime-lib.js';
+import { moduleBody, createHost, syntaxError, sandboxKind, LIMITS } from './runtime-lib-sandbox.js';
+import { hasEffect, zoneDef } from './runtime-lib.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { seedFrom } from '../../kernel/rng.js';
 
 const ID = 'engine.script.sandbox';
 const PHASES = ['input', 'ai', 'movement', 'physics', 'interaction', 'rules', 'plot', 'late'];
 const READS = ['vars', 'flags', 'counts', 'events', 'player', 'entities'];
+const STEP = 'export default { step(state, world) { return { state, effects: [] }; } };';
+/** A rule example: one script with these fields (every other field unset, as the form writes it). */
+const scriptExample = fields => ({ scripts: [{ id: 'mechanic', label: null, code: STEP, effects: ['add_var'], reads: null, components: null, radius: null, maxEntities: null, phase: null, every: null, button: null, maxEffects: null, ...fields }] });
 
 export default {
   id: ID,
@@ -24,8 +28,8 @@ export default {
     params: {
       scripts: { type: 'list', default: [], effect: 'sandboxed scripts',
         of: { type: 'object', fields: {
-          id: { type: 'string', required: true }, label: { type: 'string', default: '' },
-          code: { type: 'string', required: true, maxLength: 49152, effect: 'ES module: export default { init?(world, rng), step(state, world, input, rng) -> { state, effects } }' },
+          id: { type: 'string', pattern: ID_PATTERN, required: true }, label: { type: 'string', default: '' },
+          code: { type: 'string', required: true, maxLength: LIMITS.codeBytes, effect: 'ES module: export default { init?(world, rng), step(state, world, input, rng) -> { state, effects } }' },
           effects: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'effect kinds the script may return (e.g. add_var, spawn, damage, emit)' },
           reads: { type: 'list', of: { type: 'string', options: READS }, default: READS, effect: 'state sections in the read-model' },
           components: { type: 'list', of: { type: 'string' }, default: ['body', 'health'], effect: 'entity components included in the read-model' },
@@ -42,15 +46,24 @@ export default {
     },
     provides: { events: ['script_error', 'script_disabled', 'script_disabled:*', 'script_rejected'], services: ['scripts'] },
     requires: {},
+    rules: {
+      script_duplicate: { fields: ['scripts[].id'], message: 'script ids are distinct', example: { scripts: [scriptExample({}).scripts[0], scriptExample({}).scripts[0]] } },
+      script_empty: { fields: ['scripts[].code'], message: 'code is not blank' },
+      script_import: { fields: ['scripts[].code'], message: 'code imports nothing (no import statements, import() or import.meta)', example: scriptExample({ code: `import x from 'y';\n${STEP}` }) },
+      script_async: { fields: ['scripts[].code'], message: 'code is synchronous: no async functions or await', example: scriptExample({ code: 'export default { async step(state) { return { state, effects: [] }; } };' }) },
+      script_export: { fields: ['scripts[].code'], message: 'code has exactly one export, export default' },
+      script_syntax: { fields: ['scripts[].code'], message: 'code is a syntactically valid ES module', example: scriptExample({ code: 'export default { step(state) { return { state, effects: [] }; };' }) },
+      script_effect_unknown: { fields: ['scripts[].effects'], message: 'every effect kind is registered by a primitive of this game' },
+      script_effect_unsafe: { fields: ['scripts[].effects', 'scripts[].when'], message: 'a script whose effects include end_game has a when guard', example: scriptExample({ effects: ['end_game'] }) },
+    },
   },
   validate(config, doc, ctx) {
     const errors = [], seen = new Set();
     config.scripts.forEach((s, i) => {
       const path = `scripts[${i}]`;
       if (seen.has(s.id)) errors.push({ code: 'script_duplicate', path: `${path}.id`, message: `duplicate script '${s.id}'` }); seen.add(s.id);
-      if (!SLUG.test(s.id || '')) errors.push({ code: 'id_invalid', path: `${path}.id`, message: 'script id must be a slug' });
-      const m = moduleBody(s.code);
-      if (m.code) errors.push({ code: m.code, path: `${path}.code`, message: m.message });
+      const m = moduleBody(typeof s.code === 'string' ? s.code : '');
+      if (m.code === 'script_size') { /* the declared maxLength: preflight's */ } else if (m.code) errors.push({ code: m.code, path: `${path}.code`, message: m.message });
       else { const syn = syntaxError(s.code); if (syn) errors.push({ code: 'script_syntax', path: `${path}.code`, message: syn.slice(0, 200) }); }
       (s.effects || []).forEach((k, j) => { if (!hasEffect(ctx, k)) errors.push({ code: 'script_effect_unknown', path: `${path}.effects[${j}]`, message: `effect '${k}' is not registered by any primitive in this game` }); });
       if ((s.effects || []).includes('end_game') && !s.when) errors.push({ code: 'script_effect_unsafe', path: `${path}.effects`, message: 'a script that can end the game needs a `when` guard', hint: 'add when: a predicate for the situations where ending is allowed' });

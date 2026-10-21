@@ -16,6 +16,13 @@
 // an object's local +z axis faces world (sin rot, cos rot).
 import { nearestRoad } from './worlds3d-lib-roads.js';
 import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
+import { zonesData } from './runtime-lib.js';
+
+/** The zone fields both 3D spaces read (worlds3d-lib-world zoneHas / zoneCenter / zoneYRange, a zone's spawn). */
+export const ZONES3D = zonesData('bounds', 'center', 'r', 'polygon', 'rect', 'spawn', 'tags');
+/** A rule example: the sampler's host (ball-sport's pitch, kept) beside a 3D world whose zones are these. */
+const PITCH = { id: 'pitch', use: 'engine.space.arena2d', with: { size: [40, 24], solids: [[0, 7.5, 1.5, 8], [0, 16, 1.5, 16.5], [38.5, 7.5, 40, 8], [38.5, 16, 40, 16.5]] }, zones: [{ id: 'home_goal', name: 'Home goal', rect: [0, 8, 1, 16] }, { id: 'away_goal', name: 'Away goal', rect: [39, 8, 40, 16] }] };
+const worldWith = (...zones) => ({ doc: { spaces: [PITCH, { id: 'sampled_1', use: 'engine.space.mesh3d', zones }] } });
 
 const TILE = 64; // height samples per tile edge
 const OBJ_CELL = 32; // object spatial hash cell (m)
@@ -110,6 +117,11 @@ export default {
       services: ['surface'],
     },
     reads: [],
+    data: ZONES3D,
+    rules: {
+      zone_shape_missing: { fields: ['zones[].bounds', 'zones[].center', 'zones[].polygon', 'zones[].rect'], message: 'a world zone has a shape: bounds, center with r, polygon or rect', example: worldWith({ id: 'nowhere' }) },
+      zone_shape_invalid: { fields: ['zones[].center', 'zones[].r'], message: 'a zone with a center has r > 0', example: worldWith({ id: 'dot', center: [1, 1] }) },
+    },
   },
   validate(config, doc, ctx, inst) {
     const errors = [];
@@ -118,7 +130,6 @@ export default {
       (s.zones || []).forEach((z, j) => {
         if (!z.bounds && !z.center && !z.polygon && !z.rect) errors.push({ code: 'zone_shape_missing', path: `spaces[${i}].zones[${j}]`, message: `zone '${z.id}' needs bounds, center+r, polygon or rect` });
         if (z.center && !(z.r > 0)) errors.push({ code: 'zone_shape_invalid', path: `spaces[${i}].zones[${j}].r`, message: `zone '${z.id}' with a center needs r > 0` });
-        if (z.polygon && (!Array.isArray(z.polygon) || z.polygon.length < 3)) errors.push({ code: 'zone_shape_invalid', path: `spaces[${i}].zones[${j}].polygon`, message: 'polygon needs at least 3 [x, z] points' });
       });
     });
     return errors;
