@@ -11,7 +11,7 @@
 // portals and interactables do it in their own files (see
 // v2/kernel/requests/story.md). The `gate` predicate works anywhere a
 // predicate does (an exit's `gate`, a mechanism's `gate`, a beat's `when`).
-import { err, checkPred, checkKeys, cached } from './story-lib.js';
+import { err, cached, isObj, ENTRY_ID, TEXT, plotExample } from './story-lib.js';
 
 const ID = 'plot.gate';
 const st = rt => { const s = rt.store(ID); s.forced ??= {}; s.open ??= {}; return s; };
@@ -59,11 +59,17 @@ export default {
     reads: ['plot.gates'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
     data: { 'plot.gates': { type: 'list', of: { type: 'object', fields: {
-      id: { type: 'string', required: true }, title: { type: 'string' }, requires: { type: 'predicate', required: true }, hint: { type: 'string' },
+      id: ENTRY_ID, title: TEXT({ effect: 'the gate\'s name a person reads' }), requires: { type: 'predicate', required: true }, hint: TEXT({ effect: 'what a person is told when the gate stops them' }),
       // A target is '<kind>:<id>' ('exit:<zone>><zone>' for an exit): `targets` declares the reference kind of each part.
       locks: { type: 'list', of: { type: 'string', targets: TARGETS } },
     } } } },
     defines: [{ kind: 'gate', at: 'plot.gates' }],
+    rules: {
+      gate_target_invalid: { fields: ['plot.gates[].locks[]'], message: "a lock target is '<kind>:<id>', an exit 'exit:<zone>><zone>'",
+        example: plotExample({ gates: [{ id: 'sampled_gate', requires: { time: 0 }, locks: ['nonsense'] }] }, 'plot.gates[0].locks[0]') },
+      gate_target_unknown: { fields: ['plot.gates[].locks[]'], message: 'each id a lock target names is an id of its kind (targets: an exit\'s two zones, a beat, a quest...) when the document indexes that kind',
+        example: plotExample({ gates: [{ id: 'sampled_gate', requires: { time: 0 }, locks: ['zone:no_such_zone'] }] }, 'plot.gates[0].locks[0]') },
+    },
   },
   logic(logic) {
     logic.predicate('gate', { refs: p => [['gate', p.gate]], test: (p, rt) => gateOpen(rt, p.gate) === (p.open ?? true) });
@@ -71,22 +77,20 @@ export default {
     logic.effect('lock', { refs: e => [['gate', e.gate]], run: (e, rt) => { st(rt).forced[e.gate] = 'locked'; } });
     logic.effect('release_gate', { refs: e => [['gate', e.gate]], run: (e, rt) => { delete st(rt).forced[e.gate]; } });
   },
+  // The shape of plot.gates is declared (card.data); a lock target's form and the ids it names depend on its prefix
+  // (card.data `targets`), checked here.
   validate(config, doc, ctx) {
     const errors = [], list = doc.plot?.gates;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [err('param_type', 'plot.gates', 'must be a list of gates')];
+    if (!Array.isArray(list)) return errors;
     list.forEach((g, i) => {
-      const path = `plot.gates[${i}]`;
-      checkKeys(g, ['id', 'requires', 'hint', 'locks', 'title'], path, errors);
-      if (g.requires === undefined) errors.push(err('gate_invalid', `${path}.requires`, 'gate needs a requires predicate'));
-      checkPred(g.requires, `${path}.requires`, errors, ctx);
-      if (g.locks !== undefined && !Array.isArray(g.locks)) { errors.push(err('param_type', `${path}.locks`, 'must be a list of targets')); return; }
-      (g.locks || []).forEach((t, j) => {
-        const lp = `${path}.locks[${j}]`, p = parseTarget(t);
+      if (!isObj(g) || !Array.isArray(g.locks)) return;
+      g.locks.forEach((t, j) => {
+        if (typeof t !== 'string') return;
+        const lp = `plot.gates[${i}].locks[${j}]`, p = parseTarget(t);
         if (!p) { errors.push(err('gate_target_invalid', lp, `'${t}' is not <kind>:<id> (exit:<zone>><zone> for exits)`)); return; }
-        if (p.kind === 'exit') { for (const z of [p.from, p.to]) if (ctx.indexes.zone && !ctx.indexes.zone.has(z)) errors.push(err('ref_unknown', lp, `unknown zone '${z}'`)); return; }
+        if (p.kind === 'exit') { for (const z of [p.from, p.to]) if (ctx.indexes.zone && !ctx.indexes.zone.has(z)) errors.push(err('gate_target_unknown', lp, `unknown zone '${z}'`)); return; }
         const kind = TARGET_KINDS[p.kind] ?? p.kind;
-        if (ctx.indexes[kind] && !ctx.indexes[kind].has(p.id)) errors.push(err('ref_unknown', lp, `unknown ${kind} '${p.id}'`));
+        if (ctx.indexes[kind] && !ctx.indexes[kind].has(p.id)) errors.push(err('gate_target_unknown', lp, `unknown ${kind} '${p.id}'`));
       });
     });
     return errors;

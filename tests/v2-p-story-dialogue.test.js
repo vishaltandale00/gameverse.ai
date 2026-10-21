@@ -106,7 +106,9 @@ test('preflight rejects broken dialogue with stable codes', () => {
   d.plot.dialogue.bad = { speaker: 'nobody', start: 'zz', nodes: { a: { say: 'x', next: 'missing', choices: [{ text: '' , check: { gte: 'x', roll: 'd7' } }] }, b: { who: 'stranger' }, c: { say: 'y', mood: 1 } } };
   d.plot.dialogue.empty = { start: 'a', nodes: {} };
   const r = check(d);
-  for (const c of ['ref_unknown', 'dialogue_node_unknown', 'dialogue_invalid', 'check_invalid', 'field_unknown']) assert.ok(codes(r).includes(c), c);
+  // Single-field rules are the declared shape's (card.data): an empty choice is param_pattern, a non-numeric gte
+  // param_type, an unknown roll param_option, a line without say param_missing, an unknown field param_unknown.
+  for (const c of ['speaker_unknown', 'dialogue_node_unknown', 'dialogue_invalid', 'check_invalid', 'param_unknown', 'param_pattern', 'param_type', 'param_option', 'param_missing']) assert.ok(codes(r).includes(c), c);
   const p = doc(); p.systems[2].with = { lineSpeed: 500 };
   assert.deepEqual(codes(check(p)), ['param_range']);
   const e = doc(); e.plot.storyboard.acts[0].beats.push({ id: 'b', do: [{ do: 'start_dialogue', dialogue: 'ghost' }] });

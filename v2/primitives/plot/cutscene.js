@@ -1,16 +1,18 @@
 // Scripted sequences (plot.cutscenes): id -> { steps, skippable? }. A step is
 // any of camera {pos, look, fov, ease, sec}, say {character, text, sec?},
-// move {who, to: zone | position, sec?, run?}, wait <seconds>, fx <effects>.
+// move {who, to: zone, or at: position, sec?, run?}, wait <seconds>, fx <effects>.
 // Headless, a cutscene is a timed effect list: each step emits its event
 // (`camera`, `say`), starts its move (kernel move_to) or runs its effects,
 // then holds for its duration; zero-length steps chain in the same frame.
 // Moves snap to their destination when the step ends (snapMoves), so story
 // state never depends on a renderer or on pathing finishing in time.
 // `skip_cutscene` runs every remaining fx and move instantly.
-import { err, checkEffects, checkRef, checkKeys, ticks, readSeconds, zoneIndex } from './story-lib.js';
+import { err, isObj, ticks, readSeconds, zoneIndex, TEXT, plotExample } from './story-lib.js';
 
 const ID = 'plot.cutscene';
-const STEP_KEYS = ['camera', 'say', 'move', 'wait', 'fx', 'sec'];
+/** What a step does (a step does at least one of them; `sec` only holds it longer). */
+const ACTIONS = ['camera', 'say', 'move', 'wait', 'fx'];
+const POINT = { type: 'list', of: { type: 'number' }, effect: 'a position in the space' };
 const st = rt => { const s = rt.store(ID); s.queue ??= []; s.played ??= {}; s.active ??= null; return s; };
 const scenes = rt => rt.doc.plot?.cutscenes || {};
 
@@ -32,43 +34,53 @@ export default {
     provides: { events: ['cutscene_start', 'cutscene_start:*', 'cutscene_end', 'cutscene_end:*', 'cutscene_step', 'camera', 'say'], services: ['cutscene'], actions: ['skip_cutscene'] },
     reads: ['plot.cutscenes'],
     defines: [{ kind: 'cutscene', at: 'plot.cutscenes' }],
+    // Section shapes this primitive reads (the kernel checks entries against them; forms and repair derive from them).
+    data: { 'plot.cutscenes': { type: 'object', values: { type: 'object', fields: {
+      title: TEXT({ effect: 'the scene\'s title a person reads' }), skippable: { type: 'boolean' },
+      steps: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
+        camera: { type: 'object', fields: { pos: POINT, look: POINT, fov: { type: 'number', min: 0 }, ease: { type: 'string' }, sec: { type: 'number', min: 0, unit: 's' }, target: { type: 'string', effect: 'an entity the camera follows' } } },
+        say: { type: 'object', fields: { character: { type: 'string', selects: ['character'], effect: "a character id, or 'player'" }, text: TEXT({ required: true, effect: 'the line a person reads' }), sec: { type: 'number', min: 0, unit: 's' } } },
+        move: { type: 'object', fields: { who: { type: 'string', required: true, selects: ['character'], effect: "a character id, or 'player'" }, to: { type: 'ref', to: 'zone', effect: 'the zone walked to' }, at: { type: 'json', effect: 'the position walked to (a zone id on a graph space: use to)' }, sec: { type: 'number', min: 0, unit: 's' }, run: { type: 'boolean' } } },
+        wait: { type: 'number', min: 0, unit: 's' }, fx: { type: 'effects' }, sec: { type: 'number', min: 0, unit: 's' },
+      } } },
+    } } } },
+    rules: {
+      cutscene_step_invalid: { fields: ['plot.cutscenes.*.steps[]', 'plot.cutscenes.*.steps[].move.to', 'plot.cutscenes.*.steps[].move.at'], message: 'a step has a camera, say, move, wait or fx; a move gives to or at',
+        example: plotExample({ cutscenes: { cs: { steps: [{ sec: 1 }] } } }, 'plot.cutscenes.cs.steps[0]') },
+      cutscene_actor_unknown: { fields: ['plot.cutscenes.*.steps[].say.character', 'plot.cutscenes.*.steps[].move.who'], message: "who speaks or moves is a plot.characters id, or 'player'",
+        example: plotExample({ cutscenes: { cs: { steps: [{ say: { character: 'nobody', text: 'Hm.' } }] } } }, 'plot.cutscenes.cs.steps[0].say.character') },
+      cutscene_too_long: { fields: ['plot.cutscenes.*.steps', 'maxSeconds', 'sayCps', 'minSay'], message: 'a cutscene\'s steps last at most maxSeconds',
+        example: plotExample({ cutscenes: { cs: { steps: [{ wait: 5000 }] } } }, 'plot.cutscenes.cs') },
+    },
   },
   logic(logic) {
     logic.effect('play_cutscene', { refs: e => [['cutscene', e.cutscene]], run: (e, rt) => rt.service('cutscene').play(e.cutscene) });
     logic.effect('skip_cutscene', { run: (e, rt) => rt.service('cutscene').skip(true) });
     logic.predicate('cutscene', { refs: p => [['cutscene', p.cutscene]], test: (p, rt) => { const s = st(rt), state = p.state ?? 'done'; return state === 'playing' ? s.active?.id === p.cutscene : state === 'done' ? Boolean(s.played[p.cutscene]) : !s.played[p.cutscene] && s.active?.id !== p.cutscene; } });
   },
+  // The shape of plot.cutscenes is declared (card.data); what is left are the rules across fields: what a step does,
+  // who acts, how long a scene runs.
   validate(config, doc, ctx) {
     const errors = [], all = doc.plot?.cutscenes;
-    if (all === undefined) return errors;
-    if (!all || typeof all !== 'object' || Array.isArray(all)) return [err('param_type', 'plot.cutscenes', 'must be an object of id -> cutscene')];
+    if (!isObj(all)) return errors;
+    const actor = (who, path) => { if (typeof who === 'string' && who !== 'player' && !ctx.indexes.character?.has(who)) errors.push(err('cutscene_actor_unknown', path, `unknown character '${who}'`)); };
+    const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
     for (const [id, c] of Object.entries(all)) {
+      if (!isObj(c) || !Array.isArray(c.steps)) continue;
       const path = `plot.cutscenes.${id}`;
-      checkKeys(c, ['steps', 'skippable', 'title'], path, errors);
-      if (!Array.isArray(c?.steps) || !c.steps.length) { errors.push(err('cutscene_invalid', `${path}.steps`, 'cutscene needs at least one step')); continue; }
       let total = 0;
       c.steps.forEach((s, i) => {
+        if (!isObj(s)) return;
         const sp = `${path}.steps[${i}]`;
-        checkKeys(s, STEP_KEYS, sp, errors, 'cutscene_step_invalid');
-        if (!STEP_KEYS.some(k => k !== 'sec' && s?.[k] !== undefined)) errors.push(err('cutscene_step_invalid', sp, 'step needs camera, say, move, wait or fx'));
-        if (s.camera !== undefined) { checkKeys(s.camera, ['pos', 'look', 'fov', 'ease', 'sec', 'target'], `${sp}.camera`, errors, 'cutscene_step_invalid'); total += s.camera.sec ?? 0; }
-        if (s.say !== undefined) {
-          checkKeys(s.say, ['character', 'text', 'sec'], `${sp}.say`, errors, 'cutscene_step_invalid');
-          if (s.say.character !== undefined && s.say.character !== 'player') checkRef(ctx, 'character', s.say.character, `${sp}.say.character`, errors);
-          if (typeof s.say?.text !== 'string') errors.push(err('cutscene_step_invalid', `${sp}.say.text`, 'say needs text'));
-          total += s.say.sec ?? Math.max(config.minSay, readSeconds(s.say.text, config.sayCps));
+        if (!ACTIONS.some(k => s[k] !== undefined)) errors.push(err('cutscene_step_invalid', sp, 'step needs camera, say, move, wait or fx'));
+        if (isObj(s.camera)) total += num(s.camera.sec);
+        if (isObj(s.say)) { actor(s.say.character, `${sp}.say.character`); total += s.say.sec !== undefined ? num(s.say.sec) : Math.max(config.minSay, readSeconds(s.say.text, config.sayCps)); }
+        if (isObj(s.move)) {
+          actor(s.move.who, `${sp}.move.who`);
+          if (s.move.to === undefined && s.move.at === undefined) errors.push(err('cutscene_step_invalid', `${sp}.move`, 'move needs to (a zone id) or at (a position)'));
+          total += num(s.move.sec);
         }
-        if (s.move !== undefined) {
-          checkKeys(s.move, ['who', 'to', 'sec', 'run'], `${sp}.move`, errors, 'cutscene_step_invalid');
-          if (typeof s.move.who !== 'string') errors.push(err('cutscene_step_invalid', `${sp}.move.who`, 'move needs who (player or a character/entity id)'));
-          else if (s.move.who !== 'player' && ctx.indexes.character && !ctx.indexes.character.has(s.move.who)) errors.push(err('ref_unknown', `${sp}.move.who`, `unknown character '${s.move.who}'`));
-          if (typeof s.move.to === 'string') checkRef(ctx, 'zone', s.move.to, `${sp}.move.to`, errors);
-          else if (s.move.to === undefined) errors.push(err('cutscene_step_invalid', `${sp}.move.to`, 'move needs to (zone id or position)'));
-          total += s.move.sec ?? 0;
-        }
-        if (s.wait !== undefined) { if (!(typeof s.wait === 'number' && s.wait >= 0)) errors.push(err('cutscene_step_invalid', `${sp}.wait`, 'wait is a number of seconds')); else total += s.wait; }
-        checkEffects(s.fx, `${sp}.fx`, errors, ctx);
-        total += s.sec ?? 0;
+        total += num(s.wait) + num(s.sec);
       });
       if (total > config.maxSeconds) errors.push(err('cutscene_too_long', path, `cutscene runs ${total.toFixed(1)} s, over maxSeconds ${config.maxSeconds}`));
     }
@@ -85,7 +97,7 @@ export default {
       return ticks(rt, sec);
     };
     const moveEffect = (m, instant) => {
-      const zone = typeof m.to === 'string' ? m.to : undefined, at = zone ? undefined : m.to;
+      const zone = m.to, at = zone === undefined ? m.at : undefined;
       if (instant) {
         const e = rt.resolve(m.who); if (!e) return;
         const target = zone ? zoneIndex(rt.doc).get(zone)?.space : e.space;

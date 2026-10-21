@@ -12,13 +12,14 @@
 //              with `since: 'start'` progress starts from its count so far
 //   reads    - static requirements for the story graph (story-graph.js)
 // Event-counted kinds count only events after activation unless `since: 'start'`.
-import { err, checkRef, entityAlive, zoneIndex } from './story-lib.js';
+import { err, entityAlive, zoneIndex, TEXT, KEY_ID } from './story-lib.js';
+import { ENTITY_KINDS } from '../../kernel/params.js';
 
 const S = (extra = {}) => ({ type: 'string', ...extra });
 const N = (extra = {}) => ({ type: 'number', ...extra });
 const I = (extra = {}) => ({ type: 'integer', min: 1, max: 100000, ...extra });
 const B = (extra = {}) => ({ type: 'boolean', ...extra });
-export const BASE_FIELDS = { id: S({ required: true }), kind: S({ required: true }), text: S(), optional: B(), hidden: B(), since: S({ options: ['active', 'start'] }) };
+export const BASE_FIELDS = { id: KEY_ID, kind: S({ required: true }), text: TEXT({ effect: 'the objective as the quest log shows it' }), optional: B(), hidden: B(), since: S({ options: ['active', 'start'] }) };
 
 const playerZone = rt => rt.player()?.zone ?? null;
 const inZone = (rt, who, zone) => { const e = typeof who === 'string' ? rt.resolve(who) : who; if (!e?.space) return false; try { return rt.space(e.space).inZone(e, zone, rt); } catch { return false; } };
@@ -60,7 +61,7 @@ export const OBJECTIVES = {
     fields: { item: { type: 'ref', to: 'item', required: true }, count: I({ default: 1 }), to: S({ required: true }), consume: B({ default: true }) },
     check(o, path, errors, ctx) {
       const isChar = ctx.indexes.character?.has(o.to), isZone = ctx.indexes.zone?.has(o.to);
-      if (typeof o.to === 'string' && !isChar && !isZone) errors.push(err('ref_unknown', `${path}.to`, `deliver target '${o.to}' is neither a character nor a zone`));
+      if (typeof o.to === 'string' && !isChar && !isZone) errors.push(err('objective_target_unknown', `${path}.to`, `deliver target '${o.to}' is neither a character nor a zone`));
       ctx.checkPredicate({ item: o.item, gte: o.count ?? 1 }, path, errors);
     },
     events: () => ['talked'],
@@ -108,8 +109,8 @@ export const OBJECTIVES = {
     reads: o => [['character', o.character], ...(o.dialogue ? [['dialogue', o.dialogue]] : [])],
   },
   escort: {
-    fields: { who: S({ required: true }), to: { type: 'ref', to: 'zone', required: true }, failIfDead: B({ default: true }) },
-    check: (o, path, errors, ctx) => { if (typeof o.who === 'string' && !ctx.indexes.character?.has(o.who) && !ctx.indexes.archetype?.has(o.who)) errors.push(err('ref_unknown', `${path}.who`, `escortee '${o.who}' is neither a character nor an archetype`)); },
+    fields: { who: S({ required: true, selects: ENTITY_KINDS, effect: 'the character or archetype escorted' }), to: { type: 'ref', to: 'zone', required: true }, failIfDead: B({ default: true }) },
+    check: (o, path, errors, ctx) => { if (typeof o.who === 'string' && !ctx.indexes.character?.has(o.who) && !ctx.indexes.archetype?.has(o.who)) errors.push(err('objective_target_unknown', `${path}.who`, `escortee '${o.who}' is neither a character nor an archetype`)); },
     need: () => 1,
     poll(o, prog, rt) {
       const e = rt.entity(o.who) || Object.values(rt.state.entities).find(x => x.archetype === o.who);
@@ -147,11 +148,8 @@ export const OBJECTIVES = {
     reads: o => (o.zone ? [['zone', o.zone]] : []),
   },
   drive: {
-    fields: { vehicle: S(), to: { type: 'ref', to: 'zone' }, distance: N({ min: 0 }), maxSeconds: N({ min: 0 }) },
-    check: (o, path, errors, ctx) => {
-      if (o.to === undefined && o.distance === undefined) errors.push(err('objective_invalid', path, 'drive needs to or distance'));
-      if (o.vehicle !== undefined && !ctx.indexes.archetype?.has(o.vehicle)) errors.push(err('ref_unknown', `${path}.vehicle`, `unknown vehicle archetype '${o.vehicle}'`));
-    },
+    fields: { vehicle: { type: 'ref', to: 'archetype', effect: 'the vehicle archetype ridden' }, to: { type: 'ref', to: 'zone' }, distance: N({ min: 0 }), maxSeconds: N({ min: 0 }) },
+    check: (o, path, errors) => { if (o.to === undefined && o.distance === undefined) errors.push(err('objective_invalid', path, 'drive needs to or distance')); },
     need: () => 1,
     activate: prog => { prog.t = 0; prog.d = 0; prog.last = null; prog.ride = null; },
     events: () => ['vehicle_entered', 'vehicle_exited', 'mounted', 'dismounted'],
@@ -183,10 +181,10 @@ export const OBJECTIVES = {
     reads: o => [['recipe', o.recipe]],
   },
   use: {
-    fields: { interactable: S(), tag: S(), count: I({ default: 1 }) },
+    fields: { interactable: S({ selects: ENTITY_KINDS, effect: 'the interactable used: an entity id, or an archetype with an interact component' }), tag: S(), count: I({ default: 1 }) },
     check: (o, path, errors, ctx) => {
       if (o.interactable === undefined && o.tag === undefined) errors.push(err('objective_invalid', path, 'use needs interactable or tag'));
-      if (o.interactable !== undefined) { checkRef(ctx, 'interactable', o.interactable, `${path}.interactable`, errors); ctx.noteRef('event', `used:${o.interactable}`, path, 'read'); }
+      if (typeof o.interactable === 'string') ctx.noteRef('event', `used:${o.interactable}`, path, 'read');
     },
     events: () => ['used'],
     typed: o => (o.interactable !== undefined ? `used:${o.interactable}` : null),

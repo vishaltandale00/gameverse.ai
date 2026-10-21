@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { catalogue } from '../v2/primitives/index.js';
 import { preflight, mergePatch } from '../v2/kernel/document.js';
 import { createWorld } from '../v2/kernel/world.js';
+import { KERNEL_CODES } from '../v2/kernel/rules.js';
 
 // A tiny mystery on a graph space: find the key in the garden, open the
 // library, read the letter. Exercises spaces, gates, storyboard and items.
@@ -31,7 +32,9 @@ const mystery = () => ({
 });
 
 const { registry, logic } = catalogue();
-const codes = r => r.errors.map(e => e.code);
+// Preflight's errors and its declaration checks (section shapes, rule_undeclared), reported as warnings while the
+// catalogue's declarations are completed (kernel/document.js): a beat's unknown effect is its declared shape's finding.
+const codes = r => [...r.errors, ...r.warnings.filter(w => KERNEL_CODES.includes(w.code) || w.code === 'rule_undeclared')].map(e => e.code);
 
 test('a full document preflights in milliseconds', () => {
   const r = preflight(mystery(), registry, logic);

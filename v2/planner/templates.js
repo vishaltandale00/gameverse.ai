@@ -17,6 +17,7 @@ import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, pre
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 import { rulesOn } from '../kernel/rules.js';
 import { sectionShape, NAME_PATTERN } from '../kernel/sections.js';
+import { variantFields } from '../kernel/params.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -542,7 +543,7 @@ export function displayText(spec, value, path = []) {
   if (s.type === 'string') return s.display && isStr(value) ? [{ path, text: value, spec: s }] : [];
   if (s.type === 'list') return Array.isArray(value) ? value.flatMap((v, i) => displayText(s.of, v, [...path, i])) : [];
   if (s.type === 'object' && isObj(value)) {
-    const fields = isObj(s.fields) ? s.fields : {};
+    const fields = variantFields(s, value) ?? (isObj(s.fields) ? s.fields : {});
     return Object.entries(value).flatMap(([k, v]) => (k in fields ? displayText(fields[k], v, [...path, k]) : s.values ? displayText(s.values, v, [...path, k]) : []));
   }
   return [];

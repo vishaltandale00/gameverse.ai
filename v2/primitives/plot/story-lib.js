@@ -4,7 +4,30 @@
 // Nothing here holds state: everything that must survive a snapshot lives in
 // rt.store(<primitive id>), and derived indexes are rebuilt per rt.doc.
 
+import { ID_PATTERN, NAME_PATTERN } from '../../kernel/sections.js';
+
 export const err = (code, path, message, hint) => ({ code, path, message, ...(hint ? { hint } : {}) });
+
+// Declaration pieces shared by the plot cards' card.data (ARCHITECTURE §1.4: the section shapes are the schema).
+/** Text with at least one non-space character. */
+export const LINE_PATTERN = '\\S';
+/** The id of an entry of a section a plot card owns and indexes (card.defines): a lowercase slug, required. */
+export const ENTRY_ID = Object.freeze({ type: 'string', pattern: ID_PATTERN, required: true, effect: 'a lowercase slug, unique in its section' });
+/** A key a plot predicate or effect names (an act, a branch, an objective): a lowercase slug, required. */
+export const KEY_ID = Object.freeze({ type: 'string', pattern: ID_PATTERN, required: true });
+/** Text a person reads (display: the content forms theme it). @param {Record<string, unknown>} [extra] */
+export const TEXT = (extra = {}) => ({ type: 'string', display: true, ...extra });
+/** A line a person reads that must say something. @param {Record<string, unknown>} [extra] */
+export const LINE = (extra = {}) => ({ type: 'string', display: true, pattern: LINE_PATTERN, ...extra });
+/** A name a person reads (the kernel's name rule, kernel/sections.js NAME_PATTERN). @param {Record<string, unknown>} [extra] */
+export const NAME = (extra = {}) => ({ type: 'string', display: true, pattern: NAME_PATTERN, ...extra });
+
+/**
+ * A rule example as a document fragment (schema-sampler: each top-level section it names replaces the host's): the
+ * plot section given, over a minimal story (one act with no beats, so plot.storyboard has what it needs).
+ * @param {Record<string, unknown>} plot @param {string} [at] the path the code is reported at
+ */
+export const plotExample = (plot, at) => ({ doc: { plot: { storyboard: { acts: [{ id: 'act', beats: [] }] }, ...plot } }, ...(at ? { at } : {}) });
 
 /** Derived data cached per document version (hot-loaded content rebuilds it). Never JSON state. */
 export function cached(rt, key, build) {

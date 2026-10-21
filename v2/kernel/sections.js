@@ -48,7 +48,8 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Merge two declarations of one value (a base and a card's, or two cards'): objects merge their fields (recursively),
- * lists merge their elements; anything else must be declared the same way twice, else it is a conflict.
+ * lists merge their elements; a scalar's later declaration may refine it (refineScalar: required, a narrower range or
+ * set), and anything that contradicts it is a conflict.
  * @param {ParamSchema} a @param {ParamSchema} b @param {string} path @param {Array<{ path: string, message: string }>} conflicts @returns {ParamSchema}
  */
 export function mergeShape(a, b, path, conflicts) {
@@ -60,11 +61,35 @@ export function mergeShape(a, b, path, conflicts) {
     return { ...a, ...b, fields, open: Boolean(a.open || b.open) && !(a.open === false || b.open === false) ? true : Boolean(a.open && b.open), ...(values ? { values } : {}), required: Boolean(a.required || b.required) || undefined };
   }
   if (a.type === 'list' && b.type === 'list' && a.of && b.of) return { ...a, ...b, of: mergeShape(a.of, b.of, `${path}[]`, conflicts), min: Math.max(a.min ?? 0, b.min ?? 0) || undefined };
-  if (!same(strip(a), strip(b))) conflicts.push({ path, message: `declared as ${JSON.stringify(strip(a)).slice(0, 120)} and as ${JSON.stringify(strip(b)).slice(0, 120)}` });
-  return a;
+  return refineScalar(a, b, path, conflicts);
 }
 /** A declaration without its prose (two cards may describe one field in their own words). @param {ParamSchema} s */
 const strip = s => Object.fromEntries(Object.entries(s).filter(([k]) => k !== 'effect' && k !== 'example'));
+
+/**
+ * A later declaration of one scalar value (a card's over the kernel's base, or over an earlier card's) may refine it:
+ * make it required, narrow its range (min up, max down, maxLength down), narrow its closed set (options a subset),
+ * reserve more values, or add a pattern, multipleOf, `to` or any other key the earlier one does not set. A contradiction
+ * is a conflict: a different type, a widened range or set, or a key both set to different values.
+ * @param {ParamSchema} a @param {ParamSchema} b @param {string} path @param {Array<{ path: string, message: string }>} conflicts @returns {ParamSchema}
+ */
+function refineScalar(a, b, path, conflicts) {
+  /** @type {Record<string, unknown>} */
+  const out = { ...a };
+  const bad = [];
+  for (const [k, v] of Object.entries(strip(b))) {
+    const was = /** @type {Record<string, unknown>} */ (a)[k];
+    if (k === 'required') out.required = Boolean(was || v) || undefined;
+    else if (was === undefined) out[k] = v;
+    else if (k === 'min') { if (typeof v !== 'number' || typeof was !== 'number' || v < was) bad.push(k); else out.min = v; }
+    else if (k === 'max' || k === 'maxLength') { if (typeof v !== 'number' || typeof was !== 'number' || v > was) bad.push(k); else out[k] = v; }
+    else if (k === 'options') { if (!Array.isArray(v) || !Array.isArray(was) || !v.every(x => was.includes(x))) bad.push(k); else out.options = v; }
+    else if (k === 'reserved') { if (!Array.isArray(v) || !Array.isArray(was)) bad.push(k); else out.reserved = [...new Set([...was, ...v])]; }
+    else if (!same(was, v)) bad.push(k);
+  }
+  if (bad.length) conflicts.push({ path, message: `declared as ${JSON.stringify(strip(a)).slice(0, 120)} and as ${JSON.stringify(strip(b)).slice(0, 120)} (${bad.join(', ')} contradict)` });
+  return /** @type {ParamSchema} */ (out);
+}
 
 /**
  * The shape of a section in a document that uses `uses`: the kernel's base (when it declares the section) merged with

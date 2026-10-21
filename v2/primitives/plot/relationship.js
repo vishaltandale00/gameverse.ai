@@ -4,7 +4,7 @@
 // predicate reads them with `var`. Crossing a rank threshold emits
 // rank_changed; dropping below hostileBelow emits faction_hostile:<id>.
 // decayPerDay pulls every value toward 0 on each engine.time `new_day`.
-import { err, checkKeys, cached } from './story-lib.js';
+import { err, cached, ENTRY_ID, NAME, TEXT } from './story-lib.js';
 
 const ID = 'plot.relationship';
 const factions = rt => cached(rt, 'plot.relationship.index', doc => new Map((doc.plot?.factions || []).map(f => [f.id, f])));
@@ -24,6 +24,15 @@ export default {
     provides: { events: ['rep_changed', 'rep_changed:*', 'affinity_changed', 'affinity_changed:*', 'rank_changed', 'rank_changed:*', 'faction_hostile', 'faction_hostile:*', 'faction_calm', 'faction_calm:*'], vars: ['rep.*', 'affinity.*'], services: ['relationship'] },
     reads: ['plot.factions'],
     defines: [{ kind: 'faction', at: 'plot.factions' }],
+    // Section shapes this primitive reads (the kernel checks entries against them; forms and repair derive from them).
+    data: { 'plot.factions': { type: 'list', of: { type: 'object', fields: {
+      id: ENTRY_ID, name: NAME({ required: true, effect: 'the faction\'s name a person reads' }), desc: TEXT({ effect: 'a line about the faction a person reads' }), tags: { type: 'list', of: { type: 'string' } },
+      rep: { type: 'number', effect: 'starting reputation (default 0)' }, hostileBelow: { type: 'number', effect: 'hostile while reputation is below this' },
+      ranks: { type: 'list', of: { type: 'object', fields: { at: { type: 'number', required: true, effect: 'the reputation the rank starts at' }, title: TEXT({ required: true, effect: 'the rank\'s title a person reads' }) } } },
+    } } } },
+    rules: {
+      rep_range_invalid: { fields: ['repRange'], message: 'repRange is [min, max] with min below max' },
+    },
   },
   logic(logic) {
     const clampTo = (rt, v) => { const [lo, hi] = rt.caches[`${ID}.range`] || [-100, 100]; return Math.max(lo, Math.min(hi, v)); };
@@ -47,19 +56,10 @@ export default {
     logic.predicate('rank', { refs: p => [['faction', p.rank]], test: (p, rt) => rankOf(factions(rt).get(p.rank), rt.state.vars[`rep.${p.rank}`] ?? 0) === p.title });
     logic.predicate('hostile', { refs: p => [['faction', p.hostile]], test: (p, rt) => { const f = factions(rt).get(p.hostile); return f?.hostileBelow !== undefined && (rt.state.vars[`rep.${p.hostile}`] ?? 0) < f.hostileBelow; } });
   },
-  validate(config, doc, ctx) {
-    const errors = [], list = doc.plot?.factions;
-    if (config.repRange?.[0] >= config.repRange?.[1]) errors.push(err('param_range', 'repRange', 'repRange min must be below max'));
-    if (list === undefined) return errors;
-    if (!Array.isArray(list)) return [...errors, err('param_type', 'plot.factions', 'must be a list of factions')];
-    list.forEach((f, i) => {
-      const path = `plot.factions[${i}]`;
-      checkKeys(f, ['id', 'name', 'rep', 'ranks', 'hostileBelow', 'tags', 'desc'], path, errors);
-      if (typeof f.name !== 'string') errors.push(err('faction_invalid', `${path}.name`, 'faction needs a name'));
-      for (const k of ['rep', 'hostileBelow']) if (f[k] !== undefined && typeof f[k] !== 'number') errors.push(err('faction_invalid', `${path}.${k}`, `${k} must be a number`));
-      (f.ranks || []).forEach((r, j) => { if (typeof r?.at !== 'number' || typeof r?.title !== 'string') errors.push(err('faction_invalid', `${path}.ranks[${j}]`, 'rank needs at:number and title:string')); });
-    });
-    return errors;
+  // The shape of plot.factions is declared (card.data); what is left is the rule across the two ends of repRange.
+  validate(config) {
+    const [lo, hi] = Array.isArray(config.repRange) ? config.repRange : [];
+    return typeof lo === 'number' && typeof hi === 'number' && lo >= hi ? [err('rep_range_invalid', 'repRange', 'repRange min must be below max')] : [];
   },
   install(rt, config) {
     st(rt); // create the store at install: UI reads (view/list/known) must never write state

@@ -73,7 +73,9 @@ export function checkParam(schema, value, path, errors, ctx) {
     }
     case 'object': {
       if (!value || typeof value !== 'object' || Array.isArray(value)) { fail('param_type', 'must be an object'); return value; }
-      return checkFields(schema.fields || {}, value, path, errors, ctx, schema.open, schema.values);
+      // An object with variants whose discriminator names none: the discriminator's error says so; its other keys are not judged.
+      const variant = variantFields(schema, value), unmatched = Boolean(schema.variants) && !variant;
+      return checkFields(variant ?? schema.fields ?? {}, value, path, errors, ctx, schema.open || unmatched, schema.values);
     }
     case 'predicate':
       ctx?.checkPredicate?.(value, path, errors);
@@ -88,6 +90,21 @@ export function checkParam(schema, value, path, errors, ctx) {
       fail('schema_invalid', `unknown param type '${schema.type}'`);
       return value;
   }
+}
+
+/**
+ * An object's fields for one value when the object declares `variants: { by, of: { <value>: fields } }` (fields that
+ * depend on a discriminating field, a quest objective's `kind`): its own fields and those of the variant the value's
+ * `by` field names. undefined when it declares none, or the value names no variant (the discriminator's own declaration,
+ * its options, reports that).
+ * @param {ParamSchema} schema @param {Record<string, any>} value @returns {Params | undefined}
+ */
+export function variantFields(schema, value) {
+  const v = schema.variants;
+  if (!v || typeof v !== 'object' || typeof v.by !== 'string' || !v.of || typeof v.of !== 'object') return undefined;
+  const key = value?.[v.by];
+  const own = typeof key === 'string' && Object.hasOwn(v.of, key) ? v.of[key] : undefined;
+  return own && typeof own === 'object' ? { ...(schema.fields || {}), ...own } : undefined;
 }
 
 /**

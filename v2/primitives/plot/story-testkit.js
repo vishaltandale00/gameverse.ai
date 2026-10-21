@@ -7,6 +7,7 @@ import { Registry } from '../../kernel/registry.js';
 import { Logic } from '../../kernel/logic.js';
 import { buildLogic } from '../../kernel/world.js';
 import { preflight } from '../../kernel/document.js';
+import { KERNEL_CODES } from '../../kernel/rules.js';
 
 export const ZONES = [
   { id: 'village', rect: [0, 0, 10, 10], tags: ['town'] },
@@ -34,7 +35,11 @@ export function catalog(extra = []) {
 }
 export const make = (doc, opts = {}) => compile(doc, { primitives: primitives(), ...opts });
 export function check(doc, extra = []) { const { registry, logic } = catalog(extra); return preflight(doc, registry, logic); }
-export const codes = r => r.errors.map(e => e.code);
+/**
+ * The codes preflight reports: its errors, and the declaration checks (shape codes, rule_undeclared) it still reports as
+ * warnings while the catalogue's declarations are completed (kernel/document.js).
+ */
+export const codes = r => [...r.errors, ...r.warnings.filter(w => KERNEL_CODES.includes(w.code) || w.code === 'rule_undeclared')].map(e => e.code);
 export function step(rt, n = 1, input = {}) { for (let i = 0; i < n && rt.state.status === 'playing'; i++) rt.step(input); return rt; }
 export const act = (rt, actions) => rt.step({ actions });
 export const goTo = (rt, zone) => rt.run([{ do: 'teleport', zone }]);

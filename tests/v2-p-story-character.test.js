@@ -97,8 +97,10 @@ test('preflight rejects bad characters with stable codes', () => {
   bad.plot.characters.push({ id: 'x2', archetype: 'villager' });
   bad.plot.characters.push({ id: 'x3', name: 'Floating' });
   const r = check(bad);
-  for (const c of ['ref_unknown', 'schedule_invalid', 'field_unknown', 'character_invalid', 'character_unspawnable']) assert.ok(codes(r).includes(c), c);
-  assert.ok(r.errors.some(e => e.path === 'plot.characters[4].home'));
+  // Single-field rules are the declared shape's (card.data): an unknown field is param_unknown, a missing name
+  // param_missing, an hour past 24 param_range; the rules across fields keep their codes.
+  for (const c of ['ref_unknown', 'schedule_invalid', 'param_unknown', 'param_missing', 'param_range', 'character_unspawnable']) assert.ok(codes(r).includes(c), c);
+  assert.ok([...r.errors, ...r.warnings].some(e => e.path === 'plot.characters[4].home'));
   const badParam = doc(); badParam.systems[1].with = { talkRange: -1, chatty: true };
   assert.deepEqual(codes(check(badParam)).sort(), ['param_range', 'param_unknown']);
   const badAlive = doc(); badAlive.plot.storyboard.acts[0].beats[0].when = { alive: 'nobody' };

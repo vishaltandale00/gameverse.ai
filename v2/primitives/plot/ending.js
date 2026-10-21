@@ -3,7 +3,7 @@
 // `when` holds fires: ending_reached (with the epilogue), its `do` effects,
 // its cutscene (when plot.cutscene is installed the game ends as the cutscene
 // finishes), then end_game with the ending's outcome.
-import { err, checkPred, checkEffects, checkRef, checkKeys, service } from './story-lib.js';
+import { err, service, isObj, TEXT } from './story-lib.js';
 
 const ID = 'plot.ending';
 const OUTCOMES = ['won', 'lost', 'neutral'];
@@ -22,10 +22,14 @@ export default {
     provides: { events: ['ending_reached', 'ending_reached:*'] },
     reads: ['plot.endings'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
-    data: { 'plot.endings': { type: 'list', of: { type: 'object', fields: {
-      id: { type: 'string', required: true }, title: { type: 'string' }, when: { type: 'predicate' }, epilogue: { type: 'string' },
+    // An entry has only the fields declared here (open: false).
+    data: { 'plot.endings': { type: 'list', min: 1, of: { type: 'object', open: false, fields: {
+      title: TEXT({ effect: 'the ending\'s title a person reads' }), when: { type: 'predicate' }, epilogue: TEXT({ effect: 'what a person reads when the story ends this way' }),
       cutscene: { type: 'ref', to: 'cutscene' }, do: { type: 'effects' }, outcome: { type: 'string', options: OUTCOMES },
     } } } },
+    rules: {
+      ending_invalid: { fields: ['plot.endings[].when', 'requireWhen'], message: 'every ending has a when predicate unless requireWhen is false' },
+    },
     // The configuration under which endings reached only through end_game (no `when`) are valid: a loop's lose wired
     // by its effects next to a win evaluated here (planner/presets.js wireLoop).
     untriggered: { param: 'requireWhen', is: false },
@@ -33,20 +37,11 @@ export default {
   logic(logic) {
     logic.predicate('ending_available', { refs: p => [['ending', p.ending_available]], test: (p, rt) => { const e = (rt.doc.plot?.endings || []).find(x => x.id === p.ending_available); return Boolean(e?.when) && rt.test(e.when); } });
   },
-  validate(config, doc, ctx) {
-    const errors = [], list = doc.plot?.endings;
-    if (list === undefined) return errors;
-    if (!Array.isArray(list) || !list.length) return [err('plot_missing', 'plot.endings', 'endings must be a non-empty list')];
-    list.forEach((e, i) => {
-      const path = `plot.endings[${i}]`;
-      checkKeys(e, ['id', 'title', 'when', 'epilogue', 'cutscene', 'do', 'outcome'], path, errors);
-      if (e.when === undefined && config.requireWhen) errors.push(err('ending_invalid', `${path}.when`, 'ending needs a when predicate', 'or set requireWhen:false and reach it with end_game'));
-      checkPred(e.when, `${path}.when`, errors, ctx);
-      checkEffects(e.do, `${path}.do`, errors, ctx);
-      if (e.outcome !== undefined && !OUTCOMES.includes(e.outcome)) errors.push(err('ending_invalid', `${path}.outcome`, `outcome must be ${OUTCOMES.join('|')}`));
-      if (e.cutscene !== undefined) checkRef(ctx, 'cutscene', e.cutscene, `${path}.cutscene`, errors);
-    });
-    return errors;
+  // The shape of plot.endings is declared (card.data); what is left is the rule across a param and a field.
+  validate(config, doc) {
+    const list = doc.plot?.endings;
+    if (!Array.isArray(list) || !config.requireWhen) return [];
+    return list.flatMap((e, i) => (isObj(e) && e.when === undefined ? [err('ending_invalid', `plot.endings[${i}].when`, 'ending needs a when predicate', 'or set requireWhen:false and reach it with end_game')] : []));
   },
   install(rt, config) {
     st(rt); // create the store at install: UI reads (view/list/known) must never write state

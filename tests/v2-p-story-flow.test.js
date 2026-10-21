@@ -114,8 +114,11 @@ test('preflight rejects bad gates, cutscenes and endings with stable codes', () 
   d.plot.cutscenes.cs_long = { steps: [{ wait: 500 }] };
   d.plot.endings.push({ id: 'e_x', title: 'X', outcome: 'draw', cutscene: 'cs_none' });
   const r = check(d);
-  for (const c of ['gate_invalid', 'gate_target_invalid', 'ref_unknown', 'cutscene_step_invalid', 'cutscene_too_long', 'ending_invalid']) assert.ok(codes(r).includes(c), c);
-  assert.ok(!r.errors.some(e => /portal:anything/.test(e.message)), 'portal ids are checked only when a primitive defines the kind');
+  // Single-field rules are the declared shapes' (card.data): a gate without requires is param_missing, an unknown step
+  // key param_unknown, an outcome outside the set param_option; the rules across fields keep their own codes.
+  for (const c of ['param_missing', 'gate_target_invalid', 'gate_target_unknown', 'ref_unknown', 'param_unknown', 'param_range', 'param_option', 'cutscene_step_invalid', 'cutscene_actor_unknown', 'cutscene_too_long', 'ending_invalid']) assert.ok(codes(r).includes(c), c);
+  assert.ok(![...r.errors, ...r.warnings].some(e => /portal:anything/.test(e.message)), 'portal ids are checked only when a primitive defines the kind');
+  // plot.endings declares at least one entry (min 1): an empty list is the shape's param_range.
   const e = doc(); e.plot.endings = [];
-  assert.ok(codes(check(e)).includes('plot_missing'));
+  assert.ok(codes(check(e)).includes('param_range'));
 });

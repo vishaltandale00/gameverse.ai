@@ -19,8 +19,8 @@ const plot = () => ({
   ],
   clues: [{ id: 'c_mud', title: 'Muddy boots' }, { id: 'c_note', title: 'A note', when: { item: 'key' } }, { id: 'c_lie', title: 'A lie', tags: ['testimony'] }],
   deductions: [
-    { id: 'd_butler', clues: ['c_mud', 'c_note'], do: [{ do: 'set_flag', flag: 'solved' }], conclusion: 'The butler.' },
-    { id: 'd_maid', clues: ['c_lie'], wrong: true },
+    { id: 'd_butler', title: 'The butler did it', clues: ['c_mud', 'c_note'], do: [{ do: 'set_flag', flag: 'solved' }], conclusion: 'The butler.' },
+    { id: 'd_maid', title: 'The maid did it', clues: ['c_lie'], wrong: true },
   ],
 });
 const doc = (w = {}) => storyDoc({ plot: plot(), extraSystems: [
@@ -138,7 +138,10 @@ test('preflight rejects bad data with stable codes', () => {
   d.plot.deductions.push({ id: 'd_bad', clues: ['c_none'] }, { id: 'd_empty', clues: [] });
   d.plot.storyboard.acts[0].beats.push({ id: 'b', when: { entries: 'nonexistent_tag' }, do: [{ do: 'bark', channel: 'tv', line: 'x' }, { do: 'add_rep', faction: 'nobody', delta: 'x' }] });
   const r = check(d);
-  for (const c of ['faction_invalid', 'field_unknown', 'entry_invalid', 'bark_channel_unknown', 'bark_invalid', 'ref_unknown', 'random_event_invalid', 'deduction_invalid', 'effect_invalid']) assert.ok(codes(r).includes(c), c);
+  // Single-field rules are the declared shapes' (card.data): missing names, titles and texts are param_missing, wrong
+  // types param_type, an empty line param_pattern, negative weights param_range, unknown fields param_unknown.
+  for (const c of ['param_missing', 'param_type', 'param_unknown', 'param_pattern', 'param_range', 'ref_unknown', 'bark_channel_unknown', 'effect_invalid']) assert.ok(codes(r).includes(c), c);
+  // repRange's two ends are a rule across them (rep_range_invalid), not the kernel's param_range.
   const p = doc({ rel: { repRange: [5, 1] }, barks: { interval: 0 } });
-  assert.deepEqual(codes(check(p)).sort(), ['param_range', 'param_range']);
+  assert.deepEqual(codes(check(p)).sort(), ['param_range', 'rep_range_invalid']);
 });
