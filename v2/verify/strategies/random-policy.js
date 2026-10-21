@@ -3,7 +3,7 @@
 // frames; every non-player body that has moved is watched: one that stays
 // still for `stuckSeconds` while play continues is stuck, one that leaves
 // the space bounds (or turns non-finite) escaped.
-import { hold, velOf } from '../drive.js';
+import { hold, velOf, pressableVerbs } from '../drive.js';
 import { prng } from '../util.js';
 import { problem, entityPath, seedBudgets } from './common.js';
 
@@ -31,7 +31,7 @@ export default {
     for (const seed of seeds) for (let r = 0, b = sb.budget(); r < runs && !b.over(); r++) {
       // The verbs a person can press (a controlled runtime: v2/verify/controls.js), toggled as keys: down on the toggle
       // frame, held until the next.
-      const rt = b.meter(ctx.make(seed)), rand = prng(`random-policy:${seed ?? ''}:${r}`), verbs = rt.controls ? rt.controls.pressable() : rt.actions();
+      const rt = b.meter(ctx.make(seed)), rand = prng(`random-policy:${seed ?? ''}:${r}`), verbs = pressableVerbs(rt);
       const still = {}, moved = new Set(), gone = new Set();
       let held = {};
       stats.runs++;

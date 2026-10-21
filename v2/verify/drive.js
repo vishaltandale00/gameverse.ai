@@ -127,6 +127,12 @@ export const collectibles = (rt, e = rt.player()) => Object.values(rt.state.enti
 /** Velocity of an entity: components.body.vel or [0,0,0]. */
 export const velOf = e => { const v = e?.components?.body?.vel; return Array.isArray(v) ? v : [0, 0, 0]; };
 
+/**
+ * The verbs a person presses (a key sends true): on a controlled runtime (v2/verify/controls.js) the controls' own
+ * list, so a bot never asks for a verb no key gives; else every action the runtime registers.
+ */
+export const pressableVerbs = rt => (rt.controls ? rt.controls.pressable() : rt.actions());
+
 /** Directional input macros for continuous/cell spaces: idle + 8 axis directions. */
 export const DIRS8 = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 
@@ -136,7 +142,7 @@ export const DIRS8 = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1],
  * `verbs` defaults to the verbs a key presses and `axes` to every axis the bindings give a source (move, drive, steer,
  * aim...; mouse look excepted); else rt.actions() and the move axis. `axes: false` (or []) leaves the axes out.
  */
-export function inputMacros(rt, { verbs = rt.controls ? rt.controls.pressable() : rt.actions(), axes = boundAxes(rt), combos = true } = {}) {
+export function inputMacros(rt, { verbs = pressableVerbs(rt), axes = boundAxes(rt), combos = true } = {}) {
   const list = axes === true ? ['move'] : axes || [];
   const out = [{ label: 'idle', input: {} }];
   for (const a of list) for (const [x, y] of DIRS8.slice(1)) out.push({ label: `${a} ${x},${y}`, input: { axes: { [a]: [x, y] } } });

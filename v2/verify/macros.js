@@ -8,7 +8,7 @@
 //           with the jump verb (discovered by probing) when the next waypoint
 //           is higher in a gravity space. It proves the route with physics.
 // Solvers and playtesters attach them with rt.options (the public runtime API).
-import { hold, inputMacros, posOf, applyOption } from './drive.js';
+import { hold, inputMacros, posOf, applyOption, pressableVerbs } from './drive.js';
 import { navOptions, navFrom } from './movement.js';
 import { instancesOf } from './util.js';
 
@@ -22,7 +22,7 @@ export function jumpVerb(rt) {
   const base = rt.snapshot(), y0 = pos()[1];
   let found = null;
   // On a controlled runtime (v2/verify/controls.js) only the verbs a key presses are tried: what a person can press.
-  for (const v of rt.controls ? rt.controls.pressable() : rt.actions()) {
+  for (const v of pressableVerbs(rt)) {
     rt.restore(base);
     hold(rt, { actions: { [v]: true }, held: { [v]: true } }, 1);
     let top = pos()?.[1] ?? y0;

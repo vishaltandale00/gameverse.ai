@@ -128,7 +128,10 @@ export async function verify(doc, registry, logic, opts = {}) {
         if (wm) reached.high = 0;
         try {
           const r = playBot(s, ctx, { maxSteps: B.botSteps, ...(opts.strategies?.[s.id] || {}) });
-          ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget, ...(wm ? { progress: reached.high } : {}) });
+          // won: the game itself ended won in one of its runs (status 'won'), never a bot's own pass criterion
+          // (surviving, a share collected, the opponents down while the game plays on).
+          const won = (r.metrics?.runs ?? r.metrics?.matches ?? []).some(x => x?.status === 'won');
+          ran.push({ id: s.id, reason, ok: r.ok, won, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget, ...(wm ? { progress: reached.high } : {}) });
           tag(r.problems.map(p => ({ ...p, strategy: s.id })), 'strategy');
         } catch (error) {
           ran.push({ id: s.id, reason, ok: false, error: String(error?.message || error) });

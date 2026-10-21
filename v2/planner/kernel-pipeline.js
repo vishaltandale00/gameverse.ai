@@ -75,7 +75,7 @@ const errorText = error => String(prop(error, 'message') || error);
 
 /**
  * The quality report for a verification that already passed the publish gate (v2/verify/quality.js). It never
- * blocks: it reuses the gate's playtest, is bounded by `budgetMs`, and a failure is recorded as { error }.
+ * blocks: it reuses the gate's playtest, is bounded by simulated frames (quality.js QUALITY_STEPS), and a failure is recorded as { error }.
  * Sets v.quality so summarizeVerify keeps it. Returns null when quality is off (budgetMs 0) or there is no document.
  * @param {Verification | null | undefined} v @param {RegistryLike} registry @param {LogicLike} logic
  * @param {{ mechanics?: unknown, budgetMs?: number }} [opts] mechanics: selection.mechanics (a stored report's on revisions)

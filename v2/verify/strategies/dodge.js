@@ -8,7 +8,7 @@
 // ends with a living foe close to its line of fire (the player's facing) costs
 // less, a little: safety decides, aiming breaks the ties, so a stage whose win
 // is destroying what it sends can be won and not only survived.
-import { DIRS8, hold, threats, vitality, posOf, velOf, foes, hpOf } from '../drive.js';
+import { DIRS8, hold, threats, vitality, posOf, velOf, foes, hpOf, pressableVerbs } from '../drive.js';
 import { facingOf } from '../../primitives/gameplay/combat-lib.js';
 import { multiSeed, problem, seedBudgets } from './common.js';
 
@@ -32,7 +32,7 @@ export function aimOffset(rt) {
 export function fireVerb(rt) {
   const snap = rt.snapshot(), spawns = input => { rt.restore(snap); const before = rt.state.counts.spawn || 0; hold(rt, input, 3); return (rt.state.counts.spawn || 0) - before; };
   const idle = spawns({});
-  for (const v of rt.actions()) if (spawns({ actions: { [v]: true } }) > idle) { rt.restore(snap); return v; }
+  for (const v of pressableVerbs(rt)) if (spawns({ actions: { [v]: true } }) > idle) { rt.restore(snap); return v; }
   rt.restore(snap);
   return null;
 }

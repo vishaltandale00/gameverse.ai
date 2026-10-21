@@ -53,7 +53,9 @@ test('progress is the win quantity, not the objective score: a rising score with
 
 test('a win (the explorer\'s or a bot\'s) counts as progress', () => {
   const none = { quantity: 'event harvest', idle: 0, high: 0 };
-  assert.equal(viability(play({ progress: none }), [], bots([{ id: 'race', reason: 'card', proven: ['won 2/3'] }]), loop).viable, true);
+  assert.equal(viability(play({ progress: none }), [], bots([{ id: 'race', reason: 'card', won: true, proven: ['won 2/3'] }]), loop).viable, true);
+  // A bot's own pass criterion (it survived, it collected a share) is not the game won: no win, so progress decides.
+  assert.equal(code(viability(play({ progress: none }), [], bots([{ id: 'dodge', reason: 'card', won: false, proven: ['survived 60% of 30 s'] }]), loop)), 'no_progress');
   assert.equal(viability(play({ progress: none, winnable: true }), [], bots(), loop).viable, true);
 });
 

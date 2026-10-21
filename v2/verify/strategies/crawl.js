@@ -11,7 +11,7 @@
 // The attack verbs are the player verbs of the document's loops that act on the component the mode's win reads (the
 // loops requiring that component's owner, card.loop.verbs). Moves hold the axis toward the next cell; which way an
 // axis moves on the board is learned from what the held axis did, never assumed. It must win (defeat the boss).
-import { hold, posOf, threats, collectibles, hpOf } from '../drive.js';
+import { hold, posOf, threats, collectibles, hpOf, pressableVerbs } from '../drive.js';
 import { stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { stepsFrom } from '../../kernel/testing.js';
@@ -31,7 +31,7 @@ export function attackVerbs(ctx, rt, mode) {
   const C = mode.win?.reads?.component;
   if (!C) return [];
   const owners = ctx.registry.cards().filter(c => c.components?.[C] !== undefined).map(c => c.id);
-  const actions = new Set(rt.actions());
+  const actions = new Set(pressableVerbs(rt)); // the crawler presses them: what a key presses
   const out = [];
   for (const s of ctx.doc.systems || []) {
     const card = ctx.registry.get(s.use)?.card;

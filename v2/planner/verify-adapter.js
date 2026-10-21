@@ -81,7 +81,7 @@ const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event
 // Only the game running can crash a game: a verifier stage that throws (plot, spatial, strategies) is our bug, reported, never blocking.
 /** @type {Set<string | undefined>} */
 const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
-/** A strategy run as v2/verify reports it; progress: how far its play moved the win quantity toward the win. @typedef {{ id: string, reason?: string, ok?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string, progress?: number | null }} BotRun */
+/** A strategy run as v2/verify reports it; won: one of its runs ended with the game won; progress: how far its play moved the win quantity toward the win. @typedef {{ id: string, reason?: string, ok?: boolean, won?: boolean, proven?: string[], metrics?: Record<string, unknown> | null, error?: string, progress?: number | null }} BotRun */
 /**
  * @param {unknown} play the playtest result, when one ran @param {VerifyProblem[]} [problems]
  * @param {{ ran?: BotRun[] } | null} [strategies] the strategies stage's report; given, the playability checks apply
@@ -103,7 +103,9 @@ function unplayable(play, problems, strategies, loop) {
   // The plot solver's exhaustive proof that no ending is reachable blocks, unless a player actually won (the solver
   // searches player options only, so it can miss wins that need other participants to act). Its softlock report has
   // the same blind spot (the AI's turn offers the player no options) and is not used here.
-  const won0 = Boolean(pt.winnable) || (strategies?.ran || []).some(b => (b.proven || []).length);
+  // A win is the game ending won (the explorer's, or a bot's run with status 'won'): a bot's own pass criterion (it
+  // survived, it collected a share, its opponents fell while the game played on) is not one.
+  const won0 = Boolean(pt.winnable) || (strategies?.ran || []).some(b => b.won === true);
   const unreachable = problems.find(p => p.severity === 'error' && p.code === 'plot_uncompletable');
   if (unreachable && !won0) return [`plot_uncompletable: ${unreachable.message}`];
   /** @type {string[]} */
