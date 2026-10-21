@@ -216,10 +216,11 @@ export function botRegressions(base, after) {
  * game was built from) turns on the tune stage. -> GateResult (ok, the stage that failed and its problems, the
  * preflighted document, its verification, the bot proofs the regression stage made).
  * @param {unknown} input the document to publish (preflighted here)
- * @param {{ registry: RegistryLike, logic: LogicLike, budgetMs: number, playtestMs: number, base?: Baseline | null, template?: Template | null, botBudgetMs?: number }} opts
+ * `through: 'controls'` runs the static stages only (nothing simulates).
+ * @param {{ registry: RegistryLike, logic: LogicLike, budgetMs: number, playtestMs: number, base?: Baseline | null, template?: Template | null, botBudgetMs?: number, through?: 'controls' | null }} opts
  * @returns {Promise<GateResult>}
  */
-export async function gateVersion(input, { registry, logic, budgetMs, playtestMs, base = null, template = null, botBudgetMs = BOT_BUDGET_MS }) {
+export async function gateVersion(input, { registry, logic, budgetMs, playtestMs, base = null, template = null, botBudgetMs = BOT_BUDGET_MS, through = null }) {
   /** @type {Record<string, number>} */
   const ms = {};
   /** @type {GateResult} */
@@ -244,6 +245,7 @@ export async function gateVersion(input, { registry, logic, budgetMs, playtestMs
   if (loop.length) return fail('loop', loop.map(p => ({ stage: 'loop', code: 'loop_problem', path: p.path, message: p.message, cause: p.code })));
   const loose = timed('controls', () => documentUncontrolled(host.doc, registry));
   if (loose.length) return fail('controls', loose.map(m => ({ stage: 'controls', code: 'controls_missing', path: m.use, message: `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, use: m.use, verb: m.verb })));
+  if (through === 'controls') return Object.assign(result, { ok: true, stage: null, problems: [] });
   let t = performance.now();
   const v = await verifyDocument(doc, registry, logic, { budgetMs, playtestMs });
   ms.gate = Math.round(performance.now() - t);

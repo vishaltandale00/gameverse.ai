@@ -7,8 +7,9 @@
 //   confirms which candidate params the request means.
 // - reviseDocument: a writer proposes targeted ops (set/add/remove at
 //   identity-aware paths); nothing else in the document can change.
-// - reviewChange: the one review of a change; blocks only a game that cannot run,
-//   everything else (removals, look changes, finishability, applied-or-not) is a note.
+// - reviewChange: the notes on a change (removals, look changes, finishability, applied-or-not). What may publish
+//   is decided by the version gate (version-gate.js), which every new version passes; reviewChange's own block
+//   (an invalid or crashing game) only repeats what the gate already refused.
 import { regressed } from './verify-adapter.js';
 import { cardText, vocabulary, dataShapes } from './catalog.js';
 import { tokens } from './select.js';

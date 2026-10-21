@@ -11,7 +11,7 @@ import { hashOf } from '../v2/server/store.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { createJobs } from '../v2/server/jobs.js';
 import { tweakDocument } from '../v2/planner/doc-revise.js';
-import { tuneSlots, tuneLimits, tuneRangeProblems, instanceValue, versionTemplate, featureRegressions, botRegressions, proofHolds, GATE_CODES, GATE_STAGES } from '../v2/planner/version-gate.js';
+import { gateVersion, tuneSlots, tuneLimits, tuneRangeProblems, instanceValue, versionTemplate, featureRegressions, botRegressions, proofHolds, GATE_CODES, GATE_STAGES } from '../v2/planner/version-gate.js';
 import { fakeWriter } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
@@ -63,6 +63,14 @@ test('tune: every template\'s tune slot bounds a change to its param exactly as 
     assert.deepEqual(tuneRangeProblems(t, base, base, cat), [], t.id);
   }
   assert.ok(outCases > 0 && inCases > 0, `${outCases} out-of-range and ${inCases} in-range cases`);
+});
+
+test('the version gate\'s static stages pass every template as it is verified (no gate rule stricter than the template contract; catalogue-wide)', async () => {
+  for (const t of TEMPLATES) {
+    const g = await gateVersion(structuredClone(t.doc), { ...cat, budgetMs: 0, playtestMs: 0, template: t, through: 'controls' });
+    assert.ok(g.ok, `${t.id}: ${g.stage} ${JSON.stringify(g.problems.slice(0, 3))}`);
+    assert.equal(g.verification, null, 'nothing simulated');
+  }
 });
 
 test('versionTemplate: the template a version was made from, with every composed part\'s tune paths', () => {
