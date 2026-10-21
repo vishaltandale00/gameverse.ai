@@ -677,7 +677,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const items = content.items;
   for (const it of skeleton.content?.items || []) if (!items.some(x => x.id === it.id)) items.push(structuredClone(it));
   if (items.length) out.content.items = items;
-  out.plot.characters = content.characters;
+  // The cast the form wrote (an empty list is no section: nothing stamps one).
+  if (content.characters.length) out.plot.characters = content.characters;
   if (content.dialogue) out.plot.dialogue = content.dialogue;
   if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {

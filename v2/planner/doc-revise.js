@@ -11,7 +11,14 @@
 //   everything else (removals, look changes, finishability, applied-or-not) is a note.
 import { regressed } from './verify-adapter.js';
 import { cardText, vocabulary, dataShapes } from './catalog.js';
-import { tokens } from './select.js';
+
+// The tweak path's word match of a change request against param names (no model). It is the revise path's (agent REV's
+// area); the tokenizer moved here from select.js when the step path's lexical ranking was deleted.
+const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this their them they you your player players game games can each every any one two three when where which who what than then there these those over under up down out about via per such so not no only also more most some between'.split(' '));
+/** @param {string} w */
+const stem = w => w.length > 4 ? w.replace(/(ings|ing|ers|er|ed|es|ions|ion|ments|ment|ies|s)$/, m => m === 'ies' ? 'y' : '') : w;
+/** @param {unknown} text @returns {string[]} */
+const tokens = text => (String(text || '').toLowerCase().match(/[a-z][a-z0-9]*/g) || []).filter(w => !STOP.has(w) && w.length > 1).map(stem);
 import { parsePath } from './repair.js';
 import { contentDiff, changeSummary, shrunkLists, asksToRemove, checkRevision, noulOf } from './revision-check.js';
 import { parseReply } from './writer.js';

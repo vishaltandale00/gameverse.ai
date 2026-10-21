@@ -17,8 +17,9 @@
 //        joined concept, its own loop's interaction), as a single card or the smallest BUNDLE (bundles.js formBundle)
 //        that is valid: no new failure or type hole in checkComposition (resolve:true) on the adapter instances
 //        resolveAdapters gives it (ids, configuration, bindings), and no new capability, service, requirement or
-//        conflict error from preflight on the partial document. declaredFit only orders the list (less BUNDLE_PENALTY
-//        per extra primitive); nothing cuts it;
+//        conflict error from preflight on the partial document. The list is in declaration order (retrieval.js
+//        declarationOrder: cards whose loop declares the mechanic's verb first, then the catalogue's order); nothing
+//        cuts it and nothing ranks it by text;
 //      - ONE small strict question: pick one option id (enum: id, one-line intent, bundle members) or "none" with a
 //        reason; over MAX_LIST options, a category question (id namespaces) comes first;
 //      - the pick is added with its bundle, the whole collection is checked again and its adapters resolved; the
@@ -48,11 +49,11 @@ import { spaceVariants, requirementsOf, satisfying, isSpace, dataShapes } from '
 import { contractsOf } from './content.js';
 import { cardLoop } from './loop.js';
 import { isAvatar, unplayedLoops } from './play-spec.js';
-import { relevance, spaceSlug, KIND_HINTS } from './select.js';
+import { spaceSlug } from './select.js';
 import { unfurnishable } from './world.js';
 import { makeAsk, loopSteps, adapterSteps, askWins, askLoopStep, partialCheck, loopNeeds } from './build-steps.js';
 import { keepMashupAdapters } from './adapters.js';
-import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, MAX_LIST } from './retrieval.js';
+import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, declaresVerb, MAX_LIST } from './retrieval.js';
 import { isStr, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -88,9 +89,14 @@ import { isStr, prop } from '../kernel/guards.js';
  *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, mashupAdapters: import('./adapters.js').MashupRealisation[], gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
  */
 
-export const BUILD_VERSION = 'build/0.3';
-/** At most this many spaces are offered; mechanic options are never cut (over MAX_LIST a category question comes first). */
-export const MAX_SPACES = 8;
+export const BUILD_VERSION = 'build/0.4';
+/**
+ * Loop-check needs a pick's own declarations must answer (loop-check.js LoopNeed kinds): its participants, the player's
+ * seat, an opponent, a group to seat, the component its win reads. No later step adds them, so a pick that lacks one is
+ * dropped from its step and the step asked again without it.
+ */
+export const OWN_NEEDS = new Set(['participants', 'seat', 'opponent', 'group', 'component']);
+/** Options are never cut (over MAX_LIST a category question comes first). */
 export { MAX_LIST };
 
 /** @param {RegistryLike} registry @param {string} id @returns {Card | null} */
@@ -126,11 +132,11 @@ export function worklist(decomposition) {
 const entryFits = (registry, entry, use, caps) => (Array.isArray(entry) ? entry.every(c => caps.has(c)) : registry.has(entry) ? entry === use : caps.has(entry));
 
 /**
- * The space cards that fit the play spec, best first (at most MAX_SPACES): card.views shows one of the idea's views
+ * The space cards that fit the play spec, every one (nothing is cut): card.views shows one of the idea's views
  * (or 'any'), and, when loops are declared for the play spec's interaction, one of their declared spaces (an id, or the
  * capabilities a configuration of the space provides). An avatar interaction needs a space some registered generator
- * can furnish. Ranked by the declarations: named by a loop for the interaction, the primary view, the decomposed space
- * kind's capabilities.
+ * can furnish. Ordered by the declarations alone: named by a loop for the interaction, the primary view, the views it
+ * shows, then the catalogue's order.
  * @param {RegistryLike} registry @param {Decomposition} decomposition @param {string[]} [exclude]
  * @returns {Array<{ use: string, score: number, why: string }>}
  */
@@ -140,7 +146,6 @@ export function spaceCandidates(registry, decomposition, exclude = []) {
   const primary = views[0] || null;
   // Declared spaces (ids) that are not registered here name nothing to build on; capabilities stay.
   const declared = interaction ? registry.ids().map(id => cardLoop(cardOf(registry, id))).filter(l => l && l.interactions.includes(interaction)).flatMap(l => l?.space || []).filter(e => !(isStr(e) && isSpace(e) && !registry.has(e))) : [];
-  const kind = decomposition.spaces?.[0]?.kind ? KIND_HINTS[decomposition.spaces[0].kind] : null;
   /** @type {Array<{ use: string, score: number, why: string }>} */
   const out = [];
   for (const use of registry.ids('engine').filter(id => isSpace(id) && !exclude.includes(id))) {
@@ -152,12 +157,11 @@ export function spaceCandidates(registry, decomposition, exclude = []) {
     const byCaps = declared.some(e => !(isStr(e) && registry.has(e)) && variants.some(v => entryFits(registry, e, use, v.caps)));
     if (declared.length && !byId && !byCaps) continue;
     if (isAvatar(interaction) && unfurnishable(registry, use).length) continue;
-    const caps = new Set(variants.flatMap(v => [...v.caps]));
-    const score = (byId ? 6 : byCaps ? 3 : 0) + (primary && own.includes(primary) ? 4 : 0) + views.filter(v => own.includes(v)).length
-      + (kind ? kind.caps.filter(c => caps.has(c)).length - (kind.caps.length && !kind.caps.some(c => caps.has(c)) ? 2 : 0) : 0);
+    const score = (byId ? 6 : byCaps ? 3 : 0) + (primary && own.includes(primary) ? 4 : 0) + views.filter(v => own.includes(v)).length;
     out.push({ use, score, why: [byId ? `named by a loop played as ${interaction}` : byCaps ? `provides what loops played as ${interaction} declare` : '', views.length ? `shows ${views.filter(v => own.includes(v)).join(', ') || 'any view'}` : ''].filter(Boolean).join('; ') });
   }
-  return out.sort((a, b) => b.score - a.score || a.use.localeCompare(b.use)).slice(0, MAX_SPACES);
+  // Stable: equal scores keep the catalogue's order.
+  return out.sort((a, b) => b.score - a.score);
 }
 
 /**
@@ -193,17 +197,19 @@ const primitiveSignature = (m, interaction, space, spec = '') => `${m.id}: a pri
  * Grow the collection mechanic by mechanic (see the header). A writer is required: without one selection is the offline
  * mode (select.js). A reply that is not one of the offered ids is asked again up to `attempts` times; then selection
  * fails (status 422, code selection_failed): nothing stands in for the model.
- * @param {{ decomposition: Decomposition, registry: RegistryLike, writer: Writer, log?: (msg: string) => void, excludeSpaces?: string[], attempts?: number }} options
+ * deadline: the step path's time box (a performance.now() value): a question asked after it fails the build (422
+ * step_path_timeout, build-steps.js makeAsk) naming the step it stopped at.
+ * @param {{ decomposition: Decomposition, registry: RegistryLike, writer: Writer, log?: (msg: string) => void, excludeSpaces?: string[], attempts?: number, deadline?: number | null }} options
  * @returns {Promise<BuildResult>}
  */
-export async function buildSelection({ decomposition, registry, writer, log = () => {}, excludeSpaces = [], attempts = 2 }) {
+export async function buildSelection({ decomposition, registry, writer, log = () => {}, excludeSpaces = [], attempts = 2, deadline = null }) {
   const started = performance.now();
   const interaction = decomposition.core?.interaction || null;
   const documented = documentedBy(dataShapes);
   let calls = 0;
   const premise = `Game idea: ${decomposition.premise}\nPlayed as: ${interaction || 'undecided'}; opponent: ${decomposition.core?.opponent || 'none'}${decomposition.core?.win ? `; won by: ${decomposition.core.win}` : ''}`;
   // One strict enum question; a reply outside the enum is asked again (attempts), then selection fails.
-  const ask = makeAsk({ writer, attempts, log, count: () => { calls++; } });
+  const ask = makeAsk({ writer, attempts, log, count: () => { calls++; }, deadline });
 
   // 1. The primary space, before the first mechanic.
   const offeredSpaces = spaceCandidates(registry, decomposition, excludeSpaces);
@@ -286,6 +292,18 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
     ...joined(),
     mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic?.id ?? null, win: win?.use ?? null,
     composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
+  /**
+   * The loop problems a pick brings that only its own declarations could answer (loop-check needs of the kinds in
+   * OWN_NEEDS on one of its members), on the partial collection with it mapped to its mechanic.
+   * @param {BuildCandidate} cand @param {string} mech @returns {import('./loop-check.js').LoopProblem[]}
+   */
+  const ownHoles = (cand, mech) => {
+    const c = /** @type {any} */ (collection());
+    const had = new Set(partialCheck(registry, decomposition, c).problems.map(p => `${p.code}:${p.primitive}`));
+    const mechanics = c.mechanics.map((/** @type {{ id: string, primitives: string[] }} */ x) => (x.id === mech ? { ...x, primitives: [...x.primitives, cand.id] } : x));
+    return partialCheck(registry, decomposition, c, { more: cand.members, adapters: /** @type {any} */ (cand.adapters), mechanics }).problems
+      .filter(p => cand.members.includes(p.primitive) && OWN_NEEDS.has(String(p.need?.kind)) && !had.has(`${p.code}:${p.primitive}`));
+  };
   /** Loop-step needs asked so far (their keys): none is asked twice in the build. @type {Set<string>} */
   const askedNeeds = new Set();
   /** The coverage gaps of the steps after a mechanic, with their need's key (a later step may resolve them). @type {Array<{ key: string, gap: Gap, step: import('./build-steps.js').LoopStep }>} */
@@ -362,12 +380,11 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       await settle(step);
       continue;
     }
-    // Every valid option, ordered by declarations; the space itself when its card relates to the mechanic.
+    // Every valid option, in declaration order; the space itself when its card declares the mechanic's verb.
     const found = validOptions({ registry, decomposition, mechanic: m, mapping, state, systems, space: use, adapters });
     /** @type {BuildCandidate[]} */
     const candidates = found.options;
-    const host = registry.cards().find(c => c.id === use);
-    if (host && relevance(m, host) > 0) candidates.push({ id: use, score: 0, variant, members: [use], extra: [], adapters: [] });
+    if (declaresVerb(registry, use, m.verb)) candidates.push({ id: use, score: 1, variant, members: [use], extra: [], adapters: [] });
     step.candidates = candidates;
     step.rejected = found.rejected;
     step.context = found.context;
@@ -385,7 +402,11 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
         break;
       }
       const cand = /** @type {BuildCandidate} */ (open.find(c => c.id === a.pick));
-      const t = tryAdd(cand);
+      // The pick's own loop must be playable from its declarations: a need no later step can answer (its participants,
+      // the player's seat, an opponent, a group, the component its win reads) drops it, and the step is asked again
+      // without it (the step path retries the step, never re-plans the collection afterwards).
+      const holes = ownHoles(cand, m.id);
+      const t = holes.length ? { ok: /** @type {const} */ (false), why: holes.slice(0, 2).map(p => `[${p.code}] ${p.message}`).join('; ') } : tryAdd(cand);
       if (!t.ok) {
         // Valid when offered; the whole-collection check (card.conflicts) still decides.
         asked.problem = t.why;

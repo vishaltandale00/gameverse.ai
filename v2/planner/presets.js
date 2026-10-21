@@ -14,7 +14,8 @@
 //   of the collection needs them ('spaces.zones' in its needs.content). How many is what declarations ask for
 //   (placesFor): the space's needs, the loops' participant groups and the zones their params reference, the content's
 //   spread, and a narrative idea's story places; never a default count.
-// - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
+// - A story exists only when the collection has a primitive that reads it (plot.storyboard, chosen for a mechanic by
+//   selection); the model writes it (the preset authors no acts or beats).
 // - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
 // - Adapters are the selection's (selection.adapters): the build's steps chose each one (build.js resolveAdapters for
 //   what a space lacks; build-steps.js adapterSteps for the play spec's mashup relations: nested, union, skin). The
@@ -163,8 +164,6 @@ export function coreOf(selection, registry = null) {
 
 /** Does a space satisfy a declared space entry (a space primitive id, or a capability list)? @param {string | string[]} entry @param {{ use: string, caps: string[] }} space */
 const spaceFits = (entry, space) => (Array.isArray(entry) ? entry.every(c => space.caps.includes(c)) : entry === space.use);
-/** The primitive that runs the story (reads plot.storyboard), as the catalogue declares it. @param {RegistryLike} registry */
-const storyRunner = registry => registry.cards().find(c => (c.reads || []).includes('plot.storyboard'))?.id || null;
 /** @param {RegistryLike} registry @param {string} id */
 const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
@@ -195,8 +194,7 @@ export function loopCore(decomposition, selection, registry) {
 /**
  * The structure a collection composes, from the cards and the play spec: its core and loops, the win the collection
  * declares (none: a hole), avatar or not, story or not, zones or not, and the selection
- * adjusted to the play spec (base locomotion out without an avatar, a story runner out without narrative and in
- * with it). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
+ * adjusted to the play spec (base locomotion out without an avatar); a story when a chosen primitive reads one. @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
  */
 export function structureOf(decomposition, selection, registry) {
   const spec = decomposition.core;
@@ -215,10 +213,10 @@ export function structureOf(decomposition, selection, registry) {
   const declared = core.flatMap(id => { const l = cardLoop(registry.get(id)?.card); return !l ? [] : spec?.interaction && l.interactions.includes(spec.interaction) ? [spec.interaction] : l.interactions; });
   // Undecided by the spec: an avatar when a core loop declares avatar interaction or the collection moves a body (base locomotion).
   const avatar = spec?.interaction ? isAvatar(spec.interaction) : declared.some(isAvatar) || systems.some(id => registry.get(id)?.card.locomotion === 'base');
-  const narrative = typeof spec?.narrative === 'boolean' ? spec.narrative : core.some(id => readsStory(registry, id));
+  // A story is told when the collection has a primitive that reads plot.storyboard (selection chose it for a mechanic,
+  // as its card declares). The play spec's free narrative flag adds no primitive and removes none.
+  const narrative = systems.some(id => readsStory(registry, id));
   if (!avatar) for (const id of [...systems]) if (registry.get(id)?.card.locomotion === 'base') drop(id, 'no avatar: the player plays a side, not a walking character');
-  if (!narrative) for (const id of [...systems]) if (readsStory(registry, id) && !core.includes(id)) drop(id, 'no narrative: the core loop ends the game, not a story');
-  if (narrative && !systems.some(id => readsStory(registry, id))) add(storyRunner(registry), 'the idea has a story told in acts');
   // The win: what the collection declares. Selection chose the primitive that owns it (build-steps.js, the win step);
   // the preset never picks one itself: a collection that declares none is a hole the planner re-plans.
   const composed = composeLoop(systems, registry, { core });
@@ -321,7 +319,8 @@ function wireLoop(doc, structure, registry, text = {}) {
   };
   if (structure.win) wired = one(structure.win.use, structure.win.end, 'victory');
   for (const l of structure.lose || []) one(l.use, l.end, 'defeat');
-  doc.plot.endings = endings;
+  // The endings the wiring reaches (an empty list is no section: nothing stamps one).
+  if (endings.length) doc.plot.endings = endings; else delete doc.plot.endings;
   // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them):
   // a loop that reads them and declares no win of its own (the story also reads them, but declares its own win; a
   // view that shows them declares no loop).
@@ -833,13 +832,12 @@ export function preset({ decomposition, selection, registry, logic, seed }) {
   // The world each space gets is what the collection's declarations need (world.js planWorld), re-planned for the
   // final collection: a generator a mechanic named is kept; one the selection planned for a mover the structure took
   // out (a board whose pieces are seated, not walked) is not. A board that needs only cells gets no rooms generator.
-  const intent = [decomposition.premise, ...(decomposition.mechanics || []).map(m => m.description)].filter(Boolean).join('. ');
   const worldFor = (/** @type {typeof selSpaces[number]} */ s, /** @type {number} */ si) => {
     const named = (selection.generators || []).filter(g => g.space === s.id && !g.auto).map(g => g.id);
     const moved = st.systems.some(id => isMovement(registry, id) && (selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
     if (!moved || !needSets(registry, s.use).length) return named;
     const have = [...OUTLINE_AUTHORS, ...named.flatMap(id => contentOfGenerator(registry, id))];
-    return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, intent, exclude: named }).generators];
+    return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, exclude: named, set: selection.worlds?.[s.id] ?? null }).generators];
   };
   /** @type {OutlineSpace[]} */
   const spaces = selSpaces.map((s, si) => {
@@ -916,7 +914,8 @@ export function preset({ decomposition, selection, registry, logic, seed }) {
     views: { primary: decomposition.views[0] || registry.get(primary.use)?.card.views?.[0] || 'any', alternates: decomposition.views.slice(1) },
     spaces,
     systems,
-    plot: { premise: decomposition.premise, characters: [] },
+    // The premise only: cast and story are content the model writes for the primitives that read them.
+    plot: { premise: decomposition.premise },
     content: { archetypes: [playerArch] },
     player: { archetype: playerArch.id, space: primary.id, ...(at !== null && at !== undefined ? { at } : {}) },
   };

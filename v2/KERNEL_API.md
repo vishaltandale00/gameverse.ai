@@ -16,7 +16,8 @@ export default {
     provides: { capabilities?, events: ['hit', 'defeated:*'], vars: ['hp'], services: ['roadgraph'], actions: ['attack'] },
     requires: { capabilities: ['overlap'], primitives: ['gameplay.combat.health'], services: [] },
     conflicts: [],
-    reads: ['content.items'],               // document sections it consumes (preflight warns on unread data)
+    reads: ['content.items'],               // document sections it consumes (preflight warns on unread data: data_unused;
+                                            // a base section the document's data references by id, e.g. an ending, is read)
     defines: [{ kind: 'gate', at: 'plot.gates' }, { kind: 'portal', in: 'portals' }],  // new reference kinds
   },
   logic(logic) {},                          // register predicates/effects (once per catalogue)

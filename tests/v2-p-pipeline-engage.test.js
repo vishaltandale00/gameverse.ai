@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { engageDocument } from '../v2/planner/engage.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { proceduralOutline, ensureAgency } from '../v2/planner/outline.js';
+import { proceduralOutline } from '../v2/planner/outline.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createWorld } from '../v2/kernel/world.js';
 import { hashOf } from '../v2/server/store.js';
@@ -66,17 +66,19 @@ test('engage is idempotent, deterministic and keeps what the document has', () =
   assert.ok(!again.applied.some(a => a.part === 'player.enter'));
 });
 
-test('kart skeleton: the procedural outline for the same selection is drivable and passes the agency check', async () => {
+test('kart skeleton: the procedural outline for the same selection is drivable, and once engaged the player can act from the start', async () => {
   const { decomposition, selection: stored } = JSON.parse(readFileSync(new URL('./fixtures/v2-live/kart.json', import.meta.url), 'utf8')).report;
   // The report keeps the selection's chosen ids; the planner's working fields start empty.
-  const selection = { generators: [], graphics: [], gaps: [], bind: {}, ...stored, spaces: stored.spaces.map(s => ({ caps: [], ...s })) };
+  // The recorded selection carries plot.storyboard, which the play spec's narrative flag used to add (the HANDOFF's
+  // kart failure): no mechanic maps to it, and the preset no longer removes it, so it is left out of the fixture here.
+  const selection = { generators: [], graphics: [], gaps: [], bind: {}, ...stored, systems: stored.systems.filter(id => id !== 'plot.storyboard'), spaces: stored.spaces.map(s => ({ caps: [], ...s })) };
   const o = proceduralOutline({ decomposition, selection, registry, logic, seed: 5, prompt: 'Mario Kart with shopping carts' });
   assert.ok(o.ok);
   assert.equal(firstPlayable(o.doc, registry, logic, { seed: 5 }).options, 0, 'the skeleton alone offers nothing');
   const rt = steps(boot(engageDocument(o.doc, registry, logic).doc), 120, { axes: { move: [0, 1] } });
   assert.ok(rt.state.counts.vehicle_entered >= 1 && rt.state.vars['vehicle.speed'] > 0);
-  const a = await ensureAgency({ decomposition, selection, registry, logic, seed: 5 });
-  assert.ok(a.agency && a.attempts.length === 1, JSON.stringify(a.attempts));
+  // Agency is the engaged document's (the publish gate's cannot_act): the player has options from the first frame.
+  assert.ok(firstPlayable(engageDocument(o.doc, registry, logic).doc, registry, logic, { seed: 5 }).options > 0);
 });
 
 test('platformer: the player runs and jumps from the first frames', () => {

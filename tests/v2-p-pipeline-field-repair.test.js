@@ -7,18 +7,17 @@ import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { outlineForm, formPath, fieldForm } from '../v2/planner/outline-form.js';
 import { proceduralOutline, writeOutline } from '../v2/planner/outline.js';
-import { selectPrimitives } from '../v2/planner/select.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { referenceOf, idsAt } from '../v2/planner/content.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, selectionOf } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 
 async function chessWithCreatures() {
   const decomposition = normalize({ title: 'Pokemon chess', premise: 'chess with creatures', mechanics: [{ id: 'turns', verb: 'move', description: 'move pieces in turns', importance: 'core' }, { id: 'battle', verb: 'battle', description: 'captures are creature battles', importance: 'core' }], views: ['board'], acts: 2, zones: 4,
     core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, mashup: [{ relation: 'nested', mechanics: ['battle'], why: 'captures are battles' }] } }, 'chess with pokemon', registry);
-  const selection = await selectPrimitives({ decomposition, registry });
+  const selection = selectionOf(registry, decomposition, { space: 'engine.space.grid', map: { turns: ['gameplay.turns'], battle: ['gameplay.creature.battle'] }, systems: ['gameplay.creature.party'] });
   const scaffold = /** @type {any} */ (proceduralOutline({ decomposition, selection, registry, logic, seed: 3 }).doc);
   return { decomposition, selection, scaffold, form: outlineForm({ registry, skeleton: scaffold, selection }) };
 }
@@ -120,9 +119,9 @@ test('chess with creatures: a model wrong once on species types is corrected by 
 test('the story form (wave 2) offers the cast wave 1 wrote as enums: beats, dialogue and quests name real ids', async () => {
   const decomposition = normalize({ title: 'Harbor tales', premise: 'talk to villagers and take their quests', mechanics: [{ id: 'talk', verb: 'talk', description: 'talk to villagers with dialogue choices', importance: 'core' }, { id: 'quests', verb: 'quest', description: 'take quests from villagers and finish them', importance: 'core' }], views: ['td'], acts: 1, zones: 3,
     core: { interaction: 'avatar-realtime', opponent: 'none', win: 'finish the quests', lose: '', theme: '', narrative: true, mashup: [] } }, 'harbor tales', registry);
-  const selection = await selectPrimitives({ decomposition, registry });
+  const selection = selectionOf(registry, decomposition, { space: 'engine.space.tilemap', map: { talk: ['plot.dialogue'], quests: ['plot.quest'] }, systems: ['gameplay.move.walk', 'plot.character', 'plot.storyboard'] });
   const scaffold = /** @type {any} */ (proceduralOutline({ decomposition, selection, registry, logic, seed: 3 }).doc);
-  const form = outlineForm({ registry, skeleton: scaffold, selection: { ...selection, systems: [...new Set([...selection.systems, 'plot.dialogue', 'plot.quest'])] } });
+  const form = outlineForm({ registry, skeleton: scaffold, selection });
   const story = form.storyGroup({ characters: ['ana', 'bo'], archetypes: ['gull'], items: ['net'] });
   assert.ok(story && story.keys.includes('dialogue') && story.keys.includes('quests'), JSON.stringify(story?.keys));
   const props = story.schema.schema.properties;

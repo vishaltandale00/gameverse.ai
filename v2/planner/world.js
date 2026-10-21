@@ -20,7 +20,6 @@ import { preflight } from '../kernel/document.js';
 import { createWorld } from '../kernel/world.js';
 import { movementEnvelope } from '../primitives/gameplay/move-lib-envelope.js';
 import { defaultsOf, isGenerator } from './catalog.js';
-import { relevance, LEXICAL_ACCEPT } from './select.js';
 import { isList, isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -83,8 +82,6 @@ export function spaceCaps(registry, space) {
 export const spaceNeeds = (/** @type {RegistryLike} */ registry, /** @type {unknown} */ use) => registry.get(str(use))?.card.needs?.content || [];
 /** Every content set that makes a space kind playable: needs.content first, then needs.alternatives. @param {RegistryLike} registry @param {unknown} use @returns {string[][]} */
 export const needSets = (registry, use) => { const n = registry.get(str(use))?.card.needs; return n?.content?.length ? [n.content, ...list(prop(n, 'alternatives')).filter(/** @returns {a is string[]} */ (/** @type {unknown} */ a) => Array.isArray(a) && a.length > 0)] : []; };
-/** The idea a document states (title, logline, premise): text for choosing among declared need sets. @param {unknown} doc */
-export const intentOf = doc => [prop(doc, 'title'), prop(doc, 'logline'), prop(prop(doc, 'plot'), 'premise')].filter(x => typeof x === 'string').join('. ');
 /** World content a generator builds (generator card `provides.content`). @param {RegistryLike} registry @param {unknown} id @returns {string[]} */
 export const contentOfGenerator = (registry, id) => registry.get(str(id))?.card.provides?.content || [];
 /** Whether a generator's card declares this space kind among its targets (generator card `spaces`). @param {RegistryLike} registry @param {string} id @param {unknown} use */
@@ -130,31 +127,26 @@ export function generatorsFor(registry, space, view = null, want = null, allowed
 const cmpRank = (a, b) => { for (let i = 0; i < a.rank.length; i++) if (a.rank[i] !== b.rank[i]) return b.rank[i] - a.rank[i]; return a.id.localeCompare(b.id); };
 
 /**
- * The need set a space's world aims at: the first set `have` already satisfies; else a declared alternative whose
- * best generator is relevant to `intent` (≥ LEXICAL_ACCEPT and above the default's); else needs.content.
- * @param {RegistryLike} registry @param {SpaceLike} space @param {{ have?: string[], intent?: string }} [opts] @returns {string[]}
+ * The need set a space's world aims at: the first declared set `have` already satisfies; else the card's own
+ * needs.content (its first declared set). Never chosen by the idea's words.
+ * @param {RegistryLike} registry @param {SpaceLike} space @param {{ have?: string[] }} [opts] @returns {string[]}
  */
-export function needSetFor(registry, space, { have = [], intent = '' } = {}) {
+export function needSetFor(registry, space, { have = [] } = {}) {
   const sets = needSets(registry, space.use);
   if (!sets.length) return [];
-  const met = sets.find(set => set.every(k => have.includes(k)));
-  if (met) return met;
-  if (!intent || sets.length < 2) return sets[0];
-  // g.id comes from generatorsFor (registered ids).
-  const score = (/** @type {string[]} */ set) => Math.max(0, ...generatorsFor(registry, space, null, set, [...set, ...have]).filter(g => g.covers.length).map(g => relevance({ verb: '', description: intent }, { id: g.id, .../** @type {RegisteredPrimitive} */ (registry.get(g.id)).card })));
-  const base = score(sets[0]), best = sets.slice(1).map(set => ({ set, s: score(set) })).sort((a, b) => b.s - a.s)[0];
-  return best && best.s >= LEXICAL_ACCEPT && best.s > base ? best.set : sets[0];
+  return sets.find(set => set.every(k => have.includes(k))) ?? sets[0];
 }
 
 /**
- * Static plan for a space: generators (greedy, by generatorsFor's ranking) until every kind of its need set
- * (needSetFor) not in `have` is covered. -> { generators: [ids], unmet: [kinds], set: [kinds] }
+ * Static plan for a space: generators (greedy, by generatorsFor's ranking) until every kind of its need set not in
+ * `have` is covered: `set` when given (the step path's choice among the space's declared alternatives: select.js
+ * pick_world), else needSetFor. -> { generators: [ids], unmet: [kinds], set: [kinds] }
  * @param {RegistryLike} registry @param {SpaceLike} space
- * @param {{ view?: string | null, have?: string[], exclude?: string[], intent?: string }} [opts]
+ * @param {{ view?: string | null, have?: string[], exclude?: string[], set?: string[] | null }} [opts]
  * @returns {{ generators: string[], unmet: string[], set: string[] }}
  */
-export function planWorld(registry, space, { view = null, have = [], exclude = [], intent = '' } = {}) {
-  const set = needSetFor(registry, space, { have, intent });
+export function planWorld(registry, space, { view = null, have = [], exclude = [], set: chosen = null } = {}) {
+  const set = chosen ?? needSetFor(registry, space, { have });
   let left = set.filter(c => !have.includes(c));
   /** @type {string[]} */
   const picks = [];
@@ -272,9 +264,9 @@ export function worldProblems(rt, doc, registry) {
   const out = extentProblems(doc, registry);
   for (const { space, index } of spacesNeedingWorld(doc, registry)) {
     const c = contentOf(rt, space.id); if (!c) continue;
-    const have = worldContent(doc, registry, space, rt), unmet = needSetFor(registry, space, { have, intent: intentOf(doc) }).filter(k => !have.includes(k));
+    const have = worldContent(doc, registry, space, rt), unmet = needSetFor(registry, space, { have }).filter(k => !have.includes(k));
     if (!unmet.length) continue;
-    const plan = planWorld(registry, space, { view: primaryView(doc), have, intent: intentOf(doc) });
+    const plan = planWorld(registry, space, { view: primaryView(doc), have });
     const hint = plan.generators.length ? `add ${plan.generators.join(' + ')} in spaces[${index}].generators (it builds ${unmet.join(', ')})` : `no registered generator targets ${space.use} with ${unmet.join(', ')}: author that content`;
     if (isEmpty(c)) out.push({ code: 'world_empty', path: `spaces[${index}]`, severity: 'error', stage: 'world', space: space.id, missing: unmet,
       message: `space '${space.id}' (${space.use}) is empty: it needs ${unmet.join(' and ')} and nothing builds it, so the player moves through a void`, hint });
@@ -320,7 +312,7 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   const fixes = [];
   for (const { space: s0, index } of spacesNeedingWorld(pre.doc, registry)) {
     const had = worldContent(current, registry, current.spaces[index], world);
-    const aim = needSetFor(registry, s0, { have: had, intent: intentOf(current) });
+    const aim = needSetFor(registry, s0, { have: had });
     let left = aim.filter(k => !had.includes(k));
     /** @type {Set<string>} */
     const tried = new Set();

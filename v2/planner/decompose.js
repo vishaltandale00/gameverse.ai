@@ -27,7 +27,7 @@ import { obj, list, objects, isStr, isObj, messageOf, prop } from '../kernel/gua
  * @property {Mechanic[]} mechanics
  * @property {SpaceRole[]} spaces
  * @property {string[]} views
- * @property {string} movement  ground | air | water | track | none (MOVEMENT)
+ * @property {string} movement  ground | air | water | track | none (MOVEMENT); '' when the model did not say
  * @property {number} [acts]  the story's acts: only for a narrative idea, as the model wrote them (never a default)
  * @property {number} [zones]  the story's places: only for a narrative idea, as the model wrote them (never a default)
  * @property {Concept[]} concepts  the idea's source concepts (decomposeIdea step 1); a mechanic's `from` is a concept id
@@ -348,14 +348,15 @@ async function askStep({ writer, escalate, attempts, calls, step, concept, syste
 }
 
 /**
- * Decompose an idea, iteratively (the steps above). Without a writer the offline decomposition is the explicit offline
- * mode. `escalate` is the writer a form the default model fails `attempts` times is asked of, once.
+ * Decompose an idea, iteratively (the steps above). A writer is required: without one it fails (422
+ * step_path_model_missing); nothing reads the idea's words instead. `escalate` is the writer a form the default model fails `attempts` times is asked of, once.
  * @param {{ writer?: Writer | null, escalate?: Writer | null, prompt: string, answers?: Answer[], registry?: RegistryLike | null, attempts?: number }} options
  * @returns {Promise<DecompositionResult>}
  */
 export async function decomposeIdea({ writer = null, escalate = null, prompt, answers = [], registry = null, attempts = 2 }) {
   const started = performance.now();
-  if (!writer) return { ...decomposeOffline(prompt, answers, registry), ms: Math.round(performance.now() - started) };
+  // The decomposition is the model's: without one nothing is read from the idea's words.
+  if (!writer) throw Object.assign(Error('Decomposing the idea needs a model: no words of the idea are read as its mechanics.'), { status: 422, code: 'step_path_model_missing' });
   const idea = `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
   /** @type {DecomposeCall[]} */
   const calls = [];
@@ -418,7 +419,7 @@ const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).j
 const clampInt = (v, lo, hi, d) => typeof v === 'number' && Number.isInteger(v) ? Math.max(lo, Math.min(hi, v)) : d;
 
 /**
- * A decomposition from model output (or the offline path): `d` is unknown and narrowed field by field.
+ * A decomposition from model output: `d` is unknown and narrowed field by field.
  * @param {unknown} input @param {string} [prompt] @param {RegistryLike | null} [registry] @returns {Decomposition}
  */
 export function normalize(input, prompt = '', registry = null) {
@@ -443,9 +444,10 @@ export function normalize(input, prompt = '', registry = null) {
     mechanics: mechanics.slice(0, 16),
     spaces: objects(d.spaces).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? String(s.kind) : 'locations', description: String(s.description || '').slice(0, 200) })),
     views: list(d.views).filter(v => VIEWS.includes(v)).map(String),
-    movement: isStr(d.movement) && MOVEMENT.includes(d.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
+    // As the model said it (the spaces form asks it for an avatar); '' when nothing said it: never read from the words.
+    movement: isStr(d.movement) && MOVEMENT.includes(d.movement) ? d.movement : '',
   };
-  // The play spec: the model's (narrowed); without one (the offline mode) the collection decides what it would have said.
+  // The play spec: the model's (narrowed); without one (a hand-written decomposition) the collection decides what it would have said.
   if (registry || isObj(d.core)) {
     out.core =normalizeCore(d.core) || undecidedCore(out);
     out.core.mashup = linkMashup(out.core.mashup, mechanics);
@@ -502,48 +504,5 @@ export async function askMashup({ writer, decomposition, registry, problem, rech
   throw Object.assign(Error(`The play spec is incomplete: core.mashup was asked again ${failed.length} time(s) and still fails: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
 }
 
-/** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */
-export const movementFrom = text => /\b(fly|flying|flight|soar\w*|jetpack|airship|plane)\b/.test(text) ? 'air' : /\b(swim\w*|underwater|dive|diving|sail\w*)\b/.test(text) ? 'water' : /\b(runner|lanes?)\b/.test(text) ? 'track' : 'ground';
-
 /** @param {string} prompt */
 const titleFrom = prompt => (prompt.match(/[A-Za-z0-9']+/g) || ['Untitled']).slice(0, 5).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
-
-// A generic verb vocabulary for the offline path: what a sentence asks the player to DO.
-// It is not a genre table; each entry is a mechanic any game may combine with any other.
-/** @type {Array<[string, string, RegExp]>} */
-const VERBS = [
-  ['explore', 'explore places and travel between them', /\b(explor\w*|wander\w*|travel\w*|journey\w*|adventur\w*|map|world|roam\w*)\b/],
-  ['talk', 'talk to characters', /\b(talk\w*|dialog\w*|conversation\w*|chat\w*|npcs?|villagers?|interrogat\w*|persuad\w*)\b/],
-  ['story', 'follow a story with chapters and an ending', /\b(story|stories|narrative|plot|quest\w*|mystery|detective|chapter\w*|tale)\b/],
-  ['collect', 'find and collect items', /\b(collect\w*|gather\w*|pick\w* up|loot\w*|treasure\w*|coins?|keys?|items?|find\w*)\b/],
-  ['fight', 'fight enemies in real time', /\b(fight\w*|combat|battl\w*|attack\w*|swords?|enem(y|ies)|boss\w*|duel\w*|souls?like|monsters?)\b/],
-  ['shoot', 'shoot projectiles at targets', /\b(shoot\w*|guns?|blast\w*|lasers?|rifles?|snip\w*|bullets?|shooter)\b/],
-  ['jump', 'run and jump across platforms', /\b(jump\w*|platform\w*|leap\w*|hop\w*)\b/],
-  ['build', 'build and place structures or blocks', /\b(build\w*|construct\w*|place\w* blocks?|blocks?|sandbox|voxel\w*)\b/],
-  ['mine', 'mine or dig terrain for resources', /\b(min(e|ing)|dig\w*|excavat\w*|ores?)\b/],
-  ['craft', 'craft items from recipes', /\b(craft\w*|recipes?|forg(e|ing)|brew\w*|cook\w*)\b/],
-  ['drive', 'drive or pilot vehicles', /\b(driv\w*|cars?|vehicles?|rac(e|ing)|kart\w*|pilot\w*|ships?|steer\w*)\b/],
-  ['catch', 'catch or recruit creatures and keep a party', /\b(catch\w*|captur\w*|tam(e|ing)|recruit\w*|creatures?|pets?|party)\b/],
-  ['turns', 'take turns in tactical or turn-based encounters', /\b(turn[- ]based|tactic\w*|turns?|chess|board ?game|grid)\b/],
-  ['puzzle', 'solve puzzles and open locks', /\b(puzzl\w*|riddl\w*|solv\w*|locks?|levers?|switch\w*|match[- ]?3)\b/],
-  ['sneak', 'sneak past guards unseen', /\b(sneak\w*|stealth\w*|hid(e|ing)|guards?|spy|spies)\b/],
-  ['trade', 'buy and sell with shops and currency', /\b(shops?|trad(e|ing)|buy\w*|sell\w*|merchants?|money|gold|econom\w*)\b/],
-  ['survive', 'survive hazards, hunger or a timer', /\b(surviv\w*|hunger|thirst|zombies?|hazards?|timer|countdown|escape)\b/],
-  ['grow', 'level up, gain abilities and upgrades', /\b(level\w* up|xp|experience|upgrad\w*|abilit(y|ies)|skills?|rpg)\b/],
-  ['farm', 'grow crops and tend animals', /\b(farm\w*|crops?|harvest\w*|garden\w*|plant\w*)\b/],
-];
-
-/**
- * Offline decomposition: references split from the sentence, mechanics from the verb vocabulary. Deterministic.
- * @param {string} prompt @param {Answer[]} [answers] @param {RegistryLike | null} [registry] @returns {Decomposition & { source: string }}
- */
-export function decomposeOffline(prompt, answers = [], registry = null) {
-  const text = `${prompt} ${answers.map(a => a.answer).join(' ')}`;
-  const lower = text.toLowerCase();
-  const parts = prompt.split(/\s*(?:×|\bx\b|\+|\bmeets\b|\bcrossed with\b|\bmixed with\b|\bwith\b|\bin the style of\b|\bplus\b|,|&)\s*/i).map(s => s.trim()).filter(s => s.length > 1);
-  const references = parts.length > 1 ? parts.slice(0, 6).map(name => ({ name: name.slice(0, 80), kind: 'other', keeps: [] })) : [];
-  const mechanics = VERBS.filter(([, , re]) => re.test(lower)).map(([id, description]) => ({ id, verb: id, description, from: '', importance: 'core' }));
-  // Only what the sentence asks for: no exploring or story is added to an idea that does not name them.
-  const views = [/\bfirst[- ]person\b|\bfps\b/.test(lower) && '1p', /\bthird[- ]person\b|\b3d\b/.test(lower) && '3p', /\btop[- ]down\b/.test(lower) && 'td', /\bside[- ]?scroll\w*\b|\bplatform\w*\b/.test(lower) && 'side', /\btext\b|\bstory\b|\bmystery\b/.test(lower) && 'text'].filter(Boolean);
-  return { ...normalize({ title: titleFrom(prompt), premise: prompt, references, mechanics, spaces: [], views, tone: '' }, prompt, registry), source: 'offline' };
-}

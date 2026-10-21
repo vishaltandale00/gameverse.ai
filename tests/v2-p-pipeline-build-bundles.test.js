@@ -119,7 +119,8 @@ test('(a) a primitive that composes only alongside a declared companion is offer
 test('(b) a vehicle-style primitive is offered with its declared required companion as one option', async () => {
   const { registry } = buildCatalogue();
   const d = ideaSpec(IDEAS.race, registry);
-  const w = firstWriter();
+  // The model's picks: the race loop, and for driving the car (its category first: the list is long).
+  const w = fakeWriter([req => buildAnswer(req, { picks: { race: ['gameplay.race'], drive: ['gameplay.vehicle.car'] } })]);
   const b = await buildSelection({ decomposition: d, registry, writer: w });
   const drive = b.steps.find(s => s.mechanic === 'drive');
   const car = drive.candidates.find(c => c.id === 'gameplay.vehicle.car');

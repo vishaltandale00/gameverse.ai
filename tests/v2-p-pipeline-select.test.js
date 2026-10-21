@@ -1,20 +1,14 @@
-// Idea decomposition and capability-aware primitive selection (ARCHITECTURE.md §4).
+// Idea decomposition and the step path's selection (ARCHITECTURE.md §5): both are the model's; nothing reads the idea's
+// words, ranks cards by text or stands in for a choice.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decomposeIdea, decomposeOffline } from '../v2/planner/decompose.js';
-import { selectPrimitives, chooseSpaces, rankCandidates, relevance, LEXICAL_ACCEPT, vocabIndex } from '../v2/planner/select.js';
+import { decomposeIdea } from '../v2/planner/decompose.js';
+import { selectPrimitives, vocabIndex } from '../v2/planner/select.js';
 import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
-import { testCatalogue, fakeWriter, fakeDecisions, decomposition, decomposer } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, buildWriter, decomposition, decomposer } from './v2-p-pipeline-fixtures.js';
 
-test('offline decomposition splits references and finds mechanics as verbs, deterministically', () => {
-  const a = decomposeOffline('A lighthouse mystery × a fishing village: talk to the keeper and find the missing key');
-  assert.deepEqual(a, decomposeOffline('A lighthouse mystery × a fishing village: talk to the keeper and find the missing key'));
-  assert.ok(a.references.length >= 2, 'the × splits references');
-  const ids = a.mechanics.map(m => m.id);
-  for (const m of ['talk', 'collect', 'story']) assert.ok(ids.includes(m), `${m} in ${ids}`);
-  // Only what the sentence asks for: nothing (exploring, a story) is added to an idea that does not name it.
-  assert.ok(!decomposeOffline('swap gems to match three').mechanics.some(m => ['explore', 'story'].includes(m.id)));
-  assert.equal(a.source, 'offline');
+test('without a model the idea is not decomposed: no words of it are read as mechanics', async () => {
+  await assert.rejects(decomposeIdea({ prompt: 'A lighthouse mystery × a fishing village: talk to the keeper and find the missing key' }), e => e.status === 422 && e.code === 'step_path_model_missing');
 });
 
 test('a writer decomposes in small strict forms, step by step; a failing writer is asked again, then reported, never replaced offline', async () => {
@@ -49,66 +43,25 @@ test('a writer decomposes in small strict forms, step by step; a failing writer 
   assert.match(once.calls[0].error, /JSON/);
 });
 
-test('lexical relevance matches mechanics to cards and stays low for unrelated ones', () => {
-  const { registry } = testCatalogue();
-  const cards = registry.cards();
-  const dashCard = cards.find(c => c.id === 'gameplay.test.dash'), inv = cards.find(c => c.id === 'gameplay.inventory');
-  assert.ok(relevance({ verb: 'dash', description: 'dash through enemies with a burst of speed' }, dashCard) >= LEXICAL_ACCEPT);
-  assert.ok(relevance({ verb: 'collect', description: 'find and collect items' }, inv) >= LEXICAL_ACCEPT);
-  assert.ok(relevance({ verb: 'dash', description: 'dash through enemies' }, inv) < LEXICAL_ACCEPT);
-  assert.equal(rankCandidates({ verb: 'collect', description: 'collect items' }, cards)[0].id, 'gameplay.inventory');
-});
-
-test('spaces are chosen to provide what the chosen primitives require, including param-dependent capabilities', () => {
+test('spaces offer their param-dependent configurations (the side variant adds gravity)', () => {
   const { registry } = testCatalogue();
   const variants = spaceVariants(registry, 'engine.space.flatx');
   assert.ok(variants.some(v => v.with.mode === 'side' && v.caps.has('gravity')), 'the side variant adds gravity');
-  const { spaces, unmet } = chooseSpaces(registry, ['gameplay.test.dash', 'plot.storyboard'], decomposition([]));
-  assert.ok(['overlap', 'gravity'].every(c => spaces[0].caps.includes(c)), `${spaces[0].use} provides what the dash needs`);
-  assert.deepEqual(unmet, []);
-  // The real grid provides wrap only when configured for it: the choice includes that configuration.
-  const board = chooseSpaces(registry, ['gameplay.test.tunnels'], decomposition([]));
-  assert.equal(board.spaces[0].use, 'engine.space.grid');
-  assert.ok(['x', 'y', 'both'].includes(board.spaces[0].with.wrap), JSON.stringify(board.spaces[0].with));
-  // Excluded spaces are never chosen (agency re-selection uses this).
-  assert.notEqual(chooseSpaces(registry, ['gameplay.test.dash'], decomposition([]), [], [spaces[0].use]).spaces[0].use, spaces[0].use);
-  const none = chooseSpaces(registry, ['gameplay.test.warp'], decomposition([]));
-  assert.deepEqual(none.unmet.map(u => u.id), ['gameplay.test.warp']);
-  // Without capability needs, structure hints and views pick the space: locations -> graph.
-  const graph = chooseSpaces(registry, ['plot.storyboard'], decomposition([], { spaces: [{ role: 'manor', kind: 'locations', description: '' }] }));
-  assert.equal(graph.spaces[0].use, 'engine.space.graph');
 });
 
-test('selection maps mechanics to primitives, adds the story runner only for a story, and reports uncovered mechanics as gaps', async () => {
+test('selection is the model\'s build: the play spec\'s narrative flag adds no story runner; a primitive joins as a pick; a mechanic the model maps to none is a gap', async () => {
   const { registry } = testCatalogue();
-  const d = decomposition(['dash through enemies with a burst of speed', 'find and collect items', 'warp through wormholes between distant stars', 'brew potions in a cauldron over many days']);
-  const sel = await selectPrimitives({ decomposition: d, registry });
-  assert.deepEqual(sel.mechanics.map(m => m.primitives[0] || null), ['gameplay.test.dash', 'gameplay.inventory', null, null]);
-  assert.ok(!sel.systems.includes('plot.storyboard'), 'no story unless the idea has one');
-  const story = await selectPrimitives({ decomposition: { ...d, core: { interaction: null, opponent: 'none', win: '', lose: '', theme: '', narrative: true } }, registry });
-  assert.ok(story.systems.includes('plot.storyboard'), 'the play spec says the idea has a story told in acts');
-  assert.ok(sel.spaces[0].caps.includes('gravity'), 'a space with what the dash needs');
-  const kinds = Object.fromEntries(sel.gaps.map(g => [g.mechanic, g.kind]));
-  assert.equal(kinds.m2, 'capability', 'warp: chosen, but no space provides wormholes, so it is dropped as a capability gap');
-  assert.equal(kinds.m3, 'no_primitive');
-  assert.ok(!sel.systems.includes('gameplay.test.warp'));
-});
-
-test('a decision model picks among the candidates per mechanic; "none" makes a gap', async () => {
-  const { registry } = testCatalogue();
-  const d = decomposition(['collect shiny things', 'dash forward quickly']);
-  const decisions = fakeDecisions(questions => Object.fromEntries(Object.entries(questions).map(([k, q]) => {
-    if (q.type === 'noul') return [k, { type: 'noul', noul: 0.1 }]; // the space-coverage check: no
-    const pick = /dash/.test(q.instructions) ? 'none' : Object.keys(q.criteria)[0];
-    return [k, { type: 'choice', choice: pick, probabilities: { [pick]: 0.9 } }];
-  })));
-  const sel = await selectPrimitives({ decomposition: d, registry, decisions });
-  assert.equal(decisions.calls.length, 2, 'one batched call for the picks, one for whether the chosen space covers the gaps');
-  assert.ok(Object.values(decisions.calls[1].questions).every(q => q.type === 'noul'));
-  assert.ok(Object.values(decisions.calls[0].questions).every(q => q.criteria.none), 'every question can answer none');
-  assert.equal(sel.mechanics[1].primitives.length, 0);
-  assert.equal(sel.gaps[0].mechanic, 'm1');
-  assert.equal(sel.provider, 'fake');
+  const core = { interaction: null, opponent: 'none', win: '', lose: '', theme: '', narrative: true, mashup: [] };
+  const d = decomposition(['find the lighthouse keeper', 'brew potions in a cauldron over many days'], { core, views: ['text'] });
+  const sel = await selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: ['engine.space.graph'] }) });
+  assert.equal(sel.provider, 'build');
+  assert.ok(!sel.systems.includes('plot.storyboard'), 'the narrative flag adds no primitive');
+  assert.deepEqual(sel.gaps.filter(g => g.kind === 'no_primitive').map(g => g.mechanic).sort(), ['m0', 'm1']);
+  assert.ok(sel.mechanics.every(m => m.primitives.length === 0 && m.source === 'build'));
+  // A primitive joins as the model's pick among the options offered for the mechanic (here the only valid one).
+  const picked = await selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: ['engine.space.graph'], picks: { m0: ['gameplay.inventory'] } }) });
+  assert.deepEqual(picked.mechanics.find(m => m.id === 'm0').primitives, ['gameplay.inventory']);
+  assert.ok(!picked.systems.includes('plot.storyboard'));
 });
 
 test('a connected model whose answers are not on offer fails selection after a retry; the lexical ranking never stands in', async () => {

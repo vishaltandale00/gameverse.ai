@@ -3,13 +3,12 @@
 // primitives declare (presets.js; zero model calls). With a writer, the model fills the content and tuning through
 // small strict forms, and each draft is preflighted, booted and gated; errors go to the deterministic repair first
 // (which fixes fields and never removes a primitive) and the rest back to the model, field by field, for a bounded
-// number of rounds. What still fails is reported exactly, for the planner to re-plan (replan.js).
+// number of rounds. What still fails is reported exactly: the build fails with it (kernel-pipeline.js).
 import { readFileSync, readdirSync } from 'node:fs';
 import { DOC_SCHEMA, preflight } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
-import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
-import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
+import { vocabIndex } from './select.js';
 import { outlineForm, formPath, groupOfPath, fieldForm, paramsGroupId } from './outline-form.js';
 import { dependencyLayers, loopMechanicOf } from './build.js';
 import { preset, coreOf, zoneStart, wireCore, repairLoop } from './presets.js';
@@ -91,70 +90,6 @@ const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g
  */
 /** @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec @returns {ProceduralOutline} */
 export function proceduralOutline(spec) { return /** @type {ProceduralOutline} */ (/** @type {unknown} */ (preset(spec))); }
-
-/**
- * Player agency, checked empirically: the skeleton is booted headless and must offer the player
- * at least one option (a way to act that solvers and playtesters can take). A space that offers none
- * with the chosen primitives (e.g. a continuous space and no movement primitive yet) is excluded and
- * the selection re-run, as long as no chosen primitive is lost. If nothing offers agency, the best
- * selection is kept and the lack is reported as a gap. Zero model calls; milliseconds.
- * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string, decisions?: unknown, tries?: number }} args
- */
-export async function ensureAgency({ decomposition, selection, registry, logic, seed, prompt = '', decisions = null, tries = 4 }) {
-  /** @type {Array<{ spaces: string[], added?: string, options: number | null, ok: boolean }>} */
-  const attempts = [];
-  // Agency is an avatar's question: without one, the player acts through the mode (moves, cards, cells), whose options
-  // exist once the model has written its content. Nothing to add here, and no reason to change the space.
-  if (decomposition.core?.interaction && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
-  let current = selection;
-  /** @type {string[]} */
-  let excluded = [];
-  // Mechanics (systems) must survive a space change; generators build whichever space is chosen, so they may change with it.
-  const kept = (/** @type {{ systems: string[] }} */ sel) => new Set(sel.systems);
-  for (let i = 0; i < tries; i++) {
-    const o = proceduralOutline({ decomposition, selection: current, registry, logic, seed, prompt });
-    // A structure that does not validate yet lacks content the model writes (crops, pieces, a story): agency is then
-    // the publish gate's question on the written game (cannot_act), not a reason to change the world or report a gap.
-    if (!o.ok) return { selection: current, attempts: [...attempts, { spaces: current.spaces.map(s => s.use), options: null, ok: false }], agency: null };
-    const fp = firstPlayable(engageDocument(o.doc, registry, logic).doc, registry, logic, { seed });
-    attempts.push({ spaces: current.spaces.map(s => s.use), options: fp?.options ?? null, ok: Boolean(fp?.ok) });
-    if (fp?.ok && (fp.options ?? 0) > 0) return { selection: current, attempts, agency: true };
-    // The space may be right and only movement missing: add the movement primitive that fits it best (a card with a
-    // movement envelope whose capabilities the space provides and whose views fit), before giving the space up.
-    if (o.ok && !(fp?.errors || []).some(e => e.code !== 'no_options')) {
-      const space = current.spaces[0];
-      // The idea's primary view and the avatar's medium decide the kind of movement (td -> top-down, side -> platformer,
-      // a walking dungeon -> ground): a mover must support the view; ties go to the medium, then to the fewest requirements.
-      // An idea whose avatar does not move (cards, boards, falling pieces) gets no locomotion here.
-      const primary = (decomposition.views || []).find(v => v !== 'ui') || null;
-      const medium = decomposition.movement || movementFrom(JSON.stringify(decomposition.mechanics || []).toLowerCase());
-      const movers = medium === 'none' ? [] : baseLocomotion(registry, { caps: space.caps || [], view: primary, medium, exclude: current.systems })
-        .filter(c => registry.get(c.id)?.envelope || registry.get(c.id)?.card.envelope).slice(0, 3);
-      let moved = null;
-      for (const m of movers) {
-        /** @type {Selection} */
-        const sel = { ...current, systems: [...current.systems, m.id].sort((a, b) => (a.startsWith('engine.') ? 0 : a.startsWith('gameplay.') ? 1 : 2) - (b.startsWith('engine.') ? 0 : b.startsWith('gameplay.') ? 1 : 2) || a.localeCompare(b)) };
-        const o2 = proceduralOutline({ decomposition, selection: sel, registry, logic, seed, prompt });
-        const fp2 = o2.ok ? firstPlayable(o2.doc, registry, logic, { seed }) : null;
-        attempts.push({ spaces: sel.spaces.map(s => s.use), added: m.id, options: fp2?.options ?? null, ok: Boolean(fp2?.ok) });
-        if (fp2?.ok && (fp2.options ?? 0) > 0) { moved = sel; break; }
-      }
-      if (moved) return { selection: moved, attempts, agency: true };
-    }
-    // A collection built on its space (build.js) keeps it: no offline re-selection swaps the world; the lack is a gap.
-    if (selection.build) break;
-    excluded = [...excluded, current.spaces[0].use];
-    const next = await selectPrimitives({ decomposition, registry, decisions: null, excludeSpaces: excluded });
-    if (!next.spaces.length || [...kept(selection)].some(id => !kept(next).has(id))) break;
-    // Never change the game's kind or view: a replacement space must support the idea's primary view.
-    const view = (decomposition.views || []).find(v => v !== 'ui');
-    const nextViews = registry.get(next.spaces[0].use)?.card.views || [];
-    if (view && !nextViews.includes(view) && !nextViews.includes('any')) break;
-    current = { ...next, mechanics: selection.mechanics, provider: selection.provider };
-  }
-  const gap = { mechanic: 'player_agency', description: `move the player between places in ${selection.spaces[0]?.use || 'the world'}`, importance: 'core', kind: 'capability', why: 'no registered primitive gives the player a way to act or travel in a space that the chosen mechanics can use' };
-  return { selection: { ...selection, gaps: [...selection.gaps, gap] }, attempts, agency: false };
-}
 
 // ---------- few-shot material from v2/games, filtered to what is registered ----------
 /** Example game files (JSON read from v2/games: unchecked). @type {Record<string, unknown>[] | null} */
