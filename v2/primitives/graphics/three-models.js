@@ -27,7 +27,7 @@ export function createModelLibrary(stage) {
       if (typeof id === 'string' && models[id]) return { id, spec: models[id] };
       if (id && typeof id === 'object') return { id: `inline:${entity.id}`, spec: id };
       const a = arch || { id: typeof entity === 'string' ? entity : entity.archetype, kind: entity?.components?.kind };
-      return { id: `gen:${a.id}`, spec: synthesizeSpec(a) };
+      return { id: `gen:${a.id}`, spec: synthesizeSpec(a, { registry: rt.registry, doc }) };
     },
     itemSpecFor(itemOrName) {
       const models = rt.doc.content?.models || {};

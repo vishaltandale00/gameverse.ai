@@ -6,7 +6,7 @@
 // hudModel() is the pure view model; install() renders it and animates changes.
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { tellsOf, tellWords, uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
-import { icon, itemIcon } from './ui-icons.js';
+import { icon, itemIcon, statusIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
@@ -89,7 +89,8 @@ function maxOf(rt, maxRef, fallbackVar) {
   if (fallbackVar?.startsWith('res.')) return p.components?.resources?.[fallbackVar.slice(4)]?.max ?? null;
   return null;
 }
-const DEFAULT_COLORS = { hp: '#ff5d6c', stamina: '#7ac060', mana: '#5aa8ff', focus: '#5a9ae0', hunger: '#d8a030', flame: '#ffb347', oxygen: '#7ad8ff', fuel: '#c8a060', soul: '#e8e4ff' };
+// The player's health (the kernel's mirrored var `hp`) is red; another meter has its declared colour, else one seeded by its id.
+const DEFAULT_COLORS = { hp: '#ff5d6c' };
 const poolColor = (id, explicit) => explicit || DEFAULT_COLORS[id] || ['#7ac060', '#5aa8ff', '#d8a030', '#c06cff', '#3ad0e8'][[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % 5];
 
 /** How to draw a counter with a max: icons (one per point or per two) or a number. */
@@ -145,7 +146,7 @@ export function hudModel(rt, config, local = {}) {
   for (const [i, c] of config.counters.entries()) {
     let value, max = null, ic;
     if (c.item) { value = S.bag(rt)[c.item] || 0; ic = c.icon ? { name: c.icon } : itemIcon(docItem(rt.doc, c.item)); }
-    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = c.max !== undefined ? maxOf(rt, c.max, c.var) : maxOf(rt, `${c.var}.max`, c.var); ic = { name: c.icon || c.var }; }
+    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = c.max !== undefined ? maxOf(rt, c.max, c.var) : maxOf(rt, `${c.var}.max`, c.var); ic = { name: c.icon || null }; }
     const display = counterDisplay(c.style, max);
     out.counters.push({ key: `c${i}`, value, max, icon: ic, label: c.label ?? (c.item ? itemName(rt.doc, c.item) : titleCase(c.var)), pos: c.pos, display, fills: display.kind === 'icons' ? iconFills(value, display.per, display.slots) : null });
   }
@@ -176,7 +177,7 @@ export function hudModel(rt, config, local = {}) {
   }
   if (config.status && player) {
     const defs = rt.doc.content?.statuses || [];
-    out.status = S.statuses(rt, player).map(s => { const d = defs.find(x => x.id === s.id); const dur = d?.duration; return { id: s.id, name: d?.name || titleCase(s.id), icon: d?.icon || s.id, remaining: s.remaining, frac: isNum(dur) && dur > 0 && isNum(s.remaining) ? clamp(s.remaining / dur, 0, 1) : 1, stacks: s.stacks || 1, good: (s.tags || d?.tags || []).includes('buff') }; });
+    out.status = S.statuses(rt, player).map(s => { const d = defs.find(x => x.id === s.id); const dur = d?.duration; return { id: s.id, name: d?.name || titleCase(s.id), icon: statusIcon(d), remaining: s.remaining, frac: isNum(dur) && dur > 0 && isNum(s.remaining) ? clamp(s.remaining / dur, 0, 1) : 1, stacks: s.stacks || 1, good: (s.tags || d?.tags || []).includes('buff') }; });
   }
   if (config.clock && isNum(vars['time.hour'])) {
     const hr = vars['time.hour'];

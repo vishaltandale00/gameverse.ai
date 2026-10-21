@@ -81,7 +81,7 @@ function voxelDoc() {
     spaces: [{ id: 'w', use: 'engine.space.test', with: { size: [32, 16, 32] }, generators: [{ use: 'engine.generate.three-test-terrain' }] }],
     systems: [{ use: 'gameplay.three-test-mover' }],
     content: { blocks: blockport.content.blocks, models: { kit: blockport.content.models.kit, cow: blockport.content.models.cow, sedan: blockport.content.models.sedan },
-      archetypes: [arch('kit', 'player', 'kit', { wander: { rate: 0.5, speed: 4 } }), arch('cow', 'creature', 'cow', { wander: { rate: 0.3, speed: 1 } }), arch('sedan', 'vehicle', 'sedan', { wander: { rate: 0.2, speed: 6 } }), arch('goblin', 'enemy', null)] },
+      archetypes: [arch('kit', 'player', 'kit', { wander: { rate: 0.5, speed: 4 } }), arch('cow', 'creature', 'cow', { wander: { rate: 0.3, speed: 1 } }), arch('sedan', 'vehicle', 'sedan', { wander: { rate: 0.2, speed: 6 } }), arch('goblin', 'npc', null)] },
     graphics: blockport.graphics.filter(g => MINE.has(g.use)),
     player: { archetype: 'kit', at: [10, 6, 10] },
   };
@@ -151,6 +151,8 @@ test('voxel world: chunks mesh within budget, actors are rigged and animated, ed
   const sedan = [...s.actors.values()].find(a => a.entity?.archetype === 'sedan');
   assert.ok(sedan.spin.length >= 4, 'wheels are spin nodes');
   const goblin = [...s.actors.values()].find(a => a.entity?.archetype === 'goblin');
+  // (Corrected fixture: the goblin was an 'enemy' whose plan came from its id not matching any word; an enemy's plan now
+  // varies among the enemy plans by its id seed, so the humanoid rig is checked on an npc, which is always humanoid.)
   assert.equal(goblin.template.spec.generated, 'humanoid', 'a model is generated for an archetype without one');
   assert.equal(goblin.rig?.kind, 'humanoid');
   // Edit: remove the top block under (20,8,20) -> its chunk re-meshes.

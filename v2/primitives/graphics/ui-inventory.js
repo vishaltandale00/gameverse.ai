@@ -7,7 +7,7 @@
 // only when that action exists. Layout helpers are pure.
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, titleCase, itemName, charName, docItem, docSystem, fmtInt, isNum } from './ui-lib.js';
-import { icon, itemIcon } from './ui-icons.js';
+import { icon, itemIcon, resolveIcon } from './ui-icons.js';
 import { createSheet } from './ui-sheet.js';
 import * as S from './ui-sources.js';
 
@@ -118,7 +118,7 @@ export default {
       onClose() { if (trade?.kind === 'shop' && S.canAct(rt, 'close_shop')) rt.view.act({ close_shop: true }); if (trade?.kind === 'container' && S.canAct(rt, 'close_container')) rt.view.act({ close_container: true }); },
     });
     sheet.extra.append(wallet);
-    function paintWallet() { const m = S.money(rt); fill(wallet, ...m.map(c => el('span.gv-price', {}, icon(c.id), fmtInt(c.value)))); }
+    function paintWallet() { const m = S.money(rt); fill(wallet, ...m.map(c => el('span.gv-price', {}, icon(resolveIcon(c.icon) || 'coin'), fmtInt(c.value)))); }
     function signature(tab) { return JSON.stringify([tab, S.bag(rt), trade && (trade.kind === 'shop' ? S.shop(rt) : S.container(rt)), tab === 'equipment' || tab === 'loadout' || tab === 'items' ? S.equipment(rt) : null, tab === 'crafting' ? craftRows(rt).map(r => r.craftable) : null, S.money(rt).map(m => m.value)]); }
     const act = (verb, value) => { if (!S.canAct(rt, verb)) { host.sound('error'); return false; } rt.view.act({ [verb]: value }); host.sound('confirm'); return true; };
     const equippedIds = () => new Set((S.equipment(rt)?.slots || []).flatMap(s => s.items));

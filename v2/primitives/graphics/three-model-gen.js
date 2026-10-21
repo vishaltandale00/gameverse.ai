@@ -1,9 +1,12 @@
 // Generated model specs for anything that has no content.models entry: an
-// archetype (by kind, id, name and tags), an item (by name: sword, lantern) or
-// a placed object (by kind: tree, rock, lamp). Output is an ordinary lowpoly
-// spec (catalog §5.2), so it is built, rigged and animated like authored ones,
-// and can be voxelized for voxel worlds. Deterministic from the name.
+// archetype (by its declared kind and the presentations its components' cards
+// declare), an item (by its declared parts) or a placed object (by the prop
+// type the world-object layer gives). Output is an ordinary lowpoly spec
+// (catalog §5.2), so it is built, rigged and animated like authored ones, and
+// can be voxelized for voxel worlds. Deterministic from the declarations and
+// the id that seeds the variation.
 import { hash01 } from './three-util.js';
+import { presentationOf } from './flat-art.js';
 
 const hsl = (h, s, l) => {
   h = ((h % 360) + 360) % 360 / 360;
@@ -15,57 +18,55 @@ const SKINS = ['#f1c9a5', '#e0ac85', '#c68a62', '#a86b45', '#7d4a2c', '#5a3420']
 const HAIRS = ['#1e1612', '#3a2618', '#6a4424', '#a87838', '#d8b868', '#8a8a90', '#e8e4dc', '#7a2a1a'];
 const HAIR_STYLES = ['short', 'short-tied', 'bun', 'braid', 'long', 'ponytail', 'spiky', 'bald'];
 
-const RULES = [
-  // [plan, regex over "id name tags kind"]
-  ['bird', /\b\w*(bird|crow|raven|hawk|eagle|owl|gull|bat|moth|parrot|pigeon|duck|chicken|hen|rooster|phoenix)\w*\b/],
-  ['dragon', /\b\w*(dragon|wyvern|wyrm|drake)\w*\b/],
-  ['serpent', /\b\w*(serpent|snake|worm|eel|leech|naga|viper|slug)\w*\b/],
-  ['arthropod', /\b\w*(spider|crab|skitter|beetle|insect|ant|scorp|tick|crawler|mantis|centipede)\w*\b/],
-  ['blob', /\b\w*(slime|blob|ooze|jelly|gloomer|boomling|bloom|spore|puff|mushroom|fungus)\w*\b/],
-  ['ghost', /\b\w*(ghost|wisp|wraith|shade|spirit|specter|spectre|phantom|wight|soul)\w*\b/],
-  ['golem', /\b\w*(golem|titan|automaton|robot|construct|colossus|mech|sentinel|warden|giant)\w*\b/],
-  ['fish', /\b\w*(fish|shark|whale|dolphin|carp|trout|salmon)\w*\b/],
-  ['quadruped', /\b\w*(horse|pony|mare|stallion|deer|stag|elk|moose|boar|pig|hog|wolf|dog|hound|fox|cat|lion|tiger|bear|cow|bull|ox|sheep|goat|ram|mule|donkey|camel|rat|mouse|rabbit|hare|lizard|croc|beast)\w*\b/],
-];
-const VEHICLES = [
-  ['plane', /plane|jet|aircraft|biplane|glider|airship/], ['heli', /heli|copter|chopper/], ['boat', /boat|ship|yacht|raft|canoe|ferry|barge|sub/],
-  ['bike', /bike|motorbike|motorcycle|scooter|bicycle/], ['cart', /cart|minecart|wagon|carriage|train|tram/],
-  ['truck', /truck|van|bus|lorry|armored|armoured|tank|delivery/], ['car', /./],
-];
-const PROPS = [
-  ['campfire', /campfire|fire|brazier|bonfire|hearth/], ['lamp', /lamp|lantern|torch|light|candle|beacon/], ['chest', /chest|coffer|loot|cache|trunk/],
-  ['crate', /crate|box|package|cargo|supply/], ['barrel', /barrel|keg|cask|drum/], ['bed', /bed|cot|bunk/],
-  ['table', /table|desk|bench|workbench|counter|altar|alchemy/], ['anvil', /anvil|forge|furnace|kiln|oven|smelter/],
-  ['door', /door|gate|portal|vault/], ['tree', /tree|oak|pine|palm|birch|willow/], ['bush', /bush|shrub|hedge|plant|forage|herb|flower/],
-  ['rock', /rock|stone|boulder|ore|crystal/], ['sign', /sign|tablet|ledger|book|note|board|scroll|map/], ['statue', /statue|shrine|idol|totem|monument|seal/],
-  ['machine', /vending|machine|terminal|console|computer|generator|engine/], ['barricade', /barricade|fence|wall|barrier/],
-  ['crown', /crown|relic|artifact|trophy|chalice|orb/],
-];
-const ITEMS = [
-  ['sword', /sword|blade|sabre|saber|katana|dagger|knife|machete/], ['axe', /axe|hatchet/], ['pick', /pick/], ['hammer', /hammer|mace|maul|club/],
-  ['spear', /spear|lance|pike|halberd|trident|staff|wand|rod/], ['bow', /bow/], ['shield', /shield|buckler/], ['gun', /gun|pistol|rifle|blaster|shotgun/],
-  ['torch', /torch|lantern|lamp/], ['backpack', /backpack|pack|bag|satchel/], ['potion', /potion|flask|bottle|vial|elixir/], ['tool', /./],
-];
+// What a thing is comes from declarations, never from words in its id, name or tags (ARCHITECTURE §1.2; the 2D
+// renderers read the same: graphics/flat-art.js presentationOf): the role its archetype's declared `kind` and its
+// components' cards (card.presents) give it, a body plan a component's card declares (`presents.body`), the motion
+// component a vehicle carries, an item's declared parts (weapon, ranged, armor, tool) and kind. The id is only the
+// seed of a variation (colours, proportions, which of the role's plans), like the 2D cast: renaming it to any word
+// changes nothing but that seed, and renaming the themed `name` changes nothing at all.
+/** The 3D body plans a declaration can name (card.presents body). */
+export const BODY_PLANS = Object.freeze(['humanoid', 'golem', 'ghost', 'quadruped', 'dragon', 'bird', 'serpent', 'arthropod', 'blob', 'fish', 'vehicle', 'prop', 'pickup', 'projectile']);
+/** The plans a role's members vary among (seeded by id) when no card declares one. */
+const ROLE_PLANS = Object.freeze({
+  player: ['humanoid'], npc: ['humanoid'], enemy: ['humanoid', 'quadruped', 'bird', 'serpent', 'arthropod', 'blob', 'ghost', 'golem'], boss: ['golem', 'dragon', 'humanoid'],
+  mount: ['quadruped'], vehicle: ['vehicle'], projectile: ['projectile'], pickup: ['pickup'], goal: ['prop'], hazard: ['prop'], prop: ['prop'],
+});
+/** The vehicle shape for the motion component a vehicle carries (gameplay.vehicle.car / boat / aircraft own them). */
+const MOTION_VEHICLE = Object.freeze({ car: 'car', boat: 'boat', aircraft: 'plane' });
+/** The 3D prop a declared 2D prop (v2/art/props, card.presents prop) is built as. */
+const PROP_3D = Object.freeze({
+  chest: 'chest', door: 'door', crate: 'crate', barrel: 'barrel', lantern: 'lamp', campfire: 'campfire', fire: 'campfire', statue: 'statue', bush: 'bush', rock: 'rock', crystal: 'rock',
+  signpost: 'sign', tablet: 'sign', 'exit-sign': 'sign', flag: 'sign', bench: 'table', well: 'barrel', pot: 'barrel', trophy: 'crown', castle: 'statue', beacon: 'lamp', portal: 'door',
+});
+const PROP_TYPES = ['campfire', 'lamp', 'chest', 'crate', 'barrel', 'bed', 'table', 'anvil', 'door', 'tree', 'bush', 'rock', 'sign', 'statue', 'machine', 'barricade', 'crown'];
+const seeded = (seed, salt, list) => list[Math.floor(hash01(String(seed || 'thing'), salt) * list.length)];
+const presented = (archetype, ctx) => presentationOf(archetype, ctx.registry || null, null, ctx.doc || null);
 
-// Never the name: the content forms theme names, and a themed name must not change artwork (ARCHITECTURE §1.2).
-const words = a => `${a.id || ''} ${(a.tags || []).join(' ')} ${a.kind || ''}`.toLowerCase().replace(/_/g, ' ');
+/**
+ * The body plan of an archetype: one a card declares for its components (presents.body), else one among the plans of
+ * its declared role (kind and card.presents), seeded by its id. @param {any} archetype @param {{ registry?: any, doc?: any }} [ctx]
+ */
+export function bodyPlan(archetype, ctx = {}) {
+  const P = presented(archetype, ctx);
+  if (P?.body && BODY_PLANS.includes(P.body)) return P.body;
+  const role = archetype.id === 'player' ? 'player' : P?.role || 'npc';
+  return seeded(ctx.seed ?? archetype.id, 90, ROLE_PLANS[role] || ROLE_PLANS.npc);
+}
+/** The head features of a generated quadruped (model-lowpoly quadrupedBody reads spec.features), seeded by its id. */
+function quadrupedFeatures(seed, build) {
+  const r = i => hash01(String(seed), 95 + i);
+  return { neck: build === 'tall' ? 0.42 : 0.3, ears: build === 'small' && r(1) < 0.5 ? 'long' : r(2) < 0.5 ? 'pointed' : 'short', antlers: build === 'tall' && r(3) < 0.35, tusks: build === 'middle' && r(4) < 0.3, horns: build !== 'small' && r(5) < 0.3, bushy: build !== 'tall' && r(6) < 0.5, mane: build === 'tall' && r(7) < 0.6, ruff: build === 'middle' && r(8) < 0.3 };
+}
 
-/** Choose a body plan for an archetype. */
-export function bodyPlan(archetype) {
-  const w = words(archetype), kind = archetype.kind || '';
-  if (kind === 'vehicle' || archetype.components?.vehicle) return 'vehicle';
-  if (kind === 'prop') return 'prop';
-  if (kind === 'pickup' || kind === 'item') return 'pickup';
-  if (kind === 'projectile') return 'projectile';
-  for (const [plan, re] of RULES) if (re.test(w)) return plan;
-  if (kind === 'mount') return 'quadruped';
-  if (kind === 'creature') return 'quadruped';
-  return 'humanoid';
+/** A prop model of a given type (one of PROP_TYPES; the world-object layer says which, three-objects.js), seeded by `seed`. */
+export function propModel(seed, type) {
+  const name = String(seed || 'thing'), r = i => hash01(name, 40 + i);
+  return propSpec(name, PROP_TYPES.includes(type) ? type : 'crate', palette(name, 'prop', 'prop'), r);
 }
 
 function palette(name, plan, kind) {
   const r = i => hash01(name, i);
-  const hostile = /enemy|boss/.test(kind);
+  const hostile = kind === 'enemy' || kind === 'boss';
   const hue = hostile ? (r(1) < 0.5 ? 350 + r(2) * 30 : 260 + r(2) * 60) : r(1) * 360;
   return {
     skin: SKINS[Math.floor(r(3) * SKINS.length)], hair: HAIRS[Math.floor(r(4) * HAIRS.length)],
@@ -78,24 +79,28 @@ function palette(name, plan, kind) {
   };
 }
 
-/** A complete lowpoly spec for an archetype with no model of its own. */
-export function synthesizeSpec(archetype) {
-  const name = archetype.id || 'thing', kind = archetype.kind || 'npc';
-  const plan = bodyPlan(archetype), pal = palette(name, plan, kind), w = words(archetype), r = i => hash01(name, 40 + i);
-  const big = kind === 'boss' ? 1.6 + r(1) * 0.8 : 1;
+/**
+ * A complete lowpoly spec for an archetype with no model of its own, from its declarations (bodyPlan) and a variation
+ * seeded by its id (ctx.seed: the seed in its place). @param {any} archetype @param {{ registry?: any, doc?: any, seed?: string }} [ctx]
+ */
+export function synthesizeSpec(archetype, ctx = {}) {
+  const name = String(ctx.seed ?? archetype.id ?? 'thing'), pres = presented(archetype, ctx), role = archetype.id === 'player' ? 'player' : pres?.role || 'npc';
+  const plan = bodyPlan(archetype, ctx), pal = palette(name, plan, role), r = i => hash01(name, 40 + i), pick = (salt, list) => seeded(name, salt, list);
+  const big = role === 'boss' ? 1.6 + r(1) * 0.8 : 1;
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
   switch (plan) {
-    case 'humanoid': return { kind: 'lowpoly', rig: 'humanoid', height: (1.6 + r(2) * 0.25) * big, build: { width: 0.85 + r(3) * 0.4, shoulders: 0.9 + r(4) * 0.3, head: 1 }, palette: pal, hair: kind === 'enemy' && r(5) < 0.4 ? 'helmet' : HAIR_STYLES[Math.floor(r(5) * HAIR_STYLES.length)], parts: [], generated: plan };
-    case 'golem': return { kind: 'lowpoly', rig: 'humanoid', height: 2.6 * big, build: { width: 1.6, shoulders: 1.5, head: 0.8 }, palette: { ...pal, skin: pal.stone, cloth: pal.stone, pants: pal.stone, boots: pal.metal, trim: pal.glow, hair: pal.stone }, hair: 'bald', material: /automaton|robot|mech|construct/.test(w) ? 'metal' : 'matte', eyes: 'glow', parts: [], generated: plan };
+    case 'humanoid': return { kind: 'lowpoly', rig: 'humanoid', height: (1.6 + r(2) * 0.25) * big, build: { width: 0.85 + r(3) * 0.4, shoulders: 0.9 + r(4) * 0.3, head: 1 }, palette: pal, hair: role === 'enemy' && r(5) < 0.4 ? 'helmet' : HAIR_STYLES[Math.floor(r(5) * HAIR_STYLES.length)], parts: [], generated: plan };
+    case 'golem': return { kind: 'lowpoly', rig: 'humanoid', height: 2.6 * big, build: { width: 1.6, shoulders: 1.5, head: 0.8 }, palette: { ...pal, skin: pal.stone, cloth: pal.stone, pants: pal.stone, boots: pal.metal, trim: pal.glow, hair: pal.stone }, hair: 'bald', material: r(7) < 0.5 ? 'metal' : 'matte', eyes: 'glow', parts: [], generated: plan };
     case 'ghost': return { kind: 'lowpoly', rig: 'humanoid', height: 1.7 * big, build: { width: 0.9, shoulders: 0.9, head: 1 }, palette: { ...pal, skin: '#cfe0ea', cloth: '#9ab0c8', pants: '#9ab0c8', boots: '#9ab0c8' }, hair: 'hood', legs: 'robe', alpha: 0.65, eyes: 'glow', float: 0.35, parts: [], generated: plan };
     case 'quadruped': {
-      const tall = /horse|pony|mare|stallion|deer|stag|elk|moose|camel|mule|donkey/.test(w), small = /rat|mouse|rabbit|hare|cat|fox|lizard/.test(w);
+      // A mount is ridden: always the tall build; others vary (seeded) among small, middle and tall.
+      const build = role === 'mount' ? 'tall' : pick(91, ['small', 'middle', 'tall']), tall = build === 'tall', small = build === 'small';
       const length = (small ? 0.6 : tall ? 2.2 : 1.4) * big, height = (small ? 0.35 : tall ? 1.55 : 0.95) * big;
-      return { kind: 'lowpoly', rig: 'quadruped', length, height, palette: pal, parts: [], species: w, generated: plan };
+      return { kind: 'lowpoly', rig: 'quadruped', length, height, palette: pal, parts: [], features: quadrupedFeatures(name, build), generated: plan };
     }
-    case 'dragon': return { kind: 'lowpoly', rig: 'quadruped', length: 4 * big, height: 1.8 * big, palette: { ...pal, coat: pal.body, mane: pal.accent }, wings: true, horns: true, parts: [], species: w, generated: plan };
+    case 'dragon': return { kind: 'lowpoly', rig: 'quadruped', length: 4 * big, height: 1.8 * big, palette: { ...pal, coat: pal.body, mane: pal.accent }, wings: true, horns: true, features: { neck: 0.45, ears: 'short', horns: true }, parts: [], generated: plan };
     case 'bird': {
-      const s = (/chicken|hen|duck/.test(w) ? 0.45 : /crow|raven|bat|moth|pigeon/.test(w) ? 0.4 : 0.8) * big;
+      const s = pick(92, [0.4, 0.45, 0.8]) * big;
       return { kind: 'lowpoly', rig: 'custom', palette: pal, flier: true, parts: [
         P('sphere', [0, 0.5 * s, 0], [0.45 * s, 0.4 * s, 0.7 * s], 'body', { name: 'body' }),
         P('sphere', [0, 0.72 * s, 0.32 * s], [0.3 * s, 0.3 * s, 0.3 * s], 'body', { name: 'head' }),
@@ -114,7 +119,7 @@ export function synthesizeSpec(archetype) {
       return { kind: 'lowpoly', rig: 'custom', palette: pal, slither: true, parts, generated: plan };
     }
     case 'arthropod': {
-      const s = (/spider|scorp|crab/.test(w) ? 0.9 : 0.6) * big, parts = [
+      const s = pick(93, [0.6, 0.9]) * big, parts = [
         P('sphere', [0, 0.45 * s, -0.25 * s], [0.7 * s, 0.5 * s, 0.8 * s], 'body', { name: 'abdomen' }),
         P('sphere', [0, 0.4 * s, 0.3 * s], [0.45 * s, 0.35 * s, 0.45 * s], 'cloth', { name: 'head' }),
       ];
@@ -123,26 +128,27 @@ export function synthesizeSpec(archetype) {
       return { kind: 'lowpoly', rig: 'custom', palette: pal, scuttle: true, parts, generated: plan };
     }
     case 'blob': {
-      const s = (0.6 + r(6) * 0.5) * big;
-      return { kind: 'lowpoly', palette: pal, squash: true, alpha: /slime|jelly|ooze/.test(w) ? 0.8 : 1, parts: [
+      const s = (0.6 + r(6) * 0.5) * big, capped = r(8) < 0.4;
+      return { kind: 'lowpoly', palette: pal, squash: true, alpha: !capped && r(9) < 0.5 ? 0.8 : 1, parts: [
         P('sphere', [0, 0.42 * s, 0], [1 * s, 0.84 * s, 1 * s], 'body', { name: 'body' }),
-        /bloom|mushroom|spore|fungus/.test(w) ? P('sphere', [0, 0.95 * s, 0], [1.3 * s, 0.5 * s, 1.3 * s], 'accent', { name: 'cap' }) : P('sphere', [0, 0.3 * s, 0], [0.85 * s, 0.4 * s, 0.85 * s], 'accent', { name: 'belly' }),
+        capped ? P('sphere', [0, 0.95 * s, 0], [1.3 * s, 0.5 * s, 1.3 * s], 'accent', { name: 'cap' }) : P('sphere', [0, 0.3 * s, 0], [0.85 * s, 0.4 * s, 0.85 * s], 'accent', { name: 'belly' }),
         P('sphere', [0.18 * s, 0.6 * s, 0.42 * s], [0.14 * s, 0.18 * s, 0.08 * s], 'glow', { mat: 'glow', name: 'eyeL' }), P('sphere', [-0.18 * s, 0.6 * s, 0.42 * s], [0.14 * s, 0.18 * s, 0.08 * s], 'glow', { mat: 'glow', name: 'eyeR' }),
       ], generated: plan };
     }
     case 'fish': return { kind: 'lowpoly', palette: pal, swim: true, parts: [P('sphere', [0, 0.3, 0], [0.3 * big, 0.4 * big, 1 * big], 'body'), P('box', [0, 0.3, -0.6 * big], [0.04, 0.4 * big, 0.3 * big], 'accent', { name: 'tail' })], generated: plan };
-    case 'vehicle': return vehicleSpec(name, w, pal, r);
-    case 'prop': return propSpec(name, w, pal, r);
+    case 'vehicle': return vehicleSpec(name, archetype, pal, r);
+    case 'prop': return propSpec(name, PROP_3D[pres?.prop] || pick(94, PROP_TYPES), pal, r);
     case 'pickup': return { kind: 'lowpoly', palette: pal, spin: true, bob: true, parts: [P('sphere', [0, 0.45, 0], [0.32, 0.42, 0.32], 'glow', { mat: 'glow' }), P('cyl', [0, 0.05, 0], [0.4, 0.04, 0.4], 'accent', { mat: 'glow', alpha: 0.4 })], generated: plan };
-    case 'projectile': return { kind: 'lowpoly', palette: pal, parts: /arrow|bolt|dart/.test(w) ? [P('cyl', [0, 0, 0], [0.03, 0.7, 0.03], 'wood', { rot: [Math.PI / 2, 0, 0] }), P('cone', [0, 0, 0.38], [0.06, 0.1, 0.06], 'metal', { rot: [Math.PI / 2, 0, 0], mat: 'metal' })] : [P('sphere', [0, 0, 0], [0.25, 0.25, 0.25], 'glow', { mat: 'glow' })], generated: plan };
+    case 'projectile': return { kind: 'lowpoly', palette: pal, parts: r(10) < 0.5 ? [P('cyl', [0, 0, 0], [0.03, 0.7, 0.03], 'wood', { rot: [Math.PI / 2, 0, 0] }), P('cone', [0, 0, 0.38], [0.06, 0.1, 0.06], 'metal', { rot: [Math.PI / 2, 0, 0], mat: 'metal' })] : [P('sphere', [0, 0, 0], [0.25, 0.25, 0.25], 'glow', { mat: 'glow' })], generated: plan };
     default: return { kind: 'lowpoly', palette: pal, parts: [P('box', [0, 0.5, 0], [1, 1, 1], 'body')], generated: plan };
   }
 }
 
-function vehicleSpec(name, w, pal, r) {
-  const type = VEHICLES.find(([, re]) => re.test(w))[0];
+/** A vehicle's shape: the one for the motion component it carries (MOTION_VEHICLE), a car on land without one. */
+function vehicleSpec(name, archetype, pal, r) {
+  const comps = archetype.components || {}, type = Object.keys(MOTION_VEHICLE).filter(k => comps[k]).map(k => MOTION_VEHICLE[k])[0] || 'car';
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
-  const paint = { ...pal, paint: /police/.test(w) ? '#1e2a48' : /taxi/.test(w) ? '#e8c020' : pal.body, glass: '#8ab8d0', tire: '#1a1a1c', light: '#fff4c0', tail: '#ff3030' };
+  const paint = { ...pal, paint: pal.body, glass: '#8ab8d0', tire: '#1a1a1c', light: '#fff4c0', tail: '#ff3030' };
   const wheels = (L, W, R, y = R) => ['FL', 'FR', 'BL', 'BR'].map(k => P('cyl', [(k[1] === 'L' ? 1 : -1) * W / 2, y, (k[0] === 'F' ? 1 : -1) * L * 0.32], [R * 2, 0.22, R * 2], 'tire', { rot: [0, 0, Math.PI / 2], name: `wheel${k}` }));
   switch (type) {
     case 'car': case 'truck': {
@@ -152,21 +158,20 @@ function vehicleSpec(name, w, pal, r) {
         P('box', [0, R + H + 0.32, type === 'truck' ? L * 0.3 : -0.1], [W * 0.88, 0.62, type === 'truck' ? L * 0.32 : L * 0.5], 'glass', { name: 'cabin', alpha: 0.7, mat: 'metal' }),
         P('box', [0, R + H * 0.55, L / 2 + 0.01], [W * 0.8, 0.12, 0.04], 'light', { mat: 'glow', name: 'lights' }),
         P('box', [0, R + H * 0.55, -L / 2 - 0.01], [W * 0.8, 0.1, 0.04], 'tail', { mat: 'glow', name: 'taillights' }),
-        ...(/police/.test(w) ? [P('box', [0.3, R + H + 0.68, -0.1], [0.4, 0.12, 0.25], 'tail', { mat: 'glow', name: 'siren' }), P('box', [-0.3, R + H + 0.68, -0.1], [0.4, 0.12, 0.25], 'glass', { mat: 'glow', name: 'siren' })] : []),
         ...wheels(L, W, R),
       ] };
     }
     case 'bike': return { kind: 'lowpoly', palette: paint, vehicle: type, parts: [P('box', [0, 0.7, 0], [0.3, 0.35, 1.3], 'paint', { mat: 'metal', name: 'body' }), P('cyl', [0, 0.33, 0.7], [0.66, 0.12, 0.66], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelF' }), P('cyl', [0, 0.33, -0.7], [0.66, 0.12, 0.66], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelB' }), P('box', [0, 1.05, 0.55], [0.7, 0.05, 0.05], 'metal', { mat: 'metal', name: 'bars' })] };
     case 'boat': return { kind: 'lowpoly', palette: paint, vehicle: type, parts: [P('box', [0, 0.4, 0], [2.2, 0.8, 6], 'paint', { taper: 0.75, name: 'hull' }), P('cone', [0, 0.4, 3.4], [2.2, 1.2, 0.8], 'paint', { rot: [Math.PI / 2, 0, 0], name: 'bow' }), P('box', [0, 1.1, -0.6], [1.6, 0.7, 1.8], 'glass', { alpha: 0.7, name: 'cabin' }), P('box', [0, 0.5, -3.05], [0.5, 0.6, 0.3], 'metal', { mat: 'metal', name: 'motor' })] };
-    case 'plane': return { kind: 'lowpoly', palette: paint, vehicle: type, parts: [P('cyl', [0, 1.2, 0], [1, 5.5, 1], 'paint', { rot: [Math.PI / 2, 0, 0], taper: 0.5, name: 'body' }), P('box', [0, 1.2, 0.6], [8, 0.1, 1.3], 'paint', { name: 'wings' }), ...(/bi/.test(w) ? [P('box', [0, 2.1, 0.6], [8, 0.1, 1.3], 'paint', { name: 'wings2' })] : []), P('box', [0, 1.6, -2.5], [2.6, 0.08, 0.8], 'paint', { name: 'tailplane' }), P('box', [0, 2, -2.6], [0.08, 1, 0.8], 'accent', { name: 'fin' }), P('box', [0, 1.2, 2.85], [2.2, 0.15, 0.08], 'metal', { mat: 'metal', name: 'propeller' }), P('cyl', [0.9, 0.3, 0.6], [0.5, 0.12, 0.5], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelL' }), P('cyl', [-0.9, 0.3, 0.6], [0.5, 0.12, 0.5], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelR' })] };
+    case 'plane': return { kind: 'lowpoly', palette: paint, vehicle: type, parts: [P('cyl', [0, 1.2, 0], [1, 5.5, 1], 'paint', { rot: [Math.PI / 2, 0, 0], taper: 0.5, name: 'body' }), P('box', [0, 1.2, 0.6], [8, 0.1, 1.3], 'paint', { name: 'wings' }), ...(r(5) < 0.3 ? [P('box', [0, 2.1, 0.6], [8, 0.1, 1.3], 'paint', { name: 'wings2' })] : []), P('box', [0, 1.6, -2.5], [2.6, 0.08, 0.8], 'paint', { name: 'tailplane' }), P('box', [0, 2, -2.6], [0.08, 1, 0.8], 'accent', { name: 'fin' }), P('box', [0, 1.2, 2.85], [2.2, 0.15, 0.08], 'metal', { mat: 'metal', name: 'propeller' }), P('cyl', [0.9, 0.3, 0.6], [0.5, 0.12, 0.5], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelL' }), P('cyl', [-0.9, 0.3, 0.6], [0.5, 0.12, 0.5], 'tire', { rot: [0, 0, Math.PI / 2], name: 'wheelR' })] };
     case 'heli': return { kind: 'lowpoly', palette: paint, vehicle: type, parts: [P('sphere', [0, 1.4, 0], [2, 1.8, 3.4], 'paint', { name: 'body' }), P('cyl', [0, 1.6, -2.8], [0.3, 3, 0.3], 'paint', { rot: [Math.PI / 2, 0, 0], name: 'boom' }), P('box', [0, 2.45, 0], [7, 0.05, 0.25], 'metal', { mat: 'metal', name: 'rotor' }), P('box', [0, 0.25, 0], [1.8, 0.08, 2.6], 'metal', { name: 'skids' })] };
     case 'cart': return { kind: 'lowpoly', palette: { ...paint, paint: pal.wood }, vehicle: type, parts: [P('box', [0, 0.65, 0], [1.2, 0.7, 1.6], 'paint', { taper: 1.15, name: 'body' }), ...wheels(1.6, 1.2, 0.25)] };
   }
   return { kind: 'lowpoly', palette: paint, parts: [P('box', [0, 0.6, 0], [1.8, 1, 4], 'paint')] };
 }
 
-function propSpec(name, w, pal, r) {
-  const type = PROPS.find(([, re]) => re.test(w))?.[0] || 'crate';
+/** A prop of a given type (PROP_TYPES). */
+function propSpec(name, type, pal, r) {
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
   const s = 0.9 + r(9) * 0.3;
   const T = {
@@ -191,10 +196,24 @@ function propSpec(name, w, pal, r) {
   return { kind: 'lowpoly', palette: { ...pal, coat: hsl(95 + r(10) * 50, 0.45, 0.28 + r(11) * 0.1) }, prop: type, bob: type === 'crown', parts: T[type] };
 }
 
-/** A model for an item or attachment name ('sword', 'lantern', 'hand_axe'), in hand space (grip at origin, blade along +y). */
-export function itemSpec(item) {
-  const w = `${item.id || ''} ${item.kind || ''} ${(item.tags || []).join(' ')}`.toLowerCase().replace(/_/g, ' '); // never the themed name
-  const type = ITEMS.find(([, re]) => re.test(w))[0], name = item.id || 'item', r = i => hash01(name, 70 + i);
+/** The held shape an item's declared parts make (weapon, ranged, armor, tool, and its kind), never its id, name or tags. */
+export function itemType(item = {}) {
+  if (item.ranged) return 'bow';
+  if (item.weapon || item.kind === 'weapon') return 'sword';
+  if (item.armor || item.kind === 'armor') return 'shield';
+  // A tool whose declared kind is one of the held shapes is drawn as it (blocks.mine matches tool kinds to blocks).
+  if (item.tool || item.kind === 'tool') return ['axe', 'pick', 'hammer'].includes(item.tool?.kind) ? item.tool.kind : 'tool';
+  if (item.kind === 'potion' || item.kind === 'food') return 'potion';
+  if (item.kind === 'ammo') return 'spear';
+  return 'tool';
+}
+
+/**
+ * A model for an item, in hand space (grip at origin, blade along +y): the shape of its declared parts (itemType),
+ * coloured by a variation seeded by its id (opts.seed in its place).
+ */
+export function itemSpec(item, { seed } = {}) {
+  const type = itemType(item), name = String(seed ?? item.id ?? 'item'), r = i => hash01(name, 70 + i);
   const pal = { metal: '#c8ccd4', wood: '#6a4424', grip: '#3a2418', gem: hsl(r(1) * 360, 0.8, 0.6), cloth: hsl(r(2) * 360, 0.4, 0.35), glow: '#ffc060' };
   const P = (shape, at, size, c, extra = {}) => ({ shape, at, size, c, ...extra });
   const T = {

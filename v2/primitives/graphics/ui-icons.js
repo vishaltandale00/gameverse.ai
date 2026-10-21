@@ -1,6 +1,6 @@
 // Procedural icon set for HUD counters, item slots, status effects and map
 // markers: outlined, two-tone glyphs in a 24×24 box, coloured per use. No
-// assets. Unknown names get a lettered medallion, so every icon id renders.
+// assets. A name that is no icon gets a lettered medallion.
 import { hex, light, shade, outlineOf } from '../../art/color.js';
 import { h, hueColor } from './ui-lib.js';
 
@@ -56,32 +56,46 @@ const P = {
   hourglass: ['#d8c088', [['M6 3h12v2c0 3-3 5-4.5 7 1.5 2 4.5 4 4.5 7v2H6v-2c0-3 3-5 4.5-7C9 10 6 8 6 5z', 'base'], ['M9 19.5h6c0-1.4-1.4-2.6-3-3.8-1.6 1.2-3 2.4-3 3.8z', 'dark']]],
   crown: ['#f5c542', [['M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z', 'base'], ['M5 16.5h14', 'dark-stroke'], ['M12 5v.1M3 8v.1M21 8v.1', 'gem']]],
 };
-const ALIAS = {
-  buck: 'coin', bucks: 'coin', money: 'coin', gold: 'coin', crowns: 'crown', ash: 'flame', soul: 'flame', flame_pool: 'flame', hp: 'heart', life: 'heart', lives: 'heart', health: 'heart',
-  stamina: 'bolt', energy: 'bolt', mana: 'drop', focus: 'eye', hunger: 'food', water: 'drop', oxygen: 'drop', fuel: 'drop', burning: 'flame', burn: 'flame', fire: 'flame',
-  frozen: 'snow', ice: 'snow', chill: 'snow', slow: 'hourglass', stun: 'star', stunned: 'star', poisoned: 'poison', bleed: 'drop', shock: 'bolt', regen: 'heart', armor: 'shield',
-  weapon: 'sword', tool: 'pick', material: 'cube', block: 'cube', potion: 'potion', key: 'key', quest: 'scroll', currency: 'coin', ammo: 'arrow', prop: 'cube', misc: 'bag', charm: 'charm',
-  food: 'food', gem: 'gem', shrine: 'star', enemy: 'skull', police: 'shield', garage: 'car', npc: 'person', player: 'arrow', bench: 'home', checkpoint: 'flag', boss: 'skull',
-  herb: 'leaf', plant: 'leaf', flower: 'leaf', wood: 'axe', log: 'axe', ore: 'gem', crystal: 'gem', fish: 'drop', meat: 'food', bread: 'food', apple: 'food', torch: 'flame', oil: 'drop', letter: 'scroll', note: 'scroll', map_item: 'map', lamp: 'lantern', candle: 'flame',
-  wanted: 'star', time: 'clock', day: 'sun', night: 'moon', score: 'star', settings: 'gear', save: 'book', journal: 'book', inventory: 'bag', map: 'map',
-};
-/** Icon for an item: explicit icon, tool/weapon kind, item kind, else a lettered medallion. */
+// Which icon a thing gets comes from declarations, never from words in its id, name or tags (ARCHITECTURE §1.2: the
+// content forms theme names; a themed name must not change an icon): a declared `icon` naming one of the icons above,
+// an item's declared parts and kind, a status's declared effects. A name that is no icon draws a plain medallion.
+/** The icon each declared item kind (planner/outline-form.js ITEM_KINDS) shows. */
+const ITEM_KIND_ICON = Object.freeze({ material: 'cube', tool: 'wrench', weapon: 'sword', armor: 'shield', food: 'food', potion: 'potion', key: 'key', quest: 'scroll', currency: 'coin', charm: 'charm', ammo: 'arrow', block: 'cube', prop: 'cube', misc: 'bag' });
+/** Icon for an item: its declared icon, else the icon of its declared parts (tool kind, ranged, weapon, armor, charm) or kind. */
 export function itemIcon(item, blockColor) {
   if (!item) return { name: 'bag' };
-  if (item.icon) return { name: item.icon, color: item.color };
+  if (item.icon && P[item.icon]) return { name: item.icon, color: item.color };
   if (item.kind === 'block' || item.block) return { name: 'cube', color: blockColor || item.color || hueColor(item.id, 20, 52) };
-  if (item.tool?.kind) return { name: { pickaxe: 'pick', pick: 'pick', axe: 'axe', hammer: 'hammer', wrench: 'wrench' }[item.tool.kind] || 'pick', color: item.color };
-  if (item.ranged) return { name: /gun|pistol|rifle/.test(item.id) ? 'gun' : 'bow', color: item.color };
-  if (item.weapon) return { name: /bow/.test(item.id) ? 'bow' : /hammer|maul/.test(item.id) ? 'hammer' : /axe/.test(item.id) ? 'axe' : /gun|pistol|rifle/.test(item.id) ? 'gun' : 'sword', color: item.color };
+  // A tool whose declared kind is an icon (blocks.mine matches tool kinds to blocks) shows it.
+  if (item.tool) return { name: P[item.tool.kind] ? item.tool.kind : 'wrench', color: item.color };
+  if (item.ranged) return { name: 'bow', color: item.color };
+  if (item.weapon) return { name: 'sword', color: item.color };
   if (item.armor) return { name: 'shield', color: item.color };
   if (item.charm) return { name: 'charm', color: item.color || hueColor(item.id, 60, 62) };
-  const words = `${item.id} ${item.name || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
-  const byName = [...Object.keys(P), ...Object.keys(ALIAS)].find(k => new RegExp(`(^|[^a-z])${k}|${k}($|[^a-z])`).test(words));
-  const generic = ['material', 'misc', 'prop', 'quest'].includes(item.kind);
-  return { name: (generic && byName) || ALIAS[item.kind] || byName || item.kind || item.id, color: item.color };
+  return { name: ITEM_KIND_ICON[item.kind] || 'bag', color: item.color };
+}
+/** The icon each damage type a status ticks shows (gameplay.combat.health types). */
+const TICK_ICON = Object.freeze({ fire: 'flame', ice: 'snow', shock: 'bolt', poison: 'poison', phys: 'drop', void: 'skull' });
+/**
+ * Icon for a status (a content.statuses entry, gameplay.combat.status): its declared icon, else what it declares it does:
+ * a shield, stun, invulnerability or fright modifier, the damage type it ticks (or healing), slowing or strengthening
+ * modifiers. @param {any} def
+ */
+export function statusIcon(def) {
+  if (!def) return 'charm';
+  if (def.icon && P[def.icon]) return def.icon;
+  const mods = def.mods || {}, dps = def.tick?.dps;
+  if (def.shield || mods['stat.invulnerable'] > 0) return 'shield';
+  if (mods['stat.stun'] > 0) return 'star';
+  if (mods['stat.fright'] > 0 || mods['stat.edible'] > 0) return 'mask';
+  if (Number.isFinite(dps) && dps < 0) return 'heart';
+  if (Number.isFinite(dps) && dps > 0) return TICK_ICON[def.tick.type] || 'drop';
+  const vals = Object.values(mods).filter(Number.isFinite);
+  return vals.some(v => v < 0) ? 'hourglass' : 'charm';
 }
 export const iconNames = () => Object.keys(P);
-export const resolveIcon = name => (P[name] ? name : P[ALIAS[name]] ? ALIAS[name] : null);
+/** The icon a name is, or null (a name that is no icon draws a medallion). */
+export const resolveIcon = name => (P[name] ? name : null);
 
 /** <span class="gv-icon"><svg/></span> for an icon name (unknown names get a lettered medallion). */
 export function icon(name, { color, doc, title, label } = {}) {

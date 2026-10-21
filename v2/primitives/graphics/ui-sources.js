@@ -94,7 +94,7 @@ export function craftable(rt, who = 'player') { const list = svc(rt, 'crafting',
 export function money(rt) {
   const cfg = docSystem(rt.doc, 'gameplay.economy')?.with;
   const cur = cfg?.currencies?.length ? cfg.currencies : Object.keys(rt.state.vars).filter(k => k.startsWith('money.')).map(k => ({ id: k.slice(6), name: k.slice(6), var: k }));
-  return cur.map(c => ({ id: c.id, name: c.name || c.id, var: c.var || `money.${c.id}`, value: num(rt, c.var || `money.${c.id}`) }));
+  return cur.map(c => ({ id: c.id, name: c.name || c.id, icon: c.icon ?? null, var: c.var || `money.${c.id}`, value: num(rt, c.var || `money.${c.id}`) }));
 }
 
 // ---------------------------------------------------------------- combat

@@ -4,7 +4,8 @@
 // weather's wind), a cheaper far LOD, distance culling, and optional
 // decorative ground cover (flowers, pebbles, ferns) that never collides.
 import { joinStage, presentationOnly } from './three-stage.js';
-import { synthesizeSpec } from './three-model-gen.js';
+import { propModel } from './three-model-gen.js';
+import { objectPropType } from './three-objects.js';
 import { paletteFor } from './material-palette.js';
 import { scatterPoints, splatSample } from './three-terrain.js';
 import { hash3 } from './three-util.js';
@@ -62,7 +63,7 @@ export default {
       const models = rt.doc.content?.models || {};
       let id, spec;
       if (o.model && models[o.model]) { id = o.model; spec = models[o.model]; }
-      else { id = `foliage:${o.kind}:${o.style || ''}`; spec = synthesizeSpec({ id: `${o.kind || 'tree'}${o.style ? '_' + o.style : ''}`, kind: 'prop', tags: o.tags }); }
+      else { id = `foliage:${o.kind}:${o.style || ''}`; spec = propModel(`${o.kind || 'tree'}${o.style ? '_' + o.style : ''}`, objectPropType({ ...o, kind: o.kind || 'tree' })); }
       if (lod === 1) spec = { ...spec, parts: (spec.parts || []).map(p => ({ ...p, segments: 4 })) };
       const t = stage.models.template(`${id}|lod${lod}`, spec);
       templates.set(k, t); return t;
