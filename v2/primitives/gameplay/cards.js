@@ -36,6 +36,8 @@ export default {
         power: { type: 'integer', min: 0 }, health: { type: 'integer', min: 1 }, text: { type: 'string' } } } },
     },
     engage: { config: { deck: '$ids:content.cards' } },
+    // Duel owners on non-player sides play themselves (aiStep): the costliest affordable card, then minion attacks (hurt runs damage).
+    drives: { control: 'ai', actions: ['play_card', 'attack_with'], effects: ['damage'], events: ['card_played', 'intent'] },
     // Card-battle mode: played over gameplay.turns, whose sides and victory/defeat effects it uses.
     mode: { loop: 'card-battle', via: 'gameplay.turns', interaction: 'menu', opponent: 'ai-side', space: ['engine.space.none'], needs: { content: ['content.cards'], participants: 'sides' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['play_card', 'attack_with'], effects: ['card_damage', 'damage'] } } }, lose: { param: 'onDefeat', reads: { component: 'health', of: 'player', by: { effects: ['damage'] } } }, bot: 'turn-board' },
     intent: 'Card battles over gameplay.turns: deck, draw, hand, discard and exhaust piles, energy or growing mana, block, card modifiers (strength, vulnerable, weak, poison...), cards with effects from content.cards, enemy intents (roguelike format: persistent deck and card rewards) or minion boards with taunt/charge and hero attacks (duel format).',

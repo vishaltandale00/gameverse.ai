@@ -9,7 +9,7 @@ import { relevance, declaredFit, sharesVerbs, servesInteraction } from './select
 import { isSpace, isGenerator, isGraphics, requirementsOf, satisfying } from './catalog.js';
 import { composeLoop, winProviders, cardLoop } from './loop.js';
 import { checkComposition } from './compose-check.js';
-import { loopProblems, ownersOf } from './loop-check.js';
+import { loopProblems, ownersOf, drivesOf, drivesOwn, drivesBy } from './loop-check.js';
 import { mashupSides } from './play-spec.js';
 import { isObj, isStr, list, prop } from '../kernel/guards.js';
 
@@ -48,9 +48,10 @@ const text = v => (typeof v === 'string' ? v : v === undefined || v === null ? '
  * Gate verdicts (no_progress, loop_absent, plot_uncompletable) are diagnosed through the static loop check of the
  * played document (`core` orders its loops, as the preset's loopCore): which loop primitive's declared win or progress
  * was never reached, and why.
- * @param {StageProblem[]} problems @param {{ selection: Selection, registry: RegistryLike, doc?: unknown, core?: string[] | null }} context @returns {Diagnosis[]}
+ * `opponent` is the play spec's opponent (the loop check's AI-opponent rule).
+ * @param {StageProblem[]} problems @param {{ selection: Selection, registry: RegistryLike, doc?: unknown, core?: string[] | null, opponent?: string | null }} context @returns {Diagnosis[]}
  */
-export function diagnose(problems, { selection, registry, doc = null, core: order = null }) {
+export function diagnose(problems, { selection, registry, doc = null, core: order = null, opponent = null }) {
   /** @type {Map<string, Diagnosis>} */
   const out = new Map();
   const mechOf = (/** @type {string} */ id) => (selection.mechanics || []).find(m => (m.primitives || []).includes(id));
@@ -86,7 +87,7 @@ export function diagnose(problems, { selection, registry, doc = null, core: orde
     // was never reached and why (a missing participant, no action that affects what the win reads, an unwired win).
     const verdict = GATE_LOOP.exec(`${code} ${message}`)?.[1];
     if (verdict && (code === 'not_playable' || code === verdict)) {
-      causes ??= doc ? loopProblems(doc, registry, { core }) : [];
+      causes ??= doc ? loopProblems(doc, registry, { core, opponent }) : [];
       if (causes.length) { for (const c of causes) structural(c, [code === verdict ? code : `${code}:${verdict}`, text(c.code)]); continue; }
     }
     const words = `${message} ${text(p.hint)}`;
@@ -213,10 +214,16 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
     const n = /** @type {LoopNeed} */ (d.loop?.need), seen = triedFor(`changes:${d.primitive}:${n.kind}`);
     const owners = n.component ? ownersOf(registry, n.component) : [];
     const m = (sel.mechanics || []).find(x => (x.primitives || []).includes(String(d.primitive))) || coreMechanics[0];
-    const name = n.kind === 'event' ? n.event : n.kind === 'var' ? n.var : n.component;
+    const name = n.kind === 'event' ? n.event : n.kind === 'var' ? n.var : n.kind === 'driver' ? `${n.control} participants` : n.component;
     /** @param {any} c */
     const fits = c => {
       if (n.kind === 'owner') return owners.includes(c.id);
+      // AI participants nothing drives: a primitive whose card.drives has the control, names the loop or drives by
+      // components (the repair puts its declared example on the opponents), and whose behaviour changes what the lose reads.
+      if (n.kind === 'driver') {
+        const dr = drivesOf(c);
+        return Boolean(dr && dr.control === n.control && !drivesOwn(dr) && (dr.components.length || dr.loops.some(r => n.loop === r || String(n.loop).startsWith(r + '.'))) && (!n.by || drivesBy(dr, n.by)));
+      }
       if (!(cardLoop(c)?.verbs || []).length) return false;
       if (n.kind === 'action') return (c.requires?.primitives || []).some((/** @type {string} */ r) => owners.some(o => o === r || o.startsWith(r + '.')));
       const base = String(name).split(':')[0];
@@ -226,7 +233,8 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
     const pool = cards.filter(c => !seen.has(c.id) && !failed.has(c.id) && !sel.systems.includes(c.id) && fits(c))
       .map(c => ({ id: c.id, score: m ? Number(declaredFit(m, c, { interaction, joined: joined(m.id) }) ?? 0) + relevance(m, c) : 0 }))
       .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
-    for (const c of pool) { seen.add(c.id); if (composes(registry, sel, sel.systems, c.id).ok) return { id: c.id, why: n.kind === 'owner' ? `${c.id} owns the "${name}" component the ${d.primitive} win reads` : `${c.id}'s player verbs change ${n.kind === 'action' ? `"${name}"` : `${n.kind} ${name}`}, which the ${d.primitive} win reads`, signature: '' }; }
+    for (const c of pool) { seen.add(c.id); if (composes(registry, sel, sel.systems, c.id).ok) return { id: c.id, why: n.kind === 'driver' ? `${c.id} drives ${n.loop ? `the ${n.loop}` : "the play spec's"} AI-controlled participants (card.drives)${n.by ? ', and what they do changes what its lose reads' : ''}` : n.kind === 'owner' ? `${c.id} owns the "${name}" component the ${d.primitive} win reads` : `${c.id}'s player verbs change ${n.kind === 'action' ? `"${name}"` : `${n.kind} ${name}`}, which the ${d.primitive} win reads`, signature: '' }; }
+    if (n.kind === 'driver') return { id: null, why: '', signature: `${d.primitive}: ${n.loop ? 'its loop has' : "the play spec's opponent is"} AI-controlled participants nothing drives; needed: a primitive that declares card.drives { control: '${n.control}' } for them${n.by ? `, whose entities' actions, effects, events or movement change what the lose reads (${JSON.stringify(n.by)})` : ''}, on ${(sel.spaces || []).map(s => s.use).join(', ') || 'the chosen space'}`.slice(0, 400) };
     const what = n.kind === 'owner' ? `a primitive that owns components.${name}` : n.kind === 'action' ? `a primitive whose player verbs change the "${name}" component of the ${n.of || 'opponents'} (it requires ${owners.join(' or ') || `the owner of ${name}`})` : `a primitive whose player verbs produce the ${n.kind} "${name}"`;
     return { id: null, why: '', signature: `${d.primitive}: its win (card.loop.win) reads ${n.kind === 'action' || n.kind === 'owner' ? `"${name}"` : `${n.kind} "${name}"`}; needed: ${what}, on ${(sel.spaces || []).map(s => s.use).join(', ') || 'the chosen space'}`.slice(0, 400) };
   };

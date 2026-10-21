@@ -99,6 +99,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: [], progress: ['aggro', 'spotted', 'lost_target'] },
+    // It acts for every non-player entity with an `ai` component: its behaviors write movement intents (chase, flee, patrol...).
+    drives: { control: 'ai', components: ['ai'], movement: true, events: ['aggro', 'spotted'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { ai: { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

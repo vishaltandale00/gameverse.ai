@@ -153,7 +153,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
       const engaged = engageDocument(applySkins(outline.doc, registry), registry, logic);
       // The static loop check of the document that will be played (loop-check.js): its declared win must be reachable.
-      const structural = loopProblems(engaged.doc, registry, { logic, core: loopCore(decomposition, sel, registry) });
+      const structural = loopProblems(engaged.doc, registry, { logic, core: loopCore(decomposition, sel, registry), opponent: decomposition.core?.opponent ?? null });
       if (structural.length) return { ok: /** @type {const} */ (false), stage: 'loop', problems: structural, doc: engaged.doc, outline, engaged };
       const keep = new Set((engaged.doc.systems || []).map(s => s.use));
       const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: keep, maxIsolations: 0 });
@@ -174,7 +174,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const entry = { attempt: n, systems: [...selection.systems], stage: built.ok ? 'published' : built.stage, problems: built.ok ? [] : built.problems.slice(0, 8).map(p => `${prop(p, 'code')} ${prop(p, 'path') ?? ''}: ${String(prop(p, 'message') ?? '').slice(0, 160)}`) };
       attempts.push(entry);
       if (built.ok) break;
-      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry) });
+      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry), opponent: decomposition.core?.opponent ?? null });
       Object.assign(entry, { diagnoses: diagnoses.map(d => ({ kind: d.kind, mechanic: d.mechanic ?? null, primitive: d.primitive ?? null, codes: d.codes })) });
       const fail = (/** @type {string[]} */ missing) => {
         checkpoint('figure', { attempts, missing });

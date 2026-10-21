@@ -39,9 +39,10 @@ function fraction(value, { c, target }) {
  * Build the objective of a document: { score(rt) → number, leaves, hooks }.
  * Primitives may contribute `progress(rt, config, instance) → number` (top level or on the card).
  */
-export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENTS } = {}) {
-  // The document's primitives declare what their loop's progress is (card.loop.progress): those events count too.
-  const weights = { ...Object.fromEntries(loopEvents(doc, registry).map(e => [e, 2])), ...base };
+export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENTS, win = null } = {}) {
+  // The document's primitives declare what their loop's progress is (card.loop.progress): those events count too; the
+  // event the core loop's win counts (win.reads, winMeasure) weighs most.
+  const weights = { ...Object.fromEntries(loopEvents(doc, registry).map(e => [e, 2])), ...base, ...(typeof win?.event === 'string' ? { [win.event]: WIN_WEIGHT } : {}) };
   const leaves = goalLeaves(doc, logic);
   const hooks = instancesOf(doc).map(x => ({ x, p: registry.get(x.inst?.use) })).map(({ x, p }) => ({ x, fn: p?.progress || p?.card?.progress })).filter(h => typeof h.fn === 'function');
   const wild = Object.entries(weights).filter(([k]) => k.endsWith(':'));
@@ -63,6 +64,56 @@ export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENT
     return v;
   }
   return { score, leaves, hooks: hooks.length };
+}
+
+/** The objective weight of one unit of the win quantity (an event the win counts, a step of its var or component). */
+export const WIN_WEIGHT = 5;
+const DIRECTION = { gte: 1, gt: 1, lte: -1, lt: -1 };
+
+/**
+ * The quantity the core loop's win reads, as a measurement of play: `win` is { event } | { var } | { component, of }
+ * (card.loop.win.reads of the loop that owns the win, planner/verify-adapter.js winQuantity) with { cmp, target } when
+ * the document's won ending declares one. Its `advance` is how far play moved it toward the win from where it started:
+ *   event      occurrences since the start (typed `event:x` occurrences count when the bare name is not counted);
+ *   var        the change toward the target (gte/gt up, lte/lt down, eq closer to it), any change without a target;
+ *   component  how many of the entities it reads ('opponents': non-player entities carrying it, 'player': the player)
+ *              had it changed from how they first carried it, plus those removed during play (`carry`: per path).
+ * track(rt) is taken before a stretch of play and carry(c, token, rt) after it, so removals count along a path.
+ * -> null when there is no win quantity.
+ * @param {{ event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number } | null | undefined} win
+ */
+export function winMeasure(win) {
+  if (!win || typeof win !== 'object') return null;
+  const target = Number.isFinite(win.target) ? Number(win.target) : null, cmp = typeof win.cmp === 'string' ? win.cmp : null;
+  const towards = (q, q0) => {
+    if (cmp === 'eq' && target !== null) return Math.abs(q0 - target) - Math.abs(q - target);
+    const d = DIRECTION[cmp];
+    return d ? d * (q - q0) : Math.abs(q - q0);
+  };
+  if (typeof win.event === 'string' || typeof win.var === 'string') {
+    const name = String(win.event ?? win.var), isEvent = typeof win.event === 'string';
+    const q = isEvent
+      ? rt => { const c = rt.state.counts; if (c[name] !== undefined) return c[name]; let n = 0; for (const k in c) if (k.startsWith(name + ':')) n += c[k]; return n; }
+      : rt => { const v = Number(rt.state.vars[name]); return Number.isFinite(v) ? v : 0; };
+    return {
+      label: `${isEvent ? 'event' : 'var'} ${name}`, target,
+      start: rt => ({ q0: q(rt) }), track: () => null, carry: c => c,
+      advance: (rt, c) => (isEvent ? q(rt) - c.q0 : towards(q(rt), c.q0)),
+    };
+  }
+  if (typeof win.component !== 'string') return null;
+  const C = win.component, of = win.of || 'opponents';
+  /** How each entity first carried the component (ids are deterministic per seed). */
+  const first = new Map();
+  const carriers = rt => Object.values(rt.state.entities).filter(e => e?.components?.[C] !== undefined && (of === 'player' ? e.id === 'player' : of === 'opponents' ? e.id !== 'player' : true));
+  const changed = rt => { let n = 0; for (const e of carriers(rt)) { const j = JSON.stringify(e.components[C]); if (!first.has(e.id)) first.set(e.id, j); else if (first.get(e.id) !== j) n++; } return n; };
+  return {
+    label: `${of}' component ${C}`, target: null,
+    start: rt => { changed(rt); return { gone: 0 }; },
+    track: rt => carriers(rt).map(e => e.id),
+    carry: (c, ids, rt) => ({ gone: c.gone + (ids || []).filter(id => !rt.state.entities[id]).length }),
+    advance: (rt, c) => changed(rt) + c.gone,
+  };
 }
 
 /** Zones the plot points at (predicates `{zone}` and objectives `{zone}`), for distance-shaped exploration. */

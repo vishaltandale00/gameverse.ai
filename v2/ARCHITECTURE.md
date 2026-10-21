@@ -80,6 +80,7 @@ Its card declares, as data:
 | `requires` / `provides` / `conflicts` | capabilities, services, primitives, events, vars, actions |
 | `reads`, `content` | document sections it plays with, and the minimum content it needs to be meaningful (enemies placed in zones, species, racers, pieces…) |
 | `engage` | how the player and AI participants take part (seated in a vehicle, on a side, holding a deck) |
+| `drives` | for AI primitives: that it acts for AI-controlled entities (`control: 'ai'`), which ones (entities carrying its `components`, the participants of the `loops` it names, else its own loop's), and what they do (`actions`, `effects`, `events`, `movement`), checked against the loops' losses |
 | `mode` | for loop-owning primitives: loop, interaction (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu), opponent, content needs, win/lose wiring, and the bot that proves it |
 | `spaces`, `provides.content`, `provides.extent` | for generators: which spaces they build, what world content they produce, what area they fill |
 | `needs.content` | for spaces: the world content they must have to be playable |
@@ -137,7 +138,7 @@ What writes what:
    - no crash, NaN state, runaway entities or event storms;
    - the player can act from the start of play;
    - the core loop actually happens (the mode's events fire);
-   - progress toward a winning ending is reachable;
+   - progress toward a winning ending is reachable: a win, or play moving the quantity the core loop's win reads (`win.reads`) toward it beyond what idling does;
    - deterministic replay.
 3. **Quality signals, after publishing (non-blocking):** responsiveness, mechanics used, pacing, dead time, variety, fairness. These score versions and drive improvement.
 

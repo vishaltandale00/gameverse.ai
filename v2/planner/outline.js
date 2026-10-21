@@ -12,7 +12,7 @@ import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath, groupOfPath, fieldForm, paramsGroupId } from './outline-form.js';
 import { dependencyLayers, loopMechanicOf } from './build.js';
-import { preset, coreOf, zoneStart, wireCore, repairLoop } from './presets.js';
+import { preset, coreOf, zoneStart, wireCore, repairLoop, loopIdea } from './presets.js';
 import { loopProblems } from './loop-check.js';
 import { isAvatar } from './play-spec.js';
 import { populateProblems, placeContent, unreadReaders, contractText, contractsFor } from './content.js';
@@ -289,7 +289,9 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   // The static loop check, before any model call: a structure whose declared loop cannot be played out and won is
   // reported for the planner to re-plan (replan.js), never handed to the model to theme.
   const loopCore = skeleton.st?.core || [...core];
-  const structural = (skeleton.ok ? loopProblems(skeleton.doc, registry, { logic, core: loopCore, structure: true }) : (skeleton.loop || [])).filter(p => !p.need.pending);
+  // The play spec's opponent: an 'ai-*' opponent must be driven by a primitive (loop-check.js loop_opponent_inert).
+  const loopOpponent = decomposition.core?.opponent ?? null;
+  const structural = (skeleton.ok ? loopProblems(skeleton.doc, registry, { logic, core: loopCore, opponent: loopOpponent, structure: true }) : (skeleton.loop || [])).filter(p => !p.need.pending);
   if (structural.length) {
     rounds.push({ kind: 'loop_check', ok: false, errors: structural.length, codes: [...new Set(structural.map(p => p.code))], ms: 0 });
     return { doc: skeleton.doc, ok: false, structure: skeleton.structure, source: 'procedural', rounds, firstPassOk: false, modelMs: 0, removed: skeleton.removed, errors: [...structural, ...skeleton.errors] };
@@ -385,7 +387,7 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
     Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
     // So is the rest of the loops' structure (participants, what the win reads, an action that changes it): the model's
     // content is kept, what the declarations need and the draft lacks is put back (presets.js repairLoop).
-    try { Object.assign(draft, repairLoop(draft, registry, { logic, core: loopCore }).doc); } catch { /* malformed draft: repair and the loop check report it */ }
+    try { Object.assign(draft, repairLoop(draft, registry, { logic, core: loopCore, opponent: loopOpponent, idea: loopIdea(decomposition) }).doc); } catch { /* malformed draft: repair and the loop check report it */ }
     return draft;
   };
   // The core loop's primitives: their params forms come first, and problems no form owns go back to them and the cast.
@@ -526,12 +528,12 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
       const p = placeContent(doc, registry); doc = p.doc; placed = p.added;
       doc = engageDocument(doc, registry, logic).doc;
       // The assembled draft (skins applied, participants seated) gets the loops' structure back where it lacks it.
-      doc = repairLoop(doc, registry, { logic, core: loopCore }).doc;
+      doc = repairLoop(doc, registry, { logic, core: loopCore, opponent: loopOpponent, idea: loopIdea(decomposition) }).doc;
       // Boot it (ms): a primitive that throws is never isolated; the error (naming the primitive, install or step) goes to the model.
       const fp = firstPlayable(doc, registry, logic, { seed, furnish: false, protect: keep, maxIsolations: 0 });
       if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
       // The static loop check of the draft: a loop that cannot be played out and won is not playable.
-      const lp = repaired.ok ? loopProblems(doc, registry, { logic, core: loopCore }) : [];
+      const lp = repaired.ok ? loopProblems(doc, registry, { logic, core: loopCore, opponent: loopOpponent }) : [];
       if (lp.length) { repaired.ok = false; repaired.errors = lp; }
       repaired.doc = doc;
       if (repaired.ok) playable = doc;
