@@ -43,9 +43,12 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { turns: { type: 'object', fields: { side: { type: 'string', required: true, effect: 'the sides[] id this unit fights for' }, ap: { type: 'integer', min: 0, max: 20 }, initiative: { type: 'number' }, speed: { type: 'number' }, aim: { type: 'number' }, defense: { type: 'number' }, actions: { type: 'list', of: { type: 'string' }, effect: 'action ids this unit may use (default: all)' } }, effect: 'a unit in turn-based play' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "sides", "min": 2, "why": "turns alternate between at least two sides"},
+      {"need": "archetypes", "component": "turns", "min": 2, "placed": 4, "why": "turns are taken by units (pieces): archetypes with a turns component {side}, placed on the board by spawns (at cells when there are no zones), for every side", "example": {"id": "knight", "kind": "npc", "components": {"turns": {"side": "white", "ap": 2}, "health": {"max": 3}}}},
     ],
     // The player's units take turns: the player joins the player-controlled side when no side lists it.
     engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },

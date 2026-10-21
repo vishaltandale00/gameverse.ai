@@ -58,7 +58,7 @@ export const ORIGINAL_IDEAS = [
 const arg = (name, d = null) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : d; };
 const flag = name => process.argv.includes(`--${name}`);
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss', 'verify_threw']);
-const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game documents/, 'outline'], [/^You add detail/, 'detail'], [/^You (revise|change)/, 'revise']];
+const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game (documents|outlines)/, 'outline'], [/^You add detail/, 'detail'], [/^You (revise|change)/, 'revise']];
 const purposeOf = system => PURPOSES.find(([re]) => re.test(String(system || '')))?.[1] || 'other';
 
 const REPLIES = fileURLToPath(new URL('../../local-data/v2/bench/replies/', import.meta.url));

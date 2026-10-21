@@ -23,6 +23,13 @@ export default {
   id: ID,
   card: {
     // The player's starting deck: every card the document defines, when it named none.
+    // Section shapes this primitive reads (the planner's strict content form uses them).
+    data: {
+      'content.cards': { type: 'list', min: 4, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, type: { type: 'string', options: ['attack', 'skill', 'power', 'minion', 'spell', 'curse', 'status'], required: true },
+        cost: { type: 'integer', min: -1, max: 10, required: true }, target: { type: 'string', options: ['enemy', 'self', 'none', 'all_enemies', 'random_enemy', 'minion', 'any'], required: true },
+        effects: { type: 'effects', required: true, effect: 'what playing it does: card_damage {amount, who:"target"}, card_block {amount}, draw_cards {count}, gain_energy {amount}, card_mod {mod, amount, who}, add_card {card}' },
+        power: { type: 'integer', min: 0 }, health: { type: 'integer', min: 1 }, text: { type: 'string' } } } },
+    },
     engage: { config: { deck: '$ids:content.cards' } },
     // Card-battle mode: played over gameplay.turns, whose sides and victory/defeat effects it uses.
     mode: { loop: 'card-battle', via: 'gameplay.turns', interaction: 'menu', opponent: 'ai-side', space: ['engine.space.none'], needs: { content: ['content.cards'], participants: 'sides' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },

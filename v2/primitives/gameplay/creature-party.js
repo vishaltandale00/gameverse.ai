@@ -11,6 +11,18 @@ const ID = 'gameplay.creature.party';
 export default {
   id: ID,
   card: {
+    // Section shapes this primitive reads (the planner's strict content form uses them).
+    data: {
+      'content.species': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, types: { type: 'list', min: 1, of: { type: 'string' }, required: true, effect: 'type names from content.types' },
+        base: { type: 'object', required: true, fields: { hp: { type: 'integer', min: 1, max: 255, required: true }, atk: { type: 'integer', min: 1, max: 255, required: true }, def: { type: 'integer', min: 1, max: 255, required: true }, spa: { type: 'integer', min: 1, max: 255, required: true }, spd: { type: 'integer', min: 1, max: 255, required: true }, spe: { type: 'integer', min: 1, max: 255, required: true } }, effect: 'base stats 1..255' },
+        catchRate: { type: 'integer', min: 1, max: 255 }, expYield: { type: 'integer', min: 1, max: 400 }, growth: { type: 'string', options: ['fast', 'medium', 'slow'] },
+        learnset: { type: 'list', of: { type: 'object', fields: { level: { type: 'integer', min: 1, max: 100, required: true }, move: { type: 'string', required: true, effect: 'a content.moves id' } } } },
+        evolves: { type: 'object', fields: { level: { type: 'integer', min: 2, max: 100, required: true }, to: { type: 'string', required: true, effect: 'a content.species id' } } } } } },
+      'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, type: { type: 'string', required: true, effect: 'a type name' }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
+        power: { type: 'integer', min: 0, max: 250, required: true, effect: '0 for status moves' }, accuracy: { type: 'integer', min: 1, max: 100 }, pp: { type: 'integer', min: 1, max: 64, required: true }, priority: { type: 'integer', min: -7, max: 5 },
+        effect: { type: 'object', fields: { kind: { type: 'string', options: ['status', 'stat', 'heal', 'drain', 'recoil', 'multihit', 'flinch', 'protect'], required: true }, status: { type: 'string', options: ['burn', 'poison', 'paralysis', 'sleep', 'freeze', 'confusion'] }, stat: { type: 'string', options: ['atk', 'def', 'spa', 'spd', 'spe', 'acc', 'eva'] }, stages: { type: 'integer', min: -6, max: 6 }, chance: { type: 'number', min: 0, max: 100 }, target: { type: 'string', options: ['self', 'foe'] } } } } } },
+      'content.types': { type: 'list', min: 1, of: { type: 'string' }, effect: 'the type names (every multiplier 1), or write a chart through other fields' },
+    },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.species", "min": 4, "why": "creatures come from species with types, base stats and learnsets", "example": {"id": "sprout", "name": "Sprout", "types": ["grass"], "base": {"hp": 45, "atk": 49, "def": 49, "spa": 65, "spd": 65, "spe": 45}, "catchRate": 45, "expYield": 64, "growth": "medium", "learnset": [{"level": 1, "move": "tackle"}, {"level": 7, "move": "vine"}], "evolves": {"level": 16, "to": "bloom"}}},
