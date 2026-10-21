@@ -137,7 +137,8 @@ export function applyOps(input, ops) {
     const at = resolvePath(doc, op.path, { create: op.op !== 'remove' });
     if (!at) { failed.push({ ...op, why: 'path not found' }); continue; }
     const { parent, key } = at;
-    if (op.op === 'set') { parent[key] = structuredClone(op.value); applied.push(op); }
+    // Setting an index past the end of a list appends (never leaves holes in the list).
+    if (op.op === 'set') { if (Array.isArray(parent) && typeof key === 'number' && key >= parent.length) parent.push(structuredClone(op.value)); else parent[key] = structuredClone(op.value); applied.push(op); }
     else if (op.op === 'add') {
       if (parent[key] === undefined) parent[key] = Array.isArray(op.value) ? [] : {};
       const target = parent[key];

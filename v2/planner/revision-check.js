@@ -15,6 +15,9 @@ export function contentDiff(a, b, path = '', out = []) {
   // A list that didn't exist before is an empty one (new fields like stage features).
   if (a === undefined && Array.isArray(b)) a = [];
   if (b === undefined && Array.isArray(a)) b = [];
+  // Lists can arrive sparse (an op that set an index past the end): compare their actual entries.
+  if (Array.isArray(a)) a = Array.from(a).filter(x => x !== undefined);
+  if (Array.isArray(b)) b = Array.from(b).filter(x => x !== undefined);
   if (identityList(a, b)) {
     const before = new Map(a.map(x => [keyOf(x), x])), after = new Map(b.map(x => [keyOf(x), x]));
     const added = [...after.keys()].filter(k => !before.has(k)), removed = [...before.keys()].filter(k => !after.has(k));
