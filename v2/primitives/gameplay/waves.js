@@ -22,7 +22,7 @@ const SPAWN = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['wave_clear', 'waves_complete'], win: { param: 'onComplete' } },
+    loop: { verbs: [], progress: ['wave_clear', 'waves_complete'], win: { param: 'onComplete', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "waves", "min": 3, "why": "scripted waves list which archetypes arrive, how many and when", "example": [{"id": "w1", "spawn": [{"archetype": "grunt", "count": 4}]}]},

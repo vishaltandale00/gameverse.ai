@@ -320,7 +320,10 @@ export function engine(ctx) {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter' } },
+    loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
+      lose: { param: 'onLose', reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
+      // As an encounter: a won battle or a capture takes the foe out; a lost battle the player's side; running away leaves both.
+      outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' }, fled: { param: 'onRun', player: 'keeps', opponent: 'keeps' }, caught: { param: 'onCapture', player: 'keeps', opponent: 'defeated' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.species", "min": 4, "why": "battles are fought between species"},

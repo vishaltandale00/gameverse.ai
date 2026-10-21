@@ -43,7 +43,9 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'] },
+    loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
+      // As an encounter: the player-controlled sides win (onVictory) or the last of them is defeated (onDefeat).
+      outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onVictory', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onDefeat', player: 'defeated', opponent: 'keeps' } } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { turns: { type: 'object', fields: { side: { type: 'string', required: true, effect: 'the sides[] id this unit fights for' }, ap: { type: 'integer', min: 0, max: 20 }, initiative: { type: 'number' }, speed: { type: 'number' }, aim: { type: 'number' }, defense: { type: 'number' }, actions: { type: 'list', of: { type: 'string' }, effect: 'action ids this unit may use (default: all)' } }, effect: 'a unit in turn-based play' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -54,7 +56,7 @@ export default {
     // The player's units take turns: the player joins the player-controlled side when no side lists it.
     engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },
     // Tactics mode: the player's side against AI sides, won when one side remains.
-    mode: { loop: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.none', ['position']], needs: { content: ['content.archetypes'], participants: 'sides' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents' } }, lose: { param: 'onDefeat', reads: { component: 'health', of: 'player' } }, bot: 'turn-board' },
+    mode: { loop: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.none', ['position']], needs: { content: ['content.archetypes'], participants: 'sides' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['turn_act'], effects: ['damage'] } } }, lose: { param: 'onDefeat', reads: { component: 'health', of: 'player', by: { effects: ['damage'] } } }, bot: 'turn-board' },
     intent: 'Turn order for any turn-based mode: alternate side or unit turns, initiative order, or simultaneous commit-then-resolve; action points, phases, data-defined actions with range, line of sight, cover-aware hit and crit chance, cooldowns, overwatch reactions, AI sides, downed/bleed-out or permadeath, victory when one side remains. Works on grids, continuous spaces and engine.space.none.',
     views: ['board', 'td', 'iso', 'ui', '3p'],
     params: {

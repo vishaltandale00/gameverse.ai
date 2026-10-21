@@ -23,7 +23,7 @@ export default {
       {"need": "archetypes", "component": "collectible", "kinds": ["pickup", "prop"], "min": 1, "placed": 8, "zones": 3, "why": "pickups are entities with a collectible component (counter id or {counter, value, points}), placed through every zone", "example": {"id": "coin", "kind": "pickup", "components": {"collectible": {"counter": "coins", "points": 10}}}},
     ],
     // Collect mode (only when a counter clears the level): gather every pickup while threats chase.
-    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete' }, lose: { param: null }, bot: 'danger-field' },
+    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
     intent: 'Pickups and counters (coins, shards, pages, pellets): touch or use to collect, magnet pull, per-zone totals, a var per counter, level clear when a counter completes, and timed bonus prizes spawned at chosen counts.',
     views: ['any'],
     params: {

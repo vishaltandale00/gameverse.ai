@@ -14,7 +14,9 @@ const STATES = ['idle', 'countdown', 'running', 'finished'];
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['checkpoint', 'lap', 'race_finished'] },
+    loop: { verbs: [], progress: ['checkpoint', 'lap', 'race_finished'],
+      // As an encounter (engine.adapt.nested): finishing first beats the rivals; finishing below first, timing out or a DNF loses to them.
+      outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "racers", "min": 3, "why": "a race needs rivals: racers lists the player and at least two other racer ids or archetypes", "example": ["player", "rival_1", "rival_2", "rival_3"]},
@@ -53,7 +55,7 @@ export default {
     // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
     engage: { participants: { param: 'racers' } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
-    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'race' },
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, win: { param: 'onWin', reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {
