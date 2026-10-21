@@ -124,9 +124,15 @@ test('melee: deterministic replay and bad configs', () => {
   same(() => { const rt = make(actionDoc()); rt.spawn('beast', { at: [3, 1, 0] }).components.melee.intent = { press: 'light' }; return rt; },
     Array.from({ length: 120 }, (_, i) => (i % 20 === 0 ? { actions: { attack: true } } : i % 33 === 0 ? { actions: { heavy: true } } : {})));
   const bad = actionDoc({ moves: [{ id: 'kick', startup: 2.5, behavior: 'spin', level: 'ankle', chain: ['nope'] }, { id: 'orb', behavior: 'projectile' }] });
-  bad.content.archetypes.push({ id: 'oops', components: { melee: { weapon: 'dummy_item', fighter: { build: 'huge', specials: [{ archetype: 'hadouken' }], super: { archetype: 'nuke' } }, moves: ['ghost_move'] } } });
+  bad.content.items.push({ id: 'dummy_item', name: 'Dummy' }); // an item without a weapon block (an unknown id is the shape's ref_unknown)
+  bad.content.archetypes.push({ id: 'oops', components: { melee: { weapon: 'dummy_item', fighter: { build: 'huge', specials: [{ archetype: 'hadouken' }], super: { archetype: 'nuke' } }, moves: { ghost: { from: 'ghost_move' } } } } });
   const c = codes(bad);
-  for (const code of ['melee_move_invalid', 'melee_move_unknown', 'melee_weapon_unknown', 'melee_preset_invalid', 'melee_projectile_needs_projectile']) assert.ok(c.includes(code), `${code} in ${c}`);
+  for (const code of ['melee_move_unknown', 'melee_weapon_unknown', 'melee_projectile_needs_projectile']) assert.ok(c.includes(code), `${code} in ${c}`);
+  // Frame counts, behaviours, levels and fighter presets are the move and component shapes' closed sets and ranges
+  // (card.params moves, card.components melee): param_type / param_option where melee_move_invalid and
+  // melee_preset_invalid were (component shapes report as warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), lib = 'systems[' + bad.systems.findIndex(s => s.use === 'gameplay.combat.melee') + '].with.moves[0]', oops = 'content.archetypes[' + (bad.content.archetypes.length - 1) + '].components.melee.fighter';
+  for (const x of [`param_type@${lib}.startup`, `param_option@${lib}.behavior`, `param_option@${lib}.level`, `param_option@${oops}.build`, `param_option@${oops}.specials[0].archetype`, `param_option@${oops}.super.archetype`]) assert.ok(at.includes(x), `${x} in ${at}`);
   assert.ok(codes(actionDoc({ hitStopMs: -1 })).includes('param_range'));
 });
 

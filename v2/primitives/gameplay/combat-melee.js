@@ -7,13 +7,15 @@
 // special + 4 super archetypes as presets; see combat-lib-moves.js).
 //
 // Movesets come from components.melee: `weapon` (item with item.weapon), `fighter`
-// (preset {build, stats, specials, super}), `moves` (library ids from this
-// instance's `moves`, or inline records) and `bind` (press -> move id).
+// (preset {build, stats, specials, super}), `moves` (id -> move record, which may
+// start from a library move of this instance's `moves` by `from`) and `bind`
+// (press -> move id).
 // Input: player actions attack/heavy/special/super/throw/block (held); NPCs write
 // components.melee.intent = {press, dir, hold, motion}, consumed every frame.
 // Hits go through the combat service; block, parry, poise and counters are
 // interceptors, so projectiles and contact damage respect them too.
 import { inputOf, controlDir, frames, msFrames, invulnFrames, v3, sub, norm, dot, posOf, facingOf, facingSign, spaceOf, distance, statOf, hostile, resolveWho, intercept, hooks, hitShape, overlapping, displace, combat, service, held, setFacing, like, err, archetypes } from './combat-lib.js';
+import { itemsData } from './items-lib.js';
 import { compileFighter, compileWeapon, base, phaseOf, advantage, MOTION_ORDER, BUILD, SPECIAL_ARCHETYPES, SUPER_ARCHETYPES, BEHAVIORS, LEVELS, HEIGHT, AIR_SPECIAL_OK } from './combat-lib-moves.js';
 
 const KEY = 'gameplay.combat.melee';
@@ -22,7 +24,36 @@ const VERBS = ['attack', 'heavy', 'special', 'super', 'throw', 'block'];
 const FREE = new Set(['idle', undefined]);
 const TECH_WINDOW = 9;
 
-const MOVE_FIELDS = { id: { type: 'string', required: true } };
+/**
+ * A move record (frame data, combat-lib-moves.js base): the fields a move declares. Frames are whole frames at 60 fps;
+ * `units` says whether reach and boxes are world units or fighting units (a preset fighter is 100 tall). Its
+ * `invuln` window and behaviour `params` stay as the move presets write them.
+ */
+const FRAMES = { type: 'integer', min: 0, unit: 'frames' };
+const MOVE = {
+  name: { type: 'string', display: true, effect: 'the name a person reads' },
+  kind: { type: 'string', options: ['action', 'normal', 'special', 'super'], effect: 'action (weapon combos) or a fighting-game normal, special or super' },
+  strength: { type: 'string', options: ['light', 'heavy', 'special', 'super'] },
+  startup: FRAMES, active: FRAMES, recovery: FRAMES,
+  damage: { type: 'number', min: 0 }, chip: { type: 'number', min: 0, effect: 'damage through a block' },
+  hitstun: FRAMES, blockstun: FRAMES, push: { type: 'number', min: 0 }, blockPush: { type: 'number', min: 0 },
+  level: { type: 'string', options: LEVELS, effect: 'where it hits: high and mid are blocked standing, low crouching, overhead standing' },
+  knockdown: { type: 'boolean' }, launch: { type: 'object', fields: { vx: { type: 'number' }, vy: { type: 'number' } }, effect: 'launches the target with this velocity' },
+  specialCancel: { type: 'boolean' }, superCancel: { type: 'boolean' },
+  box: { type: 'object', fields: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number', min: 0 }, h: { type: 'number', min: 0 } }, effect: 'hitbox relative to the attacker' },
+  reach: { type: 'number', min: 0 }, arc: { type: 'number', min: 0, max: 360, unit: 'deg' }, hits: { type: 'integer', min: 1 }, every: FRAMES,
+  air: { type: 'boolean', effect: 'an air move' }, airOk: { type: 'boolean' }, lowProfile: { type: 'boolean' }, lowInvuln: { type: 'boolean' },
+  hitstop: FRAMES, landRecovery: FRAMES, unblockable: { type: 'boolean' },
+  behavior: { type: 'string', options: BEHAVIORS, effect: 'what the move does beyond its hitbox' },
+  kb: { type: 'list', of: { type: 'number' }, min: 3, max: 3, effect: '[base, growth per %, angle°] knockback (gameplay.combat.knockback)' },
+  meter: { type: 'number', min: 0 }, cost: { type: 'number', min: 0, effect: 'super meter spent' }, stamina: { type: 'number', min: 0 }, poise: { type: 'number', min: 0 },
+  type: { type: 'string', effect: 'damage type (gameplay.combat.health types)' }, status: { type: 'string', effect: 'a status applied on hit' },
+  pogo: { type: 'boolean' }, armor: { type: 'number', min: 0 }, knockback: { type: 'number', min: 0 }, units: { type: 'string', options: ['world', 'fighter'] }, tags: { type: 'list', of: { type: 'string' } },
+};
+/** A library move (this instance's `moves`): a move with its id, chaining into moves of the same library. */
+const MOVE_FIELDS = { id: { type: 'string', required: true }, ...MOVE, chain: { type: 'list', of: { type: 'string' }, effect: 'ids of moves of this library it cancels into on hit' } };
+/** An archetype's own move (components.melee.moves values): a move, or a library move by id (`from`) it adjusts. */
+const OWN_MOVE = { from: { type: 'string', effect: "a library move (the melee instance's moves) this move starts from; its own fields override" }, ...MOVE, chain: { type: 'list', of: { type: 'string' }, effect: "moves of this archetype's moveset it cancels into" } };
 
 /**
  * The compiled moveset of one melee component in a document: { moves, specials, phys } (a fighter preset, the wielded
@@ -34,8 +65,7 @@ export function movesetOf(c, doc, config) {
   const out = { moves: {}, specials: [], phys: null };
   if (c.fighter) { const f = compileFighter(c.fighter); Object.assign(out.moves, f.moves); out.specials = f.specials; out.phys = f.phys; }
   if (c.weapon) { const item = doc?.content?.items?.find(i => i.id === c.weapon); if (item?.weapon) Object.assign(out.moves, compileWeapon(item, { pogo: config.pogo })); }
-  if (Array.isArray(c.moves)) for (const id of c.moves) { if (lib.has(id)) out.moves[id] = record(id, lib.get(id)); }
-  else if (c.moves) for (const [id, m] of Object.entries(c.moves)) out.moves[id] = record(id, m);
+  for (const [id, m] of Object.entries(c.moves || {})) { const from = m.from === undefined ? undefined : lib.get(m.from); if (m.from === undefined || from) out.moves[id] = record(id, { ...from, ...m }); }
   return out;
 }
 
@@ -96,15 +126,34 @@ export default {
       fighterScale: { type: 'number', default: 0.01, min: 0.0001, max: 100, unit: 'units', effect: 'world units per fighting unit (a preset fighter is 100 fighting units tall)' },
       combatSec: { type: 'number', default: 5, min: 0, max: 60, unit: 's', effect: 'in_combat stays true this long after attacking or being hit' },
       friendlyFire: { type: 'boolean', default: false },
-      moves: { type: 'list', default: [], of: { type: 'object', fields: MOVE_FIELDS, open: true }, effect: 'move library: frame-data records any archetype can list in components.melee.moves' },
+      moves: { type: 'list', default: [], of: { type: 'object', fields: MOVE_FIELDS, open: true }, effect: 'move library: frame-data records an archetype move starts from (components.melee.moves.<id>.from)' },
     },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['move_denied'],
     provides: { events: ['weapon_used', 'attack_started', 'guard_up', 'move_denied', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
+    data: itemsData(['weapon']),
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { melee: { type: 'object', fields: {
+      weapon: { type: 'ref', to: 'item', effect: 'an item with a weapon block: its moveset (w1.., heavy, plunge)' },
+      fighter: { type: 'object', fields: {
+        build: { type: 'string', options: Object.keys(BUILD), effect: 'body build: scale, width, damage and startup' },
+        stats: { type: 'object', fields: { health: { type: 'number', min: 1 }, walkSpeed: { type: 'number', min: 0 }, jump: { type: 'number', min: 0 }, weight: { type: 'number', min: 0 } }, effect: 'fighter stats (kit scale: 5 is average)' },
+        specials: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'string', options: SPECIAL_ARCHETYPES, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, motion: { type: 'string', options: MOTION_ORDER, effect: 'its input motion (default qcf)' }, power: { type: 'number', min: 0, max: 10 }, speed: { type: 'number', min: 0, max: 10 } } }, effect: 'special moves from the 12 special presets' },
+        super: { type: 'object', fields: { archetype: { type: 'string', options: SUPER_ARCHETYPES, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' } }, effect: 'the super move, from the 4 super presets' },
+      }, effect: 'a fighting-game preset fighter: normals, specials and a super' },
+      moves: { type: 'object', values: { type: 'object', open: true, fields: OWN_MOVE }, effect: 'move id -> move record (w1.. combo, heavy, 5A...), or a library move by from' },
+      bind: { type: 'object', values: { type: 'string' }, effect: 'press (light, heavy, special, super, throw; air_/crouch_ prefixed) -> move id' },
+    }, effect: 'melee attacks' } },
     defines: [{ kind: 'move', in: 'moves' }],
     actionSpace: { special: { type: 'enum', options: MOTION_ORDER } },
+    rules: {
+      melee_move_unknown: { fields: ['moves[].chain', 'content.archetypes[].components.melee.moves.*.from'], message: "a library move's chain and an archetype move's from name moves of this instance's library (moves)",
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.melee', with: { moves: [{ id: 'jab', chain: ['no_such_move'] }] } }] } } },
+      melee_weapon_unknown: { fields: ['content.archetypes[].components.melee.weapon'], message: 'the weapon names an item with a weapon block (content.items[].weapon)' },
+      melee_projectile_needs_projectile: { fields: ['moves[].behavior', 'content.archetypes[].components.melee.moves.*.behavior', 'content.archetypes[].components.melee.fighter'], message: 'projectile moves and projectile specials (fireball, ground_wave, beam) need gameplay.combat.projectile in the document' },
+    },
   },
   logic(logic) {
     logic.predicate('in_combat', { test: (p, rt, c) => { const e = resolveWho(rt, p.in_combat === true ? undefined : p.in_combat ?? p.who, c); const m = e?.components.melee; return Boolean(m && m.lastCombat != null && rt.state.frame - m.lastCombat <= (rt.caches.meleeCombatFrames ?? 300)); } });
@@ -112,29 +161,23 @@ export default {
     logic.effect('set_weapon', { refs: e => [['item', e.item]], run: (e, rt, c) => { const t = resolveWho(rt, e.who, c); if (t) { (t.components.melee ??= {}).weapon = e.item; t.components.melee.compiled = null; } } });
   },
   validate(config, doc) {
-    const errors = [], lib = new Map(), items = new Map((doc.content?.items || []).map(i => [i.id, i]));
+    const errors = [], lib = new Set(config.moves.map(m => m.id)), items = new Map((doc.content?.items || []).map(i => [i.id, i]));
     const projectileOn = (doc.systems || []).some(s => s.use === 'gameplay.combat.projectile');
-    const checkMove = (m, path) => {
-      for (const k of ['startup', 'active', 'recovery']) if (m[k] !== undefined && !(Number.isInteger(m[k]) && m[k] >= 0)) errors.push(err('melee_move_invalid', `${path}.${k}`, `${k} must be a whole number of frames`));
-      if (m.behavior && !BEHAVIORS.includes(m.behavior)) errors.push(err('melee_move_invalid', `${path}.behavior`, `behavior must be ${BEHAVIORS.join('|')}`));
-      if (m.level && !LEVELS.includes(m.level)) errors.push(err('melee_move_invalid', `${path}.level`, `level must be ${LEVELS.join('|')}`));
-      if (m.behavior === 'projectile' && !projectileOn) errors.push(err('melee_projectile_needs_projectile', path, 'projectile moves need gameplay.combat.projectile'));
-    };
-    config.moves.forEach((m, i) => { lib.set(m.id, m); checkMove(m, `with.moves[${i}]`); });
-    config.moves.forEach((m, i) => (m.chain || []).forEach(c => { if (!lib.has(c)) errors.push(err('melee_move_unknown', `with.moves[${i}].chain`, `unknown move '${c}'`)); }));
+    const needsProjectile = (m, path) => { if (m?.behavior === 'projectile' && !projectileOn) errors.push(err('melee_projectile_needs_projectile', path, 'projectile moves need gameplay.combat.projectile')); };
+    config.moves.forEach((m, i) => {
+      needsProjectile(m, `with.moves[${i}]`);
+      (Array.isArray(m.chain) ? m.chain : []).forEach((c, j) => { if (!lib.has(c)) errors.push(err('melee_move_unknown', `with.moves[${i}].chain[${j}]`, `'${c}' is not a move of this library`, `library: ${[...lib].join(', ') || 'empty'}`)); });
+    });
     archetypes(doc).forEach((a, i) => {
       const c = a.components?.melee, path = `content.archetypes[${i}].components.melee`;
-      if (!c) return;
-      if (c.weapon !== undefined && !items.get(c.weapon)?.weapon) errors.push(err('melee_weapon_unknown', `${path}.weapon`, `'${c.weapon}' is not an item with a weapon block`));
-      if (c.fighter) {
-        const f = c.fighter;
-        if (f.build && !BUILD[f.build]) errors.push(err('melee_preset_invalid', `${path}.fighter.build`, `build must be ${Object.keys(BUILD).join('|')}`));
-        (f.specials || []).forEach((s, j) => { if (!SPECIAL_ARCHETYPES.includes(s.archetype)) errors.push(err('melee_preset_invalid', `${path}.fighter.specials[${j}].archetype`, `unknown special '${s.archetype}'`, SPECIAL_ARCHETYPES.join(', '))); });
-        if (f.super && !SUPER_ARCHETYPES.includes(f.super.archetype)) errors.push(err('melee_preset_invalid', `${path}.fighter.super.archetype`, `unknown super '${f.super.archetype}'`, SUPER_ARCHETYPES.join(', ')));
-        if (!projectileOn && [...(f.specials || []).map(s => s.archetype), f.super?.archetype].some(x => ['fireball', 'ground_wave', 'beam'].includes(x))) errors.push(err('melee_projectile_needs_projectile', `${path}.fighter`, 'projectile specials need gameplay.combat.projectile'));
+      if (!c || typeof c !== 'object') return;
+      if (items.has(c.weapon) && !items.get(c.weapon)?.weapon) errors.push(err('melee_weapon_unknown', `${path}.weapon`, `'${c.weapon}' is not an item with a weapon block`));
+      const f = c.fighter;
+      if (f && typeof f === 'object' && !projectileOn && [...(Array.isArray(f.specials) ? f.specials : []).map(s => s?.archetype), f.super?.archetype].some(x => ['fireball', 'ground_wave', 'beam'].includes(x))) errors.push(err('melee_projectile_needs_projectile', `${path}.fighter`, 'projectile specials need gameplay.combat.projectile'));
+      for (const [id, m] of Object.entries(c.moves && typeof c.moves === 'object' ? c.moves : {})) {
+        if (m?.from !== undefined && !lib.has(m.from)) errors.push(err('melee_move_unknown', `${path}.moves.${id}.from`, `'${m.from}' is not a move of this instance's library`, `library: ${[...lib].join(', ') || 'empty'}`));
+        needsProjectile(m?.from !== undefined ? { ...config.moves.find(x => x.id === m.from), ...m } : m, `${path}.moves.${id}`);
       }
-      if (Array.isArray(c.moves)) c.moves.forEach((id, j) => { if (!lib.has(id)) errors.push(err('melee_move_unknown', `${path}.moves[${j}]`, `unknown move '${id}'`, `library: ${[...lib.keys()].join(', ') || 'empty'}`)); });
-      else if (c.moves && typeof c.moves === 'object') for (const [id, m] of Object.entries(c.moves)) checkMove(m, `${path}.moves.${id}`);
     });
     return errors;
   },

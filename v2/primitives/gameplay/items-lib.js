@@ -4,6 +4,44 @@
 // (run only when their owner registered them).
 import { spaceFrame } from '../engine/runtime-lib-frame.js';
 
+/** A map from a stat (or damage type) to a number. */
+const NUMBERS = { type: 'object', values: { type: 'number' } };
+/**
+ * The fields of content.items entries the items and combat primitives read (ARCHITECTURE §1.4: each card declares the
+ * parts of a section it reads, card.data, over the kernel's base { id, name }). One declaration per field, so every card
+ * reading a field declares it the same way: a card's data picks the fields its code reads (itemsData).
+ */
+export const ITEM = Object.freeze({
+  kind: { type: 'string', effect: 'what the item is: a token accepts, buys and recipes match (weapon, tool, food...)' },
+  tags: { type: 'list', of: { type: 'string' }, effect: 'tokens accepts, buys and tag recipe inputs match' },
+  value: { type: 'number', min: 0, effect: 'base price' },
+  block: { type: 'ref', to: 'block', effect: 'the block it places' },
+  stack: { type: 'integer', min: 1, effect: 'items per inventory stack' },
+  tool: { type: 'object', fields: { kind: { type: 'string', effect: 'tool kind (tool:<kind> token)' }, durability: { type: 'number', min: 0 } }, effect: 'a tool' },
+  ingredient: { type: 'object', fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tokens tag recipe inputs match' } }, effect: 'a crafting ingredient' },
+  weapon: { type: 'object', fields: {
+    damage: { type: 'number', min: 0 }, reach: { type: 'number', min: 0 }, arc: { type: 'number', min: 0, max: 360, unit: 'deg' }, speed: { type: 'number', min: 0, effect: 'swing speed (1 = normal; below 0.2 counts as 0.2)' },
+    combo: { type: 'integer', min: 1, effect: 'light hits in its combo' }, stamina: { type: 'number', min: 0 }, type: { type: 'string', effect: 'damage type' }, durability: { type: 'number', min: 0 },
+  }, effect: 'a melee weapon (gameplay.combat.melee builds its moveset)' },
+  ranged: { type: 'object', fields: {
+    speed: { type: 'number', min: 0 }, gravity: { type: 'number' }, spread: { type: 'number', min: 0, unit: 'deg' }, damage: { type: 'number', min: 0 }, type: { type: 'string', effect: 'damage type' },
+    draw: { type: 'number', min: 0, unit: 's', effect: 'charge time for full power' }, rate: { type: 'number', min: 0, unit: '/s' }, life: { type: 'number', min: 0, unit: 's' }, radius: { type: 'number', min: 0 },
+    ammo: { type: 'ref', to: 'item', effect: 'the item each shot spends' }, projectile: { type: 'ref', to: 'archetype', effect: 'the archetype of its shots' },
+  }, effect: 'a ranged weapon (gameplay.combat.projectile fires it)' },
+  armor: { type: 'object', fields: { slot: { type: 'string', effect: 'armor:<slot> token' }, def: { ...NUMBERS, effect: 'damage type -> defense' }, durability: { type: 'number', min: 0 } }, effect: 'armor' },
+  charm: { type: 'object', fields: { mods: { ...NUMBERS, effect: 'stat -> modifier while worn' }, cost: { type: 'number', min: 0, effect: 'budget it costs worn' } }, effect: 'a charm' },
+  stats: { ...NUMBERS, effect: 'stat -> modifier while worn' },
+  durability: { type: 'number', min: 0, effect: 'uses before it breaks (with equipment durability)' },
+  cost: { type: 'number', min: 0, effect: 'budget it costs worn (charms use charm.cost)' },
+  use: { type: 'object', fields: {
+    fx: { type: 'effects', required: true, effect: 'what using it does (self = the user)' }, cooldown: { type: 'number', min: 0, unit: 's' }, consume: { type: 'boolean', effect: 'using it spends one (default true)' },
+    when: { type: 'predicate', effect: 'usable only while it holds' }, group: { type: 'string', effect: 'items of one group share a cooldown' },
+  }, effect: 'a usable item (gameplay.item.use)' },
+  creature: { type: 'object', fields: { kind: { type: 'string', options: ['ball', 'heal', 'status', 'revive'], required: true, effect: 'ball catches; heal restores hp; status cures; revive brings a fainted creature back' }, value: { type: 'number', min: 0, effect: 'catch bonus (ball), hp or hp fraction <= 1 (heal, revive)' } }, effect: 'a creature-battle item' },
+});
+/** The card.data of a card that reads these content.items fields. @param {Array<keyof typeof ITEM>} fields */
+export const itemsData = fields => ({ 'content.items': { type: 'list', of: { type: 'object', open: true, fields: Object.fromEntries(fields.map(f => [f, ITEM[f]])) } } });
+
 /** Item definitions by id, re-indexed whenever rt.doc changes (hot-loaded items appear). */
 export function items(rt) {
   const c = rt.caches;
