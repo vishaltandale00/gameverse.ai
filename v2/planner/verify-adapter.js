@@ -23,7 +23,19 @@ async function verifyModule() {
   return loaded;
 }
 
-export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, maxStates = 20000 } = {}) {
+// The publish gate (ARCHITECTURE.md §5, kept simple on purpose): a playtest agent plays the game through to a
+// winning ending, the win replays, and nothing crashes. Anything else is not a game we publish.
+const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'nondeterministic', 'snapshot_roundtrip', 'instant_loss', 'world_empty', 'verify_threw']);
+export function viability(play, problems = []) {
+  const crash = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info');
+  const finished = Boolean(play?.winnable && play.win?.replayed !== false);
+  const why = crash.length ? crash.slice(0, 3).map(p => `${p.code}: ${p.message}`).join('; ')
+    : !play ? 'the playtest did not run'
+    : !finished ? `the playtest agent could not reach the end (${play.explored ?? 0} places explored${Object.keys(play.losses || {}).length ? `, lost to ${Object.keys(play.losses).join(', ')}` : ''})` : null;
+  return { viable: !why, viability: why };
+}
+
+export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, maxStates = 20000, playtestMs = null } = {}) {
   const started = performance.now();
   const pre = preflight(doc, registry, logic);
   const out = { ok: pre.ok, completable: null, exhaustive: false, source: 'preflight', preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, problems: [], doc: pre.doc };
@@ -34,12 +46,15 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
   const m = await verifyModule();
   if (typeof m.verify === 'function') {
     try {
-      const r = await m.verify(pre.doc, registry, logic, { budgetMs, seed: pre.doc.seed, plot: { maxStates } });
+      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs ? { playtest: { budgetMs: playtestMs } } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
+      const problems = [...world, ...(r?.problems || [])];
       return { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
+        playtest: r?.playtest ? { winnable: r.playtest.winnable, win: r.playtest.win, losses: r.playtest.losses, idle: r.playtest.idle, explored: r.playtest.explored } : null,
+        ...viability(r?.playtest, problems),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
-        problems: [...world, ...(r?.problems || [])], timings: r?.timings || null, ms: Math.round(performance.now() - started) };
+        problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
     } catch (error) { out.problems.push({ code: 'verify_threw', message: String(error?.message || error).slice(0, 200) }); }
   }
   try {

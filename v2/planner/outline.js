@@ -259,8 +259,15 @@ Write the outline document for this idea from the skeleton: an evocative title a
  * writeOutline({ writer?, prompt, answers, decomposition, selection, registry, logic, seed, maxRounds })
  *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms }], firstPassOk, modelMs, removed }
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200 }) {
-  let skeletonVerify = null, skeletonStatic = null;
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 4000 }) {
+  let lastProblems = null;
+  // The publish gate (verify-adapter viability): what fails it goes back to the model with the agent's reason first.
+  const gate = async doc => {
+    const v = await verifyDocument(doc, registry, logic, { budgetMs: verifyBudgetMs, playtestMs });
+    const problems = v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability, severity: 'error', hint: 'the player must be able to progress from the start to a winning ending' },
+      ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)];
+    return { viable: Boolean(v.viable), problems, v };
+  };
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
@@ -314,28 +321,15 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ...(worldAdded.length ? { worldAdded } : {}), ms: Math.round(performance.now() - t) });
     last = repaired;
     let problems = [];
-    if (repaired.ok && worldLeft.length && round < maxRounds) { problems = worldLeft; last = { ...repaired, verified: repaired.doc }; }
+    if (repaired.ok && worldLeft.length) problems = worldLeft;
     else if (repaired.ok) {
-      // Verification problems (v2/verify: softlocks, unreachable targets, uncompletable plot...) drive the next round too,
-      // except those the valid skeleton has as well (limits of the catalogue, not of this draft).
-      if (verify && round < maxRounds) {
-        // Static plot analysis first (ms): gate cycles, unobtainable items, unreachable endings, quests that never start...
-        skeletonStatic ??= await staticPlot(skeleton.doc, logic);
-        const draftStatic = await staticPlot(repaired.doc, logic);
-        const errs = newErrorCodes(skeletonStatic, draftStatic);
-        rounds.at(-1).staticErrors = errs.length;
-        // With an error, the warnings beside it usually name the cause (an unobtainable item behind an unreachable ending).
-        problems = errs.length ? [...errs, ...newProblems(skeletonStatic, draftStatic).filter(p => p.severity !== 'error')] : [];
-      }
-      if (verify && round < maxRounds && !problems.length) {
-        skeletonVerify ??= await verifyDocument(skeleton.doc, registry, logic, { budgetMs: verifyBudgetMs });
-        const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs: verifyBudgetMs });
-        problems = newErrorCodes(skeletonVerify, v).filter(p => p.stage !== 'preflight');
-        rounds.at(-1).verifyErrors = problems.length;
-      }
-      if (!problems.length) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [] };
-      last = { ...repaired, verified: repaired.doc };
+      // Every round, the last included, must pass the publish gate: a playtest agent plays it to the end, nothing crashes.
+      const g = verify ? await gate(repaired.doc) : { viable: true };
+      rounds.at(-1).viable = g.viable;
+      if (g.viable) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [], verification: g.v };
+      problems = g.problems;
     }
+    lastProblems = problems.length ? problems : repaired.errors;
     user = `${outlineUser({ prompt, answers, decomposition, selection, skeleton: skeleton.doc })}
 
 Your previous document failed ${problems.length ? 'verification' : 'preflight'} with these problems (stable codes; fix each at its path):
@@ -344,19 +338,24 @@ Previous document:
 ${JSON.stringify(repaired.doc).slice(0, 30000)}
 Return the corrected complete document.`;
   }
-  // A valid draft that still has verification problems beats the skeleton: keep it, the report shows them.
-  if (last?.verified) return { doc: last.verified, ok: true, source: model, rounds, firstPassOk, modelMs, removed: last.removed, errors: [] };
-  // The model's last draft is usually one primitive away from valid: isolate that primitive (reported as a gap)
-  // rather than throw away the model's world and story for the placeholder skeleton.
+  // The model's last draft is usually one primitive away from valid: isolate that primitive (reported as a gap),
+  // and keep it only if it passes the same gate.
   if (last?.doc) {
     const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true });
     if (isolated.ok && firstPlayable(isolated.doc, registry, logic, { seed, furnish: false }).ok) {
-      rounds.push({ kind: 'isolate', ok: true, removed: isolated.removed.map(r => r.use) });
-      return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [] };
+      const g = verify ? await gate(isolated.doc) : { viable: true };
+      rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
+      if (g.viable) return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v };
+      lastProblems = g.problems;
     }
   }
-  // The model never produced a valid outline: the skeleton is valid and playable; say so in the report.
-  return { doc: skeleton.doc, ok: skeleton.ok, source: 'procedural', fellBack: true, rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: skeleton.removed, errors: last?.errors || [] };
+  // The skeleton is published only if it passes the gate too; otherwise nothing playable came out of this idea.
+  if (skeleton.ok) {
+    const g = verify ? await gate(skeleton.doc) : { viable: true };
+    rounds.push({ kind: 'procedural_fallback', viable: g.viable });
+    if (g.viable) return { doc: skeleton.doc, ok: true, source: 'procedural', fellBack: true, rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: skeleton.removed, errors: [], verification: g.v };
+  }
+  return { doc: last?.doc || skeleton.doc, ok: false, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || skeleton.removed, errors: lastProblems?.length ? lastProblems : (last?.errors || skeleton.errors) };
 }
 
 export { seedFrom, isSpace };
