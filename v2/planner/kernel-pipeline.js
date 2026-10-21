@@ -10,7 +10,7 @@ import { hashOf } from '../server/store.js';
 import { seedFrom } from '../kernel/rng.js';
 import { decomposeIdea, decomposeOffline } from './decompose.js';
 import { selectPrimitives } from './select.js';
-import { writeOutline, ensureAgency } from './outline.js';
+import { writeOutline, ensureAgency, coreOf } from './outline.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
@@ -71,13 +71,13 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt: job.prompt });
     const selection = agency.selection;
     timings.selectMs = ms(t);
-    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, agency: agency.agency, agencyAttempts: agency.attempts });
+    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, completeness: selection.completeness || null, agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider || 'lexical', spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description), agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('outlining', { model: spec?.model || 'procedural' });
     t = performance.now();
     const outline = await writeOutline({ writer: spec, prompt: job.prompt, answers: job.answers || [], decomposition, selection, registry, logic, seed, maxRounds: cfg.outlineRepairRounds });
     timings.outlineMs = ms(t); timings.outlineModelMs = spec ? outline.modelMs : null;
-    checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated), errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], doc: outline.doc });
+    checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated), errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], content: (outline.content || []).map(p => `${p.code} ${p.path}: ${p.message}`).slice(0, 20), doc: outline.doc });
     ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) });
     if (!outline.ok) throw Object.assign(Error(`The outline failed checks: ${outline.errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422 });
 
@@ -86,7 +86,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
     const engaged = engageDocument(outline.doc, registry, logic);
     checkpoint('engage', { ok: engaged.ok, applied: engaged.applied, skipped: engaged.skipped, errors: engaged.errors });
-    const fp = firstPlayable(engaged.doc, registry, logic, { seed });
+    const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: coreOf(selection, registry) });
     timings.firstPlayableBuildMs = ms(t);
     if (!fp.ok) checkpoint('firstPlayable', { ok: false, ms: fp.ms, errors: (fp.errors || []).slice(0, 20), problems: (fp.problems || []).slice(0, 20), removed: fp.removed || [] });
     if (!fp.ok) throw Object.assign(Error(`The first playable would not start: ${[...fp.errors, ...fp.problems].slice(0, 3).map(e => e.message || e.code).join('; ')}`), { status: 422 });

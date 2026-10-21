@@ -85,6 +85,10 @@ const MECH_FIELDS = {
 export default {
   id: 'gameplay.mechanism',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "mechanisms", "min": 1, "why": "mechanisms (doors, lifts, switches) are what the player operates"},
+    ],
     intent: 'Signal-wired world mechanisms: doors, levers, pressure plates, breakables and erodible cell bunkers, lifts, gates, traps, timers, and physics toys (flippers, bumpers, kickers, plungers, rollovers, drop-target banks, ramps, springs, breaking/vanishing/moving platforms).',
     views: ['any'],
     params: {

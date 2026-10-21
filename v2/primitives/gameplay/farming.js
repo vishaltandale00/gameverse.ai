@@ -14,6 +14,11 @@ const ABOVE = [0, 1, 0];
 export default {
   id: 'gameplay.farming',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "crops", "min": 2, "why": "farming needs crops: each names its produce item (and seed item) from content.items", "example": [{"item": "turnip", "seed": "turnip_seed", "days": 3}]},
+      {"need": "items", "min": 4, "why": "crops need produce and seed items"},
+    ],
     intent: 'Till soil with a hoe, plant seeds, water, grow crops one stage a day in season, harvest rolled yields, regrow perennials and wither crops out of season, on an editCells space.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     params: {

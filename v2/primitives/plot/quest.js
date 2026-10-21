@@ -46,6 +46,10 @@ export default {
   id: ID,
   solverKey, progress,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "plot.quests", "min": 2, "why": "quests are objectives built from goal kinds (reach, collect, deliver, defeat, talk, escort, survive, build, drive, craft, use, discover) with rewards", "example": {"id": "q_lamp", "title": "Light the lamp", "kind": "main", "giver": "keeper", "zone": "lighthouse", "summary": "Find the brass key and open the lamp room.", "autoStart": true, "objectives": [{"id": "o_talk", "kind": "talk", "character": "keeper", "text": "Speak to the keeper."}, {"id": "o_key", "kind": "collect", "item": "brass_key", "count": 1, "text": "Find the brass key."}, {"id": "o_room", "kind": "reach", "zone": "lamp_room", "text": "Open the lamp room."}], "rewards": {"items": [{"item": "lens", "count": 1}]}}},
+    ],
     intent: 'Quests of any type from plot.quests: objectives of kinds reach, collect, deliver, defeat, talk, escort, survive, build, drive, craft, use, discover, until; sequential or any order; fail predicates, time limits, branches, rewards, repeatable quests. Offered quests are taken with accept_quest.',
     views: ['any'],
     params: {

@@ -93,7 +93,9 @@ function withoutPrimitives(doc, registry, ids) {
 }
 
 /** -> { ok, doc, ms, stateHash, start, options, beatsFired, removed, problems, errors, world } */
-export function firstPlayable(input, registry, logic, { seed, frames = 3, furnish = true, maxIsolations = 6 } = {}) {
+export function firstPlayable(input, registry, logic, { seed, frames = 3, furnish = true, maxIsolations = 6, protect = null } = {}) {
+  // protect: primitives of core mechanics, never isolated; a throw in one (or in what it needs) is an error for the model.
+  const kept = new Set(protect || []);
   const started = performance.now();
   const elapsed = () => Math.round(performance.now() - started);
   let doc = input;
@@ -105,15 +107,17 @@ export function firstPlayable(input, registry, logic, { seed, frames = 3, furnis
     try { rt = boot(pre.doc, registry, logic, seed, frames); break; }
     catch (error) {
       const err = throwError(error, pre.doc);
-      const culprit = err.primitive && registry.has(err.primitive) ? err.primitive : findCulprit(pre.doc, registry, logic, seed, excluded);
+      const culprit = err.primitive && registry.has(err.primitive) ? err.primitive : findCulprit(pre.doc, registry, logic, seed, excluded, kept);
       const isSpace = culprit && (doc.spaces || []).some(s => s.use === culprit);
-      if (!culprit || isSpace || attempt >= maxIsolations) return { ok: false, errors: [culprit && !err.primitive ? { ...err, primitive: culprit, message: `'${culprit}' made the world throw: ${String(error?.message || error).slice(0, 200)}` } : err], problems, removed, ms: elapsed() };
+      const cutFirst = culprit && !isSpace ? withoutPrimitives(doc, registry, [culprit]) : null;
+      const core = culprit && (kept.has(culprit) || (cutFirst?.dropped || []).some(id => kept.has(id)));
+      if (!culprit || isSpace || core || attempt >= maxIsolations) return { ok: false, errors: [culprit && !err.primitive ? { ...err, primitive: culprit, message: `'${culprit}' made the world throw: ${String(error?.message || error).slice(0, 200)}` } : err], problems, removed, ms: elapsed() };
       // Remove it (and what requires it), then let the deterministic repair neutralise what pointed at it.
-      const cut = withoutPrimitives(doc, registry, [culprit]);
+      const cut = cutFirst;
       for (const id of cut.dropped) excluded.add(id);
       const why = err.primitive === culprit ? err.message : `made the world throw: ${String(error?.message || error).slice(0, 160)}`;
       for (const id of cut.dropped) removed.push({ use: id, why: id === culprit ? why : `requires '${culprit}', which was removed`, phase: id === culprit ? err.phase : null });
-      const fixed = repairDocument(cut.doc, { registry, logic, exclude: excluded });
+      const fixed = repairDocument(cut.doc, { registry, logic, exclude: excluded, protect: kept });
       for (const r of fixed.removed) if (!removed.some(x => x.use === r.use)) removed.push(r);
       doc = fixed.doc;
       pre = preflight(doc, registry, logic);
@@ -151,9 +155,10 @@ export function firstPlayable(input, registry, logic, { seed, frames = 3, furnis
 }
 
 /** No attribution (the kernel itself threw): the first removable instance whose removal (with repair) lets the world boot. */
-function findCulprit(doc, registry, logic, seed, excluded) {
+function findCulprit(doc, registry, logic, seed, excluded, kept = new Set()) {
   for (const x of instances(doc)) {
     if (x.keys.length === 2 && x.keys[0] === 'spaces') continue;
+    if (kept.has(x.inst.use)) continue;
     const cut = withoutPrimitives(doc, registry, [x.inst.use]);
     const fixed = repairDocument(cut.doc, { registry, logic, exclude: new Set([...excluded, ...cut.dropped]), rounds: 3 });
     if (!fixed.ok) continue;

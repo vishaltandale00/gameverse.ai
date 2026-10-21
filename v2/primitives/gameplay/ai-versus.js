@@ -76,6 +76,10 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "cpu", "min": 1, "placed": 1, "why": "the CPU opponent is an archetype with a cpu component {level, style}", "example": {"id": "rival", "kind": "npc", "components": {"cpu": {"level": 3}}}},
+    ],
     intent: 'Fighting-game CPU for entities with a `cpu` component: five difficulty levels (reaction, block, high/low read, anti-air, punish, combo confirm, throw tech, mistakes), styles with preferred range, special/super motion macros, jump-ins, juggles, platform recovery — all played through the real input path (components.input), never by setting fighter state.',
     views: ['side'],
     params: {

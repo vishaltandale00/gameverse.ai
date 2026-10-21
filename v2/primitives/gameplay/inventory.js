@@ -62,6 +62,10 @@ const countCheck = (field) => (e, path, errors) => { if (e.count !== undefined &
 export default {
   id: 'gameplay.inventory',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "items", "min": 2, "why": "an inventory needs items to hold", "example": {"id": "brass_key", "name": "Brass key", "kind": "key"}},
+    ],
     intent: 'Entities carry items in stacks with per-entity slot limits; provides the `item` and `item_tag` predicates and give_item/take_item/transfer_item effects used by quests, gates, crafting, shops and dialogue.',
     views: ['any'],
     params: {

@@ -48,6 +48,12 @@ const agentOf = (rt, id) => ((st(rt).agents ??= {})[id] ??= { phase: 'idle', cd:
 export default {
   id: ID,
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { attacks: { type: 'list', min: 1, of: { type: 'object', fields: ATTACK }, effect: 'telegraphed attack patterns' } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "attacks", "min": 1, "placed": 1, "why": "attack patterns run on archetypes with an attacks component", "example": {"id": "warden", "kind": "enemy", "components": {"health": {"max": 20}, "attacks": [{"id": "slam", "range": 2, "windup": 0.6, "active": 0.2, "recover": 0.8, "damage": 2, "shape": "arc", "weight": 2}]}}},
+    ],
     intent: 'Enemies and bosses attack with telegraphed patterns from their `attacks` component: windup/active/recover/cooldown, weighted choice by range, predicate and boss phase, hit shapes (arcs, cones, lines, rings, slams, hitscan, projectiles, summons, buffs), lunges/charges/blinks and shmup bullet emitters (aimed spread ring spiral burst flower) with per-mode caps and difficulty.',
     views: ['any'],
     params: {

@@ -212,6 +212,8 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
       decided = r.answers; provider = r.provider;
     } catch (error) { log(`selection decisions failed: ${error.message}`); }
   }
+  // Selection completeness: each core mechanic must have the primitive that defines it (a model check, when a writer is connected).
+  const checked = mapped ? await checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log }) : null;
   const chosen = new Set(), gaps = [];
   for (const m of mechanics) {
     const map = mapped?.[m.id];
@@ -261,13 +263,27 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
   const { spaces, bind, unmet, excluded: excludedSpaces = [] } = chooseSpaces(registry, [...chosen], decomposition, prefer, excludeSpaces);
+  // A primitive no chosen space can host stays the user's intent: a core mechanic's primitive becomes an adapter gap
+  // (the gap layer writes the adapter that projects it onto the space, gated by tests and the playtest agent), never
+  // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
+  const composition = unmet.length ? await compositionCheck() : null;
   for (const u of unmet) {
     chosen.delete(u.id);
+    // An adapter projects a primitive onto a space that lacks what it needs; when NO registered space provides it,
+    // the missing piece is a space capability (a capability gap), not an adapter.
+    const hostable = registry.ids('engine').filter(isSpace).some(id => spaceVariants(registry, id).some(v => u.missing.every(c => v.caps.has(c))));
+    const core = hostable && mechanics.some(m => m.importance === 'core' && m.primitives.includes(u.id));
+    let verdict = null;
+    if (core && composition) try { verdict = composition({ spaces, systems: [...chosen, u.id], primitive: u.id }, registry); } catch { verdict = null; }
+    const signature = verdict?.signature || `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})`;
     for (const m of mechanics) if (m.primitives.includes(u.id)) {
       m.primitives = m.primitives.filter(x => x !== u.id);
-      if (!m.primitives.length) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'capability', why: `${u.id} needs ${u.missing.join(', ')}, which no registered space provides` });
+      if (core && m.importance === 'core') gaps.push({ mechanic: m.id, description: `needs adapter: ${signature}`, importance: 'core', kind: 'adapter', primitive: u.id, signature, verdict: verdict?.verdict || 'incompatible-needs-adapter', why: `${u.id} needs ${u.missing.join(', ')}, which ${spaces[0]?.use || 'the space'} does not provide; an adapter primitive can project it` });
+      else if (!m.primitives.length) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'capability', why: `${u.id} needs ${u.missing.join(', ')}, which no registered space provides` });
     }
   }
+  // Base locomotion follows the idea: the primary view and the avatar's medium (cards declare locomotion and medium).
+  const loco = locomotionCompleteness({ decomposition, registry, chosen, space: spaces[0], mechanics });
   // Mechanics the chosen space itself provides (travelling between its places) are not gaps: ask the decision
   // model once for every no-primitive gap, else fall back to lexical relevance against the space card.
   const noPrim = gaps.filter(g => g.kind === 'no_primitive');
@@ -309,8 +325,90 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
 const order = id => id.startsWith('engine.') ? 0 : id.startsWith('gameplay.') ? 1 : 2;
+
+// ---------- selection completeness ----------
+
+/** compose-check.js (v2-static-composition) when present: checkComposition(selection, registry) -> { verdict, missing, adapter, signature }. */
+let composeMod;
+async function compositionCheck() {
+  if (composeMod === undefined) composeMod = await import('./compose-check.js').catch(() => null);
+  return typeof composeMod?.checkComposition === 'function' ? composeMod.checkComposition : null;
+}
+
+const primaryOf = decomposition => (decomposition.views || []).find(v => v !== 'ui') || null;
+const supportsView = (card, view) => !view || (card.views || []).includes(view) || (card.views || []).includes('any');
+
+/**
+ * Base locomotion cards that fit a space, a primary view and a medium, best first. Hard filters: base locomotion,
+ * capabilities the space provides, the primary view. Preference: the wanted medium, then the fewest requirements.
+ */
+export function baseLocomotion(registry, { caps = [], view = null, medium = null, exclude = [] } = {}) {
+  const have = new Set(caps);
+  return registry.cards('gameplay').filter(c => c.locomotion === 'base' && !exclude.includes(c.id) && (c.requires?.capabilities || []).every(x => have.has(x)) && supportsView(c, view))
+    .map(c => ({ id: c.id, medium: c.medium || null, score: ((c.views || []).includes(view) ? 10 : 1) + (medium && c.medium === medium ? 5 : 0) - (c.requires?.capabilities || []).length * 0.1 }))
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+}
+
+/**
+ * The avatar moves the way the idea says: a base locomotion that lacks the primary view is replaced; a lone base
+ * locomotion in the wrong medium (flying through a walking dungeon) is replaced by one in the right medium; an idea
+ * whose avatar moves but has no base locomotion gets one. movement 'none' (cards, boards, falling pieces) adds nothing.
+ * Mutates `chosen` and the mechanics' primitive lists; returns what it did.
+ */
+export function locomotionCompleteness({ decomposition, registry, chosen, space, mechanics = [] }) {
+  const view = primaryOf(decomposition), medium = decomposition.movement || null, out = { view, medium, removed: [], added: null };
+  if (!space) return out;
+  const present = [...chosen].filter(id => registry.get(id)?.card.locomotion === 'base');
+  const drop = id => { chosen.delete(id); out.removed.push(id); for (const m of mechanics) if (Array.isArray(m.primitives)) m.primitives = m.primitives.filter(x => x !== id); };
+  for (const id of present) if (!supportsView(registry.get(id).card, view)) drop(id);
+  const left = present.filter(id => chosen.has(id));
+  const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => registry.get(id).card.medium && registry.get(id).card.medium !== medium));
+  if (medium === 'none' || (left.length && !wrongMedium)) return out;
+  const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left }).find(c => !medium || c.medium === medium || !c.medium);
+  if (!best) return out;
+  if (wrongMedium) for (const id of left) drop(id);
+  chosen.add(best.id); out.added = best.id;
+  const host = mechanics.find(m => m.importance === 'core' && /\b(move|walk|run|jump|explor|navigat|travel|climb|platform|roam|fly|swim|drive)\w*/i.test(`${m.verb} ${m.description}`)) || mechanics.find(m => m.importance === 'core');
+  if (host && Array.isArray(host.primitives) && !host.primitives.includes(best.id)) host.primitives.push(best.id);
+  return out;
+}
+
+/**
+ * Model check of the catalogue mapping: for every core mechanic, is the primitive that DEFINES it mapped (a Tetris
+ * platformer needs the platformer movement, not grid steps)? The model sees the mapped primitives and the closest
+ * alternatives (lexical candidates and siblings of what was mapped) and names the central one and any wrong ones.
+ * Applies its answer to `mapped` (adds the central primitive, removes wrong ones). -> { checked, changes } or null.
+ */
+export async function checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log = () => {} }) {
+  const core = mechanics.filter(m => m.importance === 'core' && mapped[m.id]);
+  if (!writer?.complete || !core.length) return null;
+  const byId = new Map(cards.map(c => [c.id, c]));
+  const line = id => `${id}: ${String(byId.get(id)?.intent || '').replace(/\s+/g, ' ').slice(0, 160)}`;
+  const blocks = core.map(m => {
+    const have = mapped[m.id].primitives;
+    const domains = new Set(have.map(id => id.split('.').slice(0, 2).join('.')));
+    const alts = [...new Set([...m.candidates.map(c => c.id), ...cards.filter(c => domains.has(c.id.split('.').slice(0, 2).join('.'))).map(c => c.id)])].filter(id => !have.includes(id) && !isGraphics(id)).slice(0, 14);
+    return `Mechanic ${m.id}: ${m.description}\n  mapped:\n${have.map(id => `    ${line(id)}`).join('\n') || '    (none)'}\n  alternatives:\n${alts.map(id => `    ${line(id)}`).join('\n') || '    (none)'}`;
+  }).join('\n\n');
+  const system = 'You check a mechanic mapping for a game built from composable primitives. For each core mechanic decide which single primitive DEFINES it (the one without which the mechanic is not there at all: platforming needs the platformer movement, falling-block stacking needs the falling-pieces primitive, catching creatures needs the catch primitive). It may be one already mapped or one of the alternatives. Also list mapped primitives that implement a DIFFERENT mechanic than this one (a wrong sibling, e.g. grid steps for a jump-and-run, flying for a walking dungeon); supporting primitives that help are not wrong. Use exact ids from the lists.';
+  const user = `Game idea: ${decomposition.premise}\nMain view: ${primaryOf(decomposition) || 'any'}; the avatar moves: ${decomposition.movement || 'unknown'}\n\n${blocks}`;
+  const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why'], properties: { mechanic: { type: 'string' }, central: { type: 'string' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' } } } } } } };
+  try {
+    const reply = await writer.complete({ system, user, schema });
+    const changes = [];
+    for (const c of parseReply(reply.text)?.checks || []) {
+      const entry = mapped[c.mechanic]; if (!entry) continue;
+      const m = core.find(x => x.id === c.mechanic); if (!m) continue;
+      const central = registry.has(c.central) && !isGraphics(c.central) ? c.central : null;
+      if (central && !entry.primitives.includes(central)) { entry.primitives = [central, ...entry.primitives]; entry.covered = true; changes.push({ mechanic: m.id, added: central, why: String(c.why || '').slice(0, 160) }); }
+      for (const w of c.wrong || []) if (w !== central && entry.primitives.includes(w)) { entry.primitives = entry.primitives.filter(x => x !== w); changes.push({ mechanic: m.id, removed: w, why: String(c.why || '').slice(0, 160) }); }
+      if (!entry.primitives.length) entry.covered = false;
+    }
+    return { checked: core.map(m => m.id), changes, ms: reply.ms ?? null };
+  } catch (error) { log(`mapping check failed: ${error.message}`); return { checked: [], changes: [], error: String(error.message || error).slice(0, 120) }; }
+}

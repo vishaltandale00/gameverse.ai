@@ -24,6 +24,10 @@ export function respawn(rt, who) {
 export default {
   id: 'gameplay.checkpoint',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": true}}},
+    ],
     intent: 'Bench/bonfire/flag checkpoints (entities with a `checkpoint` component): set the respawn point, optionally restore health and resources, reset ambient enemies, and fast-travel between activated points.',
     views: ['any'],
     params: {

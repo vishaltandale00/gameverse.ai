@@ -320,6 +320,11 @@ export function engine(ctx) {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "content.species", "min": 4, "why": "battles are fought between species"},
+      {"need": "section", "at": "content.moves", "min": 4, "why": "battles use moves"},
+    ],
     intent: 'Turn-based creature battles (wild, trainer, leader, champion) entered from any overworld into a battle space: moves, type chart, STAB, crits, stat stages, statuses, priority/speed order, switching, items, capture, escape, experience, move learning and evolution.',
     views: ['ui', 'any'],
     params: {

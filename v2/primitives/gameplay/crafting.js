@@ -16,6 +16,10 @@ const parse = v => (typeof v === 'string' ? { recipe: v, count: 1 } : { recipe: 
 export default {
   id: 'gameplay.crafting',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "content.recipes", "min": 2, "why": "crafting needs recipes", "example": {"id": "torch", "inputs": [{"item": "stick", "count": 1}, {"item": "resin", "count": 1}], "output": {"item": "torch_item", "count": 2}}},
+    ],
     intent: 'Recipes at stations with item or tag inputs, craft times and queues, recipe discovery (known, learned, or experiment by combining items) and cooking-style merges whose output carries the summed ingredient effects.',
     views: ['any'],
     params: {

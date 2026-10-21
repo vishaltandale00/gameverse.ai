@@ -43,6 +43,10 @@ export default {
   id: ID,
   solverKey,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "plot.gates", "min": 1, "why": "gates are named requirements that lock exits, portals or beats", "example": {"id": "lamp_door", "requires": {"item": "brass_key"}, "hint": "The lamp room is locked."}},
+    ],
     intent: 'Named requirement predicates (plot.gates) that lock exits, portals, zones, beats, interactables and quests; owners of those things ask the gates service before letting the player through. unlock/lock force a gate open or shut.',
     views: ['any'],
     params: {

@@ -19,6 +19,10 @@ function learn(rt, id) {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "plot.entries", "min": 3, "why": "journal entries the player gains"},
+    ],
     intent: 'Journal, codex and lore entries from plot.entries, learned by add_entry (or automatically when an entry\'s when holds); `known` and `entries` (count per tag) feed gates and endings.',
     views: ['any'],
     params: {},
