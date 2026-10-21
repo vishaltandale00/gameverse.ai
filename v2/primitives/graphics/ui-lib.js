@@ -2,7 +2,7 @@
 // - h()/patch helpers that build DOM without innerHTML (works on a test stub);
 // - one host per view: the `.gv-overlay` root, z-ordered layers, the injected
 //   theme stylesheet, a small event bus between UI primitives, persisted
-//   settings, and host holds (pause) / restart with feature detection;
+//   settings, and host holds (view.pause) / restart (view.restart), released with the view;
 // - small formatting and colour helpers.
 // UI never writes rt.state. Everything here is presentation.
 import { THEME_CSS, resolveTheme } from './ui-theme.js';
@@ -11,8 +11,8 @@ import { hslToRgb, rgbToHex } from '../../art/color.js';
 
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
-/** setTimeout that never keeps a Node test process alive. */
-export function later(fn, ms) { const t = setTimeout(fn, ms); t?.unref?.(); return t; }
+/** setTimeout that never keeps a Node test process alive (UI primitives use host.later, which the view releases). */
+function later(fn, ms) { const t = setTimeout(fn, ms); t?.unref?.(); return t; }
 export const isNum = v => typeof v === 'number' && Number.isFinite(v);
 
 /** Stable 0..359 hue from a string (names, ids). */
@@ -104,11 +104,41 @@ export function uiHost(rt) {
   const handlers = new Map();
   const holds = new Set();
   const settings = loadSettings();
-  let first = null, origStep = null;
+  // What the UI holds outside its own DOM (listeners on window/document, timers), released with the view
+  // (view.onDispose: the host unloads or rebuilds the game; ARCHITECTURE §1.7).
+  const listening = [], timers = new Set();
+  let disposed = false;
   host = {
     rt, view, doc, root, settings,
-    /** Presentation clock in seconds (a host or test may supply view.now()). */
-    now: () => (typeof view.now === 'function' ? view.now() : (globalThis.performance?.now?.() ?? Date.now()) / 1000),
+    /** Presentation clock in seconds; view.now() is the host's display clock in ms (v2/web/player.js). */
+    now: () => (typeof view.now === 'function' ? view.now() : (globalThis.performance?.now?.() ?? Date.now())) / 1000,
+    /** addEventListener on a target outside the overlay (window, document), removed when the view is disposed. */
+    listen(target, type, fn, options) {
+      if (disposed || !target?.addEventListener) return () => {};
+      target.addEventListener(type, fn, options);
+      const entry = [target, type, fn, options];
+      listening.push(entry);
+      return () => { const i = listening.indexOf(entry); if (i >= 0) { listening.splice(i, 1); target.removeEventListener(type, fn, options); } };
+    },
+    /** A presentation timer (fades, toasts, banners), cleared when the view is disposed. */
+    later(fn, ms) {
+      if (disposed) return null;
+      const t = later(() => { timers.delete(t); fn(); }, ms);
+      timers.add(t); return t;
+    },
+    clearLater(t) { if (t != null) { clearTimeout(t); timers.delete(t); } },
+    get disposed() { return disposed; },
+    /** Release everything this UI holds outside its DOM and take its overlay out of the container. */
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      host.input.dispose();
+      for (const [target, type, fn, options] of listening.splice(0)) target.removeEventListener(type, fn, options);
+      for (const t of timers) clearTimeout(t);
+      timers.clear(); handlers.clear(); holds.clear();
+      root.remove();
+      HOSTS.delete(view);
+    },
     /** A z-ordered full-size layer; elements inside opt into pointer events. */
     layer(name) {
       if (layers[name]) return layers[name];
@@ -125,31 +155,23 @@ export function uiHost(rt) {
       root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
       host.emit('settings', settings);
     },
-    /** Hold or release the simulation (pause, title screen). Prefers a host-provided view.pause. */
+    /** Hold or release the simulation (pause, title screen, panels) through the host's view.pause. */
     hold(key, on) {
       if (on) holds.add(key); else holds.delete(key);
-      if (typeof view.pause === 'function') { view.pause(holds.size > 0); return; }
-      // Workaround until the host exposes view.pause (kernel request ui.md #1):
-      // stop stepping the world in the browser only. No state is written.
-      // While held, a step that carries UI actions (equip, buy, choose...) still runs one frame so they apply.
-      if (!origStep && holds.size) { origStep = rt.step; rt.step = (input = {}) => (holds.size && !Object.values(input.actions || {}).some(Boolean) ? rt.state : origStep(input)); }
+      view.pause(holds.size > 0);
     },
     held: () => holds.size > 0,
     holds: () => [...holds],
-    /** Restart from the first displayed frame. Prefers a host-provided view.restart. */
-    restart() {
-      if (typeof view.restart === 'function') { view.restart(); host.emit('restarted'); return true; }
-      if (!first) return false;
-      rt.restore(first); host.emit('restarted'); return true; // host-level reset (kernel request ui.md #2)
-    },
-    snapshotFirst() { if (!first && rt.state.frame <= 1) first = rt.snapshot(); },
+    /** Restart from the world's first state (the host's view.restart). */
+    restart() { view.restart(); host.emit('restarted'); return true; },
     /** Play a UI sound through graphics.audio.synth when present. */
     sound(name, data) { host.emit('ui_sound', { name, ...data }); },
   };
   host.input = createUiInput(host);
+  view.onDispose?.(() => host.dispose());
   root.classList.toggle('gv-reduced', Boolean(settings.reducedMotion));
   root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
-  view.onFrame?.(() => { host.snapshotFirst(); host.input.sync(); host.input.poll(); });
+  view.onFrame?.(() => { host.input.sync(); host.input.poll(); });
   HOSTS.set(view, host);
   return host;
 }
