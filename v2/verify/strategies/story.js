@@ -2,11 +2,11 @@
 // macros included) for a path to a winning ending; the bot then plays that path on the world of each seed it is given
 // through the controls a person has (ctx.make is controlled: v2/verify/controls.js). An option is taken by issuing its
 // actions (a key, or the UI that lists the options); a travel macro, which the solver may realize by warping, is taken
-// the way a person travels: the travel verb toward its zone (a choice verb, issued by the UI the host mounts), then
-// waiting until the player is there. When verify() already solved the plot (ctx.plot) for the gate's seed, that search
+// the way a person travels: the held move axis (and jump) along the space's path when the move axis is a control,
+// else the travel verb toward its zone (a choice verb, issued by the UI the host mounts) and waiting until it is there. When verify() already solved the plot (ctx.plot) for the gate's seed, that search
 // is reused instead of searching again.
 import { solve } from '../solve.js';
-import { withTravel } from '../macros.js';
+import { withTravel, travel, jumpVerb } from '../macros.js';
 import { applyOption, hold, optionLabels } from '../drive.js';
 import { budget as makeBudget } from '../util.js';
 import { problem } from './common.js';
@@ -24,10 +24,14 @@ export function playPath(ctx, seed, path, { settleSteps = 2, wait = 600, travelF
     if (j < 0 || rt.state.status !== 'playing') return { rt, ok: false, at: i };
     const o = options[j];
     if (o.zone !== undefined && typeof o.apply === 'function') {
-      // A travel macro: the travel verb toward its zone, then wait for the player to arrive.
-      hold(rt, { actions: { travel: o.zone } }, 1);
-      const p = () => rt.player(), there = () => p() && rt.space(p().space).inZone?.(p(), o.zone, rt);
-      for (let k = 0; k < travelFrames && rt.state.status === 'playing' && !there(); k++) rt.step({});
+      // A travel macro, the way a person travels: holding the move axis (and jumping) along the space's path when the
+      // move axis is a control, else the travel verb toward its zone and waiting for the player to arrive.
+      if ((rt.controls.controls.map?.axes?.move || []).length) travel(rt, ctx.registry, o.zone, { mode: 'steer', jump: jumpVerb(rt), controlsOnly: true });
+      else {
+        hold(rt, { actions: { travel: o.zone } }, 1);
+        const p = () => rt.player(), there = () => p() && rt.space(p().space).inZone?.(p(), o.zone, rt);
+        for (let k = 0; k < travelFrames && rt.state.status === 'playing' && !there(); k++) rt.step({});
+      }
     } else applyOption(rt, o);
     hold(rt, {}, settleSteps);
   }

@@ -50,9 +50,12 @@ export function connects(rt, press, { frames = 45, approach = 240, every = 4 } =
     rt.restore(here);
     return hit;
   };
+  // Up to standing beside it: the bodies' boxes touching (a fighter does not walk through its opponent).
+  const beside = (p, f) => { const a = posOf(rt, p), c = f.e.at, w = ((p.components.body?.size?.[0] ?? 1) + (f.e.components.body?.size?.[0] ?? 1)) / 2; return Array.isArray(a) && Array.isArray(c) && Math.abs(c[0] - a[0]) <= w + 0.1; };
   for (let i = 0; i < approach && rt.state.status === 'playing'; i++) {
-    if (i % every === 0 && tryHere()) { rt.restore(snap); return true; }
     const p = rt.player(), f = nearestFoe(rt); if (!p || !f || f.e.id !== id) break;
+    if ((i % every === 0 || beside(p, f)) && tryHere()) { rt.restore(snap); return true; }
+    if (beside(p, f)) break;
     hold(rt, { axes: { move: toward(rt, p, f) } }, 1);
   }
   rt.restore(snap);

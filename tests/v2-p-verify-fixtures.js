@@ -13,6 +13,8 @@ import storyboard from '../v2/primitives/plot/storyboard.js';
 import inventory from '../v2/primitives/gameplay/inventory.js';
 import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 import inputActions from '../v2/primitives/engine/input-actions.js';
+import uiStory from '../v2/primitives/graphics/ui-story.js';
+import uiChoices from '../v2/primitives/graphics/ui-choices.js';
 
 const P = defaults => Object.fromEntries(Object.entries(defaults).map(([k, v]) => [k, { type: 'json', default: v }]));
 const fx = (id, intent, params, { card = {}, ...rest } = {}) => ({ id, ...rest, card: { intent, views: ['any'], params: P(params), ...card } });
@@ -26,7 +28,8 @@ const hp = e => e.components.health.hp;
 
 /** Discrete steps on a cell space: options (one per open direction) and held move axes. */
 export const step = fx('gameplay.fixture.step', 'test: one-cell steps on a cell space', { every: 4, options: true, envelope: null }, {
-  card: { provides: { actions: ['step'] }, envelope: (config, abilities) => ({ run: 1, jumpHeight: abilities.has('high_jump') ? 5 : 1 }) },
+  // It steps by the held move axis (and by the step verb's value): it declares the axis, so the host binds it.
+  card: { provides: { actions: ['step'] }, actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, step: { type: 'enum', options: ['up', 'down', 'left', 'right'] } }, envelope: (config, abilities) => ({ run: 1, jumpHeight: abilities.has('high_jump') ? 5 : 1 }) },
   install(rt, cfg) {
     const D = { up: [0, 1, 0], down: [0, -1, 0], left: [-1, 0, 0], right: [1, 0, 0] };
     const go = d => { const p = rt.player(); if (!p) return; const api = rt.space(p.space); api.move(p, fl(p.at).map((v, i) => v + d[i]), rt); };
@@ -407,8 +410,9 @@ export const travel = fx('gameplay.fixture.travel', 'test: macro travel options'
 
 export const FIXTURES = [rows, platformer, step, glide, spawner, abilities, falling, slide, match, pellets, chasers, bullets, runner, melee, launcher, balls, battle, travel, ...Object.values(breakers)];
 export function fixtureCatalogue(extra = []) {
-  // engine.input.actions: the gate's bots play through the controls the host mounts (v2/verify/controls.js).
-  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, ...spaces2d.filter(p => p.id !== 'engine.space.graph'), storyboard, inventory, inputActions, ...FIXTURES, ...extra]);
+  // engine.input.actions and the UI that lists choices: the gate's bots play through the controls the host mounts
+  // (v2/verify/controls.js): keys, the story's option list, the choices panel for chosen values (travel).
+  const registry = new Registry([testSpace, ledgeSpace, spaceGraph, ...spaces2d.filter(p => p.id !== 'engine.space.graph'), storyboard, inventory, inputActions, uiStory, uiChoices, ...FIXTURES, ...extra]);
   return { registry, logic: buildLogic(registry, Logic) };
 }
 export function normalized(doc, cat = fixtureCatalogue()) {

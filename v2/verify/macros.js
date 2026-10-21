@@ -46,13 +46,13 @@ const grounded = (api, p) => (typeof api.grounded === 'function' ? api.grounded(
 const sideView = api => typeof api.gravityAt === 'function' && Math.abs(api.gravityAt([0, 0, 0])?.[1] ?? 0) > 0;
 
 /** Move the player to `zone` along the space's path. Returns true when it arrived. */
-export function travel(rt, registry, zone, { mode = 'warp', jump = null, perWaypoint = 120 } = {}) {
+export function travel(rt, registry, zone, { mode = 'warp', jump = null, perWaypoint = 120, controlsOnly = false } = {}) {
   const p = rt.player(); if (!p) return false;
   const api = rt.space(p.space);
   const nav = navOptions(rt, registry, p);
   const path = api.path(navFrom(api, p), zone, nav.opts);
   if (!path || path.length < 2) return false;
-  if (mode === 'warp') {
+  if (mode === 'warp' && !controlsOnly) {
     for (const wp of path.slice(1)) {
       if (p.components.body?.vel) p.components.body.vel = p.components.body.vel.map(() => 0);
       api.setPos(p, Array.isArray(wp) ? wp.slice() : wp, rt);
@@ -62,8 +62,9 @@ export function travel(rt, registry, zone, { mode = 'warp', jump = null, perWayp
     return api.inZone(p, zone, rt);
   }
   // A movement primitive that knows its own controls may steer instead: export travel(rt, path, config, instance).
-  // Prefer the controller bound to the player's space; the first one declared wins ties.
-  const owners = instancesOf(rt.doc).map(x => ({ x, prim: registry.get(x.inst?.use) })).filter(e => typeof e.prim?.travel === 'function');
+  // Prefer the controller bound to the player's space; the first one declared wins ties. controlsOnly (a bot playing
+  // through the controls a person has): only held move axes and the jump verb, never a movement plan written for it.
+  const owners = controlsOnly ? [] : instancesOf(rt.doc).map(x => ({ x, prim: registry.get(x.inst?.use) })).filter(e => typeof e.prim?.travel === 'function');
   const own = owners.find(e => e.x.space === p.space) || owners[0];
   if (own) {
     const arrived = own.prim.travel(rt, path, own.x.inst.with || {}, { key: own.x.key, ...own.x.inst });

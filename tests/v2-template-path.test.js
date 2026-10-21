@@ -35,6 +35,7 @@ const IDEAS = {
   'card-battle': { idea: 'Slay the Spire in a haunted bakery', game: 'Slay the Spire', themes: [['haunted bakery', 'setting']] },
   launcher: { idea: 'Angry Birds with penguins on an ice shelf', game: 'Angry Birds', themes: [['penguins on an ice shelf', 'theme']] },
   'slide-merge': { idea: '2048 with planets', game: '2048', themes: [['planets', 'theme']] },
+  'falling-blocks': { idea: 'Tetris with books on a library shelf', game: 'Tetris', themes: [['books on a library shelf', 'theme']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 

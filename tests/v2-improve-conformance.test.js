@@ -57,7 +57,7 @@ test('check-primitive --conformance: runs every entry in the worktree; a failing
 test('a candidate in v2/primitives/promoted/ is part of the catalogue the conformance tests check', () => {
   // A copy of the code the tests load (symlinks would resolve to this checkout and its own promoted directory).
   const root = join(tmp, 'copy');
-  for (const d of ['kernel', 'planner', 'primitives', 'verify', 'server', 'templates', 'experiments', 'art']) if (existsSync(join(repo, 'v2', d))) cpSync(join(repo, 'v2', d), join(root, 'v2', d), { recursive: true });
+  for (const d of ['kernel', 'planner', 'primitives', 'verify', 'server', 'templates', 'experiments', 'art', 'web']) if (existsSync(join(repo, 'v2', d))) cpSync(join(repo, 'v2', d), join(root, 'v2', d), { recursive: true });
   cpSync(join(repo, 'v2/PRIMITIVE_CATALOG.md'), join(root, 'v2/PRIMITIVE_CATALOG.md'));
   const entry = CATALOGUE_CONFORMANCE.find(e => e.file.endsWith('modes-bots.test.js'));
   cpSync(join(repo, entry.file), join(root, entry.file));
