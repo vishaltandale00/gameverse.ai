@@ -24,6 +24,7 @@ import race from './race.js';
 import striker from './striker.js';
 import story from './story.js';
 import crawl from './crawl.js';
+import farm from './farm.js';
 import { stagesStrategy } from './stages.js';
 import { boardOf, untilDecision } from './common.js';
 import { threats, velOf, foes } from '../drive.js';
@@ -40,7 +41,7 @@ for (const s of [beam, placement, expectimax, greedy, dangerField, dodge, versus
 // Mode bots added with card.mode: chosen through the modes that name them, not by detection
 // (detection keeps choosing among the strategies above for documents without modes).
 const stages = stagesStrategy(id => strategies.get(id) || null, ctx => select(ctx, { modes: false }).chosen.map(c => c.s));
-for (const s of [turnBoard, race, striker, story, crawl, stages]) register({ ...s, modeOnly: true });
+for (const s of [turnBoard, race, striker, story, crawl, farm, stages]) register({ ...s, modeOnly: true });
 
 // Narrow the overlapping real-time detectors so each document gets the right player:
 // dodge = many moving threats or threats without health (bullets, rocks); versus = a few AI opponents with health.
@@ -106,4 +107,4 @@ export function select(ctx, { only = null, modes = true } = {}) {
   return { chosen, skipped };
 }
 
-export { placement, expectimax, greedy, dangerField, dodge, beam, versus, aim, randomPolicy, balance, turnBoard, race, striker, story, crawl, stages };
+export { placement, expectimax, greedy, dangerField, dodge, beam, versus, aim, randomPolicy, balance, turnBoard, race, striker, story, crawl, farm, stages };

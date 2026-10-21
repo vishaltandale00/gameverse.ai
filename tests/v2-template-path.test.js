@@ -210,9 +210,11 @@ test('tune slots conform to their card specs across all templates: every declare
       let allowed = [];
       if (spec.type === 'number' || spec.type === 'integer') {
         assert.equal(slot.minimum, spec.min, `${s.path}: minimum`); assert.equal(slot.maximum, spec.max, `${s.path}: maximum`);
-        const mid = (spec.min + spec.max) / 2;
-        allowed = [spec.min, spec.max, spec.type === 'integer' ? Math.round(mid) : mid, spec.default].filter(v => v !== undefined);
-        for (const out of [spec.min - 1, spec.max + 1, ...(spec.type === 'integer' ? [spec.min + 0.5] : [])]) assert.equal(accepts(slot, out), false, `${t.id} ${s.path}: ${out} is outside the card's range, so the form does not allow it`);
+        const lo = typeof spec.min === 'number', hi = typeof spec.max === 'number';
+        // An open end is declared too: sample past the declared bound (min + 100, max - 100) on that side.
+        const mid = lo && hi ? (spec.min + spec.max) / 2 : lo ? spec.min + 100 : hi ? spec.max - 100 : (spec.default ?? 0) + 1;
+        allowed = [lo ? spec.min : undefined, hi ? spec.max : undefined, spec.type === 'integer' ? Math.round(mid) : mid, spec.default].filter(v => v !== undefined);
+        for (const out of [...(lo ? [spec.min - 1] : []), ...(hi ? [spec.max + 1] : []), ...(spec.type === 'integer' ? [Math.round(mid) + 0.5] : [])]) assert.equal(accepts(slot, out), false, `${t.id} ${s.path}: ${out} is outside the card's range, so the form does not allow it`);
       } else if (spec.type === 'boolean') allowed = [true, false];
       else if (spec.type === 'string' && spec.options?.length) { assert.deepEqual(slot.enum, spec.options.map(String)); allowed = spec.options; assert.equal(accepts(slot, '__undeclared__'), false); }
       else if (spec.type === 'string') allowed = [spec.default, current[s.key]].filter(v => v !== undefined);

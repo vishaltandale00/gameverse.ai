@@ -10,11 +10,17 @@ import { item as itemDef, tokens, roll, cellDist, cellKey, cellOf, isVec, api as
 const KEY = 'gameplay.farming';
 const parse = v => (isVec(v) ? { cell: v } : v || {});
 const ABOVE = [0, 1, 0];
+// Harvesting a target number of crops wins: a plot ending tests the count ('$target' is a number the content picks).
+const WIN = { when: { count: 'harvested', gte: '$target' }, reads: { event: 'harvested', by: { actions: ['harvest'] } } };
 
 export default {
   id: 'gameplay.farming',
   card: {
-    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: { when: { count: 'harvested', gte: '$target' }, reads: { event: 'harvested', by: { actions: ['harvest'] } } } },
+    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: WIN },
+    // The farm loop, played by an avatar on a cell space against the day clock (crops grow one stage a watered day and
+    // wither out of season); no lose of its own. Its bot (v2/verify/strategies/farm.js) tills, plants, waters and
+    // harvests through the controls a person uses.
+    mode: { loop: 'farm', interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'clock', space: ['engine.space.grid', 'engine.space.tilemap', 'engine.space.voxel', ['editCells']], needs: { content: ['content.items'], participants: null }, win: WIN, lose: { param: null }, bot: 'farm' },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "crops", "min": 2, "why": "farming needs crops: each names its produce item (and seed item) from content.items", "example": [{"item": "turnip", "seed": "turnip_seed", "days": 3}]},
@@ -43,7 +49,7 @@ export default {
       rainWaters: { type: 'boolean', default: true, effect: "var weather = 'rain' waters every crop" },
       wither: { type: 'boolean', default: true, effect: 'crops die when the season leaves their seasons' },
     },
-    provides: { events: ['tilled', 'planted', 'planted:*', 'watered', 'ripened', 'ripened:*', 'harvested', 'harvested:*', 'withered', 'farm_denied'], actions: ['till', 'plant', 'water', 'harvest'] },
+    provides: { events: ['tilled', 'planted', 'planted:*', 'watered', 'ripened', 'ripened:*', 'harvested', 'harvested:*', 'withered', 'farm_denied'], actions: ['till', 'plant', 'water', 'harvest'], services: ['farming'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.items', 'content.blocks'],
   },
