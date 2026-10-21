@@ -73,6 +73,8 @@ test('gate: the launcher\'s feature table (its in-flight ability) is the same un
   const run = budgetMs => verify(doc, registry, logic, { seed: doc.seed, budgetMs, playtest: {}, strategies: {} });
   const huge = await run(1e9), tiny = await onJumpingClock(() => run(1));
   assert.ok(huge.features?.table?.length, 'the gate ran its feature checks');
+  // The first shot has no ability: the probe reaches a later one (a choice taken, play run to the next decision).
+  assert.equal(huge.features.table.find(r => r.use === 'gameplay.launcher')?.verbs?.ability?.works, true, JSON.stringify(huge.features.table.find(r => r.use === 'gameplay.launcher')));
   assert.deepEqual(timeless(tiny.features), timeless(huge.features));
   assert.deepEqual(huge.budget, { ...GATE_BUDGET });
 });

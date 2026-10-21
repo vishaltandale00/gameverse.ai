@@ -84,8 +84,12 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
       if (row.verbs[verb]) continue;
       const r = works(rt, verb, declared, picked, moves, frames, stepsPerVerb);
       row.verbs[verb] = { controllable: true, works: r.works, ...(r.event ? { event: r.event } : {}), tried: r.tried };
-      if (!r.works && !r.tried) { row.verbs[verb].reached = false; warn('feature_unreached', `${f.use}: no state play reached offers a value for '${verb}' (nothing to choose in this game yet)`, verb); continue; }
-      if (!r.works) fail(r.tried ? 'feature_inert' : 'feature_unreached', r.tried ? `${f.use}: pressing '${verb}' produced none of its events (${declared.slice(0, 6).join(', ')}) from ${r.tried} tries over ${picked.length} reached states` : `${f.use}: no reached state offers a value for '${verb}'`, verb);
+      // Blocking needs evidence (ARCHITECTURE §1.5, §6.3: a crash, a control that does nothing when pressed): a verb
+      // pressed and inert is a defect (feature_inert, an error); a verb never tried, because no reached state offered it
+      // a value, is no evidence either way (the loop's events still have to fire from play, the gate checks that), so
+      // it is a warning (feature_unreached), like the explorer's goal_not_reached.
+      if (!r.works && !r.tried) { row.verbs[verb].reached = false; warn('feature_unreached', `${f.use}: no state play reached gives '${verb}' a value to act on (nothing to choose in this game yet)`, verb); continue; }
+      if (!r.works) fail('feature_inert', `${f.use}: pressing '${verb}' produced none of its events (${declared.slice(0, 6).join(', ')}) from ${r.tried} tries over ${picked.length} reached states`, verb);
     }
     if (!f.verbs.length) row.events = declared.slice(0, 8);
     table.push(row);
