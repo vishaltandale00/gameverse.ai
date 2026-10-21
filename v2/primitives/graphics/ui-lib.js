@@ -11,8 +11,6 @@ import { hslToRgb, rgbToHex } from '../../art/color.js';
 
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
-/** setTimeout that never keeps a Node test process alive (UI primitives use host.later, which the view releases). */
-function later(fn, ms) { const t = setTimeout(fn, ms); t?.unref?.(); return t; }
 export const isNum = v => typeof v === 'number' && Number.isFinite(v);
 
 /** Stable 0..359 hue from a string (names, ids). */
@@ -106,8 +104,8 @@ export function uiHost(rt) {
   const settings = loadSettings();
   // What the UI holds outside its own DOM (listeners on window/document, timers), released with the view
   // (view.onDispose: the host unloads or rebuilds the game; ARCHITECTURE §1.7).
-  const listening = [], timers = new Set();
-  let disposed = false;
+  const listening = [], timers = new Map();
+  let disposed = false, timerSeq = 0;
   host = {
     rt, view, doc, root, settings,
     /** Presentation clock in seconds; view.now() is the host's display clock in ms (v2/web/player.js). */
@@ -120,13 +118,15 @@ export function uiHost(rt) {
       listening.push(entry);
       return () => { const i = listening.indexOf(entry); if (i >= 0) { listening.splice(i, 1); target.removeEventListener(type, fn, options); } };
     },
-    /** A presentation timer (fades, toasts, banners), cleared when the view is disposed. */
+    /**
+     * A presentation timer (fades, toasts, banners) on the host's display clock: it fires on the first display frame
+     * `ms` after now, so it follows the frames the host draws and goes with the view. -> an id for clearLater.
+     */
     later(fn, ms) {
       if (disposed) return null;
-      const t = later(() => { timers.delete(t); fn(); }, ms);
-      timers.add(t); return t;
+      const id = ++timerSeq; timers.set(id, { at: host.now() + (Number(ms) || 0) / 1000, fn }); return id;
     },
-    clearLater(t) { if (t != null) { clearTimeout(t); timers.delete(t); } },
+    clearLater(id) { timers.delete(id); },
     get disposed() { return disposed; },
     /** Release everything this UI holds outside its DOM and take its overlay out of the container. */
     dispose() {
@@ -134,7 +134,6 @@ export function uiHost(rt) {
       disposed = true;
       host.input.dispose();
       for (const [target, type, fn, options] of listening.splice(0)) target.removeEventListener(type, fn, options);
-      for (const t of timers) clearTimeout(t);
       timers.clear(); handlers.clear(); holds.clear();
       root.remove();
       HOSTS.delete(view);
@@ -171,7 +170,10 @@ export function uiHost(rt) {
   view.onDispose?.(() => host.dispose());
   root.classList.toggle('gv-reduced', Boolean(settings.reducedMotion));
   root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
-  view.onFrame?.(() => { host.input.sync(); host.input.poll(); });
+  view.onFrame?.(() => {
+    host.input.sync(); host.input.poll();
+    if (timers.size) { const t = host.now(); for (const [id, x] of [...timers]) if (x.at <= t && timers.delete(id)) x.fn(); }
+  });
   HOSTS.set(view, host);
   return host;
 }

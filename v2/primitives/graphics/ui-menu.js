@@ -296,7 +296,7 @@ export default {
     function showBanner(text, kicker = '') { if (!config.banners) return; fill(banner, kicker ? el('div.gv-banner-kicker', { text: kicker }) : null, el('div.gv-banner-line'), el('div.gv-banner-title', { text }), el('div.gv-banner-line')); }
 
     // ------------------------------------------------------------- wiring
-    if (config.pause) host.input.hotkey('menu', () => { if (!stack.length && started && !ended) SCREENS.pause(); });
+    if (config.pause) host.input.hotkey('menu', () => { if (!stack.length && started && !ended) SCREENS.pause(); }, { overModal: true });
     if (config.autoPause) host.listen(host.doc, 'visibilitychange', () => { if (host.doc.visibilityState === 'hidden' && !stack.length && started && !ended && config.pause) SCREENS.pause(); });
     for (const s of config.select.filter(x => x.on !== 'start')) rt.on(s.on, () => { if (!stack.length) SCREENS.select(s); else selectQueue.push(s); });
     if (config.vs) rt.on('match_start', e => { const f = e.fighters || e.sides; if (f?.length >= 2) SCREENS.vs(f); });

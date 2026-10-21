@@ -254,6 +254,9 @@ function install(rt, config) {
   const stops = [];
   const gesture = () => { if (unlock()) for (const stop of stops.splice(0)) stop(); };
   stops.push(host.listen(win, 'pointerdown', gesture, true), host.listen(win, 'keydown', gesture, true));
+  // A page the person has already interacted with may start audio at once: a hot-loaded version (view.continuing)
+  // keeps playing sound without waiting for another key.
+  if (rt.view.continuing || globalThis.navigator?.userActivation?.hasBeenActive) gesture();
 
   // Collect every step's events (the host may run several steps per display frame).
   rt.on('*', e => { if (pending.length < 256) pending.push(e); });

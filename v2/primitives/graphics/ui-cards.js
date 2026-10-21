@@ -67,12 +67,13 @@ export default {
         if (verb === 'left' || verb === 'right') { targeting.i = (targeting.i + (verb === 'left' ? -1 : 1) + targeting.ids.length) % targeting.ids.length; paintTargets(); host.sound('move'); }
         else if (verb === 'confirm') play(targeting.card, targeting.ids[targeting.i]);
         else if (verb === 'back') { targeting = null; paintTargets(); host.sound('back'); }
+        else return false;
         return true;
       }
       if (verb === 'left' || verb === 'right' || verb === 'up' || verb === 'down') { const list = focusables(); const i = moveFocus(focus, verb === 'up' ? 'left' : verb === 'down' ? 'right' : verb, list.length, 1); if (i !== focus) { focus = i; paintFocus(); host.sound('move'); } return true; }
       if (verb === 'confirm') { focusables()[focus]?._run?.(); return true; }
       if (verb === 'next') { endTurn(); return true; }
-      return true;
+      return false; // not handled: the pause menu's key reaches it
     }
     function choose(c) {
       if (!c.playable) { host.sound('error'); pulse(cardNodes[view.hand.indexOf(c)] || hand, 'is-shake'); return; }

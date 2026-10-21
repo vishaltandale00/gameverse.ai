@@ -118,7 +118,7 @@ export default {
       if (verb === 'confirm') return run(machine.confirm());
       if (['up', 'down', 'left', 'right'].includes(verb)) { if (machine.move(verb)) host.sound('move'); return true; }
       const d = /^digit(\d)$/.exec(verb); if (d) return run(machine.pick(Number(d[1])));
-      return verb === 'back' ? true : false;
+      return false; // back and the rest are not handled here: the pause menu's key reaches it
     }
     function run(cmd) {
       if (!cmd) return true;
