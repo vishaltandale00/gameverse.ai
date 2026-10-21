@@ -21,6 +21,7 @@ function envelope(config) { return { mode: 'ship', run: config.mode === 'inertia
 export default {
   id: ID,
   card: {
+    locomotion: 'base', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Ship controls for shmups and arena shooters: rail (side to side), eight-way, twin-stick (separate aim with auto-aim) or inertial Asteroids flight (rotate, thrust, drag, wraparound), with a slow focus mode and hyperspace jumps, clamped to or wrapping around the play bounds.',
     views: ['td', 'side'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, aim: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

@@ -12,6 +12,7 @@ function envelope(config) { return { mode: 'continuous', dash: config.distance, 
 export default {
   id: ID,
   card: {
+    locomotion: 'modifier', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Dodge: a roll, dash or backstep that covers a set distance over a set time with an invulnerability window, costs stamina, and leaves a short recovery. Direction comes from the stick, the facing, or always backwards.',
     views: ['3p', 'side', 'td', 'iso', '1p'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

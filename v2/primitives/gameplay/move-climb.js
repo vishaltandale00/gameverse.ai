@@ -19,6 +19,7 @@ function envelope(config, abilities = new Set()) {
 export default {
   id: ID,
   card: {
+    locomotion: 'modifier', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Climb ladders and climbable walls: push into or grab a surface to climb up, down and sideways at a set speed, drain stamina while climbing, jump off, slip when exhausted, and mantle over the top. Surfaces are ladders, any steep wall, or cells/zones carrying climb tags.',
     views: ['1p', '3p', 'side', 'iso'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

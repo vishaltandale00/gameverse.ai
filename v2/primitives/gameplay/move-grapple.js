@@ -17,6 +17,7 @@ function envelope(config, abilities = new Set()) {
 export default {
   id: ID,
   card: {
+    locomotion: 'modifier', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Grapple hook: fire along the aim to hook a surface within range, then swing on the rope like a pendulum (reel in and out) or get pulled straight to the anchor. Release to fly off with your momentum. Anchors can be limited to tagged cells.',
     views: ['side', '3p', '1p'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, aim: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

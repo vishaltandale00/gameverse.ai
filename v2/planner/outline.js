@@ -158,15 +158,14 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
     // The space may be right and only movement missing: add the movement primitive that fits it best (a card with a
     // movement envelope whose capabilities the space provides and whose views fit), before giving the space up.
     if (o.ok && !(fp?.errors || []).some(e => e.code !== 'no_options')) {
-      const space = current.spaces[0], caps = new Set(space.caps || []), views = new Set([...(registry.get(space.use)?.card.views || []), ...(decomposition.views || [])]);
-      const movers = registry.cards('gameplay').filter(c => (c.envelope || registry.get(c.id).envelope) && !current.systems.includes(c.id) && (c.requires?.capabilities || []).every(x => caps.has(x)))
-        .map(c => {
-          // Fit: views, how specialised it is to this space (capabilities it needs and gets), and its own reach there.
-          let env = {}; try { const f = c.envelope || registry.get(c.id).envelope; env = (typeof f === 'function' ? f(defaultsOf(c), new Set(), {}) : f) || {}; } catch { env = {}; }
-          const reach = (env.run > 0 ? 2 : 0) + (caps.has('gravity') ? Math.min(4, env.jumpHeight || 0) : 0);
-          return { id: c.id, score: (c.views || []).filter(v => views.has(v)).length * 2 + ((c.views || []).includes(decomposition.views?.[0]) ? 3 : 0) + (c.requires?.capabilities || []).length * 1.5 + reach };
-        })
-        .filter(c => c.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 3);
+      const space = current.spaces[0], caps = new Set(space.caps || []);
+      // The idea's primary view decides the kind of movement (td -> top-down, side -> platformer...): a mover must support
+      // it. Ties go to the mover that asks least of the space, never to the one with the biggest jump.
+      const primary = (decomposition.views || []).find(v => v !== 'ui') || null;
+      const movers = registry.cards('gameplay').filter(c => c.locomotion === 'base' && (c.envelope || registry.get(c.id).envelope) && !current.systems.includes(c.id) && (c.requires?.capabilities || []).every(x => caps.has(x))
+          && (!primary || (c.views || []).includes(primary) || (c.views || []).includes('any')))
+        .map(c => ({ id: c.id, score: ((c.views || []).includes(primary) ? 10 : 1) - (c.requires?.capabilities || []).length * 0.1 }))
+        .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 3);
       let moved = null;
       for (const m of movers) {
         const sel = { ...current, systems: [...current.systems, m.id].sort((a, b) => (a.startsWith('engine.') ? 0 : a.startsWith('gameplay.') ? 1 : 2) - (b.startsWith('engine.') ? 0 : b.startsWith('gameplay.') ? 1 : 2) || a.localeCompare(b)) };

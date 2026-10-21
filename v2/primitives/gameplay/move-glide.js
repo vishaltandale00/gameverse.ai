@@ -13,6 +13,7 @@ function envelope(config, abilities = new Set()) {
 export default {
   id: ID,
   card: {
+    locomotion: 'modifier', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Glide while falling: hold glide (or jump) in the air to cap your fall speed and sail forward, spending stamina; updraft cells or zones lift you. Gate it behind an ability to make it a progression unlock.',
     views: ['3p', '1p', 'side', 'iso'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
