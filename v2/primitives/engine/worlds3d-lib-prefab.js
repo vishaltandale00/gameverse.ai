@@ -156,6 +156,17 @@ const ROLE_DEFAULTS = {
   foundation: ['cobblestone', 'stone'], floor: ['planks', 'concrete', 'stone'], wall: ['planks', 'brick', 'stone'], window: ['glass'], roof: ['planks', 'brick', 'stone'],
   trim: ['log', 'cobblestone', 'stone'], post: ['log', 'planks', 'stone'], deck: ['planks', 'stone'], fence: ['planks', 'log'], light: ['lamp', 'neon', 'glass'], ladder: ['ladder'], decor: ['cobblestone', 'gravel', 'stone'],
 };
+/** A role -> block override map (structures place[].palette, city styles): the voxel block a prefab builds each role with. */
+export const paletteShape = (extra = {}) => ({ type: 'object', ...extra, fields: Object.fromEntries(Object.keys(ROLE_DEFAULTS).map(role => [role, { type: 'ref', to: 'block', effect: `voxel block for ${role} parts` }])) });
+/** A prefab part (the header's Part), as content.structures entries declare their parts: an oriented box (size) or a cylinder (r). */
+export const PART_SHAPE = { type: 'object', fields: {
+  role: { type: 'string', required: true, effect: 'material role: foundation floor wall window roof trim post deck fence light ladder decor (solid), door carve (air)' },
+  c: { type: 'list', of: { type: 'number' }, min: 2, max: 2, required: true, unit: 'm', effect: 'centre [x, z] in structure-local metres (front door at +z)' },
+  y: { type: 'list', of: { type: 'number' }, min: 2, max: 2, required: true, unit: 'm', effect: '[bottom, top] above the structure floor' },
+  size: { type: 'list', of: { type: 'number', min: 0 }, min: 2, max: 2, unit: 'm', effect: 'box [width, depth] (a box part)' },
+  r: { type: 'number', min: 0, unit: 'm', effect: 'cylinder radius (a cylinder part)' },
+  rot: { type: 'number', unit: 'rad', effect: 'box yaw relative to the structure' },
+} };
 const STYLE_WORDS = [
   [/glass/, { wall: ['glass', 'concrete'], window: ['glass'], floor: ['concrete'], roof: ['concrete'], trim: ['steel_beam', 'concrete'] }],
   [/brick|historic/, { wall: ['brick'], roof: ['brick', 'stone'], trim: ['stone', 'cobblestone'], floor: ['planks'] }],
@@ -170,7 +181,7 @@ const STYLE_WORDS = [
 export function stylePalette(style = '', known, overrides = {}, problem) {
   const words = STYLE_WORDS.filter(([re]) => re.test(style)).map(([, v]) => v), out = {};
   for (const role of Object.keys(ROLE_DEFAULTS)) {
-    const cand = [...[].concat(overrides[role] ?? []), ...words.flatMap(w => w[role] || []), ...ROLE_DEFAULTS[role]];
+    const cand = [...(overrides[role] !== undefined ? [overrides[role]] : []), ...words.flatMap(w => w[role] || []), ...ROLE_DEFAULTS[role]];
     out[role] = known.size ? cand.find(c => known.has(c)) ?? (known.has('stone') ? 'stone' : [...known][0]) : cand[0];
     if (known.size && overrides[role] && !known.has(overrides[role])) problem?.('block_unknown', `style '${style}' ${role} block '${overrides[role]}' is not in content.blocks`);
   }

@@ -35,6 +35,7 @@ const card = {
   provides: { content: ['biomes'], extent: 'space', services: ['biomeAt'], events: [] },
   defines: [{ kind: 'biome', in: 'biomes' }],
   reads: [],
+  rules: { biome_range_invalid: { fields: ['biomes[].temp', 'biomes[].moist'], message: 'temp and moist are [low, high] ranges with low ≤ high' } },
 };
 
 export default {
@@ -53,10 +54,8 @@ export default {
     });
   },
   validate(config) {
-    const errors = [], ids = new Set();
-    config.biomes?.forEach((b, i) => {
-      if (ids.has(b.id)) errors.push({ code: 'id_duplicate', path: `with.biomes[${i}].id`, message: `duplicate biome '${b.id}'` });
-      ids.add(b.id);
+    const errors = [];
+    (Array.isArray(config.biomes) ? config.biomes : []).forEach((b, i) => {
       for (const k of ['temp', 'moist']) if (b[k] && b[k][0] > b[k][1]) errors.push({ code: 'biome_range_invalid', path: `with.biomes[${i}].${k}`, message: `${k} range must be [low, high]` });
     });
     return errors;
