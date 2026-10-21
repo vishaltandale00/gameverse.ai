@@ -165,11 +165,13 @@ templates: their samples become template content and their bots already live in 
 
 ```
 idea
- → template pick (1 model call, strict form): title, premise, and the concepts the idea names, each with
-     kind (game | genre | theme | setting | character), template (enum of template ids, or 'none') and relation
-     (primary | nested | union | theme). Code checks: exactly one primary; nested only onto a primary whose
-     loop declares an entry event (card.loop.involves); a game or genre concept with 'none' goes to the
-     step path. The chosen templates' declarations ARE the play spec; nothing is asked twice.
+ → template pick (1 model call, strict form whose shape makes structural mistakes inexpressible): title,
+     premise, ONE primary (kind game | genre, template: enum of template ids or 'none'), other games
+     (kind game | genre, template, relation nested | union) and themes (kind theme | setting | character, no
+     template). A named game and its genre are one concept. The templates are offered grouped by the loops
+     their cards declare. Code checks what needs the registry: nested only onto a primary whose loop
+     declares an entry event (card.loop.involves). A game or genre with 'none' goes to the step path. The
+     chosen templates' declarations ARE the play spec; nothing is asked twice.
  → composition (code, instant): the primary template's document; theme: no adapter, the theme goes to the
      content forms; nested: the inner template appended (prefixed ids) with engine.adapt.nested wired from
      declarations, plus engine.adapt.skin when the inner concept's content maps onto an outer contract; union:

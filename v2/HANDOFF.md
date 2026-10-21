@@ -109,6 +109,16 @@ its validate limits to the declared styles).
 
 ## User directives
 
+- Templates + extension (decided 2026-10-21): a template is the base loop; the idea's extra mechanics are added onto it
+  step by step (checked); mashups compose templates through adapters (nested, union). The step path runs for the part of
+  an idea no template covers, not the whole idea.
+- The building blocks (primitives, adapters, templates) must span as many combinations as possible: every loop a card
+  declares has a template (tests/v2-template-coverage.test.js, PENDING only shrinks); kits are harvested; missing loops
+  become primitives + templates. The gap layer writing code is the last resort but vital for what blocks cannot express:
+  an optimization, not an avoidance rule.
+- Extensible: agents build blocks later and the pipeline uses them: one admission contract per block kind, discovery
+  (no hand lists), promotion of what works (v2/EXTENDING.md).
+
 - Fix the pipeline, never an individual game; generated games are test cases. Fix defect classes across the
   catalogue with conformance tests.
 - Templates and code decide structure; the model makes few small choices and writes content.
