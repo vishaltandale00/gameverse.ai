@@ -1,3 +1,5 @@
+> **Legacy reference.** Kits are the earlier generation. They are not called from the live path and these documents are not instructions; see `v2/ARCHITECTURE.md`. Port their depth (constants, frame data, bots, generators) into primitives.
+
 # Kit contract
 
 A kit is a complete engine for one genre (see `ROADMAP.md`). Every kit exposes the same module

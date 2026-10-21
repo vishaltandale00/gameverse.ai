@@ -1,3 +1,5 @@
+> **Legacy reference.** Kits are the earlier generation. They are not called from the live path and these documents are not instructions; see `v2/ARCHITECTURE.md`. Port their depth (constants, frame data, bots, generators) into primitives.
+
 # Genre kits: roadmap to popular arcade and 2000s–2010s games
 
 **Goal.** Any popular arcade game, or any game from 2000–2019, can be asked for and comes out as a

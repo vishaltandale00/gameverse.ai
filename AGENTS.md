@@ -38,3 +38,7 @@ Use the five default triage labels. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Single-context: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+
+## v2 game engine
+
+Work under `v2/` follows `v2/ARCHITECTURE.md` as the specification and the rules in `CLAUDE.md`: fix defect classes at their root across the whole catalogue, never individual games; cards are the single source of truth for forms, repair and validation; no fallbacks, defaults standing in for decisions, templates or workarounds; verification is the static and conformance checks plus the playtest bot playing through real controls.

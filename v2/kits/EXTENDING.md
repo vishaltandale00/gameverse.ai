@@ -1,3 +1,5 @@
+> **Legacy reference.** Kits are the earlier generation. They are not called from the live path and these documents are not instructions; see `v2/ARCHITECTURE.md`. Port their depth (constants, frame data, bots, generators) into primitives.
+
 # Extending games beyond their kit
 
 A request a kit can't express, like "add a Tetris mechanic to Breakout", has three ways forward,

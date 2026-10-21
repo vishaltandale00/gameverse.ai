@@ -159,7 +159,7 @@ Each workstream owns:
 - tests named `tests/v2-p-<area>-*.test.js`.
 
 **Shared files.**
-- **Kernel files are frozen.** Do not edit `v2/kernel/*`. Write kernel requests to `v2/kernel/requests/<area>.md`, with a workaround inside your own files.
+- **Kernel changes are contract changes.** When a defect or a missing capability is in the kernel, fix it in the kernel: update this document and the kernel types, and add a kernel test. Never work around a kernel defect inside primitive or planner code.
 - **Example documents.** `v2/games/*.json` may be edited only within the instances (`with`) and data sections your primitives own.
 - **Catalog.** Don't edit `PRIMITIVE_CATALOG.md`. Your cards are regenerated into it.
 
