@@ -18,7 +18,7 @@ import { isObj, isStr, list } from '../kernel/guards.js';
 /** @typedef {{ mode: string, relation: string, why: string }} Secondary */
 /**
  * The play spec (decomposition.core).
- * @typedef {{ mode: string, interaction: string, opponent: string, win: string, lose: string, theme: string, narrative: boolean, secondary: Secondary[] }} Core
+ * @typedef {{ mode: string, interaction: string, opponent: string, win: string, lose: string, theme: string, narrative: boolean, secondary: Secondary[], problem?: string }} Core
  */
 
 export const MODES_VERSION = 'modes/0.1';
@@ -106,9 +106,12 @@ export function coreOffline(decomposition, registry, text = '') {
 export function normalizeCore(core, registry) {
   if (!isObj(core)) return null;
   const ids = new Set(modeIds(registry));
-  const mode = isStr(core.mode) && ids.has(core.mode) ? core.mode : STORY;
+  // An unknown mode is a reported failure (`problem`), never a quiet switch to the story loop.
+  const known = isStr(core.mode) && ids.has(core.mode);
+  const mode = known ? String(core.mode) : isStr(core.mode) && core.mode ? core.mode.slice(0, 80) : STORY;
   return {
     mode,
+    ...(isStr(core.mode) && core.mode && !known ? { problem: `unknown mode '${mode}': no catalogue card declares it` } : {}),
     interaction: isStr(core.interaction) && INTERACTIONS.includes(core.interaction) ? core.interaction : 'avatar-realtime',
     opponent: isStr(core.opponent) && OPPONENTS.includes(core.opponent) ? core.opponent : 'none',
     win: String(core.win || '').slice(0, 200), lose: String(core.lose || '').slice(0, 200), theme: String(core.theme || '').slice(0, 120),
