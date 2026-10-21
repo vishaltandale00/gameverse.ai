@@ -126,8 +126,12 @@ test('turns: deterministic replay and restore', () => {
 test('turns: preflight rejects bad configs with stable codes', () => {
   const registry = new Registry(P), logic = buildLogic(registry, Logic);
   const bad = tactics({ order: 'chaos', sides: [{ id: 'a' }, { id: 'a' }], actions: [{ id: 'move' }, { id: 'zap', range: 1, minRange: 3 }, { id: 'zap2', phase: 'nope' }, { id: 'buff', target: 'self', hit: { base: 50 } }], overwatchAction: 'buff', phases: [{ id: 'x' }, { id: 'x' }] });
-  const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
-  for (const c of ['param_option', 'turns_sides', 'turns_action', 'turns_phase', 'turns_overwatch']) assert.ok(codes.has(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = new Set(errors.map(e => e.code));
+  for (const c of ['param_option', 'turns_action', 'turns_overwatch']) assert.ok(codes.has(c), c);
+  // Sides, actions and phases are kinds the card defines: repeated ids are the kernel's id_duplicate, a reserved action id
+  // param_reserved, an unknown phase ref_unknown (they were turns_sides / turns_action / turns_phase).
+  const at = new Set(errors.map(e => `${e.code}@${e.path.replace(/^systems\[\d+\]\.with\./, '')}`));
+  for (const c of ['id_duplicate@sides[1].id', 'id_duplicate@phases[1].id', 'param_reserved@actions[0].id', 'ref_unknown@actions[2].phase']) assert.ok(at.has(c), c);
   assert.ok(preflight(tactics(), registry, logic).ok);
 });
 

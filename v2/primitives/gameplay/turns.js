@@ -21,13 +21,13 @@ import { pushModal, popModal, withDefaults, alive, hpOf, matchesAny, sortedEntit
 const ID = 'gameplay.turns';
 const DEFAULT_SIDES = [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'ai', members: [] }];
 const ACTION_FIELDS = {
-  id: { type: 'string', required: true, reserved: ['move', 'overwatch', 'pass'] }, label: { type: 'string' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
+  id: { type: 'string', required: true, reserved: ['move', 'overwatch', 'pass'] }, label: { type: 'string', display: true, effect: 'the action name a person reads' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
   range: { type: 'number', default: 1, min: 0, max: 1e6 }, minRange: { type: 'number', default: 0, min: 0, max: 1e6 },
   target: { type: 'string', options: ['unit', 'cell', 'self', 'none'], default: 'unit' }, hostile: { type: 'boolean', default: true },
   los: { type: 'boolean', default: true, effect: 'unit targets must be in line of sight when the space has los' },
   endsTurn: { type: 'boolean', default: false }, priority: { type: 'integer', default: 0, min: -10, max: 10 },
   cooldown: { type: 'integer', default: 0, min: 0, max: 99, unit: 'turns' }, uses: { type: 'integer', default: 0, min: 0, max: 999, effect: '0 = unlimited' },
-  phase: { type: 'string', effect: 'only legal in this phase' }, when: { type: 'predicate', effect: 'legal when (self = actor)' },
+  phase: { type: 'ref', to: 'turn_phase', effect: 'only legal in this phases[] phase' }, when: { type: 'predicate', effect: 'legal when (self = actor)' },
   hit: { type: 'object', fields: { base: { type: 'number', default: 65 }, cover: { type: 'list', of: { type: 'number' }, default: [0, 20, 40] }, optimal: { type: 'number' }, falloff: { type: 'number', default: 0 }, min: { type: 'number', default: 5 }, max: { type: 'number', default: 95 }, flank: { type: 'number', default: 0, effect: 'bonus vs a target with no cover' } } },
   crit: { type: 'object', fields: { chance: { type: 'number', default: 0, min: 0, max: 100 }, flankBonus: { type: 'number', default: 0 } } },
   do: { type: 'effects', default: [], effect: 'always run' }, onHit: { type: 'effects', default: [] }, onCrit: { type: 'effects', default: [], effect: 'run on a crit (in addition to onHit)' }, onMiss: { type: 'effects', default: [] },
@@ -103,11 +103,17 @@ export default {
       actions: ['turn_act', 'turn_move', 'end_turn', 'next_phase', 'select_unit'],
     },
     requires: {},
-    defines: [{ kind: 'turn_action', in: 'actions' }],
+    defines: [{ kind: 'turn_action', in: 'actions' }, { kind: 'turn_side', in: 'sides' }, { kind: 'turn_phase', in: 'phases' }],
     reads: [],
+    rules: {
+      turns_action: { fields: ['actions[].minRange', 'actions[].range', 'actions[].target', 'actions[].hit', 'actions[].onHit', 'actions[].onMiss'], message: 'an action\'s minRange is at most its range, and hit rolls (hit, onHit, onMiss) belong to unit or cell targets',
+        example: { doc: { systems: [{ use: ID, with: { sides: [{ id: 'light', control: 'player' }, { id: 'dark', control: 'ai' }], actions: [{ id: 'zap', range: 1, minRange: 3 }] } }] } } },
+      turns_overwatch: { fields: ['overwatchAction', 'actions'], message: 'overwatchAction names an actions[] action whose target is unit' },
+    },
   },
   logic(logic) {
     logic.predicate('turn', {
+      codes: [{ code: 'turn_state', fields: ['state'], message: 'state is active or over', example: { turn: true, state: 'paused' } }],
       check: (p, path, errors) => { if (p.state !== undefined && !['active', 'over'].includes(p.state)) errors.push(err('turn_state', `${path}.state`, 'state must be active|over')); },
       test: (p, rt) => {
         const s = rt.state.prim[ID];
@@ -129,17 +135,12 @@ export default {
     logic.effect('set_overwatch', { run: (e, rt, c) => { const u = rt.store(ID).units?.[rt.resolve(e.who, c)?.id]; if (u) u.ow = e.on ?? true; } });
   },
   validate(config) {
-    const errors = [], sides = new Set(), acts = new Set(), phases = new Set();
-    config.sides.forEach((s, i) => { if (sides.has(s.id)) errors.push(err('turns_sides', `with.sides[${i}].id`, `duplicate side '${s.id}'`)); sides.add(s.id); });
-    if (config.order !== 'simultaneous' && config.sides.length < 1) errors.push(err('turns_sides', 'with.sides', 'needs at least one side'));
+    // Side, action and phase ids are kinds the card defines (unique, slugs; action ids not reserved): the kernel checks them.
+    const errors = [];
     config.actions.forEach((a, i) => {
-      if (acts.has(a.id) || a.id === 'move' || a.id === 'overwatch' || a.id === 'pass') errors.push(err('turns_action', `with.actions[${i}].id`, `action id '${a.id}' is duplicate or reserved (move, overwatch, pass)`));
-      acts.add(a.id);
       if (a.minRange > a.range) errors.push(err('turns_action', `with.actions[${i}].minRange`, 'minRange exceeds range'));
       if (a.target !== 'unit' && (a.hit || a.onHit?.length || a.onMiss?.length) && a.target !== 'cell') errors.push(err('turns_action', `with.actions[${i}].hit`, `hit rolls need a unit or cell target, not '${a.target}'`));
     });
-    config.phases.forEach((p, i) => { if (phases.has(p.id)) errors.push(err('turns_phase', `with.phases[${i}].id`, `duplicate phase '${p.id}'`)); phases.add(p.id); });
-    config.actions.forEach((a, i) => { if (a.phase && !phases.has(a.phase)) errors.push(err('turns_phase', `with.actions[${i}].phase`, `unknown phase '${a.phase}'`)); });
     if (config.overwatchAction && !config.actions.some(a => a.id === config.overwatchAction && a.target === 'unit')) errors.push(err('turns_overwatch', 'with.overwatchAction', `overwatchAction '${config.overwatchAction}' must be a unit-target action`));
     return errors;
   },
