@@ -49,7 +49,12 @@ test('inventory: stacks, slot limits, per-entity bags, typed events and transfer
   assert.equal(rt.state.counts['item_lost:apple'], 1);
   const bad = doc({ systems: [{ use: 'gameplay.inventory', with: { slots: 0, start: [{ item: 'ghost' }] } }], content: { items: [{ id: 'x', name: 'X', stack: 0 }], archetypes: [hero, { id: 'n', components: { inventory: { start: [{ item: 'nope' }] } } }] } });
   const c = codes(checkWith(bad));
-  for (const code of ['param_range', 'ref_unknown', 'item_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // An item's stack and a component's start items are content.items' and the inventory component's declared shapes,
+  // reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the
+  // validator's ref_unknown were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.items[0].stack', 'ref_unknown@content.archetypes[1].components.inventory.start[0].item']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.inventory')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -77,7 +82,11 @@ test('item.use: effects, cooldowns, consumption and denial reasons', () => {
   assert.ok(rt.availableOptions().some(o => o.actions.use_item === 'notch'));
   const bad = kit(); bad.content.items[0].use.cooldown = -1; bad.content.items[2].use.fx.push({ do: 'teleport_home' }); bad.systems[1].with = { cooldown: 'soon' };
   const c = codes(checkWith(bad));
-  for (const code of ['item_invalid', 'effect_unknown', 'param_type']) assert.ok(c.includes(code), code);
+  assert.ok(c.includes('param_type'));
+  // An item's use block is content.items' declared shape (items-lib ITEM.use): cooldown and fx are checked at their paths
+  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the validator's effect check were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.items[0].use.cooldown', `effect_unknown@content.items[2].use.fx[${bad.content.items[2].use.fx.length - 1}]`]) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.item.use')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -129,7 +138,12 @@ test('equipment: replay, bad config codes and game instances', () => {
   bad.systems[2].with.budget.slots = ['ring'];
   bad.content.archetypes[0].components.equipment.slots.push('tail');
   const c = codes(checkWith(bad));
-  for (const code of ['id_duplicate', 'param_range', 'equipment_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['id_duplicate', 'param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // Slots are a declared kind (card.defines equip_slot): duplicate ids are the kernel's id_duplicate, and budget.slots and
+  // components.equipment.slots are references to it (ref_unknown where equipment_invalid was; the component's at its
+  // path, a warning until kernel/document.js DECLARATIONS_ENFORCED).
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  assert.ok(at.some(x => x.startsWith('ref_unknown@content.archetypes[0].components.equipment.slots[')), at);
   for (const x of gameInstances('gameplay.equipment')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 

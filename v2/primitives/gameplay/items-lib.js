@@ -39,6 +39,8 @@ export const ITEM = Object.freeze({
   }, effect: 'a usable item (gameplay.item.use)' },
   creature: { type: 'object', fields: { kind: { type: 'string', options: ['ball', 'heal', 'status', 'revive'], required: true, effect: 'ball catches; heal restores hp; status cures; revive brings a fainted creature back' }, value: { type: 'number', min: 0, effect: 'catch bonus (ball), hp or hp fraction <= 1 (heal, revive)' } }, effect: 'a creature-battle item' },
 });
+/** The item fields tokens() reads: a card matching item tokens (accepts, buys, tag recipe inputs, item_tag) reads them. */
+export const TOKEN_FIELDS = Object.freeze(/** @type {Array<keyof typeof ITEM>} */ (['kind', 'tags', 'ingredient', 'armor', 'tool', 'weapon', 'charm', 'block']));
 /** The card.data of a card that reads these content.items fields. @param {Array<keyof typeof ITEM>} fields */
 export const itemsData = fields => ({ 'content.items': { type: 'list', of: { type: 'object', open: true, fields: Object.fromEntries(fields.map(f => [f, ITEM[f]])) } } });
 
