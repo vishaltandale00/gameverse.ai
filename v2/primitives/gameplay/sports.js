@@ -15,12 +15,16 @@ const STATES = ['kickoff', 'play', 'goal', 'break', 'over', 'won', 'lost', 'draw
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
+    // The archetype its `ball` param names reads as a ball on screen (graphics/flat-art.js; never its name).
+    presents: { ball: { role: 'prop', vector: 'orb' } },
+    // Whose side its entities are on, as a person sees it (graphics/allegiance.js).
+    sides: { param: 'teams', members: 'members' },
+    loop: { shows: ['entities', 'zones'], verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
     // The player plays: it joins the first team when no team lists it.
     engage: { join: { param: 'teams', field: 'members' } },
     // Ball-sport mode: the player's team scores into goal zones against the other team before the clock runs out.
     // Its target service (mode.targets): every team member but the player goes for the ball while play is live.
-    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, targets: 'sports.targets', win: { param: 'onWin', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
+    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, targets: 'sports.targets', win: { param: 'onWin', end: 'endGame', shown: { var: 'score.*' }, reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', shown: { var: 'score.*' }, reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
     intent: 'Ball sports: ball, teams, goal zones, kickoffs, match clock with periods and overtime (golden goal or extra time), mercy rule, kicks, touches and last-touch scoring, possession; the ball rides the physics space when it has dynamics, else it is simulated here with drag, gravity, bounces and hits from players and cars.',
     views: ['td', 'side', '3p'],
     params: {

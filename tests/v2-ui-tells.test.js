@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { hostDocument } from '../v2/web/host-doc.js';
+import { uiControls, loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
 import { tellsOf, tellWords } from '../v2/primitives/graphics/ui-lib.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 import { mount } from './v2-p-ui-dom.js';
@@ -34,7 +35,10 @@ test('every card.tells entry names an event its card provides, a section it read
 const games = fs.readdirSync(new URL('../v2/games/', import.meta.url)).filter(f => f.endsWith('.json')).map(f => ({ id: `v2/games/${f}`, doc: JSON.parse(fs.readFileSync(new URL(`../v2/games/${f}`, import.meta.url), 'utf8')) }));
 const told = [...TEMPLATES.map(t => ({ id: `template ${t.id}`, doc: t.doc })), ...games]
   .map(d => ({ ...d, host: hostDocument(d.doc, registry) }))
-  .filter(d => d.host.graphics.some(g => g.use === 'graphics.ui.story') && tellsOf(d.host, registry).length);
+  .filter(d => d.host.graphics.some(g => g.use === 'graphics.ui.story') && tellsOf(d.host, registry).length)
+  // Played through the story UI: some loop verb is not issued by another mounted UI (a battle's commands are its battle
+  // screen's: ui-sources.js unownedOptions), so the walk below has story choices to take.
+  .filter(d => { const owned = uiControls(d.host, registry).verbs; return loopVerbs(d.host, registry).some(v => !(owned.get(v) || []).some(u => u !== 'graphics.ui.story')); });
 
 test('the story template is among the documents whose story log tells events', () => assert.ok(told.some(d => d.id === 'template story'), told.map(d => d.id).join(', ')));
 
@@ -64,8 +68,10 @@ for (const d of told) test(`${d.id}: every told event that fires while playing t
       m.frame(2); check();
     }
   }
-  assert.ok(seen > 0, 'a told event fired while playing');
-  if (d.id === 'template story') assert.deepEqual([...events].sort(), ['clue_found', 'deduced', 'journal_added', 'quest_started'], 'the walk reads the story deep enough to be told its conclusions');
+  // Every told event that fired is in the log (checked above). Declared tells need not all fire in every document (an
+  // inventory's item tells in a game where the walk gains no item); the story template's walk must reach its tells.
+  if (d.id === 'template story') assert.ok(seen > 0, 'a told event fired while playing');
+  if (d.id === 'template story') assert.deepEqual([...events].sort(), ['clue_found', 'deduced', 'item_gained', 'journal_added', 'quest_started'], 'the walk reads the story deep enough to be told its conclusions');
 });
 
 test('every catalogue document with an investigation keeps its clues and conclusions in the journal a person opens', async () => {

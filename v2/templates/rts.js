@@ -42,7 +42,7 @@ export default {
         { id: 'barracks', name: 'Barracks', components: UNITS.barracks },
         { id: 'minerals', name: 'Mineral field', components: UNITS.minerals },
       ],
-      blocks: [{ id: 'rock', name: 'Rock', solid: true }],
+      blocks: [{ id: 'rock', name: 'Rock', solid: true, tile: 'rock', color: '#8a8478' }],
     },
   },
   tune: ['engine.generate.grid.board.symmetry'],

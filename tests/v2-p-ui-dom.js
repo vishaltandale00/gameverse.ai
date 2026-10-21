@@ -1,6 +1,6 @@
 // A tiny DOM stub for UI primitive tests (no dependencies): elements with
 // attributes, classes, styles, text, events and a small selector engine, a
-// recording 2D canvas context, a window with keyboard dispatch, and a mount()
+// recording 2D canvas context (calls in order with their arguments; style sets as ['=<prop>', value]), a window with keyboard dispatch, and a mount()
 // harness that runs a document in a fake browser host (view.act/onFrame).
 import { compile } from '../v2/kernel/testing.js';
 
@@ -76,7 +76,7 @@ function matchChain(el, chain) {
 export function event(type, init = {}) { return { type, ...init, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this._stop = true; } }; }
 export function canvasContext() {
   const calls = [];
-  return new Proxy({ calls, canvas: { width: 300, height: 150 } }, { get: (t, k) => k in t ? t[k] : (...args) => { calls.push([k, ...args]); return k === 'measureText' ? { width: 10 } : k === 'createRadialGradient' || k === 'createLinearGradient' ? { addColorStop() {} } : undefined; }, set: (t, k, v) => { t[k] = v; return true; } });
+  return new Proxy({ calls, canvas: { width: 300, height: 150 } }, { get: (t, k) => k in t ? t[k] : (...args) => { calls.push([k, ...args]); return k === 'measureText' ? { width: 10 } : k === 'createRadialGradient' || k === 'createLinearGradient' ? { addColorStop() {} } : undefined; }, set: (t, k, v) => { t[k] = v; if (typeof v === 'string' || typeof v === 'number') calls.push([`=${String(k)}`, v]); return true; } });
 }
 
 export function createDocument() {

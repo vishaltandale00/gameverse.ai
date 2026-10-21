@@ -16,7 +16,9 @@ const counterOf = e => { const c = e.components.collectible; return typeof c ===
 export default {
   id: 'gameplay.collectible',
   card: {
-    loop: { verbs: [], progress: ['collected', 'counter_complete'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { collectible: { role: 'pickup' } },
+    loop: { shows: ['entities'], verbs: [], progress: ['collected', 'counter_complete'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { collectible: { type: 'json', effect: 'a counter id, or {counter, value?, points?, item?}' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -25,7 +27,7 @@ export default {
     ],
     // Collect mode (only when a counter clears the level): gather every pickup while threats chase. Touch and use
     // collect whatever moves the collector (box overlap, radius, the cell it is on), so it is played stepping or in real time.
-    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
+    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', shown: { each: { param: 'counters', where: { clearsLevel: true } }, var: 'collected.$id', max: 'collected.$id.total', label: '$id' }, reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
     intent: 'Pickups and counters (coins, shards, pages, pellets): touch or use to collect, magnet pull, per-zone totals, a var per counter, level clear when a counter completes, and timed bonus prizes spawned at chosen counts.',
     views: ['any'],
     params: {
@@ -115,7 +117,7 @@ export default {
     function countUp(id, who, value, zone, at) {
       const s = st(), c = defs.get(id); if (!c) return;
       const before = s.count[id] || 0, now = before + value;
-      s.count[id] = now; rt.state.vars[varOf(c)] = now;
+      s.count[id] = now; rt.state.vars[varOf(c)] = now; rt.state.vars[`collected.${c.id}`] = now;
       if (zone) { (s.byZone[id] ??= {})[zone] = (s.byZone[id][zone] || 0) + value; }
       const total = totalOf(id);
       rt.emitTyped('collected', id, { who, value, count: now, total, zone: zone ?? null });
@@ -157,7 +159,8 @@ export default {
 
     rt.on('interacted', d => { const t = rt.entity(d.target); if (t && counterOf(t)) collect(t, d.who); });
     rt.system('interaction', rt => {
-      st().totals ??= computeTotals();
+      // Each counter's count and total as vars from the first step: what a person watches for the win (card.loop.win.shown).
+      if (!st().totals) { st().totals = computeTotals(); for (const c of config.counters) { rt.state.vars[varOf(c)] ??= 0; rt.state.vars[`collected.${c.id}.total`] = st().totals[c.id]; } }
       const s = st();
       for (const [id, until] of Object.entries(s.prizes)) if (rt.state.frame >= until) { delete s.prizes[id]; if (rt.entity(id)) { rt.despawn(id); rt.emit('prize_expired', { id }); } }
       const collectors = Object.values(rt.state.entities).filter(isCollector);

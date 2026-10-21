@@ -11,6 +11,7 @@ import { drawEntity, lookOf } from './flat-models.js';
 import { drawBackdrop, defaultLayers, normalizeLayers } from './flat-backdrop.js';
 import { normalizeTheme, themeFromBlock, paintTile } from './flat-tiles.js';
 import { blobMask } from './flat-autotile.js';
+import { drawZones } from './flat-zones.js';
 import { rgba, surface, ctx2d, light, shade } from './flat-util.js';
 
 export default {
@@ -18,6 +19,9 @@ export default {
   card: {
     intent: 'Canvas renderer for arena2d spaces (fighters, shmups, asteroids, runners): side or top view, themed solid blocks and plank platforms, a camera that fits the scroll window, frames all fighters or follows the player, wrap ghosts and optional hit/hurt box overlays.',
     views: ['side', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
@@ -73,6 +77,7 @@ export default {
       S.defaultLayers ??= top ? normalizeLayers([{ pattern: 'gradient', depth: 0, color: '#05051a', fogColor: '#120a30' }, { pattern: 'void', depth: 0.05, color: '#2a1a6a' }, { pattern: 'stars', depth: 0.15, color: '#ffffff' }, { pattern: 'stars', depth: 0.45, color: '#bfe0ff' }]) : defaultLayers(F.doc, 'side');
       drawBackdrop(F, S.defaultLayers);
     }, { space, name: 'arena2d.backdrop' });
+    H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'arena2d.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.arena2d' });
 
     function draw(F) {

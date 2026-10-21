@@ -36,7 +36,7 @@ export default {
         { id: 'drone', name: 'Drone', kind: 'enemy', components: { health: { max: 6 }, turns: { side: 'aliens', actions: ['claw', 'spit'] } } },
         { id: 'brute', name: 'Brute', kind: 'enemy', components: { health: { max: 9 }, turns: { side: 'aliens', defense: 10, actions: ['claw'] } } },
       ],
-      blocks: [{ id: 'wall', name: 'Wall', solid: true }, { id: 'crate', name: 'Crate', solid: true }, { id: 'rubble', name: 'Rubble', solid: false }],
+      blocks: [{ id: 'wall', name: 'Wall', solid: true, tile: 'brick', color: '#6a6e80' }, { id: 'crate', name: 'Crate', solid: true, tile: 'wood', color: '#a0703a' }, { id: 'rubble', name: 'Rubble', solid: false, tile: 'rock', color: '#7a7468' }],
     },
     player: { archetype: 'captain', at: [2, 0] },
   },

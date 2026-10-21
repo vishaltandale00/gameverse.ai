@@ -15,13 +15,13 @@ const clubs = {
   id: 'gameplay.test.clubs',
   card: {
     intent: 'Toss clubs high and catch them for applause, juggling.',
-    loop: { verbs: ['toss'], progress: ['tossed'], win: { when: { count: 'tossed', gte: '$target' } } },
+    loop: { shows: [], verbs: ['toss'], progress: ['tossed'], win: { when: { count: 'tossed', gte: '$target' } } },
     params: {}, provides: { actions: ['toss'], events: ['tossed'] },
   },
   install(rt) { rt.action('toss', (v, r) => { if (v) r.emit('tossed', {}); }); },
 };
 /** The test catalogue's `broken` juggler (its install throws) declares a playable loop too (a verb that juggles), so only its crash is wrong. */
-const brokenJuggler = { ...broken, card: { ...broken.card, loop: { verbs: ['juggle'], progress: ['juggled'], win: { when: { count: 'juggled', gte: '$target' } } }, provides: { events: ['juggled'], actions: ['juggle'] } } };
+const brokenJuggler = { ...broken, card: { ...broken.card, loop: { shows: [], verbs: ['juggle'], progress: ['juggled'], win: { when: { count: 'juggled', gte: '$target' } } }, provides: { events: ['juggled'], actions: ['juggle'] } } };
 /** picky (the title must start with "The"): a field only the model can fix. */
 const pickyLoop = { ...picky, card: { ...picky.card, loop: { verbs: [], progress: ['titled'] }, provides: { events: ['titled'] } } };
 const endingRunner = PRIMITIVES.find(p => p.id === 'plot.ending');

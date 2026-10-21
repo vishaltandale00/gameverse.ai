@@ -41,6 +41,8 @@ export function battleAction(view, item, target) {
 export default {
   id: 'graphics.ui.battle',
   card: {
+    // The quantities it shows a person (graphics/ui-defaults.js: a loop's goal it displays needs no HUD widget).
+    displays: [{ component: 'health', of: 'opponents' }, { component: 'health', of: 'player' }],
     intent: 'Turn-based battle UI for any battle or tactics system: sides with sprites, draining HP bars and statuses, a message box, and Fight/Bag/Party/Run menus with targeting; or a compact command panel over the world for tactics.',
     views: ['any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).

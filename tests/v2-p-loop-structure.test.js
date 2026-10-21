@@ -38,7 +38,7 @@ const duelOf = (id, { example = true } = {}) => ({
   id,
   card: {
     intent: 'Two camps trade blows in turns until one camp has no one standing.',
-    loop: { verbs: ['duel_move'], progress: ['duel_blow', 'fainted'], interaction: 'pieces-turns', opponent: 'ai-side', needs: { participants: 'camps' },
+    loop: { shows: [], verbs: ['duel_move'], progress: ['duel_blow', 'fainted'], interaction: 'pieces-turns', opponent: 'ai-side', needs: { participants: 'camps' },
       win: { param: 'onTriumph', reads: { component: 'vigor', of: 'opponents' } }, lose: { param: 'onRout', reads: { component: 'vigor', of: 'player', by: { effects: ['sap'] } } } },
     engage: { join: { param: 'camps', field: 'members', where: { control: 'player' } } },
     components: { camp: { type: 'object', fields: { side: { type: 'string', required: true, effect: 'the camps[] id this unit fights for' } } } },
@@ -98,7 +98,7 @@ const taunter = {
 /** Munch: the win counts munched dots; its own loop declares only hazards (the play spec names the AI chasers). */
 const munch = {
   id: 'gameplay.test.munch',
-  card: { intent: 'Munch the dots of a grid maze; enough dots wins.', loop: { verbs: ['munch'], progress: ['munched'], interaction: 'avatar-realtime', opponent: 'hazards', win: { when: { count: 'munched', gte: '$target' }, reads: { event: 'munched', by: { actions: ['munch'] } } } },
+  card: { intent: 'Munch the dots of a grid maze; enough dots wins.', loop: { shows: [], verbs: ['munch'], progress: ['munched'], interaction: 'avatar-realtime', opponent: 'hazards', win: { when: { count: 'munched', gte: '$target' }, reads: { event: 'munched', by: { actions: ['munch'] } } } },
     params: {}, provides: { actions: ['munch'], events: ['munched'] } },
   install(rt) { rt.action('munch', (v, r) => { if (v) r.emit('munched', {}); }); },
 };
@@ -115,7 +115,7 @@ const haunt = {
 /** Forage: the win counts gathered events; it produces none itself (a player-driven primitive must). */
 const forage = {
   id: 'gameplay.test.forage',
-  card: { intent: 'Forage the meadow for berries while avoiding stinging bees; enough berries wins.', loop: { verbs: [], progress: ['gathered'], interaction: 'avatar-realtime', opponent: 'hazards', win: { when: { count: 'gathered', gte: '$target' } }, lose: { param: 'onStung' } },
+  card: { intent: 'Forage the meadow for berries while avoiding stinging bees; enough berries wins.', loop: { shows: [], verbs: [], progress: ['gathered'], interaction: 'avatar-realtime', opponent: 'hazards', win: { when: { count: 'gathered', gte: '$target' } }, lose: { param: 'onStung' } },
     params: { onStung: { type: 'effects', default: [] } }, provides: { events: ['stung'] } },
   install() {},
 };
@@ -132,7 +132,7 @@ const raceOf = (id, { example = true } = {}) => ({
   id,
   card: {
     intent: 'Run laps of the course against rival runners; finish the laps first.',
-    loop: { verbs: ['stride'], progress: ['strode', 'lap_done'], interaction: 'avatar-realtime', opponent: 'ai-rival', needs: { participants: 'runners' },
+    loop: { shows: [], verbs: ['stride'], progress: ['strode', 'lap_done'], interaction: 'avatar-realtime', opponent: 'ai-rival', needs: { participants: 'runners' },
       win: { param: 'onFinish', reads: { event: 'lap_done' } }, lose: { param: 'onBeaten' } },
     content: [{ need: 'param', param: 'runners', min: 2, why: 'a race needs rivals', ...(example ? { example: ['player', 'rival'] } : {}) }],
     params: { runners: { type: 'list', of: { type: 'string' }, default: [] }, laps: { type: 'integer', default: 2, min: 1, max: 9 }, onFinish: { type: 'effects', default: [] }, onBeaten: { type: 'effects', default: [] } },

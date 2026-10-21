@@ -24,7 +24,7 @@ export default {
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { play_card: { type: 'choice', of: 'a card in hand (and its target)', from: 'options', emits: ['card_played'] }, attack_with: { type: 'choice', of: 'a board card and its target', from: 'options', emits: ['minion_attacked'] }, pick_card: { type: 'choice', of: 'a reward card', from: 'options', emits: ['card_picked'] } },
-    loop: { verbs: ['play_card', 'attack_with', 'pick_card'],
+    loop: { shows: [], verbs: ['play_card', 'attack_with', 'pick_card'],
       // Minions attack in duels; a roguelike offers reward cards after a won battle when it has a pool to draw them from.
       verbsOf: config => ['play_card', ...(config.format === 'duel' ? ['attack_with'] : []), ...(config.format === 'roguelike' && config.rewards?.choices > 0 && config.rewards?.pool?.length ? ['pick_card'] : [])], progress: ['card_played', 'card_damage', 'minion_died'],
       // As an encounter: the card battle ends through gameplay.turns (card.mode.via), whose victory and defeat params it uses.

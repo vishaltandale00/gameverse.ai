@@ -42,7 +42,7 @@ export default {
         { id: 'runner', name: 'Runner', components: { health: { max: 1 }, body: { size: [0.7, 1.1] } } },
         { id: 'coin', name: 'Coin', kind: 'pickup', components: { collectible: { counter: 'coins' }, body: { size: [0.6, 0.6] } } },
       ],
-      blocks: [{ id: 'crate', name: 'Crate', solid: true }, { id: 'spikes', name: 'Spikes', solid: false, hazard: 'spikes' }, { id: 'pit', name: 'Pit', solid: false, hazard: 'pit' }],
+      blocks: [{ id: 'crate', name: 'Crate', solid: true, tile: 'wood' }, { id: 'spikes', name: 'Spikes', solid: false, hazard: 'spikes', tile: 'spikes' }, { id: 'pit', name: 'Pit', solid: false, hazard: 'pit' }],
     },
     player: { archetype: 'runner', at: [2, 0.55] },
   },

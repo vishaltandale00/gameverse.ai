@@ -3,16 +3,18 @@
 //   pixel  → flat-pixel part sprites          vector → flat-vector presets/shapes
 //   rig    → flat-rig fighter or bone rigs    art    → v2/art character or prop
 //   voxel/lowpoly (3D specs) → an art character in the spec's palette
-// With no model, the archetype's role, words and tags choose generated art.
+// With no model, the archetype's declared role (flat-art.js roleOf: its kind, else what its components' cards
+// declare they present) and a variation seeded by its id choose generated art; names and words never do.
 // drawEntity() adds the presentation state machine (idle, run, jump, fall,
 // land, dash, attack, hurt, die, wallslide), squash and stretch, trails,
 // hurt flashes, invulnerability blinking, spawn pops, pickup bob and shimmer,
 // goal beacons, shadows and small glows, reading state but never writing it.
 import { TAU, clamp, clamp01, lerp, easeOutBack, rgba, light, col, surface, ctx2d, seedOf, hash, hueShift } from './flat-util.js';
 import { pixelFrame, resolveAnim, animInfo, frameIndex } from './flat-pixel.js';
-import { drawVector, glow } from './flat-vector.js';
+import { drawVector, glow, PRESETS } from './flat-vector.js';
 import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, drawBones, rigFrom, isFighterSpec, RIG_HEIGHT } from './flat-rig.js';
-import { roleOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
+import { roleOf, presentationOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
+import { sideOf } from './allegiance.js';
 
 export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win', 'dazed'];
 
@@ -25,7 +27,8 @@ export function modelSpec(doc, e) {
   return { key: `${e.archetype}#auto`, spec: null, arch };
 }
 
-const VECTOR_WORDS = [['rock', /rock|asteroid|meteor|boulder/], ['saucer', /ufo|saucer/], ['invader-crab', /invader|crab/], ['invader-squid', /squid/], ['invader-octopus', /octopus/], ['moth', /moth/], ['bug', /bug|beetle|insect|wasp|bee/], ['fighter', /fighter|jet|interceptor/], ['ship', /ship|player/], ['orb', /orb|eye|mine/], ['drone', /drone|turret|sentry/], ['ghost', /ghost|phantom|spook/], ['chomp', /chomp|pac|muncher/], ['gem', /gem|jewel/], ['virus', /virus|germ/], ['capsule', /capsule|pill/], ['blob', /blob|slime|bubble/], ['diamond', /diamond|crystal/], ['pinwheel', /pinwheel|spinner/], ['coin', /coin/], ['star', /star/], ['heart', /heart/], ['key', /key/], ['bomb', /bomb/], ['crate', /crate|box/], ['bullet', /bullet|shot|laser|bolt|missile|projectile/]];
+// Vector presets a top-view look takes by role (player ship, projectile bullet, enemy a seeded pick among these).
+const ENEMY_VECTORS = ['bug', 'moth', 'fighter', 'drone', 'saucer'];
 const ROLE_COLOR = { player: '#4fd8ff', enemy: '#ff5a7a', boss: '#c84aff', npc: '#7adf8a', pickup: '#ffd23f', hazard: '#ff6a2a', goal: '#5fe36a', projectile: '#ffe066', prop: '#c0a080', vehicle: '#3a7ad8', mount: '#a0683a' };
 
 /** Resolve (and cache) how an archetype looks. */
@@ -33,11 +36,18 @@ export function lookOf(H, e, view = 'side') {
   const doc = H.rt.doc;
   const found = modelSpec(doc, e);
   const { key, arch } = found, spec = found.spec || H.vectorModels?.[e.archetype] || (H.cfg.rig?.archetypes?.[e.archetype] ? { kind: 'rig', rig: H.cfg.rig.archetypes[e.archetype] } : null);
-  const ck = `${key}|${view}|${e.id === 'player' ? 'p' : ''}`;
+  // Whose side it is on (graphics/allegiance.js: card.sides): one archetype can fight for either side (rts workers).
+  const side = e.id === 'player' ? null : sideOf(H.rt, e);
+  const ck = `${key}|${view}|${e.id === 'player' ? 'p' : ''}|${side ? (side.mine ? 'mine' : 'theirs') : ''}`;
   H.looks ??= new Map();
   if (H.looks.has(ck)) return H.looks.get(ck);
-  const role = e.id === 'player' ? 'player' : roleOf(arch, e.archetype);
-  const text = [arch.id, arch.name, arch.kind, ...(arch.tags || [])].join(' ').toLowerCase();
+  // Components the entity was spawned with (a key's pickup item) present as much as its archetype's.
+  const carried = { ...arch, components: { ...(arch.components || {}), ...(e.components || {}) } }, reg = H.rt.registry;
+  const declared = presentationOf(carried, reg, null, doc), declaredVector = declared?.vector;
+  // An entity on a side reads as an ally on the player's side and an enemy on the other, unless it declares a more
+  // specific role (a building, a boss, a vehicle).
+  const sided = side && (!declared || declared.role === 'npc' || declared.role === 'enemy');
+  const role = e.id === 'player' ? 'player' : sided ? (side.mine ? 'npc' : 'enemy') : roleOf(carried, e.archetype, reg, null, doc);
   const light2 = arch.components?.light || e.components?.light;
   let L;
   const kind = spec?.kind;
@@ -55,18 +65,19 @@ export function lookOf(H, e, view = 'side') {
     const p = Object.values(spec.palette || {});
     const named = spec.palette || {};
     const colors = { primary: named.cloth || named.body || named.t || p[2] || p[0], secondary: named.skin || named.s || p[0], accent: named.trim || named.accent || p[3] || p[1], hair: named.hair || named.h };
-    L = ['pickup', 'hazard', 'goal', 'prop'].includes(role) ? { type: 'prop', prop: propFor(arch, role), color: colors.primary } : { type: 'character', look: lookFor(arch, role, colors) };
+    L = ['pickup', 'hazard', 'goal', 'prop'].includes(role) ? { type: 'prop', prop: propFor(carried, role, reg, doc), color: colors.primary } : { type: 'character', look: lookFor(arch, role, colors) };
   } else {
-    // No art: pick from role and view.
-    const vword = (VECTOR_WORDS.find(([, re]) => re.test(text)) || [])[0];
-    if (view === 'top' && ['player', 'enemy', 'boss', 'projectile', 'pickup'].includes(role)) L = { type: 'vector', preset: role === 'player' ? 'ship' : role === 'projectile' ? 'bullet' : role === 'pickup' ? (vword || 'gem') : (vword && vword !== 'ship' ? vword : ['bug', 'moth', 'fighter', 'drone', 'saucer'][Math.floor(hash(seedOf(e.archetype)) * 5)]), color: ROLE_COLOR[role] };
+    // No art: a vector its card declares (card.presents vector), else from the role and the view (versus fighters by their declared component).
+    if (PRESETS.includes(declaredVector)) L = { type: 'vector', preset: declaredVector, color: ROLE_COLOR[role] };
+    else if (view === 'top' && ['player', 'enemy', 'boss', 'projectile', 'pickup'].includes(role)) { const prop = role === 'pickup' ? propFor(carried, role, reg, doc) : null; L = { type: 'vector', preset: role === 'player' ? 'ship' : role === 'projectile' ? 'bullet' : role === 'pickup' ? (PRESETS.includes(prop) ? prop : 'gem') : ENEMY_VECTORS[Math.floor(hash(seedOf(e.archetype)) * ENEMY_VECTORS.length)], color: ROLE_COLOR[role] }; }
     else if (role === 'projectile') L = { type: 'vector', preset: 'bullet', color: ROLE_COLOR.projectile };
-    else if (vword && /rock|asteroid|meteor|gem|virus|capsule|bomb|crate|coin|chomp|ghost|blob|invader/.test(vword) && !/^(player|npc)$/.test(role)) L = { type: 'vector', preset: vword, color: ROLE_COLOR[role] };
-    else if (/fighter|brawler|martial|boxer|wrestler/.test(text) || arch.components?.versus) L = { type: 'fighter', look: fighterLook(e.archetype) };
-    else if (['pickup', 'hazard', 'goal', 'prop'].includes(role)) L = { type: 'prop', prop: propFor(arch, role) };
+    else if (carried.components.versus) L = { type: 'fighter', look: fighterLook(e.archetype) };
+    else if (['pickup', 'hazard', 'goal', 'prop'].includes(role)) L = { type: 'prop', prop: propFor(carried, role, reg, doc) };
     else L = { type: 'character', look: lookFor(arch, role) };
   }
-  L.role = role; L.key = key; L.glow = spec?.glow || (light2 ? { color: light2.color || '#ffd890', radius: 0.5 } : null);
+  // A sided prop (a faction's building) takes its side's color.
+  if (side && L.type === 'prop' && !L.color) L.color = side.mine ? '#3a7bd5' : '#d8352a';
+  L.role = role; L.key = key; L.side = side ? side.mine : null; L.glow = spec?.glow || (light2 ? { color: light2.color || '#ffd890', radius: 0.5 } : null);
   L.boss = role === 'boss';
   H.looks.set(ck, L);
   return L;
@@ -74,7 +85,8 @@ export function lookOf(H, e, view = 'side') {
 
 // ---------- presentation state ----------
 const deadOf = e => { const h = e.components?.health; return Boolean(h && typeof h === 'object' && (h.dead || (Number.isFinite(h.hp) && h.hp <= 0))); };
-const stunned = e => Object.entries(e.components?.status || {}).some(([k, v]) => v > 0 && /stun|daze|dizzy|confus|sleep|frozen|freeze/.test(k));
+// Stunned: the shared health field statuses and hits set (components.health.stun, combat-status.js stat.stun), never a status's id.
+const stunned = e => (Number(e.components?.health?.stun) || 0) > 0;
 /** Presentation state of an entity this frame: { state, age, speed }. Updates the tracker (cache only). */
 export function presentState(F, item, tr, view) {
   const e = item.e, now = F.t, body = e.components?.body || {}, vel = item.vel || [0, 0];
@@ -220,7 +232,7 @@ function drawLook(F, L, item, tr, S, P, o) {
       g.translate(0, -P.h * 0.5);
       // Ships keep their heading in top-down arenas (up for the player, down for foes) unless the body has an angle.
       const ang = item.e.components?.body?.angle;
-      const dir = P.view === 'side' ? [facing, 0] : Number.isFinite(ang) ? [Math.cos(ang), -Math.sin(ang)] : P.view === 'top' && /ship|fighter/.test(L.preset) ? [0, L.role === 'player' ? -1 : 1] : tr.dir || [1, 0];
+      const dir = P.view === 'side' ? [facing, 0] : Number.isFinite(ang) ? [Math.cos(ang), -Math.sin(ang)] : P.view === 'top' && ['ship', 'fighter'].includes(L.preset) ? [0, L.role === 'player' ? -1 : 1] : tr.dir || [1, 0];
       const vcfg = H.cfg.vector || {};
       if (vcfg.glow ?? (P.view === 'top')) glow(g, 0, 0, R * 2.2, col(L.color || L.spec?.color, '#ff5a7a'), 0.3);
       drawVector(g, L.preset, R, L.color || (L.role === 'enemy' ? hueShift(ROLE_COLOR.enemy, Math.round(hash(seedOf(item.e.archetype)) * 8) * 40 - 160) : ROLE_COLOR[L.role]), { t, dir, flash: o.flash, seed: seedOf(item.id) % 997, idx: L.spec?.idx ?? seedOf(item.e.archetype), shapes: L.spec?.shapes, mood: item.e.components?.ai?.mood || (S.state === 'hurt' ? 'hurt' : undefined), accent: L.spec?.accent, pixel: F.style === 'pixel', variant: L.spec?.variant });
@@ -261,7 +273,7 @@ function drawLook(F, L, item, tr, S, P, o) {
       if (!img) { g.translate(0, -size * 0.5); drawVector(g, L.role === 'pickup' ? 'coin' : L.role === 'hazard' ? 'diamond' : 'crate', size * 0.45, ROLE_COLOR[L.role], { t }); break; }
       const [bx0, , bx1, by1] = img.box || [0, 0, 1, 1];
       const s = size / Math.max(0.2, Math.max(bx1 - bx0, by1 - (img.box?.[1] ?? 0)));
-      if (L.role === 'pickup' && /coin|ring/.test(L.prop)) g.scale(Math.max(0.2, Math.abs(Math.cos(t * 3 + hash(seedOf(item.id)) * 6))), 1);
+      if (L.role === 'pickup' && ['coin', 'ring'].includes(L.prop)) g.scale(Math.max(0.2, Math.abs(Math.cos(t * 3 + hash(seedOf(item.id)) * 6))), 1);
       g.drawImage(img.img, -((bx0 + bx1) / 2) * s, -by1 * s, s, s);
       if (L.role === 'pickup') shimmer(g, size, t + hash(seedOf(item.id)) * 4);
       if (o.flash > 0) { const w = whiteOf(img.img); if (w) { g.globalAlpha *= o.flash; g.drawImage(w, -((bx0 + bx1) / 2) * s, -by1 * s, s, s); } }

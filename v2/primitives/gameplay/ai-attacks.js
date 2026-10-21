@@ -48,6 +48,8 @@ const agentOf = (rt, id) => ((st(rt).agents ??= {})[id] ??= { phase: 'idle', cd:
 export default {
   id: ID,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { attacks: { role: 'enemy' } },
     loop: { verbs: [], progress: ['attack_launched', 'attack_hit'] },
     // It acts for every non-player entity with an `attacks` component: hits run damage/apply_status (ai-lib applyHit), lunges move it.
     drives: { control: 'ai', components: ['attacks'], effects: ['damage', 'apply_status'], events: ['attack_hit', 'shot_hit'], movement: true },

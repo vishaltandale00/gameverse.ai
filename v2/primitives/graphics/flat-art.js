@@ -1,13 +1,14 @@
 // Generated art for entities with no art data: the shared procedural painters
 // in v2/art (six character body plans, props, scenery) rasterized for canvas.
-// Archetype kind, id, name and tags pick a role, body plan, parts and colors,
-// so a document with zero art still shows a cast that reads at a glance.
+// The archetype's declared kind and the roles its components' cards declare pick
+// its role; a variation seeded by its id picks body plan, parts and colors, so a
+// document with zero art still shows a cast that reads at a glance.
 // SVGs are rasterized through Blob URLs (the CSP allows blob: images) and
 // cached per look and pose; until an image decodes, callers draw a placeholder.
 import { paintCharacter, POSE_NAMES } from '../../art/characters.js';
 import { paintProp, PROPS } from '../../art/props.js';
 import { paintScenery, THEMES } from '../../art/scenery.js';
-import { rng, seedOf, words, hash, surface, ctx2d } from './flat-util.js';
+import { rng, seedOf, hash, surface, ctx2d } from './flat-util.js';
 
 const images = new Map();
 const canRaster = () => typeof Image !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL;
@@ -45,52 +46,87 @@ function opaqueBox(img) {
 }
 
 // ---------- roles ----------
-const ROLE_WORDS = [
-  ['player', /^(player|hero|avatar)$/], ['boss', /^(boss|miniboss)$/], ['enemy', /^(enemy|hostile|monster|foe|mob)$/],
-  ['npc', /^(npc|villager|merchant|friend|ally|citizen|pedestrian|character)$/], ['pickup', /^(pickup|item|collectible|coin|gem|loot|powerup|power-up|token)$/],
-  ['hazard', /^(hazard|trap|spike|spikes|lava|saw)$/], ['goal', /^(goal|exit|door|portal|flag|finish)$/], ['projectile', /^(projectile|bullet|shot|missile|arrow|bolt|fireball)$/],
-  ['vehicle', /^(vehicle|car|truck|boat|ship|plane|cart|bike)$/], ['mount', /^(mount|horse|steed)$/], ['prop', /^(prop|object|decor|furniture|sign|bench|crate|barrel)$/],
-];
-/** The cast role of an archetype from its kind, tags, id and components. */
-export function roleOf(arch = {}, id = arch.id) {
+// What an entity reads as comes from declarations, never from words in its id, name or tags (ARCHITECTURE §1.2: the
+// content forms theme `name`, so a themed name must never change artwork): the role its archetype's declared `kind`
+// reads as and the roles its components present (card.presents: { <component>: P | [P...] } on the card owning the
+// component, or on a card whose param of type ref to an archetype names it, P = { role, prop?, vector?, when? }: the first P whose `when` fields the component matches, `true` matching any
+// set value), the highest in precedence; with neither, a prop.
+export const ROLES = Object.freeze(['player', 'enemy', 'boss', 'npc', 'pickup', 'hazard', 'goal', 'projectile', 'vehicle', 'mount', 'prop']);
+/** The role each declared archetype kind (planner/outline-form.js ARCH_KINDS) reads as. */
+const KIND_ROLE = Object.freeze({ player: 'player', npc: 'npc', creature: 'enemy', enemy: 'enemy', boss: 'boss', vehicle: 'vehicle', prop: 'prop', projectile: 'projectile', pickup: 'pickup', mount: 'mount' });
+/** When an entity's kind and components present several roles, the first of these wins. */
+const PRECEDENCE = ['boss', 'projectile', 'vehicle', 'mount', 'goal', 'hazard', 'pickup', 'enemy', 'npc', 'prop'];
+const presented = new WeakMap();
+/** component → [{ role, prop?, when?, by }] from every card's `presents` (cached per registry). */
+export function presentations(registry) {
+  if (!registry || typeof registry.cards !== 'function') return new Map();
+  let m = presented.get(registry);
+  if (m) return m;
+  m = new Map();
+  const refParam = (c, k) => c.params?.[k]?.type === 'ref' && c.params[k].to === 'archetype';
+  for (const c of registry.cards()) for (const [comp, v] of Object.entries(c.presents || {})) if (!refParam(c, comp)) m.set(comp, (Array.isArray(v) ? v : [v]).filter(p => p && ROLES.includes(p.role)).map(p => ({ ...p, by: c.id })));
+  presented.set(registry, m);
+  return m;
+}
+const byDoc = new WeakMap();
+/**
+ * archetype id → [P] for archetypes a system's param names, from `presents` keys that are a card param of type
+ * `ref` to an archetype (sports `ball`: the archetype that param names on the instance is drawn as declared).
+ */
+export function paramPresentations(doc, registry) {
+  if (!doc || !registry || typeof registry.get !== 'function') return new Map();
+  let m = byDoc.get(doc)?.get(registry);
+  if (m) return m;
+  m = new Map();
+  for (const inst of [...(doc.systems || []), ...(doc.spaces || []).flatMap(s => s.generators || [])]) {
+    const card = registry.get(inst?.use)?.card;
+    for (const [key, v] of Object.entries(card?.presents || {})) {
+      const param = card.params?.[key];
+      if (param?.type !== 'ref' || param.to !== 'archetype' || typeof inst.with?.[key] !== 'string') continue;
+      m.set(inst.with[key], (Array.isArray(v) ? v : [v]).filter(p => p && ROLES.includes(p.role)).map(p => ({ ...p, by: card.id })));
+    }
+  }
+  if (!byDoc.has(doc)) byDoc.set(doc, new WeakMap());
+  byDoc.get(doc).set(registry, m);
+  return m;
+}
+const matches = (when, value) => !when || Object.entries(when).every(([k, v]) => (v === true ? value?.[k] != null && value[k] !== false : value?.[k] === v));
+/** The presentation an entity's kind and components declare (highest precedence), or null. */
+export function presentationOf(arch = {}, registry = null, components = null, doc = null) {
+  const P = presentations(registry), comps = { ...(arch.components || {}), ...(components || {}) };
+  const found = Object.entries(comps).map(([k, value]) => (P.get(k) || []).find(p => matches(p.when, value))).filter(Boolean);
+  found.push(...(paramPresentations(doc, registry).get(arch.id) || []));
+  if (KIND_ROLE[arch.kind]) found.push({ role: KIND_ROLE[arch.kind], by: 'kind' });
+  found.sort((a, b) => PRECEDENCE.indexOf(a.role) - PRECEDENCE.indexOf(b.role));
+  return found[0] || null;
+}
+/** The cast role of an archetype: the highest-precedence role its kind and components declare, else 'prop'. */
+export function roleOf(arch = {}, id = arch.id, registry = null, components = null, doc = null) {
   if (id === 'player') return 'player';
-  const comps = arch.components || {};
-  const cands = [arch.kind, ...(arch.tags || []), ...words(arch.id), ...words(arch.name)].filter(Boolean).map(String);
-  for (const [role, re] of ROLE_WORDS) if (cands.some(w => re.test(w.toLowerCase()))) return role;
-  if (comps.projectile || comps.bullet) return 'projectile';
-  if (comps.item || comps.collectible || comps.pickup) return 'pickup';
-  if (comps.ai && (comps.touch || comps.attacks || comps.melee)) return 'enemy';
-  if (comps.interact) return 'npc';
-  if (comps.health) return 'enemy';
-  return 'prop';
+  return presentationOf(arch, registry, components, doc)?.role || 'prop';
 }
 
 // ---------- character looks ----------
-const PLAN_WORDS = [
-  ['ghost', /ghost|wraith|wisp|spirit|shade|phantom|specter|spectre|soul|gloam|banshee|haunt/],
-  ['flyer', /bat|bird|moth|fly|wasp|bee|owl|crow|raven|hawk|eagle|dragonfly|pixie|fairy|parrot|duck|gull/],
-  ['blob', /slime|blob|ooze|jelly|goo|spore|bloom|frog|toad|mushroom|leech|crab|mossling|puff|bubble|snail|worm|grub/],
-  ['robot', /robot|automaton|drone|mech|bot|android|turret|machine|sentry|cyborg/],
-  ['quadruped', /wolf|dog|hound|horse|cat|deer|boar|beast|bear|rat|mouse|lion|tiger|crawler|lizard|dragon|fox|pony|goat|sheep|cow|pig|stag|panther|hyena|stalker/],
-];
-const HEAD_WORDS = [['crown', /king|queen|regent|sovereign|prince|princess|royal|emperor/], ['helmet', /knight|soldier|guard|warden|paladin|trooper|automaton/], ['wizard-hat', /wizard|mage|witch|sorcer|cantor|warlock|seer/], ['bandana', /ninja|rogue|thief|bandit|pirate|assassin/], ['horns', /imp|demon|devil|horn|minotaur|fiend|beast/], ['hood', /hood|monk|veil|cultist|reaper|hermit|keeper/], ['cap', /plumber|miner|worker|scout|kid|boy/]];
-const HELD_WORDS = [['sword', /knight|warrior|sword|blade|paladin|samurai|ninja|hunter|stalker/], ['hammer', /hammer|smith|forge|anvil|ogre|brute/], ['staff', /mage|wizard|witch|staff|sage|priest|cantor|shaman/], ['blaster', /gunner|soldier|trooper|sniper|robot|space/], ['shield', /guard|shield|defender|warden/]];
+// A declared look (content.models / components.model, kind 'art' with `look`) is drawn as declared; without one the
+// look is a variation seeded by the archetype id (stable per archetype, independent of its name).
+const PLANS = ['biped', 'blob', 'flyer', 'quadruped', 'robot', 'ghost'];
+const HEADWEAR = ['none', 'none', 'none', 'crown', 'helmet', 'wizard-hat', 'bandana', 'horns', 'hood', 'cap'];
+const HELD = ['none', 'none', 'none', 'sword', 'hammer', 'staff', 'blaster', 'shield'];
 const FRIENDLY = ['#3a7bd5', '#e8742a', '#2ea84a', '#d8352a', '#9b5cff', '#f0b429', '#1fb5a8', '#ff6fa0'];
 const MENACE = ['#6a2a8a', '#3a3a4a', '#8a2a2a', '#2a5a3a', '#5a3a2a', '#2a3a6a', '#7a1a3a', '#4a4a1a'];
 const SKIN = ['#f2d2a9', '#e8b48c', '#c8906a', '#8a5a3c', '#f5dcc4', '#d8a878'];
 
-/** A normalizeLook()-compatible character look for an archetype, from words and a seed. */
+/** A normalizeLook()-compatible character look for an archetype: a variation seeded by its id. */
 export function lookFor(arch = {}, role = roleOf(arch), colors = null) {
-  const text = [arch.id, arch.name, arch.kind, ...(arch.tags || [])].join(' ').toLowerCase();
-  const r = rng(seedOf(arch.id || text)), pick = a => a[Math.floor(r() * a.length)];
-  const body = (PLAN_WORDS.find(([, re]) => re.test(text)) || ['biped'])[0];
+  const r = rng(seedOf(arch.id || role)), pick = a => a[Math.floor(r() * a.length)];
   const hostile = role === 'enemy' || role === 'boss';
+  const body = hostile && role !== 'boss' ? pick(PLANS) : 'biped';
   const primary = colors?.primary || pick(hostile ? MENACE : FRIENDLY);
-  const look = {
+  return {
     body, build: role === 'boss' ? 'stocky' : pick(['chibi', 'chibi', 'normal', 'stocky']),
     colors: { primary, secondary: colors?.secondary || (body === 'biped' ? pick(SKIN) : '#f0e8d8'), accent: colors?.accent || pick(hostile ? ['#ff3b3b', '#f0c020', '#9cff3a'] : ['#f5c542', '#ffffff', '#3ad0e8', '#ff5a7a']), eye: colors?.eye || (hostile ? '#ff3b3b' : pick(['#1f8a4c', '#2a5ad8', '#3a2a10'])), hair: colors?.hair || pick(['#3a2418', '#1a1418', '#e8c040', '#c84a2a']) },
     eyes: hostile ? pick(['angry', 'angry', 'visor', 'cyclops']) : pick(['cartoon', 'cartoon', 'dots']),
-    headwear: (HEAD_WORDS.find(([, re]) => re.test(text)) || ['none'])[0], held: (HELD_WORDS.find(([, re]) => re.test(text)) || ['none'])[0],
+    headwear: body === 'biped' ? pick(HEADWEAR) : 'none', held: body === 'biped' ? pick(HELD) : 'none',
     ears: body === 'quadruped' ? pick(['pointed', 'round', 'floppy']) : r() < 0.25 ? pick(['pointed', 'round']) : 'none',
     snout: body === 'quadruped' ? 'muzzle' : body === 'flyer' ? 'beak' : r() < 0.3 ? pick(['nose', 'muzzle']) : 'none',
     tail: body === 'quadruped' ? pick(['fluffy', 'thin', 'spiky']) : 'none',
@@ -98,21 +134,20 @@ export function lookFor(arch = {}, role = roleOf(arch), colors = null) {
     accessory: role === 'boss' ? 'cape' : r() < 0.2 ? pick(['scarf', 'belt', 'backpack']) : 'none',
     feet: body === 'quadruped' ? 'paws' : pick(['shoes', 'boots']), hands: hostile && r() < 0.4 ? 'claws' : 'gloves',
   };
-  if (/thorn|spike|bramble/.test(text)) look.accessory = 'spots';
-  return look;
 }
-const PROP_WORDS = {
-  pickup: { coin: /coin|gold|money|cash|ash|ember|shard/, gem: /gem|jewel|diamond|ruby|emerald|sapphire/, key: /key/, heart: /heart|health|life|heal|potion|flask|sip/, star: /star/, ring: /ring/, fruit: /fruit|apple|cherry|berry|food/, orb: /orb|soul|essence|spirit/, mushroom: /mushroom|shroom/, crystal: /crystal|ore|mana/, feather: /feather/, battery: /battery|energy|power|fuel/, flower: /flower|petal|seed/, scroll: /scroll|map|fragment|page|tablet|note|letter|lore/, candy: /candy|sweet/, acorn: /acorn|nut/, shell: /shell/, note: /music|song/ },
-  hazard: { spikes: /spike/, lava: /lava|magma|slag/, saw: /saw|blade/, fire: /fire|flame|burn/, thorns: /thorn|bramble/, electric: /electric|shock|zap|volt/, 'ice-spikes': /ice|frost/, cactus: /cactus/, acid: /acid|poison|toxic/, mine: /mine|bomb/ },
-  decor: { bench: /bench|seat|pew/, crate: /crate|box|cargo/, barrel: /barrel|keg|cask/, signpost: /sign|post|notice/, lantern: /lantern|lamp|torch|light/, tablet: /tablet|tomb|grave|stele|monument|lore/, well: /well|fountain/, pot: /pot|vase|urn|jar/, statue: /statue|idol|bust/, campfire: /campfire|fire|bonfire|hearth/, bush: /bush|shrub|plant|hedge/, rock: /rock|boulder|stone/ },
-  goal: { flag: /flag|finish|checkpoint/, door: /door|gate|exit/, portal: /portal|warp|teleport/, chest: /chest|treasure|loot/, trophy: /trophy|cup|prize/, castle: /castle/, beacon: /beacon|lantern|lamp|light|bench|shrine|altar/, 'exit-sign': /sign/, nest: /nest|egg/ },
-};
-/** A prop kind (v2/art/props) for an archetype of a prop-like role. */
-export function propFor(arch = {}, role = roleOf(arch)) {
-  const text = [arch.id, arch.name, arch.kind, ...(arch.tags || [])].join(' ').toLowerCase();
-  const table = PROP_WORDS[role] || (role === 'prop' ? { ...PROP_WORDS.decor, ...PROP_WORDS.goal, ...PROP_WORDS.pickup } : PROP_WORDS.pickup);
-  const hit = Object.entries(table).find(([, re]) => re.test(text));
-  if (hit) return hit[0];
+/** The prop a declared item kind (planner/outline-form.js ITEM_KINDS) is drawn as when it lies in the world. */
+const ITEM_PROP = Object.freeze({ currency: 'coin', key: 'key', food: 'fruit', potion: 'heart', charm: 'ring', quest: 'scroll', material: 'crystal', ammo: 'battery', tool: 'star', weapon: 'star', armor: 'shell', block: 'gem', prop: 'gem', misc: 'gem' });
+/**
+ * A prop kind (v2/art/props) for an archetype of a prop-like role: the one its components' card declares
+ * (card.presents prop), else for a pickup of an item the prop its declared item kind is drawn as, else a pick seeded
+ * by the archetype id among the role's props.
+ */
+export function propFor(arch = {}, role = roleOf(arch), registry = null, doc = null) {
+  const declared = presentationOf(arch, registry, null, doc)?.prop;
+  if (declared && Object.values(PROPS).some(l => l.includes(declared))) return declared;
+  const itemId = arch.components?.pickup?.item ?? arch.components?.collectible?.item;
+  const kind = itemId && (doc?.content?.items || []).find(i => i.id === itemId)?.kind;
+  if (role === 'pickup' && ITEM_PROP[kind]) return ITEM_PROP[kind];
   const list = PROPS[role === 'prop' ? 'decor' : role] || PROPS.pickup;
   return list[Math.floor(hash(seedOf(arch.id || 'x')) * list.length)];
 }
@@ -138,11 +173,11 @@ export function poseFor(state, t, speed = 1) {
     default: return Math.floor(t * 1.6) % 2 ? 'idleB' : 'idle';
   }
 }
-/** Best-guess scenery theme for a document (title, logline, zone tags). */
+/**
+ * The scenery theme for a document or zone: one it declares (a zone's `theme`, or a zone tag naming a theme), never
+ * guessed from words in the title, logline or names; otherwise the meadow.
+ */
 export function themeFor(doc, zone = null) {
-  const text = `${doc.title || ''} ${doc.logline || ''} ${zone?.name || ''} ${(zone?.tags || []).join(' ')}`.toLowerCase();
-  const direct = THEMES.find(t => new RegExp(`\\b${t}\\b`).test(text));
-  if (direct) return direct;
-  const map = [['cave', /cave|mine|dungeon|underground|crypt|cistern|catacomb|lantern|hollow/], ['snow', /snow|ice|frost|winter|frozen/], ['volcano', /lava|fire|ember|volcan|forge|ash/], ['space', /space|star|galax|alien|orbit|asteroid/], ['city', /city|street|urban|neon|cyber/], ['haunted', /ghost|haunt|spook|manor|grave|night/], ['desert', /desert|sand|dune/], ['ocean', /ocean|sea|beach|island|water/], ['jungle', /jungle|tropic/], ['forest', /forest|wood|grove/], ['factory', /factory|robot|machine|steam/], ['castle', /castle|kingdom|knight/], ['candy', /candy|sweet/], ['sky', /sky|cloud|air/]];
-  return (map.find(([, re]) => re.test(text)) || ['meadow'])[0];
+  const declared = [zone?.theme, ...(zone?.tags || [])].find(t => THEMES.includes(t));
+  return declared || 'meadow';
 }

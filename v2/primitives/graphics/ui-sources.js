@@ -20,7 +20,31 @@
 //   battle     service battle.view() | gameplay.creature.battle store + battle options (puzzle)
 //   input      service input.glyph(verb) / device()                                (runtime)
 //   save       service save.slots(); actions save_game/load_game                  (runtime)
-import { docSystem } from './ui-lib.js';
+import { docSystem, titleCase } from './ui-lib.js';
+import { uiControls } from '../engine/runtime-lib-controls.js';
+
+/**
+ * The options a UI listing whole options (card.controls.options) shows: those whose verbs not every one is issued by
+ * another mounted UI primitive's card.controls.verbs (the battle screen owns `battle`, the card table `play_card`): one
+ * UI owns each option, derived from the cards. @param {any} rt @param {string} self the listing UI's id @param {any[]} options
+ */
+export function unownedOptions(rt, self, options) {
+  const verbs = uiControls(rt.doc, rt.registry).verbs;
+  const owned = v => (verbs.get(v) || []).some(u => u !== self);
+  return options.filter(o => { const vs = Object.keys(o.actions || {}); return !vs.length || !vs.every(owned); });
+}
+
+/**
+ * What an entity is called on screen: its character's declared name (plot.characters), else its archetype's
+ * (content.archetypes): the names the content forms theme. A view's own name for it (a primitive's fallback to the
+ * entity id) and the title-cased archetype id come only after the declarations.
+ */
+export function entityName(rt, id, viewName = null) {
+  const e = rt.entity(id), doc = rt.doc || {};
+  const declared = (doc.plot?.characters || []).find(c => c.id === id)?.name || (doc.content?.archetypes || []).find(a => a.id === e?.archetype)?.name;
+  if (declared) return declared;
+  return viewName && viewName !== id ? viewName : titleCase(e?.archetype || id);
+}
 
 export const vars = (rt, name) => rt.state.vars[name];
 export const num = (rt, name, d = 0) => { const v = rt.state.vars[name]; return typeof v === 'number' && Number.isFinite(v) ? v : d; };
@@ -168,7 +192,7 @@ function fromTurns(rt, t) {
   const myTurn = (t.sides || []).find(s => s.id === t.side)?.control === 'player';
   return {
     active: true, turn: myTurn ? 'player' : t.side, round: t.round,
-    sides: (t.sides || []).map(s => ({ id: s.id, player: s.control === 'player', units: (s.units || []).map(u => { const e = rt.entity(u.id), hp = health(e); return { id: u.id, name: u.name || e?.archetype || u.id, model: e?.components?.model, hp: hp?.hp ?? 0, hpMax: hp?.max ?? 1, active: u.id === t.unit, down: u.downed || hp?.dead, ap: u.ap, apMax: u.apMax }; }) })),
+    sides: (t.sides || []).map(s => ({ id: s.id, player: s.control === 'player', units: (s.units || []).map(u => { const e = rt.entity(u.id), hp = health(e); return { id: u.id, name: entityName(rt, u.id, u.name), model: e?.components?.model, hp: hp?.hp ?? 0, hpMax: hp?.max ?? 1, active: u.id === t.unit, down: u.downed || hp?.dead, ap: u.ap, apMax: u.apMax }; }) })),
     menu: myTurn ? (t.legal || []).map(a => ({ id: a.id, label: a.label || a.id, kind: 'move', enabled: true, cost: a.cost, target: a.target, targets: a.targets, hit: a.hit })) : [],
     ap: t.ap, apMax: t.apMax,
   };

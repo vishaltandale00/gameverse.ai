@@ -33,7 +33,7 @@ export default {
         { id: 'chest', name: 'Chest', components: {} },
       ],
       items: [{ id: 'bronze_key', name: 'Bronze key' }, { id: 'iron_key', name: 'Iron key' }],
-      blocks: [{ id: 'stone', name: 'Stone', solid: true }, { id: 'locked_door', name: 'Locked door', solid: true }],
+      blocks: [{ id: 'stone', name: 'Stone', solid: true, tile: 'rock', color: '#5a5668' }, { id: 'locked_door', name: 'Locked door', solid: true, tile: 'wood', color: '#9a6a3a' }],
     },
     player: { archetype: 'hero' },
   },

@@ -11,7 +11,8 @@ import { loopEvents } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { isObj, objects, prop } from '../kernel/guards.js';
-import { loopInstances, winOwner, readsOf } from './loop-check.js';
+import { winQuantity } from './loop.js';
+import { presentationProblems } from '../primitives/graphics/presentation.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -90,6 +91,8 @@ const GAME_STAGES = new Set(['playtest', 'invariants', undefined]);
  */
 export function viability(play, problems = [], strategies, loop = []) {
   const why = problems.filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info' && GAME_STAGES.has(p.stage)).map(p => `${p.code}: ${p.message}`);
+  // A game whose renderers do not draw what its loops need a person to see is not playable by a person (graphics/presentation.js).
+  why.push(...problems.filter(p => p.stage === 'presentation' && p.severity === 'error').map(p => `${p.code}: ${p.message}`));
   if (strategies !== undefined && !why.length) why.push(...unplayable(play, problems, strategies, loop));
   return why.length ? { viable: false, viability: why.slice(0, 3).join('; ') } : { viable: true, viability: null };
 }
@@ -133,26 +136,8 @@ function unplayable(play, problems, strategies, loop) {
 /** @param {unknown} v @returns {v is Record<string, unknown>} */
 const isObjLike = v => typeof v === 'object' && v !== null;
 
-/**
- * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
- * winOwner: `core` orders the loops as the planner does, else the win the document wires), with the comparison and target of the won plot ending that
- * tests it, when one does. null when no loop declares a game-ending win with reads.
- * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {WinQuantity | null}
- */
-export function winQuantity(doc, registry, core = null) {
-  const owner = winOwner(doc, registry, loopInstances(doc, registry), core);
-  const reads = owner ? readsOf(owner.loop.win) : null;
-  if (!owner || !reads) return null;
-  /** @type {WinQuantity} */
-  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event } : { use: owner.use, var: /** @type {string} */ (reads.var) };
-  for (const e of objects(prop(prop(doc, 'plot'), 'endings'))) {
-    const w = e.when;
-    if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;
-    const cmp = ['gte', 'gt', 'lte', 'lt', 'eq'].find(k => typeof w[k] === 'number');
-    if (cmp) return { ...out, cmp, target: Number(w[cmp]) };
-  }
-  return out;
-}
+// winQuantity lives with the loop declarations (loop.js), so the host's HUD (browser side) shows the same quantity.
+export { winQuantity };
 
 /**
  * The gate's verdict depends only on the document, its seed and the budgets (v2/verify GATE_BUDGET: states and
@@ -179,7 +164,7 @@ export async function verifyDocument(doc, registry, logic, { playable = false, b
   // source is set by every return below.
   const out = { ok: pre.ok, completable: null, exhaustive: false, source: 'preflight', preflight: summary, problems: /** @type {VerifyProblem[]} */ ([]), doc: pre.doc };
   // An empty world can be "completable" (zones are rects, the solver walks the map's solid edges): flag it.
-  const world = worldCheck(pre.doc, registry, logic);
+  const world = [...worldCheck(pre.doc, registry, logic), ...presentationProblems(pre.doc, registry).map(p => ({ ...p, severity: 'error', stage: 'presentation' }))];
   out.problems.push(...world);
   const m = await verifyModule();
   if (typeof m.verify === 'function') {

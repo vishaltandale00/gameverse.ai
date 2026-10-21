@@ -24,6 +24,8 @@ export function respawn(rt, who) {
 export default {
   id: 'gameplay.checkpoint',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { checkpoint: { role: 'goal', prop: 'flag' } },
     // fast_travel exists only when the instance turns it on (fastTravelBetween).
     loop: { verbs: ['fast_travel'], verbsOf: config => (config.fastTravelBetween ? ['fast_travel'] : []), progress: ['checkpoint_set'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).

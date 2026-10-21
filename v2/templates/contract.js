@@ -9,6 +9,8 @@
 //   preflight    the document preflights against the catalogue's card-derived schemas
 //   composition  the static composition check (card declarations only) finds no failure
 //   loop         the loop check finds no problem
+//   presentation the document a person plays (the host's renderers added) draws everything its loops need a person to
+//                see (card.loop.shows against the renderers' card.draws: graphics/presentation.js)
 //   gate         the publish gate (verifyDocument with the playtest agents' budget) finds it viable
 //   controls     the document a person plays (the host's input and UI added) gives a control for every verb its loops
 //                declare, and each direction pressed through the controls moves the player the way the view shows it
@@ -35,6 +37,7 @@ import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
 import { humanRate } from '../verify/human.js';
+import { presentationProblems, PRESENTATION_CODES } from '../primitives/graphics/presentation.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
@@ -71,6 +74,7 @@ export const CODES = Object.freeze({
   preflight: Object.freeze(['preflight_failed']),
   composition: Object.freeze(['composition_failed']),
   loop: Object.freeze(['loop_problem']),
+  presentation: Object.freeze(Object.values(PRESENTATION_CODES)),
   gate: Object.freeze(['gate_not_viable']),
   controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
@@ -176,6 +180,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
     },
     composition: () => checkComposition(bare.doc, registry, { logic }).failures.map(f => problem('composition_failed', `${f.check}: ${f.message}`, { cause: f.check })),
     loop: () => loopProblems(bare.doc, registry, { logic }).map(p => problem('loop_problem', p.message, { path: p.path, cause: p.code })),
+    presentation: () => presentationProblems(checked.doc, registry).map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.space ? { space: p.space } : {}), missing: p.missing })),
     gate: async () => {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };

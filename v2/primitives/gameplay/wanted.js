@@ -16,7 +16,7 @@ const n = (d, extra = {}) => ({ type: 'number', default: d, ...extra });
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['crime', 'escaped'], lose: { param: 'onBusted', reads: { var: 'wanted', by: { effects: ['surrender'], movement: true } } } },
+    loop: { shows: [], verbs: [], progress: ['crime', 'escaped'], lose: { param: 'onBusted', reads: { var: 'wanted', by: { effects: ['surrender'], movement: true } } } },
     intent: 'Wanted level: crimes add heat when witnessed (law instantly, civilians after a report delay), stars escalate a law response that spawns units/vehicles/roadblocks out of sight and hunts the player, heat decays unseen, hiding or safe zones clear it, bribes and arrests end it.',
     views: ['any'],
     params: {

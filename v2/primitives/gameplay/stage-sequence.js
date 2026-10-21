@@ -52,7 +52,7 @@ export default {
   card: {
     // select_stage exists when the instance allows choosing (select); next_stage skips an intro or a clear screen, so it
     // exists only when the stages have one (runtime-lib-controls.js instanceVerbs).
-    loop: { verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
+    loop: { shows: [], verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { select_stage: { type: 'choice', of: 'a stage', from: 'options', emits: ['stage_selected'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -62,7 +62,7 @@ export default {
     // Levels mode: a wrapper that sequences the stages of another mode; its bot plays the wrapped mode stage by stage.
     // The win reads stage.advance (stages cleared plus the current stage's goal progress): it moves within a stage, so
     // progress toward completing the sequence is measurable before the first stage clears.
-    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
+    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', shown: { var: 'stage.number', label: 'Stage' }, reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', shown: { var: 'stage.lives', label: 'Lives', applies: { param: 'lives', gt: 0 } }, reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {

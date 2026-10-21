@@ -17,7 +17,11 @@ const ORDERS = ['move', 'attack', 'attack_move', 'gather', 'build', 'stop', 'hol
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { rts: [{ when: { building: true }, role: 'prop', prop: 'castle' }, { when: { node: true }, role: 'prop', prop: 'crystal' }, { role: 'npc' }] },
+    // Whose side its entities are on, as a person sees it (graphics/allegiance.js).
+    sides: { param: 'factions', control: 'player', component: 'rts', field: 'faction' },
+    loop: { shows: ['entities', 'cells'], verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { select: { type: 'choice', of: 'units of the player faction', selects: 'who', emits: ['selected'] }, order: { type: 'choice', of: 'an order for units (gather, move, attack-move) and its target', pick: 'who', from: 'options', emits: ['order_given'] }, produce: { type: 'choice', of: 'a building and what it trains', from: 'options', emits: ['production_queued'] }, rally: { type: 'choice', of: 'a building and its rally point', from: 'options', emits: ['rally_set'] } },
     // Its AI-controlled factions play themselves (stepAI): they gather, produce and order attack-moves.
@@ -40,7 +44,7 @@ export default {
     ],
     // RTS mode: the player's faction against AI factions; won when only the player's faction stands, which play
     // moves toward by wearing down and destroying the opponents' units and buildings (their health).
-    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['order', 'produce'], effects: ['damage'] } } }, lose: { param: 'onDefeat', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
+    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['order', 'produce'], effects: ['damage'] } } }, lose: { param: 'onDefeat', once: true, reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {

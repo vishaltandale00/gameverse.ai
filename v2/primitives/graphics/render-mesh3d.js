@@ -6,6 +6,7 @@
 // from the roadgraph service become terrain-following ribbons; entities are
 // skinned, animated actors. Shadows: none | sun | cascade (wider, sharper).
 import { joinStage, presentationOnly } from './three-stage.js';
+import { syncZones } from './three-zones.js';
 import { ensureTerrain } from './terrain-procedural.js';
 import { syncActors } from './three-actors.js';
 import { roadRibbon, roadMask } from './three-buildings.js';
@@ -20,6 +21,9 @@ export default {
   card: {
     intent: 'three.js scene for heightfield + placed-object spaces: LOD terrain, streamed placed objects (generated buildings merged per cell, instanced props and models, foliage via graphics.foliage.scatter), terrain-following roads from the roadgraph, skinned animated actors, and sun or cascade shadows.',
     views: ['1p', '3p', 'iso', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     params: {
       shadows: { type: 'string', options: ['none', 'sun', 'cascade'], default: 'cascade', effect: 'sun shadow quality (cascade = wider, higher resolution)' },
       drawDistance: { type: 'number', default: 1200, min: 50, max: 20000, unit: 'm', effect: 'terrain and object draw distance (fog hides the edge)' },
@@ -78,8 +82,10 @@ export default {
       syncActors(stage, spaceId, actorsRoot, { drawDistance: Math.min(config.drawDistance, 400) });
     }, 'graphics.render.mesh3d');
 
+    const zoneState = {};
     stage.hook('world', ctx => {
       if (stage.activeSpace !== spaceId || !api()) return;
+      syncZones(rt, THREE, root, spaceId, (x, z) => stage.groundAt(spaceId, x, z)?.y ?? 0, zoneState); // the zones the loops name
       if (!roadsBuilt) buildRoads(); // first: grass and decor read the road mask
       terrain ??= ensureTerrain(stage, spaceId, root);
       terrain.frame(ctx);

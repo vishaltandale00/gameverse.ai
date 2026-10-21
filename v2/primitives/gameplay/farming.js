@@ -16,7 +16,9 @@ const WIN = { when: { count: 'harvested', gte: '$target' }, reads: { event: 'har
 export default {
   id: 'gameplay.farming',
   card: {
-    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: WIN },
+    // Its plots live in its store, not in cells or entities: the renderers draw them from its service (graphics/presentation.js).
+    marks: { service: 'farming' },
+    loop: { shows: ['cells', 'marks'], verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: WIN },
     // The farm loop, played by an avatar on a cell space against the day clock (crops grow one stage a watered day and
     // wither out of season); no lose of its own. Its bot (v2/verify/strategies/farm.js) tills, plants, waters and
     // harvests through the controls a person uses.
@@ -163,6 +165,9 @@ export default {
       }
       return out.slice(0, 8);
     });
-    rt.provide('farming', { plots: () => structuredClone(Object.values(st().plots)), day });
+    // marks (card.marks): each plot of a space as a person sees it: its crop, growth stage of the days to ripen, ripe, watered.
+    const marks = sid => Object.values(st().plots).filter(p => p.space === sid).sort((a, b) => (a.at.join() < b.at.join() ? -1 : 1))
+      .map(p => ({ at: p.at.slice(), kind: p.crop, stage: Math.min(p.growth, byItem.get(p.crop)?.days ?? p.growth), stages: byItem.get(p.crop)?.days ?? 1, ready: p.ripe, watered: p.watered }));
+    rt.provide('farming', { plots: () => structuredClone(Object.values(st().plots)), day, marks });
   },
 };

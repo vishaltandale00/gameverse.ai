@@ -203,7 +203,8 @@ function entitiesOf(H, S, alpha) {
 }
 
 function frame(H, alpha, fixedDt) {
-  const now = typeof performance !== 'undefined' ? performance.now() / 1000 : H.clock + 1 / 60;
+  // view.now: the host's display clock override (tests, recorders), as three-stage.js and ui-lib.js read it.
+  const now = typeof H.view?.now === 'function' ? H.view.now() : typeof performance !== 'undefined' ? performance.now() / 1000 : H.clock + 1 / 60;
   const realDt = fixedDt ?? (H.wall == null ? 1 / 60 : clamp(now - H.wall, 0, 0.1));
   H.wall = now; H.frameNo++;
   const fb = H.feedback;

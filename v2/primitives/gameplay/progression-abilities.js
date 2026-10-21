@@ -9,6 +9,8 @@ const owned = (rt, who = 'player') => ((st(rt).owned ??= {})[who] ??= {});
 export default {
   id: ID,
   card: {
+    // What its events tell a person (the HUD's notices and the story log read it: graphics/ui-lib.js tellsOf).
+    tells: { ability_unlocked: { label: 'New ability' } },
     loop: { verbs: [], progress: ['ability_unlocked'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [

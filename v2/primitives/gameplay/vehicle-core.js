@@ -77,6 +77,8 @@ function controlsFor(rt, v, pref = 'auto') {
 export default {
   id: ID,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { vehicle: { role: 'vehicle' }, seat: { role: 'npc' } },
     loop: { verbs: ['enter_vehicle', 'exit_vehicle'], progress: ['vehicle_entered'] },
     intent: 'Vehicles anyone can enter and exit: seats (driver + passengers), carjacking NPC drivers, locked cars with theft attempts and alarms, ownership, hull damage with burning and explosion, fuel, horn and radio. Motion comes from gameplay.vehicle.car/boat/aircraft; AI drives by writing components.drive.control, or through the movement intents (steer, moveTo) of the AI driver seated in it.',
     views: ['any'],

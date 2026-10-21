@@ -35,6 +35,8 @@ export const cardArt = (id, type) => { const h = hashHue(id), h2 = (h + 40) % 36
 export default {
   id: 'graphics.ui.cards',
   card: {
+    // The quantities it shows a person (graphics/ui-defaults.js: a loop's goal it displays needs no HUD widget).
+    displays: [{ component: 'health', of: 'opponents' }, { component: 'health', of: 'player' }],
     intent: 'Card game UI for any deck game: fanned hand with focus lift, costs and playable glow, procedural card art, energy, draw/discard piles, enemies with intents and health, duel board row, targeting and End turn.',
     views: ['ui', 'any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
@@ -113,7 +115,7 @@ export default {
         foeSig = sig; foeNodes.clear();
         fill(enemies, ...list.map(e => {
           const ent = rt.entity(e.id), model = ent?.components?.model || ent?.archetype || e.id;
-          const n = el('div.gv-foe', { data: { foe: e.id }, style: { '--who': portraitColor(rt.doc, model) } }, el('span.gv-intent'), el('div.gv-bsprite', {}, portrait(rt.doc, model, { mode: 'full' })), el('b', { text: e.name || titleCase(ent?.archetype || e.id) }),
+          const n = el('div.gv-foe', { data: { foe: e.id }, style: { '--who': portraitColor(rt.doc, model) } }, el('span.gv-intent'), el('div.gv-bsprite', {}, portrait(rt.doc, model, { mode: 'full' })), el('b', { text: S.entityName(rt, e.id, e.name) }),
             el('div.gv-meter', { style: { width: '150px', 'min-width': '0' } }, el('div.gv-meter-track', {}, el('div.gv-meter-chip'), el('div.gv-meter-fill', { style: { '--fill': '#ff5d5d' } })), el('span.gv-meter-value')));
           n.addEventListener('click', () => { if (targeting) { const i = targeting.ids.indexOf(e.id); if (i >= 0) play(targeting.card, e.id); } });
           foeNodes.set(e.id, n); return n;

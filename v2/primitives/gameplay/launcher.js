@@ -18,7 +18,7 @@ const rotate = (v, a) => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.s
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['aim', 'aim_left', 'aim_right', 'pull', 'fire', 'ability'],
+    loop: { shows: ['entities'], verbs: ['aim', 'aim_left', 'aim_right', 'pull', 'fire', 'ability'],
       // A cannon is aimed (its speed is fixed); a sling is pulled back, which sets both the direction and the power.
       verbsOf: config => (config.mode === 'sling' ? ['aim_left', 'aim_right', 'pull', 'fire', 'ability'] : ['aim', 'aim_left', 'aim_right', 'fire', 'ability']), progress: ['launched', 'explosion', 'contact'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

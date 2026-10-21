@@ -41,7 +41,7 @@ test('ui + plot: a real conversation, its choice, the quest it starts, HUD objec
   assert.equal(m.text('.gv-dlg-text span'), 'Bless you.');
   m.key('Enter'); m.frame(30);
   assert.ok(m.q('.gv-dialogue').classList.contains('gv-hide'), 'conversation over');
-  assert.match(m.text('.gv-toasts'), /New quest[\s\S]*The Lost Lamp/);
+  assert.match(m.text('.gv-toasts'), /New task[\s\S]*The Lost Lamp/);
   assert.equal(m.text('.gv-objective-title'), 'The Lost Lamp');
   assert.equal(m.text('.gv-objective-text'), 'Search the woods');
   const before = m.rt.snapshot();
