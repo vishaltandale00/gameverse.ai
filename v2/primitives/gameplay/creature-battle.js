@@ -331,6 +331,8 @@ export default {
     ],
     // Creature-battle mode: menu turns against wild or trainer creatures, started by start_battle (encounters, beats).
     mode: { loop: 'creature-battle', interaction: 'menu', opponent: 'ai-rival', space: ['engine.space.none'], needs: { content: ['content.species', 'content.moves', 'content.types'], participants: null }, win: { param: 'onWin' }, lose: { param: 'onLose' }, bot: 'balance' },
+    // As an encounter's inner loop: the participant posing it fields a creature of the document's species (a duel, not a wild catch).
+    engage: { encounter: { start: [{ do: 'start_battle', kind: 'trainer', foe: [{ species: '$first:content.species', level: 5 }] }] } },
     intent: 'Turn-based creature battles (wild, trainer, leader, champion) entered from any overworld into a battle space: moves, type chart, STAB, crits, stat stages, statuses, priority/speed order, switching, items, capture, escape, experience, move learning and evolution.',
     views: ['ui', 'any'],
     params: {

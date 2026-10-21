@@ -1,15 +1,18 @@
 // Mashups relate mechanics ACROSS concepts (v2/planner/play-spec.js mashupProblem, decompose.js): when an idea joins
 // concepts (mechanic.from) whose loops each declare a win, every core.mashup entry must name mechanics of both, the
 // one joined into first. An entry within one concept relates nothing: it is rejected and only that field is asked
-// again. The preset then adds the adapter that realises the relation (card.adapts.relation), its params filled from
-// declarations: nested (engine.adapt.nested: trigger, inner loops, outcomes), skin (engine.adapt.skin: maps), union
-// (engine.adapt.projection: a region of the joined loop's space kind). Real catalogue; fake writers; no network.
+// again. The build's adapter steps (build-steps.js adapterSteps) then add the adapter that realises the relation
+// (card.adapts.relation), its params from declarations: nested (engine.adapt.nested: the trigger the model picks from the
+// declared ones, inner loops, start, outcomes), skin (engine.adapt.skin), union (engine.adapt.projection: a region of
+// the joined loop's space kind); the preset configures them (outcome emits and effects, skin maps). Real catalogue; fake
+// writers; no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { normalize } from '../v2/planner/decompose.js';
 import { mashupProblem, mashupSides } from '../v2/planner/play-spec.js';
 import { selectPrimitives } from '../v2/planner/select.js';
+import { adapterStepsOnSelection, makeAsk } from '../v2/planner/build-steps.js';
 import { preset } from '../v2/planner/presets.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
@@ -61,7 +64,11 @@ test('selection re-asks only core.mashup until the model relates the concepts ac
   assert.equal(sel.completeness.mashup.asked, 2);
 });
 
-test('the preset adds the matching adapters with params filled from declarations: nested and skin across chess × pokemon', () => {
+/** The adapter steps over a selection with a scripted model picking the nested trigger (as build.js runs them). */
+const adapterStep = (d, selection, trigger = null) => adapterStepsOnSelection({ registry, decomposition: d, selection,
+  ask: makeAsk({ writer: fakeWriter([req => JSON.stringify({ pick: req.schema.schema.properties.pick.enum.includes(trigger) ? trigger : 'none', why: 'scripted', spec: '' })]) }) });
+
+test('the adapter steps add the matching adapters and the preset fills their params from declarations: nested and skin across chess × pokemon', async () => {
   const FX = JSON.parse(readFileSync(new URL('./fixtures/v2-chess-pokemon-selection.json', import.meta.url), 'utf8'));
   const d = structuredClone(FX.decomposition);
   d.core.mashup = [...ACROSS, { relation: 'skin', mechanics: ['turn_based_piece_movement', 'unique_abilities'], why: 'creatures are the pieces' }];
@@ -70,6 +77,10 @@ test('the preset adds the matching adapters with params filled from declarations
   const selection = { ...structuredClone(FX.selection), generators: [], bind: {} };
   selection.systems.push('gameplay.combat.health');
   selection.mechanics.find(m => m.id === d.core.loop).primitives.push('gameplay.combat.health');
+  // The steps: the nested trigger is one strict question over the events the outer loop declares participants for.
+  const steps = await adapterStep(d, selection, 'attack_hit');
+  assert.deepEqual(steps.gaps, []);
+  assert.deepEqual(steps.steps.map(s => [s.kind, s.outcome]), [['nested', 'added'], ['skin', 'reused']]);
   const p = preset({ decomposition: d, selection, registry, logic, seed: FX.seed, prompt: FX.prompt });
   assert.equal(p.ok, true, JSON.stringify(p.errors));
   assert.deepEqual(p.gaps, []);
@@ -99,7 +110,7 @@ test('the preset adds the matching adapters with params filled from declarations
   assert.ok(preflight(p.doc, registry, logic).ok);
 });
 
-test('union across concepts: the joined race gets a region of the space kind it declares, projected by the adapter', () => {
+test('union across concepts: the joined race gets a region of the space kind it declares, projected by the adapter', async () => {
   const caps = [...registry.get('engine.space.tilemap').capabilities({ mode: 'side' })];
   const mechanics = [{ id: 'run', verb: 'run', description: 'run and jump through the level', from: 'Mario', importance: 'core' }, { id: 'kart', verb: 'race', description: 'race rivals to the finish', from: 'Mario Kart', importance: 'core' }];
   // gameplay.ai.seek: the driver of the race's rivals, as selection's driver step chose it (build-steps.js).
@@ -107,6 +118,10 @@ test('union across concepts: the joined race gets a region of the space kind it 
     mechanics: [{ ...mechanics[0], primitives: ['gameplay.move.platformer'] }, { ...mechanics[1], primitives: ['gameplay.race'] }] };
   const d = { version: 't', title: 'Kart Bros', premise: 'Platform racing.', tone: '', references: [], views: ['side'], spaces: [], movement: 'ground', mechanics,
     core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'win the race', lose: '', theme: '', narrative: false, mashup: [{ relation: 'union', mechanics: ['run', 'kart'], why: 'the race runs through the level' }] } };
+  // The union step asks nothing: the race's declared spaces decide the region, and the race is bound to it.
+  const steps = await adapterStep(d, selection);
+  assert.deepEqual(steps.steps.map(s => [s.kind, s.outcome, s.asks.length]), [['union', 'added', 0]]);
+  assert.equal(selection.bind['gameplay.race'], selection.adapters[0].id);
   const p = preset({ decomposition: d, selection, registry, logic, seed: 3 });
   assert.equal(p.ok, true, JSON.stringify(p.errors));
   const region = p.doc.systems.find(s => s.use === 'engine.adapt.projection');

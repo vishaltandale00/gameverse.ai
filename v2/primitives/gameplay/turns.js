@@ -44,6 +44,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
+      // The participants an event names (role -> data field): a hit names the acting unit and the unit it hit.
+      involves: { attack_hit: { attacker: 'who', defender: 'target' } },
       // As an encounter: the player-controlled sides win (onVictory) or the last of them is defeated (onDefeat).
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onVictory', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onDefeat', player: 'defeated', opponent: 'keeps' } } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
@@ -54,7 +56,8 @@ export default {
       {"need": "archetypes", "component": "turns", "min": 2, "placed": 4, "why": "turns are taken by units (pieces): archetypes with a turns component {side}, placed on the board by spawns (at cells when there are no zones), for every side", "example": {"id": "knight", "kind": "npc", "components": {"turns": {"side": "white", "ap": 2}, "health": {"max": 3}}}},
     ],
     // The player's units take turns: the player joins the player-controlled side when no side lists it.
-    engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },
+    // As an encounter's inner loop: it waits (autoStart off) and the encounter starts it.
+    engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } }, encounter: { start: [{ do: 'start_turns' }], config: { autoStart: false } } },
     // Its AI-controlled sides play themselves (aiStep): their units take the same data-defined actions and moves.
     drives: { control: 'ai', actions: ['turn_act', 'turn_move'], events: ['turn_action', 'attack_hit', 'unit_moved'], movement: true },
     // Tactics mode: the player's side against AI sides, won when one side remains.

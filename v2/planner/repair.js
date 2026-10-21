@@ -13,6 +13,7 @@ import { defaultsOf, isSpace, isGenerator, isGraphics, satisfying, spaceVariants
 import { vocabIndex } from './select.js';
 import { isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
 import { referenceOf, idsAt, declaredAt, ZONES } from './content.js';
+import { ensureInstanceFields } from './adapters.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Instance} Instance */
@@ -364,6 +365,9 @@ export function repairDocument(input, { registry, logic, rounds = 6, exclude = n
   /** @type {PreflightResult | null} */
   let checked = null;
   for (let round = 0; round < rounds; round++) {
+    // Instance fields the planner owns (an adapter instance's id, its host binding) are filled by code before
+    // preflight: they are never a field the model repairs (adapters.js ensureInstanceFields).
+    fixes.push(...ensureInstanceFields(doc, registry));
     checked = safePreflight(doc, registry, logic);
     // Preflight accepts vocabulary whose owning primitive is registered but not in the document
     // (kernel request: pipeline.md); add the owners so the effects run with their primitive installed.

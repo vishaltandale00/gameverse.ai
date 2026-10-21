@@ -27,6 +27,9 @@
 //                      'list.field' for every entry of a list param) run when it ends that way, and each side's fate:
 //                      'keeps' (stays in play) or 'defeated' (out of play in the outer loop);
 //   needs?:   { content: [document sections], participants: param | null };
+//   involves?: { <event>: { <role>: <data field> } }: the participants a provided event names (entity ids in its data),
+//             e.g. attack_hit: { attacker: 'who', defender: 'target' }; what a nested encounter can be entered on
+//             (build-steps.js nestedStep) and the roles it binds (engine.adapt.nested with.roles);
 // }
 // card.mode is the richer form of the same declaration on primitives that own a whole loop (interaction, opponent,
 // preferred spaces, a bot that proves it): cardLoop() merges the two, card.loop winning field by field.
@@ -43,7 +46,7 @@ import { isObj, isList, prop } from '../kernel/guards.js';
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
  *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null,
- *   targets: string | null }} Loop
+ *   targets: string | null, involves: Record<string, Record<string, string>> }} Loop
  * `targets`: the service through which the loop tells each of its AI-controlled participants where to go next (its
  * next checkpoint, the ball): kernel/types.d.ts TargetService; a driver with card.drives.targets steers them by it.
  */
@@ -86,7 +89,24 @@ export function cardLoop(card) {
     via: typeof mode?.via === 'string' ? mode.via : null, bot: typeof mode?.bot === 'string' ? mode.bot : null, wraps: Boolean(mode?.wraps),
     outcome: outcomeOf(own?.outcome),
     targets: typeof (own?.targets ?? mode?.targets) === 'string' ? String(own?.targets ?? mode?.targets) : null,
+    involves: involvesOf(own?.involves),
   };
+}
+
+/**
+ * A loop's declared event participants (card.loop.involves): event -> role -> data field; entries that are not a
+ * non-empty map of strings are left out. @param {unknown} v @returns {Record<string, Record<string, string>>}
+ */
+export function involvesOf(v) {
+  /** @type {Record<string, Record<string, string>>} */
+  const out = {};
+  if (!isObj(v)) return out;
+  for (const [event, roles] of Object.entries(v)) {
+    if (!isObj(roles)) continue;
+    const r = Object.fromEntries(Object.entries(roles).filter(([k, f]) => k && typeof f === 'string' && f));
+    if (Object.keys(r).length) out[event] = /** @type {Record<string, string>} */ (r);
+  }
+  return out;
 }
 
 const FATES = ['keeps', 'defeated'];

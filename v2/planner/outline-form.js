@@ -612,7 +612,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
     // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
     for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
-    out.systems.push({ use: id, ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
+    // Instance fields are the scaffold's (an adapter's id names its region or encounter): the form never drops them.
+    out.systems.push({ use: id, ...(typeof base.id === 'string' ? { id: base.id } : {}), ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
   }
   const content = contentFromForm(f, { comps });
   /** @type {Record<string, unknown>[]} */

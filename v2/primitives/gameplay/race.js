@@ -54,7 +54,8 @@ export default {
     requires: { capabilities: ['position'] },
     reads: [],
     // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
-    engage: { participants: { param: 'racers' } },
+    // As an encounter's inner loop: the race waits (autoStart off) and the encounter starts it.
+    engage: { participants: { param: 'racers' }, encounter: { start: [{ do: 'start_race' }], config: { autoStart: false } } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
     // Its target service (mode.targets): each AI-controlled racer's next checkpoint zone while the race runs.
     mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },

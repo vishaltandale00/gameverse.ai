@@ -74,6 +74,11 @@ export interface Engage {
   /** param -> value; '$first:<path>' / '$ids:<path>' are filled from the document (or 'with.<param>'). */
   config?: Record<string, unknown>;
   join?: { param: string; field: string; where?: Record<string, unknown> };
+  /**
+   * How an encounter (engine.adapt.nested) enters this loop as its inner loop: the effects that start it ('$first:<path>'
+   * filled from the document, 'with.<param>' from this instance) and the instance config that makes it wait for them.
+   */
+  encounter?: { start: Effect[]; config?: Record<string, unknown> };
 }
 
 /**

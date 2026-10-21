@@ -52,6 +52,8 @@ export default {
     },
     requires: {},
     reads: [],
+    // As an encounter's inner loop: the match waits (autoStart off) and the encounter starts it.
+    engage: { encounter: { start: [{ do: 'start_match' }], config: { autoStart: false } } },
   },
   logic(logic) {
     logic.predicate('round', {

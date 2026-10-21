@@ -21,11 +21,12 @@
 // candidate, is a gap for the gap layer (the primitive or adapter signature); nothing is added silently.
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
-import { checkComposition } from './compose-check.js';
-import { resolveAdapters } from './adapters.js';
+import { checkComposition, capsOf } from './compose-check.js';
+import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds } from './adapters.js';
 import { cardLoop, endsGame, composeLoop } from './loop.js';
 import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, LOOP_CODES } from './loop-check.js';
-import { preset, coreOf } from './presets.js';
+import { preset, coreOf, declaredOutcomes } from './presets.js';
+import { mashupSides } from './play-spec.js';
 import { declaredFit, relevance, servesInteraction } from './select.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
 import { parseReply } from './writer.js';
@@ -40,7 +41,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 /** @typedef {import('./select.js').Gap} Gap */
 /** @typedef {import('./loop-check.js').LoopProblem} LoopProblem */
 /** @typedef {import('./bundles.js').Composes} Composes */
-/** @typedef {'win' | 'lose' | 'driver' | 'coverage'} StepKind */
+/** The loop steps' kinds (win, lose, driver, coverage), the inner loop of a nested mashup, and the mashup adapter steps. @typedef {'win' | 'lose' | 'driver' | 'coverage' | 'inner' | 'nested' | 'union' | 'skin'} StepKind */
 /** A mechanic as the preset reads it (its core and loops come from the core mechanics' primitives). @typedef {{ id: string, importance: string, primitives: string[] }} StepMechanic */
 /**
  * The collection a step reads: its space (the configuration it composes on), systems, adapter instances and bindings,
@@ -50,7 +51,11 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  *   mechanics: StepMechanic[], loop: string | null,
  *   composes: (ids: string[]) => Composes, resolve: (ids: string[], variant: number) => { adapters: AdapterInstance[], bind: Record<string, string>, gaps: AdapterSpec[] } }} StepCollection
  */
-/** What a step answers: its kind, a stable key, why it is needed, and the loop problem it answers (driver, coverage). @typedef {{ kind: StepKind, key: string, why: string, problem?: LoopProblem }} StepNeed */
+/**
+ * What a step answers: its kind, a stable key, why it is needed, the loop problem it answers (driver, coverage), and the
+ * mechanic its pick joins (default: the core loop mechanic; an inner loop joins the joined concept's loop mechanic).
+ * @typedef {{ kind: StepKind, key: string, why: string, problem?: LoopProblem, join?: string }} StepNeed
+ */
 /** A candidate a step offers (build.js BuildCandidate without covers). @typedef {{ id: string, score: number, variant: number, members: string[], extra: import('./bundles.js').Companion[], adapters: import('./bundles.js').BundleAdapter[] }} StepCandidate */
 /**
  * One loop step as selection.build.steps records it: the need, the candidates offered (and rejected, with why), the
@@ -59,6 +64,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  *   asks: Array<{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }>, outcome: 'added' | 'reused' | 'gap', primitive: string | null,
  *   members: string[], loop: string[], collection: string[], ms: number }} LoopStep
  */
+/** Add a step's pick to the caller's collection, joined to `mechanic` (the core loop mechanic, or an inner loop's): the collection after it, or why not. @typedef {(kind: StepKind, pick: StepCandidate, mechanic?: string | null) => StepCollection | string} Commit */
 /** One strict enum question (makeAsk). @typedef {(q: { name: string, system: string, user: string, field: string, options: string[], extra?: Record<string, Record<string, unknown>> }) => Promise<{ pick: string, why: string, reply: Record<string, unknown> }>} Ask */
 
 export const STEPS_VERSION = 'build-steps/0.1';
@@ -128,8 +134,10 @@ export function selectionCollection(registry, sel, loop) {
 /** A loop problem's stable key (its path is left out: indices move as the collection grows). @param {LoopProblem} p */
 const problemKey = p => `${p.code}|${p.primitive}|${p.need.kind}|${p.need.loop || ''}|${p.need.component || p.need.event || p.need.var || ''}`;
 
-/** The mechanics with `ids` joined to the core loop mechanic (as a win, lose or coverage pick joins it). @param {StepCollection} c @param {string[]} ids @returns {StepMechanic[]} */
-const joinLoop = (c, ids) => c.mechanics.map(m => (m.id === c.loop ? { ...m, primitives: [...m.primitives, ...ids.filter(id => !m.primitives.includes(id))] } : m));
+/** The mechanics with `ids` joined to a mechanic (default the core loop mechanic, as a win, lose or coverage pick joins it). @param {StepCollection} c @param {string[]} ids @param {string | null} [to] @returns {StepMechanic[]} */
+const joinLoop = (c, ids, to = c.loop) => c.mechanics.map(m => (m.id === to ? { ...m, primitives: [...m.primitives, ...ids.filter(id => !m.primitives.includes(id))] } : m));
+/** The gap's mechanic for a step need. @param {StepNeed} need */
+const gapMechanic = need => (need.kind === 'win' ? 'win' : need.kind === 'lose' ? 'lose' : need.kind === 'driver' ? 'opponent' : need.kind === 'coverage' ? 'loop' : need.join || need.kind);
 /** The core the preset reads from mechanics (presets.js coreOf). @param {RegistryLike} registry @param {StepMechanic[]} mechanics @param {string[]} systems */
 const coreIds = (registry, mechanics, systems) => [...coreOf({ mechanics, systems }, registry)];
 
@@ -184,6 +192,8 @@ const byText = by => (by ? [by.actions?.length && `actions ${by.actions.join('/'
 function answers(registry, logic, need, { reads }) {
   if (need.kind === 'win') return card => endsGame(cardLoop(card)?.win);
   if (need.kind === 'lose') return card => endsGame(cardLoop(card)?.lose);
+  // The inner loop of a nested encounter: a loop that declares what its result means for an encounter's participants.
+  if (need.kind === 'inner') return card => Boolean(cardLoop(card)?.outcome) && startOf(card).length > 0;
   const n = need.problem?.need;
   if (need.kind === 'driver' && n) {
     const loop = n.loop ? cardLoop(cardOf(registry, n.loop)) : null;
@@ -222,6 +232,7 @@ function signatureOf(need, decomposition, c, registry, owner, spec = '') {
   const n = need.problem?.need;
   const text = need.kind === 'win' || need.kind === 'lose'
     ? `${need.kind}: a primitive whose loop declares a game-ending ${need.kind} (card.loop.${need.kind}) for "${str(decomposition.core?.[need.kind]) || decomposition.premise}"${interaction ? `, played as ${interaction}` : ''}, whose ${need.kind}.reads ${need.kind === 'win' ? `the collection's player verbs (${verbs.join(', ') || 'none'}) can change` : 'play can change'}, ${on}`
+    : need.kind === 'inner' ? `inner loop: a primitive whose loop declares an encounter outcome (card.loop.outcome: each result's effects param and each side's fate) and how an encounter starts it (card.engage.encounter), for "${need.join ? (decomposition.mechanics || []).find(m => m.id === need.join)?.description || need.join : 'the joined concept'}"`
     : need.kind === 'driver' ? `opponent: a primitive that declares card.drives { control: '${n?.control || 'ai'}' } for ${n?.loop ? `the ${n.loop} AI participants` : "the play spec's opponent"}${n?.by ? `, whose entities change what the lose reads (${byText(n.by)})` : ''}, ${on}`
     : `loop: a primitive whose player verbs or effects change what the ${owner || 'core loop'} win reads (${readsText(owner ? readsOf(cardLoop(cardOf(registry, owner))?.win) : null)}), ${on}`;
   return `${text}${spec ? `. Spec: ${spec}` : ''}`.slice(0, 600);
@@ -236,6 +247,7 @@ export const stepSignature = (need, decomposition, c, registry) => signatureOf(n
 /** What a card declares for a step, one line for the model. @param {any} card @param {StepKind} kind */
 function declares(card, kind) {
   const loop = cardLoop(card);
+  if (kind === 'inner') return loop?.outcome ? `as an encounter: ${Object.entries(loop.outcome.results).map(([r, x]) => `${r} (player ${x.player}${x.opponent ? `, opponent ${x.opponent}` : ''})`).join(', ')}` : '';
   if (kind === 'win' || kind === 'lose') { const end = loop?.[kind]; return end ? `${kind} reads ${readsText(readsOf(end))}${end.reads?.by ? ` (changed by ${byText(end.reads.by)})` : ''}` : ''; }
   if (kind === 'driver') { const d = drivesOf(card); return d ? `drives ${d.loops.length ? `loops ${d.loops.join('/')}` : d.components.length ? `entities with ${d.components.join('/')}` : d.targets ? 'participants by their target service' : 'its own participants'}${d.effects.length || d.actions.length ? `; they ${[...d.actions, ...d.effects].join('/')}` : ''}${d.movement ? '; they move' : ''}` : ''; }
   return loop?.verbs.length ? `verbs: ${loop.verbs.join(', ')}` : '';
@@ -264,10 +276,12 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   // the collection may answer a win or lose (it joins the core loop); a driver or coverage need it left open, it cannot.
   const pool = registry.cards().filter(card => {
     if (!/^(gameplay|plot)\./.test(card.id) || isSpace(card.id) || isGenerator(card.id) || isGraphics(card.id) || card.adapts || skip.has(card.id)) return false;
-    if ((need.kind === 'driver' || need.kind === 'coverage') && c.systems.includes(card.id)) return false;
-    if (!servesInteraction(card, interaction)) return false;
+    // A member of the collection may answer a win or lose; a driver, coverage or inner loop need it left open, it cannot.
+    if ((need.kind === 'driver' || need.kind === 'coverage' || need.kind === 'inner') && c.systems.includes(card.id)) return false;
+    // An inner loop is played its own way (entered from the outer loop): the spec's interaction does not bind it.
+    if (need.kind !== 'inner' && !servesInteraction(card, interaction)) return false;
     const loop = cardLoop(card);
-    if (interaction && loop?.interaction && loop.interaction !== interaction && (endsGame(loop.win) || endsGame(loop.lose))) return false;
+    if (need.kind !== 'inner' && interaction && loop?.interaction && loop.interaction !== interaction && (endsGame(loop.win) || endsGame(loop.lose))) return false;
     return fits(card);
   }).map(card => ({ card, rank: (mechanic ? declaredFit(mechanic, card, { interaction }) ?? 0 : 0) + (sentence ? relevance({ verb: '', description: sentence }, card) : 0) }))
     .sort((a, b) => b.rank - a.rank || a.card.id.localeCompare(b.card.id));
@@ -278,7 +292,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   /** @type {AdapterSpec | undefined} */
   let missingAdapter;
   // A win, lose or coverage pick joins the core loop mechanic (the seed: its companions come as its closure); a driver joins the collection only.
-  const mechanicsWith = (/** @type {string} */ id) => (need.kind === 'driver' ? c.mechanics : joinLoop(c, [id]));
+  const mechanicsWith = (/** @type {string} */ id) => (need.kind === 'driver' ? c.mechanics : joinLoop(c, [id], need.join ?? c.loop));
   for (const { card, rank } of pool) {
     if (candidates.length >= MAX_CANDIDATES) break;
     const b = formBundle({ registry, seed: card.id, systems: c.systems, space: c.space.use, adapters: c.adapters, composes: c.composes, resolve: c.resolve });
@@ -310,7 +324,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
     const adapter = !candidates.length && missingAdapter && rejected.every(x => /needs an adapter/.test(x.why)) ? missingAdapter : undefined;
     const signature = adapter ? `adapter ${adapter.id}: ${adapter.card.adapts.projection}` : signatureOf(need, decomposition, c, registry, before.owner, spec);
     /** @type {Gap} */
-    const gap = { mechanic: need.kind === 'win' ? 'win' : need.kind === 'lose' ? 'lose' : need.kind === 'driver' ? 'opponent' : 'loop', description: `${need.problem ? `[${need.problem.code}] ` : ''}${adapter ? `needs adapter: ${signature}` : signature}`,
+    const gap = { mechanic: gapMechanic(need), description: `${need.problem ? `[${need.problem.code}] ` : ''}${adapter ? `needs adapter: ${signature}` : signature}`,
       importance: 'core', kind: adapter ? 'adapter' : need.kind === 'win' ? 'win' : 'no_primitive', why: why.slice(0, 400), signature, ...(adapter ? { adapter, verdict: 'incompatible-needs-adapter' } : {}) };
     return gap;
   };
@@ -319,6 +333,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   const what = need.kind === 'win' ? 'how the game is WON: a primitive that declares the game-ending win the idea describes'
     : need.kind === 'lose' ? 'how the game is LOST: a primitive that declares the game-ending lose the idea describes'
     : need.kind === 'driver' ? 'what makes the AI-controlled opponents act: a primitive that drives them'
+    : need.kind === 'inner' ? 'the joined idea\'s loop, entered from the core loop as an encounter: a primitive whose loop declares what its result means for the participants'
     : "what lets play reach the win: a primitive whose verbs or effects change what the win reads";
   const a = await ask({ name: `pick_${need.kind}`, field: 'pick', options: [...offered, 'none'],
     extra: { spec: { type: 'string', description: 'when pick is "none": what a new primitive must do for this (its rules, inputs, state, events), precise enough to build it; else ""' } },
@@ -336,7 +351,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
  * driver, coverage. `commit` adds a pick to the caller's collection (build.js, replan.js) and returns the collection
  * after it, or why it could not (the step is then a gap with that problem). After each step the loop check of the
  * partial collection is recorded on it. `only` limits the kinds; `exclude` maps a kind to ids never offered.
- * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, commit: (kind: StepKind, pick: StepCandidate) => StepCollection | string,
+ * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, commit: Commit,
  *   mechanic?: { id: string, verb: string, description: string } | null, only?: StepKind[], exclude?: (kind: StepKind) => Iterable<string>, needs?: StepNeed[], logic?: LogicLike | null, log?: (msg: string) => void }} options
  * @returns {Promise<{ steps: LoopStep[], gaps: Gap[], collection: StepCollection }>}
  */
@@ -358,11 +373,11 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
     const r = await askLoopStep({ registry, decomposition, collection: c, need, ask, mechanic, exclude: exclude(need.kind), logic: lg });
     let gap = r.gap;
     if (r.pick) {
-      const next = commit(need.kind, r.pick);
+      const next = commit(need.kind, r.pick, need.join ?? c.loop);
       if (typeof next === 'string') {
         r.step.asks[r.step.asks.length - 1].ok = false; r.step.asks[r.step.asks.length - 1].problem = next;
         r.step.outcome = 'gap'; r.step.primitive = null;
-        gap = { mechanic: need.kind === 'win' ? 'win' : need.kind === 'lose' ? 'lose' : need.kind === 'driver' ? 'opponent' : 'loop', description: `${r.pick.id} failed the checks for the ${need.kind} step: ${next}`.slice(0, 400), importance: 'core', kind: need.kind === 'win' ? 'win' : 'no_primitive', why: next.slice(0, 400) };
+        gap = { mechanic: gapMechanic(need), description: `${r.pick.id} failed the checks for the ${need.kind} step: ${next}`.slice(0, 400), importance: 'core', kind: need.kind === 'win' ? 'win' : 'no_primitive', why: next.slice(0, 400) };
         log(`loop step ${need.kind}: ${r.pick.id} failed (${next})`);
       } else c = next;
     }
@@ -373,4 +388,256 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
     steps.push(r.step);
   }
   return { steps, gaps, collection: c };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The mashup adapter steps, after the mechanic and loop steps: each core.mashup entry across concepts is realised by the
+// registered adapter that declares its relation (card.adapts.relation), added here by code with its configuration read
+// from declarations (the preset only configures what these steps chose: presets.js):
+//   nested  the outer loop is the core loop mechanic's loop primitives; the inner loop is the joined concept's loop
+//           primitive (its concept.loop, else the entry's first joined mechanic), asked for with the loop step (kind
+//           'inner') when the collection has none. ONE strict enum question: which declared outer event enters the
+//           inner loop. Offered: the events an outer card declares the participants of (card.loop.involves) among its
+//           progress and provided events, naming at least as many participants as the inner loop's card.loop.outcome
+//           has sides. Code then writes engine.adapt.nested: the trigger and its roles, the inner loop, its start
+//           (card.engage.encounter.start), the participants carried into the inner loop's own space when it is bound
+//           elsewhere and played by participants (card.loop.needs.participants, card.engage.participants), and the
+//           outcomes (card.loop.outcome, presets.js declaredOutcomes).
+//   union   each joined loop whose declared spaces (card.loop.space) do not include the chosen space gets a region of the
+//           first one it declares, projected by the union adapter's adapt() hook; the loop is bound to the region.
+//   skin    the skin adapter, once (its maps come from the composition: presets.js configureSkins).
+// union and skin ask nothing: their declarations decide. After each, the composition check and the loop check of the
+// partial collection run (nothing new may break) and the step is recorded; what cannot be derived is a gap.
+//
+// Integration (build.js, owned elsewhere), after loopSteps:
+//     const m = await adapterSteps({ registry, decomposition, collection: collection(), ask, log,
+//       commit: (kind, pick, mechanic) => { const t = tryAdd(pick); if (!t.ok) return t.why;
+//         const own = mechanic ? mapping[mechanic] : null; if (own && !own.primitives.includes(pick.id)) own.primitives.push(pick.id); return collection(); },
+//       adopt: (instances, b) => { stepAdapters.push(...instances); Object.assign(stepBind, b); return collection(); } });
+//     steps.push(...m.steps); gaps.push(...m.gaps);
+// stepAdapters / stepBind are kept apart from tryAdd's (which replaces `adapters` and `bind` with resolveAdapters' output
+// on every pick) and joined into collection() and the BuildResult: adapters: [...adapters, ...stepAdapters],
+// bind: { ...bind, ...stepBind }. Re-planning (replan.js) can call it the same way over selection.adapters / bind.
+
+/** Add adapter instances (with the bindings onto their regions) to the caller's collection: the collection after it, or why not. @typedef {(instances: AdapterInstance[], bind: Record<string, string>) => StepCollection | string} Adopt */
+
+/** An encounter id from the entry's mechanics. @param {string[]} ids */
+const encounterSlug = ids => (ids.join('_').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_').slice(0, 40);
+/** A concept key as play-spec.js groups mechanics (mechanic.from). @param {unknown} from */
+const ideaKey = from => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || []).join('_');
+/** The effects an encounter starts a card's loop with (card.engage.encounter.start). @param {any} card @returns {unknown[]} */
+function startOf(card) { const s = card?.engage?.encounter?.start; return Array.isArray(s) ? s : []; }
+/** Does a card's loop take part through participants (the entities an encounter would carry)? @param {any} card */
+const hasParticipants = card => Boolean(cardLoop(card)?.needs.participants || card?.engage?.participants?.param);
+
+/**
+ * The joined concept's loop mechanic of a mashup entry: its concept's declared loop (concept.loop) when the entry names
+ * it, else the entry's first joined mechanic (the play spec names the joined idea's own loop first). null for an entry
+ * within one concept. @param {Decomposition} decomposition @param {import('./play-spec.js').Mashup} entry
+ */
+export function joinedLoopOf(decomposition, entry) {
+  const sides = mashupSides(entry, decomposition.mechanics || []);
+  if (!sides.outer.length || !sides.inner.length) return null;
+  const from = ideaKey((decomposition.mechanics || []).find(m => m.id === sides.inner[0])?.from);
+  const declared = (decomposition.concepts || []).find(x => ideaKey(x.id) === from)?.loop;
+  return typeof declared === 'string' && sides.inner.includes(declared) ? declared : sides.inner[0];
+}
+
+/** The collection's loop primitives a mechanic maps to. @param {RegistryLike} registry @param {StepCollection} c @param {string | null} mechanic */
+const loopsOf = (registry, c, mechanic) => (c.mechanics.find(m => m.id === mechanic)?.primitives || []).filter(id => c.systems.includes(id) && cardLoop(cardOf(registry, id)));
+
+/**
+ * The outer events a nested encounter can be entered on: for each outer loop primitive, the events its loop declares
+ * the participants of (card.loop.involves) that it provides or counts as progress, naming at least `sides` participants.
+ * @param {RegistryLike} registry @param {string[]} outer @param {number} sides
+ * @returns {Array<{ event: string, use: string, roles: Record<string, string> }>}
+ */
+export function nestedTriggers(registry, outer, sides) {
+  /** @type {Array<{ event: string, use: string, roles: Record<string, string> }>} */
+  const out = [];
+  for (const use of outer) {
+    const card = cardOf(registry, use), loop = cardLoop(card);
+    if (!loop) continue;
+    for (const [event, roles] of Object.entries(loop.involves)) {
+      const declared = loop.progress.includes(event) || (card?.provides?.events || []).includes(event);
+      if (declared && Object.keys(roles).length >= sides && !out.some(t => t.event === event)) out.push({ event, use, roles: { ...roles } });
+    }
+  }
+  return out;
+}
+
+/**
+ * The composition check and the loop check of the partial collection with adapter instances (and bindings) added:
+ * why it breaks something new ('' when nothing), its verdict and the loop problems after it.
+ * @param {RegistryLike} registry @param {Decomposition} decomposition @param {StepCollection} c @param {AdapterInstance[]} instances @param {Record<string, string>} bind @param {LogicLike} logic
+ */
+function adapterChecks(registry, decomposition, c, instances, bind, logic) {
+  const of = (/** @type {AdapterInstance[]} */ extra, /** @type {Record<string, string>} */ b) => checkComposition({ spaces: [{ ...c.space }], systems: [...c.systems], bind: { ...c.bind, ...b }, adapters: [...c.adapters, ...extra] }, registry, { resolve: true });
+  const before = of([], {}), after = of(instances, bind);
+  const had = new Set(before.failures.map(failureKey));
+  const fresh = after.failures.filter(f => !had.has(failureKey(f)));
+  const known = new Set(partialCheck(registry, decomposition, c, { logic }).problems.map(problemKey));
+  const loop = partialCheck(registry, decomposition, { ...c, bind: { ...c.bind, ...bind } }, { adapters: instances, logic }).problems;
+  const breaks = loop.filter(p => !known.has(problemKey(p)) && !isDriverCode(p.code));
+  const why = fresh.length ? `the composition check fails with it: ${fresh.slice(0, 2).map(f => `[${f.code}] ${f.message}`).join('; ')}`
+    : breaks.length ? `the loop check fails with it: ${breaks.slice(0, 2).map(p => `[${p.code}] ${p.message}`).join('; ')}` : '';
+  return { why, verdict: after.verdict, loop: loop.map(p => `${p.code} ${p.primitive}`) };
+}
+
+/**
+ * Run the mashup adapter steps (see above) on a collection: one per core.mashup entry across concepts. `commit` adds an
+ * inner loop the loop step picked (joined to the joined concept's loop mechanic); `adopt` adds the adapter instances.
+ * -> the steps recorded, the gaps, the adapter instances added and the collection after them.
+ * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, commit: Commit, adopt: Adopt, logic?: LogicLike | null, log?: (msg: string) => void }} options
+ * @returns {Promise<{ steps: LoopStep[], gaps: Gap[], adapters: AdapterInstance[], collection: StepCollection }>}
+ */
+export async function adapterSteps({ registry, decomposition, collection, ask, commit, adopt, logic = null, log = () => {} }) {
+  const lg = logic || logicOf(registry);
+  let c = collection;
+  /** @type {LoopStep[]} */
+  const steps = [];
+  /** @type {Gap[]} */
+  const gaps = [];
+  /** @type {AdapterInstance[]} */
+  const added = [];
+  for (const entry of decomposition.core?.mashup || []) {
+    const sides = mashupSides(entry, decomposition.mechanics || []);
+    const relation = entry.relation;
+    // An entry within one concept relates nothing (play-spec.js); an unknown relation has no adapter step.
+    if (!sides.outer.length || (relation !== 'nested' && relation !== 'union' && relation !== 'skin')) continue;
+    const t0 = performance.now();
+    const use = adaptersFor(registry, relation)[0] || null;
+    const label = `${relation} [${entry.mechanics.join(', ')}]`;
+    /** @type {LoopStep} */
+    const step = { kind: relation, mechanic: entry.mechanics[0] || null, need: `${label}: ${entry.why || 'the ideas join'}`.slice(0, 300), candidates: [], rejected: [], asks: [], outcome: 'gap', primitive: use, members: [], loop: [], collection: [...c.systems], ms: 0 };
+    /** @param {string} why */
+    const finish = why => {
+      if (why) {
+        step.outcome = 'gap';
+        gaps.push({ mechanic: entry.mechanics[0] || 'mashup', description: `needs adapter: ${label}`, importance: 'core', kind: 'adapter', why: why.slice(0, 400), signature: `adapter ${use || relation}: ${relation} mashup of ${entry.mechanics.join(', ')}: ${why}`.slice(0, 600) });
+        log(`${relation} step: ${why}`);
+      }
+      step.collection = [...c.systems];
+      if (!step.loop.length) step.loop = partialCheck(registry, decomposition, c, { logic: lg }).problems.map(p => `${p.code} ${p.primitive}`);
+      step.ms = Math.round(performance.now() - t0);
+      steps.push(step);
+    };
+    /** Check and add instances; '' when added. @param {AdapterInstance[]} instances @param {Record<string, string>} bind */
+    const add = (instances, bind) => {
+      const checked = adapterChecks(registry, decomposition, c, instances, bind, lg);
+      if (checked.why) return checked.why;
+      const next = adopt(instances, bind);
+      if (typeof next === 'string') return next;
+      c = next; added.push(...instances); step.loop = checked.loop; step.outcome = 'added';
+      return '';
+    };
+    const taken = new Set([c.space.id, ...instanceIds({ adapters: c.adapters }), ...added.map(a => a.id).filter(/** @returns {x is string} */ x => typeof x === 'string')]);
+    if (!use) { finish(`no registered adapter declares the ${relation} relation (card.adapts.relation)`); continue; }
+    const innerMechanic = joinedLoopOf(decomposition, entry);
+
+    if (relation === 'skin') {
+      if (c.adapters.some(a => a.use === use) || c.systems.includes(use)) { step.outcome = 'reused'; finish(''); continue; }
+      const inst = { use, id: uniqueId(adapterInstanceId(registry, { use, space: c.space.id, with: {} }), taken), space: c.space.id, with: {} };
+      finish(add([inst], {}));
+      continue;
+    }
+
+    if (relation === 'union') {
+      const inner = loopsOf(registry, c, innerMechanic);
+      if (!inner.length) { finish(`the joined loop mechanic ${innerMechanic || '(none)'} maps to no loop primitive of the collection`); continue; }
+      const proj = registry.get(use);
+      /** @type {AdapterInstance[]} */
+      const instances = [];
+      /** @type {Record<string, string>} */
+      const bind = {};
+      let why = '';
+      for (const u of inner) {
+        const want = (cardLoop(cardOf(registry, u))?.space || []).filter(/** @returns {e is string} */ e => typeof e === 'string' && registry.has(e));
+        // Already placed in a region, or the chosen space is one the loop declares: both loops run in one space as they are.
+        if (c.bind[u] || !want.length || want.includes(c.space.use)) continue;
+        if (typeof proj?.adapt !== 'function') { why = `${use} declares no adapt() hook to project ${want[0]} for ${u}`; break; }
+        const missing = { capabilities: [...capsOf(registry, want[0])].filter(x => !c.space.caps.includes(x)), content: [], services: [] };
+        const proposal = proj.adapt({ space: { id: c.space.id, use: c.space.use, with: c.space.with || {}, caps: c.space.caps }, missing, neededBy: [{ use: u, card: /** @type {any} */ (cardOf(registry, u)) }], registry });
+        if (!proposal) { why = `${use} cannot project ${want[0]} onto ${c.space.use} for ${u}`; break; }
+        const w = isObj(proposal.with) ? proposal.with : {};
+        const id = uniqueId(typeof proposal.id === 'string' && proposal.id ? proposal.id : adapterInstanceId(registry, { use, space: c.space.id, with: w }), taken);
+        instances.push({ use, id, space: c.space.id, with: w });
+        bind[u] = id;
+      }
+      step.members = [...inner];
+      if (why) { finish(why); continue; }
+      if (!instances.length) { step.outcome = 'reused'; finish(''); continue; }
+      finish(add(instances, bind));
+      continue;
+    }
+
+    // nested: the inner loop (asked for with the loop step when missing), then ONE question for the trigger.
+    let inner = loopsOf(registry, c, innerMechanic).filter(id => cardLoop(cardOf(registry, id))?.outcome);
+    if (!inner.length && innerMechanic) {
+      const m = (decomposition.mechanics || []).find(x => x.id === innerMechanic);
+      /** @type {StepNeed} */
+      const need = { kind: 'inner', key: `inner:${innerMechanic}`, join: innerMechanic, why: `the ${label} mashup enters ${innerMechanic}'s loop from the core loop, and no primitive of the collection mapped to it declares an encounter outcome (card.loop.outcome) and how an encounter starts it (card.engage.encounter)` };
+      const r = await askLoopStep({ registry, decomposition, collection: c, need, ask, mechanic: m ? { id: m.id, verb: m.verb, description: m.description } : null, logic: lg });
+      if (r.pick) {
+        const next = commit('inner', r.pick, innerMechanic);
+        if (typeof next === 'string') { r.step.outcome = 'gap'; r.step.primitive = null; r.gap = { mechanic: innerMechanic, description: `${r.pick.id} failed the checks for the inner loop step: ${next}`.slice(0, 400), importance: 'core', kind: 'no_primitive', why: next.slice(0, 400) }; }
+        else c = next;
+      }
+      if (r.gap) gaps.push(r.gap);
+      r.step.collection = [...c.systems];
+      r.step.loop = partialCheck(registry, decomposition, c, { logic: lg }).problems.map(p => `${p.code} ${p.primitive}`);
+      steps.push(r.step);
+      inner = loopsOf(registry, c, innerMechanic).filter(id => cardLoop(cardOf(registry, id))?.outcome);
+    }
+    step.collection = [...c.systems];
+    if (!inner.length) { finish(`the joined loop ${innerMechanic || '(none)'} has no primitive that declares an encounter outcome (card.loop.outcome)`); continue; }
+    const noStart = inner.filter(u => !startOf(cardOf(registry, u)).length);
+    if (noStart.length) { finish(`${noStart.join(', ')} declare${noStart.length === 1 ? 's' : ''} no way an encounter starts ${noStart.length === 1 ? 'its' : 'their'} loop (card.engage.encounter.start)`); continue; }
+    const outer = loopsOf(registry, c, c.loop).filter(id => !inner.includes(id));
+    const sideCount = Math.max(...inner.map(u => cardLoop(cardOf(registry, u))?.outcome?.sides.length || 1));
+    const triggers = nestedTriggers(registry, outer, sideCount);
+    step.members = [...inner];
+    if (!triggers.length) { finish(`the outer loop (${outer.join(', ') || 'none'}) declares no event naming ${sideCount} participant${sideCount === 1 ? '' : 's'} (card.loop.involves) to enter ${inner.join(', ')} on`); continue; }
+    const offered = triggers.map(t => t.event);
+    const a = await ask({ name: 'pick_nested_trigger', field: 'pick', options: [...offered, 'none'],
+      system: 'You join two game loops: an event of the outer loop starts the inner loop as an encounter between the participants that event names, and the encounter\'s result comes back to the outer loop (a defeated participant leaves play). Pick the ONE listed outer event that should start the inner loop as the idea describes, or "none" when none of them does.',
+      user: `Game idea: ${decomposition.premise}\nHow the ideas join (nested): ${entry.why || entry.mechanics.join(', ')}\nOuter loop: ${outer.join(', ')}\nInner loop: ${inner.map(u => `${u} [${declares({ id: u, ...cardOf(registry, u) }, 'inner')}]`).join('; ')}\n\nOuter events:\n${triggers.map(t => `- ${t.event} (${t.use}): names the ${Object.keys(t.roles).join(' and the ')}`).join('\n')}` });
+    step.asks.push({ offered, pick: a.pick, why: a.why, ok: a.pick !== 'none' });
+    if (a.pick === 'none') { finish(a.why || 'none of the outer events starts the inner loop as the idea describes'); continue; }
+    const trigger = /** @type {{ event: string, use: string, roles: Record<string, string> }} */ (triggers.find(t => t.event === a.pick));
+    const id = encounterSlug(entry.mechanics);
+    const { outcomes } = declaredOutcomes(registry, { id, inner });
+    const start = inner.flatMap(u => structuredClone(startOf(cardOf(registry, u))));
+    // Participants are carried only into an inner loop bound to a space of its own and played by participants.
+    const outerSpace = c.bind[trigger.use] ?? c.space.id;
+    const innerSpace = inner.map(u => c.bind[u]).find(s => typeof s === 'string' && s !== outerSpace);
+    const carry = innerSpace && inner.some(u => hasParticipants(cardOf(registry, u))) ? Object.keys(trigger.roles).map(role => ({ role })) : [];
+    /** @type {Record<string, any>} */
+    const w = { id, on: trigger.event, roles: trigger.roles, inner: [...inner], start, outcomes, ...(carry.length ? { space: innerSpace, carry } : {}) };
+    const inst = { use, id: uniqueId(adapterInstanceId(registry, { use, with: w }, c.space.id), taken), with: w };
+    finish(add([inst], {}));
+  }
+  return { steps, gaps, adapters: added, collection: c };
+}
+
+/**
+ * The mashup adapter steps over a select.js selection (re-planning, and a selection built before these steps existed):
+ * an inner loop pick joins sel.systems and the joined loop mechanic; the adapter instances join sel.adapters and their
+ * bindings sel.bind. Mutates `sel`. -> adapterSteps' result.
+ * @param {{ registry: RegistryLike, decomposition: Decomposition, selection: import('./select.js').Selection, ask: Ask, logic?: LogicLike | null, log?: (msg: string) => void }} options
+ */
+export async function adapterStepsOnSelection({ registry, decomposition, selection: sel, ask, logic = null, log = () => {} }) {
+  const loop = typeof decomposition.core?.loop === 'string' && sel.mechanics.some(m => m.id === decomposition.core?.loop) ? decomposition.core.loop : null;
+  /** @type {AdapterInstance[]} */
+  const own = [];
+  const collection = () => selectionCollection(registry, sel, loop);
+  return adapterSteps({ registry, decomposition, collection: collection(), ask, logic, log,
+    commit: (kind, pick, mechanic) => {
+      for (const id of pick.members) if (!sel.systems.includes(id)) sel.systems.push(id);
+      if (pick.adapters.length) { const r = resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry); sel.adapters = [...r.adapters, ...own]; Object.assign(sel.bind, r.bind); }
+      const m = sel.mechanics.find(x => x.id === mechanic);
+      if (m && !m.primitives.includes(pick.id)) m.primitives = [...m.primitives, pick.id];
+      return collection();
+    },
+    adopt: (instances, bind) => { own.push(...instances); sel.adapters = [...(sel.adapters || []), ...instances]; Object.assign(sel.bind, bind); return collection(); } });
 }

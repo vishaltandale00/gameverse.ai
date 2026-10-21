@@ -16,9 +16,10 @@
 //   spread, and a narrative idea's story places; never a default count.
 // - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
 // - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
-// - Mashup relations of the play spec are realised by the adapters that declare them (card.adapts.relation): nested
-//   (the joined mechanics' loops entered from the rest), skin (their content fills the rest's slots); union and any
-//   space/primitive mismatch by the registered adapters that cover what the space lacks (adapters.js).
+// - Adapters are the selection's (selection.adapters): the build's steps chose each one (build.js resolveAdapters for
+//   what a space lacks; build-steps.js adapterSteps for the play spec's mashup relations: nested, union, skin). The
+//   preset never decides whether an adapter exists; it configures the instances it is given from declarations (a
+//   nested encounter's outcome emits, its inner loop's wait config and start; a skin's maps) and reports what it cannot.
 // - Participants are seated by code (content.js placeParticipants): a loop's declared groups (sides, teams,
 //   factions) get its pieces on their own edge of the space's cells or in their own zone; a skin adapter's maps come
 //   from the composition (configureSkins). A space's world is what the final collection needs (world.js planWorld).
@@ -40,7 +41,7 @@ import { contractsOf, participantsOf, placeParticipants } from './content.js';
 import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop } from './loop.js';
 import { engageDocument } from './engage.js';
-import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
+import { applySkins, ensureInstanceFields } from './adapters.js';
 import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf, drivesBy, drivesOwn, driversIn } from './loop-check.js';
 import { spawnRules } from './census.js';
 import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
@@ -402,13 +403,46 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
  * @returns {{ outcomes: EncounterOutcome[], problems: string[] }}
  */
 export function encounterOutcomes(registry, systems, { id, inner }) {
+  const declared = declaredOutcomes(registry, { id, inner });
+  const wired = wireOutcomes(registry, systems, { id, inner });
+  return { outcomes: declared.outcomes.filter(o => wired.wired.includes(o.on)), problems: [...declared.problems, ...wired.problems] };
+}
+
+/**
+ * A nested encounter's outcomes as its inner loops declare them (card.loop.outcome), before any document exists: each
+ * result ends the encounter on `<id>_<result>` with its sides' fates; the outer effects (`do`) come later
+ * (configureEncounters). Pure. -> the outcomes, and the inner loops that declare none.
+ * @param {RegistryLike} registry @param {{ id: string, inner: string[] }} spec @returns {{ outcomes: EncounterOutcome[], problems: string[] }}
+ */
+export function declaredOutcomes(registry, { id, inner }) {
   /** @type {EncounterOutcome[]} */
   const outcomes = [];
   /** @type {string[]} */
   const problems = [];
   for (const u of inner) {
-    const card = registry.get(u)?.card, loop = cardLoop(card), o = loop?.outcome;
+    const o = cardLoop(registry.get(u)?.card)?.outcome;
     if (!o) { problems.push(`${u} declares no encounter outcome (card.loop.outcome)`); continue; }
+    for (const [result, r] of Object.entries(o.results))
+      outcomes.push({ on: `${id}_${result}`, result, fates: Object.fromEntries(o.sides.map(side => [side, /** @type {Record<string, string>} */ (/** @type {unknown} */ (r))[side]])), do: [] });
+  }
+  return { outcomes, problems };
+}
+
+/**
+ * Make the inner loops emit the encounter's outcome events: each declared result's effects param (on the inner
+ * instance, or on the host it plays through, card.mode.via; each entry of a 'list.field' param) emits `<id>_<result>`.
+ * Mutates `systems`; a list param with no entries yet, or a host the document does not run, is reported, never guessed.
+ * @param {RegistryLike} registry @param {SystemInstance[]} systems @param {{ id: string, inner: string[] }} spec
+ * @returns {{ wired: string[], problems: string[] }} the outcome events now emitted, and what could not be wired
+ */
+export function wireOutcomes(registry, systems, { id, inner }) {
+  /** @type {string[]} */
+  const wired = [];
+  /** @type {string[]} */
+  const problems = [];
+  for (const u of inner) {
+    const card = registry.get(u)?.card, loop = cardLoop(card), o = loop?.outcome;
+    if (!o) continue;
     for (const [result, r] of Object.entries(o.results)) {
       const [p, field] = r.param.split('.');
       const host = card?.params?.[p] ? u : loop?.via;
@@ -422,10 +456,63 @@ export function encounterOutcomes(registry, systems, { id, inner }) {
         if (!entries.length) { problems.push(`${u}: its ${result} runs through ${host} with.${p} entries, which are not written yet`); continue; }
         w[p] = entries.map(x => ({ ...x, [field]: emits(x[field]) }));
       } else w[p] = emits(w[p]);
-      outcomes.push({ on, result, fates: Object.fromEntries(o.sides.map(side => [side, /** @type {Record<string, string>} */ (/** @type {unknown} */ (r))[side]])), do: [] });
+      wired.push(on);
     }
   }
-  return { outcomes, problems };
+  return { wired, problems };
+}
+
+/**
+ * The outer loop primitive a nested encounter is entered from: the document's primitive whose loop declares the
+ * participants of its trigger event (card.loop.involves[on]). null when none does.
+ * @param {RegistryLike} registry @param {unknown[]} systems @param {unknown} inst
+ */
+export function encounterOuter(registry, systems, inst) {
+  const on = prop(prop(inst, 'with'), 'on'), inner = list(prop(prop(inst, 'with'), 'inner'));
+  if (!isStr(on)) return null;
+  const s = systems.find(x => isStr(prop(x, 'use')) && !inner.includes(prop(x, 'use')) && Object.hasOwn(cardLoop(registry.get(String(prop(x, 'use')))?.card)?.involves || {}, on));
+  return s ? String(prop(s, 'use')) : null;
+}
+
+/**
+ * The inner loops of the document's nested encounters wait for them: each inner instance gets the config its card
+ * declares for being entered (card.engage.encounter.config, e.g. autoStart off). Mutates `systems`.
+ * @param {RegistryLike} registry @param {SystemInstance[]} systems
+ */
+export function configureInner(registry, systems) {
+  for (const n of systems) {
+    if (registry.get(n.use)?.card.adapts?.relation !== 'nested') continue;
+    for (const u of list(n.with?.inner)) {
+      const config = registry.get(String(u))?.card.engage?.encounter?.config;
+      const inst = systems.find(s => s.use === u);
+      if (inst && isObj(config)) inst.with = { ...(inst.with || {}), ...structuredClone(config) };
+    }
+  }
+}
+
+/**
+ * Fill an encounter's start effects from the document: '$first:<path>' / '$ids:<path>' become the first / every id
+ * listed at a document path ('with.<param>': an inner instance's own param). -> the effects, or the paths with no ids.
+ * @param {any} doc @param {unknown[]} start @param {any[]} inner the inner instances
+ * @returns {{ start: unknown[], missing: string[] }}
+ */
+function fillStart(doc, start, inner) {
+  /** @type {string[]} */
+  const missing = [];
+  const idsAt = (/** @type {string} */ path) => {
+    const lists = path.startsWith('with.') ? inner.map(i => path.slice(5).split('.').reduce((/** @type {any} */ o, k) => o?.[k], i?.with)) : [path.split('.').reduce((/** @type {any} */ o, k) => o?.[k], doc)];
+    const v = lists.find(x => (Array.isArray(x) && x.length) || (isObj(x) && Object.keys(x).length));
+    return Array.isArray(v) ? v.map(e => prop(e, 'id')).filter(isStr) : isObj(v) ? Object.keys(v) : [];
+  };
+  /** @param {unknown} x @returns {unknown} */
+  const sub = x => {
+    const m = typeof x === 'string' ? /^\$(first|ids):(.+)$/.exec(x) : null;
+    if (m) { const ids = idsAt(m[2]); if (!ids.length) missing.push(m[2]); return m[1] === 'first' ? ids[0] : ids; }
+    if (Array.isArray(x)) return x.map(sub);
+    if (isObj(x)) return Object.fromEntries(Object.entries(x).map(([k, y]) => [k, sub(y)]));
+    return x;
+  };
+  return { start: list(sub(structuredClone(start))), missing };
 }
 
 /**
@@ -480,7 +567,10 @@ export function configureEncounters(doc, registry, encounters) {
       if (!defeat) { problems.push(`the ${id} encounter's ${o.result} defeats a participant, and no primitive of the document declares how (card.defeats${outer ? ` for what ${outer} reads` : ''})`); return o; }
       return { ...o, do: structuredClone(defeat) };
     });
-    inst.with = { ...inst.with, outcomes, ...(player ? { player } : {}) };
+    // The start effects the inner loops declare (card.engage.encounter.start), filled from the final document.
+    const filled = fillStart(doc, list(inst.with.start), (doc.systems || []).filter((/** @type {any} */ s) => list(inst.with.inner).includes(s?.use)));
+    for (const path of filled.missing) problems.push(`the ${id} encounter starts its inner loop with an id from ${path}, which has none`);
+    inst.with = { ...inst.with, outcomes, ...(list(inst.with.start).length && !filled.missing.length ? { start: filled.start } : {}), ...(player ? { player } : {}) };
   }
   return problems;
 }
@@ -780,18 +870,12 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const primaryShape = /** @type {ZoneShape} */ (primary._shape);
   for (const s of spaces) delete s._shape;
   // A primitive no space of this game can host stays in the collection and is reported with what it needs: the
-  // planner re-plans (another primitive for the mechanic), or the gap layer writes the adapter. Never removed here.
+  // planner re-plans (another primitive for the mechanic), or the gap layer writes the adapter. Never removed here,
+  // and no adapter is added here: the adapters are the selection's (the build's steps chose them).
   /** @type {import('./compose-check.js').AdapterInstance[]} */
   const adapters = (selection.adapters || []).map(a => structuredClone(a));
   const adapterIds = new Set(adapters.map(a => a.id).filter(/** @returns {x is string} */ x => typeof x === 'string'));
   const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; if (bound && adapterIds.has(bound)) return true; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
-  // What no chosen space hosts: a registered adapter that covers it is added (its config from its adapt() hook).
-  if (st.systems.some(id => !hosted(id))) {
-    /** @type {import('./adapters.js').AdapterResolution | null} */
-    let r = null;
-    try { r = resolveAdapters({ spaces: selSpaces, systems: st.systems, bind: selection.bind, adapters }, registry); } catch { r = null; }
-    if (r && r.adapters.length) { for (const a of r.adapters) { adapters.push(a); if (a.id) adapterIds.add(a.id); } Object.assign(selection.bind, r.bind); }
-  }
   for (const id of st.systems) {
     if (hosted(id)) continue;
     const missing = (registry.get(id)?.card.requires?.capabilities || []).filter(c => !selSpaces.some(sp => sp.caps.includes(c)));
@@ -805,58 +889,24 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   for (const a of adapters) systems.push(/** @type {SystemInstance} */ (structuredClone(a)));
   // Nested loops point at their space.
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
-  // Mashup relations across concepts: the adapter that declares each one (card.adapts.relation) joins, its params
-  // filled from declarations. nested: the joined side's loops are entered on the outer loop's declared progress event
-  // (one that names its subject: a typed `event:*` it provides), their declared encounter outcomes (card.loop.outcome)
-  // emit the results the adapter maps back, each side's fate becoming outer effects (configureEncounters); skin: its maps (configureSkins, below); union: a region of the space kind the
-  // joined loop declares, projected by the adapter's own adapt() hook, when no chosen space is that kind (otherwise
-  // both loops already run in one space). What cannot be derived is a gap, never a guess.
+  // Mashup adapters are the selection's (build-steps.js adapterSteps chose them); the preset configures them from
+  // declarations. nested: its inner loops emit the outcome events its declared outcomes end on (card.loop.outcome), they
+  // wait for it (card.engage.encounter.config), and an inner loop played in its own sub-space names it; its outer effects
+  // and start are written once the document is final (configureEncounters). skin: its maps (configureSkins, below).
+  // union: the region instance and the bindings came with the selection. What cannot be derived is a gap.
+  configureInner(registry, systems);
   /** @type {Array<{ id: string, outer: string | null }>} */
   const encounters = [];
-  const loopsOf = (/** @type {string[]} */ ids) => [...new Set(ids.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card)))];
-  for (const m of decomposition.core?.mashup || []) {
-    const use = adaptersFor(registry, m.relation)[0];
-    const sides = mashupSides(m, decomposition.mechanics || []);
-    const inner = loopsOf(sides.inner), outer = loopsOf(sides.outer).filter(id => !inner.includes(id));
-    const gap = (/** @type {string} */ why) => gaps.push({ mechanic: m.mechanics[0] || 'mashup', description: `needs adapter: ${m.relation} mashup of ${m.mechanics.join(', ')}`, importance: 'core', kind: 'adapter', why });
-    if (!use) { gap(`no registered adapter declares the ${m.relation} relation (card.adapts.relation)`); continue; }
-    if (m.relation === 'nested') {
-      if (!inner.length) continue;
-      if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(inner))) continue;
-      const id = slug(m.mechanics.join('_'));
-      const host = outer[0] || [st.win?.use, ...st.core].find(x => isStr(x) && !inner.includes(x) && cardLoop(registry.get(x)?.card)) || null;
-      const hostCard = host ? registry.get(host)?.card : null;
-      const progress = cardLoop(hostCard)?.progress || [];
-      const on = progress.find(e => (hostCard?.provides?.events || []).includes(`${e}:*`)) || progress[0] || null;
-      // The inner loops' declared encounter outcomes (card.loop.outcome) end it; their fates become outer effects
-      // once the document is final (configureEncounters).
-      const { outcomes, problems } = encounterOutcomes(registry, systems, { id, inner });
-      for (const why of problems) gap(why);
-      if (!on || !outcomes.length) { gap(`the nested encounter needs ${!on ? `an outer loop progress event to start it (${host || 'no outer loop'} declares none)` : `an encounter outcome its inner loops declare (${inner.join(', ')})`}`); continue; }
-      const space = nested.find(n => inner.includes(n.use))?.space;
-      systems.push({ use, with: { id, inner, on, outcomes, ...(space ? { space } : {}) } });
-      encounters.push({ id, outer: host });
-    } else if (m.relation === 'skin') {
-      if (systems.some(s => s.use === use)) continue;
-      systems.push({ use, with: {} });
-    } else {
-      const proj = registry.get(use);
-      for (const u of inner) {
-        const want = (cardLoop(registry.get(u)?.card)?.space || []).filter(/** @returns {e is string} */ e => isStr(e) && registry.has(e));
-        const host = selSpaces[0];
-        if (!host || !want.length || want.some(w => selSpaces.some(sp => sp.use === w))) continue;
-        const kind = want[0];
-        const missing = { capabilities: capsOf(kind).filter(c => !host.caps.includes(c)), content: [], services: [] };
-        if (typeof proj?.adapt !== 'function') continue;
-        const proposal = proj.adapt({ space: { id: host.id, use: host.use, with: host.with || {}, caps: host.caps }, missing, neededBy: [{ use: u, card: /** @type {any} */ (registry.get(u)?.card) }], registry });
-        if (!proposal) { gap(`${use} cannot project ${kind} onto ${host.use} for ${u}`); continue; }
-        const rid = isStr(proposal.id) ? proposal.id : null;
-        systems.push(/** @type {SystemInstance} */ ({ use, ...(rid ? { id: rid } : {}), space: host.id, with: isObj(proposal.with) ? proposal.with : {} }));
-        const own = systems.find(s => s.use === u); if (own && rid) own.space = rid;
-      }
-    }
-    st.added.push({ use, why: `${m.relation} mashup across ${sides.outer.length ? `${sides.outer.join(', ')} -> ` : ''}${sides.inner.join(', ')}: ${m.why || m.mechanics.join(', ')}` });
+  for (const inst of systems) {
+    if (registry.get(inst.use)?.card.adapts?.relation !== 'nested' || !isObj(inst.with) || !isStr(inst.with.id)) continue;
+    const inner = list(inst.with.inner).filter(isStr);
+    for (const why of wireOutcomes(registry, systems, { id: inst.with.id, inner }).problems) gaps.push({ mechanic: 'mashup', description: `needs: ${why}`, importance: 'core', kind: 'adapter', why });
+    const space = nested.find(n => inner.includes(n.use))?.space;
+    if (space && inst.with.space === undefined) inst.with = { ...inst.with, space };
+    encounters.push({ id: inst.with.id, outer: encounterOuter(registry, systems, inst) });
   }
+  // Every adapter instance carries the instance fields the planner owns (its id, its host binding).
+  ensureInstanceFields({ spaces, systems }, registry);
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
   const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
   const extent = primaryShape.extent;
