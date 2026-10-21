@@ -81,3 +81,16 @@ test('rts: deterministic replay and preflight codes', () => {
   const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
   for (const c of ['param_option', 'rts_resource', 'rts_faction', 'ref_unknown', 'rts_unit']) assert.ok(codes.has(c), c);
 });
+
+test('rts: progress counts what the player paid for in production, armed units above others', () => {
+  const rt = make({}, rt => { sp(rt, 'base', 'hq', [5, 5, 0], 'blue'); });
+  const rts = P.find(p => p.id === 'gameplay.rts'), cfg = rtsDoc({}).systems[1].with;
+  const config = { ...cfg, factions: cfg.factions.map(f => ({ control: 'ai', start: {}, ...f })) };
+  const before = rts.progress(rt, config);
+  rt.step({ actions: { produce: { building: 'hq', archetype: 'marine' } } });
+  const queued = rts.progress(rt, config);
+  assert.ok(Math.abs(queued - before - (1 - 0.03)) < 1e-9, `a queued marine counts 1 less the 30 minerals banked (${before} -> ${queued})`);
+  drive(rt, 70);
+  assert.equal(rt.state.counts.unit_produced, 1);
+  assert.ok(Math.abs(rts.progress(rt, config) - queued) < 1e-9, 'trained, it counts the same');
+});

@@ -69,6 +69,7 @@ export default {
       grain: { type: 'string', options: ['side', 'unit'], default: 'side', effect: 'alternate: a whole side acts per turn (XCOM) or one unit per side turn (chess)' },
       sides: { type: 'list', min: 1, default: DEFAULT_SIDES, of: { type: 'object', fields: SIDE_FIELDS }, effect: 'teams; units join by components.turns.side or members (id/archetype/tag)' },
       ap: { type: 'integer', default: 2, min: 0, max: 99, effect: 'action points per unit per turn' },
+      actionsPerTurn: { type: 'integer', default: 0, min: 0, max: 99, effect: 'alternate order: actions (moves included) a side or unit takes per turn before the turn passes (chess: 1, any one piece); 0 = until its units spend their AP' },
       movePerAp: { type: 'integer', default: 4, min: 0, max: 64, effect: 'cells (or path cost) moved per action point; 0 disables moving' },
       actions: { type: 'list', default: [{ id: 'attack', range: 6, target: 'unit', hostile: true, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions',
         // An action that wears an opposing unit down (the effect is gameplay.combat.health's): what the win reads changes in play.
@@ -253,7 +254,7 @@ export default {
     }
     function beginTurn(s, side, unit) {
       if (!side) { roundEnd(s); return; }
-      s.current = { side, unit }; s.decisions = 0; s.aiWait = rt.state.frame + 1 + config.aiDelay; s.selected = unit ?? unitsOf(s, side)[0] ?? null;
+      s.current = { side, unit }; s.decisions = 0; s.acted = 0; s.aiWait = rt.state.frame + 1 + config.aiDelay; s.selected = unit ?? unitsOf(s, side)[0] ?? null;
       for (const id of unit ? [unit] : unitsOf(s, side)) refresh(s, id);
       rt.emitTyped('turn_start', side, { side, who: unit ?? side, round: s.round });
       s.phase = 0; s.autoEnd = false; enterPhase(s);
@@ -382,25 +383,34 @@ export default {
       if (checkOver(s)) return;
       if (config.order === 'simultaneous') return;
       const c = s.current; if (!c) return;
+      if (config.actionsPerTurn && ++s.acted >= config.actionsPerTurn) { endTurn(s); return; }
       const acting = c.unit ? [c.unit] : unitsOf(s, c.side);
       if (acting.every(x => (s.units[x]?.ap ?? 0) <= 0)) endTurn(s);
       else if (s.units[s.selected]?.ap <= 0) s.selected = acting.find(x => s.units[x].ap > 0);
     }
-    function move(s, id, to) {
+    /** The move of unit `id` to `to` this turn: { path, apCost }, or { reason } when it is not legal. The one rule for moving and for the move options. */
+    function planMove(s, id, to) {
       const u = s.units[id], e = rt.entity(id), api = spaceOf(rt, e);
-      if (!config.movePerAp || u.ap <= 0) return invalid(id, 'move', 'unavailable');
-      if (!Array.isArray(e?.at) || !Array.isArray(to)) return invalid(id, 'move', 'bad_target');
+      if (!config.movePerAp || u.ap <= 0) return { reason: 'unavailable' };
+      if (!Array.isArray(e?.at) || !Array.isArray(to)) return { reason: 'bad_target' };
       let path = has(api, 'path') ? api.path(e.at, to) : [e.at, to];
-      if (!path || path.length < 2) return invalid(id, 'move', 'no_path');
+      if (!path || path.length < 2) return { reason: 'no_path' };
       if (cellKey(path[0]) !== cellKey(e.at)) path = [e.at, ...path];
       let cost = 0;
       for (let i = 1; i < path.length; i++) {
         cost += has(api, 'moveCost') ? api.moveCost(path[i - 1], path[i], e) : 1;
         const occ = has(api, 'entitiesAt') ? api.entitiesAt(path[i]).filter(o => o !== id && s.units[o] && live(s, o)) : [];
-        if (occ.length) return invalid(id, 'move', 'blocked');
+        if (occ.length) return { reason: 'blocked' };
       }
       const apCost = Math.ceil(cost / config.movePerAp);
-      if (apCost > u.ap) return invalid(id, 'move', 'too_far');
+      if (apCost > u.ap) return { reason: 'too_far' };
+      return { path, apCost };
+    }
+    function move(s, id, to) {
+      const u = s.units[id], e = rt.entity(id), api = spaceOf(rt, e);
+      const plan = planMove(s, id, to);
+      if (plan.reason) return invalid(id, 'move', plan.reason);
+      const { path, apCost } = plan;
       u.ap -= apCost;
       for (let i = 1; i < path.length; i++) {
         api.setPos(e, path[i], rt);
@@ -451,7 +461,8 @@ export default {
     }
 
     // ----- AI -----
-    function bestAttack(s, id) {
+    function bestAttack(s, id) { return scoredAttack(s, id)?.intent ?? null; }
+    function scoredAttack(s, id) {
       let best = null;
       for (const l of legal(s, id)) {
         const a = ACT.get(l.id); if (!a || !a.ai || a.target !== 'unit') continue;
@@ -460,7 +471,7 @@ export default {
           if (!best || score > best.score) best = { score, intent: { action: a.id, target: t } };
         }
       }
-      return best?.intent ?? null;
+      return best;
     }
     function aiIntent(s, id) {
       const pol = SIDE.get(s.units[id].side)?.ai ?? 'aggressive';
@@ -481,12 +492,22 @@ export default {
       const id = acting[0]; if (!id) { endTurn(s); return; }
       const pol = SIDE.get(c.side)?.ai ?? 'aggressive';
       if (pol !== 'aggressive') { const i = aiIntent(s, id); if (!act(s, id, i)) act(s, id, { action: 'pass' }); return; }
+      if (config.actionsPerTurn && acting.length > 1) {
+        // A side with a few actions per turn chooses which unit takes them: its best attack, else the unit nearest an
+        // opponent closes in.
+        let best = null;
+        for (const u of acting) { const a = scoredAttack(s, u); if (a && (!best || a.score > best.score)) best = { ...a, unit: u }; }
+        if (best) { act(s, best.unit, best.intent); return; }
+        for (const u of [...acting].sort((a, b) => nearestFoe(s, a) - nearestFoe(s, b) || (a < b ? -1 : 1))) if (approachEnemy(s, u)) return;
+        act(s, id, { action: 'pass' }); return;
+      }
       const attack = bestAttack(s, id);
       if (attack) { act(s, id, attack); return; }
       if (approachEnemy(s, id)) return;
       if (config.overwatch && owAction && !s.units[id].ow) { act(s, id, { action: 'overwatch' }); return; }
       act(s, id, { action: 'pass' });
     }
+    const nearestFoe = (s, id) => Math.min(1e9, ...Object.keys(s.units).filter(t => live(s, t) && s.units[t].side !== s.units[id].side).map(t => dist(rt, rt.entity(id), rt.entity(t))));
     function approachEnemy(s, id) {
       const u = s.units[id], e = rt.entity(id), api = spaceOf(rt, e);
       if (!config.movePerAp || !has(api, 'path') || !Array.isArray(e?.at)) return false;
@@ -555,20 +576,30 @@ export default {
       const pu = playerUnit(s, null); v['turns.ap'] = pu ? s.units[pu].ap : 0;
     }, ID);
 
+    // Options: what the player may do now. On a side turn every unit of the side with AP left can act (a person selects
+    // any of them), so each one's choices are offered: actions on targets first, then the turn's end, then moves taken
+    // in turn from each unit (eight cells each, nearest to an opponent first).
     rt.options(rt => {
       const s = st(), id = playerUnit(s, null); if (!id) return [];
-      const out = [];
-      for (const l of legal(s, id)) {
-        if (l.id === 'move') {
-          const e = rt.entity(id), api = spaceOf(rt, e); if (!has(api, 'cellsInRange')) continue;
-          const reach = s.units[id].ap * config.movePerAp, foes = Object.keys(s.units).filter(t => live(s, t) && s.units[t].side !== s.units[id].side).map(t => rt.entity(t));
-          const cells = api.cellsInRange(e.at, reach).filter(c => cellKey(c) !== cellKey(e.at) && !(has(api, 'entitiesAt') && api.entitiesAt(c).length))
-            .map(c => ({ c, d: Math.min(...foes.map(f => dist(rt, { ...e, at: c }, f)), 1e9) })).sort((a, b) => a.d - b.d || cellKey(a.c).localeCompare(cellKey(b.c))).slice(0, 8);
-          for (const { c } of cells) out.push({ label: `${id} move ${cellKey(c)}`, actions: { turn_move: { unit: id, to: c } } });
-        } else if (l.targets.length) for (const t of l.targets.slice(0, 8)) out.push({ label: `${id} ${l.id} ${Array.isArray(t) ? cellKey(t) : t}`, actions: { turn_act: { unit: id, action: l.id, target: t } } });
-        else out.push({ label: `${id} ${l.id}`, actions: { turn_act: { unit: id, action: l.id } } });
-      }
-      out.push({ label: 'end turn', actions: { end_turn: true } });
+      const c = s.current, sideTurn = config.order !== 'simultaneous' && c && !c.unit;
+      const acting = sideTurn ? unitsOf(s, c.side).filter(u => s.units[u].ap > 0) : [id];
+      const acts = [], moves = acting.map(() => []);
+      acting.forEach((uid, k) => {
+        for (const l of legal(s, uid)) {
+          if (l.id === 'move') {
+            const e = rt.entity(uid), api = spaceOf(rt, e); if (!has(api, 'cellsInRange')) continue;
+            const reach = s.units[uid].ap * config.movePerAp, foes = Object.keys(s.units).filter(t => live(s, t) && s.units[t].side !== s.units[uid].side).map(t => rt.entity(t));
+            const near = api.cellsInRange(e.at, reach).filter(q => cellKey(q) !== cellKey(e.at) && !(has(api, 'entitiesAt') && api.entitiesAt(q).length))
+              .map(q => ({ q, d: Math.min(...foes.map(f => dist(rt, { ...e, at: q }, f)), 1e9) })).sort((a, b) => a.d - b.d || cellKey(a.q).localeCompare(cellKey(b.q)));
+            const cells = [];
+            for (const x of near) { if (cells.length >= 8) break; if (!planMove(s, uid, x.q).reason) cells.push(x); }
+            for (const { q } of cells) moves[k].push({ label: `${uid} move ${cellKey(q)}`, actions: { turn_move: { unit: uid, to: q } } });
+          } else if (l.targets.length) for (const t of l.targets.slice(0, 8)) acts.push({ label: `${uid} ${l.id} ${Array.isArray(t) ? cellKey(t) : t}`, actions: { turn_act: { unit: uid, action: l.id, target: t } } });
+          else acts.push({ label: `${uid} ${l.id}`, actions: { turn_act: { unit: uid, action: l.id } } });
+        }
+      });
+      const out = [...acts, { label: 'end turn', actions: { end_turn: true } }];
+      for (let i = 0; moves.some(m => i < m.length); i++) for (const m of moves) if (m[i]) out.push(m[i]);
       return out;
     });
   },

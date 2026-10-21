@@ -25,6 +25,9 @@ const IDEAS = {
   farm: { idea: 'A cozy farming game on a floating island', game: 'farming game', themes: [['floating island', 'setting']] },
   platformer: { idea: 'can I have a Mario game but with sonic as the character', game: 'Mario', themes: [['Sonic as the character', 'character']] },
   runner: { idea: 'can I have an infinite runner game with Mario as a playable character', game: 'infinite runner', themes: [['Mario', 'character']] },
+  tactics: { idea: 'XCOM-style squad tactics in a sunken city', game: 'XCOM', themes: [['sunken city', 'setting']] },
+  board: { idea: 'Checkers with garden gnomes', game: 'checkers', themes: [['garden gnomes', 'theme']] },
+  rts: { idea: 'StarCraft with ants in a backyard', game: 'StarCraft', themes: [['ants in a backyard', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 

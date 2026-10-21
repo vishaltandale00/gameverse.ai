@@ -111,7 +111,10 @@ export default {
   detect(ctx) { const rt = ctx.make(ctx.seed); untilDecision(rt, 600); return rt.availableOptions().length > 0 && foes(rt).length > 0; },
   run(ctx, { seeds = [1, 2, 3], passRate = 0.67, maxDecisions = 200, depth = 2, width = 4, samples = 2, maxBranch = 24, dwell = 60, maxWait = 900, budgetMs = 2000, maxSteps = Infinity } = {}) {
     const b = makeBudget({ ms: budgetMs, steps: maxSteps });
-    const { score } = objective(ctx.doc, ctx.registry, ctx.logic);
+    // Every side emits the same loop events here, so the score is the primitives' side-aware progress hooks when the
+    // document has them (event counts would reward letting the opponent act).
+    const sided = objective(ctx.doc, ctx.registry, ctx.logic, { counts: false });
+    const { score } = sided.hooks ? sided : objective(ctx.doc, ctx.registry, ctx.logic);
     const probe = ctx.make(ctx.seed); untilDecision(probe, maxWait);
     const realtime = runsOnItsOwn(probe), where = ownerPath(ctx, probe, ['gameplay.turns', 'gameplay.cards', 'gameplay.rts']);
     const play = seed => {

@@ -20,8 +20,25 @@ export default {
     loop: { verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // Its AI-controlled factions play themselves (stepAI): they gather, produce and order attack-moves.
     drives: { control: 'ai', actions: ['order', 'produce'], events: ['order_given', 'unit_attack', 'unit_produced'], movement: true },
-    // RTS mode: the player's faction against AI factions; won when only the player's faction stands.
-    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, lose: { param: 'onDefeat', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
+    // Shapes of the archetype component this primitive owns (the planner's schemas and repair read them).
+    components: { rts: { type: 'object', effect: 'a unit, building or resource node in real-time strategy', fields: {
+      faction: { type: 'string', effect: 'the factions[] id this unit or building belongs to (none for resource nodes)' },
+      speed: { type: 'number', min: 0, unit: 'cells/s' }, sight: { type: 'number', min: 0 },
+      worker: { type: 'boolean', effect: 'gathers from nodes and builds' }, carry: { type: 'number', min: 0 }, gatherRate: { type: 'number', min: 0, unit: 'per s' },
+      dropoff: { type: 'boolean', effect: 'workers deposit resources here' }, building: { type: 'boolean' },
+      attack: { type: 'object', fields: { range: { type: 'number', min: 0 }, cooldown: { type: 'number', min: 0, unit: 's' }, effects: { type: 'effects' } } },
+      produces: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', open: true }, time: { type: 'number', min: 0, unit: 's' } } } },
+      builds: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, cost: { type: 'object', open: true }, time: { type: 'number', min: 0, unit: 's' } } } },
+      node: { type: 'object', effect: 'a resource node workers gather from', fields: { resource: { type: 'string', required: true }, amount: { type: 'number', min: 0 } } },
+      supply: { type: 'integer', min: 0 }, supplyCap: { type: 'integer', min: 0 },
+    } } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      { need: 'archetypes', component: 'rts', min: 2, placed: 4, why: 'the factions fight with units and buildings: archetypes with an rts component {faction}, placed by spawns, for every faction', example: { id: 'marine', components: { rts: { faction: 'player', speed: 3, attack: { range: 3, cooldown: 0.6, effects: [{ do: 'damage', who: 'target', amount: 2 }] } }, health: { max: 8 } } } },
+    ],
+    // RTS mode: the player's faction against AI factions; won when only the player's faction stands, which play
+    // moves toward by wearing down and destroying the opponents' units and buildings (their health).
+    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['order', 'produce'], effects: ['damage'] } } }, lose: { param: 'onDefeat', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {
@@ -43,7 +60,8 @@ export default {
       services: ['rts'],
       actions: ['select', 'order', 'produce', 'rally'],
     },
-    requires: { capabilities: ['position'] },
+    // Units and buildings are destroyed through their health (the win reads it; attacks run its damage effect).
+    requires: { capabilities: ['position'], primitives: ['gameplay.combat.health'] },
     reads: ['content.archetypes'],
   },
   logic(logic) {
@@ -71,17 +89,21 @@ export default {
   },
   /**
    * Solver progress for the player's faction: enemy factions defeated (10 each), enemy units
-   * removed or worn down, own units standing (0.5 each), banked resources (0.001 each).
+   * removed or worn down, own units standing or paid for in a production queue (training takes longer than a
+   * lookahead sees, and what was spent on it is not lost): 1 for a unit that can attack, 0.5 for any other,
+   * banked resources (0.001 each).
    */
   progress(rt, config) {
     const s = rt.state.prim[ID], mine = config.factions.find(f => f.control === 'player')?.id; if (!s?.res || !mine) return 0;
     const fac = e => e.components.rts?.faction ?? (e.id === 'player' ? config.factions[0].id : null);
+    const worth = r => (r?.attack && !r.building ? 1 : 0.5);
     let v = 0;
     for (const e of Object.values(rt.state.entities)) {
       const r = e.components.rts; if (!r || r.node || !alive(e)) continue;
       const f = fac(e), h = e.components.health, frac = h?.max ? (h.hp ?? h.max) / h.max : 1;
-      if (f === mine) v += 0.5; else if (f) v -= frac;
+      if (f === mine) v += worth(r); else if (f) v -= frac;
     }
+    for (const [bid, q] of Object.entries(s.queue || {})) { const b = rt.state.entities[bid]; if (b && alive(b) && fac(b) === mine) for (const item of q) v += worth(rt.doc.content?.archetypes?.find(a => a.id === item.archetype)?.components?.rts); }
     for (const f of config.factions) if (f.id !== mine && s.defeated?.[f.id]) v += 10;
     for (const n of Object.values(s.res[mine] || {})) v += 0.001 * n;
     return v;
@@ -113,14 +135,16 @@ export default {
     const invalid = (who, reason) => { rt.emit('rts_invalid', { who, reason }); return false; };
 
     // ----- visibility -----
-    function visible(fac, at, space) {
+    const sees = (u, at, space) => {
+      if (space && u.space !== space) return false;
+      const a = api(u), d = has(a, 'distance') ? a.distance(u.at, at) : len(sub(v3(u.at), v3(at)));
+      return d <= sightOf(u) && (!has(a, 'los') || a.los(u.at, at).clear);
+    };
+    /** Does any unit of `fac` see `at`? `first` (a unit of fac, usually the one asking) is tried before the rest. */
+    function visible(fac, at, space, first = null) {
       if (!at) return false;
-      for (const u of units(fac)) {
-        if (space && u.space !== space) continue;
-        const a = api(u), d = has(a, 'distance') ? a.distance(u.at, at) : len(sub(v3(u.at), v3(at)));
-        if (d > sightOf(u)) continue;
-        if (!has(a, 'los') || a.los(u.at, at).clear) return true;
-      }
+      if (first && sees(first, at, space)) return true;
+      for (const u of units(fac)) if (u !== first && sees(u, at, space)) return true;
       return false;
     }
     // Visible cells per unit are cached (derived data) and recomputed only when the unit changes cell.
@@ -194,7 +218,7 @@ export default {
       let best = null, bd = Infinity;
       for (const o of units()) {
         if (factionOf(o) === factionOf(e) || !factionOf(o) || o.space !== e.space) continue;
-        const d = dist(rt, e, o); if (d <= range && d < bd && visible(factionOf(e), o.at, o.space)) { bd = d; best = o; }
+        const d = dist(rt, e, o); if (d <= range && d < bd && visible(factionOf(e), o.at, o.space, e)) { bd = d; best = o; }
       }
       return best;
     }

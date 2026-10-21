@@ -38,8 +38,10 @@ function fraction(value, { c, target }) {
 /**
  * Build the objective of a document: { score(rt) → number, leaves, hooks }.
  * Primitives may contribute `progress(rt, config, instance) → number` (top level or on the card).
+ * `counts: false` leaves event counts out: in a game where every side emits the same loop events (turns, cards, RTS),
+ * the opponent's actions would count as the player's progress; the primitives' progress hooks measure it by side.
  */
-export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENTS, win = null } = {}) {
+export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENTS, win = null, counts = true } = {}) {
   // The document's primitives declare what their loop's progress is (card.loop.progress): those events count too; the
   // event the core loop's win counts (win.reads, winMeasure) weighs most.
   const weights = { ...Object.fromEntries(loopEvents(doc, registry).map(e => [e, 2])), ...base, ...(typeof win?.event === 'string' ? { [win.event]: WIN_WEIGHT } : {}) };
@@ -49,7 +51,7 @@ export function objective(doc, registry, logic, { weights: base = PROGRESS_EVENT
   function score(rt) {
     const s = rt.state;
     let v = 0;
-    for (const [name, n] of Object.entries(s.counts)) {
+    if (counts) for (const [name, n] of Object.entries(s.counts)) {
       if (weights[name] !== undefined && !name.endsWith(':')) v += weights[name] * n;
       else for (const [prefix, w] of wild) if (name.startsWith(prefix)) { v += w * Math.log2(1 + n); break; }
     }
