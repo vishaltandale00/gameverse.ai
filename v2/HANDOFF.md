@@ -103,7 +103,9 @@ is restarted on it. Measure with the pipeline's stage timings (`kernel-pipeline.
 
 Known instances of the schema class (item 5), for orientation only; the conformance test finds the rest:
 `interact.kind`, `content.items[].creature.kind`, `health.respawn`, damage types in `resist`,
-`status.duration`.
+`status.duration`, `engine.generate.dungeon.rooms` `rooms` ≥ keys + 2 (`dungeon_keys_many`, undeclared: so the dungeon
+template does not tune `rooms` until the card declares the rule), `engine.generate.grid.maze` `style` (a free string
+its validate limits to the declared styles).
 
 ## User directives
 

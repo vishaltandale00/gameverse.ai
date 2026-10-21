@@ -37,5 +37,5 @@ export default {
     },
     player: { archetype: 'hero' },
   },
-  tune: ['engine.generate.dungeon.rooms.rooms', 'engine.generate.dungeon.rooms.guardsPerRoom', 'gameplay.death.lives'],
+  tune: ['engine.generate.dungeon.rooms.guardsPerRoom', 'gameplay.death.lives'],
 };

@@ -493,7 +493,9 @@ export function checkComposition(input, registry, opts = {}) {
         if (inParams(sc, s, item, isDoc)) return { how: 'have' };
         if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
         if (here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); })) return { how: 'have' };
-        const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
+        // A generator that carries a loop of its own (card.loop / card.mode: a crawl with its boss) is a mechanic, not
+        // filler: content coverage never adds one (loop.js winProviders keeps the same rule for wins).
+        const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return !cardLoop(c) && /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
         if (cand && resolve) return { how: 'add', id: cand, adapter: false };
         const a = adapterFor(x => x.provides.content, item, s);
         if (a && resolve) return { how: 'add', id: a, adapter: true };
@@ -589,7 +591,7 @@ export function checkComposition(input, registry, opts = {}) {
           const sc = cardOf(registry, s.use);
           const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || (sc ? inParams(sc, s, item, isDoc) : false) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
           if (has) continue;
-          const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
+          const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && !cardLoop(gc) && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
           if (gen && propose(gen, u.space, `generates ${item} for ${u.use}'s mode`)) continue;
           const a = adapterFor(x => x.provides.content, item, s);
           if (a && propose(a, u.space, `adapts content ${item} for ${u.use}'s mode`)) continue;
