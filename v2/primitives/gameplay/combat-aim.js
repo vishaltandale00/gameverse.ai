@@ -36,6 +36,7 @@ export default {
     },
     provides: { events: ['aim_start', 'aim_end', 'aim_marked', 'aim_shot', 'aim_miss', 'aim_no_points'], vars: ['aim.active', 'aim.points', 'time.scale'], actions: ['aim', 'mark', 'execute'] },
     requires: { primitives: ['gameplay.combat.health'] },
+    rules: { aim_chance_invalid: { fields: ['minChance', 'baseChance'], message: 'minChance is at most baseChance' } },
   },
   validate(config) {
     return config.minChance > config.baseChance ? [err('aim_chance_invalid', 'with.minChance', 'minChance exceeds baseChance')] : [];

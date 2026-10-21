@@ -191,7 +191,7 @@ test('cover: snap to a wall; hits from the covered side are reduced or blocked; 
   rt.space('field').setPos(p, [1, 5, 0], rt); rt.step();
   assert.equal(count(rt, 'cover_exit'), 1);
   same(() => make(coverDoc()), [{ actions: { cover: true } }, {}, { actions: { cover: true } }]);
-  assert.ok(codes(coverDoc({ sources: [] })).includes('cover_sources_empty'));
+  assert.ok(codes(coverDoc({ sources: [] })).includes('param_range')); // sources declares min: 1
   assert.ok(codes(coverDoc({ sources: ['laser'] })).includes('param_option'));
 });
 

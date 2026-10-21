@@ -4,7 +4,7 @@
 // wall direction; NPCs can set components.cover themselves. Ranged hits from the
 // covered side lose `reduction` of their damage at half cover and are stopped at
 // full cover; entities out of snapped cover still get the space's los cover level.
-import { boxOf, centerOf, v3, add, sub, mul, norm, dot, len, posOf, like, spaceOf, resolveWho, intercept, err } from './combat-lib.js';
+import { boxOf, centerOf, v3, add, sub, mul, norm, dot, len, posOf, like, spaceOf, resolveWho, intercept } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.cover';
 
@@ -18,7 +18,7 @@ export default {
       reduction: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'damage removed by half cover' },
       fullBlocks: { type: 'boolean', default: true, effect: 'full cover stops the hit entirely' },
       snapRange: { type: 'number', default: 2, min: 0.1, max: 20, unit: 'units' },
-      sources: { type: 'list', of: { type: 'string', options: ['projectile', 'blast', 'aim', 'melee', 'effect'] }, default: ['projectile', 'aim'], effect: 'hit sources cover protects against' },
+      sources: { type: 'list', of: { type: 'string', options: ['projectile', 'blast', 'aim', 'melee', 'effect'] }, min: 1, default: ['projectile', 'aim'], effect: 'hit sources cover protects against (at least one)' },
       leaveDist: { type: 'number', default: 0.75, min: 0, max: 20, unit: 'units', effect: 'moving this far from the snap point leaves cover' },
     },
     provides: { events: ['cover_enter', 'cover_exit', 'cover_blocked', 'cover_hit'], actions: ['cover'] },
@@ -26,9 +26,6 @@ export default {
   },
   logic(logic) {
     logic.predicate('in_cover', { test: (p, rt, c) => { const e = resolveWho(rt, p.in_cover === true ? undefined : p.in_cover ?? p.who, c); return Boolean(e?.components.cover?.in); } });
-  },
-  validate(config) {
-    return config.sources.length ? [] : [err('cover_sources_empty', 'with.sources', 'cover must protect against at least one hit source')];
   },
   install(rt, config) {
     // Probe along the ground plane: x/y for 2D spaces (or flat test spaces), x/z for 3D.

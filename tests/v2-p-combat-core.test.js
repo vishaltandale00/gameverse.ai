@@ -162,7 +162,11 @@ test('health: deterministic replay and bad configs', () => {
   const bad = healthDoc({ types: ['phys', 'phys'] });
   bad.content.archetypes.push({ id: 'blob', components: { health: { max: -3, respawn: 'teleport', splitOnDeath: { into: 'nope' } }, resist: { acid: 1 } } });
   const c = codes(bad);
-  for (const code of ['health_types_invalid', 'health_invalid', 'health_respawn_invalid', 'ref_unknown', 'health_type_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  for (const code of ['health_types_invalid', 'health_type_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  // max, respawn and splitOnDeath.into are checked by the health component's declared shape (card.components), reported
+  // as section-shape findings (warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), blob = 'content.archetypes[' + (bad.content.archetypes.length - 1) + '].components.health';
+  for (const x of [`param_range@${blob}.max`, `param_type@${blob}.respawn`, `ref_unknown@${blob}.splitOnDeath.into`]) assert.ok(at.includes(x), `${x} in ${at}`);
   assert.ok(codes(healthDoc({ iframes: 99 })).includes('param_range'));
 });
 
