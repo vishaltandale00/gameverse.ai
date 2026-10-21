@@ -20,18 +20,24 @@
 //            defeat does and who is on the player's side: presets.js configureEncounters); the inner loop's results
 //            end the encounter, never the game. A skin (engine.adapt.skin) maps the inner concept's content section
 //            onto the outer loop's content contract when declarations decide it (presets.js skinSections).
-//   union    the secondary's systems re-homed onto the primary's space and its content merged; its space (and the
-//            world its generators build there) is the primary's; a list of zone references is re-bound to the zones of
-//            the space its loop now runs on; the game's win is the primary's. The result composes only when the
-//            composition check passes, else it fails with the adapter compose-check names (adapterSignature).
+//   union    the secondary's LOOP on the primary's world: its systems re-homed onto the primary's space and its content
+//            merged; its space (and the world its generators build there) is the primary's. Its zones are bound to the
+//            host's: a list of them as the host's whole zone list, any other reference to the host zone at its zone's
+//            place. The player and how its body moves are the primary's: a secondary primitive moving the player's body
+//            (loop-check movesPlayer: its template's kart) comes only when the primary moves none, with what only it
+//            required. Entries placed by a position in the replaced world (a field declared scale: 'world') do not
+//            carry: a participant's is seated beside the player (card.engage), group participants by placeParticipants,
+//            any other goes with that world (union.replaced lists each). The game's win is the primary's. The result
+//            composes only when preflight, the composition check and the loop check pass, else it fails with the named
+//            problem (the adapter compose-check names: adapterSignature).
 //
 // Every problem has a stable code (COMPOSE_RULES). Nothing here names a primitive, a template or a pair.
 import { cardLoop } from './loop.js';
 import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
-import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, ZONES, SECTIONS } from './content.js';
+import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, participantsOf, placeParticipants, ZONES, SECTIONS } from './content.js';
 import { declaredOutcomes, wireOutcomes, configureInner, configureEncounters, skinSections } from './presets.js';
 import { checkComposition } from './compose-check.js';
-import { loopProblems } from './loop-check.js';
+import { loopProblems, movesPlayer } from './loop-check.js';
 import { preflight } from '../kernel/document.js';
 import { modeApplies } from '../primitives/gameplay/modes-lib-mode.js';
 import { adaptersFor, adapterInstanceId, uniqueId, instanceIds, applySkins } from './adapters.js';
@@ -53,7 +59,7 @@ export const COMPOSE_RULES = Object.freeze({
   nested_entry_ambiguous: 'the outer loop declares several entry events at the same precedence: the pick must choose one',
   nested_no_inner: 'the inner template has no loop that declares an encounter outcome (card.loop.outcome) and how an encounter starts it (card.engage.encounter.start)',
   nested_unwired: 'an inner result or an outer effect of the encounter cannot be derived from the declarations',
-  union_zone_unbound: 'a reference to a zone of the secondary\'s space has no zone on the primary\'s space to re-bind to',
+  union_zone_unbound: 'a reference to a zone of the secondary\'s space has no zone on the primary\'s space to bind to (the host declares fewer zones than the zone\'s place)',
   union_world_loop: 'a loop of the secondary is carried by the world it generates (a generator\'s card.mode): on the primary\'s space it would need a second world',
   union_needs_adapter: 'the united loops do not compose on the primary\'s space: the composition check names the adapter that would fix it',
   union_loop_problem: 'the united document fails the loop check',
@@ -450,15 +456,10 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
   const doc2 = structuredClone(secondary.doc);
   const ids = definedIds(doc2, registry);
   const own = { spaces: new Set(ids.get('spaces') || []), zones: new Set(ids.get(ZONES) || []) };
-  // Re-homing: its spaces are the host; its zones have no place there until a list of them is re-bound to the host's.
+  // Re-homing: its spaces are the host; its zones are bound to the host's zones below (a whole list of them at once).
   const rename = (/** @type {string} */ d, /** @type {string} */ id) => (d === 'spaces' && own.spaces.has(id) ? String(host?.id) : d === ZONES && own.zones.has(id) ? `${UNBOUND}${id}` : (ids.get(d) || []).includes(id) ? `${prefix}${id}` : id);
   const relist = (/** @type {string} */ d, /** @type {string[]} */ v) => (d === ZONES && v.length && v.every(x => x.startsWith(UNBOUND)) && hostZones.length ? [...hostZones] : v);
   rewrite(doc2, { registry, logic, rename, define: (d, id) => (d === 'spaces' || d === ZONES ? id : `${prefix}${id}`), list: relist });
-  /** @type {string[]} */
-  const unbound = [];
-  const scan = (/** @type {unknown} */ v) => { if (isStr(v)) { if (v.startsWith(UNBOUND)) unbound.push(v); } else if (Array.isArray(v)) v.forEach(scan); else if (isObj(v)) Object.values(v).forEach(scan); };
-  scan(doc2);
-  for (const z of [...new Set(unbound)]) problems.push(problem('union_zone_unbound', z.slice(UNBOUND.length), `'${secondary.id}' refers to its zone '${z.slice(UNBOUND.length)}', which has no counterpart on '${primary.id}''s space '${host?.id}'`));
   // The secondary's world is the primary's: its spaces (with the generators that build them) are replaced by the host's.
   // A loop its world carries (a generator whose card.mode applies) cannot be: it would need a second world.
   const world = objects(doc2.spaces).flatMap(sp => objects(sp.generators).map(g => ({ g, sp })));
@@ -466,11 +467,86 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
     const mode = registry.get(String(g.use))?.card.mode;
     if (mode && modeApplies(mode, isObj(g.with) ? g.with : {})) problems.push(problem('union_world_loop', String(g.use), `'${secondary.id}' plays its ${mode.loop} loop through the world ${g.use} generates; on '${primary.id}''s space ${host?.use} that is a second world`));
   }
-  /** @type {{ spaces: string[], generators: string[], endings?: string[] }} */
+  /** @type {{ spaces: string[], generators: string[], movement?: string[], entries?: string[], seated?: string[], endings?: string[] }} */
   const replaced = { spaces: objects(secondary.doc.spaces).map(x => `${x.id} (${x.use})`), generators: world.map(({ g }) => String(g.use)) };
   doc2.spaces = [];
+  const loops = playedLoops(doc2, registry);
+  const cardOf = (/** @type {unknown} */ u) => registry.get(String(u))?.card;
+  // The player is the primary's, and so is how its body moves: a primitive of the secondary that moves the player's body
+  // (loop-check movesPlayer: a locomotion, or card.engage.player.movement: the kart its template seats the player in)
+  // comes only when the primary moves no body and no loop of the secondary requires it; what only it required goes too.
+  const hostUses = new Set(instancesOf(primary.doc).map(i => String(i.use)));
+  if (instancesOf(primary.doc).some(i => movesPlayer(cardOf(i.use)))) {
+    const needed = new Set(loops.flatMap(u => list(cardOf(u)?.requires?.primitives)));
+    const keep = (/** @type {string} */ u) => hostUses.has(u) || loops.includes(u) || needed.has(u);
+    const uses = [...new Set(objects(doc2.systems).map(x => String(x.use)))];
+    const out = new Set(uses.filter(u => !keep(u) && movesPlayer(cardOf(u))));
+    for (let grew = out.size > 0; grew;) {
+      grew = false;
+      for (const u of uses) {
+        if (out.has(u) || keep(u) || ![...out].some(o => list(cardOf(o)?.requires?.primitives).includes(u))) continue;
+        if (uses.some(o => !out.has(o) && o !== u && list(cardOf(o)?.requires?.primitives).includes(u))) continue;
+        out.add(u); grew = true;
+      }
+    }
+    if (out.size) { doc2.systems = objects(doc2.systems).filter(x => !out.has(String(x.use))); replaced.movement = [...out]; }
+  }
+  // Entries placed by a position in the replaced world (a list entry setting a field its card declares scale: 'world',
+  // with no zone and no other space): positions do not carry to another world. An entry placing a participant of the
+  // secondary's loops (card.engage.participants, card.loop needs.participants) is seated by the host's start as
+  // card.engage declares it (beside the player: its declared anchor field, `selects`, on the player); any other is a
+  // piece of the replaced world and goes with it.
+  const participants = new Set(objects(doc2.systems).flatMap(x => {
+    const card = cardOf(x.use), param = card?.engage?.participants?.param ?? cardLoop(card)?.needs.participants;
+    return isStr(param) ? list(prop(x.with, param) ?? prop(card?.params?.[param], 'default')).filter(isStr) : [];
+  }));
+  for (const x of objects(doc2.systems)) {
+    for (const [k, spec] of Object.entries(cardOf(x.use)?.params || {})) {
+      const fields = prop(prop(spec, 'of'), 'fields');
+      if (prop(spec, 'type') !== 'list' || !isObj(fields) || !Array.isArray(prop(x.with, k))) continue;
+      const located = Object.keys(fields).filter(f => prop(fields[f], 'scale') === 'world');
+      const anchor = Object.keys(fields).find(f => Array.isArray(prop(fields[f], 'selects')));
+      if (!located.length) continue;
+      const w = /** @type {Record<string, any>} */ (x.with);
+      const placed = (/** @type {Record<string, any>} */ e) => located.some(f => e[f] !== undefined) && e.zone === undefined && (e.space === undefined || e.space === host?.id);
+      w[k] = objects(w[k]).flatMap(e => {
+        if (!placed(e)) return [e];
+        const name = `${x.use}.${k}.${e.id ?? '?'}`;
+        if (anchor && Object.values(e).some(v => isStr(v) && participants.has(v))) {
+          (replaced.seated ??= []).push(name);
+          return [{ ...Object.fromEntries(Object.entries(e).filter(([f]) => !located.includes(f) && f !== 'space')), [anchor]: 'player' }];
+        }
+        (replaced.entries ??= []).push(name);
+        return [];
+      });
+    }
+  }
+  // Group participants (content.js participantsOf: sides or teams and the pieces their loop plays with) are seated on the
+  // host's space by code (placeParticipants), at its cells or one zone per group, as every template's are.
+  /** @type {Record<string, any>} */
+  const probe = { ...doc2, spaces: [host], player: primary.doc.player };
+  if (participantsOf(probe, registry).length) {
+    const seated = placeParticipants(probe, registry);
+    doc2.systems = seated.doc.systems;
+    if (seated.added.length) (replaced.seated ??= []).push(...seated.added.map(x => `${x.contract}: ${x.rule}`));
+  }
+  // Its zones are bound to the host's: a reference with none left (once the world it lived in is replaced) is a problem.
+  // A list of them was re-bound to the host's zones as a whole (relist); any other reference takes the host's zone at its
+  // zone's place in the secondary's space (the i-th zone the secondary declares is the host's i-th).
+  const order = ids.get(ZONES) || [];
+  /** @type {string[]} */
+  const unbound = [];
+  /** @param {unknown} v @returns {unknown} */
+  const bindZones = v => {
+    if (isStr(v)) { if (!v.startsWith(UNBOUND)) return v; const at = hostZones[order.indexOf(v.slice(UNBOUND.length))]; if (at) return at; unbound.push(v); return v; }
+    if (Array.isArray(v)) return v.map(bindZones);
+    if (isObj(v)) { for (const k of Object.keys(v)) v[k] = bindZones(v[k]); return v; }
+    return v;
+  };
+  for (const k of Object.keys(doc2)) doc2[k] = bindZones(doc2[k]);
+  for (const z of [...new Set(unbound)]) problems.push(problem('union_zone_unbound', z.slice(UNBOUND.length), `'${secondary.id}' refers to its zone '${z.slice(UNBOUND.length)}' (zone ${order.indexOf(z.slice(UNBOUND.length)) + 1} of ${order.length}), which has no counterpart on '${primary.id}''s space '${host?.id}': ${hostZones.length ? `it declares ${hostZones.length} zone(s) (${hostZones.join(', ')})` : 'it declares no zones'}`));
   // The game's win is the primary's: the secondary's game-ending win ends nothing.
-  for (const u of playedLoops(doc2, registry)) {
+  for (const u of loops) {
     const win = cardLoop(registry.get(u)?.card)?.win, inst = doc2.systems.find((/** @type {any} */ s) => s.use === u);
     if (inst && win?.param && registry.get(u)?.card.params?.[win.param.split('.')[0]]) endsEncounter(inst, win.param);
   }

@@ -24,7 +24,7 @@ export default {
         of: { type: 'object', fields: {
           id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
           space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' },
-          at: { type: 'json', effect: 'a point or a list of points to spawn at' }, near: { type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
+          at: { type: 'json', scale: 'world', effect: 'a point or a list of points to spawn at, in its space\'s coordinates' }, near: { type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
           spread: { type: 'number', default: 0, min: 0, effect: 'scatter radius around at/near/group anchor' },
           count: pair('[min, max] alive target, rolled each time the rule activates', [1, 1]),
           per1000m2: { type: 'number', min: 0, effect: 'density; with a zone of known area the target is area x density, clamped to count' },

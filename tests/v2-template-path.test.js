@@ -255,11 +255,21 @@ test('nested and union compose from declarations; one that does not fails with i
   assert.ok(chess.doc.systems.some(s => s.use === 'engine.adapt.skin'), 'species skinned onto the pieces');
   assert.deepEqual(chess.template.tune, [...templateById('board').tune, ...templateById('creature-battle').tune], 'the composed tune is every part\'s');
   assert.ok(preflight(structuredClone(chess.doc), registry, logic).ok);
-  // A union the composition check rejects fails with the composition's code; the build never drops either loop.
+  // A union: the race's loop on the platformer's level. Its checkpoints are bound to the level's zones, its rivals are
+  // seated beside the player (their track positions do not carry), and the kart that moved its own player is not
+  // carried: the player and how it moves are the primary's (compose.js uniteDocuments).
   const sonic = composeTemplates(pickWith({ primary: game('Sonic', 'game', 'platformer'), games: [game('racing', 'genre', 'race', 'union')] }), ctx);
-  assert.equal(sonic.doc, null);
-  assert.deepEqual(sonic.problems.map(p => [p.code, p.path]), [['union_needs_adapter', 'games[0]']]);
-  for (const x of ['union', "'race'", "'platformer'"]) assert.ok(sonic.problems[0].message.includes(x), `${x}: ${sonic.problems[0].message}`);
+  assert.deepEqual(sonic.problems, []);
+  assert.deepEqual(sonic.doc.spaces.map(s => s.id), ['level']);
+  const race = sonic.doc.systems.find(s => s.use === 'gameplay.race');
+  assert.deepEqual(race.with.checkpoints, templateById('platformer').doc.spaces[0].zones.map(z => z.id));
+  assert.deepEqual(sonic.joins.map(j => [j.relation, j.template, j.replaced.movement, j.replaced.seated.length]), [['union', 'race', ['gameplay.vehicle.car', 'gameplay.vehicle.core'], 3]]);
+  assert.ok(preflight(structuredClone(sonic.doc), registry, logic).ok);
+  // A union that does not compose fails with its code, naming both templates: the runner's loop is its world's.
+  const run = composeTemplates(pickWith({ primary: game('Mario Kart', 'game', 'race'), games: [game('runner', 'genre', 'runner', 'union')] }), ctx);
+  assert.equal(run.doc, null);
+  assert.deepEqual(run.problems.map(p => [p.code, p.path]), [['union_world_loop', 'games[0]']]);
+  for (const x of ["union", "'runner'", "'race'"]) assert.ok(run.problems[0].message.includes(x), `${x}: ${run.problems[0].message}`);
   // The same template twice would repeat its ids: a problem, never a silent merge.
   const twice = composeTemplates(pickWith({ primary: game('Chess', 'game', 'board'), games: [game('Pokémon', 'game', 'creature-battle', 'nested'), game('Pokémon', 'game', 'creature-battle', 'nested')] }), ctx);
   assert.deepEqual(twice.problems.map(p => [p.code, p.path]), [['compose_id_collision', 'games[1].template']]);

@@ -111,13 +111,23 @@ test(`nested: every ordered pair with an entry event and an enterable inner loop
   timings.nestedMs = Math.round(performance.now() - t0);
 });
 
-// compose-check reads every loop's declared win as the game's (mode_win_unwired): an inner loop's results end the
-// encounter (they emit the outcome events engine.adapt.nested consumes), so every nested composition fails it. That is a
-// defect of compose-check (the loop check already reads only the loop that owns the game's win), not of composition.
-test('nested: every composed pair passes the composition check', { todo: "controls (HANDOFF item 3): \"mode_input_mismatch: no input primitive supports the 'pieces-turns' interaction\" (board as the outer loop) until a UI primitive declares pieces-turns controls" }, () => {
+// Every composed nested pair passes the composition check except for the inputs: a template whose input primitive
+// (engine.input.motions, the fighting template's) declares only its own interactions makes compose-check require that
+// every loop's interaction (pieces-turns, menu, cursor-board) be served by an input primitive, which the UI primitives
+// that serve them do not declare yet (controls, HANDOFF item 3). The second test holds the rest of the check meanwhile:
+// it found compose-check reading the first instance of a primitive for every unit of it (the race's goal-less course
+// read with the runner's goal), fixed by reading each unit's own instance.
+test('nested: every composed pair passes the composition check', { todo: "controls (HANDOFF item 3): \"mode_input_mismatch: no input primitive supports the 'pieces-turns' interaction\" (board, card-battle, tactics with fighting), \"... the 'menu' interaction\" (card-battle, creature-battle with fighting), \"... the 'cursor-board' interaction\" (rts × fighting): the UI primitives serving them declare no input interactions" }, () => {
   for (const [a, b] of NESTED) {
     const r = composeNested(part(a), part(b), cat);
     if (r.doc) assert.deepEqual(checkComposition(preflight(structuredClone(r.doc), registry, logic).doc, registry, { logic }).failures.map(f => `${f.code}: ${f.message}`), [], `${a} × ${b}`);
+  }
+});
+
+test('nested: every composed pair passes the composition check but for the input interactions the controls work declares', () => {
+  for (const [a, b] of NESTED) {
+    const r = composeNested(part(a), part(b), cat);
+    if (r.doc) assert.deepEqual(checkComposition(preflight(structuredClone(r.doc), registry, logic).doc, registry, { logic }).failures.filter(f => f.code !== 'mode_input_mismatch').map(f => `${f.code}: ${f.message}`), [], `${a} × ${b}`);
   }
 });
 
@@ -148,14 +158,14 @@ test(`union: every ordered pair (${PAIRS.length}) composes into a document that 
   timings.unionMs = Math.round(performance.now() - t0);
 });
 
-/** The gate and every bot the document's loops name: viable, each bot the gate plays wins on SEEDS and replays. */
-async function plays(doc) {
+/** The gate and the bots the document's loops name: viable, the gate plays those bots, and each of `run` (default: all of them) wins on SEEDS and replays. */
+async function plays(doc, run = null) {
   const v = await verifyDocument(structuredClone(doc), registry, logic, { ...GATE });
   assert.ok(v.viable, `${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`);
   const ctx = playContext(preflight(structuredClone(doc), registry, logic), registry, logic);
   const named = modeBots(ctx).map(x => x.s.id);
   assert.deepEqual(select(ctx).chosen.map(c => c.s.id), named, 'the gate plays the bots the loops name');
-  for (const id of named) {
+  for (const id of run ?? named) {
     const opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS] };
     const a = strategies.get(id).run(ctx, opts), b = strategies.get(id).run(ctx, opts);
     assert.equal(a.ok, true, `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`);
@@ -181,16 +191,26 @@ test('play: board × creature-battle nested on attack_hit, species skinned onto 
   timings.playNestedMs = Math.round(performance.now() - t0);
 });
 
-// The union of the platformer and the race is refused by compose-check's mode_win_unwired (the race's win is not the
-// game's: the game's win is the primary's). Behind it, the united document is not yet playable: the race template seats
-// the player in a kart (its spawn rule's enter_vehicle) and places its rivals at track coordinates, so on the side-view
-// level the platformer bot and the race bot both fail (0/3 in the measured run).
-test('play: platformer ∪ race on the level; the gate finds it viable and the primary\'s bot wins', { todo: "compose-check defect: \"mode_win_unwired: 'gameplay.race' with.onWin reaches no ending\"; then the race seats the player in a kart on the level" }, async () => {
+// The union of the platformer and the race: the race's loop on the platformer's level. Its checkpoints are the level's
+// zones, its rivals are seated beside the player, the kart its template moved its own player in is not carried (the
+// player and how it moves are the primary's), and its win ends nothing (the game's win is the primary's goal).
+test('play: platformer ∪ race on the level; the gate finds it viable and the primary\'s bot wins', async () => {
+  const t0 = performance.now();
   const r = composeUnion(part('platformer'), part('race'), cat);
   assert.deepEqual(r.problems, []);
-  const bots = await plays(r.doc);
-  assert.equal(bots[0], 'platformer');
+  assert.deepEqual(r.union.replaced.movement, ['gameplay.vehicle.car', 'gameplay.vehicle.core']);
+  assert.deepEqual(r.doc.systems.find(s => s.use === 'gameplay.race').with.checkpoints, templateById('platformer').doc.spaces[0].zones.map(z => z.id));
+  const ctx = playContext(preflight(structuredClone(r.doc), registry, logic), registry, logic);
+  assert.deepEqual(modeBots(ctx).map(x => x.s.id), ['platformer', 'race'], 'the gate plays both loops\' bots');
+  await plays(r.doc, ['platformer']);
+  timings.playUnionMs = Math.round(performance.now() - t0);
 });
+
+// The race bot plays a race on foot with held move directions only (v2/verify/strategies/race.js raceMacros); on a
+// side-view level the route to the next checkpoint crosses pits that only the jump verb the controls give clears, so it
+// holds 'move 1,0' against the first gap until its budget runs out ("budget_exhausted: the race driver ran out of budget
+// before the race ended", lap 0). Not run here: it spends its whole budget.
+test('play: platformer ∪ race: the race bot wins the race on foot through the level\'s controls', { todo: 'bot defect (v2/verify, controls agent): the race bot\'s on-foot macros are held directions only; it never presses jump, so it cannot pass the level\'s pits (budget_exhausted, lap 0)' });
 
 // ---------- create, end to end, with a fake writer ----------
 
@@ -260,12 +280,19 @@ test('create "Sonic racing": platformer ∪ race publishes the union, or fails l
   if (error.report?.stage === 'composition') assert.equal(writer.calls.length, 1, 'only the pick was asked: a composition that fails asks no content');
 });
 
-test('create "Sonic racing" publishes platformer ∪ race in at most 6 calls and 2 rounds', { todo: 'blocked by the union of platformer and race (see the play test above)' }, async () => {
+test('create "Sonic racing" publishes platformer ∪ race in at most 6 calls and 2 rounds', async () => {
+  const t0 = performance.now();
   const writer = mashupWriter(SONIC), m = memoryCtx();
   await createKernelPipeline({ catalogue: async () => cat, writers: { spec: writer } })({ gameId: 'g', prompt: 'Sonic racing', kind: 'create', seed: 7 }, m.ctx);
   assert.equal(m.versions.length, 1);
   assert.ok(m.versions[0].report.modelCalls <= 6);
   assert.equal(m.versions[0].report.modelRounds, 2);
+  assert.deepEqual(m.versions[0].report.templates, ['platformer', 'race']);
+  assert.equal(m.versions[0].report.verified, true);
+  for (const use of ['gameplay.race', 'gameplay.goal', 'gameplay.move.platformer']) assert.ok(m.versions[0].doc.systems.some(s => s.use === use), use);
+  timings.createSonicMs = Math.round(performance.now() - t0);
+  timings.sonicModelCalls = m.versions[0].report.modelCalls;
+  timings.sonicRequestToFirstPlayableMs = m.versions[0].report.timings.requestToFirstPlayableMs;
 });
 
 test('timings (AGENTS.md: reported, not budgeted)', t => { t.diagnostic(JSON.stringify(timings)); });
