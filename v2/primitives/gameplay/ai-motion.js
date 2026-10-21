@@ -36,6 +36,8 @@ export default {
   id: ID,
   card: {
     loop: { verbs: [], progress: ['motion_step', 'motion_done', 'swallow'] },
+    // It moves every entity with a `motion` component through its motion program.
+    drives: { control: 'ai', components: ['motion'], movement: true, events: ['motion_step', 'swallow'] },
     intent: 'Kinematic motion programs for movers (`motion` component): sequences of straight, sine, zigzag, dive, hover, turret, orbit, chase-steer, wander, split, snake, gravity-well, saucer, rock and spline-path steps, with arena/scroller variants and bounce/wrap/exit bounds. Ported from the shmup kit.',
     views: ['side', 'td', 'any'],
     params: {

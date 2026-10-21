@@ -23,12 +23,14 @@
 // - Every loop's structure passes the static loop check (loop-check.js) from declarations alone (repairLoop): its
 //   participants and their control (engage.join.where), the component its win reads on the opponents (with the declared
 //   example value) and that component's owner, an action that changes it (the loop card's declared example), the win
-//   and lose wired. What no declaration provides is reported (structure.loopCheck, `loop`) for the planner to re-plan.
+//   and lose wired, and AI-controlled participants (the loop's, or the play spec's 'ai-*' opponent) driven by a
+//   primitive that declares it (card.drives) and whose entities can change what the loop's lose reads.
+//   What no declaration provides is reported (structure.loopCheck, `loop`) for the planner to re-plan.
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random } from '../kernel/rng.js';
-import { defaultsOf } from './catalog.js';
+import { defaultsOf, satisfying } from './catalog.js';
 import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
@@ -37,7 +39,8 @@ import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
 import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
-import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf } from './loop-check.js';
+import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf, drivesOf, drivesBy, drivesOwn, driversIn } from './loop-check.js';
+import { spawnRules } from './census.js';
 import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -454,6 +457,8 @@ const componentExample = (card, C) => {
 };
 /** Entries of a declared list param's example and default (the example first). @param {unknown} spec @returns {unknown[]} */
 const declaredEntries = spec => [...(isList(prop(spec, 'example')) ? /** @type {unknown[]} */ (prop(spec, 'example')) : prop(spec, 'example') !== undefined ? [prop(spec, 'example')] : []), ...list(prop(spec, 'default'))];
+/** Is a list entry the declared example `e` (same id and effects)? @param {unknown} x @param {Record<string, unknown>} e */
+const sameEntry = (x, e) => isObj(x) && x.id === e.id && JSON.stringify(effectsIn(x)) === JSON.stringify(effectsIn(e));
 /** A fresh id among `taken` (id, id_2, ...). @param {string} id @param {Set<unknown>} taken */
 const freshId = (id, taken) => { let out = id, n = 2; while (taken.has(out)) out = `${id}_${n++}`; return out; };
 
@@ -465,15 +470,17 @@ const freshId = (id, taken) => { let out = id, n = 2; while (taken.has(out)) out
  * field's other value; an empty group -> the loop's archetypes example, seated by placeParticipants; a component the
  * win reads -> the declared example value on the opponents; an unowned component -> its owner added; no action that
  * changes what the win reads -> the loop's declared example action whose effect the component's owner registers (the
- * owner added); an unwired win or lose -> wired (wireLoop). What it cannot fix is returned for the planner to re-plan.
- * The input is not modified.
- * @template T @param {T} input @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null }} [options]
+ * owner added); an unwired win or lose -> wired (wireLoop); AI participants nothing drives, or whose drivers cannot
+ * change what the loop's lose reads -> addDriver. What it cannot fix is returned for the planner to re-plan.
+ * `opponent` is the play spec's opponent and `idea` the words that rank drivers (loopIdea). The input is not modified.
+ * @template T @param {T} input @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null, idea?: string }} [options]
  * @returns {{ doc: T, fixes: LoopFix[], problems: import('./loop-check.js').LoopProblem[] }}
  */
-export function repairLoop(input, registry, { logic = null, core = null } = {}) {
+export function repairLoop(input, registry, { logic = null, core = null, opponent = null, idea = '' } = {}) {
   if (!isObj(input) || !Array.isArray(input.systems)) return { doc: input, fixes: [], problems: [] };
   const lg = logic || logicOf(registry);
   const coreIds = core ? [...core] : null;
+  const check = { logic: lg, core: coreIds, opponent };
   /** @type {Record<string, any>} */
   let doc = structuredClone(input);
   /** @type {LoopFix[]} */
@@ -481,7 +488,7 @@ export function repairLoop(input, registry, { logic = null, core = null } = {}) 
   /** @type {Set<string>} */
   const tried = new Set();
   for (let pass = 0; pass < 6; pass++) {
-    const problems = loopProblems(doc, registry, { logic: lg, core: coreIds });
+    const problems = loopProblems(doc, registry, check);
     let changed = false, seat = false;
     /** @type {any[]} */
     const systems = doc.systems;
@@ -563,6 +570,7 @@ export function repairLoop(input, registry, { logic = null, core = null } = {}) 
             if (!isObj(entry)) continue;
             h.with = isObj(h.with) ? h.with : {};
             const cur = h.with[k] !== undefined ? list(h.with[k]) : list(ps.default);
+            if (cur.some(x => sameEntry(x, entry))) { done = true; continue; } // already written this pass (a driver repair took the same example)
             const add = /** @type {Record<string, any>} */ (structuredClone(entry));
             if (isStr(add.id)) add.id = freshId(add.id, new Set(cur.map(x => prop(x, 'id'))));
             h.with[k] = [...cur.map(x => structuredClone(x)), add];
@@ -576,12 +584,98 @@ export function repairLoop(input, registry, { logic = null, core = null } = {}) 
         const end = /** @type {LoopEnd} */ (loop[n.kind]);
         const r = wireLoop(doc, n.kind === 'win' ? { win: { use: p.primitive, end }, lose: [] } : { win: null, lose: [{ use: p.primitive, end }] }, registry);
         if (r.wired || n.kind === 'lose') fix(`${p.primitive} ${n.kind} wired to ${n.kind === 'win' ? 'a won' : 'a lost'} ending (card.loop.${n.kind})`);
+      } else if (n.kind === 'driver' && n.control) {
+        const what = addDriver(doc, registry, n, idea);
+        if (what) fix(what);
       }
     }
     if (seat) doc = placeParticipants(doc, registry).doc;
     if (!changed) break;
   }
-  return { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), fixes, problems: loopProblems(doc, registry, { logic: lg, core: coreIds }) };
+  return { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), fixes, problems: loopProblems(doc, registry, check) };
+}
+
+/** The words that rank what the structural repair adds for an idea (its win, lose, premise and core mechanics). @param {Decomposition} decomposition */
+export const loopIdea = decomposition => [decomposition.core?.lose, decomposition.core?.win, decomposition.premise, ...(decomposition.mechanics || []).filter(m => m.importance === 'core').map(m => m.description)].filter(Boolean).join('. ');
+
+/**
+ * Make AI-controlled participants act (a 'driver' need of the loop check), from declarations alone:
+ * - a driver of the loop's own participants already in the document whose entities cannot change what the lose reads
+ *   gets the declared example entry of its action list whose effects do (need.by.effects);
+ * - else a catalogue primitive whose card.drives has the control, whose required capabilities the document's spaces
+ *   provide and whose declared behaviour changes what the lose reads (need.by), in this order: one that names the
+ *   loop (drives.loops), one whose components the opponents already carry, one whose component's declared example
+ *   (its archetypes contract) goes on them: the loop's AI participants, or for the play spec's opponent the placed
+ *   archetypes of the kind that example declares (none placed yet: the content the model writes from the contract).
+ *   Ties: the idea's words (relevance), fewer required primitives, id.
+ * Returns what it did, or null when no declaration provides it.
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @param {import('./loop-check.js').LoopNeed} n @param {string} idea @returns {string | null}
+ */
+function addDriver(doc, registry, n, idea) {
+  /** @type {any[]} */
+  const systems = doc.systems;
+  const arches = objects(prop(doc.content, 'archetypes'));
+  const rules = spawnRules(doc, registry);
+  const carries = (/** @type {string} */ a, /** @type {string} */ C) => prop(prop(arches.find(x => x.id === a), 'components'), C) !== undefined || rules.some(r => prop(r, 'archetype') === a && prop(prop(r, 'components'), C) !== undefined);
+  const targets = n.archetypes || [];
+  const by = n.by || null;
+  // 1. The loop's own driver acts, but nothing it makes them do changes what the lose reads: its declared example action.
+  if (by && n.loop) {
+    const loopCard = registry.get(n.loop)?.card;
+    for (const d of driversIn(doc, registry).filter(x => drivesOwn(x.drives) && (x.use === n.loop || x.use === cardLoop(loopCard)?.via))) {
+      const h = systems[d.index], loop = cardLoop(d.card);
+      for (const [k, ps] of Object.entries(d.card.params || {})) {
+        if (ps.type !== 'list' || prop(ps.of, 'type') !== 'object' || [loop?.win?.param, loop?.lose?.param].some(w => isStr(w) && w.split('.')[0] === k)) continue;
+        const entry = declaredEntries(ps).find(e => drivesBy(d.drives, by, effectsIn(e).map(x => String(x.do))));
+        if (!isObj(entry)) continue;
+        h.with = isObj(h.with) ? h.with : {};
+        const cur = h.with[k] !== undefined ? list(h.with[k]) : list(ps.default);
+        if (cur.some(x => sameEntry(x, entry))) return null;
+        const add = /** @type {Record<string, any>} */ (structuredClone(entry));
+        if (isStr(add.id)) add.id = freshId(add.id, new Set(cur.map(x => prop(x, 'id'))));
+        h.with[k] = [...cur.map(x => structuredClone(x)), add];
+        return `${d.use} with.${k} gains its declared example '${String(add.id ?? k)}': its AI participants can change what the ${n.loop} lose reads`;
+      }
+    }
+  }
+  // 2. A catalogue driver.
+  const caps = new Set(objects(doc.spaces).flatMap(s => {
+    const p = registry.get(String(s.use)); if (!p) return [];
+    const config = { ...defaultsOf(p.card), ...(isObj(s.with) ? s.with : {}) };
+    try { return [...(p.capabilities ? p.capabilities(config) : p.card.provides?.capabilities || [])]; } catch { return [...(p.card.provides?.capabilities || [])]; }
+  }));
+  const has = (/** @type {string} */ id) => systems.some(s => s?.use === id);
+  /** The archetypes a component driver's declared example would go on, and that example. @param {string} id @param {string} C */
+  const exampleFor = (id, C) => {
+    const contract = contractsOf(registry, id).find(c => c.need === 'archetypes' && c.component === C && isObj(c.example));
+    const value = prop(prop(contract?.example, 'components'), C);
+    if (value === undefined) return null;
+    const kinds = contract?.kinds?.length ? contract.kinds : [String(prop(contract?.example, 'kind'))];
+    return { value, on: n.loop ? targets : targets.filter(a => kinds.includes(String(prop(arches.find(x => x.id === a), 'kind')))) };
+  };
+  const satisfiesLoop = (/** @type {string} */ r) => n.loop === r || Boolean(n.loop?.startsWith(r + '.'));
+  const ranked = registry.cards().map(c => ({ c, d: drivesOf(c) })).filter(({ c, d }) => d && d.control === n.control && !drivesOwn(d)
+    && (c.requires?.capabilities || []).every(x => caps.has(x)) && (!by || drivesBy(d, by)))
+    .map(({ c, d }) => {
+      const dr = /** @type {import('./loop-check.js').Driving} */ (d);
+      const named = dr.loops.some(satisfiesLoop);
+      const carried = dr.components.find(C => targets.some(a => carries(a, C)));
+      const ex = !named && !carried ? dr.components.map(C => ({ C, ex: exampleFor(c.id, C) })).find(x => x.ex && (x.ex.on.length || !n.loop)) : null;
+      const rank = named ? 0 : carried ? 1 : ex ? 2 : -1;
+      return { c, rank, ex, score: idea ? relevance({ verb: '', description: idea }, c) : 0 };
+    })
+    .filter(x => x.rank >= 0 && !(x.rank < 2 && has(x.c.id)))
+    .sort((a, b) => a.rank - b.rank || b.score - a.score || (a.c.requires?.primitives || []).length - (b.c.requires?.primitives || []).length || a.c.id.localeCompare(b.c.id));
+  const best = ranked[0];
+  if (!best) return null;
+  if (!has(best.c.id)) systems.push({ use: best.c.id });
+  for (const r of best.c.requires?.primitives || []) { const s = satisfying(registry, r); if (s && !systems.some(x => x?.use === s || (isStr(x?.use) && x.use.startsWith(r + '.')))) systems.push({ use: s }); }
+  const why = n.loop ? `the ${n.loop} AI participants` : `the play spec's ${n.control} opponent`;
+  if (best.rank === 0) return `+${best.c.id}: it drives ${why} (card.drives.loops)`;
+  if (best.rank === 1) return `+${best.c.id}: it drives ${why}, which carry its component (card.drives.components)`;
+  const { C, ex } = /** @type {{ C: string, ex: { value: unknown, on: string[] } }} */ (best.ex);
+  for (const a of arches) if (ex.on.includes(String(a.id)) && prop(a.components, C) === undefined) { const comps = isObj(a.components) ? a.components : {}; comps[C] = structuredClone(ex.value); a.components = comps; }
+  return `+${best.c.id}: it drives ${why}; ${ex.on.length ? `${ex.on.join(', ')} get its "${C}" component (declared example)` : `its archetypes contract places carriers of "${C}" (content to write)`}`;
 }
 
 /**
@@ -773,7 +867,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const seated = placeParticipants(applySkins(doc, registry), registry);
   // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the
   // components the win reads, an action that changes it, the win and lose wired. What cannot be derived is reported.
-  const looped = repairLoop(seated.doc, registry, { logic, core: st.core });
+  const looped = repairLoop(seated.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) });
   // Nested encounters' outcomes act on the outer participants: the defeated side is taken out of play the way the
   // final document declares (card.defeats), the player's side known from the outer loop's seated groups.
   for (const why of configureEncounters(looped.doc, registry, encounters)) gaps.push({ mechanic: 'mashup', description: `needs: ${why}`, importance: 'core', kind: 'adapter', why });
@@ -784,11 +878,11 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
   // Repair may have written what the loops' wiring runs through (a required list's first entry): wire it too.
-  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
+  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
   // A space still empty after repair (no generator selected) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
   // The static loop check of the finished structure, before any model call: the planner re-plans what it reports.
-  const loopCheck = loopReport(world?.doc ?? repaired.doc, registry, { logic, core: st.core });
+  const loopCheck = loopReport(world?.doc ?? repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null });
   // (A win wired through list entries the model writes is pending content, not a structural failure yet.)
   const loop = loopCheck.problems.filter(p => p.severity === 'error' && !p.need.pending);
   const structure = { version: PRESETS_VERSION, packs: packed, core: st.core, loop: st.loops.filter(l => st.core.includes(l.use) || l.use === st.win?.use).map(l => ({ use: l.use, progress: l.loop.progress })),

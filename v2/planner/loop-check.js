@@ -14,7 +14,15 @@
 //                 whether play can reach it is unknown;
 //   wiring        the win of the loop that owns the game's win is wired to a won ending (an end_game effect in its
 //                 declared param, its `end` boolean, a `when` ending with its evaluator in the document, or a won
-//                 story ending), and its declared lose (and the core loops' losses) to a lost one.
+//                 story ending), and its declared lose (and the core loops' losses) to a lost one;
+//   opponents     AI-controlled participants act: a loop whose groups have AI control (a group not seating the player
+//                 whose engage.join.where field is 'ai'; with no `where`, the non-player participants of a loop whose
+//                 declared opponent is 'ai-*'), and a play spec whose opponent is 'ai-*' (options.opponent), need a
+//                 primitive that drives them (card.drives, control 'ai': the loop itself, one that names the loop, or one
+//                 whose components they carry; for the play spec, a driving core loop or a component driver with a placed
+//                 carrier) -> loop_opponent_inert; and when such a loop declares a game-ending lose, what its drivers make
+//                 the opponents do (drives.actions/effects/events/movement, and the effects in their action data) must
+//                 be something that changes what the lose reads (lose.reads.by) -> loop_lose_unaffected_by_opponent.
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
 // structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
@@ -38,14 +46,21 @@ import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
  */
 /**
  * What a problem says is missing, as data for repair and re-planning. `pending`: the list param whose entries (content
- * the model writes) would carry the wiring.
- * @typedef {{ kind: 'participants' | 'seat' | 'opponent' | 'group' | 'component' | 'owner' | 'action' | 'event' | 'var' | 'win' | 'lose' | 'reads',
+ * the model writes) would carry the wiring. A 'driver' need: a primitive that drives AI-controlled participants
+ * (card.drives with `control`), of `loop` when the loop declares them (else the play spec's opponent), the opponent
+ * archetypes it would drive, and `by`: what its driven entities must be able to do (the loop's lose.reads.by).
+ * @typedef {{ kind: 'participants' | 'seat' | 'opponent' | 'group' | 'component' | 'owner' | 'action' | 'event' | 'var' | 'win' | 'lose' | 'reads' | 'driver',
  *   param?: string, min?: number, where?: Record<string, unknown>, group?: string, component?: string, archetypes?: string[], owners?: string[],
- *   event?: string, var?: string, of?: string, pending?: string }} LoopNeed
+ *   event?: string, var?: string, of?: string, pending?: string, control?: string, loop?: string, by?: import('./loop.js').ReadsBy }} LoopNeed
+ */
+/**
+ * A card's drives declaration, normalised (card.drives; types.d.ts Drives).
+ * @typedef {{ control: string, components: string[], loops: string[], actions: string[], effects: string[], events: string[], movement: boolean }} Driving
  */
 /**
  * @typedef {{ code: string, path: string, message: string, hint: string, severity: 'error' | 'warning', stage: 'loop', primitive: string, need: LoopNeed }} LoopProblem
  */
+/** @typedef {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null }} LoopCheckOptions */
 /** A loop instance of a document. @typedef {{ use: string, index: number, path: string, loop: Loop, card: Record<string, any>, config: Record<string, unknown>, inst: Record<string, unknown> }} LoopInstance */
 
 export const LOOP_CHECK_VERSION = 'loop-check/0.1';
@@ -53,8 +68,29 @@ export const LOOP_CHECK_VERSION = 'loop-check/0.1';
 export const LOOP_CODES = Object.freeze({
   participants: 'loop_participants_missing', seat: 'loop_player_unseated', opponent: 'loop_opponent_missing', group: 'loop_group_empty',
   component: 'loop_component_missing', owner: 'loop_component_unowned', unaffected: 'loop_win_unaffected', win: 'loop_win_unwired',
-  lose: 'loop_lose_unwired', reads: 'loop_win_reads_undeclared',
+  lose: 'loop_lose_unwired', reads: 'loop_win_reads_undeclared', inert: 'loop_opponent_inert', loseUnaffected: 'loop_lose_unaffected_by_opponent',
 });
+
+/** Does a play spec opponent (or a loop's declared opponent) mean AI-controlled participants ('ai-rival', 'ai-side')? @param {unknown} o */
+export const aiOpponent = o => isStr(o) && o.startsWith('ai-');
+/** @param {unknown} v @returns {string[]} */
+const strs = v => (Array.isArray(v) ? v.filter(isStr).map(String) : []);
+/** A card's drives declaration (card.drives), or null when it drives nothing. @param {unknown} card @returns {Driving | null} */
+export function drivesOf(card) {
+  const d = prop(card, 'drives');
+  if (!isObj(d) || !isStr(d.control)) return null;
+  return { control: String(d.control), components: strs(d.components), loops: strs(d.loops), actions: strs(d.actions), effects: strs(d.effects), events: strs(d.events), movement: d.movement === true };
+}
+/** Does a driver drive the participants of its own loop (it names neither components nor loops)? @param {Driving} d */
+export const drivesOwn = d => !d.components.length && !d.loops.length;
+/**
+ * Can what a driver's entities do change what a loop end reads (its reads.by)? Their declared actions, effects, events
+ * or movement, plus `effects`: the effects its instance's action data runs. @param {Driving} d @param {import('./loop.js').ReadsBy} by @param {string[]} [effects]
+ */
+export function drivesBy(d, by, effects = []) {
+  const has = (/** @type {string[] | undefined} */ want, /** @type {string[]} */ got) => (want || []).some(x => got.includes(x));
+  return has(by.actions, d.actions) || has(by.effects, [...d.effects, ...effects]) || (by.events || []).includes('*') || has(by.events, d.events) || Boolean(by.movement && d.movement);
+}
 
 /** @type {WeakMap<object, LogicLike>} */
 const logicCache = new WeakMap();
@@ -218,11 +254,12 @@ function placedMembers(doc, registry, P) {
 
 /**
  * The structural loop report of a document: problems (errors and warnings) and the loop that owns the win.
- * `core` orders the loops (the first core loop declaring a game-ending win owns it) and names the core losses.
- * @param {unknown} doc @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null }} [options]
+ * `core` orders the loops (the first core loop declaring a game-ending win owns it) and names the core losses;
+ * `opponent` is the play spec's opponent ('ai-*': AI-controlled participants play against the player).
+ * @param {unknown} doc @param {RegistryLike} registry @param {LoopCheckOptions} [options]
  * @returns {{ problems: LoopProblem[], owner: string | null, loops: string[] }}
  */
-export function loopReport(doc, registry, { logic = null, core = null } = {}) {
+export function loopReport(doc, registry, { logic = null, core = null, opponent = null } = {}) {
   const lg = logic || logicOf(registry);
   const coreIds = core ? [...core] : null;
   const loops = loopInstances(doc, registry);
@@ -235,12 +272,27 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
   const playerArch = prop(prop(doc, 'player'), 'archetype');
   const participants = participantsOf(doc, registry);
   const owner = winOwner(loops, coreIds);
+  // The primitives of the document that act for AI-controlled entities (card.drives), with the effects their action data runs.
+  const drivers = driversIn(doc, registry);
+  const rules = spawnRules(doc, registry);
+  /** Does an archetype carry component C (its own components, or a spawn rule's override placing it)? @param {string} a @param {string} C */
+  const carries = (a, C) => prop(prop(arches.find(x => x.id === a), 'components'), C) !== undefined || rules.some(r => prop(r, 'archetype') === a && prop(prop(r, 'components'), C) !== undefined);
+  /** The drivers of a loop's AI participants (the loop, or the host it plays through, driving its own). @param {LoopInstance} l @param {Set<string>} ai @returns {DriverInstance[]} */
+  const driving = (l, ai) => drivers.filter(d => ((d.use === l.use || d.use === l.loop.via) && drivesOwn(d.drives)) || d.drives.loops.some(r => satisfies(l.use, r)) || [...ai].some(a => d.drives.components.some(C => carries(a, C))));
+  /** Core loops that declare AI-controlled participants or an AI opponent: they answer the play spec's opponent (checked above). @type {Set<string>} */
+  const aiCore = new Set();
+  const isCore = (/** @type {LoopInstance} */ l) => l === owner || !coreIds || coreIds.includes(l.use);
 
   for (const l of loops) {
     const P = l.loop.needs.participants;
     const reads = l === owner ? readsOf(l.loop.win) : null;
     /** Opponent members (archetype ids) of this loop, for the component its win reads; null when it has no groups. @type {Set<string> | null} */
     let opponents = null;
+    /** Whether the loop declares AI-controlled participants, and their archetypes placed in the world. */
+    let hasAI = false;
+    /** @type {Set<string>} */
+    let aiArch = new Set();
+    const loopAI = aiOpponent(l.loop.opponent);
     if (isStr(P)) {
       const spec = l.card.params?.[P];
       const entries = list(l.config[P]);
@@ -265,12 +317,35 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
           if (!(members.get(g.id)?.size)) push(LOOP_CODES.group, l, `${path}[${groups.findIndex(x => x.id === g.id) >= 0 ? groups.findIndex(x => x.id === g.id) : j}]`, `${P} '${g.id}' has no entities in the world (archetypes with a "${seated.component}" component on it, placed by spawns)`, `seat ${seated.component} archetypes for '${g.id}' (the card's content example)`, { kind: 'group', param: P, group: g.id, component: seated.component });
         });
         opponents = new Set(seated.groups.filter(g => !(where && seats(objects(entries).find(x => x.id === g.id) || {}))).flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
+        // AI control: a group that does not seat the player whose seating field (engage.join.where) is 'ai'; with no
+        // `where`, every group without the player when the loop's declared opponent is AI-controlled.
+        const ai = seated.groups.filter(g => {
+          const entry = objects(entries).find(x => x.id === g.id) || {};
+          if (where) return !seats(entry) && Object.keys(where).some(k => (entry[k] ?? fieldDefault(k)) === 'ai');
+          return loopAI && !g.members.includes('player') && !members.get(g.id)?.has('player');
+        });
+        hasAI = ai.length > 0;
+        aiArch = new Set(ai.flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
       } else if (!groups.length && entries.length) {
         const others = entries.filter(isStr).filter(x => x !== 'player' && x !== playerArch);
         if (declaresOpponent && !others.length) push(LOOP_CODES.opponent, l, path, `${P} lists only the player: its loop declares an opponent (${l.loop.opponent})`, `add the opponents' ids or archetypes to with.${P}`, { kind: 'opponent', param: P });
         opponents = new Set(others.filter(x => arches.some(a => a.id === x)));
+        hasAI = loopAI && others.length > 0;
+        aiArch = opponents;
       }
     }
+    // Its AI-controlled participants act: a primitive drives them, and (when its lose ends the game) what they do can
+    // change what that lose reads.
+    if (hasAI) {
+      const by = endsGame(l.loop.lose) && isCore(l) ? readsOf(l.loop.lose)?.by : undefined;
+      const lose = by && Object.keys(by).length ? by : null;
+      const ds = driving(l, aiArch);
+      const need = /** @type {LoopNeed} */ ({ kind: 'driver', control: 'ai', loop: l.use, archetypes: [...aiArch].sort(), ...(lose ? { by: lose } : {}) });
+      const does = lose ? ` and can change what its lose reads (${byText(lose)})` : '';
+      if (!ds.length) push(LOOP_CODES.inert, l, l.path, `its loop has AI-controlled participants (${need.archetypes?.join(', ') || P}) and no primitive of the document drives them (card.drives control 'ai': this loop, one naming it, or one whose components they carry)`, `add a primitive that drives them${does} (card.drives), with its component on them`, need);
+      else if (lose && !ds.some(d => drivesBy(d.drives, lose, d.effects))) push(LOOP_CODES.loseUnaffected, l, l.path, `its lose reads ${readsText(readsOf(l.loop.lose))}, changed by ${byText(lose)}, and nothing its AI participants' drivers (${ds.map(d => d.use).join(', ')}) make them do changes it`, `give the opponents an action whose effects change it (the card's declared example), or add a driver whose entities do (${byText(lose)})`, need);
+    }
+    if ((hasAI || loopAI) && isCore(l)) aiCore.add(l.use);
     if (l !== owner) continue;
     // The state the win reads, and whether play can change it.
     if (!reads) {
@@ -293,6 +368,20 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
       if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? ' (its providers are driven by nothing in the document yet)' : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(signal === 'idle' ? { pending: 'drive' } : {}) });
     }
   }
+  // The play spec's AI opponent plays against the player in the core loop: a core loop that declares AI participants
+  // (their drivers are checked above), or a driver acting on any entity that carries its components, with a placed
+  // carrier. A component driver whose carriers are not placed yet is `pending` content (its archetypes contract: the
+  // model writes them).
+  const host = owner || loops.find(isCore) || loops[0];
+  if (aiOpponent(opponent) && host && !aiCore.size) {
+    const placed = [...new Set(rules.map(r => prop(r, 'archetype')).filter(isStr).map(String))].filter(a => a !== playerArch && prop(arches.find(x => x.id === a), 'kind') !== 'player').sort();
+    const components = drivers.filter(d => d.drives.components.length);
+    if (!components.some(d => placed.some(a => d.drives.components.some(C => carries(a, C))))) {
+      push(LOOP_CODES.inert, host, 'systems', `the play spec's opponent (${opponent}) plays against the player, and no primitive drives it: no core loop's AI participants are driven and no driver's components (card.drives) are on a placed entity${components.length ? ` (${components.map(d => `${d.use}: ${d.drives.components.join('/')}`).join(', ')})` : ''}`,
+        components.length ? `place opponents carrying ${components[0].drives.components[0]} (the ${components[0].use} content example)` : 'add a primitive that drives AI-controlled entities (card.drives), with its component on the opponents',
+        { kind: 'driver', control: 'ai', archetypes: placed, ...(components.length ? { pending: 'archetypes' } : {}) });
+    }
+  }
   // Wiring: the owner's win to a won ending; its lose and the core loops' losses to a lost one. (A collection whose
   // loops declare no win at all is the composition's hole, loop.js composeLoop: the planner adds a primitive that does.)
   // A win wired through the entries of a list param that has none yet (bosses the model writes) is `pending` content.
@@ -312,7 +401,7 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
  * Errors of the structural loop check (loopReport's warnings left out). `structure: true` leaves out what only the
  * content the model writes can settle (need.pending: a win wired through list entries not written yet): the check
  * before any model call.
- * @param {unknown} doc @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null, structure?: boolean }} [options] @returns {LoopProblem[]}
+ * @param {unknown} doc @param {RegistryLike} registry @param {LoopCheckOptions & { structure?: boolean }} [options] @returns {LoopProblem[]}
  */
 export const loopProblems = (doc, registry, options = {}) => loopReport(doc, registry, options).problems.filter(p => p.severity === 'error' && !(options.structure && p.need.pending));
 
@@ -388,6 +477,31 @@ function written(v, path) {
   const x = path.reduce((/** @type {unknown} */ o, k) => prop(o, k), v);
   return Array.isArray(x) ? x.length > 0 : isObj(x) && Object.keys(x).length > 0;
 }
+
+/** A driver instance of a document. @typedef {{ use: string, index: number, card: Record<string, any>, drives: Driving, effects: string[] }} DriverInstance */
+/**
+ * The primitives of a document that drive AI-controlled entities (card.drives control 'ai'), with the effects their
+ * instance's action data runs (its loop's win and lose params left out). @param {unknown} doc @param {RegistryLike} registry @returns {DriverInstance[]}
+ */
+export function driversIn(doc, registry) {
+  /** @type {DriverInstance[]} */
+  const out = [];
+  list(prop(doc, 'systems')).forEach((s, index) => {
+    const use = prop(s, 'use'); if (!isStr(use)) return;
+    const card = registry.get(use)?.card; const drives = drivesOf(card);
+    if (!card || !drives || drives.control !== 'ai') return;
+    /** @type {Record<string, unknown>} */
+    let config = {};
+    try { config = { ...defaultsOf(/** @type {any} */ (card)), ...(isObj(prop(s, 'with')) ? /** @type {Record<string, unknown>} */ (prop(s, 'with')) : {}) }; } catch { config = {}; }
+    const loop = cardLoop(card);
+    out.push({ use, index, card, drives, effects: [...new Set(actionEffects(card, config, [loop?.win?.param, loop?.lose?.param]).map(a => String(a.effect.do)))] });
+  });
+  return out;
+}
+/** @param {import('./loop.js').ReadsBy} by */
+const byText = by => [by.actions?.length && `actions ${by.actions.join('/')}`, by.effects?.length && `effects ${by.effects.join('/')}`, by.events?.length && `events ${by.events.join('/')}`, by.movement && 'movement'].filter(Boolean).join(', ') || 'nothing declared';
+/** @param {LoopReads | null} r */
+const readsText = r => (!r ? 'nothing declared' : r.component ? `the ${r.of || 'opponents'}' "${r.component}"` : r.event ? `the event "${r.event}"` : `the var "${r.var}"`);
 
 /** Problems as one line each (failure reports, model feedback). @param {LoopProblem[]} problems */
 export const loopText = problems => problems.map(p => `[${p.code}] ${p.path}: ${p.message}`);

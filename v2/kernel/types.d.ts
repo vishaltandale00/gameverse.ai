@@ -136,12 +136,30 @@ export interface CardInput {
   adapts?: Adapts;
   /** A mechanic's mode: how it is played (compose-check `mode` check). */
   mode?: CardMode;
+  /** It acts for AI-controlled entities (planner/loop-check.js): see Drives. */
+  drives?: Drives;
   /** Input primitives: the interactions they support ('realtime', 'turn', 'pointer', 'menu'...). */
   interactions?: string[];
   /** Shapes of document sections this card owns: section path -> schema or description. */
   data?: Record<string, unknown>;
   dataShapes?: Record<string, unknown>;
   [extra: string]: unknown;
+}
+/**
+ * card.drives: the primitive acts for AI-controlled entities (opponents, rivals, AI sides). `components`: it drives
+ * every entity carrying one of them; `loops`: the AI participants of these loop primitives (ids or prefixes); neither:
+ * the AI-controlled participants of its own loop. What the driven entities do, in the vocabulary of a loop end's
+ * reads.by: player-style `actions` they take, `effects` they run, `events` they emit, `movement` (their bodies move,
+ * touch and pass). Checked against the loops' losses (planner/loop-check.js loop_lose_unaffected_by_opponent).
+ */
+export interface Drives {
+  control: 'ai';
+  components?: string[];
+  loops?: string[];
+  actions?: string[];
+  effects?: string[];
+  events?: string[];
+  movement?: boolean;
 }
 /** A card as the Registry stores it: params, provides and requires always present. */
 /** card.mode (v2-card-modes): checked statically by v2/planner/compose-check.js. */
