@@ -46,19 +46,17 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   const pipeline = createKernelPipeline({ catalogue: async () => base, writers: { spec }, decisions: null });
   const { ctx, versions, stages } = memoryCtx();
   const out = await pipeline({ gameId: 'g', prompt: 'a lighthouse mystery with tides', kind: 'create', seed: 5 }, ctx);
-  // The preset publishes first (code only, no model call), then the themed outline replaces it.
+  // The only publish before detail patches is the gated, themed version (no early preset publish).
   assert.equal(versions[0].stage, 'first_playable');
-  assert.equal(versions[0].report.outline.source, 'preset');
-  const themed = versions.find(v => v.stage === 'themed');
-  assert.ok(themed, versions.map(v => v.stage).join(' '));
+  assert.equal(versions.filter(v => !v.stage.startsWith('detail:')).length, 1, versions.map(v => v.stage).join(' '));
+  const themed = versions[0];
   assert.equal(themed.doc.title, 'Lamp of the Drowned');
   assert.equal(themed.report.outline.source, 'fake-writer');
   assert.ok(themed.report.timings.firstPlayableBuildMs < 1000);
-  assert.ok(out.timings.requestToFirstPlayableMs <= out.timings.requestToThemedMs, 'the preset is playable before the themed outline');
   for (const m of themed.report.selection.mechanics) assert.ok(m.primitives.length || themed.report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
   assert.ok(out.detail.accepted >= 1 && out.detail.proposed >= out.detail.accepted);
   assert.ok(versions.slice(versions.indexOf(themed) + 1).every(v => v.stage.startsWith('detail:') && v.report.added));
-  for (const k of ['decomposeMs', 'selectMs', 'presetMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'requestToThemedMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
+  for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
   assert.ok(stages.some(s => s.name === 'complete'));
   // Revise: a parameter tweak takes no model call; a content change goes to the model as targeted ops.
   const calls = spec.calls.length;
