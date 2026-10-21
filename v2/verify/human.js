@@ -3,9 +3,9 @@
 //   held input   what is held (the move axis and the other axes, the keys held down) changes only at the start of
 //                each window of frames; for the rest of the window it stays as it was then;
 //   presses      a press or a choice sent through a UI (one actions record: one act of the person) goes out at the
-//                start of a window, one per window, its key held down for that window; an act asked for mid-window
-//                waits for the next window start (one waiting act; asking again for the same act while it waits, a
-//                mashed key, is the same act).
+//                start of a window, one per window, its key held down for that window; acts asked for faster wait
+//                their turn in order (none is dropped), and asking again for the act that is down or last waiting (a
+//                mashed key) is the same act.
 // The bot plays these worlds exactly as it plays any other (through the controls: v2/verify/controls.js), seeing the
 // state and reacting to it, its lookahead on snapshots simulating the same hands; a bot that still wins found a line a
 // person's hands can play. The limiter's decisions are a pure function of the intents stepped from the first frame,
@@ -27,8 +27,8 @@ const heldOf = x => ({ ...(x?.axes ? { axes: x.axes } : {}), held: Object.fromEn
 export function humanRate(make, changesPerSecond) {
   return seed => {
     const rt = make(seed), step = rt.step, W = windowFrames(changesPerSecond, rt.dt ?? 1 / 60);
-    // sched[f]: the hands before frame f: { hold (the window's held input), act (the act down this window), wait }.
-    const sched = [{ hold: heldOf(null), act: null, wait: null }];
+    // sched[f]: the hands before frame f: { hold (the window's held input), act (the act down this window), wait (acts in order) }.
+    const sched = [{ hold: heldOf(null), act: null, wait: [] }];
     rt.humanWindow = W;
     rt.step = intent => {
       const f = rt.state.frame;
@@ -40,9 +40,10 @@ export function humanRate(make, changesPerSecond) {
       const s = sched[k];
       const acts = Object.fromEntries(Object.entries(intent?.actions || {}).filter(([, v]) => truthy(v)));
       let { hold, act, wait } = s;
-      if (Object.keys(acts).length && JSON.stringify(acts) !== JSON.stringify(wait) && !(f % W !== 0 && act && JSON.stringify(acts) === JSON.stringify(act))) wait = acts;
+      const key = JSON.stringify(acts), last = wait.length ? JSON.stringify(wait[wait.length - 1]) : act ? JSON.stringify(act) : null;
+      if (Object.keys(acts).length && key !== last) wait = [...wait, acts];
       let pressed = null;
-      if (f % W === 0) { hold = heldOf(intent); act = wait; wait = null; pressed = act; }
+      if (f % W === 0) { hold = heldOf(intent); act = wait[0] ?? null; wait = wait.slice(1); pressed = act; }
       const down = { ...hold.held, ...(act ? Object.fromEntries(Object.entries(act).filter(([, v]) => v === true).map(([v]) => [v, true])) : {}) };
       const out = { ...(hold.axes ? { axes: hold.axes } : {}), ...(Object.keys(down).length ? { held: down } : {}), ...(pressed ? { actions: pressed } : {}) };
       sched[f + 1] = { hold, act: f % W === W - 1 ? null : act, wait };

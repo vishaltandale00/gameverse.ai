@@ -42,7 +42,7 @@ export default {
     for (const seed of seeds) {
       // The plot stage of verify() already searched the gate's world (and reported its own problems): reuse it.
       const reuse = ctx.plot?.endings && seed === ctx.seed ? ctx.plot : null;
-      const r = reuse || solve(ctx.doc, ctx.registry, ctx.logic, { seed, search, maxStates, maxSteps, settleSteps, ...rest });
+      const r = reuse || solve(ctx.doc, ctx.registry, ctx.logic, { seed, search, maxStates, maxSteps, settleSteps, stopAtWin: true, ...rest });
       exhaustive = exhaustive || Boolean(r.exhaustive);
       const wins = winningEndings(r);
       if (!wins.length) {

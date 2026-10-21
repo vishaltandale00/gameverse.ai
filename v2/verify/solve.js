@@ -54,6 +54,7 @@ const pathOf = node => { const out = []; for (let n = node; n?.label !== undefin
  * solve(doc, registry, logic, opts) — doc must be preflight's normalized document.
  * opts: { search, maxStates, maxSteps, maxDepth, settleSteps, waitSteps, seed, quantum, includeRng, entities, key(rt), heuristic(rt) }
  * The search is bounded by states kept and frames simulated, never wall time: the same document and seed give the same result.
+ * `stopAtWin`: stop at the first won ending found (a caller that needs one winning path, not every ending).
  */
 export function solve(doc, registry, logic, opts = {}) {
   const { search = 'bfs', maxStates = 20000, maxDepth = Infinity, settleSteps = 2, waitSteps = 600, seed } = opts;
@@ -79,7 +80,7 @@ export function solve(doc, registry, logic, opts = {}) {
   let best = { score: h(rt), node: null };
   const root = { snap: rt.snapshot(), parent: null, label: undefined, depth: 0 };
   const startOptions = rt.availableOptions().length;
-  let expanded = 0, tries = 0, cutByDepth = false, errors = [];
+  let expanded = 0, tries = 0, cutByDepth = false, errors = [], wonFound = false;
 
   // Expand a node: try each option from its snapshot; returns child nodes (new abstract states).
   const expand = (node, seen, admit) => {
@@ -103,6 +104,7 @@ export function solve(doc, registry, logic, opts = {}) {
         const k = rt.state.ending || rt.state.status, path = pathOf(child);
         if (!endings.has(k) || endings.get(k).length > path.length) endings.set(k, path);
         outcomes[k] = rt.state.status;
+        if (opts.stopAtWin && rt.state.status === 'won') { wonFound = true; break; }
         continue;
       }
       const key = keyOf(rt);
@@ -123,7 +125,7 @@ export function solve(doc, registry, logic, opts = {}) {
       cutByDepth = false;
       const stack = [root];
       const admit = (key, d) => { const old = depthSeen.get(key); if (old !== undefined && old <= d) return false; depthSeen.set(key, d); return true; };
-      while (stack.length && !b.over()) {
+      while (stack.length && !b.over() && !wonFound) {
         const node = stack.pop();
         if (node.depth >= limit) { if (rt.restore(node.snap), rt.availableOptions().length) cutByDepth = true; continue; }
         const kids = expand(node, null, admit);
@@ -144,8 +146,8 @@ export function solve(doc, registry, logic, opts = {}) {
       : { a: [], i: 0, push(x) { this.a.push(x); }, pop() { return this.a[this.i++]; }, get size() { return this.a.length - this.i; } };
     root.score = h((rt.restore(root.snap), rt));
     frontier.push(root);
-    while (frontier.size && !b.over()) for (const c of expand(frontier.pop(), seen, admit)) frontier.push(c);
-    exhaustive = !frontier.size && !cutByDepth && !b.hit;
+    while (frontier.size && !b.over() && !wonFound) for (const c of expand(frontier.pop(), seen, admit)) frontier.push(c);
+    exhaustive = !frontier.size && !cutByDepth && !b.hit && !wonFound;
   }
 
   const allBeats = (doc.plot?.storyboard?.acts || []).flatMap(a => (a.beats || []).map(x => x.id));
