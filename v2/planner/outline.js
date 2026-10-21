@@ -12,7 +12,7 @@ import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath, groupOfPath, fieldForm, paramsGroupId } from './outline-form.js';
 import { dependencyLayers, loopMechanicOf } from './build.js';
-import { preset, coreOf, zoneStart, wireCore, repairLoop, loopIdea } from './presets.js';
+import { preset, coreOf, zoneStart, wireCore, repairLoop } from './presets.js';
 import { loopProblems } from './loop-check.js';
 import { isAvatar } from './play-spec.js';
 import { populateProblems, placeContent, unreadReaders, contractText, contractsFor } from './content.js';
@@ -83,8 +83,6 @@ import { isObj, isList, isStr, obj, list, objects, str, prop } from '../kernel/g
 export const OUTLINE_VERSION = 'outline/0.1';
 /** @param {unknown} s @param {string} [sep] @returns {string} */
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
-const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this where who you your player game games like style meets world'.split(' '));
-const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 
 /**
  * The procedural structure: the preset the selected primitives' declarations and the play spec compose (presets.js).
@@ -387,7 +385,7 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
     Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
     // So is the rest of the loops' structure (participants, what the win reads, an action that changes it): the model's
     // content is kept, what the declarations need and the draft lacks is put back (presets.js repairLoop).
-    try { Object.assign(draft, repairLoop(draft, registry, { logic, core: loopCore, opponent: loopOpponent, idea: loopIdea(decomposition) }).doc); } catch { /* malformed draft: repair and the loop check report it */ }
+    try { Object.assign(draft, repairLoop(draft, registry, { logic, core: loopCore, opponent: loopOpponent }).doc); } catch { /* malformed draft: repair and the loop check report it */ }
     return draft;
   };
   // The core loop's primitives: their params forms come first, and problems no form owns go back to them and the cast.
@@ -528,7 +526,7 @@ Fill ONLY this part of the outline now: ${part} (other parts are written separat
       const p = placeContent(doc, registry); doc = p.doc; placed = p.added;
       doc = engageDocument(doc, registry, logic).doc;
       // The assembled draft (skins applied, participants seated) gets the loops' structure back where it lacks it.
-      doc = repairLoop(doc, registry, { logic, core: loopCore, opponent: loopOpponent, idea: loopIdea(decomposition) }).doc;
+      doc = repairLoop(doc, registry, { logic, core: loopCore, opponent: loopOpponent }).doc;
       // Boot it (ms): a primitive that throws is never isolated; the error (naming the primitive, install or step) goes to the model.
       const fp = firstPlayable(doc, registry, logic, { seed, furnish: false, protect: keep, maxIsolations: 0 });
       if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }

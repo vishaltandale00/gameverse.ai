@@ -32,9 +32,7 @@
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
-import { random } from '../kernel/rng.js';
 import { defaultsOf } from './catalog.js';
-import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
@@ -54,7 +52,7 @@ import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 /** @typedef {import('./select.js').Selection} Selection */
 /** How a space's zones are written. @typedef {{ exits: boolean, rect: boolean, range?: boolean, bounds: boolean, slot?: boolean, extent: number[] | null, length?: number }} ZoneShape */
 /** @typedef {{ to: string, gate?: { item: string } }} Exit */
-/** @typedef {{ id: string, name: string, description: string, rect?: number[], range?: number[], bounds?: { min: number[], max: number[] }, exits?: Exit[] }} OutlineZone */
+/** A zone as code writes it: its id and the shape its space understands (the model names and describes it). @typedef {{ id: string, name?: string, description?: string, rect?: number[], range?: number[], bounds?: { min: number[], max: number[] }, exits?: Exit[] }} OutlineZone */
 /** @typedef {{ id: string, use: string, with?: Record<string, unknown>, zones: OutlineZone[], generators?: Array<{ use: string }>, _shape?: ZoneShape }} OutlineSpace */
 /** @typedef {{ use: string, with?: Record<string, any>, space?: string }} SystemInstance */
 /** @typedef {{ mechanic: string, description: string, importance: string, kind: 'adapter' | 'no_primitive' | 'capability' | 'win', why: string, primitive?: string }} PresetGap */
@@ -69,8 +67,6 @@ import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 export const PRESETS_VERSION = 'presets/0.3';
 /** @param {unknown} s @param {string} [sep] */
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
-const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this where who you your player game games like style meets world'.split(' '));
-const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 /** A win/lose `when` template names '$target': the number the content picks (here: a reachable default). */
 const DEFAULT_TARGET = 10;
 
@@ -618,11 +614,11 @@ const freshId = (id, taken) => { let out = id, n = 2; while (taken.has(out)) out
  * primitive of the document owns (the component's owner); an unwired win or lose -> wired (wireLoop); AI participants
  * nothing drives, or whose drivers cannot change what the loop's lose reads -> addDriver (wiring the drivers already
  * there). An unowned component and a driver nobody chose are reported, with what it cannot fix, for the planner to
- * re-plan. `opponent` is the play spec's opponent and `idea` the words that rank drivers (loopIdea). The input is not modified.
+ * re-plan. `opponent` is the play spec's opponent. The input is not modified.
  * @template T @param {T} input @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null, idea?: string }} [options]
  * @returns {{ doc: T, fixes: LoopFix[], problems: import('./loop-check.js').LoopProblem[] }}
  */
-export function repairLoop(input, registry, { logic = null, core = null, opponent = null, idea = '' } = {}) {
+export function repairLoop(input, registry, { logic = null, core = null, opponent = null } = {}) {
   if (!isObj(input) || !Array.isArray(input.systems)) return { doc: input, fixes: [], problems: [] };
   const lg = logic || logicOf(registry);
   const coreIds = core ? [...core] : null;
@@ -726,7 +722,7 @@ export function repairLoop(input, registry, { logic = null, core = null, opponen
         const r = wireLoop(doc, n.kind === 'win' ? { win: { use: p.primitive, end }, lose: [] } : { win: null, lose: [{ use: p.primitive, end }] }, registry);
         if (r.wired || n.kind === 'lose') fix(`${p.primitive} ${n.kind} wired to ${n.kind === 'win' ? 'a won' : 'a lost'} ending (card.loop.${n.kind})`);
       } else if (n.kind === 'driver' && n.control) {
-        const what = addDriver(doc, registry, n, idea);
+        const what = addDriver(doc, registry, n);
         if (what) fix(what);
       }
     }
@@ -736,9 +732,6 @@ export function repairLoop(input, registry, { logic = null, core = null, opponen
   return { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), fixes, problems: loopProblems(doc, registry, check) };
 }
 
-/** The words that rank what the structural repair adds for an idea (its win, lose, premise and core mechanics). @param {Decomposition} decomposition */
-export const loopIdea = decomposition => [decomposition.core?.lose, decomposition.core?.win, decomposition.premise, ...(decomposition.mechanics || []).filter(m => m.importance === 'core').map(m => m.description)].filter(Boolean).join('. ');
-
 /**
  * Make AI-controlled participants act (a 'driver' need of the loop check), from declarations alone and with the
  * drivers the document already has (selection chose them; nothing is added here):
@@ -747,11 +740,11 @@ export const loopIdea = decomposition => [decomposition.core?.lose, decompositio
  * - else a driver of the document acting on a component (card.drives.components) the AI participants do not carry yet,
  *   whose declared behaviour changes what the lose reads (need.by): its component's declared example (its archetypes
  *   contract) goes on them: the loop's AI participants, or for the play spec's opponent the placed archetypes of the
- *   kind that example declares. Ties: the idea's words (relevance), id.
+ *   kind that example declares. Several such drivers: the first in the document's systems (the order selection chose them).
  * Returns what it did, or null when the document's drivers provide nothing (reported for the planner to re-plan).
- * @param {Record<string, any>} doc @param {RegistryLike} registry @param {import('./loop-check.js').LoopNeed} n @param {string} idea @returns {string | null}
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @param {import('./loop-check.js').LoopNeed} n @returns {string | null}
  */
-function addDriver(doc, registry, n, idea) {
+function addDriver(doc, registry, n) {
   /** @type {any[]} */
   const systems = doc.systems;
   const arches = objects(prop(doc.content, 'archetypes'));
@@ -789,9 +782,9 @@ function addDriver(doc, registry, n, idea) {
     return { value, on: n.loop ? targets : targets.filter(a => kinds.includes(String(prop(arches.find(x => x.id === a), 'kind')))) };
   };
   const ranked = driversIn(doc, registry).filter(d => d.drives.control === n.control && d.drives.components.length && !d.drives.components.some(C => targets.some(a => carries(a, C))) && (!by || drivesBy(d.drives, by, d.effects)))
-    .map(d => ({ d, ex: d.drives.components.map(C => ({ C, ex: exampleFor(d.use, C) })).find(x => x.ex && x.ex.on.length) || null, score: idea ? relevance({ verb: '', description: idea }, /** @type {any} */ ({ id: d.use, ...d.card })) : 0 }))
+    .map(d => ({ d, ex: d.drives.components.map(C => ({ C, ex: exampleFor(d.use, C) })).find(x => x.ex && x.ex.on.length) || null }))
     .filter(x => x.ex)
-    .sort((a, b) => b.score - a.score || a.d.use.localeCompare(b.d.use));
+    .sort((a, b) => a.d.index - b.d.index);
   const best = ranked[0];
   if (!best?.ex?.ex) return null;
   const why = n.loop ? `the ${n.loop} AI participants` : `the play spec's ${n.control} opponent`;
@@ -801,23 +794,14 @@ function addDriver(doc, registry, n, idea) {
 }
 
 /**
- * preset({ decomposition, selection, registry, logic, seed, prompt }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
+ * preset({ decomposition, selection, registry, logic, seed }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
  * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec
  */
-export function preset({ decomposition, selection, registry, logic, seed, prompt = '' }) {
+export function preset({ decomposition, selection, registry, logic, seed }) {
   const st = structureOf(decomposition, selection, registry);
-  const state = { rng: seed >>> 0 || 1 };
-  const rand = () => random(state);
-  const words = [...new Set((`${decomposition.title} ${decomposition.premise} ${prompt}`.match(/[A-Za-z]{4,}/g) || []).filter(w => !STOP.has(w.toLowerCase())))];
-  const cap = (/** @type {string} */ w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
-  const usedNames = new Set();
-  const placeName = (/** @type {number} */ i) => {
-    for (let k = 0; k < 8; k++) {
-      const n = `${words.length ? cap(words[Math.floor(rand() * words.length)]) + ' ' : ''}${PLACES[Math.floor(rand() * PLACES.length)]}`;
-      if (!usedNames.has(n)) { usedNames.add(n); return n; }
-    }
-    return `Place ${i + 1}`;
-  };
+  // Code writes the zones' ids (place_1, place_2... across the document); their names and descriptions are content
+  // the model writes (outline-form.js), never words picked from the prompt.
+  let places = 0;
   const capsOf = (/** @type {string} */ use, /** @type {Record<string, unknown>} */ w = {}) => {
     const p = registry.get(use); if (!p) return /** @type {string[]} */ ([]);
     const config = { ...defaultsOf(p.card), ...w };
@@ -867,13 +851,9 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     const on = st.systems.filter(id => (nested.find(x => x.use === id)?.space ?? selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
     const generators = worldFor(s, si).map(use => ({ use }));
     const n = shape.exits || (st.zones && !isNested) ? placesFor(registry, s, shape, { systems: on, generators: generators.map(g => g.use), story: si === 0 && st.narrative ? decomposition.zones ?? 0 : 0, needed: st.zones && !isNested }) : 0;
-    /** @type {string[]} */
-    const ids = [];
     const zones = Array.from({ length: n }, (_, i) => {
-      const name = placeName(i + si * 10);
-      let id = slug(name); while (ids.includes(id)) id += '_b'; ids.push(id);
       /** @type {OutlineZone} */
-      const z = { id, name, description: `${name}${decomposition.tone ? `, ${decomposition.tone}` : ''}.` };
+      const z = { id: `place_${++places}` };
       placeZone(z, i, n, shape);
       return z;
     });
@@ -927,7 +907,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // Every adapter instance carries the instance fields the planner owns (its id, its host binding).
   ensureInstanceFields({ spaces, systems }, registry);
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
-  const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
+  const playerArch = st.avatar ? { id: 'player_avatar', kind: 'player', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
   const extent = primaryShape.extent;
   const at = primary.zones.length ? (primaryShape.exits ? primary.zones[0].id : zoneStart(primary.zones[0])) : extent ? extent.map(v => Math.floor(v / 2)) : null;
   /** @type {any} */
@@ -962,7 +942,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const seated = placeParticipants(applySkins(doc, registry), registry);
   // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the
   // components the win reads, an action that changes it, the win and lose wired. What cannot be derived is reported.
-  const looped = repairLoop(seated.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) });
+  const looped = repairLoop(seated.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null });
   // Nested encounters' outcomes act on the outer participants: the defeated side is taken out of play the way the
   // final document declares (card.defeats), the player's side known from the outer loop's seated groups.
   for (const why of configureEncounters(looped.doc, registry, encounters)) gaps.push({ mechanic: 'mashup', description: `needs: ${why}`, importance: 'core', kind: 'adapter', why });
@@ -973,7 +953,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
   // Repair may have written what the loops' wiring runs through (a required list's first entry): wire it too.
-  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
+  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
   // A space still empty after repair (no generator selected) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
   // The static loop check of the finished structure, before any model call: the planner re-plans what it reports.
