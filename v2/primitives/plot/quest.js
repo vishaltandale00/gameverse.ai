@@ -60,8 +60,23 @@ export default {
       trackOne: { type: 'boolean', default: true, effect: 'one tracked quest; a newly started main quest is tracked when none is' },
       failOnDeathOfGiver: { type: 'boolean', default: false, effect: 'active quests fail when their giver dies' },
     },
+    // What a person is told when these events fire (a story log, a toast): `label`, then the title of the document entry
+    // the event names (`entry`: the section and the event field holding its id), then the entry's `detail` field when set.
+    tells: { quest_started: { label: 'New task', entry: { at: 'plot.quests', by: 'quest' }, detail: 'summary' }, quest_complete: { label: 'Task done', entry: { at: 'plot.quests', by: 'quest' } }, quest_failed: { label: 'Task failed', entry: { at: 'plot.quests', by: 'quest' } } },
     provides: { events: ['quest_available', 'quest_available:*', 'quest_started', 'quest_started:*', 'quest_updated', 'objective_done', 'objective_done:*', 'objective_failed', 'quest_complete', 'quest_complete:*', 'quest_failed', 'quest_failed:*', 'quest_tracked', 'quest_blocked', 'delivered'], vars: ['quests.active', 'quests.complete'], services: ['quests'], actions: ['accept_quest', 'track_quest'] },
     reads: ['plot.quests'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    // An objective's fields are its kind's (story-objectives.js, the same fields the validator checks): `variants`.
+    data: { 'plot.quests': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', required: true }, title: { type: 'string', required: true }, kind: { type: 'string', options: KINDS }, summary: { type: 'string' },
+      giver: { type: 'ref', to: 'character' }, zone: { type: 'ref', to: 'zone' }, gate: { type: 'predicate' }, prereq: { type: 'list', of: { type: 'ref', to: 'quest' } },
+      autoStart: { type: 'boolean' }, offer: { type: 'string', options: ['auto', 'accept', 'script'] }, order: { type: 'string', options: ['sequential', 'any'] },
+      fail: { type: 'predicate' }, timeLimit: { type: 'number', min: 0 }, onStart: { type: 'effects' }, onComplete: { type: 'effects' }, onFail: { type: 'effects' },
+      rewards: { type: 'object', fields: { xp: { type: 'number', min: 0 }, money: { type: 'json' }, items: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } } }, rep: { type: 'list', of: { type: 'object', fields: { faction: { type: 'ref', to: 'faction', required: true }, delta: { type: 'number', required: true } } } }, do: { type: 'effects' } } },
+      repeatable: { type: 'boolean' }, branches: { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, label: { type: 'string' }, when: { type: 'predicate' }, do: { type: 'effects' } } } },
+      tags: { type: 'list', of: { type: 'string' } }, hidden: { type: 'boolean' },
+      objectives: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { ...BASE_FIELDS, kind: { type: 'string', required: true, options: Object.keys(OBJECTIVES) } }, variants: { by: 'kind', of: Object.fromEntries(Object.entries(OBJECTIVES).map(([k, o]) => [k, o.fields || {}])) } } },
+    } } } },
   },
   logic(logic) {
     // `{quest, objective, state}` written quest-first is still an objective test.
@@ -327,7 +342,7 @@ export default {
     rt.options(rt => (service(rt, 'dialogue')?.active() || service(rt, 'cutscene')?.playing() ? [] : api.offered().filter(id => {
       const g = quests().get(id).giver, ch = service(rt, 'character');
       return !g || !ch || ch.isPlayer(g) || ch.inRange().includes(g);
-    }).map(id => ({ label: `accept ${id}`, actions: { accept_quest: id } }))));
+    }).map(id => ({ label: `accept ${id}`, text: `Take on: ${quests().get(id).title || id}`, actions: { accept_quest: id } }))));
   },
 };
 

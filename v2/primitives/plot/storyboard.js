@@ -15,6 +15,11 @@ export default {
     params: { sequentialActs: { type: 'boolean', default: true, effect: 'beats in act N+1 wait until every non-optional beat in act N has fired' } },
     provides: { events: ['beat', 'act_start', 'act_complete'] },
     reads: ['plot.storyboard', 'plot.characters', 'plot.endings'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.storyboard': { type: 'object', fields: { acts: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
+      id: { type: 'string', required: true }, title: { type: 'string' },
+      beats: { type: 'list', of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string' }, when: { type: 'predicate' }, after: { type: 'list', of: { type: 'ref', to: 'beat' } }, optional: { type: 'boolean' }, do: { type: 'effects' } } } },
+    } } } } } },
   },
   logic(logic) {
     logic.predicate('beat', { refs: p => [['beat', p.beat]], test: (p, rt) => Boolean(rt.store('plot.storyboard').fired?.[p.beat]) });

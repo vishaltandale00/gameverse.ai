@@ -117,6 +117,21 @@ function walker(w) {
       const named = list(spec.selects).filter(isStr).map(kind => domainOfKind(registry, kind)).filter(isStr).map(d => w.ref(d, v)).find(x => x !== v);
       return named ?? v;
     }
+    // A target string ('<kind>:<id>', declared by `targets`: the reference kind of each '<kind>:' prefix, or { of: [kinds],
+    // sep } for an id made of parts, as 'exit:<zone>><zone>'): each part refers to an entry of its kind.
+    if (spec.type === 'string' && isObj(spec.targets)) {
+      if (!isStr(v)) return v;
+      const i = v.indexOf(':'); if (i <= 0) return v;
+      const kind = v.slice(0, i), id = v.slice(i + 1), t = prop(spec.targets, kind);
+      const one = (/** @type {unknown} */ k, /** @type {string} */ x) => { const d = isStr(k) ? domainOfKind(registry, k) : null; return d ? w.ref(d, x) : x; };
+      if (isObj(t)) {
+        const of = list(t.of), sep = t.sep;
+        if (!isStr(sep)) return v;
+        const parts = id.split(sep);
+        return parts.length === of.length ? `${kind}:${parts.map((/** @type {string} */ p, /** @type {number} */ j) => one(of[j], p)).join(sep)}` : v;
+      }
+      return `${kind}:${one(t, id)}`;
+    }
     if (spec.type === 'string') { const d = referenceOf(registry, spec); return d && d !== SECTIONS && isStr(v) ? w.ref(d, v) : v; }
     if (spec.type === 'list') {
       if (!Array.isArray(v)) return v;
@@ -128,6 +143,8 @@ function walker(w) {
     if (spec.type === 'object') {
       if (!isObj(v)) return v;
       if (isObj(spec.fields)) fields(spec.fields, v);
+      // Fields that depend on a discriminating field (`variants`: { by, of: { <value>: fields } }), as a quest objective's kind.
+      if (isObj(spec.variants) && isStr(spec.variants.by)) { const vf = prop(spec.variants.of, String(v[spec.variants.by])); if (isObj(vf)) fields(vf, v); }
       // A map with free keys: every value under a key `fields` does not name has the declared `values` shape.
       if (isObj(spec.values)) for (const k of Object.keys(v)) if (!isObj(spec.fields) || !(k in spec.fields)) v[k] = value(spec.values, v[k]);
       return v;
@@ -182,6 +199,8 @@ function walker(w) {
   return {
     /** @param {Record<string, any>} inst */
     instance(inst) { const card = registry.get(String(inst.use))?.card; if (card && isObj(inst.with)) fields(card.params || {}, inst.with); },
+    /** A zone through the fields its space's card declares for zones (card.zoneFields). @param {Record<string, any>} space @param {Record<string, any>} z */
+    zone(space, z) { const zf = registry.get(String(space.use))?.card?.zoneFields; if (isObj(zf)) fields(zf, z); },
     /** @param {Record<string, any>} a */
     archetype(a) { if (isObj(a.components)) for (const [c, v] of Object.entries(a.components)) { const spec = componentSpec(c); if (spec) a.components[c] = value(spec, v); } },
     /** @param {string} root @param {string} key */
@@ -199,7 +218,7 @@ function rewrite(doc, { registry, logic, rename, define = rename, list: relist }
   for (const s of objects(doc.spaces)) {
     w.instance(s);
     for (const g of objects(s.generators)) { w.instance(g); if (isStr(g.id)) g.id = def('instances', g.id); }
-    for (const z of objects(s.zones)) z.id = def(ZONES, z.id);
+    for (const z of objects(s.zones)) { w.zone(s, z); z.id = def(ZONES, z.id); }
     s.id = def('spaces', s.id);
   }
   for (const s of [...objects(doc.systems), ...objects(doc.graphics)]) {

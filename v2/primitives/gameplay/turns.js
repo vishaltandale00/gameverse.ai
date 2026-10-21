@@ -601,7 +601,7 @@ export default {
           else acts.push({ label: `${uid} ${l.id}`, actions: { turn_act: { unit: uid, action: l.id } } });
         }
       });
-      const out = [...acts, { label: 'end turn', actions: { end_turn: true } }];
+      const out = [...acts, { label: 'end turn', text: 'End turn', actions: { end_turn: true } }];
       for (let i = 0; moves.some(m => i < m.length); i++) for (const m of moves) if (m[i]) out.push(m[i]);
       return out;
     });

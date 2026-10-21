@@ -471,18 +471,20 @@ export default {
     function menu(b) {
       const eng = E(), need = eng.needsInput(b); if (!need) return [];
       const party = b.player.party, me = party[b.player.active], out = [];
-      const add = (id, label, kind, v, extra = {}) => out.push({ id, label, kind, enabled: true, ...extra, action: { battle: v } });
-      if (need.kind === 'learn') { add('learn:keep', 'keep moves', 'learn', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => add(`learn:${i}`, `forget #${i} ${m.id}`, 'learn', { kind: 'learn', forget: i })); return out; }
-      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) add(`switch:${i}`, `send #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); }); return out; }
-      if (me.moves.some(m => m.pp > 0)) me.moves.forEach((m, i) => { const mv = moveOf(content(), m.id); add(`move:${i}`, `use ${m.id}`, 'move', { kind: 'move', index: i }, { enabled: m.pp > 0, pp: m.pp, ppMax: m.max, type: mv?.type ?? null, name: mv?.name ?? m.id }); });
-      else add('move:struggle', 'struggle', 'move', { kind: 'move', index: 0 }, { type: null });
-      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) add(`switch:${i}`, `switch to #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); });
+      // label: the solvers' unique key; text: what a person reads (the document's move, item and creature names).
+      const add = (id, label, text, kind, v, extra = {}) => out.push({ id, label, text, kind, enabled: true, ...extra, action: { battle: v } });
+      const moveName = id => moveOf(content(), id)?.name ?? id, itemName = it => it.name ?? it.id;
+      if (need.kind === 'learn') { add('learn:keep', 'keep moves', 'Keep the moves', 'learn', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => add(`learn:${i}`, `forget #${i} ${m.id}`, `Forget ${moveName(m.id)}`, 'learn', { kind: 'learn', forget: i })); return out; }
+      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) add(`switch:${i}`, `send #${i} ${c.name}`, `Send out ${c.name}`, 'switch', { kind: 'switch', index: i }); }); return out; }
+      if (me.moves.some(m => m.pp > 0)) me.moves.forEach((m, i) => { const mv = moveOf(content(), m.id); add(`move:${i}`, `use ${m.id}`, mv?.name ?? m.id, 'move', { kind: 'move', index: i }, { enabled: m.pp > 0, pp: m.pp, ppMax: m.max, type: mv?.type ?? null, name: mv?.name ?? m.id }); });
+      else add('move:struggle', 'struggle', 'Struggle', 'move', { kind: 'move', index: 0 }, { type: null });
+      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) add(`switch:${i}`, `switch to #${i} ${c.name}`, `Switch to ${c.name}`, 'switch', { kind: 'switch', index: i }); });
       for (const it of (content().items || []).filter(i => i.creature)) {
         if (hasInv() && !rt.test({ item: it.id, gte: 1 }, {})) continue;
-        if (it.creature.kind === 'ball') { if (b.kind === 'wild') add(`item:${it.id}`, `throw ${it.id}`, 'item', { kind: 'item', item: it.id }); continue; }
-        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) add(`item:${it.id}:${i}`, `${it.id} on #${i} ${c.name}`, 'item', { kind: 'item', item: it.id, target: i }); });
+        if (it.creature.kind === 'ball') { if (b.kind === 'wild') add(`item:${it.id}`, `throw ${it.id}`, `Throw ${itemName(it)}`, 'item', { kind: 'item', item: it.id }); continue; }
+        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) add(`item:${it.id}:${i}`, `${it.id} on #${i} ${c.name}`, `${itemName(it)} on ${c.name}`, 'item', { kind: 'item', item: it.id, target: i }); });
       }
-      if (b.kind === 'wild') add('run', 'run', 'run', { kind: 'run' });
+      if (b.kind === 'wild') add('run', 'run', 'Run', 'run', { kind: 'run' });
       return out;
     }
     const unitsOf = (b, side) => side.party.map((c, i) => {
@@ -506,7 +508,7 @@ export default {
     // Solver options: every enabled answer to what the battle needs now.
     rt.options(rt => {
       const b = st().battle; if (!b) return [];
-      return menu(b).filter(m => m.enabled).map(m => ({ label: m.label, actions: m.action }));
+      return menu(b).filter(m => m.enabled).map(m => ({ label: m.label, text: m.text, actions: m.action }));
     });
   },
 };

@@ -6,7 +6,7 @@
 // sent exactly as the primitive defines them through view.act. Pointer, number keys (when no gameplay key uses them)
 // and back while a group is open. Presentation only: it never writes rt.state.
 import { uiHost, fill, setClass, setText, titleCase } from './ui-lib.js';
-import { unclaimedChoices, verbInstances, actionSpaceOf } from '../engine/runtime-lib-controls.js';
+import { unclaimedChoices, verbInstances, actionSpaceOf, uiControls } from '../engine/runtime-lib-controls.js';
 import { INTERACTIONS } from '../gameplay/modes-lib-mode.js';
 
 /** The choice verbs this primitive issues in a document: the loops' choice verbs no other mounted UI names. */
@@ -72,7 +72,10 @@ export default {
       if (verb === 'back' && group !== null) { group = null; sig = ''; return true; }
       return false;
     } });
-    const label = o => o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
+    // A UI that lists the game's options (card.controls.options: the story's choices) already lists every whole option: this
+    // panel then lists only its selections (a unit to act with), so one number key never means two things on screen.
+    const listedElsewhere = uiControls(rt.doc, rt.registry).options.some(u => u !== 'graphics.ui.choices');
+    const label = o => o.text || o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
     // Choosing a group (a unit) also issues the verb that selects it, when the document has one (card.actionSpace selects).
     const choose = (g, f, value) => { group = g; field = f; if (selects[f] && served.includes(selects[f])) rt.view.act({ [selects[f]]: value }); sig = ''; };
     function paint() {
@@ -81,7 +84,7 @@ export default {
       if (group !== null && !groups.some(([g]) => g === group)) group = null;
       const rows = group === null
         ? [...groups.map(([g, e]) => ({ text: titleCase(g), run: () => choose(g, e.field, e.value) })),
-          ...entries.filter(e => e.group === null).map(e => ({ text: label(e.option), run: () => rt.view.act(e.option.actions) }))]
+          ...entries.filter(e => e.group === null && !listedElsewhere).map(e => ({ text: label(e.option), run: () => rt.view.act(e.option.actions) }))]
         : [{ text: '‹ Back', run: () => { group = null; sig = ''; } }, ...entries.filter(e => e.group === group).map(e => ({ text: label(e.option), run: () => { rt.view.act(e.option.actions); group = null; sig = ''; } }))];
       setClass(root, 'gv-hide', !rows.length);
       const key = JSON.stringify([group, field, rows.map(r => r.text)]);
