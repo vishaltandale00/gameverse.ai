@@ -5,7 +5,7 @@
 // a concept line of its own.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TEMPLATES } from '../v2/templates/index.js';
+import { TEMPLATES } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { modesIn } from '../v2/primitives/gameplay/modes-lib-mode.js';
 import { pickForm, pickSystem, offeredTemplates, templateLoops } from '../v2/planner/templates.js';

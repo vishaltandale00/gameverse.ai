@@ -4,7 +4,7 @@
 // (farm, dungeon...) is covered by adding its line to IDEAS.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TEMPLATES, templateById } from '../v2/templates/index.js';
+import { TEMPLATES, templateById } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';

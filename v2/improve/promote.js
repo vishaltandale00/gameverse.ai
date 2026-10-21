@@ -3,20 +3,26 @@
 // Results are a branch improve/<jobId> plus a report; nothing is applied without an explicit apply().
 import { EventEmitter } from 'node:events';
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveConfig, configRef } from './config.js';
 import { createJobStore, newJob, transition, timingReport, TERMINAL } from './jobs.js';
 import { buildPrompt, repairPrompt, modPaths, primitivePaths, primitiveSlug, buildPrimitivePrompt, primitiveRepairPrompt } from './prompt.js';
-import { fastForward } from './runners/git.js';
-import { redact } from './runners/proc.js';
+import { fastForward, headCommit } from './runners/git.js';
+import { redact, run as runProcess, minimalEnv } from './runners/proc.js';
+import { deriveTemplate, templatePaths, promotedFile, TEMPLATE_DERIVATION_VERSION } from './template.js';
+import { TEMPLATES } from '../templates/registry.js';
+import { ID_PATTERN, CONTRACT_VERSION } from '../templates/contract.js';
 import { availableKits, loadKit } from '../kits/registry.js';
 import { MODS } from '../kits/mods/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const CHECKER = join(HERE, 'check-mod.mjs');
 export const PRIMITIVE_CHECKER = join(HERE, 'check-primitive.mjs');
+export const TEMPLATE_CHECKER = join(HERE, 'check-template.mjs');
+/** Writes a promoted template into the checkout (tests pass a fake: { write(relPath, text) }). */
+export const fileWriter = root => ({ write(rel, text) { const file = join(root, rel); mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, text); } });
 const ID = /^[a-z0-9][a-z0-9-]{3,63}$/;
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/^[^a-z]+/, '').slice(0, 32).replace(/-+$/, '');
 
@@ -39,11 +45,12 @@ export function scopeCheck(files, scope, modId, target = 'mod') {
 const substitute = (argv, vars) => argv.map(a => a.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)));
 const tail = (s, n) => { s = String(s || ''); return s.length > n ? '…' + s.slice(-n) : s; };
 
-export function createImprovementService({ root, runner, config: overrides = {}, dataDir = null } = {}) {
+export function createImprovementService({ root, runner, config: overrides = {}, dataDir = null, templateWriter = null } = {}) {
   if (!root) throw Error('improvement service: root (the git checkout) is required');
   if (!runner) throw Error('improvement service: a runner is required');
   const config = resolveConfig({ runner: runner.id, ...overrides });
   const L = config.limits;
+  const writer = templateWriter || fileWriter(root);
   // What each target may touch and how the job checks it (the mod target keeps the original top-level config).
   const targetOf = job => (job.target === 'primitive' ? { scope: config.targets.primitive.scope, verification: config.targets.primitive.verification } : { scope: config.scope, verification: config.verification });
   const store = createJobStore(dataDir || join(root, 'local-data/v2/improve'));
@@ -60,7 +67,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
   };
   const view = job => job && {
     id: job.id, state: job.state, target: job.target, kitId: job.kitId, kitVersion: job.kitVersion, gameId: job.gameId, gameVersion: job.gameVersion,
-    userId: job.userId, modId: job.modId, primitiveId: job.primitiveId ?? null, experiment: job.experiment,
+    userId: job.userId, modId: job.modId, primitiveId: job.primitiveId ?? null, templateId: job.templateId ?? null, experiment: job.experiment,
     createdAt: job.createdAt, startedAt: job.startedAt, finishedAt: job.finishedAt,
     outcome: job.outcome, reason: job.reason, cancelRequested: job.cancelRequested,
     queuePosition: job.state === 'queued' ? store.all().filter(j => j.state === 'queued').findIndex(j => j.id === job.id) + 1 : null,
@@ -93,7 +100,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
       if (job.state !== 'queued' || active.has(job.id) || !admissible(job)) continue;
       const ac = new AbortController();
       active.set(job.id, { ac });
-      execute(job, ac).finally(() => { active.delete(job.id); pump(); });
+      (job.target === 'template' ? executeTemplate(job, ac) : execute(job, ac)).finally(() => { active.delete(job.id); pump(); });
     }
   }
 
@@ -184,6 +191,60 @@ export function createImprovementService({ root, runner, config: overrides = {},
     }
   }
 
+  // ---------- target 'template': derive, run the contract in its own process, write on success ----------
+  // queued → preparing (derive the template from the version) → verifying (check-template.mjs: the whole template
+  // contract against the live catalogue) → succeeded (the promoted file written) | failed (the problems reported).
+  async function executeTemplate(job, ac) {
+    const { signal } = ac;
+    const deadline = setTimeout(() => ac.abort(Object.assign(Error(`job timeout after ${L.jobTimeoutMs} ms`), { code: 'timeout' })), L.jobTimeoutMs);
+    let outcome = null, reason = null;
+    try {
+      move(job, 'preparing');
+      job.context.sourceCommit = await headCommit(root).catch(() => null);
+      const input = templateInputs.get(job.id);
+      const attempt = { n: 0, kind: 'initial', coding: null, verify: null };
+      job.attempts.push(attempt);
+      const derived = deriveTemplate({ doc: input.doc }, { id: job.templateId, registry: input.registry });
+      if (!derived.template) {
+        job.result = { problems: derived.problems };
+        outcome = 'failed'; reason = `the version cannot be a template: ${derived.problems.map(p => `${p.code}: ${p.message}`).join('; ')}`;
+        return;
+      }
+      if (signal.aborted) throw signal.reason;
+      const candidate = join(store.jobDir(job.id), 'template.json');
+      writeFileSync(candidate, JSON.stringify(derived.template));
+      move(job, 'verifying', { attempt: 0 });
+      const started = Date.now();
+      const res = await runProcess([process.execPath, TEMPLATE_CHECKER, '--template', candidate], { cwd: HERE, env: minimalEnv(), timeoutMs: L.verifyCommandTimeoutMs, signal });
+      writeFileSync(join(store.logDir(job.id), 'verify-0.log'), redact(`${res.stdout || ''}${res.stderr ? `\n[stderr]\n${res.stderr}` : ''}`));
+      if (signal.aborted) throw signal.reason;
+      let out = null;
+      try { out = JSON.parse(String(res.stdout || '').trim().split('\n').at(-1)); } catch { out = null; }
+      const ok = res.code === 0 && !res.timedOut && out?.ok === true;
+      const problems = out?.problems ?? [{ code: res.timedOut ? 'check_timed_out' : 'check_crashed', message: res.timedOut ? `the contract did not finish in ${L.verifyCommandTimeoutMs} ms` : tail(redact(res.stderr || res.stdout || ''), 800) }];
+      attempt.verify = { ok, ms: Date.now() - started, checks: [{ id: 'template-contract', ok, ms: res.ms ?? null, code: res.code ?? null, timedOut: !!res.timedOut, ...(ok ? {} : { problems: problems.map(p => `${p.code}: ${p.message}`.slice(0, 300)) }) }] };
+      job.result = { template: { id: job.templateId, tune: derived.template.tune, concept: derived.template.concept }, problems: ok ? [] : problems, evidence: out?.evidence ?? null };
+      store.save(job);
+      emit(job, 'improve_check', { attempt: 0, id: 'template-contract', ok, ms: res.ms ?? null });
+      if (!ok) { outcome = 'failed'; reason = `the template contract failed: ${[...new Set(problems.map(p => p.code))].join(', ')}`; return; }
+      const file = templatePaths(job.templateId).file;
+      const provenance = { job: job.id, derivation: TEMPLATE_DERIVATION_VERSION, contract: CONTRACT_VERSION, gameId: job.gameId, gameVersion: job.gameVersion, sourceDocSha256: job.experiment.codeSha256,
+        sourceCommit: job.context.sourceCommit, catalogHash: out.catalogHash ?? null, loop: { id: config.id, version: config.version }, promotedAt: new Date().toISOString(),
+        evidence: { ms: out.evidence?.ms ?? null, gate: out.evidence?.gate ?? null, bots: out.evidence?.bots ?? [] } };
+      await writer.write(file, promotedFile(derived.template, provenance));
+      job.result.file = file;
+      outcome = 'succeeded';
+    } catch (error) {
+      const cancelled = job.cancelRequested;
+      outcome = cancelled ? 'cancelled' : 'failed';
+      reason = cancelled ? 'cancelled' : error?.code === 'timeout' ? error.message : `${error?.message || error}`;
+    } finally {
+      clearTimeout(deadline);
+      templateInputs.delete(job.id);
+      finish(job, outcome || 'failed', reason);
+    }
+  }
+
   async function bounded(promise, ms, what, ac) {
     let timer;
     const timeout = new Promise((_, reject) => { timer = setTimeout(() => { const e = Object.assign(Error(`${what} timed out after ${ms} ms`), { code: 'timeout' }); ac.abort(e); reject(e); }, ms); });
@@ -210,7 +271,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
     if (scope.ok) for (const cmd of verification) {
       if (signal.aborted) break;
       const argv = substitute(cmd.argv, vars);
-      const res = await runner.exec({ workspace, argv, timeoutMs: L.verifyCommandTimeoutMs, signal });
+      const res = await runner.exec({ workspace, argv, timeoutMs: cmd.timeoutLimit ? L[cmd.timeoutLimit] : L.verifyCommandTimeoutMs, signal });
       const ok = res.code === 0 && !res.timedOut && !res.aborted;
       const text = redact(`${res.stdout || ''}${res.stderr ? `\n[stderr]\n${res.stderr}` : ''}`);
       output += `\n===== ${cmd.id}: ${argv.join(' ')} → exit ${res.code}${res.timedOut ? ' (timed out)' : ''} in ${res.ms} ms\n${text}\n`;
@@ -262,6 +323,32 @@ export function createImprovementService({ root, runner, config: overrides = {},
     return view(job);
   }
 
+  const templateInputs = new Map(); // jobId -> { doc, registry }: the version and the catalogue it is derived against
+
+  /** Target 'template': a published game version becomes a template under v2/templates/promoted (see executeTemplate). */
+  function startTemplate({ gameId, gameVersion, userId, doc, registry, templateId }) {
+    if (typeof gameId !== 'string' || !gameId) throw Error('gameId is required');
+    if (!doc || typeof doc !== 'object') throw Error('the published game document is required');
+    if (typeof registry?.get !== 'function') throw Error('the live catalogue registry is required (the template\'s tune is derived from its cards)');
+    const id = templateId ?? gameId;
+    if (typeof id !== 'string' || !ID_PATTERN.test(id)) throw Error(`template id ${JSON.stringify(id)} is not a lowercase slug (${ID_PATTERN}); name one with templateId`);
+    if (TEMPLATES.some(t => t.id === id)) throw Error(`template '${id}' already exists`);
+    if (existsSync(join(root, templatePaths(id).file))) throw Error(`template '${id}' already exists in v2/templates/promoted`);
+    if (store.all().some(j => j.target === 'template' && j.templateId === id && !['failed', 'cancelled'].includes(j.state))) throw Error(`a promotion of template '${id}' is already running or done`);
+    if (store.all().filter(j => j.state === 'queued').length >= L.maxQueuedJobs) throw Error(`the promotion queue is full (${L.maxQueuedJobs})`);
+    const jobId = `${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomBytes(4).toString('hex')}`;
+    const docSha256 = createHash('sha256').update(JSON.stringify(doc)).digest('hex');
+    const job = newJob({ id: jobId, now: Date.now(), experiment: { id: null, label: `template ${id}`, request: null }, codeSha256: docSha256, kitId: null, kitVersion: null, gameId, gameVersion, userId, target: 'template', modId: id,
+      config: configRef(config), runner: { id: 'template-contract', version: CONTRACT_VERSION } });
+    job.templateId = id;
+    store.create(job);
+    writeFileSync(join(store.jobDir(jobId), 'game.json'), JSON.stringify(doc));
+    templateInputs.set(jobId, { doc, registry });
+    emit(job, 'improve_queued', { target: 'template', templateId: id, position: store.all().filter(j => j.state === 'queued').length });
+    pump();
+    return view(job);
+  }
+
   return {
     config, events,
     /** The persisted events of one job (events.jsonl), oldest first. */
@@ -269,9 +356,10 @@ export function createImprovementService({ root, runner, config: overrides = {},
     /** Subscribe to every event; returns an unsubscribe function. */
     subscribe(fn) { events.on('event', fn); return () => events.off('event', fn); },
 
-    async start({ experiment, kitId, gameId, gameVersion = null, userId = null, target = 'mod', modId = null, doc = null, registry = null } = {}) {
+    async start({ experiment, kitId, gameId, gameVersion = null, userId = null, target = 'mod', modId = null, doc = null, registry = null, templateId = null } = {}) {
       if (target === 'primitive') return startPrimitive({ experiment, gameId, gameVersion, userId, doc, registry });
-      if (target !== 'mod') throw Error(`unsupported promotion target '${target}' (mod or primitive)`);
+      if (target === 'template') return startTemplate({ gameId, gameVersion, userId, doc, registry, templateId: templateId ?? undefined });
+      if (target !== 'mod') throw Error(`unsupported promotion target '${target}' (mod, primitive or template)`);
       if (!experiment || typeof experiment.code !== 'string' || !experiment.code.trim()) throw Error('experiment.code is required');
       if (experiment.code.length > L.maxExperimentCodeChars) throw Error(`experiment code is over ${L.maxExperimentCodeChars} characters`);
       if (typeof gameId !== 'string' || !gameId) throw Error('gameId is required');
@@ -323,6 +411,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
       const job = ID.test(String(id)) ? store.get(id) : null;
       if (!job) return { ok: false, reason: 'no such job' };
       if (job.state !== 'succeeded') return { ok: false, reason: `only a succeeded job can be applied (this one is ${job.state})` };
+      if (job.target === 'template') return { ok: false, reason: `a template promotion writes ${templatePaths(job.templateId).file} when it succeeds; there is nothing to apply (restart the server to load it)` };
       if (job.applied) return { ok: false, reason: `already applied to ${job.applied.into} at ${job.applied.commit}` };
       if (!job.result?.branch) return { ok: false, reason: 'the job has no result branch' };
       const res = await fastForward(root, job.result.branch);

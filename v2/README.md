@@ -6,6 +6,7 @@ v2 turns a player's idea, including mashups, into a playable game built from com
   verification (§6) and the delivery rules (§7) are binding.
 - **Where the code stands and what is required next:** [HANDOFF.md](HANDOFF.md).
 - **Kernel contract and primitive rules:** [KERNEL_API.md](KERNEL_API.md).
+- **Adding blocks (primitives, adapters, bots, templates) and how each is promoted:** [EXTENDING.md](EXTENDING.md).
 - **Primitive catalogue (generated from the cards):** [PRIMITIVE_CATALOG.md](PRIMITIVE_CATALOG.md).
 - **Default polish every game gets:** [POLISH.md](POLISH.md).
 - **Rules for agents working here:** [../CLAUDE.md](../CLAUDE.md).

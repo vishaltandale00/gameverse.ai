@@ -28,7 +28,7 @@ import { loopCore } from './presets.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str } from '../kernel/guards.js';
-import { TEMPLATES } from '../templates/index.js';
+import { TEMPLATES } from '../templates/registry.js';
 import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn } from './templates.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */

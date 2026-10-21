@@ -5,6 +5,8 @@
 // - its source uses no wall clock, Math.random, timers, network, dynamic imports, kits or the 2D engine;
 // - the original game, with the native primitive in place of the experiment, preflights, plays 600
 //   scripted frames without throwing, replays deterministically and restores snapshots exactly.
+//   node v2/improve/check-primitive.mjs --root <worktree> --conformance
+// - the catalogue conformance tests (v2/improve/conformance.js) pass in the worktree, the candidate included.
 // Prints one JSON line and exits 1 on any failure.
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -18,7 +20,23 @@ const load = rel => import(pathToFileURL(join(root, rel)).href);
 const hash = v => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const done = extra => { console.log(JSON.stringify({ ok: !problems.length, primitive: id, problems, ...extra })); process.exit(problems.length ? 1 : 0); };
 
-if (!id || !docFile) { problems.push('usage: --root <dir> --doc <game.json> --primitive <id>'); done(); }
+// --conformance: the catalogue conformance tests (./conformance.js, the host's list) run in the worktree, where the
+// candidate sits in v2/primitives/promoted/ and so is part of the live catalogue those tests build.
+if (process.argv.includes('--conformance')) {
+  const { CATALOGUE_CONFORMANCE, conformanceArgv } = await import('./conformance.js');
+  const { spawnSync } = await import('node:child_process');
+  // Each entry is its own test run (never a child of a test runner that started this checker).
+  const { NODE_TEST_CONTEXT, ...inherited } = process.env, env = { ...inherited, NO_COLOR: '1' };
+  const conformance = CATALOGUE_CONFORMANCE.map(entry => {
+    const t0 = performance.now();
+    const r = spawnSync(process.execPath, conformanceArgv(entry), { cwd: root, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024 });
+    const ok = r.status === 0;
+    if (!ok) problems.push(`conformance ${entry.file}${entry.name ? ` (${entry.name})` : ''} failed: ${String(r.stdout || r.error?.message || '').split('\n').filter(l => /^not ok|^# fail|Error|assert/i.test(l.trim())).slice(0, 8).join(' | ').slice(0, 800)}`);
+    return { file: entry.file, name: entry.name ?? null, ok, ms: Math.round(performance.now() - t0) };
+  });
+  done({ conformance });
+}
+if (!id || !docFile) { problems.push('usage: --root <dir> --doc <game.json> --primitive <id> | --root <dir> --conformance'); done(); }
 const slug = id.replace(/\./g, '-');
 let source = '';
 try { source = readFileSync(join(root, `v2/primitives/promoted/${slug}.js`), 'utf8'); } catch { problems.push(`missing v2/primitives/promoted/${slug}.js`); done(); }
