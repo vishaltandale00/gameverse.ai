@@ -224,7 +224,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.totalMs = ms(t0);
     return ctx.publish({
       doc: v.doc, stage: `revision: ${job.change}`,
-      report: { kind: 'kernel', change: job.change, path, ops: opsApplied.slice(0, 20), changes: guard.changes, diffLines: guard.lines, revisionCheck: guard.revisionCheck, gaps, verified: true, verification: summarizeVerify(v), quality, ...(selection ? { selection } : {}), hot: path === 'tweak' ? 'params' : 'reload', timings },
+      report: { kind: 'kernel', change: job.change, path, ops: opsApplied.slice(0, 20), changes: guard.changes, notes: guard.notes || [], diffLines: guard.lines, revisionCheck: guard.revisionCheck, gaps, verified: true, verification: summarizeVerify(v), quality, ...(selection ? { selection } : {}), hot: path === 'tweak' ? 'params' : 'reload', timings },
       provenance: { ...previous.provenance, pipeline: KERNEL_PIPELINE_VERSION, base: job.base, change: job.change, revisePath: path, models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } },
     });
   }

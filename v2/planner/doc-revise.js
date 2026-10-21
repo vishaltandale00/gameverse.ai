@@ -186,18 +186,18 @@ const artOf = doc => ({ graphics: doc.graphics || [], models: doc.content?.model
 
 /**
  * The revision-check guards for kernel documents:
- * - dropped content: lists that shrank must be asked for (decision model or wording), else the revision is refused;
- * - art lock: graphics, content.models and art stay as they were unless the request is about looks;
+ * - dropped content and art changes the request didn't mention are reported in `notes` (never refused);
  * - applied: a decision model judges whether the diff carries out the request (null without one).
  * -> { ok, reason?, dropped, artChanged, revisionCheck, changes, diff }
  */
 export async function guardRevision({ before, after, change, decisions = null, unsupported = [] }) {
   const shrunk = [...shrunkLists(before.plot || {}, after.plot || {}, 'plot'), ...shrunkLists(before.content || {}, after.content || {}, 'content'), ...shrunkLists({ spaces: before.spaces, systems: before.systems }, { spaces: after.spaces, systems: after.systems })];
-  if (shrunk.length && !(await asksToRemove(decisions, change, shrunk))) return { ok: false, reason: 'dropped_content', dropped: shrunk };
+  // The request is the authority: removals and art changes are reported with the version, never refused.
+  const dropped = shrunk.length && !(await asksToRemove(decisions, change, shrunk)) ? shrunk : [];
   const artChanged = JSON.stringify(artOf(before)) !== JSON.stringify(artOf(after));
-  if (artChanged && !LOOKS.test(change)) return { ok: false, reason: 'art_locked', dropped: [] };
+  const notes = [...(dropped.length ? [`removed ${dropped.map(d => d.path).join(', ')}`] : []), ...(artChanged && !LOOKS.test(change) ? ['changed the look'] : [])];
   const diff = contentDiff(strip(before), strip(after));
   const revisionCheck = await checkRevision(decisions, { change, engine: 'gameverse kernel document', before: strip(before), after: strip(after), unsupported });
-  return { ok: true, dropped: [], artChanged, revisionCheck, changes: changeSummary(diff), diff: diff.length, lines: diff.slice(0, 20) };
+  return { ok: true, dropped, artChanged, notes, revisionCheck, changes: changeSummary(diff), diff: diff.length, lines: diff.slice(0, 20) };
 }
 const strip = doc => { const { experiments, ...rest } = doc; return rest; };
