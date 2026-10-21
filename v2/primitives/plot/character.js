@@ -77,7 +77,7 @@ export default {
       archetype: { type: 'ref', to: 'archetype' }, model: { type: 'ref', to: 'model' }, home: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' },
       faction: { type: 'ref', to: 'faction' }, shop: { type: 'ref', to: 'shop' }, tags: { type: 'list', of: { type: 'string' } },
       dialogue: { type: 'list', of: { type: 'object', fields: { id: { type: 'ref', to: 'dialogue', required: true }, when: { type: 'predicate' } } }, effect: 'the first entry whose when holds opens when the player talks' },
-      schedule: { type: 'list', of: { type: 'object', fields: { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json', effect: 'a position in the space' }, doing: { type: 'string' } } } },
+      schedule: { type: 'list', of: { type: 'object', fields: { from: { type: 'number', min: 0, max: 24, required: true }, to: { type: 'number', min: 0, max: 24, required: true }, zone: { type: 'ref', to: 'zone' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'a position in the space (gameplay.ai.schedule reads it)' }, doing: { type: 'string' } } } },
       at: { type: 'json', effect: 'a position in its space (a zone id on a graph space)' }, spawn: { type: 'boolean' }, player: { type: 'boolean' }, components: { type: 'object', open: true },
     } } } },
     rules: {

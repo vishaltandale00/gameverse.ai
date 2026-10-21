@@ -59,7 +59,7 @@ const RECIPES = {
     content: { archetypes: [hero, { id: 'bird', kind: 'projectile', components: { body: { size: [0.8, 0.8], shape: { kind: 'circle', r: 0.4 }, density: 2.6, bullet: true } } }] }, skipTarget: true }),
   'gameplay.economy': () => ({ systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.economy', with: { currencies: [{ id: 'gold', start: 20 }], shops: [{ id: 'shop', owner: 'mara', stock: [{ item: 'ale', count: 3, price: 5 }] }] } }],
     plot: { characters: [{ id: 'mara', name: 'Mara' }] }, content: { items: [{ id: 'ale', name: 'Ale', value: 5 }], archetypes: [hero] }, skipTarget: true }),
-  'gameplay.build.structure': () => ({ systems: [{ use: 'gameplay.inventory', with: { start: [{ item: 'b_planks', count: 20 }, { item: 'stick', count: 2 }] } }, { use: 'gameplay.build.structure', with: { pieces: ['wall', 'door', { id: 'hut', size: [2, 2, 1], cost: [{ item: 'stick', count: 2 }] }], block: 'planks', refund: 0.5 } }],
+  'gameplay.build.structure': () => ({ systems: [{ use: 'gameplay.inventory', with: { start: [{ item: 'b_planks', count: 20 }, { item: 'stick', count: 2 }] } }, { use: 'gameplay.build.structure', with: { pieces: ['wall', 'door'], custom: [{ id: 'hut', size: [2, 2, 1], cost: [{ item: 'stick', count: 2 }] }], block: 'planks', refund: 0.5 } }],
     content: { items: [{ id: 'b_planks', name: 'Planks', kind: 'block', block: 'planks', stack: 64 }, { id: 'stick', name: 'Stick' }], blocks: [{ id: 'planks', name: 'Planks', hardness: 1 }, { id: 'door', name: 'Door', hardness: 1 }, { id: 'wall', name: 'Wall', hardness: 1 }], archetypes: [hero] }, skipTarget: true }),
 };
 

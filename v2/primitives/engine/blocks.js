@@ -39,7 +39,7 @@ export default {
         hardness: { type: 'number', min: 0, effect: 'break-time points; 9999 or more is unbreakable' },
         tool: { type: 'string', effect: 'tool kind that harvests it (content.items[].tool.kind); none: any' },
         tier: { type: 'integer', min: 0, effect: 'index of the lowest tool tier (params.tiers) that harvests it' },
-        drops: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1, effect: 'default 1' }, p: { type: 'number', min: 0, max: 1, effect: 'drop chance (default always)' } } }, effect: 'what harvesting it gives (default the block itself)' },
+        drops: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] dropped (default 1)' }, p: { type: 'number', min: 0, max: 1, effect: 'drop chance (default always)' } } }, effect: 'what harvesting it gives (default the block itself)' },
         light: { type: 'integer', min: 0, max: 31, effect: 'light level it emits (at most params.lightLevels)' },
         transparent: { type: 'boolean' },
         tags: { type: 'list', of: { type: 'string' } },

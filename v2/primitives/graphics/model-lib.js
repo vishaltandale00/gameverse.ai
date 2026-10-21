@@ -141,7 +141,7 @@ const BLOCK_FIELDS = {
   tags: { type: 'list', of: { type: 'string' } },
   solid: { type: 'boolean' },
   transparent: { type: 'boolean' },
-  light: { type: 'number', min: 0, effect: 'emitted light level (15 = full glow)' },
+  light: { type: 'integer', min: 0, max: 31, effect: 'emitted light level (15 = full glow; engine.blocks owns the scale)' },
   tile: { type: 'string', effect: 'a graphics.tileset.pixel theme id or a tile pattern name' },
 };
 /** The card.data declaration of content.blocks for a card reading `fields` (names of BLOCK_FIELDS). @param {string[]} fields */

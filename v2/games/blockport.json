@@ -240,7 +240,6 @@
     {
      "id": "act1",
      "title": "Landfall",
-     "summary": "Kit arrives at Harbor Row with a charter pass and a hand axe. Learn to mine, craft and build; get wheels; see the first signs of the forged-deed racket.",
      "beats": [
       {"id":"b_arrive","title":"Ferry arrival","do":[{"do":"play_cutscene","cutscene":"cs_arrive"},{"do":"set_time","hour":8}]},
       {
@@ -330,7 +329,6 @@
     {
      "id": "act2",
      "title": "Foundations",
-     "summary": "Mining, a quarry contract, forged deeds, and an offer from the Ironmonger that is hard to refuse.",
      "beats": [
       {
        "id": "b_quarry",
@@ -398,7 +396,6 @@
     {
      "id": "act3",
      "title": "Glass Heights",
-     "summary": "A gala, a keycard, a vault, three stars of heat and a betrayal. The third act tests how much of the city you have learned.",
      "beats": [
       {
        "id": "b_heights",
@@ -484,7 +481,6 @@
     {
      "id": "act4",
      "title": "Bedrock",
-     "summary": "Beneath the Quarry Hills, the old rail line and the vault of the first Tidewrights. Whoever holds the First Ledger holds the city.",
      "beats": [
       {
        "id": "b_descend",
@@ -569,7 +565,7 @@
      {"id":"o_sleep","kind":"use","interactable":"bed","text":"Place a bed and sleep through the night."}
     ],
     "autoStart": true,
-    "rewards": {"xp":200,"money":100}
+    "rewards": {"xp":200,"money":{"amount":100}}
    },
    {
     "id": "m2_first_wheels",
@@ -586,7 +582,7 @@
      {"id":"o_drive","kind":"drive","vehicle":"sedan","distance":600,"text":"Drive 600 m in the sedan."}
     ],
     "prereq": [],
-    "rewards": {"xp":250,"money":150},
+    "rewards": {"xp":250,"money":{"amount":150}},
     "onComplete": [{"do":"set_flag","flag":"sedan_fixed"}]
    },
    {
@@ -603,7 +599,7 @@
      {"id":"o_deliver","kind":"deliver","item":"b_cobblestone","count":40,"to":"foundry_flats","text":"Deliver the stone to the Foundry."}
     ],
     "prereq": ["m1_landfall"],
-    "rewards": {"xp":400,"money":400,"rep":[{"faction":"miners","delta":20}]}
+    "rewards": {"xp":400,"money":{"amount":400},"rep":[{"faction":"miners","delta":20}]}
    },
    {
     "id": "m4_deed_trouble",
@@ -641,7 +637,7 @@
      {"id":"o_lose","kind":"until","when":{"var":"wanted","lte":0},"text":"Lose the police."}
     ],
     "prereq": ["m3_quarry_run"],
-    "rewards": {"xp":700,"money":2000,"rep":[{"faction":"underworld","delta":25}]},
+    "rewards": {"xp":700,"money":{"amount":2000},"rep":[{"faction":"underworld","delta":25}]},
     "onStart": [{"do":"spawn","archetype":"delivery_van","zone":"foundry_flats"}],
     "onComplete": [{"do":"set_flag","flag":"syndicate_job_done"}],
     "branches": [{"id":"br_syndicate","label":"Take Mire's money","when":{"flag":"syndicate_job_done"}}]
@@ -676,7 +672,7 @@
      {"id":"o_escape","kind":"until","when":{"all":[{"var":"wanted","lte":0},{"item":"drill_bit"}]},"text":"Escape the police with the bit."}
     ],
     "prereq": ["m6_heights_plan"],
-    "rewards": {"xp":1200,"money":3000},
+    "rewards": {"xp":1200,"money":{"amount":3000}},
     "fail": {"not":{"alive":"ysolde"}}
    },
    {
@@ -744,7 +740,7 @@
     "zone": "quarry_hills",
     "summary": "Mark twelve ore deposits for Dr. Ashgrove.",
     "objectives": [{"id":"o_mark","kind":"discover","tag":"ore_deposit","count":12,"text":"Mark twelve ore deposits."}],
-    "rewards": {"xp":300,"money":360}
+    "rewards": {"xp":300,"money":{"amount":360}}
    },
    {
     "id": "s_taxi",
@@ -754,7 +750,7 @@
     "zone": "glass_heights",
     "summary": "Take five radio-call fares around the city.",
     "objectives": [{"id":"o_fares","kind":"use","interactable":"taxi_fare","count":5,"text":"Complete five taxi fares."}],
-    "rewards": {"xp":300,"money":450}
+    "rewards": {"xp":300,"money":{"amount":450}}
    },
    {
     "id": "s_street_race",
@@ -764,7 +760,7 @@
     "zone": "lakeshore",
     "summary": "Beat Vesper's time on the lakeshore loop.",
     "objectives": [{"id":"o_race","kind":"drive","to":"lakeshore","maxSeconds":150,"distance":3000,"text":"Finish three laps under 150 seconds."}],
-    "rewards": {"xp":400,"money":300},
+    "rewards": {"xp":400,"money":{"amount":300}},
     "onComplete": [{"do":"spawn","archetype":"coupe","zone":"harbor_row"}]
    },
    {
@@ -778,7 +774,7 @@
      {"id":"o_plant","kind":"use","interactable":"farmland_plot","count":5,"text":"Plant five plots."},
      {"id":"o_wheat","kind":"deliver","item":"wheat","count":20,"to":"maude","text":"Deliver 20 wheat."}
     ],
-    "rewards": {"xp":200,"money":200,"items":[{"item":"bread","count":5}]}
+    "rewards": {"xp":200,"money":{"amount":200},"items":[{"item":"bread","count":5}]}
    },
    {
     "id": "s_lighthouse",
@@ -792,7 +788,7 @@
      {"id":"o_lamp","kind":"build","block":"lamp","count":4,"zone":"harbor_row","text":"Place 4 lamps at the top."}
     ],
     "prereq": ["m1_landfall"],
-    "rewards": {"xp":500,"money":600}
+    "rewards": {"xp":500,"money":{"amount":600}}
    },
    {
     "id": "s_airmail",
@@ -805,7 +801,7 @@
      {"id":"o_fly","kind":"drive","vehicle":"biplane","distance":2500,"text":"Fly 2,500 m in the biplane."},
      {"id":"o_drop","kind":"deliver","item":"airmail_sack","count":3,"to":"quarry_hills","text":"Drop the sacks in the Quarry Hills."}
     ],
-    "rewards": {"xp":450,"money":500}
+    "rewards": {"xp":450,"money":{"amount":500}}
    },
    {
     "id": "s_fence",
@@ -818,7 +814,7 @@
      {"id":"o_crates","kind":"collect","item":"fence_goods","count":3,"text":"Collect three crates of hot goods."},
      {"id":"o_deliver","kind":"deliver","item":"fence_goods","count":3,"to":"fenn","text":"Deliver to Fenn."}
     ],
-    "rewards": {"xp":250,"money":300,"rep":[{"faction":"underworld","delta":10}]},
+    "rewards": {"xp":250,"money":{"amount":300},"rep":[{"faction":"underworld","delta":10}]},
     "onComplete": [{"do":"add_wanted","delta":1}]
    },
    {
@@ -829,7 +825,7 @@
     "zone": "old_quarter",
     "summary": "Arrest three Syndicate thugs for Inspector Calloway.",
     "objectives": [{"id":"o_thugs","kind":"defeat","archetype":"thug","count":3,"text":"Defeat three Syndicate thugs."}],
-    "rewards": {"xp":350,"money":400,"rep":[{"faction":"city","delta":10}]}
+    "rewards": {"xp":350,"money":{"amount":400},"rep":[{"faction":"city","delta":10}]}
    },
    {
     "id": "s_night_watch",
@@ -842,7 +838,7 @@
      {"id":"o_wall","kind":"build","block":"cobblestone","count":60,"zone":"quarry_hills","text":"Build a stone wall."},
      {"id":"o_survive","kind":"survive","until":{"daytime":"dawn"},"text":"Survive until dawn."}
     ],
-    "rewards": {"xp":500,"money":350}
+    "rewards": {"xp":500,"money":{"amount":350}}
    },
    {
     "id": "s_deep_dive",
@@ -863,7 +859,7 @@
     "zone": "glass_heights",
     "summary": "Recover Ysolde's four lost tower blueprints.",
     "objectives": [{"id":"o_find","kind":"collect","item":"blueprint","count":4,"text":"Recover four blueprints."}],
-    "rewards": {"xp":350,"money":350}
+    "rewards": {"xp":350,"money":{"amount":350}}
    },
    {
     "id": "s_tobi_upgrade",
@@ -877,7 +873,7 @@
      {"id":"o_circuit","kind":"craft","recipe":"r_circuit","count":1,"text":"Craft a circuit board."}
     ],
     "prereq": ["m2_first_wheels"],
-    "rewards": {"xp":300,"money":400}
+    "rewards": {"xp":300,"money":{"amount":400}}
    }
   ],
   "gates": [

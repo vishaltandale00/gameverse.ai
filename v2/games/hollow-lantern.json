@@ -155,7 +155,6 @@
     {
      "id": "act1",
      "title": "The Last Warm Room",
-     "summary": "Wick wakes in Cinderwell, takes a lamp from Marrow and descends into Mossgrave to face the first warden.",
      "beats": [
       {"id":"b_wake","title":"Wake in the well","do":[{"do":"play_cutscene","cutscene":"cs_wake"},{"do":"set_flag","flag":"awoke"}]},
       {
@@ -229,7 +228,6 @@
     {
      "id": "act2",
      "title": "Water and Bells",
-     "summary": "The Cisterns and the Foundry teach dash and double jump. Wardens guard their cinders with grief and fury.",
      "beats": [
       {
        "id": "b_cisterns",
@@ -304,7 +302,6 @@
     {
      "id": "act3",
      "title": "Songs Below",
-     "summary": "Wick follows two cinders down: the Drowned Cantor in the Choir and the Ashen Regent in the Barrows. The world opens, and so does its grief.",
      "beats": [
       {
        "id": "b_choir",
@@ -372,7 +369,6 @@
     {
      "id": "act4",
      "title": "The Hollow Heart",
-     "summary": "Four cinders, one lie, and a choice: borrow the flame, share it, surrender it, or take the crown.",
      "beats": [
       {
        "id": "b_all_cinders",
@@ -561,7 +557,7 @@
      {"id":"o_frag","kind":"collect","item":"map_fragment","count":4,"text":"Find four map fragments."},
      {"id":"o_give","kind":"deliver","item":"map_fragment","count":4,"to":"pip","text":"Give them to Pip."}
     ],
-    "rewards": {"items":[{"item":"cartographer_lens","count":1}],"money":150}
+    "rewards": {"items":[{"item":"cartographer_lens","count":1}],"money":{"amount":150}}
    },
    {
     "id": "q_lost_lamp",
@@ -598,7 +594,7 @@
     "zone": "cinderwell",
     "summary": "Six ember ore settle an old debt.",
     "objectives": [{"id":"o_ore","kind":"deliver","item":"ember_ore","count":6,"to":"dorrin","text":"Deliver six ember ore."}],
-    "rewards": {"money":200,"items":[{"item":"c_long_nail","count":1}]}
+    "rewards": {"money":{"amount":200},"items":[{"item":"c_long_nail","count":1}]}
    },
    {
     "id": "q_charmsmith",
@@ -634,7 +630,7 @@
      {"id":"o_enter","kind":"use","interactable":"arena_ash","text":"Step onto the colosseum sand."},
      {"id":"o_waves","kind":"defeat","archetype":"ash_knight","count":6,"text":"Defeat six ash knights."}
     ],
-    "rewards": {"money":300,"items":[{"item":"c_brittle_oath","count":1}]},
+    "rewards": {"money":{"amount":300},"items":[{"item":"c_brittle_oath","count":1}]},
     "repeatable": false
    },
    {
@@ -656,7 +652,7 @@
     "summary": "An old guardian keeps the vault of the Dim Galleries.",
     "objectives": [{"id":"o_defeat","kind":"defeat","archetype":"hush_knight","count":1,"text":"Defeat the Hush Knight."}],
     "gate": {"item":"archive_key"},
-    "rewards": {"items":[{"item":"c_hush_veil","count":1}],"money":400}
+    "rewards": {"items":[{"item":"c_hush_veil","count":1}],"money":{"amount":400}}
    }
   ],
   "gates": [
