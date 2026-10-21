@@ -14,6 +14,7 @@ export const rankOf = (f, rep) => [...(f?.ranks || [])].sort((a, b) => a.at - b.
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['rep_changed', 'affinity_changed'] },
     intent: 'Faction reputation (rep.<faction>) and character affinity (affinity.<character>) as clamped vars, with named ranks, hostility thresholds and optional daily decay.',
     views: ['any'],
     params: {

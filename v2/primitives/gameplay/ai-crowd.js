@@ -16,6 +16,7 @@ const n = (d, extra = {}) => ({ type: 'number', default: d, ...extra });
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['crowd_panic'] },
     intent: 'Ambient pedestrians: spawn around the player by density and hour, stroll sidewalks of the road graph (or wander nearby ground), keep personal space, and panic away from gunfire/crime/explosions before resuming.',
     views: ['3p', 'td', 'iso'],
     params: {

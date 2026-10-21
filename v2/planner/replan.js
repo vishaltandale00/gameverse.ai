@@ -5,9 +5,9 @@
 // primitive that declares the missing win), the outline repairs the failing fields again, or the gap layer writes the
 // missing primitive. Then everything is verified again. The attempts are bounded by the pipeline config; when they
 // are exhausted the build fails with what it tried and what is still missing.
-import { rankCandidates } from './select.js';
+import { rankCandidates, relevance } from './select.js';
 import { isSpace, isGenerator, isGraphics, requirementsOf, satisfying } from './catalog.js';
-import { cardLoop, winProviders } from './loop.js';
+import { composeLoop, winProviders } from './loop.js';
 import { isObj, list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -53,6 +53,8 @@ export function diagnose(problems, { selection, registry, doc = null }) {
   const ranked = [...used].filter(id => GAME_PREFIX.test(id)).sort((a, b) => b.length - a.length);
   for (const p of problems) {
     const code = text(p.code), path = text(p.path), message = text(p.message);
+    // A selection gap restated as a problem is already diagnosed above.
+    if (code.startsWith('gap_')) continue;
     const words = `${message} ${text(p.hint)}`;
     if (/win_unwired|win_undeclared/.test(code) || (code === 'not_playable' && /no_progress/.test(message) && !/loop_absent|cannot_act/.test(message))) { put({ kind: 'win', codes: [code], message }); continue; }
     if (code === 'not_playable' && /loop_absent|loop_undeclared|cannot_act/.test(message)) { put({ kind: 'loop', codes: [code], message }); continue; }
@@ -92,21 +94,30 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
   const unresolved = [];
   const cards = registry.cards().filter(c => GAME_PREFIX.test(c.id) && !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id));
   const triedFor = (/** @type {string} */ key) => { let s = tried.get(key); if (!s) { s = new Set(); tried.set(key, s); } return s; };
+  // Primitives that failed here are never chosen again, for any mechanic or the win.
+  const failed = triedFor('failed');
   /** Bring in what a primitive requires (closure), as selection does. @param {string} id */
   const require = id => { for (const r of requirementsOf(registry, id).primitives) { if (sel.systems.some(x => x === r || x.startsWith(r + '.'))) continue; const s = satisfying(registry, r); if (s) { sel.systems.push(s); require(s); } } };
   /** The next untried catalogue primitive for a mechanic that the chosen spaces host. @param {{ id: string, verb: string, description: string }} m */
   const next = m => {
     const seen = triedFor(m.id);
-    const pool = rankCandidates(m, cards, 12).filter(c => !seen.has(c.id) && !sel.systems.includes(c.id) && hostable(registry, sel, c.id));
+    const pool = rankCandidates(m, cards, 12).filter(c => !seen.has(c.id) && !failed.has(c.id) && !sel.systems.includes(c.id) && hostable(registry, sel, c.id));
     return pool[0]?.id || null;
   };
   const coreMechanics = (sel.mechanics || []).filter(m => m.importance === 'core');
-  for (const d of diagnoses) {
+  // Primitives first: a replacement may itself declare the missing win.
+  const ordered = [...diagnoses.filter(d => d.kind === 'primitive' || d.kind === 'mechanic'), ...diagnoses.filter(d => d.kind !== 'primitive' && d.kind !== 'mechanic')];
+  for (const d of ordered) if (d.kind === 'primitive' && d.primitive) failed.add(d.primitive);
+  for (const d of ordered) {
     if (d.kind === 'fields') { actions.push({ action: 'repair', ...(d.primitive ? { primitive: d.primitive } : {}), why: d.message }); continue; }
     if (d.kind === 'win') {
       const seen = triedFor('win');
+      const core = coreMechanics.flatMap(m => m.primitives || []);
+      if (actions.length && composeLoop(sel.systems, registry, { core }).win) { actions.push({ action: 'repair', why: `the re-planned collection declares a win: ${d.message}` }); continue; }
       const caps = (sel.spaces || []).map(s => s.caps || []);
-      const best = winProviders(registry, { caps: caps.length ? caps : [[]], exclude: [...sel.systems, ...seen] })[0];
+      // The provider that best fits how the idea is won (the play spec's words and the core mechanics).
+      const words = [decomposition.core?.win, ...coreMechanics.map(m => m.description)].filter(Boolean).join('. ') || decomposition.premise || '';
+      const best = winProviders(registry, { caps: caps.length ? caps : [[]], exclude: [...sel.systems, ...seen, ...failed], score: card => relevance({ verb: '', description: words }, /** @type {any} */ (card)) })[0];
       if (best) { seen.add(best.id); sel.systems.push(best.id); require(best.id); sel.gaps = sel.gaps.filter(g => g.kind !== 'win'); actions.push({ action: 'add', primitive: best.id, why: `declares a way to win (card.loop.win): ${d.message}` }); }
       else unresolved.push(d);
       continue;
@@ -177,5 +188,3 @@ export const experimentsOf = doc => list(prop(doc, 'experiments')).filter(isObj)
 /** One line per unresolved diagnosis, for the failure report. @param {Diagnosis[]} ds */
 export const missingText = ds => ds.map(d => `${d.kind}${d.mechanic ? ` "${d.mechanic}"` : ''}${d.primitive ? ` (${d.primitive})` : ''}: ${d.message}`.slice(0, 240));
 
-/** Does a primitive declare a loop? (re-exported for callers that report the collection) @param {RegistryLike} registry @param {string} id */
-export const declaresLoop = (registry, id) => Boolean(cardLoop(registry.get(id)?.card));

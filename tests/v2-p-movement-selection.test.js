@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { locomotionCompleteness, baseLocomotion, movementStyle } from '../v2/planner/select.js';
 import { preset } from '../v2/planner/presets.js';
-import { normalizeCore } from '../v2/planner/modes.js';
+import { normalizeCore } from '../v2/planner/play-spec.js';
 import { normalize } from '../v2/planner/decompose.js';
 
 const { registry, logic } = buildCatalogue();
@@ -50,33 +50,39 @@ test('no movement that fits the space is a reported gap, not a different world',
 
 const dec = core => normalize({ title: 'Gem duel', premise: 'A duel.', mechanics: [{ id: 'm0', verb: 'duel', description: 'duel', importance: 'core' }], views: ['board'], acts: 2, zones: 3, core }, 'Gem duel', registry);
 
-test('preset keeps the idea\'s space when the mode prefers another: a needs-adapter gap, no swap', () => {
-  const d = dec({ mode: 'match-board', interaction: 'cursor-board', opponent: 'ai-side', win: 'w', lose: 'l', theme: 't', narrative: false, secondary: [] });
+test('preset keeps the idea\'s space when the win-owning loop prefers another: a needs-adapter gap, no swap', () => {
+  const d = dec({ interaction: 'cursor-board', opponent: 'ai-side', win: 'w', lose: 'l', theme: 't', narrative: false });
   const meshCaps = caps('engine.space.mesh3d');
-  const selection = { systems: [], spaces: [{ id: 'world', use: 'engine.space.mesh3d', with: {}, role: 'world', caps: meshCaps }], generators: [], graphics: [], bind: {}, mechanics: [], gaps: [] };
+  const selection = { systems: ['gameplay.match'], spaces: [{ id: 'world', use: 'engine.space.mesh3d', with: {}, role: 'world', caps: meshCaps }], generators: [], graphics: [], bind: {},
+    mechanics: [{ id: 'm0', verb: 'duel', description: 'duel', importance: 'core', primitives: ['gameplay.match'], candidates: [] }], gaps: [] };
   const p = preset({ decomposition: d, selection, registry, logic, seed: 3 });
-  assert.ok(p.doc.spaces.every(s => s.use === 'engine.space.mesh3d') || p.doc.spaces[0].use === 'engine.space.mesh3d', p.doc.spaces.map(s => s.use).join());
-  assert.ok(p.gaps.some(g => /^needs adapter: match-board on engine\.space\.mesh3d/.test(g.description) && g.kind === 'adapter'), JSON.stringify(p.gaps));
+  assert.equal(p.doc.spaces[0].use, 'engine.space.mesh3d', p.doc.spaces.map(s => s.use).join());
+  assert.ok(p.gaps.some(g => /^needs adapter: gameplay\.match on engine\.space\.mesh3d/.test(g.description) && g.kind === 'adapter'), JSON.stringify(p.gaps));
   assert.ok(selection.gaps.some(g => g.kind === 'adapter'));
 });
 
-test('preset never drops a core-mechanic primitive silently: it becomes a gap', () => {
-  const d = dec({ mode: 'story', interaction: 'avatar-realtime', opponent: 'none', win: 'w', lose: 'l', theme: 't', narrative: false, secondary: [] });
+test('preset never drops a core-mechanic primitive: an adapter projects what the space lacks, or it is a gap', () => {
+  const d = dec({ interaction: 'avatar-realtime', opponent: 'none', win: 'w', lose: 'l', theme: 't', narrative: false });
   // A platformer needs gravity; a grid space provides none.
   const need = 'gameplay.move.platformer';
   assert.ok(!caps('engine.space.grid').includes('gravity'));
   const selection = { systems: [need], spaces: [{ id: 'world', use: 'engine.space.grid', with: {}, role: 'world', caps: caps('engine.space.grid') }], generators: [], graphics: [], bind: {},
     mechanics: [{ id: 'jump', verb: 'jump', description: 'jump', importance: 'core', primitives: [need], candidates: [] }], gaps: [] };
   const p = preset({ decomposition: d, selection, registry, logic, seed: 3 });
-  assert.ok(p.gaps.some(g => g.primitive === need && g.importance === 'core'), JSON.stringify(p.gaps));
+  // Either a registered adapter projects what the grid lacks (its instance joins), or the lack is a core gap.
+  const adapted = p.doc.systems.some(s => registry.get(s.use)?.card.adapts);
+  assert.ok(adapted || p.gaps.some(g => g.primitive === need && g.importance === 'core'), JSON.stringify(p.gaps));
   assert.ok(!p.structure.removed.some(r => r.use === need), 'reported as a gap, not as a quiet removal');
+  assert.ok(p.doc.systems.some(s => s.use === need), 'kept in the collection for the planner to re-plan, never dropped');
 });
 
-test('an unknown mode is a reported failure, not the story', () => {
-  const c = normalizeCore({ mode: 'no-such-loop', interaction: 'menu', opponent: 'none', win: '', lose: '', theme: '', narrative: false, secondary: [] }, registry);
-  assert.equal(c.mode, 'no-such-loop');
-  assert.match(c.problem, /unknown mode 'no-such-loop'/);
-  assert.equal(normalizeCore({ mode: 'story' }, registry).problem, undefined);
-  const p = preset({ decomposition: dec({ mode: 'no-such-loop', interaction: 'menu', opponent: 'none', win: '', lose: '', theme: '', narrative: false, secondary: [] }), selection: { systems: [], spaces: [{ id: 'world', use: 'engine.space.grid', with: {}, role: 'world', caps: caps('engine.space.grid') }], generators: [], graphics: [], bind: {}, mechanics: [], gaps: [] }, registry, logic, seed: 3 });
-  assert.ok(p.gaps.some(g => /unknown mode/.test(g.description)));
+test('there are no modes: an unknown interaction is reported and left for the collection, never defaulted', () => {
+  const c = normalizeCore({ mode: 'tactics', interaction: 'telepathy', opponent: 'none', win: '', lose: '', theme: '', narrative: false });
+  assert.equal(c.mode, undefined, 'a mode is not part of the play spec');
+  assert.equal(c.interaction, null);
+  assert.match(c.problems[0], /unknown interaction 'telepathy'/);
+  const p = preset({ decomposition: dec({ interaction: 'telepathy', opponent: 'none', win: '', lose: '', theme: '', narrative: false }), selection: { systems: [], spaces: [{ id: 'world', use: 'engine.space.grid', with: {}, role: 'world', caps: caps('engine.space.grid') }], generators: [], graphics: [], bind: {}, mechanics: [], gaps: [] }, registry, logic, seed: 3 });
+  assert.ok(p.gaps.some(g => /unknown interaction/.test(g.description) && g.importance === 'core'));
+  // An empty collection declares no win: a core gap naming it (the planner adds a primitive or the gap layer writes one).
+  assert.ok(p.gaps.some(g => g.kind === 'win' || p.structure.win), JSON.stringify(p.gaps));
 });

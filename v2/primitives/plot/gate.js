@@ -43,6 +43,7 @@ export default {
   id: ID,
   solverKey,
   card: {
+    loop: { verbs: [], progress: ['gate_opened'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.gates", "min": 1, "why": "gates are named requirements that lock exits, portals or beats", "example": {"id": "lamp_door", "requires": {"item": "brass_key"}, "hint": "The lamp room is locked."}},

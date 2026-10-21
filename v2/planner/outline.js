@@ -17,6 +17,7 @@ import { populateProblems, placeContent, unreadReaders, contractText } from './c
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
+import { applySkins } from './adapters.js';
 import { parseReply } from './writer.js';
 import { configureGenerators, furnishWorld, worldProblems } from './world.js';
 import { coreLoopProblems } from './core-loop.js';
@@ -99,7 +100,7 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
   const attempts = [];
   // Agency is an avatar's question: without one, the player acts through the mode (moves, cards, cells), whose options
   // exist once the model has written its content. Nothing to add here, and no reason to change the space.
-  if (decomposition.core && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
+  if (decomposition.core?.interaction && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
   let current = selection;
   /** @type {string[]} */
   let excluded = [];
@@ -283,10 +284,14 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   // The form and the prompts frame the model on the scaffold. The skeleton is built procedurally (never model output):
   // when repair rejected it, it is still the procedural draft, in the document's shape.
   const scaffold = /** @type {Doc} */ (skeleton.doc);
-  const form = outlineForm({ registry, skeleton: scaffold, selection });
+  // The form asks for every primitive of the collection, not those the structure took out for the play spec (with why).
+  const out = new Set(list(prop(skeleton.structure, 'removed')).map(r => prop(r, 'use')));
+  const form = outlineForm({ registry, skeleton: scaffold, selection: { ...selection, systems: selection.systems.filter(id => !out.has(id)) } });
   const system = outlineSystem(registry, logic, selection, form);
   const base = outlineUser({ prompt, answers, decomposition, selection, skeleton: scaffold });
-  const skeletonPlot = verify ? await staticPlot(scaffold, logic) : { problems: [] };
+  // The draft's static plot problems all count: the structure has no story of its own to compare against.
+  /** @type {{ problems: VerifyProblem[] }} */
+  const skeletonPlot = { problems: [] };
   let user = base, modelMs = 0;
   /** @type {boolean | null} */
   let firstPassOk = null;
@@ -392,6 +397,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
     keepPlayer(draft, skeleton.doc);
+    keepCollection(draft, skeleton.doc);
     // The collection's loop wiring is code's: whatever the model wrote, the declared win and losses end the game.
     Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
@@ -399,7 +405,7 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
     // Every primitive the draft uses is kept: repair fixes fields; what it cannot fix goes back as a problem.
     const keep = new Set([...core, ...list(draft.systems).map(x => prop(x, 'use')).filter(isStr).filter(id => registry.has(id))]);
-    const result = repairDocument(draft, { registry, logic, protect: keep });
+    const result = repairDocument(applySkins(/** @type {any} */ (draft), registry), { registry, logic, protect: keep });
     /** @type {DraftRepair} */
     const repaired = result;
     /** The draft while it is still valid (repaired.ok), for the gate. @type {Doc | null} */
@@ -496,6 +502,17 @@ function valueAt(form, path) {
   String(path).replace(/\["([^"]*)"\]|\[(\d+)\]|([^.[\]]+)/g, (_, q, i, n) => { v = i !== undefined ? (Array.isArray(v) ? v[Number(i)] : undefined) : prop(v, q !== undefined ? q : n); return ''; });
   return v;
 }
+/**
+ * The collection is code's: a draft that leaves out a primitive the structure chose (a core loop, an adapter that
+ * realises a mashup relation, the win owner) gets the structure's instance back, with its configuration.
+ * @param {Record<string, unknown>} draft the model's draft (unchecked) @param {unknown} skeleton
+ */
+function keepCollection(draft, skeleton) {
+  if (!Array.isArray(draft.systems)) return;
+  const have = new Set(draft.systems.map(s => prop(s, 'use')));
+  for (const s of list(prop(skeleton, 'systems'))) if (!have.has(prop(s, 'use'))) draft.systems.push(structuredClone(s));
+}
+
 /**
  * A draft that drops the player (models do) would publish a world nobody plays: keep the skeleton's, in the draft's first zone.
  * @param {Record<string, unknown>} draft the model's draft (unchecked) @param {unknown} skeleton

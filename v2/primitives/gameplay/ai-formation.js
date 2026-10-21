@@ -18,6 +18,7 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['formation_join', 'dive', 'formation_clear'] },
     intent: 'Shmup formations: waves enter on spline paths into slots; Galaga sway/breathing or Invaders march-step (faster as the formation thins, reverse and drop at edges, overrun line); timed dives by a leader with escorts (dive, swoop, zigzag, homing chase) that rejoin; a `formation_front` predicate lets only column fronts fire.',
     views: ['side', 'td'],
     params: {

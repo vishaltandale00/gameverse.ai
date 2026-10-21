@@ -14,6 +14,7 @@ import { decomposeIdea, decomposeOffline } from './decompose.js';
 import { selectPrimitives } from './select.js';
 import { writeOutline, ensureAgency } from './outline.js';
 import { diagnose, replan, gapRequest, addedBy, experimentsOf, missingText } from './replan.js';
+import { applySkins } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
@@ -40,11 +41,12 @@ import { obj, prop, str } from '../kernel/guards.js';
 /** The registry and logic for a document (catalog.js). @typedef {{ registry: RegistryLike, logic: LogicLike }} Catalogue */
 /** New primitives for a gap (the experiments sandbox). Its document is the service's output, checked by the caller's next stage. @typedef {{ fill(request: { doc: unknown, request: string, gap: unknown }): Promise<{ ok: boolean, doc?: unknown, experiment: Record<string, unknown>, problems?: unknown[] }> }} GapService */
 /**
- * Limits: outlineRepairRounds bounds the model's field repairs inside one build attempt; replanAttempts bounds the build
+ * Limits: modelAttempts bounds the calls for the play spec and the catalogue mapping (a failing call is asked again, then
+ * the stage fails); outlineRepairRounds bounds the model's field repairs inside one build attempt; replanAttempts bounds the build
  * attempts (each after diagnosing and re-planning a failure); maxGapPrimitives bounds the primitives the gap layer
  * writes (only with gaps 'auto'). When they are exhausted the build fails with what it tried and what is missing.
  * @typedef {{ detailConcurrency: number, maxDetailTasks: number, playtestMs: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
- *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number }} PipelineConfig
+ *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number, modelAttempts: number }} PipelineConfig
  */
 /** Stage durations: null when not measured (AGENTS.md). @typedef {Record<string, number | null>} Timings */
 /** @typedef {{ code: string, path?: string, message: string }} PatchProblem */
@@ -56,7 +58,7 @@ import { obj, prop, str } from '../kernel/guards.js';
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze(/** @type {PipelineConfig} */ ({
   detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
-  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3,
+  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3, modelAttempts: 2,
 }));
 
 const ms = (/** @type {number} */ t) => Math.round(performance.now() - t);
@@ -110,12 +112,12 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
     ctx.stage('decomposing', { model: spec?.model || 'offline' });
     let t = performance.now();
-    const decomposition = await decomposeIdea({ writer: spec, prompt, answers: job.answers || [], registry });
+    const decomposition = await decomposeIdea({ writer: spec, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts });
     timings.decomposeMs = ms(t);
     checkpoint('decomposition', decomposition);
     ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
     t = performance.now();
-    const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec });
+    const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec, attempts: cfg.modelAttempts });
     const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt });
     // Cast: ensureAgency (outline.js) has no @returns, so the gap it may add widens Gap.kind to string; at runtime
     // it is a Selection. Remove once outline.js declares its result.
@@ -147,7 +149,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const later = sel.gaps.filter(g => g.importance === 'core');
       if (later.length) return { ok: /** @type {const} */ (false), stage: 'structure', problems: later.map(g => ({ code: `gap_${g.kind}`, path: 'systems', message: g.description })), doc: outline.doc, outline };
       // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
-      const engaged = engageDocument(outline.doc, registry, logic);
+      const engaged = engageDocument(applySkins(outline.doc, registry), registry, logic);
       const keep = new Set((engaged.doc.systems || []).map(s => s.use));
       const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: keep, maxIsolations: 0 });
       if (!fp.ok) return { ok: /** @type {const} */ (false), stage: 'first_playable', problems: [...fp.errors, ...fp.problems], doc: engaged.doc, outline, engaged };
@@ -200,8 +202,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         } catch (error) { actions.push({ action: 'write', text: `gap layer failed: ${errorText(error).slice(0, 120)}` }); }
       }
       Object.assign(entry, { actions });
-      // Nothing left to change: the problems are what is missing.
-      if (!plan.actions.length && !actions.some(a => a.action === 'write' && Array.isArray(a.primitives))) throw fail(missingText(plan.unresolved.length ? plan.unresolved : diagnoses));
+      // Nothing left to change: the problems are what is missing. Re-asking the model only helps once it has written
+      // something (the outline ran); a gap in the collection needs another primitive.
+      const changes = plan.actions.filter(a => a.action !== 'repair' || (built.stage !== 'selection' && built.stage !== 'structure'));
+      if (!changes.length && !actions.some(a => a.action === 'write' && Array.isArray(a.primitives))) throw fail(missingText(plan.unresolved.length ? plan.unresolved : diagnoses));
       selection = plan.selection;
       ctx.stage('replanned', { attempt: n, actions: actions.map(a => a.text), unresolved: missingText(plan.unresolved) });
       built = await attempt(selection);

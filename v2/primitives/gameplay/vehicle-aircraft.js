@@ -14,6 +14,7 @@ const SPEC = { stall: 50, maxSpeed: 200, climb: 8, turn: 30, takeoffSpeed: 70, v
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['airborne', 'landed'] },
     intent: 'Aircraft flight: throttle, takeoff roll and rotation, pitch and banked turns, climb limits, stalls, a ceiling, and landings that succeed when slow, level and gentle or crash otherwise. vtol aircraft hover (helicopters, drones).',
     views: ['1p', '3p', 'side'],
     params: {

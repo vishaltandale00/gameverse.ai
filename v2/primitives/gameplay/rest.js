@@ -10,6 +10,7 @@ const KEY = 'gameplay.rest';
 export default {
   id: 'gameplay.rest',
   card: {
+    loop: { verbs: [], progress: ['rested'] },
     intent: 'Sleep/rest/wait at beds, benches and campfires (entities with a `rest` component, or the rest effect): skip time to a named hour, heal, refill resources, optionally respawn enemies and save; can require no hostiles nearby.',
     views: ['any'],
     params: {

@@ -68,7 +68,7 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
 
-const CORE = `- core: the play spec, in the idea's own terms. The core loop itself is the "core" mechanics above (a mashup keeps the core mechanics of BOTH ideas); here say only how it is played. interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost (checkmate, finish first, clear every line, catch the culprit, a full harvest). narrative: true only when the idea has a story told in acts.`;
+const CORE = `- core: the play spec, in the idea's own terms. The core loop itself is the "core" mechanics above (a mashup keeps the core mechanics of BOTH ideas); here say only how it is played. interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost (checkmate, finish first, clear every line, catch the culprit, a full harvest). narrative: true only when the idea has a story told in acts. mashup: for a mashup, how each joined idea's core mechanics (by id) relate to the rest: nested (a loop entered from the other, e.g. a creature battle deciding a chess capture), union (both loops in one space), skin (only its content and cast); [] for a single idea.`;
 
 /** The decomposition schema; with a registry it includes the play spec (`core`). @param {RegistryLike | null} [registry] */
 export function decompositionSchema(registry = null) {
@@ -139,6 +139,8 @@ export function normalize(input, prompt = '', registry = null) {
   // The play spec: the model's (narrowed); without one (the offline mode) the collection decides what it would have said.
   if (registry) {
     out.core = normalizeCore(d.core) || undecidedCore(out);
+    // Mashup relations name mechanics by the ids the model wrote: the same slugs as the mechanics.
+    out.core.mashup = out.core.mashup.map(m => ({ ...m, mechanics: m.mechanics.map(slug).filter(id => mechanics.some(x => x.id === id)) })).filter(m => m.mechanics.length);
     // No avatar, no avatar movement: the medium follows the interaction (an undecided one decides nothing here).
     if (out.core.interaction && !isAvatar(out.core.interaction)) out.movement = 'none';
   }

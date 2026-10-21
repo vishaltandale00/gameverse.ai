@@ -24,17 +24,23 @@ function memoryCtx() {
 /** A stand-in spec model: answers each layer's request from the prompt it is given. */
 function scriptedModel() {
   return fakeWriter([(req) => {
-    if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4 });
+    if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
+      core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } });
+    if (req.schema?.name === 'mechanic_map') return JSON.stringify({ mappings: [{ mechanic: 'collect', primitives: ['gameplay.inventory'], covered: true, why: '' }, { mechanic: 'tides', primitives: ['gameplay.hazard'], covered: true, why: '' }] });
     if (String(req.schema?.name || '').startsWith('game_outline')) {
       // The outline form: the scaffold's zones, named; params, story and endings left to the scaffold's defaults.
       const scaffold = JSON.parse(req.user.split('not the game):\n')[1].split('\n\nWrite the outline')[0]);
       const spaces = Object.fromEntries(scaffold.spaces.map(s => [s.id, { zones: s.zones.map(z => ({ id: z.id, name: z.id.replace(/_/g, ' '), description: `the ${z.id}`, exits: (z.exits || []).map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) })) }]));
-      return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
+      // The story: reaching the top of the lighthouse finds the lamp.
+      const zones = scaffold.spaces[0].zones.map(z => z.id);
+      const acts = [{ id: 'act_1', title: 'The climb', beats: [{ id: 'lamp', title: 'The lamp', when_json: JSON.stringify({ zone: zones.at(-1) }), after: [], optional: false, do_json: JSON.stringify([{ do: 'give_item', item: 'lens' }, { do: 'end_game', ending: 'victory' }]) }] }];
+      return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, acts, dialogue: [], quests: [], items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
     }
     if (/Write the detail patch for zone "([^"]+)"/.test(req.user)) {
       const zone = req.user.match(/zone "([^"]+)"/)[1];
       return JSON.stringify({ plot: { characters: [{ id: 'gull', name: 'A gull' }], storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'gull', when: { zone }, do: [{ do: 'say', character: 'gull', text: 'Kee!' }] }] }] } } });
     }
+    if (/Change request:.*dragon/.test(req.user)) return JSON.stringify({ ops: [], unsupported: [{ request: 'a dragon that breathes fire', why: 'no primitive breathes fire' }], summary: 'not possible yet' });
     if (/Change request:/.test(req.user)) return JSON.stringify({ ops: [{ op: 'set', path: 'title', value: 'Lamp of the Deep' }], unsupported: [], summary: 'renamed' });
     return '{}';
   }]);
@@ -71,7 +77,8 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
 });
 
 test('the server builds kernel games, revises them, and refuses to route anything to a kit', async () => {
-  const svc = createGameService({ root: tmp(), env: { V2_IMPROVE: 'off', V2_DECISIONS: 'off' }, writers: { spec: null, code: null }, decisions: null, improve: null, experiments: null });
+  // A game is made by a model writing the play spec and the content: the service gets the scripted one.
+  const svc = createGameService({ root: tmp(), env: { V2_IMPROVE: 'off', V2_DECISIONS: 'off' }, writers: { spec: scriptedModel(), code: null }, decisions: null, improve: null, experiments: null });
   const call = async (method, path, body) => {
     const res = { code: 0, body: null, writeHead(c) { this.code = c; return this; }, end(b) { this.body = b; } };
     // index.mjs turns thrown { status } errors into responses; mirror that here.
@@ -82,7 +89,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   const done = id => new Promise(resolve => { const off = svc.jobs.subscribe(e => { if (e.gameId === id && (e.type === 'job_done' || e.type === 'job_failed')) { off(); resolve(e); } }); });
   const cat = await call('GET', '/api/v2/catalog');
   assert.ok(cat.json.primitives.some(p => p.id === 'plot.storyboard'));
-  assert.equal(cat.json.writers.spec, null);
+  assert.equal(cat.json.writers.spec, 'fake-writer');
   const { json: created } = await call('POST', '/api/v2/games', { prompt: 'a mystery in a lighthouse: find the key' });
   const finished = done(created.gameId);
   assert.equal((await finished).type, 'job_done');
@@ -92,7 +99,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   const { json: versions } = await call('GET', `/api/v2/games/${created.gameId}/versions`);
   assert.equal(versions.versions[0].stage, 'first_playable');
   assert.ok(versions.versions.length > 1, 'detail versions follow');
-  // A tweak, then a request nothing in this game (and no model) can carry out: reported as a gap.
+  // A tweak, then a request nothing in this game can carry out: reported as a gap.
   let wait = done(created.gameId);
   await call('POST', `/api/v2/games/${created.gameId}/revise`, { change: 'more inventory slots' });
   await wait;
@@ -113,7 +120,8 @@ test('the server builds kernel games, revises them, and refuses to route anythin
 });
 
 test('the benchmark records latency, pass rates, detail acceptance and determinism with its context', async () => {
-  const r = await runBench({ prompts: ['a mystery in a lighthouse: find the key'], n: 1, offline: true });
+  // Offline, nothing writes a story or content: the idea is one the catalogue's lexical selection builds without them.
+  const r = await runBench({ prompts: ['collect coins in a maze'], n: 1, offline: true });
   assert.equal(r.summary.succeeded, 1);
   assert.equal(typeof r.summary.requestToFirstPlayableMs.p50, 'number');
   assert.equal(r.summary.replayDeterministicRate, 1);

@@ -76,6 +76,7 @@ const st = rt => rt.store(ID);
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['cpu_intent'] },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "cpu", "min": 1, "placed": 1, "why": "the CPU opponent is an archetype with a cpu component {level, style}", "example": {"id": "rival", "kind": "npc", "components": {"cpu": {"level": 3}}}},

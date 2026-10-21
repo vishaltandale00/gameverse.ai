@@ -17,7 +17,7 @@ const { registry, logic } = buildCatalogue();
 
 async function chessWithCreatures() {
   const decomposition = normalize({ title: 'Pokemon chess', premise: 'chess with creatures', mechanics: [{ id: 'turns', verb: 'move', description: 'move pieces in turns', importance: 'core' }, { id: 'battle', verb: 'battle', description: 'captures are creature battles', importance: 'core' }], views: ['board'], acts: 2, zones: 4,
-    core: { mode: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, secondary: [{ mode: 'creature-battle', relation: 'nested', why: '' }] } }, 'chess with pokemon', registry);
+    core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, mashup: [{ relation: 'nested', mechanics: ['battle'], why: 'captures are battles' }] } }, 'chess with pokemon', registry);
   const selection = await selectPrimitives({ decomposition, registry });
   const scaffold = /** @type {any} */ (proceduralOutline({ decomposition, selection, registry, logic, seed: 3 }).doc);
   return { decomposition, selection, scaffold, form: outlineForm({ registry, skeleton: scaffold, selection }) };
@@ -89,6 +89,11 @@ test('chess with creatures: a model wrong once on species types is corrected by 
   /** One scripted model for every small form: species types are invented until the problem names the allowed ids. */
   const reply = req => {
     const name = req.schema.name.replace('game_outline_', '');
+    // A field-level re-ask: only the failing fields, each slot described by its form path (the allowed ids are its enum).
+    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => {
+      const m = /^section_content_species\[(\d+)\]\.types/.exec(p.description || '');
+      return [k, m ? scaffold.content.species[Number(m[1])].types : null];
+    })));
     if (name === 'frame') return JSON.stringify({ title: 'Pocket Gambit', logline: 'l', premise: 'p', spaces: {}, player: req.schema.schema.properties.player ? { archetype: req.schema.schema.properties.player.properties.archetype.enum?.[0] ?? 'hero', zone: req.schema.schema.properties.player.properties.zone.enum?.[0] ?? '' } : undefined, endings: [] });
     if (name === 'systems') return JSON.stringify({ systems: {}, extra_systems: [] });
     if (name === 'cast') return JSON.stringify({ archetypes: pack('archetypes').filter(a => a.kind !== 'player').map(a => ({ id: a.id, kind: a.kind, name: a.id, components: { other_json: JSON.stringify(a.components || {}) } })), spawns: [], items: [], characters: [] });
@@ -100,12 +105,14 @@ test('chess with creatures: a model wrong once on species types is corrected by 
   const writer = fakeWriter([reply]), escalate = fakeWriter([reply], { model: 'stronger' });
   const r = await writeOutline({ writer, escalate, prompt: 'chess but with pokemon', decomposition, selection, registry, logic, seed: 3, verify: false, maxRounds: 2 });
   const asked = writer.calls.map(c => c.schema.name.replace('game_outline_', ''));
-  const speciesCalls = writer.calls.filter(c => c.schema.name.endsWith('section_content_species'));
+  const speciesCalls = writer.calls.filter(c => /section_content_species(_fields)?$/.test(c.schema.name));
   assert.equal(speciesCalls.length, 2, `asked: ${asked.join(' ')}`);
+  assert.match(speciesCalls[1].schema.name, /_fields$/, 'the re-ask is a field form: only the failing fields');
+  assert.ok(Object.values(speciesCalls[1].schema.schema.properties).every(p => /^section_content_species\[\d\]\.types/.test(p.description)), 'only the species types');
   assert.equal(asked.filter(n => n === 'section_content_types').length, 1, 'the other forms are not re-asked for the species problem');
   assert.match(speciesCalls[1].user, /\[type_unknown\] content\.species\[0\]\.types \(form: section_content_species\[0\]\.types\)/);
   assert.doesNotMatch(speciesCalls[1].user, /species_invalid/, 'the problem is the unknown type, not a dropped field');
-  assert.ok(!escalate.calls.some(c => c.schema.name.endsWith('section_content_species')), 'fixed before escalation');
+  assert.ok(!escalate.calls.some(c => /section_content_species/.test(c.schema.name)), 'fixed before escalation');
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 4)));
   const types = new Set(idsAt(r.doc, 'content.types'));
   assert.ok(r.doc.content.species.every(s => s.types.length && s.types.every(t => types.has(t))), JSON.stringify(r.doc.content.species.map(s => s.types)));

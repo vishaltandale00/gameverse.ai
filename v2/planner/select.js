@@ -9,6 +9,7 @@ import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
 import { cardLoop } from './loop.js';
+import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
 
@@ -25,8 +26,8 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
 /** A decomposed mechanic with what selection made of it. @typedef {Mechanic & { candidates: Candidate[], primitives: string[], source: string, score: number }} SelectedMechanic */
 /** A chosen space: instance id, primitive, its configuration, the role it plays and the capabilities it then provides. @typedef {{ id: string, use: string, with: Record<string, unknown>, role: string, caps: string[] }} SpaceChoice */
 /** @typedef {{ id: string, missing: string[], why: string }} Unmet */
-/** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/** @typedef {import('./compose-check.js').AdapterInstance} AdapterInstance */
 /**
  * An uncovered mechanic ('win': the collection declares no way to win). 'adapter' gaps name the primitive no chosen space can host and the adapter that would
  * project it (`signature` a one-line description; `adapter` compose-check's adapter card when it produced one).
@@ -54,6 +55,7 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null }} completeness
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
+ * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
  * @property {number} ms
  */
 
@@ -307,17 +309,17 @@ async function mapOnce({ writer, decomposition, mechanics, cards, registry, log,
 }
 
 /**
- * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[] }} options
+ * @param {{ decomposition: Decomposition, registry: RegistryLike, decisions?: DecisionClient | null, writer?: Writer | null, log?: (msg: string) => void, excludeSpaces?: string[], attempts?: number }} options
  * @returns {Promise<Selection>}
  */
-export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [] }) {
+export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [], attempts = 2 }) {
   const started = performance.now();
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
   // primitives, source and score are set for every mechanic in the loop below (in this key order).
   /** @type {SelectedMechanic[]} */
   const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
-  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log });
+  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log, attempts });
   /** @type {Record<string, DecisionAnswer> | null} */
   let decided = null;
   /** @type {string | null} */
@@ -385,11 +387,13 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
 
   // The core loops declare the spaces they are made for (card.loop / card.mode space). The first core primitive (in the
-  // idea's order) declaring a registered space that shows the idea's views (a card table for a ui-only card battle, a
-  // board for chess) makes it the world: primitives it cannot host become adapter gaps below rather than pulling the
-  // game into another space. A declared space that does not show the idea's views is not forced.
+  // idea's order) played the way the play spec says (its declared interaction) and declaring a registered space that
+  // shows the idea's views (a card table for a ui-only card battle, a board for chess) makes it the world: primitives
+  // it cannot host become adapter gaps below rather than pulling the game into another space. A declared space that
+  // does not show the idea's views, or a loop the spec does not say is played that way, is not forced.
   const wantViews = decomposition.views || [];
-  const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(Boolean);
+  const playedAs = decomposition.core?.interaction || null;
+  const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(l => l && playedAs && l.interaction === playedAs);
   const modeSpace = coreLoops.map(l => (l?.space || []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
     && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)))).find(Boolean);
   const prefer = [...chosen].filter(isSpace);
@@ -399,22 +403,28 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // A primitive no chosen space can host stays the user's intent: a core mechanic's primitive becomes an adapter gap
   // (the gap layer writes the adapter that projects it onto the space, gated by tests and the playtest agent), never
   // a quiet downgrade. The document published meanwhile leaves it out (it could not install).
-  const composition = unmet.length ? await compositionCheck() : null;
+  /** @type {AdapterInstance[]} */
+  const adapters = [];
   for (const u of unmet) {
     chosen.delete(u.id);
+    // A registered adapter that projects what the space lacks keeps the primitive: its instance (with its config)
+    // joins the selection and the primitive is bound to the adapter's region (adapters.js resolveAdapters).
+    /** @type {import('./adapters.js').AdapterResolution | null} */
+    let r = null;
+    try { r = resolveAdapters({ spaces, systems: [...chosen, u.id], bind, adapters }, registry); } catch { r = null; }
+    if (r?.verdict === 'compatible-via-adapter') {
+      chosen.add(u.id); Object.assign(bind, r.bind);
+      for (const a of r.adapters) if (!adapters.some(x => x.use === a.use && x.space === a.space && x.id === a.id)) adapters.push(a);
+      continue;
+    }
     // An adapter projects a primitive onto a space that lacks what it needs; when NO registered space provides it,
     // the missing piece is a space capability (a capability gap), not an adapter.
     const hostable = registry.ids('engine').filter(isSpace).some(id => spaceVariants(registry, id).some(v => u.missing.every(c => v.caps.has(c))));
     const core = hostable && mechanics.some(m => m.importance === 'core' && m.primitives.includes(u.id));
-    /** @type {CompositionResult | null} */
-    let verdict = null;
-    /** @type {import('./compose-check.js').Selection & { primitive: string }} */
-    const probe = { spaces, systems: [...chosen, u.id], primitive: u.id };
-    if (core && composition) try { verdict = composition(probe, registry); } catch { verdict = null; }
-    // compose-check's signature is an adapter card (AdapterSpec), not text: the gap keeps it as `adapter` and
-    // describes the adapter in one line.
-    const adapter = verdict?.signature || undefined;
-    const signature = isStr(adapter) ? adapter : `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})`;
+    // The adapter that would fix it (adapterSignature, an AdapterSpec card) goes to the gap layer; it is described in one line.
+    const adapter = r?.gaps[0] || r?.before.signature || undefined;
+    const signature = `${u.id} -> ${spaces[0]?.use || 'space'} (${u.missing.join(', ')})${adapter?.id ? ` as ${adapter.id}` : ''}`;
+    const verdict = r ? { verdict: r.verdict } : null;
     for (const m of mechanics) if (m.primitives.includes(u.id)) {
       m.primitives = m.primitives.filter(x => x !== u.id);
       if (core && m.importance === 'core') gaps.push({ mechanic: m.id, description: `needs adapter: ${signature}`, importance: 'core', kind: 'adapter', primitive: u.id, signature, ...(adapter ? { adapter } : {}), verdict: verdict?.verdict || 'incompatible-needs-adapter', why: `${u.id} needs ${u.missing.join(', ')}, which ${spaces[0]?.use || 'the space'} does not provide; an adapter primitive can project it` });
@@ -470,7 +480,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
@@ -478,15 +488,6 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
 const order = id => id.startsWith('engine.') ? 0 : id.startsWith('gameplay.') ? 1 : 2;
 
 // ---------- selection completeness ----------
-
-/** compose-check.js (v2-static-composition) when present: checkComposition(selection, registry) -> { verdict, missing, adapter, signature }. */
-/** @type {typeof import('./compose-check.js') | null | undefined} */
-let composeMod;
-/** @returns {Promise<typeof import('./compose-check.js').checkComposition | null>} */
-async function compositionCheck() {
-  if (composeMod === undefined) composeMod = await import('./compose-check.js').catch(() => null);
-  return typeof composeMod?.checkComposition === 'function' ? composeMod.checkComposition : null;
-}
 
 /** @param {{ views?: string[] }} decomposition @returns {string | null} */
 const primaryOf = decomposition => (decomposition.views || []).find(v => v !== 'ui') || null;
@@ -562,7 +563,9 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
   const wrongMedium = Boolean(medium && medium !== 'none' && left.length && left.every(id => cardOf(id).medium && cardOf(id).medium !== medium));
   if (medium === 'none' || (left.length && !wrongMedium)) return out;
   const best = baseLocomotion(registry, { caps: space.caps, view, medium, exclude: left, interaction }).find(c => !medium || c.medium === medium || !c.medium);
-  if (!best) { if (!left.length) out.gap = `no base movement fits ${space.id || 'the space'}${interaction ? ` for ${interaction}` : ''}${medium ? ` (${medium})` : ''}`; return out; }
+  // A space that navigates its own places (travel between zones) moves the avatar itself; agency is then checked on the
+  // built game (ensureAgency, the publish gate). Otherwise no fitting base movement is a gap.
+  if (!best) { if (!left.length && !space.caps.includes('navigate')) out.gap = `no base movement fits ${space.id || 'the space'}${interaction ? ` for ${interaction}` : ''}${medium ? ` (${medium})` : ''}`; return out; }
   if (wrongMedium) for (const id of left) drop(id);
   chosen.add(best.id); out.added = best.id;
   const host = mechanics.find(m => m.importance === 'core' && /\b(move|walk|run|jump|explor|navigat|travel|climb|platform|roam|fly|swim|drive)\w*/i.test(`${m.verb} ${m.description}`)) || mechanics.find(m => m.importance === 'core');

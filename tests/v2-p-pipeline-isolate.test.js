@@ -1,8 +1,8 @@
-// First-playable isolation (v2/planner/first-playable.js): a primitive whose install or early step throws
-// is identified directly (errors are attributed to the owning primitive), removed with what requires it,
-// and the references it leaves (a storyboard beat using its vocabulary) are neutralised so preflight passes.
-// When nothing can be isolated (the throwing primitive is the space), the error names the primitive and
-// install vs step, and writeOutline feeds it back to the model as a repair error. No network.
+// First-playable attribution (v2/planner/first-playable.js): a primitive whose install or early step throws is
+// identified directly (errors are attributed to the owning primitive) and, by default, reported as an error naming
+// it and install vs step: nothing is removed, and writeOutline feeds it back to the model as a repair error. Removal
+// of the thrower with what requires it (references neutralised) happens only when a caller explicitly asks for it
+// (maxIsolations > 0); no generation path does. No network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { preflight } from '../v2/kernel/document.js';
@@ -50,10 +50,14 @@ test('tracing attributes a throw to its primitive and says whether it was instal
   assert.throws(() => rt.step(), e => e.gvPrimitive === 'gameplay.test.wobbly' && e.gvPhase === 'step' && e.gvDetail === 'movement');
 });
 
-test('an install that throws is isolated with its dependents, and the beat using its vocabulary is neutralised', () => {
+test('an install that throws is an error naming it by default; removal happens only when explicitly asked', () => {
   const input = doc(['gameplay.test.fragile', 'gameplay.test.shard'], [{ id: 'smash', title: 'Smash', do: [{ do: 'shatter' }, { do: 'set_flag', flag: 'smashed' }] }]);
   assert.ok(preflight(input, registry, logic).ok);
-  const fp = firstPlayable(input, registry, logic, { seed: 1 });
+  const plain = firstPlayable(input, registry, logic, { seed: 1 });
+  assert.equal(plain.ok, false);
+  assert.deepEqual(plain.removed, [], 'nothing is removed');
+  assert.deepEqual(plain.errors.map(e => [e.code, e.primitive, e.phase]), [['install_threw', 'gameplay.test.fragile', 'install']]);
+  const fp = firstPlayable(input, registry, logic, { seed: 1, maxIsolations: 6 });
   assert.ok(fp.ok, JSON.stringify(fp.errors));
   assert.deepEqual(fp.removed.map(r => r.use).sort(), ['gameplay.test.fragile', 'gameplay.test.shard']);
   const r = fp.removed.find(x => x.use === 'gameplay.test.fragile');
@@ -66,9 +70,10 @@ test('an install that throws is isolated with its dependents, and the beat using
   assert.ok(preflight(fp.doc, registry, logic).ok);
 });
 
-test('a step that throws is isolated too, and its predicate in a beat trigger is neutralised', () => {
+test('a step that throws is named too (and, only when asked, removed with its predicate neutralised)', () => {
   const input = doc(['gameplay.test.wobbly'], [{ id: 'quake', when: { all: [{ wobbling: true }, { zone: 'hall' }] }, do: [{ do: 'set_flag', flag: 'shook' }] }]);
-  const fp = firstPlayable(input, registry, logic, { seed: 1 });
+  assert.equal(firstPlayable(input, registry, logic, { seed: 1 }).errors[0]?.primitive, 'gameplay.test.wobbly');
+  const fp = firstPlayable(input, registry, logic, { seed: 1, maxIsolations: 6 });
   assert.ok(fp.ok, JSON.stringify(fp.errors));
   assert.deepEqual(fp.removed.map(r => [r.use, r.phase]), [['gameplay.test.wobbly', 'step']]);
   assert.match(fp.removed[0].why, /threw during a step \('movement'\): floor fell off/);
@@ -92,7 +97,7 @@ test('when the thrower cannot be removed (the space), the error names it, says i
   assert.equal(o.doc.spaces[0].use, 'engine.space.graph');
 });
 
-test('a degraded result that lost a core primitive is named (mechanic, primitive, failing fields) and never intact-core', () => {
+test('the diagnostic: a draft that lost a core primitive is named (mechanic, primitive, failing fields)', () => {
   const mechanics = [{ id: 'm1', description: 'shatter the glass', importance: 'core', primitives: ['gameplay.test.fragile'] }];
   const keep = new Set(['gameplay.test.fragile']);
   const intact = doc(['gameplay.test.fragile'], []);

@@ -16,6 +16,7 @@ const n = (d, extra = {}) => ({ type: 'number', default: d, ...extra });
 export default {
   id: ID,
   card: {
+    loop: { verbs: [], progress: ['traffic_collision'] },
     intent: 'Ambient traffic on the road graph: cars spawn around the player by density and hour, follow lanes, keep gaps (cars, player, vehicles), obey two-phase traffic lights, yield at junctions, panic on gunfire/crime, and report collisions.',
     views: ['3p', 'td', 'iso'],
     params: {

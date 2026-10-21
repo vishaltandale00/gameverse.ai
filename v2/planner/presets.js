@@ -14,6 +14,9 @@
 //   of the collection needs them ('spaces.zones' in its needs.content).
 // - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
 // - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
+// - Mashup relations of the play spec are realised by the adapters that declare them (card.adapts.relation): nested
+//   (the joined mechanics' loops entered from the rest), skin (their content fills the rest's slots); union and any
+//   space/primitive mismatch by the registered adapters that cover what the space lacks (adapters.js).
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
@@ -25,6 +28,7 @@ import { configureGenerators, furnishWorld } from './world.js';
 import { isAvatar } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
+import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
 import { isList, isObj, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -110,6 +114,13 @@ const storyRunner = registry => registry.cards().find(c => (c.reads || []).inclu
 const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
 /**
+ * The primitives of the mechanics a nested mashup relation names (the loops entered from the rest).
+ * @param {Decomposition['core']} spec @param {Selection} selection @returns {Set<string>}
+ */
+const innerOf = (spec, selection) => new Set((spec?.mashup || []).filter(m => m.relation === 'nested').flatMap(m => m.mechanics)
+  .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => /^(gameplay|plot)\./.test(id)));
+
+/**
  * The structure a collection composes, from the cards and the play spec: its core and loops, the win (added from the
  * catalogue when the collection declares none), avatar or not, story or not, zones or not, and the selection
  * adjusted to the play spec (base locomotion out without an avatar, a story runner out without narrative and in
@@ -118,7 +129,9 @@ const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includ
 export function structureOf(decomposition, selection, registry) {
   const spec = decomposition.core;
   let systems = [...selection.systems];
-  const core = [...coreOf(selection, registry)];
+  // The joined idea's loops of a nested mashup are entered from the rest: they come last, so they never own the game's win.
+  const inner = innerOf(spec, selection);
+  const core = [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
   /** @type {Array<{ use: string, why: string }>} */
   const added = [];
   /** @type {Array<{ use: string, why: string }>} */
@@ -247,8 +260,10 @@ function wireLoop(doc, structure, registry, text = {}) {
   for (const l of structure.lose || []) one(l.use, l.end, 'defeat');
   doc.plot.endings = endings;
   // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them).
-  if (endings.some(e => isObj(e.when)) && !systems.some(s => (registry.get(s?.use)?.card.reads || []).includes('plot.endings') && !cardLoop(registry.get(s?.use)?.card))) {
-    const reader = registry.cards().find(c => (c.reads || []).includes('plot.endings') && !cardLoop(c) && !(c.requires?.capabilities || []).length);
+  // (The story also reads them, but it declares its own win: the evaluator is the reader that declares none.)
+  const evaluates = (/** @type {any} */ c) => Boolean(c) && (c.reads || []).includes('plot.endings') && !cardLoop(c)?.win && !(c.requires?.capabilities || []).length;
+  if (endings.some(e => isObj(e.when)) && !systems.some(s => evaluates(registry.get(s?.use)?.card))) {
+    const reader = registry.cards().find(evaluates);
     if (reader) systems.push({ use: reader.id });
   }
   return { wired, endings: endings.map(e => String(e.id)) };
@@ -343,7 +358,17 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   for (const s of spaces) delete s._shape;
   // A primitive no space of this game can host stays in the collection and is reported with what it needs: the
   // planner re-plans (another primitive for the mechanic), or the gap layer writes the adapter. Never removed here.
-  const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
+  /** @type {import('./compose-check.js').AdapterInstance[]} */
+  const adapters = (selection.adapters || []).map(a => structuredClone(a));
+  const adapterIds = new Set(adapters.map(a => a.id).filter(/** @returns {x is string} */ x => typeof x === 'string'));
+  const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; if (bound && adapterIds.has(bound)) return true; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
+  // What no chosen space hosts: a registered adapter that covers it is added (its config from its adapt() hook).
+  if (st.systems.some(id => !hosted(id))) {
+    /** @type {import('./adapters.js').AdapterResolution | null} */
+    let r = null;
+    try { r = resolveAdapters({ spaces: selSpaces, systems: st.systems, bind: selection.bind, adapters }, registry); } catch { r = null; }
+    if (r && r.adapters.length) { for (const a of r.adapters) { adapters.push(a); if (a.id) adapterIds.add(a.id); } Object.assign(selection.bind, r.bind); }
+  }
   for (const id of st.systems) {
     if (hosted(id)) continue;
     const missing = (registry.get(id)?.card.requires?.capabilities || []).filter(c => !selSpaces.some(sp => sp.caps.includes(c)));
@@ -352,9 +377,23 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   }
   for (const g of gaps) if (Array.isArray(selection.gaps) && !selection.gaps.some(x => x.description === g.description)) selection.gaps.push(/** @type {any} */ (g));
   /** @type {SystemInstance[]} */
-  const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] && selSpaces.some(sp => sp.id === selection.bind[id]) ? { space: selection.bind[id] } : {}) }));
+  const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] && (selSpaces.some(sp => sp.id === selection.bind[id]) || adapterIds.has(selection.bind[id])) ? { space: selection.bind[id] } : {}) }));
+  // Adapter instances (with their config) the selection resolved and the ones resolved here.
+  for (const a of adapters) systems.push(/** @type {SystemInstance} */ (structuredClone(a)));
   // Nested loops point at their space.
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
+  // Mashup relations: the adapter that declares each one joins with the structure code owns (which loops, which
+  // sub-space); its trigger, outcomes and maps are content the model writes through the form.
+  for (const m of decomposition.core?.mashup || []) {
+    const use = adaptersFor(registry, m.relation)[0];
+    if (!use || m.relation === 'union') continue;
+    const loops = m.mechanics.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card));
+    if (m.relation === 'nested' && !loops.length) continue;
+    const space = nested.find(n => loops.includes(n.use))?.space;
+    if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(m.relation === 'nested' ? loops : null))) continue;
+    systems.push({ use, with: m.relation === 'nested' ? { id: slug(m.mechanics.join('_')), inner: loops, ...(space ? { space } : {}) } : {} });
+    st.added.push({ use, why: `${m.relation} mashup: ${m.why || m.mechanics.join(', ')}` });
+  }
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
   const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
   const extent = primaryShape.extent;
@@ -376,7 +415,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const scaffolded = configureGenerators(doc, registry);
   // Every primitive of the collection is kept: repair fixes fields and reports what it cannot fix.
   const keep = new Set(doc.systems.map((/** @type {SystemInstance} */ s) => s.use));
-  let repaired = repairDocument(doc, { registry, logic, protect: keep });
+  let repaired = repairDocument(applySkins(doc, registry), { registry, logic, protect: keep });
   // Engagement fills what a loop needs from the content (a starting deck from the cards, sides from the units): when the
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }

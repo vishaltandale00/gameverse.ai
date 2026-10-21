@@ -303,22 +303,19 @@ function unwrapCountPredicates(doc, logic, fixes) {
   walk(doc, '');
 }
 
-/** The space instance used when a document has none or an unknown one (any shape the caller built). @typedef {{ use?: unknown, with?: unknown, id?: unknown, [k: string]: unknown }} FallbackSpace */
 /**
  * @typedef {object} RepairOptions
  * @property {RegistryLike} registry
  * @property {LogicLike} logic
  * @property {number} [rounds]
- * @property {FallbackSpace | null} [fallbackSpace]
- * @property {boolean} [isolate]
- * @property {Set<unknown>} [exclude] primitive ids never (re-)added; isolation adds the ones it removes
+ * @property {Set<unknown>} [exclude] primitive ids never (re-)added
  * @property {Set<unknown> | unknown[] | null} [protect] primitives of core mechanics: never removed
  */
 /**
  * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
  * @param {unknown} input @param {RepairOptions} options @returns {RepairResult}
  */
-export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false, exclude = new Set(), protect: protectIn = new Set() }) {
+export function repairDocument(input, { registry, logic, rounds = 6, exclude = new Set(), protect: protectIn = new Set() }) {
   // protect: primitives of core mechanics; never removed (isolation, capability or requirement fixes): their errors stay for the model.
   const protect = protectIn instanceof Set ? protectIn : new Set(protectIn || []);
   const kept = (/** @type {unknown} */ id) => protect.has(id);
@@ -390,7 +387,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           if (e.path === 'schema') { doc.schema = DOC_SCHEMA; fix('set schema'); }
           else if (e.path === 'id') { doc.id = slug(doc.title || doc.id || 'game').replace(/_/g, '-').slice(0, 60) || 'game'; fix('slugged id'); }
           else if (e.path === 'title') { doc.title = title(doc.id || 'Untitled game'); fix('titled from id'); }
-          else if (e.path === 'spaces' && fallbackSpace) { doc.spaces = [structuredClone(fallbackSpace)]; fix(`added space ${fallbackSpace.use}`); }
+          // A document without a space is reported: the world is the idea's, never a substitute.
           break;
         case 'id_invalid': {
           const v = getAt(doc, keys);
@@ -404,9 +401,9 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         case 'primitive_unknown': {
           if (!loc) break;
-          if (isSpace(String(loc.inst.use)) || loc.keys.length === 2 && loc.keys[0] === 'spaces') {
-            if (fallbackSpace) { loc.inst.use = fallbackSpace.use; loc.inst.with = structuredClone(fallbackSpace.with || {}); fix(`space replaced by ${fallbackSpace.use}`); }
-          } else { removed.push({ use: loc.inst.use, why: 'not in the catalogue' }); removals.push(loc.keys); fix(`removed unknown primitive ${loc.inst.use}`); }
+          // An unknown space stays an error (never swapped for another world); an unknown system id is not a primitive.
+          if (isSpace(String(loc.inst.use)) || loc.keys.length === 2 && loc.keys[0] === 'spaces') break;
+          else { removed.push({ use: loc.inst.use, why: 'not in the catalogue' }); removals.push(loc.keys); fix(`removed unknown primitive ${loc.inst.use}`); }
           break;
         }
         case 'primitive_slot': {
@@ -519,12 +516,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           if (common) { c.archetype = common; fix(`gave the character the common body '${common}'`); } else { c.spawn = false; fix('character has no body (spawn: false)'); }
           break;
         }
-        case 'plot_missing': {
-          const plot = (doc.plot ??= {}); if (!isBag(plot)) break;
-          const storyboard = (plot.storyboard ??= {}); if (!isBag(storyboard)) break;
-          storyboard.acts = [{ id: 'act_1', title: 'Act 1', beats: [{ id: 'begin', title: 'Begin' }] }]; fix('added a minimal storyboard');
-          break;
-        }
+        // plot_missing stays an error: the story is the model's to write, never a placeholder act.
         default: {
           const last = keys.at(-1);
           // "archetype 'x' has no <component> component": give it the component, synthesized from the owning card's shape.
@@ -563,49 +555,8 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
     if (!progressed) break;
   }
   checked = safePreflight(doc, registry, logic);
-  // Last resort (procedural skeletons): an error no generic fix handles comes from some primitive's own
-  // validate(); find the instance (system, generator or graphic) whose removal clears it, remove it, and report it as a gap.
-  if (!checked.ok && isolate) {
-    for (let pass = 0; pass < 6 && !checked.ok; pass++) {
-      const before = checked.errors.length;
-      // An instance and everything that requires it go together (removing a dependency alone just re-adds it).
-      // Candidates: every instance but the spaces themselves (systems, generators, graphics), keyed by path.
-      const cands = instances(doc).filter(x => !(x.keys.length === 2 && x.keys[0] === 'spaces') && !kept(x.inst.use));
-      const keyOf = (/** @type {InstanceEntry} */ x) => JSON.stringify(x.keys);
-      /** @param {InstanceEntry} x @returns {InstanceEntry[]} */
-      const dependents = x => {
-        const out = new Map([[keyOf(x), x]]);
-        for (let grew = true; grew;) { grew = false; for (const c of cands) { if (out.has(keyOf(c))) continue; const req = requirementsOf(registry, useOf(c.inst)).primitives; if ([...out.values()].some(o => req.some(r => { const u = o.inst.use; return u === r || (isStr(u) && u.startsWith(r + '.')); }))) { out.set(keyOf(c), c); grew = true; } } }
-        return [...out.values()];
-      };
-      /** @param {InstanceEntry[]} entries */
-      const without = entries => { const d = structuredClone(doc); const sorted = entries.map(x => x.keys).sort((a, b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) { const x = a[i], y = b[i]; if (x !== y) return typeof x === 'number' ? Number(y) - x : String(y).localeCompare(String(x)); } return b.length - a.length; }); for (const k of sorted) deleteAt(d, k); return d; };
-      const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l && !(l.keys.length === 2 && l.keys[0] === 'spaces'));
-      /** @type {InstanceEntry[] | null} */
-      let drop = located ? dependents(cands.find(c => keyOf(c) === JSON.stringify(located.keys)) || located) : null;
-      // A validator that crashes: find every instance whose validator throws on its own (all other candidates removed).
-      if (!drop && checked.errors.some(e => e.code === 'preflight_threw')) {
-        const crashers = cands.filter(c => safePreflight(without(cands.filter(o => o !== c)), registry, logic).errors.some(e => e.code === 'preflight_threw'));
-        if (crashers.length && crashers.length < cands.length) drop = [...new Map(crashers.flatMap(x => dependents(x)).map(x => /** @type {[string, InstanceEntry]} */ ([keyOf(x), x]))).values()];
-      }
-      if (!drop) {
-        let bestCount = before;
-        // Score each removal after the ordinary repair (which may itself fix what the removal exposes), never re-adding it.
-        for (const c of cands) { const group = dependents(c); if (group.some(x => kept(x.inst.use))) continue; const trial = repairDocument(without(group), { registry, logic, rounds: 3, fallbackSpace, protect, exclude: new Set([...exclude, ...group.map(x => x.inst.use)]) }); const n = trial.errors.length; if (n < bestCount) { drop = group; bestCount = n; } if (!n) break; }
-      }
-      if (drop && drop.some(x => kept(x.inst.use))) drop = null;
-      if (!drop) break;
-      for (const x of drop) {
-        removed.push({ use: x.inst.use, why: `could not be configured automatically: ${checked.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}` });
-        fixes.push({ code: 'isolate', path: x.keys.join('.'), action: `removed ${x.inst.use}` });
-      }
-      Object.assign(doc, without(drop));
-      for (const x of drop) exclude.add(x.inst.use); // isolated instances are never re-added by the next repair
-      const again = repairDocument(doc, { registry, logic, rounds, fallbackSpace, exclude, protect });
-      Object.assign(doc, again.doc); fixes.push(...again.fixes); removed.push(...again.removed);
-      checked = again.checked || safePreflight(doc, registry, logic);
-    }
-  }
+  // An error no generic fix handles (a primitive's own validate()) stays: it goes back to the model or the planner,
+  // never resolved by removing the primitive.
   // When ok, preflight accepted this draft (directly, or as the nested repair's result merged into it).
   return checked.ok
     ? { doc: /** @type {Doc} */ (doc), ok: true, checked, errors: checked.errors, fixes, removed, version: REPAIR_VERSION }

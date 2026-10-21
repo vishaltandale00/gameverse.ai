@@ -29,6 +29,7 @@ const POOL = {
 export default {
   id: KEY,
   card: {
+    loop: { verbs: [], progress: ['spent', 'restored'] },
     intent: 'Named resource pools (stamina, mana, focus, oxygen, fuel, hunger) on the player and any entity: max, regen or passive drain, regen delay after spending, exhaustion lockout, drains while a predicate holds, and effects when a pool empties or refills. Movement and combat spend pools through drain tags.',
     views: ['any'],
     params: {
