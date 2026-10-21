@@ -16,7 +16,7 @@
 // gravity through setCell; refill from the top is optional.
 // Triggers: the `swap` verb, and/or `piece_locked` from gameplay.falling.pieces on
 // the same board name; while resolving it emits board_busy, then board_idle.
-import { BOARD_CONTENT, boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleBoard, rint } from './puzzle-lib-board.js';
+import { BOARD_CONTENT, BOARD_RULES, boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleBoard, rint } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.match';
 const CHAIN_POWER = [0, 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512];
@@ -235,13 +235,13 @@ export default {
       board: boardParam([8, 8]),
       rule: { type: 'string', default: 'line', options: ['line', 'group'], effect: 'line: runs in rows/columns; group: connected same-colour groups' },
       min: { type: 'integer', default: 3, min: 2, max: 8, effect: 'run length (line) or group size (group) that clears' },
-      colors: { type: 'list', default: ['red', 'orange', 'yellow', 'green', 'blue'], min: 2, max: 8, of: { type: 'string' }, effect: 'gem colour tokens: the board cells (content.blocks ids)' },
+      colors: { type: 'list', default: ['red', 'orange', 'yellow', 'green', 'blue'], min: 2, max: 8, of: { type: 'ref', to: 'block' }, effect: 'gem colours: the board cells (content.blocks ids)' },
       trigger: { type: 'list', default: ['swap'], min: 1, of: { type: 'string', options: ['swap', 'land'] }, effect: 'swap verb and/or piece_locked from falling pieces on this board' },
       refill: { type: 'boolean', default: true, effect: 'new gems drop in from the top after clears' },
       gravity: { type: 'boolean', default: true, effect: 'cells fall after clears (fixed cells and blockers stay)' },
       specials: { type: 'boolean', default: true, effect: 'line min+1 striped, L/T area bomb, min+2 colour bomb, and their combos (line rule)' },
       scoring: { type: 'string', default: 'match3', options: ['match3', 'chain', 'virus', 'none'], effect: 'match3: 20/cell, jelly 100, blocker 80, specials, x cascade; chain: puyo chain power; virus: 100·2^n per virus' },
-      layout: { type: 'list', default: [], of: { type: 'string' }, effect: "rows top to bottom: '.' gem, '_' empty, 'j'/'J' jelly 1/2, 'b'/'B' blocker 1/2 hp, 'x' hole, 'g' garbage, 'v' virus, '1'-'8' colour index" },
+      layout: { type: 'list', default: [], of: { type: 'string', pattern: '^[._jJbBxgv1-8]*$' }, effect: "rows top to bottom: '.' gem, '_' empty, 'j'/'J' jelly 1/2, 'b'/'B' blocker 1/2 hp, 'x' hole, 'g' garbage, 'v' virus, '1'-'8' colour index" },
       fill: { type: 'string', default: 'nomatch', options: ['nomatch', 'none'], effect: "fill '.' cells at start without ready-made matches (and with a move)" },
       viruses: { type: 'integer', default: 0, min: 0, max: 200, effect: 'viruses placed at random in the lower board (no 3 in a row)' },
       ignoreRows: { type: 'integer', default: 0, min: 0, max: 10, effect: 'top rows that never match (puyo hidden row)' },
@@ -264,12 +264,20 @@ export default {
       content: [...BOARD_CONTENT],
     },
     requires: { capabilities: ['editCells'] },
+    rules: {
+      ...BOARD_RULES,
+      match_layout_size: { fields: ['layout', 'board.size'], message: 'layout is empty or board.size[1] rows of board.size[0] characters' },
+      match_layout_char: { fields: ['layout', 'colors'], message: "a layout colour index '1'-'8' is at most the number of colors", example: { colors: ['red', 'orange'], layout: ['3.......', ...Array(7).fill('........')] } },
+      match_rule_scoring: { fields: ['rule', 'scoring'], message: "the group rule scores with 'chain', 'virus' or 'none', not 'match3'" },
+      match_rule_trigger: { fields: ['trigger', 'rule'], message: 'swap triggers need the line rule' },
+      match_min: { fields: ['min', 'rule', 'board.size'], message: 'with the line rule, min is at most the longer board side', example: { board: { name: null, at: null, size: [4, 4], axes: null, fall: null, layer: null }, min: 5 } },
+    },
   },
   validate(config) {
     const errors = validateBoard(config.board);
     const [W, H] = config.board.size;
     if (config.layout.length && (config.layout.length !== H || config.layout.some(r => r.length !== W))) errors.push({ code: 'match_layout_size', path: 'with.layout', message: `layout must be ${H} rows of ${W} characters` });
-    config.layout.forEach((row, i) => { const bad = [...row].find(ch => !'._jJbBxgv12345678'.includes(ch)); if (bad) errors.push({ code: 'match_layout_char', path: `with.layout[${i}]`, message: `unknown layout char '${bad}'` }); if ([...row].some(ch => /[1-8]/.test(ch) && +ch > config.colors.length)) errors.push({ code: 'match_layout_char', path: `with.layout[${i}]`, message: 'colour index beyond colors' }); });
+    config.layout.forEach((row, i) => { if ([...row].some(ch => /[1-8]/.test(ch) && +ch > config.colors.length)) errors.push({ code: 'match_layout_char', path: `with.layout[${i}]`, message: 'colour index beyond colors' }); });
     if (config.rule === 'group' && config.scoring === 'match3') errors.push({ code: 'match_rule_scoring', path: 'with.scoring', message: "group rule scores with 'chain' (or 'none')", hint: "set scoring: 'chain'" });
     if (config.trigger.includes('swap') && config.rule === 'group') errors.push({ code: 'match_rule_trigger', path: 'with.trigger', message: 'swaps need the line rule' });
     if (config.rule === 'line' && config.min > Math.max(W, H)) errors.push({ code: 'match_min', path: 'with.min', message: 'run length longer than the board' });

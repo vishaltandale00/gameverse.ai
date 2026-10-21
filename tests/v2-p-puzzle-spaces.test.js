@@ -23,7 +23,7 @@ test('real grid: puyo pairs pop and settle through the grid settle capability', 
   const doc = base([{ id: 'g', use: 'engine.space.grid', with: { size: [6, 12] } }], [
     { use: 'gameplay.falling.pieces', with: { board: board(6, 12), sets: ['pairs'], pairColors: ['red', 'green'], hidden: 1, clearRows: 'none', scoring: 'none', onTopOut: [] } },
     { use: 'gameplay.match', with: { board: board(6, 12), rule: 'group', min: 4, colors: ['red', 'green'], trigger: ['land'], refill: false, scoring: 'chain', clearFrames: 1, settleFrames: 1 } },
-  ]);
+  ], { content: { blocks: [{ id: 'red' }, { id: 'green' }] } }); // the match colours are board cells (content.blocks)
   const { rt } = go(doc);
   const api = rt.space('g');
   for (const [x, y, t] of [[0, 0, 'green'], [1, 0, 'green'], [1, 1, 'green'], [0, 1, 'red'], [0, 2, 'red'], [0, 3, 'red']]) api.setCell([x, y], t, rt);

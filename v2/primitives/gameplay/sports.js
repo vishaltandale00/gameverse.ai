@@ -26,9 +26,9 @@ export default {
     params: {
       ball: { type: 'ref', to: 'archetype', required: true, effect: 'the ball archetype' },
       ballId: { type: 'string', default: 'ball' },
-      ballAt: { type: 'json', required: true, effect: 'kickoff spot of the ball' },
-      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'json' }, default: [] } } } },
-      goals: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, scores: { type: 'string', required: true, effect: 'team awarded when the ball enters' } } } },
+      ballAt: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true, effect: 'kickoff spot of the ball, in space coordinates' },
+      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, default: [], effect: 'kickoff spots of the members, in order' } } } },
+      goals: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, scores: { type: 'ref', to: 'sports_team', required: true, effect: 'the teams[] team awarded when the ball enters' } } } },
       periodSec: { type: 'number', default: 180, min: 1, max: 7200, unit: 's' },
       periods: { type: 'integer', default: 2, min: 1, max: 9 },
       breakSec: { type: 'number', default: 2, min: 0, max: 600, unit: 's' },
@@ -53,19 +53,14 @@ export default {
     actionSpace: { kick: { kind: 'impulse', params: { power: { min: 0, max: 30 } } } },
     requires: { capabilities: ['position'] },
     reads: [],
+    defines: [{ kind: 'sports_team', in: 'teams' }],
   },
   logic(logic) {
     logic.predicate('sports', {
+      codes: [{ code: 'sports_state', fields: ['sports'], message: `sports is one of ${STATES.join(', ')}`, example: { sports: 'halftime' } }],
       check: (p, path, errors) => { if (!STATES.includes(p.sports)) errors.push(err('sports_state', path, `sports must be ${STATES.join('|')}`)); },
       test: (p, rt) => { const s = rt.state.prim[ID]; if (!s) return false; return ['won', 'lost', 'draw'].includes(p.sports) ? s.result === p.sports : s.phase === p.sports; },
     });
-  },
-  validate(config) {
-    const errors = [], teams = new Set(config.teams.map(t => t.id));
-    if (teams.size !== config.teams.length) errors.push(err('sports_teams', 'with.teams', 'team ids must be unique'));
-    config.goals.forEach((g, i) => { if (!teams.has(g.scores)) errors.push(err('sports_teams', `with.goals[${i}].scores`, `unknown team '${g.scores}'`, [...teams].join(', '))); });
-    if (!Array.isArray(config.ballAt)) errors.push(err('sports_ball', 'with.ballAt', 'ballAt must be a position'));
-    return errors;
   },
   install(rt, config, instance) {
     const sid = instance.space ?? rt.doc.spaces[0].id, F = s => Math.round(s * 60);

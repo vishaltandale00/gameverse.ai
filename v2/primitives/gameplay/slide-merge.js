@@ -3,7 +3,7 @@
 // (the merged tile cannot merge again that move); fixed rocks split lines; after a
 // move that changed the board a 2 (or, with spawnFour chance, a 4) appears in a
 // random empty cell. Tiles are number tokens ('2', '4', ...), rocks 'rock'.
-import { BOARD_CONTENT, boardParam, validateBoard, boardOf, provideBoard, award, rint } from './puzzle-lib-board.js';
+import { BOARD_CONTENT, BOARD_RULES, boardParam, validateBoard, boardOf, provideBoard, award, rint } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.slide.merge';
 export const DIRS = ['left', 'right', 'up', 'down'];
@@ -59,7 +59,7 @@ export default {
       start: { type: 'integer', default: 2, min: 0, max: 16, effect: 'tiles placed at start' },
       spawnFour: { type: 'number', default: 0.1, min: 0, max: 1, effect: 'chance a spawned tile is a 4' },
       rocks: { type: 'integer', default: 0, min: 0, max: 16, effect: 'fixed rocks placed at random at start (at most width-2)' },
-      layout: { type: 'list', default: [], of: { type: 'string' }, effect: "rows top to bottom: 'x' rock, '.' empty, '1'..'9' tile 2^n (1 = 2)" },
+      layout: { type: 'list', default: [], of: { type: 'string', pattern: '^[.x1-9]*$' }, effect: "rows top to bottom: 'x' rock, '.' empty, '1'..'9' tile 2^n (1 = 2)" },
       rockToken: { type: 'string', default: 'rock', effect: 'token of rocks' },
       moves: { type: 'integer', default: 0, min: 0, max: 100000, effect: 'move limit (0 = none)' },
       target: { type: 'integer', default: 2048, min: 4, max: 1 << 30, effect: 'tile that emits tile_reached (stage goals usually read merged.value)' },
@@ -70,11 +70,16 @@ export default {
     provides: { events: ['slid', 'merged', 'merged:*', 'tile_spawned', 'tile_reached', 'move', 'slide_blocked', 'board_stuck', 'score'], vars: ['slide.max', 'slide.moves', 'score'], actions: ['slide'], services: ['board'], content: [...BOARD_CONTENT] },
     requires: { capabilities: ['editCells'] },
     actionSpace: { slide: { type: 'enum', options: DIRS } },
+    rules: {
+      ...BOARD_RULES,
+      slide_layout_size: { fields: ['layout', 'board.size'], message: 'layout is empty or board.size[1] rows of board.size[0] characters' },
+      slide_rocks: { fields: ['rocks', 'board.size'], message: 'rocks is at most the smaller board side minus 2' },
+      slide_target: { fields: ['target'], message: 'target is a power of two' },
+    },
   },
   validate(config) {
     const errors = validateBoard(config.board), [W, H] = config.board.size;
     if (config.layout.length && (config.layout.length !== H || config.layout.some(r => r.length !== W))) errors.push({ code: 'slide_layout_size', path: 'with.layout', message: `layout must be ${H} rows of ${W} characters` });
-    config.layout.forEach((row, i) => { if ([...row].some(ch => !'.x123456789'.includes(ch))) errors.push({ code: 'slide_layout_char', path: `with.layout[${i}]`, message: "layout chars are '.', 'x' and 1-9" }); });
     if (config.rocks > Math.max(0, Math.min(W, H) - 2)) errors.push({ code: 'slide_rocks', path: 'with.rocks', message: 'too many rocks for the board', hint: `at most ${Math.max(0, Math.min(W, H) - 2)}` });
     if (config.target & (config.target - 1)) errors.push({ code: 'slide_target', path: 'with.target', message: 'target must be a power of two' });
     return errors;
