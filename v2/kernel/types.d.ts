@@ -21,6 +21,8 @@ export interface ParamSchema {
   max?: number;
   unit?: string;
   options?: readonly string[];
+  /** Values a string param may never take (ids the primitive itself uses). */
+  reserved?: readonly string[];
   maxLength?: number;
   /** `ref`: the reference kind (base REF_KINDS or a card.defines kind). */
   to?: string;

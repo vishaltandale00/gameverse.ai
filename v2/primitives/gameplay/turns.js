@@ -20,7 +20,7 @@ import { pushModal, popModal, withDefaults, alive, hpOf, matchesAny, sortedEntit
 const ID = 'gameplay.turns';
 const DEFAULT_SIDES = [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'ai', members: [] }];
 const ACTION_FIELDS = {
-  id: { type: 'string', required: true }, label: { type: 'string' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
+  id: { type: 'string', required: true, reserved: ['move', 'overwatch', 'pass'] }, label: { type: 'string' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
   range: { type: 'number', default: 1, min: 0, max: 1e6 }, minRange: { type: 'number', default: 0, min: 0, max: 1e6 },
   target: { type: 'string', options: ['unit', 'cell', 'self', 'none'], default: 'unit' }, hostile: { type: 'boolean', default: true },
   los: { type: 'boolean', default: true, effect: 'unit targets must be in line of sight when the space has los' },

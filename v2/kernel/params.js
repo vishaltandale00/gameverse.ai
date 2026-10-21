@@ -47,6 +47,7 @@ export function checkParam(schema, value, path, errors, ctx) {
     case 'string':
       if (typeof value !== 'string') fail('param_type', 'must be a string');
       else if (schema.options && !schema.options.includes(value)) fail('param_option', `'${value}' is not one of ${schema.options.join('|')}`);
+      else if (Array.isArray(schema.reserved) && schema.reserved.includes(value)) fail('param_reserved', `'${value}' is reserved (${schema.reserved.join(', ')}): pick another`);
       else if (schema.maxLength && value.length > schema.maxLength) fail('param_range', `longer than ${schema.maxLength} characters`);
       return value;
     case 'ref': {

@@ -84,13 +84,14 @@ const plainString = s => Boolean(s && (s.type === 'ref' || (s.type === 'string' 
  * @param {Spec} spec @param {number} [depth] @param {RefContext | null} [refs] @returns {{ schema: JsonSchema, codec: Codec }}
  */
 export function specSchema(spec, depth = 0, refs = null) {
-  const d = describe(spec);
+  let d = describe(spec);
   const t = spec?.type;
   const ids = refs && (plainString(spec) || (t === 'list' && plainString(spec.of))) ? refs.allowed(spec) : null;
   if (ids && t !== 'list') return { schema: idEnum(ids, d), codec: 'raw' };
   if (ids && t === 'list' && depth < MAX_DEPTH) return { schema: arr(idEnum(ids, describe(spec.of || {})), d), codec: { list: 'raw' } };
   if (t === 'number' || t === 'integer') return { schema: { type: t, ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'boolean') return { schema: { type: 'boolean', ...(d ? { description: d } : {}) }, codec: 'raw' };
+  if (t === 'string' && Array.isArray(spec.reserved) && spec.reserved.length) d = `${d ? d + '; ' : ''}never ${spec.reserved.join(', ')} (reserved)`;
   if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : str(d), codec: 'raw' };
   if (t === 'ref') return { schema: str(`id of a ${spec.to}${d ? `; ${d}` : ''}`), codec: 'raw' };
   if (t === 'list' && depth < MAX_DEPTH) {
