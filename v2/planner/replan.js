@@ -10,6 +10,7 @@ import { isSpace, isGenerator, isGraphics, requirementsOf, satisfying } from './
 import { composeLoop, winProviders, cardLoop } from './loop.js';
 import { checkComposition } from './compose-check.js';
 import { loopProblems, ownersOf } from './loop-check.js';
+import { mashupSides } from './play-spec.js';
 import { isObj, isStr, list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -154,7 +155,7 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
   /** Bring in what a primitive requires (closure), as selection does. @param {string} id */
   const require = id => { for (const r of requirementsOf(registry, id).primitives) { if (sel.systems.some(x => x === r || x.startsWith(r + '.'))) continue; const s = satisfying(registry, r); if (s) { sel.systems.push(s); require(s); } } };
   const interaction = decomposition.core?.interaction || null;
-  const joined = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
+  const joined = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => mashupSides(x, decomposition.mechanics || []).inner.includes(id));
   /**
    * The next untried catalogue primitive for a mechanic: ranked by its declarations (declaredFit: loop verbs and
    * progress fitting the mechanic and what the failing primitive did, the play spec's interaction, how participants

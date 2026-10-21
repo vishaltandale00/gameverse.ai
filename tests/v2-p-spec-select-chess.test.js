@@ -43,8 +43,12 @@ test('the live decomposition left core.mashup empty; the post-check finds two id
   assert.deepEqual(p.ideas.map(i => i.from).sort(), ['chess', 'pok_mon']);
   assert.ok(p.ideas.find(i => i.from === 'pok_mon').loops.includes('gameplay.creature.battle'));
   assert.ok(p.ideas.find(i => i.from === 'chess').loops.includes('gameplay.turns'));
-  // A relation that links the joined idea completes it; a single idea's loops never ask.
-  assert.equal(mashupProblem({ ...d, core: { ...d.core, mashup: [{ relation: 'nested', mechanics: ['type_advantages'], why: '' }] } }, mappedOf, registry), null);
+  // A relation that links the joined idea ACROSS concepts completes it; one within a single concept relates nothing and
+  // is rejected; a single idea's loops never ask.
+  assert.equal(mashupProblem({ ...d, core: { ...d.core, mashup: [{ relation: 'nested', mechanics: ['turn_based_piece_movement', 'type_advantages'], why: '' }] } }, mappedOf, registry), null);
+  const within = mashupProblem({ ...d, core: { ...d.core, mashup: [{ relation: 'nested', mechanics: ['type_advantages'], why: '' }] } }, mappedOf, registry);
+  assert.equal(within?.code, 'mashup_within_concept');
+  assert.match(within.message, /one concept only/);
   assert.equal(mashupProblem({ ...d, mechanics: d.mechanics.map(m => ({ ...m, from: 'Chess' })) }, mappedOf, registry), null);
 });
 
@@ -61,7 +65,7 @@ test('the decomposition asks for a mashup entry per joined idea, by mechanic id'
 
 test('selection: piece movement fits pieces-turns (the turns loop, not avatar steps) and the mashup is re-asked as one field', async () => {
   const d = decomposition();
-  const writer = liveWriter(() => [{ relation: 'nested', mechanics: ['type_advantages'], why: 'a creature battle decides each capture' }]);
+  const writer = liveWriter(() => [{ relation: 'nested', mechanics: ['turn_based_piece_movement', 'type_advantages'], why: 'a creature battle decides each capture' }]);
   const sel = await selectPrimitives({ decomposition: d, registry, writer });
   const move = sel.mechanics.find(m => m.id === 'turn_based_piece_movement');
   assert.ok(!move.primitives.includes('gameplay.move.grid'), JSON.stringify(move.primitives));
@@ -77,7 +81,7 @@ test('selection: piece movement fits pieces-turns (the turns loop, not avatar st
   assert.deepEqual(Object.keys(asks[0].schema.schema.properties), ['field_1']);
   assert.match(asks[0].schema.schema.properties.field_1.description, /^core\.mashup/);
   assert.match(asks[0].user, /no mashup relation links/);
-  assert.deepEqual(d.core.mashup, [{ relation: 'nested', mechanics: ['type_advantages'], why: 'a creature battle decides each capture' }]);
+  assert.deepEqual(d.core.mashup, [{ relation: 'nested', mechanics: ['turn_based_piece_movement', 'type_advantages'], why: 'a creature battle decides each capture' }]);
   assert.equal(sel.completeness.mashup.asked, 1);
 });
 

@@ -11,9 +11,10 @@ import { cardLoop } from './loop.js';
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 
 /**
- * How a mashup's ideas join: `mechanics` (core mechanic ids of the joined idea) relate to the rest as nested (a loop
- * entered from the other, e.g. a creature battle deciding a capture), union (both loops in one space) or skin (only
- * its content and cast fill the other's slots).
+ * How a mashup's ideas join: `mechanics` relate mechanics ACROSS concepts (mechanic.from): first the mechanic of the
+ * idea it joins into (the outer side: the primary idea's loop), then the joined idea's mechanics (the inner side, its
+ * own loop first), related as nested (the inner loop entered from the outer, e.g. a creature battle deciding a
+ * capture), union (both loops in one space) or skin (only the inner's content and cast fill the outer's slots).
  * @typedef {{ relation: string, mechanics: string[], why: string }} Mashup
  */
 /**
@@ -41,9 +42,9 @@ export function coreSchema() {
       lose: { ...str, description: "how it is lost, in the game's own terms ('' when it cannot be lost)" },
       theme: str,
       narrative: { type: 'boolean', description: 'true when the idea has a story told in acts (characters, plot, quests); false for a pure loop' },
-      mashup: { type: 'array', description: 'one entry per joined idea when the idea combines two or more concepts (games, genres) that each bring their own loop: how that idea\'s mechanics relate to the primary idea\'s; [] only for a single idea', items: { type: 'object', additionalProperties: false, required: ['relation', 'mechanics', 'why'], properties: {
+      mashup: { type: 'array', description: 'one entry per joined idea when the idea combines two or more concepts (games, genres) that each bring their own loop: how that idea\'s mechanics relate ACROSS to the primary idea\'s (an entry naming mechanics of one concept only is rejected); [] only for a single idea', items: { type: 'object', additionalProperties: false, required: ['relation', 'mechanics', 'why'], properties: {
         relation: { type: 'string', enum: RELATIONS, description: 'nested: its loop is entered from the other (a creature battle deciding a chess capture); union: both loops run in one space; skin: only its content and cast fill the other\'s slots' },
-        mechanics: { type: 'array', items: str, description: 'ids (exactly as in mechanics[].id) of the joined idea\'s mechanics, its own loop first' }, why: str } } },
+        mechanics: { type: 'array', items: str, description: 'ids (exactly as in mechanics[].id) from BOTH concepts: first the primary idea\'s mechanic it joins into (its loop), then the joined idea\'s mechanics, its own loop first' }, why: str } } },
     },
   };
 }
@@ -81,8 +82,22 @@ export const normalizeMashup = value => (Array.isArray(value) ? value : []).filt
 const ideaKey = from => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || []).join('_');
 
 /**
- * What a mashup check found: the joined ideas whose loops each declare their own win, and which of them no relation links.
- * @typedef {{ code: 'mashup_missing', ideas: Array<{ from: string, mechanics: string[], loops: string[] }>, unlinked: string[], message: string }} MashupProblem
+ * The two sides of a mashup entry, by concept (mechanic.from): `outer` the mechanics of its first mechanic's concept
+ * (the idea joined into), `inner` the rest (the joined idea). An entry within one concept has no outer side.
+ * @param {Mashup} entry @param {Array<{ id: string, from: string }>} mechanics @returns {{ outer: string[], inner: string[] }}
+ */
+export function mashupSides(entry, mechanics) {
+  const fromOf = new Map(mechanics.map(m => [m.id, ideaKey(m.from)]));
+  const first = fromOf.get(entry.mechanics[0]) || '';
+  const outer = entry.mechanics.filter(id => (fromOf.get(id) || '') === first);
+  return outer.length === entry.mechanics.length ? { outer: [], inner: [...entry.mechanics] } : { outer, inner: entry.mechanics.filter(id => !outer.includes(id)) };
+}
+
+/**
+ * What a mashup check found: the joined ideas whose loops each declare their own win, which of them no relation
+ * across concepts links (mashup_missing), and the entries that relate mechanics within one concept only
+ * (mashup_within_concept: rejected, the field is asked again).
+ * @typedef {{ code: 'mashup_missing' | 'mashup_within_concept', ideas: Array<{ from: string, mechanics: string[], loops: string[] }>, unlinked: string[], within: Mashup[], message: string }} MashupProblem
  */
 
 /**
@@ -117,10 +132,17 @@ export function mashupProblem(decomposition, primitivesOf, registry) {
   }
   if (loops.size < 2 || ideas.size < 2) return null;
   const fromOf = new Map(decomposition.mechanics.map(m => [m.id, ideaKey(m.from)]));
-  const linked = new Set(core.mashup.flatMap(x => x.mechanics.map(id => fromOf.get(id))).filter(Boolean));
+  // Only an entry that relates mechanics across concepts links them; one within a single concept relates nothing.
+  const concepts = (/** @type {Mashup} */ x) => new Set(x.mechanics.map(id => fromOf.get(id)).filter(Boolean));
+  const across = core.mashup.filter(x => concepts(x).size >= 2), within = core.mashup.filter(x => concepts(x).size < 2);
+  const linked = new Set(across.flatMap(x => [...concepts(x)]));
   const unlinked = [...ideas.keys()].filter(k => !linked.has(k));
-  if (unlinked.length < 2) return null;
+  if (!unlinked.length && !within.length) return null;
   const list = [...ideas.values()];
-  return { code: 'mashup_missing', ideas: list, unlinked,
-    message: `the idea combines ${list.map(i => `${i.from} (${i.mechanics.join(', ')} -> ${i.loops.join(', ')})`).join(' and ')}, whose loops each declare their own win (card.loop.win), but no mashup relation links ${unlinked.join(', ')}: core.mashup must say how the joined idea's mechanics relate (nested | union | skin, by mechanic id)` };
+  const what = `the idea combines ${list.map(i => `${i.from} (${i.mechanics.join(', ')} -> ${i.loops.join(', ')})`).join(' and ')}, whose loops each declare their own win (card.loop.win)`;
+  const how = 'each core.mashup entry relates mechanics ACROSS concepts: first the primary idea\'s mechanic it joins into, then the joined idea\'s mechanics (nested | union | skin, by mechanic id)';
+  if (within.length) return { code: 'mashup_within_concept', ideas: list, unlinked, within,
+    message: `${what}, but ${within.map(x => `${x.relation} [${x.mechanics.join(', ')}]`).join(' and ')} relate${within.length === 1 ? 's' : ''} mechanics of one concept only (${within.map(x => [...concepts(x)].join(', ') || 'none').join('; ')}): ${how}` };
+  return { code: 'mashup_missing', ideas: list, unlinked, within,
+    message: `${what}, but no mashup relation links ${unlinked.join(', ')} across concepts: ${how}` };
 }

@@ -33,7 +33,7 @@ import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
-import { isAvatar } from './play-spec.js';
+import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
 import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
@@ -123,10 +123,15 @@ const storyRunner = registry => registry.cards().find(c => (c.reads || []).inclu
 const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
 /**
- * The primitives of the mechanics a nested mashup relation names (the loops entered from the rest).
- * @param {Decomposition['core']} spec @param {Selection} selection @returns {Set<string>}
+ * The joined (inner) side's mechanic ids of the play spec's mashup entries of a relation (play-spec.js mashupSides).
+ * @param {Decomposition} decomposition @param {string} relation @returns {string[]}
  */
-const innerOf = (spec, selection) => new Set((spec?.mashup || []).filter(m => m.relation === 'nested').flatMap(m => m.mechanics)
+const joinedMechanics = (decomposition, relation) => (decomposition.core?.mashup || []).filter(m => m.relation === relation).flatMap(m => mashupSides(m, decomposition.mechanics || []).inner);
+/**
+ * The primitives of the mechanics a nested mashup relation joins (the loops entered from the rest).
+ * @param {Decomposition} decomposition @param {Selection} selection @returns {Set<string>}
+ */
+const innerOf = (decomposition, selection) => new Set(joinedMechanics(decomposition, 'nested')
   .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => /^(gameplay|plot)\./.test(id)));
 
 /**
@@ -134,7 +139,7 @@ const innerOf = (spec, selection) => new Set((spec?.mashup || []).filter(m => m.
  * enters from the rest last (they never own the game's win). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry
  */
 export function loopCore(decomposition, selection, registry) {
-  const inner = innerOf(decomposition.core, selection);
+  const inner = innerOf(decomposition, selection);
   return [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
 }
 
@@ -325,7 +330,7 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
   const target = /** @type {import('./content.js').Contract} */ (contractsOf(registry, owner).find(sectionOf));
   const to = /** @type {string} */ (sectionOf(target));
   const entries = (/** @type {string} */ path) => { const v = path.split('.').reduce((/** @type {any} */ o, k) => o?.[k], doc); return Array.isArray(v) ? v.length : isObj(v) ? Object.keys(v).length : 0; };
-  const skinned = new Set((decomposition.core?.mashup || []).filter(m => m.relation === 'skin').flatMap(m => m.mechanics)
+  const skinned = new Set(joinedMechanics(decomposition, 'skin')
     .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []));
   const others = st.systems.filter(id => id !== owner).sort((a, b) => Number(skinned.has(b)) - Number(skinned.has(a)));
   const from = others.flatMap(id => contractsOf(registry, id).map(c => (c.need === 'section' ? String(c.at) : '')))
@@ -597,18 +602,60 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   for (const a of adapters) systems.push(/** @type {SystemInstance} */ (structuredClone(a)));
   // Nested loops point at their space.
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
-  // Mashup relations: the adapter that declares each one joins with the structure code owns (which loops, which
-  // sub-space); a nested encounter's trigger and outcomes are content the model writes through the form, a skin's
-  // maps are written below (configureSkins).
+  // Mashup relations across concepts: the adapter that declares each one (card.adapts.relation) joins, its params
+  // filled from declarations. nested: the joined side's loops are entered on the outer loop's declared progress event
+  // (one that names its subject: a typed `event:*` it provides) and their declared win and lose (effects params) emit
+  // the outcomes the adapter maps back; skin: its maps (configureSkins, below); union: a region of the space kind the
+  // joined loop declares, projected by the adapter's own adapt() hook, when no chosen space is that kind (otherwise
+  // both loops already run in one space). What cannot be derived is a gap, never a guess.
+  const loopsOf = (/** @type {string[]} */ ids) => [...new Set(ids.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card)))];
   for (const m of decomposition.core?.mashup || []) {
     const use = adaptersFor(registry, m.relation)[0];
-    if (!use || m.relation === 'union') continue;
-    const loops = m.mechanics.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card));
-    if (m.relation === 'nested' && !loops.length) continue;
-    const space = nested.find(n => loops.includes(n.use))?.space;
-    if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(m.relation === 'nested' ? loops : null))) continue;
-    systems.push({ use, with: m.relation === 'nested' ? { id: slug(m.mechanics.join('_')), inner: loops, ...(space ? { space } : {}) } : {} });
-    st.added.push({ use, why: `${m.relation} mashup: ${m.why || m.mechanics.join(', ')}` });
+    const sides = mashupSides(m, decomposition.mechanics || []);
+    const inner = loopsOf(sides.inner), outer = loopsOf(sides.outer).filter(id => !inner.includes(id));
+    const gap = (/** @type {string} */ why) => gaps.push({ mechanic: m.mechanics[0] || 'mashup', description: `needs adapter: ${m.relation} mashup of ${m.mechanics.join(', ')}`, importance: 'core', kind: 'adapter', why });
+    if (!use) { gap(`no registered adapter declares the ${m.relation} relation (card.adapts.relation)`); continue; }
+    if (m.relation === 'nested') {
+      if (!inner.length) continue;
+      if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(inner))) continue;
+      const id = slug(m.mechanics.join('_'));
+      const host = outer[0] || [st.win?.use, ...st.core].find(x => isStr(x) && !inner.includes(x) && cardLoop(registry.get(x)?.card)) || null;
+      const hostCard = host ? registry.get(host)?.card : null;
+      const progress = cardLoop(hostCard)?.progress || [];
+      const on = progress.find(e => (hostCard?.provides?.events || []).includes(`${e}:*`)) || progress[0] || null;
+      /** @type {Array<{ on: string, result: string, do: unknown[] }>} */
+      const outcomes = [];
+      for (const [side, result] of /** @type {const} */ ([['win', 'won'], ['lose', 'lost']])) for (const u of inner) {
+        const p = cardLoop(registry.get(u)?.card)?.[side]?.param;
+        const own = systems.find(s => s.use === u);
+        if (!own || !isStr(p) || registry.get(u)?.card.params?.[p]?.type !== 'effects') continue;
+        const event = `${id}_${result}`;
+        own.with = { ...(own.with || {}), [p]: [...list(own.with?.[p]), { do: 'emit', event }] };
+        if (!outcomes.some(o => o.on === event)) outcomes.push({ on: event, result, do: [] });
+      }
+      if (!on || !outcomes.length) { gap(`the nested encounter needs ${!on ? `an outer loop progress event to start it (${host || 'no outer loop'} declares none)` : `the inner loop's declared win or lose as effects (${inner.join(', ')})`}`); continue; }
+      const space = nested.find(n => inner.includes(n.use))?.space;
+      systems.push({ use, with: { id, inner, on, outcomes, ...(space ? { space } : {}) } });
+    } else if (m.relation === 'skin') {
+      if (systems.some(s => s.use === use)) continue;
+      systems.push({ use, with: {} });
+    } else {
+      const proj = registry.get(use);
+      for (const u of inner) {
+        const want = (cardLoop(registry.get(u)?.card)?.space || []).filter(/** @returns {e is string} */ e => isStr(e) && registry.has(e));
+        const host = selSpaces[0];
+        if (!host || !want.length || want.some(w => selSpaces.some(sp => sp.use === w))) continue;
+        const kind = want[0];
+        const missing = { capabilities: capsOf(kind).filter(c => !host.caps.includes(c)), content: [], services: [] };
+        if (typeof proj?.adapt !== 'function') continue;
+        const proposal = proj.adapt({ space: { id: host.id, use: host.use, with: host.with || {}, caps: host.caps }, missing, neededBy: [{ use: u, card: /** @type {any} */ (registry.get(u)?.card) }], registry });
+        if (!proposal) { gap(`${use} cannot project ${kind} onto ${host.use} for ${u}`); continue; }
+        const rid = isStr(proposal.id) ? proposal.id : null;
+        systems.push(/** @type {SystemInstance} */ ({ use, ...(rid ? { id: rid } : {}), space: host.id, with: isObj(proposal.with) ? proposal.with : {} }));
+        const own = systems.find(s => s.use === u); if (own && rid) own.space = rid;
+      }
+    }
+    st.added.push({ use, why: `${m.relation} mashup across ${sides.outer.length ? `${sides.outer.join(', ')} -> ` : ''}${sides.inner.join(', ')}: ${m.why || m.mechanics.join(', ')}` });
   }
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
   const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };

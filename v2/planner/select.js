@@ -9,7 +9,7 @@ import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
 import { cardLoop, endsGame } from './loop.js';
-import { isAvatar, mashupProblem } from './play-spec.js';
+import { isAvatar, mashupProblem, mashupSides } from './play-spec.js';
 import { askMashup } from './decompose.js';
 import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
@@ -456,7 +456,8 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   // The mapping fits how the idea is played: what does not serve the interaction leaves its mechanic, and what it did
   // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap.
-  const joinedBy = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
+  // The joined idea's mechanics (the inner side of a mashup entry across concepts, play-spec.js mashupSides).
+  const joinedBy = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => mashupSides(x, decomposition.mechanics || []).inner.includes(id));
   const interactionFit = fitInteraction({ mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
   for (const c of interactionFit.changes) {
     if (!mechanics.some(m => m.primitives.includes(c.removed))) chosen.delete(c.removed);
