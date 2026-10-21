@@ -14,7 +14,7 @@ import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath } from './outline-form.js';
 import { preset, coreOf, zoneStart, wireCore } from './presets.js';
-import { isAvatar } from './modes.js';
+import { isAvatar, modeOf } from './modes.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
@@ -257,7 +257,8 @@ const isDocShape = x => isObj(x) && (Array.isArray(x.spaces) || x.schema === DOC
  * @returns {Promise<OutlineResult>}
  */
 export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null }) {
-  const keep = protect || coreOf(selection, registry);
+  // The core: mechanics' gameplay/plot primitives and the play spec's mode (and the primitive its params live on).
+  const keep = protect || coreOf({ ...selection, mode: decomposition.core ? modeOf(registry, decomposition.core.mode) : null }, registry);
   /** @param {Doc} doc @returns {Promise<Gate & { problems: VerifyProblem[], v: Verification }>} */
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.

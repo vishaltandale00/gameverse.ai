@@ -30,16 +30,16 @@ import { memoryCtx } from './kernel-bench.mjs';
 
 // The bench (the user's consolidated list). Seeds are fixed per idea so runs are comparable.
 export const IDEAS = [
-  { id: 'chess-pokemon', seed: 201, prompt: 'chess but with pokemon' },
-  { id: 'mario', seed: 101, prompt: 'A Mario-style platformer: run and jump across levels, stomp enemies, collect coins and reach the flag' },
-  { id: 'kart', seed: 102, prompt: 'Mario Kart with shopping carts' },
-  { id: 'farming', seed: 202, prompt: 'A cozy farming game on a floating island' },
-  { id: 'clock-dungeon', seed: 203, prompt: '3D Zelda-style dungeon inside a giant clock' },
-  { id: 'pacman-library', seed: 106, prompt: 'Pac-Man in a haunted library' },
-  { id: 'card-battler', seed: 204, prompt: 'A card battler: build a deck of spell cards and duel monsters' },
-  { id: 'match3', seed: 205, prompt: 'A match-3 puzzle game with enchanted gems' },
-  { id: 'tower-defense', seed: 108, prompt: 'A tower-defense game: build towers along the path to stop waves of enemies' },
-  { id: 'mystery', seed: 109, prompt: 'A mystery adventure: question suspects, gather clues and name the culprit' },
+  { id: 'chess-pokemon', seed: 201, prompt: 'chess but with pokemon' , avatar: false},
+  { id: 'mario', seed: 101, prompt: 'A Mario-style platformer: run and jump across levels, stomp enemies, collect coins and reach the flag' , avatar: true},
+  { id: 'kart', seed: 102, prompt: 'Mario Kart with shopping carts' , avatar: true},
+  { id: 'farming', seed: 202, prompt: 'A cozy farming game on a floating island' , avatar: true},
+  { id: 'clock-dungeon', seed: 203, prompt: '3D Zelda-style dungeon inside a giant clock' , avatar: true},
+  { id: 'pacman-library', seed: 106, prompt: 'Pac-Man in a haunted library' , avatar: true},
+  { id: 'card-battler', seed: 204, prompt: 'A card battler: build a deck of spell cards and duel monsters' , avatar: false},
+  { id: 'match3', seed: 205, prompt: 'A match-3 puzzle game with enchanted gems' , avatar: false},
+  { id: 'tower-defense', seed: 108, prompt: 'A tower-defense game: build towers along the path to stop waves of enemies' , avatar: false},
+  { id: 'mystery', seed: 109, prompt: 'A mystery adventure: question suspects, gather clues and name the culprit' , avatar: true},
 ];
 // The first bench's set (the "before" run), kept for comparison: --set original.
 export const ORIGINAL_IDEAS = [
@@ -110,8 +110,9 @@ export async function playReport(doc, registry, logic, { playtestMs = 3000, budg
 }
 
 /** Is the avatar there exactly when the idea's interaction needs one? (base locomotion or a vehicle the player drives) */
-export function avatarFit(decomposition, doc, registry) {
-  const want = decomposition.core ? isAvatar(decomposition.core.interaction) : null;
+export function avatarFit(decomposition, doc, registry, expected = null) {
+  // The bench's own expectation for the idea when it has one, else what the play spec says.
+  const want = typeof expected === 'boolean' ? expected : decomposition?.core ? isAvatar(decomposition.core.interaction) : null;
   const moves = (doc.systems || []).some(s => registry.get(s.use)?.card.locomotion === 'base' || registry.get(s.use)?.card.engage?.player?.spawn);
   return { want, has: moves, ok: want === null ? null : want === moves };
 }
@@ -160,7 +161,7 @@ export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offli
         decomposition: { views: out.decomposition.views, spaces: out.decomposition.spaces.map(x => x.kind), source: out.decomposition.source },
         kindView: kindViewPreserved(out.decomposition, out.doc, cat.registry),
         core: out.decomposition.core || null, structure: out.outline?.structure || null,
-        avatar: avatarFit(out.decomposition, out.doc, cat.registry),
+        avatar: avatarFit(out.decomposition, out.doc, cat.registry, idea.avatar),
         coverage: coreCoverage(out.selection, out.doc, out.selection.gaps),
         census: census(out.doc, cat.registry, cat.logic), outlineCensus: fp ? census(fp, cat.registry, cat.logic, { boot: 0 }) : null,
         play: await playReport(out.doc, cat.registry, cat.logic, { playtestMs }),
@@ -213,6 +214,49 @@ export function row(g) {
     `avatar ${g.avatar?.ok === null ? '-' : g.avatar?.ok ? 'fits' : g.avatar?.has ? 'UNNEEDED' : 'MISSING'}`, `core ${g.coverage ? `${g.coverage.covered} covered, ${g.coverage.gapped} gapped${g.coverage.dropped.length ? `, DROPPED ${g.coverage.dropped.join(',')}` : ''}` : '-'}`, `arch ${c.archetypesReal}/${c.archetypes} real, ${c.archetypesPlaced} placed`, `spawns ${c.spawnRulesNonPlayer}+${c.spawnEffects}fx`, `rt ents ${c.runtime?.entities ?? '-'}`, `items ${c.items}`, `chars ${c.characters}`,
     `quests ${c.questsRead}/${c.quests}`, `dlg ${c.dialogueRead}/${c.dialogue}`, `zones ${c.zonesDistinct}/${c.zones} distinct`, `play: ${p.crashes ? `CRASH ${p.crashCodes.join(',')}` : 'no crash'}, explored ${p.explored}, completed ${p.completed === undefined ? (p.ending ? 'yes' : 'no') : p.completed ? `yes (${p.by}${p.trace != null ? `, trace ${p.trace}` : ''})` : 'no'}`,
     `total ${Math.round((g.timings?.totalMs ?? g.ms) / 1000)}s`].join(' | ');
+}
+
+/**
+ * Re-measure saved bench runs with today's measures (census, the playtest agent and mode bots, kind/view, avatar
+ * fit against the idea's expectation, core coverage), so runs made by older code compare column for column.
+ * Zero model calls. dirs: bench run directories (each with report.json and <idea>.json documents).
+ */
+export async function evaluateRuns(dirs, { playtestMs = 3000 } = {}) {
+  const base = await loadCatalogue();
+  const rows = [];
+  for (const dir of dirs) {
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'));
+    for (const g of report.games) {
+      const idea = [...IDEAS, ...ORIGINAL_IDEAS].find(i => i.id === g.id) || {};
+      const file = join(dir, `${g.id}.json`);
+      const row = { id: g.id, run: report.label || dir, ok: g.ok && existsSync(file), reason: g.reason || null, failedStage: g.failedStage || null, timings: g.timings || null, ms: g.ms, modelCalls: (g.modelCalls || []).length };
+      if (row.ok) {
+        const doc = JSON.parse(readFileSync(file, 'utf8'));
+        const cat = doc?.experiments?.length ? await catalogueForDoc(doc) : base;
+        const decomposition = { views: g.decomposition?.views || [], core: g.core || null };
+        const mech = g.mechanics || [];
+        Object.assign(row, {
+          kindView: kindViewPreserved(decomposition, doc, cat.registry), avatar: avatarFit(decomposition, doc, cat.registry, idea.avatar),
+          // A core mechanic mapped to nothing was reported as a gap by the selection.
+          coverage: coreCoverage({ mechanics: mech }, doc, mech.filter(m => !(m.primitives || []).length).map(m => ({ mechanic: m.id }))),
+          census: census(doc, cat.registry, cat.logic), play: await playReport(doc, cat.registry, cat.logic, { playtestMs }), core: g.core || null,
+        });
+      }
+      rows.push(row);
+      process.stderr.write(`${row.id}: ${row.ok ? 'measured' : 'failed run'}\n`);
+    }
+  }
+  return rows;
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1] && process.argv.includes('--evaluate')) {
+  const rest = process.argv.slice(process.argv.indexOf('--evaluate') + 1), end = rest.findIndex(a => a.startsWith('--'));
+  const dirs = end < 0 ? rest : rest.slice(0, end);
+  const rows = await evaluateRuns(dirs);
+  const out = arg('out', fileURLToPath(new URL('../../local-data/v2/bench/generation/evaluated.json', import.meta.url)));
+  writeFileSync(out, JSON.stringify(rows, null, 1));
+  for (const r of rows) console.log(`${r.run} | ${row(r)}`);
+  process.exit(0);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
