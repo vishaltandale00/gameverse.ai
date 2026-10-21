@@ -139,7 +139,7 @@ export function spaceCandidates(registry, decomposition, exclude = []) {
   const views = (decomposition.views || []).filter(v => v !== 'ui' || decomposition.views.length === 1);
   const primary = views[0] || null;
   // Declared spaces (ids) that are not registered here name nothing to build on; capabilities stay.
-  const declared = interaction ? registry.ids().map(id => cardLoop(cardOf(registry, id))).filter(l => l && l.interaction === interaction).flatMap(l => l?.space || []).filter(e => !(isStr(e) && isSpace(e) && !registry.has(e))) : [];
+  const declared = interaction ? registry.ids().map(id => cardLoop(cardOf(registry, id))).filter(l => l && l.interactions.includes(interaction)).flatMap(l => l?.space || []).filter(e => !(isStr(e) && isSpace(e) && !registry.has(e))) : [];
   const kind = decomposition.spaces?.[0]?.kind ? KIND_HINTS[decomposition.spaces[0].kind] : null;
   /** @type {Array<{ use: string, score: number, why: string }>} */
   const out = [];
@@ -232,7 +232,7 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   let bind = {};
   // Validity (retrieval.js): the composition on the adapter instances resolveAdapters gives it, and preflight on the
   // partial document; the same checks decide the options and the whole collection after a pick.
-  const checks = collectionChecks({ registry, space: { id: sid, use }, variants, documented });
+  const checks = collectionChecks({ registry, space: { id: sid, use }, variants, documented, interaction: decomposition.core?.interaction || null });
   const stateOf = () => collectionState({ checks, systems, variant, variants });
   let state = stateOf();
   /** @type {string[]} */

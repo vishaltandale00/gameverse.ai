@@ -54,8 +54,9 @@
 //                reached through an adapter for the capabilities it lacks; mode.bot is a registered strategy
 //                (v2/verify/strategies); mode.win.param (and lose.param) exist and, in a document, win is
 //                wired to an ending (an end_game effect or a plot.endings id); and an input primitive whose
-//                card.interactions includes mode.interaction is present (input cards without
-//                card.interactions are a type hole).
+//                card.interactions includes the interaction the loop is played in is present: the play spec's
+//                (opts.interaction) when the loop's declared interactions include it, else one of them (input
+//                cards without card.interactions are a type hole).
 //
 // Planner use (select.js is owned elsewhere; the one call site to add, at the end of selectPrimitives just
 // before `return`, with `selection` the object it is about to return):
@@ -109,6 +110,7 @@ import { list, prop } from '../kernel/guards.js';
  * @property {Record<string, unknown>} [content]  the content form for a selection: document sections by path
  *                                     ('content.cards') or as a document-shaped object, for mode needs
  * @property {Iterable<string>} [strategies]  registered bot strategy ids (default: v2/verify/strategies)
+ * @property {string | null} [interaction]  the play spec's interaction: a loop that serves it is played in it
  */
 /**
  * @typedef {object} CompositionResult
@@ -633,16 +635,20 @@ export function checkComposition(input, registry, opts = {}) {
         const wired = /"do":"end_game"/.test(text) || (typeof value === 'string' && endings.has(value)) || [...endings].some(id => text.includes(`"${id}"`));
         if (!wired) fail({ check: 'mode', code: 'mode_win_unwired', unit: u.use, message: `'${u.use}' with.${param} reaches no ending`, hint: 'end the game (end_game) or name a plot.endings id there', adaptable: false });
       }
-      // interaction: an input primitive that declares it.
-      if (typeof md.interaction === 'string' && md.interaction !== 'none') {
+      // interaction: an input primitive that serves the interaction the loop is played in (the play spec's when the
+      // loop serves it, else any it declares).
+      const own = /** @type {string[]} */ (md.interactions).filter(x => x !== 'none');
+      const played = opts.interaction && own.includes(opts.interaction) ? [opts.interaction] : own;
+      if (played.length) {
         const pool = inputs.length ? inputs.map(i => i.use) : registry.ids('engine').filter(id => id.startsWith('engine.input.'));
         const declared = pool.filter(id => isList(cardOf(registry, id)?.interactions));
-        const match = declared.find(id => /** @type {unknown[]} */ (cardOf(registry, id)?.interactions).includes(md.interaction));
+        const servedBy = (/** @type {string} */ id) => played.find(x => /** @type {unknown[]} */ (cardOf(registry, id)?.interactions).includes(x));
+        const match = declared.find(id => servedBy(id));
         // An input the host supplies when a document leaves it out (card.hostDefault) needs no instance.
-        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${md.interaction} interaction`) && !cardOf(registry, match)?.hostDefault) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
+        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${servedBy(match)} interaction`) && !cardOf(registry, match)?.hostDefault) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
         const undeclared = pool.filter(id => !declared.includes(id));
         if (undeclared.length) for (const id of undeclared) hole('mode', { card: id, field: 'card.interactions', code: 'input_interactions_undeclared', message: 'input primitive does not declare the interactions it supports (card.interactions)' });
-        else fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no input primitive supports the '${md.interaction}' interaction`, hint: `inputs: ${pool.join(', ') || 'none'}`, adaptable: false });
+        else fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no input primitive supports the ${played.map(x => `'${x}'`).join(' or ')} interaction`, hint: `inputs: ${pool.join(', ') || 'none'}`, adaptable: false });
       }
     }
 
