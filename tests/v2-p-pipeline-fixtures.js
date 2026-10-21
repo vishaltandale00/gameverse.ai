@@ -83,6 +83,23 @@ export function fakeDecisions(answer, provider = 'fake') {
   return { provider, calls, async decide(req) { calls.push(req); return { provider, answers: answer(req.questions, req) }; } };
 }
 
+/**
+ * Answers the iterative build's questions (v2/planner/build.js) from preferences, or null for any other request:
+ * pick_space takes the first preferred space on offer (else the first offered), pick_primitive the first preferred
+ * primitive the mechanic is offered (picks: mechanic id -> ids), else "none".
+ */
+export function buildAnswer(req, { space = [], picks = {} } = {}) {
+  const name = String(req.schema?.name || '');
+  const props = req.schema?.schema?.properties || {};
+  if (name === 'pick_space') { const offered = props.space.enum; return JSON.stringify({ space: space.find(s => offered.includes(s)) || offered[0], why: 'scripted' }); }
+  if (name === 'pick_primitive') {
+    const mechanic = /\nMechanic (\S+) \(/.exec(req.user)?.[1];
+    const offered = props.pick.enum;
+    return JSON.stringify({ pick: (picks[mechanic] || []).find(id => offered.includes(id)) || 'none', why: 'scripted', spec: '' });
+  }
+  return null;
+}
+
 export const decomposition = (mechanics, extra = {}) => ({
   version: 'test', title: 'Test Game', premise: 'A test premise. Second sentence.', tone: 'brisk', references: [], views: [], spaces: [], acts: 2, zones: 4,
   mechanics: mechanics.map((m, i) => ({ id: `m${i}`, verb: m.split(' ')[0], description: m, from: '', importance: 'core' })), ...extra,

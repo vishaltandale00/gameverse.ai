@@ -8,7 +8,7 @@ import { createGameService } from '../v2/server/api.mjs';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { runBench } from '../v2/tools/kernel-bench.mjs';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
 const tmp = () => mkdtempSync(join(os.tmpdir(), 'gv-pipeline-'));
 
@@ -26,7 +26,8 @@ function scriptedModel() {
   return fakeWriter([(req) => {
     if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
       core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } });
-    if (req.schema?.name === 'mechanic_map') return JSON.stringify({ mappings: [{ mechanic: 'collect', primitives: ['gameplay.inventory'], covered: true, why: '' }, { mechanic: 'tides', primitives: ['gameplay.hazard'], covered: true, why: '' }] });
+    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });
+    if (built) return built;
     if (String(req.schema?.name || '').startsWith('game_outline')) {
       // The outline form: the scaffold's zones, named; params, story and endings left to the scaffold's defaults.
       const scaffold = JSON.parse(req.user.split('not the game):\n')[1].split('\n\nWrite the outline')[0]);

@@ -100,12 +100,12 @@ test('a decision model picks among the candidates per mechanic; "none" makes a g
   assert.equal(sel.provider, 'fake');
 });
 
-test('a connected model that cannot map the mechanics fails selection after a retry; the lexical ranking never stands in', async () => {
+test('a connected model whose answers are not on offer fails selection after a retry; the lexical ranking never stands in', async () => {
   const { registry } = testCatalogue();
   const d = decomposition(['dash through enemies with a burst of speed']);
   const writer = fakeWriter(['{"mappings": []}']);
   await assert.rejects(selectPrimitives({ decomposition: d, registry, writer }), e => e.code === 'selection_failed' && /2 attempt/.test(e.message));
-  assert.equal(writer.calls.filter(c => c.schema.name === 'mechanic_map').length, 2);
+  assert.equal(writer.calls.filter(c => c.schema.name === 'pick_space').length, 2, 'the space question, asked again once');
 });
 
 test('the vocabulary index names which primitive registers each predicate and effect', () => {

@@ -7,7 +7,7 @@ import { buildCatalogue } from '../v2/planner/catalog.js';
 import { contractsFor, populateProblems, placeContent, unreadReaders, placementCounts } from '../v2/planner/content.js';
 import { outlineForm, decode, specSchema } from '../v2/planner/outline-form.js';
 import { proceduralOutline, writeOutline, coreOf } from '../v2/planner/outline.js';
-import { selectPrimitives, locomotionCompleteness, checkMapping, baseLocomotion } from '../v2/planner/select.js';
+import { selectPrimitives, locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js';
 import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
@@ -223,18 +223,6 @@ test('selection completeness: base locomotion follows the view and the medium (t
   const none = new Set(['gameplay.falling.pieces']);
   assert.equal(locomotionCompleteness({ decomposition: { views: ['board'], movement: 'none' }, registry, chosen: none, space: tile }).added, null);
   assert.ok(baseLocomotion(registry, { caps: tile.caps, view: 'td', medium: 'ground' }).every(c => registry.get(c.id).card.views.includes('td') || registry.get(c.id).card.views.includes('any')));
-});
-
-test('selection completeness: the mapping check adds the primitive that defines a core mechanic and drops a wrong sibling', async () => {
-  const d = normalize({ title: 'T', premise: 'Climb a tower built from falling tetromino pieces', mechanics: [{ id: 'climb', verb: 'jump', description: 'run and jump up the stacked pieces', importance: 'core' }], views: ['side'], movement: 'ground' });
-  const mechanics = d.mechanics.map(m => ({ ...m, candidates: [{ id: 'gameplay.move.platformer', score: 1 }] }));
-  const mapped = { climb: { primitives: ['gameplay.move.grid'], covered: true } };
-  const writer = fakeWriter([{ checks: [{ mechanic: 'climb', central: 'gameplay.move.platformer', wrong: ['gameplay.move.grid'], why: 'jumping is platforming' }] }]);
-  const r = await checkMapping({ writer, decomposition: d, mechanics, mapped, cards: registry.cards(), registry });
-  assert.deepEqual(mapped.climb.primitives, ['gameplay.move.platformer']);
-  assert.equal(r.changes.length, 2);
-  assert.match(writer.calls[0].user, /gameplay\.move\.platformer/, 'the alternatives include the right sibling');
-  assert.equal(writer.calls[0].schema.name, 'mapping_check');
 });
 
 test('a core mechanic primitive the chosen spaces cannot host becomes a "needs adapter" core gap, never a quiet downgrade', async () => {
