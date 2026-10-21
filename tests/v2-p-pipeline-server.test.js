@@ -25,7 +25,7 @@ function memoryCtx() {
 function scriptedModel() {
   return fakeWriter([(req) => {
     if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
-      core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } });
+      core: { loop: 'collect', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } });
     const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });
     if (built) return built;
     if (String(req.schema?.name || '').startsWith('game_outline')) {
