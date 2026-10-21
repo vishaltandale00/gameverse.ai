@@ -20,8 +20,8 @@ const clubs = {
   },
   install(rt) { rt.action('toss', (v, r) => { if (v) r.emit('tossed', {}); }); },
 };
-/** The test catalogue's `broken` juggler (its install throws) declares a loop too, so only its crash is wrong. */
-const brokenJuggler = { ...broken, card: { ...broken.card, loop: { verbs: [], progress: ['juggled'], win: { when: { count: 'juggled', gte: '$target' } } }, provides: { events: ['juggled'] } } };
+/** The test catalogue's `broken` juggler (its install throws) declares a playable loop too (a verb that juggles), so only its crash is wrong. */
+const brokenJuggler = { ...broken, card: { ...broken.card, loop: { verbs: ['juggle'], progress: ['juggled'], win: { when: { count: 'juggled', gte: '$target' } } }, provides: { events: ['juggled'], actions: ['juggle'] } } };
 /** picky (the title must start with "The"): a field only the model can fix. */
 const pickyLoop = { ...picky, card: { ...picky.card, loop: { verbs: [], progress: [] } } };
 const endingRunner = PRIMITIVES.find(p => p.id === 'plot.ending');

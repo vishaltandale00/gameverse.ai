@@ -11,7 +11,8 @@ import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath, groupOfPath, fieldForm } from './outline-form.js';
-import { preset, coreOf, zoneStart, wireCore } from './presets.js';
+import { preset, coreOf, zoneStart, wireCore, repairLoop } from './presets.js';
+import { loopProblems } from './loop-check.js';
 import { isAvatar } from './play-spec.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
@@ -60,8 +61,9 @@ import { isObj, isList, isStr, obj, list, objects, str, prop } from '../kernel/g
 /**
  * proceduralOutline's result: `doc` is a Doc exactly when `ok` (else the repaired draft). `structure` reports what the
  * collection composed; `st` is the composition itself (its win and losses, re-wired into every model draft).
+ * `loop` is the static loop check of the structure (loop-check.js errors).
  * @typedef {{ errors: import('../kernel/types.js').Problem[], fixes: Array<Fix | WorldFix>, removed: Removed[], gaps: import('./presets.js').PresetGap[], structure: Record<string, unknown>, st: import('./presets.js').Structure,
- *   world: { added: Array<{ space: unknown, use: string, problems: string[] }>, problems: WorldProblem[] } | null } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} ProceduralOutline
+ *   loop: import('./loop-check.js').LoopProblem[], world: { added: Array<{ space: unknown, use: string, problems: string[] }>, problems: WorldProblem[] } | null } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} ProceduralOutline
  */
 /**
  * One model round's repaired draft. `ok` means `doc` passed repair and boot (it is then a Doc).
@@ -280,6 +282,14 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   if (skeleton.ok) skeleton.doc = engageDocument(skeleton.doc, registry, logic).doc;
   /** @type {OutlineRound[]} */
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
+  // The static loop check, before any model call: a structure whose declared loop cannot be played out and won is
+  // reported for the planner to re-plan (replan.js), never handed to the model to theme.
+  const loopCore = skeleton.st?.core || [...core];
+  const structural = (skeleton.ok ? loopProblems(skeleton.doc, registry, { logic, core: loopCore, structure: true }) : (skeleton.loop || [])).filter(p => !p.need.pending);
+  if (structural.length) {
+    rounds.push({ kind: 'loop_check', ok: false, errors: structural.length, codes: [...new Set(structural.map(p => p.code))], ms: 0 });
+    return { doc: skeleton.doc, ok: false, structure: skeleton.structure, source: 'procedural', rounds, firstPassOk: false, modelMs: 0, removed: skeleton.removed, errors: [...structural, ...skeleton.errors] };
+  }
   if (!writer) return { ...(skeleton.ok ? { doc: skeleton.doc, ok: skeleton.ok } : { doc: skeleton.doc, ok: skeleton.ok }), structure: skeleton.structure, source: 'procedural', rounds, firstPassOk: skeleton.ok, modelMs: 0, removed: skeleton.removed, errors: skeleton.errors };
   // The form and the prompts frame the model on the scaffold. The skeleton is built procedurally (never model output):
   // when repair rejected it, it is still the procedural draft, in the document's shape.
@@ -400,6 +410,9 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
     keepCollection(draft, skeleton.doc);
     // The collection's loop wiring is code's: whatever the model wrote, the declared win and losses end the game.
     Object.assign(draft, wireCore(draft, skeleton.st, registry).doc);
+    // So is the rest of the loops' structure (participants, what the win reads, an action that changes it): the model's
+    // content is kept, what the declarations need and the draft lacks is put back (presets.js repairLoop).
+    try { Object.assign(draft, repairLoop(draft, registry, { logic, core: loopCore }).doc); } catch { /* malformed draft: repair and the loop check report it */ }
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
     for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
@@ -423,9 +436,14 @@ Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are wr
       // Archetypes the draft defines but never puts in the world are placed zone by zone (deterministic).
       const p = placeContent(doc, registry); doc = p.doc; placed = p.added;
       doc = engageDocument(doc, registry, logic).doc;
+      // The assembled draft (skins applied, participants seated) gets the loops' structure back where it lacks it.
+      doc = repairLoop(doc, registry, { logic, core: loopCore }).doc;
       // Boot it (ms): a primitive that throws is never isolated; the error (naming the primitive, install or step) goes to the model.
       const fp = firstPlayable(doc, registry, logic, { seed, furnish: false, protect: keep, maxIsolations: 0 });
       if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
+      // The static loop check of the draft: a loop that cannot be played out and won is not playable.
+      const lp = repaired.ok ? loopProblems(doc, registry, { logic, core: loopCore }) : [];
+      if (lp.length) { repaired.ok = false; repaired.errors = lp; }
       repaired.doc = doc;
       if (repaired.ok) playable = doc;
     }

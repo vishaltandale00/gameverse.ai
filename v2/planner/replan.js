@@ -9,7 +9,9 @@ import { relevance, declaredFit, sharesVerbs, servesInteraction } from './select
 import { isSpace, isGenerator, isGraphics, requirementsOf, satisfying } from './catalog.js';
 import { composeLoop, winProviders, cardLoop } from './loop.js';
 import { checkComposition } from './compose-check.js';
-import { isObj, list, prop } from '../kernel/guards.js';
+import { loopProblems, ownersOf } from './loop-check.js';
+import { mashupSides } from './play-spec.js';
+import { isObj, isStr, list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('./select.js').Selection} Selection */
@@ -17,33 +19,43 @@ import { isObj, list, prop } from '../kernel/guards.js';
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
 /** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
-/** A problem as stages report it. @typedef {{ code?: unknown, path?: unknown, message?: unknown, primitive?: unknown, hint?: unknown }} StageProblem */
+/** A problem as stages report it. @typedef {{ code?: unknown, path?: unknown, message?: unknown, primitive?: unknown, hint?: unknown, need?: unknown }} StageProblem */
+/** @typedef {import('./loop-check.js').LoopNeed} LoopNeed */
 /**
  * What a failure is about. kind: 'primitive' (a chosen primitive cannot work here), 'mechanic' (nothing serves a
- * mechanic), 'win' (the collection cannot be won), 'loop' (the core loop does not happen in play), 'fields' (content
+ * mechanic), 'win' (the collection cannot be won), 'loop' (the core loop does not happen in play), 'structure' (a
+ * loop primitive's declared win can never be reached: `loop` says why, from the static loop check), 'fields' (content
  * and params only the model can fix).
  * `signature` (with `adapter`, compose-check's adapter card, when an adapter would fix it) is what re-planning found the
  * catalogue lacks: the gap layer's request.
- * @typedef {{ kind: 'primitive' | 'mechanic' | 'win' | 'loop' | 'fields', mechanic?: string, primitive?: string, importance?: string, codes: string[], message: string, signature?: string, adapter?: AdapterSpec }} Diagnosis
+ * @typedef {{ kind: 'primitive' | 'mechanic' | 'win' | 'loop' | 'structure' | 'fields', mechanic?: string, primitive?: string, importance?: string, codes: string[], message: string,
+ *   signature?: string, adapter?: AdapterSpec, loop?: { code: string, need: LoopNeed } }} Diagnosis
  */
 /** One re-planning decision. @typedef {{ action: 'replace' | 'add' | 'repair' | 'write', mechanic?: string, primitive?: string, by?: string, why: string }} Action */
 
 export const REPLAN_VERSION = 'replan/0.1';
 
 const GAME_PREFIX = /^(gameplay|plot)\./;
+/** Gate verdicts (verify-adapter.js viability) that say the declared loop was never won or never progressed. */
+export const GATE_LOOP = /\b(no_progress|loop_absent|plot_uncompletable)\b/;
+/** Loop-check needs a re-planned loop primitive answers (its declarations cannot produce them): replaced for its mechanic. */
+const REPLACE = new Set(['participants', 'seat', 'opponent', 'group', 'component']);
 /** @param {unknown} v */
 const text = v => (typeof v === 'string' ? v : v === undefined || v === null ? '' : JSON.stringify(v));
 
 /**
  * Diagnose a stage's problems (and the selection's core gaps) to the mechanic, primitive or win they concern.
- * @param {StageProblem[]} problems @param {{ selection: Selection, registry: RegistryLike, doc?: unknown }} context @returns {Diagnosis[]}
+ * Gate verdicts (no_progress, loop_absent, plot_uncompletable) are diagnosed through the static loop check of the
+ * played document (`core` orders its loops, as the preset's loopCore): which loop primitive's declared win or progress
+ * was never reached, and why.
+ * @param {StageProblem[]} problems @param {{ selection: Selection, registry: RegistryLike, doc?: unknown, core?: string[] | null }} context @returns {Diagnosis[]}
  */
-export function diagnose(problems, { selection, registry, doc = null }) {
+export function diagnose(problems, { selection, registry, doc = null, core: order = null }) {
   /** @type {Map<string, Diagnosis>} */
   const out = new Map();
   const mechOf = (/** @type {string} */ id) => (selection.mechanics || []).find(m => (m.primitives || []).includes(id));
   const put = (/** @type {Diagnosis} */ d) => {
-    const key = `${d.kind}:${d.mechanic || ''}:${d.primitive || ''}`;
+    const key = `${d.kind}:${d.mechanic || ''}:${d.primitive || ''}:${d.loop?.code || ''}`;
     const cur = out.get(key);
     if (cur) { cur.codes = [...new Set([...cur.codes, ...d.codes])]; return; }
     out.set(key, d);
@@ -56,10 +68,27 @@ export function diagnose(problems, { selection, registry, doc = null }) {
   }
   const used = new Set([...(selection.systems || []), ...list(prop(doc, 'systems')).map(s => prop(s, 'use')).filter(/** @returns {x is string} */ x => typeof x === 'string')]);
   const ranked = [...used].filter(id => GAME_PREFIX.test(id)).sort((a, b) => b.length - a.length);
+  const core = order || (selection.mechanics || []).filter(m => m.importance === 'core').flatMap(m => m.primitives || []).filter(id => GAME_PREFIX.test(id));
+  /** A static loop problem: which loop primitive's declared win can never be reached, and why. @param {StageProblem} p @param {string[]} codes */
+  const structural = (p, codes) => {
+    const primitive = text(p.primitive), need = /** @type {LoopNeed} */ (p.need);
+    put({ kind: 'structure', primitive, mechanic: mechOf(primitive)?.id, codes, message: text(p.message), loop: { code: text(p.code), need } });
+  };
+  /** The structural cause of a gate verdict, from the static loop check of the document the gate played. @type {StageProblem[] | null} */
+  let causes = null;
   for (const p of problems) {
     const code = text(p.code), path = text(p.path), message = text(p.message);
     // A selection gap restated as a problem is already diagnosed above.
     if (code.startsWith('gap_')) continue;
+    // The static loop check's own problems (outline stage, before any model call).
+    if (code.startsWith('loop_') && isObj(p.need) && isStr(p.primitive)) { structural(p, [code]); continue; }
+    // The gate saw no progress, no loop, or no reachable ending: diagnose which loop primitive's declared win or progress
+    // was never reached and why (a missing participant, no action that affects what the win reads, an unwired win).
+    const verdict = GATE_LOOP.exec(`${code} ${message}`)?.[1];
+    if (verdict && (code === 'not_playable' || code === verdict)) {
+      causes ??= doc ? loopProblems(doc, registry, { core }) : [];
+      if (causes.length) { for (const c of causes) structural(c, [code === verdict ? code : `${code}:${verdict}`, text(c.code)]); continue; }
+    }
     const words = `${message} ${text(p.hint)}`;
     if (/win_unwired|win_undeclared/.test(code) || (code === 'not_playable' && /no_progress/.test(message) && !/loop_absent|cannot_act/.test(message))) { put({ kind: 'win', codes: [code], message }); continue; }
     if (code === 'not_playable' && /loop_absent|loop_undeclared|cannot_act/.test(message)) { put({ kind: 'loop', codes: [code], message }); continue; }
@@ -126,7 +155,7 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
   /** Bring in what a primitive requires (closure), as selection does. @param {string} id */
   const require = id => { for (const r of requirementsOf(registry, id).primitives) { if (sel.systems.some(x => x === r || x.startsWith(r + '.'))) continue; const s = satisfying(registry, r); if (s) { sel.systems.push(s); require(s); } } };
   const interaction = decomposition.core?.interaction || null;
-  const joined = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
+  const joined = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => mashupSides(x, decomposition.mechanics || []).inner.includes(id));
   /**
    * The next untried catalogue primitive for a mechanic: ranked by its declarations (declaredFit: loop verbs and
    * progress fitting the mechanic and what the failing primitive did, the play spec's interaction, how participants
@@ -173,12 +202,59 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
       return cardLoop(card)?.interaction === interaction && sharesVerbs(card, verbs) && declaredFit(m, card, { interaction, joined: joined(m.id), verbs }) !== null;
     }) || null;
   };
+  /**
+   * What a loop needs added so play can reach its declared win, from the catalogue's declarations: the owner of the
+   * component its win reads; a primitive whose player verbs change that component (it requires the owner) or produce
+   * the event or var the win counts. Untried, not failed, and only one that passes the static composition check.
+   * -> { id, why } or { id: null, signature } (the gap layer's request).
+   * @param {Diagnosis} d @returns {{ id: string | null, why: string, signature: string }}
+   */
+  const changer = d => {
+    const n = /** @type {LoopNeed} */ (d.loop?.need), seen = triedFor(`changes:${d.primitive}:${n.kind}`);
+    const owners = n.component ? ownersOf(registry, n.component) : [];
+    const m = (sel.mechanics || []).find(x => (x.primitives || []).includes(String(d.primitive))) || coreMechanics[0];
+    const name = n.kind === 'event' ? n.event : n.kind === 'var' ? n.var : n.component;
+    /** @param {any} c */
+    const fits = c => {
+      if (n.kind === 'owner') return owners.includes(c.id);
+      if (!(cardLoop(c)?.verbs || []).length) return false;
+      if (n.kind === 'action') return (c.requires?.primitives || []).some((/** @type {string} */ r) => owners.some(o => o === r || o.startsWith(r + '.')));
+      const base = String(name).split(':')[0];
+      if (n.kind === 'event') return (c.provides?.events || []).some((/** @type {string} */ e) => e === name || e === base || e === `${base}:*`);
+      return (c.provides?.vars || []).some((/** @type {string} */ v) => v === name || String(name).startsWith(v + '.'));
+    };
+    const pool = cards.filter(c => !seen.has(c.id) && !failed.has(c.id) && !sel.systems.includes(c.id) && fits(c))
+      .map(c => ({ id: c.id, score: m ? Number(declaredFit(m, c, { interaction, joined: joined(m.id) }) ?? 0) + relevance(m, c) : 0 }))
+      .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+    for (const c of pool) { seen.add(c.id); if (composes(registry, sel, sel.systems, c.id).ok) return { id: c.id, why: n.kind === 'owner' ? `${c.id} owns the "${name}" component the ${d.primitive} win reads` : `${c.id}'s player verbs change ${n.kind === 'action' ? `"${name}"` : `${n.kind} ${name}`}, which the ${d.primitive} win reads`, signature: '' }; }
+    const what = n.kind === 'owner' ? `a primitive that owns components.${name}` : n.kind === 'action' ? `a primitive whose player verbs change the "${name}" component of the ${n.of || 'opponents'} (it requires ${owners.join(' or ') || `the owner of ${name}`})` : `a primitive whose player verbs produce the ${n.kind} "${name}"`;
+    return { id: null, why: '', signature: `${d.primitive}: its win (card.loop.win) reads ${n.kind === 'action' || n.kind === 'owner' ? `"${name}"` : `${n.kind} "${name}"`}; needed: ${what}, on ${(sel.spaces || []).map(s => s.use).join(', ') || 'the chosen space'}`.slice(0, 400) };
+  };
   const coreMechanics = (sel.mechanics || []).filter(m => m.importance === 'core');
+  // A loop primitive whose declared win can never be reached (the static loop check, or the cause of a gate verdict):
+  // when its own declarations cannot produce what the loop needs (participants, sides, the components its win reads),
+  // it is re-planned like a failing primitive; an unwired win like a missing one; what play cannot change (an action
+  // or a player-driven producer) and an unowned component are added below.
+  const mapped = diagnoses.map(d => (d.kind !== 'structure' || !d.loop ? d : REPLACE.has(d.loop.need.kind) ? /** @type {Diagnosis} */ ({ ...d, kind: 'primitive' }) : d.loop.need.kind === 'win' || d.loop.need.kind === 'lose' ? /** @type {Diagnosis} */ ({ ...d, kind: 'win' }) : d));
   // Primitives first: a replacement may itself declare the missing win.
-  const ordered = [...diagnoses.filter(d => d.kind === 'primitive' || d.kind === 'mechanic'), ...diagnoses.filter(d => d.kind !== 'primitive' && d.kind !== 'mechanic')];
+  const ordered = [...mapped.filter(d => d.kind === 'primitive' || d.kind === 'mechanic'), ...mapped.filter(d => d.kind !== 'primitive' && d.kind !== 'mechanic')];
   for (const d of ordered) if (d.kind === 'primitive' && d.primitive) failed.add(d.primitive);
-  for (const d of ordered) {
+  for (let d of ordered) {
     if (d.kind === 'fields') { actions.push({ action: 'repair', ...(d.primitive ? { primitive: d.primitive } : {}), why: d.message }); continue; }
+    if (d.kind === 'structure' && d.loop) {
+      const r = changer(d);
+      if (r.id) {
+        const m = (sel.mechanics || []).find(x => (x.primitives || []).includes(String(d.primitive))) || coreMechanics[0];
+        sel.systems.push(r.id); require(r.id); if (m) m.primitives = [...(m.primitives || []), r.id];
+        actions.push({ action: 'add', ...(m ? { mechanic: m.id } : {}), primitive: r.id, why: `${r.why}: ${d.message}`.slice(0, 240) });
+        continue;
+      }
+      // Nothing in the catalogue lets play change what its win reads: the loop primitive itself is re-planned for its
+      // mechanic (another primitive in its place); when none fits, what was needed is the gap layer's request.
+      if (!d.primitive) { unresolved.push({ ...d, signature: r.signature }); continue; }
+      failed.add(d.primitive);
+      d = { ...d, kind: 'primitive', signature: r.signature };
+    }
     if (d.kind === 'win') {
       const seen = triedFor('win');
       const core = coreMechanics.flatMap(m => m.primitives || []);
@@ -222,7 +298,7 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
     if (d.primitive) triedFor(m.id).add(d.primitive);
     const found = next(m, d.primitive || null);
     const c = found.id;
-    if (!c) { unresolved.push({ ...d, mechanic: m.id, signature: found.signature, ...(found.adapter ? { adapter: found.adapter } : {}) }); continue; }
+    if (!c) { unresolved.push({ ...d, mechanic: m.id, signature: d.loop && d.signature ? d.signature : found.signature, ...(found.adapter ? { adapter: found.adapter } : {}) }); continue; }
     triedFor(m.id).add(c);
     if (d.kind === 'primitive' && d.primitive) {
       // Another primitive in its place, for this mechanic (what required the failing one keeps its own requirement).
@@ -250,6 +326,7 @@ export function gapRequest(d, selection, decomposition) {
   const m = (selection.mechanics || []).find(x => x.id === d.mechanic);
   const spaces = (selection.spaces || []).map(s => s.use).join(', ');
   const what = d.kind === 'win' ? `a primitive that declares how this game is won (card.loop.win) for: ${decomposition.core?.win || decomposition.premise}`
+    : d.kind === 'structure' && d.signature ? `${m ? `"${m.description}": ` : ''}${d.signature}`
     : d.adapter ? `an adapter for "${m ? m.description : d.message}": ${d.signature}`
     : `${m ? m.description : d.message}${d.primitive ? ` (instead of ${d.primitive}: ${d.message})` : ''}`;
   const played = decomposition.core?.interaction ? `, be played as ${decomposition.core.interaction}` : '';
@@ -269,5 +346,5 @@ export function addedBy(doc, selection, registry) {
 export const experimentsOf = doc => list(prop(doc, 'experiments')).filter(isObj);
 
 /** One line per unresolved diagnosis, for the failure report. @param {Diagnosis[]} ds */
-export const missingText = ds => ds.map(d => `${d.kind}${d.mechanic ? ` "${d.mechanic}"` : ''}${d.primitive ? ` (${d.primitive})` : ''}: ${d.message}`.slice(0, 240));
+export const missingText = ds => ds.map(d => `${d.kind}${d.mechanic ? ` "${d.mechanic}"` : ''}${d.primitive ? ` (${d.primitive})` : ''}${d.loop ? ` [${d.codes.join(', ')}]` : ''}: ${d.message}${d.signature && d.loop ? `; needed: ${d.signature}` : ''}`.slice(0, 400));
 

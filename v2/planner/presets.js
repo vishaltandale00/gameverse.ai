@@ -20,6 +20,10 @@
 // - Participants are seated by code (content.js placeParticipants): a loop's declared groups (sides, teams,
 //   factions) get its pieces on their own edge of the space's cells or in their own zone; a skin adapter's maps come
 //   from the composition (configureSkins). A space's world is what the final collection needs (world.js planWorld).
+// - Every loop's structure passes the static loop check (loop-check.js) from declarations alone (repairLoop): its
+//   participants and their control (engage.join.where), the component its win reads on the opponents (with the declared
+//   example value) and that component's owner, an action that changes it (the loop card's declared example), the win
+//   and lose wired. What no declaration provides is reported (structure.loopCheck, `loop`) for the planner to re-plan.
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
@@ -29,11 +33,12 @@ import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
-import { isAvatar } from './play-spec.js';
+import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
 import { resolveAdapters, adaptersFor, applySkins } from './adapters.js';
-import { isList, isObj, prop } from '../kernel/guards.js';
+import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf } from './loop-check.js';
+import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -118,11 +123,25 @@ const storyRunner = registry => registry.cards().find(c => (c.reads || []).inclu
 const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
 /**
- * The primitives of the mechanics a nested mashup relation names (the loops entered from the rest).
- * @param {Decomposition['core']} spec @param {Selection} selection @returns {Set<string>}
+ * The joined (inner) side's mechanic ids of the play spec's mashup entries of a relation (play-spec.js mashupSides).
+ * @param {Decomposition} decomposition @param {string} relation @returns {string[]}
  */
-const innerOf = (spec, selection) => new Set((spec?.mashup || []).filter(m => m.relation === 'nested').flatMap(m => m.mechanics)
+const joinedMechanics = (decomposition, relation) => (decomposition.core?.mashup || []).filter(m => m.relation === relation).flatMap(m => mashupSides(m, decomposition.mechanics || []).inner);
+/**
+ * The primitives of the mechanics a nested mashup relation joins (the loops entered from the rest).
+ * @param {Decomposition} decomposition @param {Selection} selection @returns {Set<string>}
+ */
+const innerOf = (decomposition, selection) => new Set(joinedMechanics(decomposition, 'nested')
   .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => /^(gameplay|plot)\./.test(id)));
+
+/**
+ * The core collection in the order its loops own the game's win: the idea's order, the loops a nested mashup relation
+ * enters from the rest last (they never own the game's win). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry
+ */
+export function loopCore(decomposition, selection, registry) {
+  const inner = innerOf(decomposition, selection);
+  return [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
+}
 
 /**
  * The structure a collection composes, from the cards and the play spec: its core and loops, the win (added from the
@@ -134,8 +153,7 @@ export function structureOf(decomposition, selection, registry) {
   const spec = decomposition.core;
   let systems = [...selection.systems];
   // The joined idea's loops of a nested mashup are entered from the rest: they come last, so they never own the game's win.
-  const inner = innerOf(spec, selection);
-  const core = [...coreOf(selection, registry)].sort((a, b) => Number(inner.has(a)) - Number(inner.has(b)));
+  const core = loopCore(decomposition, selection, registry);
   /** @type {Array<{ use: string, why: string }>} */
   const added = [];
   /** @type {Array<{ use: string, why: string }>} */
@@ -263,12 +281,19 @@ function wireLoop(doc, structure, registry, text = {}) {
   if (structure.win) wired = one(structure.win.use, structure.win.end, 'victory');
   for (const l of structure.lose || []) one(l.use, l.end, 'defeat');
   doc.plot.endings = endings;
-  // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them).
-  // (The story also reads them, but it declares its own win: the evaluator is the reader that declares none.)
-  const evaluates = (/** @type {any} */ c) => Boolean(c) && (c.reads || []).includes('plot.endings') && !cardLoop(c)?.win && !(c.requires?.capabilities || []).length;
-  if (endings.some(e => isObj(e.when)) && !systems.some(s => evaluates(registry.get(s?.use)?.card))) {
-    const reader = registry.cards().find(evaluates);
+  // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them):
+  // a loop that reads them and declares no win of its own (the story also reads them, but declares its own win; a
+  // view that shows them declares no loop).
+  if (endings.some(e => isObj(e.when)) && !systems.some(s => evaluatesEndings(registry.get(s?.use)?.card))) {
+    const reader = registry.cards().find(evaluatesEndings);
     if (reader) systems.push({ use: reader.id });
+  }
+  // Endings reached only through end_game (a lose wired by effects) next to the evaluator: the configuration its card
+  // declares for them (card.untriggered: { param, is }).
+  if (endings.some(e => !isObj(e.when))) for (const s of systems) {
+    const u = prop(registry.get(s?.use)?.card, 'untriggered');
+    if (!evaluatesEndings(registry.get(s?.use)?.card) || !isStr(prop(u, 'param'))) continue;
+    s.with = { ...(isObj(s.with) ? s.with : {}), [String(prop(u, 'param'))]: prop(u, 'is') };
   }
   return { wired, endings: endings.map(e => String(e.id)) };
 }
@@ -305,7 +330,7 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
   const target = /** @type {import('./content.js').Contract} */ (contractsOf(registry, owner).find(sectionOf));
   const to = /** @type {string} */ (sectionOf(target));
   const entries = (/** @type {string} */ path) => { const v = path.split('.').reduce((/** @type {any} */ o, k) => o?.[k], doc); return Array.isArray(v) ? v.length : isObj(v) ? Object.keys(v).length : 0; };
-  const skinned = new Set((decomposition.core?.mashup || []).filter(m => m.relation === 'skin').flatMap(m => m.mechanics)
+  const skinned = new Set(joinedMechanics(decomposition, 'skin')
     .flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []));
   const others = st.systems.filter(id => id !== owner).sort((a, b) => Number(skinned.has(b)) - Number(skinned.has(a)));
   const from = others.flatMap(id => contractsOf(registry, id).map(c => (c.need === 'section' ? String(c.at) : '')))
@@ -317,11 +342,152 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
     const ex = isObj(target.example) ? target.example : {}, C = target.component;
     const seat = participantsOf(doc, registry).find(p => p.use === owner);
     const comp = C ? { ...(isObj(prop(ex.components, C)) ? /** @type {Record<string, unknown>} */ (prop(ex.components, C)) : {}), ...(seat?.field && seat.groups[0] ? { [seat.field]: seat.groups[0].id } : {}) } : null;
-    template = { kind: typeof ex.kind === 'string' ? ex.kind : 'npc', ...(C && comp ? { components: { [C]: comp } } : {}) };
+    // The pieces also carry what the owner's win reads of them (win.reads.component), with its declared example value.
+    const R = readsOf(cardLoop(registry.get(owner)?.card)?.win)?.component;
+    const read = R && R !== C ? componentExample(registry.get(owner)?.card, R) ?? ownersOf(registry, R).map(o => componentExample(registry.get(o)?.card, R)).find(v => v !== undefined) : undefined;
+    template = { kind: typeof ex.kind === 'string' ? ex.kind : 'npc', ...(C && comp ? { components: { [C]: comp, ...(R && read !== undefined ? { [R]: structuredClone(read) } : {}) } } : {}) };
   }
   const maps = [{ from, to, template, ...(to === 'content.archetypes' ? { fields: { 'components.name': 'name' } } : {}) }];
   for (const inst of insts) inst.with = { ...(isObj(inst.with) ? inst.with : {}), maps: structuredClone(maps) };
   return maps.map(m => ({ from: m.from, to: m.to }));
+}
+
+/** A fix the structural loop repair made. @typedef {{ code: string, path: string, what: string }} LoopFix */
+/** The value of component C a card declares: its archetypes contract examples, then what it gives the player (card.engage.player). @param {unknown} card @param {string} C */
+const componentExample = (card, C) => {
+  for (const c of objects(prop(card, 'content'))) { const v = prop(prop(c.example, 'components'), C); if (v !== undefined) return v; }
+  return prop(prop(prop(prop(card, 'engage'), 'player'), 'components'), C);
+};
+/** Entries of a declared list param's example and default (the example first). @param {unknown} spec @returns {unknown[]} */
+const declaredEntries = spec => [...(isList(prop(spec, 'example')) ? /** @type {unknown[]} */ (prop(spec, 'example')) : prop(spec, 'example') !== undefined ? [prop(spec, 'example')] : []), ...list(prop(spec, 'default'))];
+/** A fresh id among `taken` (id, id_2, ...). @param {string} id @param {Set<unknown>} taken */
+const freshId = (id, taken) => { let out = id, n = 2; while (taken.has(out)) out = `${id}_${n++}`; return out; };
+
+/**
+ * Structural repair of a document's loops (loop-check.js), from declarations alone: every fix takes its value from a
+ * card (a param's default or example, a content contract's example, card.engage, the owner that declares a
+ * component), never from a genre or an idea. Participants missing -> the param's default/example entries; the player
+ * unseated -> the engage.join.where values on the player's entry; no opponent -> the other entry gets the declared
+ * field's other value; an empty group -> the loop's archetypes example, seated by placeParticipants; a component the
+ * win reads -> the declared example value on the opponents; an unowned component -> its owner added; no action that
+ * changes what the win reads -> the loop's declared example action whose effect the component's owner registers (the
+ * owner added); an unwired win or lose -> wired (wireLoop). What it cannot fix is returned for the planner to re-plan.
+ * The input is not modified.
+ * @template T @param {T} input @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null }} [options]
+ * @returns {{ doc: T, fixes: LoopFix[], problems: import('./loop-check.js').LoopProblem[] }}
+ */
+export function repairLoop(input, registry, { logic = null, core = null } = {}) {
+  if (!isObj(input) || !Array.isArray(input.systems)) return { doc: input, fixes: [], problems: [] };
+  const lg = logic || logicOf(registry);
+  const coreIds = core ? [...core] : null;
+  /** @type {Record<string, any>} */
+  let doc = structuredClone(input);
+  /** @type {LoopFix[]} */
+  const fixes = [];
+  /** @type {Set<string>} */
+  const tried = new Set();
+  for (let pass = 0; pass < 6; pass++) {
+    const problems = loopProblems(doc, registry, { logic: lg, core: coreIds });
+    let changed = false, seat = false;
+    /** @type {any[]} */
+    const systems = doc.systems;
+    for (const p of problems) {
+      const key = `${p.code}|${p.path}|${JSON.stringify(p.need)}`;
+      if (tried.has(key)) continue;
+      tried.add(key);
+      const inst = systems.find(s => s?.use === p.primitive);
+      const card = registry.get(p.primitive)?.card;
+      const loop = cardLoop(card);
+      const n = p.need;
+      const fix = (/** @type {string} */ what) => { fixes.push({ code: p.code, path: p.path, what }); changed = true; };
+      const addSystem = (/** @type {string} */ use) => { if (!systems.some(s => s?.use === use)) { systems.push({ use }); return true; } return false; };
+      if (!inst || !card || !loop) continue;
+      inst.with = isObj(inst.with) ? inst.with : {};
+      const spec = n.param ? card.params?.[n.param] : null;
+      const current = () => (n.param && inst.with[n.param] !== undefined ? list(inst.with[n.param]) : list(prop(spec, 'default')));
+      const idOf = (/** @type {unknown} */ e) => (isObj(e) ? e.id : e);
+      if (n.kind === 'participants' && n.param) {
+        const cur = current().map(e => structuredClone(e));
+        const contract = contractsOf(registry, p.primitive).find(c => c.need === 'param' && c.param === n.param);
+        for (const e of [...list(prop(spec, 'default')), ...list(contract?.example), ...list(prop(spec, 'example'))]) {
+          if (cur.length >= (n.min ?? 2)) break;
+          if (!cur.some(x => JSON.stringify(idOf(x)) === JSON.stringify(idOf(e)))) cur.push(structuredClone(e));
+        }
+        if (cur.length > current().length) { inst.with[n.param] = cur; fix(`${p.primitive} with.${n.param} from its declared default/example (${cur.length} entries)`); }
+      } else if ((n.kind === 'seat' || n.kind === 'opponent') && n.param && n.where) {
+        const groups = current().map(e => structuredClone(e));
+        const objs = groups.filter(isObj);
+        if (!objs.length) continue;
+        const fields = /** @type {Record<string, any>} */ (prop(prop(spec, 'of'), 'fields') || {});
+        if (n.kind === 'seat') {
+          const g = objs.find(x => list(x.members).includes('player')) || objs[0];
+          Object.assign(g, n.where);
+          fix(`${p.primitive} with.${n.param} '${String(g.id)}' seats the player (${JSON.stringify(n.where)}, card.engage.join.where)`);
+        } else {
+          if (objs.length < 2) continue;
+          const g = [...objs].reverse().find(x => !list(x.members).includes('player')) || objs[objs.length - 1];
+          for (const [k, v] of Object.entries(n.where)) {
+            const f = fields[k], alt = prop(f, 'default') !== v && prop(f, 'default') !== undefined ? prop(f, 'default') : list(prop(f, 'options')).find(o => o !== v);
+            if (alt !== undefined) g[k] = alt;
+          }
+          fix(`${p.primitive} with.${n.param} '${String(g.id)}' plays against the player (its declared ${Object.keys(n.where).join(', ')})`);
+        }
+        inst.with[n.param] = groups;
+      } else if (n.kind === 'group' && n.component) {
+        const arches = (doc.content ??= {}).archetypes ??= [];
+        const C = n.component;
+        if (!objects(arches).some(a => a.kind !== 'player' && a.id !== prop(doc.player, 'archetype') && prop(a.components, C) !== undefined)) {
+          const ex = contractsOf(registry, p.primitive).map(c => c.example).find(e => prop(prop(e, 'components'), C) !== undefined);
+          if (!isObj(ex)) continue;
+          const a = /** @type {Record<string, any>} */ (structuredClone(ex));
+          a.id = freshId(String(a.id || C), new Set(objects(arches).map(x => x.id)));
+          arches.push(a);
+          fix(`${p.primitive}: the archetypes contract example '${a.id}' stands for the ${n.param} with no entities`);
+        } else fix(`${p.primitive}: ${n.param} '${n.group}' seated from the ${C} archetypes`);
+        seat = true;
+      } else if (n.kind === 'component' && n.component) {
+        const C = n.component;
+        const value = [card, ...systems.map(s => registry.get(s?.use)?.card), ...ownersOf(registry, C).map(o => registry.get(o)?.card), ...registry.cards()]
+          .map(c => componentExample(c, C)).find(v => v !== undefined);
+        if (value === undefined) continue;
+        for (const a of objects(prop(doc.content, 'archetypes'))) if ((n.archetypes || []).includes(String(a.id)) && prop(a.components, C) === undefined) { const comps = isObj(a.components) ? a.components : {}; comps[C] = structuredClone(value); a.components = comps; }
+        fix(`${(n.archetypes || []).join(', ')} get the "${C}" component the ${p.primitive} win reads (declared example ${JSON.stringify(value)})`);
+      } else if (n.kind === 'owner' && n.component) {
+        const owners = n.owners || [];
+        const wanted = owners.find(o => systems.some(s => (registry.get(s?.use)?.card.requires?.primitives || []).some(r => o === r || o.startsWith(r + '.'))))
+          || [...owners].sort((a, b) => (registry.get(a)?.card.requires?.primitives || []).length - (registry.get(b)?.card.requires?.primitives || []).length || a.localeCompare(b))[0];
+        if (wanted && addSystem(wanted)) fix(`+${wanted}: it owns the "${n.component}" component the ${p.primitive} win reads`);
+      } else if (n.kind === 'action' && n.component) {
+        const owners = new Set(n.owners || []);
+        const hosts = [inst, ...(loop.via ? systems.filter(s => s?.use === loop.via) : [])];
+        let done = false;
+        for (const h of hosts) {
+          const hcard = registry.get(h.use)?.card; if (!hcard || done) continue;
+          for (const [k, ps] of Object.entries(hcard.params || {})) {
+            if (done || ps.type !== 'list' || prop(ps.of, 'type') !== 'object' || [loop.win?.param, loop.lose?.param].some(w => isStr(w) && w.split('.')[0] === k)) continue;
+            const entry = declaredEntries(ps).find(e => effectsIn(e).some(x => owners.has(String(lg.owners.effect.get(String(x.do))))));
+            if (!isObj(entry)) continue;
+            h.with = isObj(h.with) ? h.with : {};
+            const cur = h.with[k] !== undefined ? list(h.with[k]) : list(ps.default);
+            const add = /** @type {Record<string, any>} */ (structuredClone(entry));
+            if (isStr(add.id)) add.id = freshId(add.id, new Set(cur.map(x => prop(x, 'id'))));
+            h.with[k] = [...cur.map(x => structuredClone(x)), add];
+            const effOwner = effectsIn(add).map(x => String(lg.owners.effect.get(String(x.do)))).find(o => owners.has(o));
+            if (effOwner) addSystem(effOwner);
+            fix(`${h.use} with.${k} gains its declared example '${String(add.id ?? k)}', whose effects change "${n.component}"${effOwner ? ` (owned by ${effOwner})` : ''}`);
+            done = true;
+          }
+        }
+      } else if ((n.kind === 'win' || n.kind === 'lose') && loop[n.kind]) {
+        const end = /** @type {LoopEnd} */ (loop[n.kind]);
+        const r = wireLoop(doc, n.kind === 'win' ? { win: { use: p.primitive, end }, lose: [] } : { win: null, lose: [{ use: p.primitive, end }] }, registry);
+        if (r.wired || n.kind === 'lose') fix(`${p.primitive} ${n.kind} wired to ${n.kind === 'win' ? 'a won' : 'a lost'} ending (card.loop.${n.kind})`);
+      }
+    }
+    if (seat) doc = placeParticipants(doc, registry).doc;
+    if (!changed) break;
+  }
+  return { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), fixes, problems: loopProblems(doc, registry, { logic: lg, core: coreIds }) };
 }
 
 /**
@@ -436,18 +602,60 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   for (const a of adapters) systems.push(/** @type {SystemInstance} */ (structuredClone(a)));
   // Nested loops point at their space.
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
-  // Mashup relations: the adapter that declares each one joins with the structure code owns (which loops, which
-  // sub-space); a nested encounter's trigger and outcomes are content the model writes through the form, a skin's
-  // maps are written below (configureSkins).
+  // Mashup relations across concepts: the adapter that declares each one (card.adapts.relation) joins, its params
+  // filled from declarations. nested: the joined side's loops are entered on the outer loop's declared progress event
+  // (one that names its subject: a typed `event:*` it provides) and their declared win and lose (effects params) emit
+  // the outcomes the adapter maps back; skin: its maps (configureSkins, below); union: a region of the space kind the
+  // joined loop declares, projected by the adapter's own adapt() hook, when no chosen space is that kind (otherwise
+  // both loops already run in one space). What cannot be derived is a gap, never a guess.
+  const loopsOf = (/** @type {string[]} */ ids) => [...new Set(ids.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card)))];
   for (const m of decomposition.core?.mashup || []) {
     const use = adaptersFor(registry, m.relation)[0];
-    if (!use || m.relation === 'union') continue;
-    const loops = m.mechanics.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card));
-    if (m.relation === 'nested' && !loops.length) continue;
-    const space = nested.find(n => loops.includes(n.use))?.space;
-    if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(m.relation === 'nested' ? loops : null))) continue;
-    systems.push({ use, with: m.relation === 'nested' ? { id: slug(m.mechanics.join('_')), inner: loops, ...(space ? { space } : {}) } : {} });
-    st.added.push({ use, why: `${m.relation} mashup: ${m.why || m.mechanics.join(', ')}` });
+    const sides = mashupSides(m, decomposition.mechanics || []);
+    const inner = loopsOf(sides.inner), outer = loopsOf(sides.outer).filter(id => !inner.includes(id));
+    const gap = (/** @type {string} */ why) => gaps.push({ mechanic: m.mechanics[0] || 'mashup', description: `needs adapter: ${m.relation} mashup of ${m.mechanics.join(', ')}`, importance: 'core', kind: 'adapter', why });
+    if (!use) { gap(`no registered adapter declares the ${m.relation} relation (card.adapts.relation)`); continue; }
+    if (m.relation === 'nested') {
+      if (!inner.length) continue;
+      if (systems.some(s => s.use === use && JSON.stringify(s.with?.inner || null) === JSON.stringify(inner))) continue;
+      const id = slug(m.mechanics.join('_'));
+      const host = outer[0] || [st.win?.use, ...st.core].find(x => isStr(x) && !inner.includes(x) && cardLoop(registry.get(x)?.card)) || null;
+      const hostCard = host ? registry.get(host)?.card : null;
+      const progress = cardLoop(hostCard)?.progress || [];
+      const on = progress.find(e => (hostCard?.provides?.events || []).includes(`${e}:*`)) || progress[0] || null;
+      /** @type {Array<{ on: string, result: string, do: unknown[] }>} */
+      const outcomes = [];
+      for (const [side, result] of /** @type {const} */ ([['win', 'won'], ['lose', 'lost']])) for (const u of inner) {
+        const p = cardLoop(registry.get(u)?.card)?.[side]?.param;
+        const own = systems.find(s => s.use === u);
+        if (!own || !isStr(p) || registry.get(u)?.card.params?.[p]?.type !== 'effects') continue;
+        const event = `${id}_${result}`;
+        own.with = { ...(own.with || {}), [p]: [...list(own.with?.[p]), { do: 'emit', event }] };
+        if (!outcomes.some(o => o.on === event)) outcomes.push({ on: event, result, do: [] });
+      }
+      if (!on || !outcomes.length) { gap(`the nested encounter needs ${!on ? `an outer loop progress event to start it (${host || 'no outer loop'} declares none)` : `the inner loop's declared win or lose as effects (${inner.join(', ')})`}`); continue; }
+      const space = nested.find(n => inner.includes(n.use))?.space;
+      systems.push({ use, with: { id, inner, on, outcomes, ...(space ? { space } : {}) } });
+    } else if (m.relation === 'skin') {
+      if (systems.some(s => s.use === use)) continue;
+      systems.push({ use, with: {} });
+    } else {
+      const proj = registry.get(use);
+      for (const u of inner) {
+        const want = (cardLoop(registry.get(u)?.card)?.space || []).filter(/** @returns {e is string} */ e => isStr(e) && registry.has(e));
+        const host = selSpaces[0];
+        if (!host || !want.length || want.some(w => selSpaces.some(sp => sp.use === w))) continue;
+        const kind = want[0];
+        const missing = { capabilities: capsOf(kind).filter(c => !host.caps.includes(c)), content: [], services: [] };
+        if (typeof proj?.adapt !== 'function') continue;
+        const proposal = proj.adapt({ space: { id: host.id, use: host.use, with: host.with || {}, caps: host.caps }, missing, neededBy: [{ use: u, card: /** @type {any} */ (registry.get(u)?.card) }], registry });
+        if (!proposal) { gap(`${use} cannot project ${kind} onto ${host.use} for ${u}`); continue; }
+        const rid = isStr(proposal.id) ? proposal.id : null;
+        systems.push(/** @type {SystemInstance} */ ({ use, ...(rid ? { id: rid } : {}), space: host.id, with: isObj(proposal.with) ? proposal.with : {} }));
+        const own = systems.find(s => s.use === u); if (own && rid) own.space = rid;
+      }
+    }
+    st.added.push({ use, why: `${m.relation} mashup across ${sides.outer.length ? `${sides.outer.join(', ')} -> ` : ''}${sides.inner.join(', ')}: ${m.why || m.mechanics.join(', ')}` });
   }
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
   const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
@@ -472,17 +680,27 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const skins = configureSkins(doc, st, decomposition, selection, registry);
   // Participants are structure: the loop's sides (teams, factions) get their pieces seated on the space.
   const seated = placeParticipants(applySkins(doc, registry), registry);
+  // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the
+  // components the win reads, an action that changes it, the win and lose wired. What cannot be derived is reported.
+  const looped = repairLoop(seated.doc, registry, { logic, core: st.core });
   // Every primitive of the collection is kept: repair fixes fields and reports what it cannot fix.
-  const keep = new Set(doc.systems.map((/** @type {SystemInstance} */ s) => s.use));
-  let repaired = repairDocument(seated.doc, { registry, logic, protect: keep });
+  const keep = new Set((looped.doc.systems || []).map((/** @type {SystemInstance} */ s) => s.use));
+  let repaired = repairDocument(looped.doc, { registry, logic, protect: keep });
   // Engagement fills what a loop needs from the content (a starting deck from the cards, sides from the units): when the
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
+  // Repair may have written what the loops' wiring runs through (a required list's first entry): wire it too.
+  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
   // A space still empty after repair (no generator selected) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
+  // The static loop check of the finished structure, before any model call: the planner re-plans what it reports.
+  const loopCheck = loopReport(world?.doc ?? repaired.doc, registry, { logic, core: st.core });
+  // (A win wired through list entries the model writes is pending content, not a structural failure yet.)
+  const loop = loopCheck.problems.filter(p => p.severity === 'error' && !p.need.pending);
   const structure = { version: PRESETS_VERSION, packs: packed, core: st.core, loop: st.loops.filter(l => st.core.includes(l.use) || l.use === st.win?.use).map(l => ({ use: l.use, progress: l.loop.progress })),
     win: st.win ? { use: st.win.use, added: Boolean(st.win.added) } : null, lose: st.lose.map(l => l.use), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed,
-    endings: loopWired.endings, nested: nested.map(n => n.space), holes: st.holes, skins, seated: seated.added.map(a => a.rule) };
-  const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure, st };
+    endings: loopWired.endings, nested: nested.map(n => n.space), holes: st.holes, skins, seated: seated.added.map(a => a.rule),
+    loopCheck: { owner: loopCheck.owner, fixes: looped.fixes.map(f => f.what), problems: loopCheck.problems.map(p => `${p.code} ${p.path}`) } };
+  const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure, st, loop };
   return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: /** @type {true} */ (true), ...rest } : { doc: /** @type {unknown} */ (repaired.doc), ok: /** @type {false} */ (false), ...rest };
 }

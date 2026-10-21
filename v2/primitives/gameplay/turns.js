@@ -54,7 +54,7 @@ export default {
     // The player's units take turns: the player joins the player-controlled side when no side lists it.
     engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },
     // Tactics mode: the player's side against AI sides, won when one side remains.
-    mode: { loop: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.none', ['position']], needs: { content: ['content.archetypes'], participants: 'sides' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },
+    mode: { loop: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.none', ['position']], needs: { content: ['content.archetypes'], participants: 'sides' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents' } }, lose: { param: 'onDefeat', reads: { component: 'health', of: 'player' } }, bot: 'turn-board' },
     intent: 'Turn order for any turn-based mode: alternate side or unit turns, initiative order, or simultaneous commit-then-resolve; action points, phases, data-defined actions with range, line of sight, cover-aware hit and crit chance, cooldowns, overwatch reactions, AI sides, downed/bleed-out or permadeath, victory when one side remains. Works on grids, continuous spaces and engine.space.none.',
     views: ['board', 'td', 'iso', 'ui', '3p'],
     params: {
@@ -63,7 +63,9 @@ export default {
       sides: { type: 'list', min: 1, default: DEFAULT_SIDES, of: { type: 'object', fields: SIDE_FIELDS }, effect: 'teams; units join by components.turns.side or members (id/archetype/tag)' },
       ap: { type: 'integer', default: 2, min: 0, max: 99, effect: 'action points per unit per turn' },
       movePerAp: { type: 'integer', default: 4, min: 0, max: 64, effect: 'cells (or path cost) moved per action point; 0 disables moving' },
-      actions: { type: 'list', default: [{ id: 'attack', range: 6, target: 'unit', hostile: true, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions' },
+      actions: { type: 'list', default: [{ id: 'attack', range: 6, target: 'unit', hostile: true, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions',
+        // An action that wears an opposing unit down (the effect is gameplay.combat.health's): what the win reads changes in play.
+        example: [{ id: 'strike', range: 1, target: 'unit', hostile: true, onHit: [{ do: 'damage', who: 'target', amount: 1 }] }] },
       overwatch: { type: 'boolean', default: true, effect: 'units may spend remaining AP to react to enemy movement in sight' },
       overwatchAction: { type: 'string', effect: 'action fired on overwatch (default: first hostile unit action)' },
       overwatchPenalty: { type: 'number', default: 15, min: 0, max: 100, effect: 'aim penalty for reaction shots' },
