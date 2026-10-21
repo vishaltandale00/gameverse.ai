@@ -11,7 +11,9 @@
 // - An avatar exists only for avatar interaction (the play spec's, else what the collection declares); otherwise the
 //   player is a side/controller with no locomotion.
 // - Zones exist only when the space is made of places (exits), the avatar travels, the story needs places, or a loop
-//   of the collection needs them ('spaces.zones' in its needs.content).
+//   of the collection needs them ('spaces.zones' in its needs.content). How many is what declarations ask for
+//   (placesFor): the space's needs, the loops' participant groups and the zones their params reference, the content's
+//   spread, and a narrative idea's story places; never a default count.
 // - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
 // - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
 // - Mashup relations of the play spec are realised by the adapters that declare them (card.adapts.relation): nested
@@ -88,6 +90,49 @@ export function placeZone(z, i, n, shape) {
   if (shape.rect) { const w = Math.max(1, Math.floor(W / n)); z.rect = [i * w, 0, i === n - 1 ? W : (i + 1) * w, H]; }
   if (shape.range) { const L = shape.length || 40 * n, w = L / n; z.range = [+(i * w).toFixed(2), +((i + 1) * w).toFixed(2)]; }
   if (shape.bounds) z.bounds = { min: [i * 64, 0, 0], max: [i * 64 + 64, 64, 64] };
+}
+/** Does a param declaration name zones: a zone ref, a list of them, or a list of objects with a zone-ref field? @param {unknown} spec */
+const zoneRefs = spec => {
+  const isZone = (/** @type {unknown} */ s) => prop(s, 'type') === 'ref' && prop(s, 'to') === 'zone';
+  const of = prop(spec, 'of');
+  if (isZone(spec)) return 'one';
+  if (prop(spec, 'type') === 'list' && isZone(of)) return 'list';
+  return prop(spec, 'type') === 'list' && isObj(prop(of, 'fields')) && Object.values(/** @type {Record<string, unknown>} */ (prop(of, 'fields'))).some(isZone) ? 'one' : null;
+};
+/**
+ * How many places (zones) a space gets, from declarations alone: the most any of them asks for.
+ * - The space card's needs: a space that needs zones (needs.content 'zones'), or whose structure needs them (`needed`:
+ *   the avatar travels, a loop needs 'spaces.zones'), has one, and one made of places joined by exits has two (an exit
+ *   joins two places); unless a generator on it lays out its places over the whole space (provides.content 'zones',
+ *   provides.extent 'space'), which binds the ones written here.
+ * - Each loop played on it (card.loop.needs): one place per participant group (each seated in its own zone) on a
+ *   space without cells.
+ * - Each primitive played on it: the distinct zones its params reference, as its content contracts and params declare
+ *   them (a list of zone refs: its declared min; entries carrying a zone, or a single ref: one).
+ * - The content placed on it: an archetypes contract spread over `zones` places.
+ * - A narrative idea's story places (decomposition.zones, as the model wrote them), on the primary space.
+ * @param {RegistryLike} registry @param {{ use: string, with?: Record<string, unknown> }} space @param {ZoneShape} shape
+ * @param {{ systems: string[], generators: string[], config?: Record<string, Record<string, unknown> | undefined>, story?: number, needed?: boolean }} on
+ * @returns {number}
+ */
+export function placesFor(registry, space, shape, { systems, generators, config = {}, story = 0, needed = false }) {
+  const card = registry.get(space.use)?.card;
+  const needs = list(prop(prop(card, 'needs'), 'content'));
+  const generated = generators.some(id => { const g = registry.get(id)?.card; return list(g?.provides?.content).includes('zones') && prop(g?.provides, 'extent') === 'space'; });
+  const counts = [generated ? 0 : shape.exits ? 2 : needs.includes('zones') || needed ? 1 : 0, story];
+  for (const id of systems) {
+    const c = registry.get(id)?.card; if (!c) continue;
+    const loop = cardLoop(c), P = loop?.needs.participants;
+    if (isStr(P) && !needs.includes('cells')) counts.push(objects(config[id]?.[P] ?? prop(c.params?.[P], 'default')).filter(g => isStr(g.id)).length);
+    const contracts = contractsOf(registry, id);
+    for (const [k, spec] of Object.entries(c.params || {})) {
+      const refs = zoneRefs(spec); if (!refs) continue;
+      const min = Math.max(Number(contracts.find(x => x.need === 'param' && x.param === k)?.min) || 0, Number(prop(spec, 'min')) || 0, prop(spec, 'required') === true ? 1 : 0);
+      counts.push(refs === 'list' ? min : Math.min(1, min));
+    }
+    for (const x of contracts) if (x.need === 'archetypes' && x.zones) counts.push(x.zones);
+  }
+  return Math.max(0, ...counts);
 }
 /**
  * A start position inside a zone (bounds, rect or range), else null. Zones of a model draft are unchecked: a shape
@@ -740,9 +785,12 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const spaces = selSpaces.map((s, si) => {
     const card = registry.get(s.use)?.card || { views: [] };
     const shape = zoneShape(card, s.caps, { ...defaultsOf(/** @type {any} */ (card)), ...(s.with || {}) });
-    // Places are zones: a space made of exits always has them; elsewhere only when the structure needs them.
+    // Places are zones: a space made of exits always has them; elsewhere only when the structure needs them. How many
+    // is what the declarations of the space, the primitives played on it and their content ask for (placesFor).
     const isNested = nested.some(n => n.space === s.id);
-    const n = shape.exits || (st.zones && !isNested) ? (si === 0 ? decomposition.zones : 2) : 0;
+    const on = st.systems.filter(id => (nested.find(x => x.use === id)?.space ?? selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
+    const generators = worldFor(s, si).map(use => ({ use }));
+    const n = shape.exits || (st.zones && !isNested) ? placesFor(registry, s, shape, { systems: on, generators: generators.map(g => g.use), story: si === 0 && st.narrative ? decomposition.zones ?? 0 : 0, needed: st.zones && !isNested }) : 0;
     /** @type {string[]} */
     const ids = [];
     const zones = Array.from({ length: n }, (_, i) => {
@@ -759,7 +807,6 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
       if (i < zones.length - 1) z.exits.push({ to: zones[i + 1].id });
       if (i > 1 && i % 3 === 0) { z.exits.push({ to: zones[i - 2].id }); zones[i - 2].exits?.push({ to: z.id }); }
     });
-    const generators = worldFor(s, si).map(use => ({ use }));
     return { id: s.id, use: s.use, ...(Object.keys(s.with || {}).length ? { with: s.with } : {}), zones, ...(generators.length ? { generators } : {}), _shape: shape };
   });
   const primary = spaces[0];

@@ -99,7 +99,7 @@ test('union across concepts: the joined race gets a region of the space kind it 
   const mechanics = [{ id: 'run', verb: 'run', description: 'run and jump through the level', from: 'Mario', importance: 'core' }, { id: 'kart', verb: 'race', description: 'race rivals to the finish', from: 'Mario Kart', importance: 'core' }];
   const selection = { systems: ['engine.input.actions', 'gameplay.move.platformer', 'gameplay.race'], spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { mode: 'side', size: [64, 24] }, role: 'level', caps }], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
     mechanics: [{ ...mechanics[0], primitives: ['gameplay.move.platformer'] }, { ...mechanics[1], primitives: ['gameplay.race'] }] };
-  const d = { version: 't', title: 'Kart Bros', premise: 'Platform racing.', tone: '', references: [], views: ['side'], spaces: [], movement: 'ground', acts: 1, zones: 3, mechanics,
+  const d = { version: 't', title: 'Kart Bros', premise: 'Platform racing.', tone: '', references: [], views: ['side'], spaces: [], movement: 'ground', mechanics,
     core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'win the race', lose: '', theme: '', narrative: false, mashup: [{ relation: 'union', mechanics: ['run', 'kart'], why: 'the race runs through the level' }] } };
   const p = preset({ decomposition: d, selection, registry, logic, seed: 3 });
   assert.equal(p.ok, true, JSON.stringify(p.errors));
