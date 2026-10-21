@@ -22,6 +22,8 @@ const DECAYS = ['vulnerable', 'weak', 'frail'];
 export default {
   id: ID,
   card: {
+    // The player's starting deck: every card the document defines, when it named none.
+    engage: { config: { deck: '$ids:content.cards' } },
     intent: 'Card battles over gameplay.turns: deck, draw, hand, discard and exhaust piles, energy or growing mana, block, card modifiers (strength, vulnerable, weak, poison...), cards with effects from content.cards, enemy intents (roguelike format: persistent deck and card rewards) or minion boards with taunt/charge and hero attacks (duel format).',
     views: ['ui', 'board'],
     params: {

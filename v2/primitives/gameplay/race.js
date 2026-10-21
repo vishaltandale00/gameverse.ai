@@ -44,6 +44,8 @@ export default {
     },
     requires: { capabilities: ['position'] },
     reads: [],
+    // Rivals named in `racers` exist at the start (spawned beside the player when missing) and are equipped by the other mechanics' actors contracts.
+    engage: { participants: { param: 'racers' } },
   },
   logic(logic) {
     logic.predicate('race', {

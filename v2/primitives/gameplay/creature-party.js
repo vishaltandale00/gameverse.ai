@@ -11,6 +11,8 @@ const ID = 'gameplay.creature.party';
 export default {
   id: ID,
   card: {
+    // The player starts with a creature (the first species) so battles and catching have someone to fight with.
+    engage: { config: { start: [{ species: '$first:content.species', level: 5 }] } },
     intent: 'Creature collection: party (6) and PC box per owner, stats/IVs/growth curves, learnsets, evolution, dex of seen and caught species; the creatures service used by battles, catching and encounters.',
     views: ['any'],
     params: {

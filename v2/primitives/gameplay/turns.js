@@ -43,6 +43,8 @@ const PHASE_FIELDS = { id: { type: 'string', required: true }, auto: { type: 'bo
 export default {
   id: ID,
   card: {
+    // The player's units take turns: the player joins the player-controlled side when no side lists it.
+    engage: { join: { param: 'sides', field: 'members', where: { control: 'player' } } },
     intent: 'Turn order for any turn-based mode: alternate side or unit turns, initiative order, or simultaneous commit-then-resolve; action points, phases, data-defined actions with range, line of sight, cover-aware hit and crit chance, cooldowns, overwatch reactions, AI sides, downed/bleed-out or permadeath, victory when one side remains. Works on grids, continuous spaces and engine.space.none.',
     views: ['board', 'td', 'iso', 'ui', '3p'],
     params: {

@@ -66,6 +66,8 @@ export default {
     },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    // The player sits in the vehicle a motion primitive provides (role 'vehicle'); AI participants likewise.
+    engage: { player: { enter: [{ do: 'enter_vehicle', vehicle: '$vehicle', force: true }] }, actors: { enter: [{ do: 'enter_vehicle', who: '$actor', vehicle: '$vehicle', force: true }] } },
   },
   logic(logic) {
     logic.predicate('in_vehicle', {

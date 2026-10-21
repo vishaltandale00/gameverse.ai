@@ -39,6 +39,9 @@ export default {
     provides: { events: ['crash', 'drift', 'drift_end', 'drift_boost', 'boost', 'landed', 'airborne', 'rail_end', 'stalled', 'gear'], vars: [] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
+    // A car for the player to drive from the first frame; AI participants get one with a steady throttle (the vehicle.core AI interface).
+    engage: { player: { spawn: { role: 'vehicle', archetype: { id: 'car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: {} } } } },
+      actors: { spawn: { role: 'vehicle', archetype: { id: 'car', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, car: {} } }, components: { drive: { control: { throttle: 0.9 } } } } } },
   },
   validate(config, doc) {
     const errors = [];

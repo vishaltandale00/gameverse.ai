@@ -26,6 +26,11 @@ const MOVE_FIELDS = { id: { type: 'string', required: true } };
 export default {
   id: KEY,
   card: {
+    // A basic swing (attack) and heavy blow for a player the document gave no moveset; selected like a weapon's w1/heavy.
+    engage: { player: { components: { melee: { moves: {
+      w1: { name: 'Strike', damage: 3, reach: 1.2, arc: 100, startup: 8, active: 6, recovery: 14, hitstun: 18, units: 'world' },
+      heavy: { name: 'Heavy strike', strength: 'heavy', damage: 6, reach: 1.4, arc: 100, startup: 24, active: 8, recovery: 30, hitstun: 30, knockback: 1, units: 'world' },
+    } } } } },
     intent: 'Melee attacks with frame data for any entity: windup/active/recovery hitboxes, combos and chains, heavy attacks, block, parry and riposte, poise and stagger, pogo strikes, stamina costs, hit-stop, and full fighting-game moves (hit/blockstun, push, high/low/overhead levels, cancels, invulnerability, grabs and tech, counters) with BUILD and special/super presets.',
     views: ['3p', 'side', 'td', '1p'],
     params: {
