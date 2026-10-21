@@ -487,7 +487,7 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
     const mode = registry.get(String(g.use))?.card.mode;
     if (mode && modeApplies(mode, isObj(g.with) ? g.with : {})) problems.push(problem('union_world_loop', String(g.use), `'${secondary.id}' plays its ${mode.loop} loop through the world ${g.use} generates; on '${primary.id}''s space ${host?.use} that is a second world`));
   }
-  /** @type {{ spaces: string[], generators: string[], movement?: string[], entries?: string[], seated?: string[], endings?: string[] }} */
+  /** @type {{ spaces: string[], generators: string[], movement?: string[], sections?: string[], entries?: string[], seated?: string[], endings?: string[] }} */
   const replaced = { spaces: objects(secondary.doc.spaces).map(x => `${x.id} (${x.use})`), generators: world.map(({ g }) => String(g.use)) };
   doc2.spaces = [];
   const loops = playedLoops(doc2, registry);
@@ -510,6 +510,17 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
       }
     }
     if (out.size) { doc2.systems = objects(doc2.systems).filter(x => !out.has(String(x.use))); replaced.movement = [...out]; }
+  }
+  // The replaced world's own sections go with it: a content or plot section only the replaced spaces, generators or
+  // movement read (card.reads), and no primitive that stays reads, is no section of the composed game.
+  const gone = new Set([...objects(secondary.doc.spaces).flatMap(sp => [String(sp.use), ...objects(sp.generators).map(g => String(g.use))]), ...(replaced.movement || [])]);
+  const stays = new Set([...instancesOf(primary.doc), ...instancesOf(doc2)].map(i => String(i.use)));
+  const readBy = (/** @type {Iterable<string>} */ uses, /** @type {string} */ key) => [...uses].some(u => list(cardOf(u)?.reads).some(r => r === key || key.startsWith(`${r}.`)));
+  for (const root of ['content', 'plot']) for (const k of Object.keys(isObj(doc2[root]) ? doc2[root] : {})) {
+    const key = `${root}.${k}`;
+    if (key === 'content.archetypes' || !readBy(gone, key) || readBy(stays, key)) continue;
+    delete doc2[root][k];
+    (replaced.sections ??= []).push(key);
   }
   // Entries placed by a position in the replaced world (a list entry setting a field its card declares scale: 'world',
   // with no zone and no other space): positions do not carry to another world. An entry placing a participant of the

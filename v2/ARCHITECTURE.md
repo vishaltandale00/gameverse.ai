@@ -278,7 +278,7 @@ Not acceptable, ever:
 |---|---|
 | `v2/kernel/` | ECS, events, scheduler, predicates, effects, capabilities, registry, preflight; no space code |
 | `v2/primitives/{engine,plot,graphics,gameplay}/` | One file per primitive, with its card |
-| `v2/planner/` | Generation: decomposition, play spec, iterative selection and build steps, composition check, presets, content forms, repair, replan, pipeline |
+| `v2/planner/` | Generation: template pick and composition, extensions, decomposition, play spec, iterative selection and build steps, composition check, presets, content forms, repair, the version gate, pipeline |
 | `v2/verify/` | Plot solver, spatial checks, playtest, loop bots, invariants, quality |
 | `v2/server/` | Studio API, isolated jobs |
 | `v2/web/` | Studio and player |

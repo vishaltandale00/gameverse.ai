@@ -58,7 +58,7 @@ export const ORIGINAL_IDEAS = [
 const arg = (name, d = null) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : d; };
 const flag = name => process.argv.includes(`--${name}`);
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss', 'verify_threw']);
-const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game (documents|outlines)/, 'outline'], [/^You add detail/, 'detail'], [/^You (revise|change)/, 'revise']];
+const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game (documents|outlines)/, 'outline'], [/^You (revise|change)/, 'revise']];
 const purposeOf = system => PURPOSES.find(([re]) => re.test(String(system || '')))?.[1] || 'other';
 
 const REPLIES = fileURLToPath(new URL('../../local-data/v2/bench/replies/', import.meta.url));
@@ -166,7 +166,6 @@ export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offli
         coverage: coreCoverage(out.selection, out.doc, out.selection.gaps),
         census: census(out.doc, cat.registry, cat.logic), outlineCensus: fp ? census(fp, cat.registry, cat.logic, { boot: 0 }) : null,
         play: await playReport(out.doc, cat.registry, cat.logic),
-        detail: { proposed: out.detail.proposed, accepted: out.detail.accepted, rejected: out.detail.rejected.map(r => r.reason) },
         versions: versions.length,
       });
       if (outDir) writeFileSync(join(outDir, `${idea.id}.json`), JSON.stringify(out.doc, null, 1));
@@ -196,7 +195,7 @@ export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offli
       writers: { spec: raw.spec ? `${raw.spec.provider}:${raw.spec.model}` : null }, servedModels: [...new Set(games.flatMap(g => g.models))],
       decisions: decisions?.provider ?? null, offline,
       machine: { platform: os.platform(), release: os.release(), arch: os.arch(), cpuModel: cpus[0]?.model || null, cpuCount: cpus.length, memoryGb: Math.round(os.totalmem() / 2 ** 30), node: process.version, loadavg: os.loadavg().map(x => +x.toFixed(2)) },
-      nesting: 'timings come from the pipeline (requestToFirstPlayableMs contains decompose/select/outline/firstPlayable/gate; detailMs follows it; totalMs covers all); play.ms is the benchmark\'s own playtest after the run',
+      nesting: 'timings come from the pipeline (requestToFirstPlayableMs contains decompose/select/outline/firstPlayable/gate; totalMs covers all (there is no detail stage)); play.ms is the benchmark\'s own playtest after the run',
     },
     summary: {
       games: games.length, succeeded: games.filter(g => g.ok).length,

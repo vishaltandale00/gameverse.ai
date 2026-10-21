@@ -1,13 +1,12 @@
-// Retrieval in the iterative build and re-planning (v2/planner/retrieval.js, build.js, replan.js): coverage by
-// declarations first, then every valid option (composition on resolved adapters and preflight on the partial document),
-// one model pick, and re-planning through the same functions. The live "chess but with pokemon" run record
+// Retrieval in the step path (v2/planner/retrieval.js, build.js, extend.js): coverage by declarations first, then every
+// valid option (composition on resolved adapters and preflight on the partial document), in declaration order, one
+// model pick. (There is no re-planning: a failing build fails with its problems.) The live "chess but with pokemon" run record
 // (tests/fixtures/v2-live/chess-pokemon-retrieval.json) and unrelated specs, on the real catalogue. Scripted fake
 // writers; no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildSelection } from '../v2/planner/build.js';
-import { replan } from '../v2/planner/replan.js';
 import { servesContext, MAX_LIST } from '../v2/planner/retrieval.js';
 import { checkComposition, documentedBy } from '../v2/planner/compose-check.js';
 import { resolveAdapters } from '../v2/planner/adapters.js';
@@ -60,17 +59,27 @@ function assertValid(b, label) {
   }
 }
 
-test('(a) mechanics the chosen battle loop declares as its own content are covered without a question', async () => {
+test('(a) a mechanic whose verb is a name the chosen battle loop declares is covered without a question; a phrase is asked, never split into words', async () => {
+  // The verbs as the live model wrote them ("use moves", "exploit type advantages") name no declaration as a whole: they
+  // are asked, and the battle loop already in the collection is among the options (re-used when picked).
+  const phrased = decomposition();
+  const w0 = fakeWriter([req => buildAnswer(req, { picks: { ...PICKS, pokemon_moves: ['gameplay.creature.battle'] }, steps: NO_STEPS }) ?? '{}']);
+  const b0 = await buildSelection({ decomposition: phrased, registry, writer: w0 });
+  const moves = b0.steps.find(s => s.kind === 'mechanic' && s.mechanic === 'pokemon_moves');
+  assert.notEqual(moves.outcome, 'covered');
+  assert.ok(callsFor(w0, 'pokemon_moves').length > 0, 'asked');
+  assert.equal(moves.outcome, 'reused');
+  assert.deepEqual(b0.mapping.pokemon_moves.primitives, ['gameplay.creature.battle']);
+  // The same mechanics with the declared names as their verbs (content.moves -> moves, content.types -> types).
   const d = decomposition();
+  for (const m of d.mechanics) if (m.id === 'pokemon_moves') m.verb = 'moves'; else if (m.id === 'type_advantages') m.verb = 'types';
   const w = liveWriter();
   const b = await buildSelection({ decomposition: d, registry, writer: w });
   const step = id => b.steps.find(s => s.kind === 'mechanic' && s.mechanic === id);
-  // The live build offered launcher and falling pieces for the moves; now the battle loop (pokemon's concept loop)
-  // declares the content they name: content.moves and content.types (its mode needs them).
   assert.deepEqual(live.offered.pokemon_moves.candidates.slice(0, 2), ['gameplay.launcher', 'gameplay.falling.pieces']);
   for (const [id, section] of [['pokemon_moves', 'content.moves'], ['type_advantages', 'content.types']]) {
     const s = step(id);
-    assert.equal(s.outcome, 'covered', `${id}: ${JSON.stringify(s)}`);
+    assert.equal(s.outcome, 'covered', `${id}: ${JSON.stringify(s).slice(0, 300)}`);
     assert.equal(s.primitive, 'gameplay.creature.battle');
     assert.equal(s.coverage.asked, false);
     assert.ok(s.coverage.why.includes(section), s.coverage.why);
@@ -129,30 +138,6 @@ test('(c) the option list is every valid card that serves the context, with no t
       if (chosen !== 'none') assert.deepEqual(listed(calls[1]).sort(), line.split('): ')[1].split(', ').sort(), `${s.mechanic}: the pick is over ${chosen}`);
     } else assert.deepEqual(listed(calls[0]).sort(), all);
   }
-});
-
-test('(d) re-planning offers the same valid list the build offered, less the failing primitive', async () => {
-  const d = normalize({ title: 'chess', premise: 'Two armies take turns moving pieces on a board to capture the enemy king.', tone: 'war', references: [{ name: 'chess', kind: 'game', keeps: [] }], views: ['board'], movement: 'none', acts: 1, zones: 3,
-    spaces: [{ role: 'world', kind: 'board', description: '' }],
-    mechanics: [{ id: 'move_pieces', verb: 'move', description: 'move pieces across the board in turns', from: 'chess', importance: 'core' }, { id: 'capture', verb: 'capture', description: 'capture enemy pieces by moving onto them', from: 'chess', importance: 'core' }],
-    core: { loop: 'move_pieces', interaction: 'pieces-turns', opponent: 'ai-side', win: 'capture the king', lose: '', theme: 'war', narrative: false, mashup: [] } }, 'chess', registry);
-  const picks = { move_pieces: ['gameplay.turns'], capture: ['gameplay.ai.brain'] };
-  const w = fakeWriter([req => buildAnswer(req, { picks, steps: NO_STEPS }) ?? '{}']);
-  const b = await buildSelection({ decomposition: d, registry, writer: w });
-  const capture = b.steps.find(s => s.mechanic === 'capture');
-  assert.equal(capture.primitive, 'gameplay.ai.brain');
-  assert.deepEqual(capture.checks.closure, []);
-  const selection = { spaces: [b.space], systems: [...b.systems], bind: { ...b.bind }, adapters: b.adapters, generators: [], graphics: [], gaps: [],
-    mechanics: d.mechanics.map(m => ({ ...m, primitives: [...(b.mapping[m.id]?.primitives || [])], candidates: [], source: 'build', score: 1 })) };
-  const w2 = fakeWriter([req => buildAnswer(req, { picks: { capture: ['gameplay.combat.melee'] }, steps: NO_STEPS }) ?? '{}']);
-  const r = await replan(selection, [{ kind: 'primitive', primitive: 'gameplay.ai.brain', mechanic: 'capture', codes: ['runtime_error'], message: 'boom' }], { registry, decomposition: d, tried: new Map(), writer: w2 });
-  const asked = callsFor(w2, 'capture');
-  assert.ok(asked.length > 0);
-  const built = capture.candidates.map(c => c.id).filter(id => id !== 'gameplay.ai.brain' && id !== b.space.use);
-  assert.deepEqual(listed(asked[0]).sort(), built.sort(), 'the same valid options, the failed one left out');
-  assert.match(asked.at(-1).user, /It replaces gameplay\.ai\.brain, which failed: boom/);
-  assert.ok(r.actions.some(a => a.action === 'replace' && a.by === 'gameplay.combat.melee'), JSON.stringify(r.actions));
-  assert.ok(r.selection.systems.includes('gameplay.combat.health'), 'its bundle (requirements closure) comes with it');
 });
 
 // (e) Unrelated specs on the real catalogue: nothing here knows a genre.

@@ -1,5 +1,5 @@
 // @ts-check
-// The loop steps of the iterative build (build.js), after its mechanic steps, and of re-planning (replan.js): one
+// The loop steps of the iterative build (build.js), after its mechanic steps: one
 // mechanism that completes the core loop the mechanic steps built, never a pick made by the preset or the repair.
 //
 // After every step the static loop check (loop-check.js) runs on the partial collection: the preset's document of the
@@ -20,9 +20,8 @@
 // (a declared win or lose, card.drives serving those participants and that loop, verbs or effects that change the
 // win's reads), played the play spec's way, each as a single card or a minimal bundle (bundles.js formBundle) that
 // composes with the collection (compose-check) on its space or through a registered adapter, and that passes the loop
-// check of the partial collection with it (its need met, nothing new broken); ranked by their declarations against the
-// core loop mechanic and the spec's sentence for display order only: every candidate that passes is offered (ranking never
-// cuts an option: ARCHITECTURE §5, never by text overlap). The model picks one id or "none". "none", or no
+// check of the partial collection with it (its need met, nothing new broken); offered in the catalogue's order: every
+// candidate that passes is offered, nothing ranks it by text and nothing cuts it (ARCHITECTURE §5). The model picks one id or "none". "none", or no
 // candidate, is a gap for the gap layer (the primitive or adapter signature); nothing is added silently.
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
@@ -32,8 +31,8 @@ import { cardLoop, endsGame, composeLoop, loopServes } from './loop.js';
 import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, playerChanges, LOOP_CODES } from './loop-check.js';
 import { preset, coreOf, declaredOutcomes, skinSections, innerOf } from './presets.js';
 import { mashupSides } from './play-spec.js';
-import { declaredFit, relevance, servesInteraction } from './select.js';
-import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
+import { servesInteraction } from './select.js';
+import { formBundle, bundleLabel } from './bundles.js';
 import { parseReply } from './writer.js';
 import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 
@@ -57,7 +56,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  * The collection a step reads: its space (the configuration it composes on), systems, adapter instances and bindings,
  * what each mechanic maps to and the core loop mechanic's id (where the win, lose and coverage picks go), the game's
  * win when several are declared (`win`: the primitive askWins picked; it owns the game's win), and the composition
- * checks bound to it (build.js composes / resolveWith; replan.js the same over a selection).
+ * checks bound to it (build.js composes / resolveWith).
  * @typedef {{ space: { id: string, use: string, with: Record<string, unknown>, role?: string, caps: string[] }, systems: string[], adapters: AdapterInstance[], bind: Record<string, string>,
  *   mechanics: StepMechanic[], loop: string | null, win?: string | null,
  *   composes: (ids: string[]) => Composes, resolve: (ids: string[], variant: number) => { adapters: AdapterInstance[], bind: Record<string, string>, gaps: AdapterSpec[] } }} StepCollection
@@ -81,6 +80,8 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 export const STEPS_VERSION = 'build-steps/0.1';
 /** Bound on the loop steps one call asks (each step answers one need). */
 export const MAX_LOOP_STEPS = 32;
+/** The code of a step-path question not asked because the time box ran out (makeAsk `deadline`). */
+export const STEP_PATH_TIMEOUT = 'step_path_timeout';
 // The loop codes a driver answers, and those the coverage step answers.
 /** @param {string} code (read at call time: loop-check.js and this module import each other through presets.js) */
 const isDriverCode = code => code === LOOP_CODES.inert || code === LOOP_CODES.loseUnaffected;
@@ -92,10 +93,13 @@ const cardOf = (registry, id) => registry.get(id)?.card ?? null;
 /**
  * A strict enum question over a writer: a reply outside the enum is asked again (attempts), then the build fails
  * (status 422, code selection_failed): nothing stands in for the model. `count` is told of every model call.
- * @param {{ writer: Writer, attempts?: number, log?: (msg: string) => void, count?: () => void }} options @returns {Ask}
+ * `deadline` (a performance.now() value, the step path's time box): a question asked after it is not sent; the ask
+ * fails (422 step_path_timeout) naming it.
+ * @param {{ writer: Writer, attempts?: number, log?: (msg: string) => void, count?: () => void, deadline?: number | null }} options @returns {Ask}
  */
-export function makeAsk({ writer, attempts = 2, log = () => {}, count = () => {} }) {
+export function makeAsk({ writer, attempts = 2, log = () => {}, count = () => {}, deadline = null }) {
   return async ({ name, system, user, field, options, extra = {} }) => {
+    if (deadline !== null && performance.now() > deadline) throw Object.assign(Error(`The step path's time box ran out before ${name}: it asks nothing more, and what it did not build is missing`), { status: 422, code: STEP_PATH_TIMEOUT });
     const props = { [field]: { type: 'string', enum: options }, why: { type: 'string', description: 'one line' }, ...extra };
     const schema = { name, schema: { type: 'object', additionalProperties: false, required: Object.keys(props), properties: props } };
     /** @type {string[]} */
@@ -278,7 +282,7 @@ function declares(card, kind) {
 
 /**
  * Ask ONE loop step (see the header): the candidates that answer `need`, compose and pass the loop check of the
- * partial collection with them, ranked by declarations; the model picks one or "none". `exclude`: ids never offered
+ * partial collection with them, in the catalogue's order; the model picks one or "none". `exclude`: ids never offered
  * (tried before); `among`: when given, only these ids are offered (the build's own retrieval: retrieval.js validOptions
  * for the mechanic the pick joins). -> the step record, the pick (null: a gap) and the gap.
  * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, need: StepNeed, ask: Ask, mechanic?: { id: string, verb: string, description: string } | null,
@@ -296,7 +300,6 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   // What the end reads: the problem's own primitive's (its win, or its lose), else the owner's win.
   const ownerReads = need.problem ? readsOf(problemEnd(registry, need.problem)) : before.owner ? readsOf(cardLoop(cardOf(registry, before.owner))?.win) : null;
   const fits = answers(registry, lg, need, { reads: ownerReads, used: c.systems });
-  const sentence = need.kind === 'win' || need.kind === 'lose' ? str(decomposition.core?.[need.kind]) : need.kind === 'driver' ? [decomposition.core?.opponent, decomposition.core?.lose].filter(Boolean).join('. ') : str(decomposition.core?.win);
   // The pool: gameplay and plot cards (no space, generator, graphics or adapter) that answer the need and are played the
   // play spec's way: none whose loop is declared for another interaction and ends the game (another game). A member of
   // the collection may answer a win or lose (it joins the core loop); a driver or coverage need it left open, it cannot.
@@ -309,8 +312,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
     const loop = cardLoop(card);
     if (need.kind !== 'inner' && !loopServes(loop, interaction) && (endsGame(loop?.win) || endsGame(loop?.lose))) return false;
     return fits(card);
-  }).map(card => ({ card, rank: (mechanic ? declaredFit(mechanic, card, { interaction }) ?? 0 : 0) + (sentence ? relevance({ verb: '', description: sentence }, card) : 0) }))
-    .sort((a, b) => b.rank - a.rank || a.card.id.localeCompare(b.card.id));
+  });
   /** @type {StepCandidate[]} */
   const candidates = [];
   /** @type {Array<{ id: string, why: string }>} */
@@ -319,7 +321,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
   let missingAdapter;
   // A win, lose or coverage pick joins the core loop mechanic (the seed: its companions come as its closure); a driver joins the collection only.
   const mechanicsWith = (/** @type {string} */ id) => (need.kind === 'driver' ? c.mechanics : joinLoop(c, [id], need.join ?? c.loop));
-  for (const { card, rank } of pool) {
+  for (const card of pool) {
     const b = formBundle({ registry, seed: card.id, systems: c.systems, space: c.space.use, adapters: c.adapters, composes: c.composes, resolve: c.resolve, interaction: need.kind === 'inner' ? null : interaction });
     if (!b.ok) { rejected.push({ id: card.id, why: b.why }); continue; }
     const r = c.resolve(b.members, b.variant);
@@ -338,10 +340,8 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
     }
     if (!why && need.problem && after.problems.some(p => problemKey(p) === problemKey(/** @type {LoopProblem} */ (need.problem)))) why = `it leaves [${need.problem.code}] ${need.problem.message}`;
     if (why) { rejected.push({ id: card.id, why: why.slice(0, 300) }); continue; }
-    const size = b.members.length + b.adapters.length;
-    candidates.push({ id: card.id, score: +(rank - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters });
+    candidates.push({ id: card.id, score: 0, variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters });
   }
-  candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
   /** @type {LoopStep} */
   const step = { kind: need.kind, mechanic: mechanic?.id ?? null, need: need.why.slice(0, 300), candidates, rejected: rejected.slice(0, 6), asks: [], outcome: 'gap', primitive: null, members: [], loop: [], collection: [...c.systems], ms: 0 };
   const done = (/** @type {StepCandidate | null} */ pick, /** @type {Gap | null} */ gap) => { step.ms = Math.round(performance.now() - t0); return { step, pick, gap }; };
@@ -373,7 +373,7 @@ export async function askLoopStep({ registry, decomposition, collection: c, need
 
 /**
  * Run the loop steps on a collection until it needs nothing more the steps answer (each need asked once): win, lose,
- * driver, coverage. `commit` adds a pick to the caller's collection (build.js, replan.js) and returns the collection
+ * driver, coverage. `commit` adds a pick to the caller's collection (build.js) and returns the collection
  * after it, or why it could not (the step is then a gap with that problem). After each step the loop check of the
  * partial collection is recorded on it. `only` limits the kinds; `exclude` maps a kind to ids never offered; `asked`
  * holds the keys of needs asked before (the build's steps after each mechanic: build.js), never asked again.
@@ -479,7 +479,7 @@ export async function askWins({ registry, decomposition, collection: c, ask, dec
 //     steps.push(...m.steps); gaps.push(...m.gaps);
 // stepAdapters / stepBind are kept apart from tryAdd's (which replaces `adapters` and `bind` with resolveAdapters' output
 // on every pick) and joined into collection() and the BuildResult with adapters.js keepMashupAdapters; the BuildResult
-// carries the records (mashupAdapters). Re-planning (replan.js) calls it over a selection (adapterStepsOnSelection).
+// carries the records (mashupAdapters). adapterStepsOnSelection runs it over a selection.
 
 /** Add adapter instances (with the bindings onto their regions) to the caller's collection: the collection after it, or why not. @typedef {(instances: AdapterInstance[], bind: Record<string, string>) => StepCollection | string} Adopt */
 

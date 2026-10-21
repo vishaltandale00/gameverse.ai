@@ -8,9 +8,8 @@ import assert from 'node:assert/strict';
 import { preflight } from '../v2/kernel/document.js';
 import { firstPlayable, tracingRegistry } from '../v2/planner/first-playable.js';
 import { writeOutline, coreLossProblems } from '../v2/planner/outline.js';
-import { selectPrimitives } from '../v2/planner/select.js';
 import { createWorld } from '../v2/kernel/world.js';
-import { testCatalogue, fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
+import { testCatalogue, fakeWriter, decomposition, selectionOf } from './v2-p-pipeline-fixtures.js';
 
 /** Registers the effect 'shatter' (so a beat can depend on it) and throws while installing. */
 const fragile = {
@@ -87,7 +86,7 @@ test('when the thrower cannot be removed (the space), the error names it, says i
   assert.match(fp.errors[0].message, /'engine\.space\.boom' threw while installing: kaboom/);
 
   const d = decomposition(['find and collect items']);
-  const selection = await selectPrimitives({ decomposition: d, registry });
+  const selection = selectionOf(registry, d, { space: 'engine.space.graph', map: { m0: ['gameplay.inventory'] } });
   const good = doc([], []);
   const writer = fakeWriter([doc([], [], 'engine.space.boom'), good]);
   const o = await writeOutline({ forms: 'single', writer, prompt: 'a glass house', decomposition: d, selection, registry, logic, seed: 1, maxRounds: 1, verify: false });

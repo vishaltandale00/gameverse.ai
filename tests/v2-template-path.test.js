@@ -419,7 +419,7 @@ for (const id of Object.keys(IDEAS)) test(`create "${IDEAS[id].idea}": the templ
 });
 
 test('a pick with a game concept no template is runs the step path for the whole idea, and says so', async () => {
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: mazeWriter() }, config: { maxDetailTasks: 0 } });
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: mazeWriter() } });
   const m = memoryCtx();
   await pipeline({ gameId: 'g', prompt: 'collect coins in a maze', kind: 'create', seed: 5 }, m.ctx);
   const v = m.versions[0];

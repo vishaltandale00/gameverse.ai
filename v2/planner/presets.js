@@ -14,7 +14,8 @@
 //   of the collection needs them ('spaces.zones' in its needs.content). How many is what declarations ask for
 //   (placesFor): the space's needs, the loops' participant groups and the zones their params reference, the content's
 //   spread, and a narrative idea's story places; never a default count.
-// - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
+// - A story exists only when the collection has a primitive that reads it (plot.storyboard, chosen for a mechanic by
+//   selection); the model writes it (the preset authors no acts or beats).
 // - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
 // - Adapters are the selection's (selection.adapters): the build's steps chose each one (build.js resolveAdapters for
 //   what a space lacks; build-steps.js adapterSteps for the play spec's mashup relations: nested, union, skin). The
@@ -32,11 +33,9 @@
 // Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
 // planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
-import { random } from '../kernel/rng.js';
 import { defaultsOf } from './catalog.js';
-import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
-import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
+import { configureGenerators, furnishWorld, planWorld, needSets, contentOfGenerator, selectedContent } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
 import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop } from './loop.js';
@@ -54,7 +53,7 @@ import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 /** @typedef {import('./select.js').Selection} Selection */
 /** How a space's zones are written. @typedef {{ exits: boolean, rect: boolean, range?: boolean, bounds: boolean, slot?: boolean, extent: number[] | null, length?: number }} ZoneShape */
 /** @typedef {{ to: string, gate?: { item: string } }} Exit */
-/** @typedef {{ id: string, name: string, description: string, rect?: number[], range?: number[], bounds?: { min: number[], max: number[] }, exits?: Exit[] }} OutlineZone */
+/** A zone as code writes it: its id and the shape its space understands (the model names and describes it). @typedef {{ id: string, name?: string, description?: string, rect?: number[], range?: number[], bounds?: { min: number[], max: number[] }, exits?: Exit[] }} OutlineZone */
 /** @typedef {{ id: string, use: string, with?: Record<string, unknown>, zones: OutlineZone[], generators?: Array<{ use: string }>, _shape?: ZoneShape }} OutlineSpace */
 /** @typedef {{ use: string, with?: Record<string, any>, space?: string }} SystemInstance */
 /** @typedef {{ mechanic: string, description: string, importance: string, kind: 'adapter' | 'no_primitive' | 'capability' | 'win', why: string, primitive?: string }} PresetGap */
@@ -69,8 +68,6 @@ import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 export const PRESETS_VERSION = 'presets/0.3';
 /** @param {unknown} s @param {string} [sep] */
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
-const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this where who you your player game games like style meets world'.split(' '));
-const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 /** A win/lose `when` template names '$target': the number the content picks (here: a reachable default). */
 const DEFAULT_TARGET = 10;
 
@@ -167,8 +164,6 @@ export function coreOf(selection, registry = null) {
 
 /** Does a space satisfy a declared space entry (a space primitive id, or a capability list)? @param {string | string[]} entry @param {{ use: string, caps: string[] }} space */
 const spaceFits = (entry, space) => (Array.isArray(entry) ? entry.every(c => space.caps.includes(c)) : entry === space.use);
-/** The primitive that runs the story (reads plot.storyboard), as the catalogue declares it. @param {RegistryLike} registry */
-const storyRunner = registry => registry.cards().find(c => (c.reads || []).includes('plot.storyboard'))?.id || null;
 /** @param {RegistryLike} registry @param {string} id */
 const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
@@ -199,8 +194,7 @@ export function loopCore(decomposition, selection, registry) {
 /**
  * The structure a collection composes, from the cards and the play spec: its core and loops, the win the collection
  * declares (none: a hole), avatar or not, story or not, zones or not, and the selection
- * adjusted to the play spec (base locomotion out without an avatar, a story runner out without narrative and in
- * with it). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
+ * adjusted to the play spec (base locomotion out without an avatar); a story when a chosen primitive reads one. @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
  */
 export function structureOf(decomposition, selection, registry) {
   const spec = decomposition.core;
@@ -219,10 +213,10 @@ export function structureOf(decomposition, selection, registry) {
   const declared = core.flatMap(id => { const l = cardLoop(registry.get(id)?.card); return !l ? [] : spec?.interaction && l.interactions.includes(spec.interaction) ? [spec.interaction] : l.interactions; });
   // Undecided by the spec: an avatar when a core loop declares avatar interaction or the collection moves a body (base locomotion).
   const avatar = spec?.interaction ? isAvatar(spec.interaction) : declared.some(isAvatar) || systems.some(id => registry.get(id)?.card.locomotion === 'base');
-  const narrative = typeof spec?.narrative === 'boolean' ? spec.narrative : core.some(id => readsStory(registry, id));
+  // A story is told when the collection has a primitive that reads plot.storyboard (selection chose it for a mechanic,
+  // as its card declares). The play spec's free narrative flag adds no primitive and removes none.
+  const narrative = systems.some(id => readsStory(registry, id));
   if (!avatar) for (const id of [...systems]) if (registry.get(id)?.card.locomotion === 'base') drop(id, 'no avatar: the player plays a side, not a walking character');
-  if (!narrative) for (const id of [...systems]) if (readsStory(registry, id) && !core.includes(id)) drop(id, 'no narrative: the core loop ends the game, not a story');
-  if (narrative && !systems.some(id => readsStory(registry, id))) add(storyRunner(registry), 'the idea has a story told in acts');
   // The win: what the collection declares. Selection chose the primitive that owns it (build-steps.js, the win step);
   // the preset never picks one itself: a collection that declares none is a hole the planner re-plans.
   const composed = composeLoop(systems, registry, { core });
@@ -325,7 +319,8 @@ function wireLoop(doc, structure, registry, text = {}) {
   };
   if (structure.win) wired = one(structure.win.use, structure.win.end, 'victory');
   for (const l of structure.lose || []) one(l.use, l.end, 'defeat');
-  doc.plot.endings = endings;
+  // The endings the wiring reaches (an empty list is no section: nothing stamps one).
+  if (endings.length) doc.plot.endings = endings; else delete doc.plot.endings;
   // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them):
   // a loop that reads them and declares no win of its own (the story also reads them, but declares its own win; a
   // view that shows them declares no loop).
@@ -618,11 +613,11 @@ const freshId = (id, taken) => { let out = id, n = 2; while (taken.has(out)) out
  * primitive of the document owns (the component's owner); an unwired win or lose -> wired (wireLoop); AI participants
  * nothing drives, or whose drivers cannot change what the loop's lose reads -> addDriver (wiring the drivers already
  * there). An unowned component and a driver nobody chose are reported, with what it cannot fix, for the planner to
- * re-plan. `opponent` is the play spec's opponent and `idea` the words that rank drivers (loopIdea). The input is not modified.
+ * re-plan. `opponent` is the play spec's opponent. The input is not modified.
  * @template T @param {T} input @param {RegistryLike} registry @param {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null, idea?: string }} [options]
  * @returns {{ doc: T, fixes: LoopFix[], problems: import('./loop-check.js').LoopProblem[] }}
  */
-export function repairLoop(input, registry, { logic = null, core = null, opponent = null, idea = '' } = {}) {
+export function repairLoop(input, registry, { logic = null, core = null, opponent = null } = {}) {
   if (!isObj(input) || !Array.isArray(input.systems)) return { doc: input, fixes: [], problems: [] };
   const lg = logic || logicOf(registry);
   const coreIds = core ? [...core] : null;
@@ -726,7 +721,7 @@ export function repairLoop(input, registry, { logic = null, core = null, opponen
         const r = wireLoop(doc, n.kind === 'win' ? { win: { use: p.primitive, end }, lose: [] } : { win: null, lose: [{ use: p.primitive, end }] }, registry);
         if (r.wired || n.kind === 'lose') fix(`${p.primitive} ${n.kind} wired to ${n.kind === 'win' ? 'a won' : 'a lost'} ending (card.loop.${n.kind})`);
       } else if (n.kind === 'driver' && n.control) {
-        const what = addDriver(doc, registry, n, idea);
+        const what = addDriver(doc, registry, n);
         if (what) fix(what);
       }
     }
@@ -736,9 +731,6 @@ export function repairLoop(input, registry, { logic = null, core = null, opponen
   return { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), fixes, problems: loopProblems(doc, registry, check) };
 }
 
-/** The words that rank what the structural repair adds for an idea (its win, lose, premise and core mechanics). @param {Decomposition} decomposition */
-export const loopIdea = decomposition => [decomposition.core?.lose, decomposition.core?.win, decomposition.premise, ...(decomposition.mechanics || []).filter(m => m.importance === 'core').map(m => m.description)].filter(Boolean).join('. ');
-
 /**
  * Make AI-controlled participants act (a 'driver' need of the loop check), from declarations alone and with the
  * drivers the document already has (selection chose them; nothing is added here):
@@ -747,11 +739,11 @@ export const loopIdea = decomposition => [decomposition.core?.lose, decompositio
  * - else a driver of the document acting on a component (card.drives.components) the AI participants do not carry yet,
  *   whose declared behaviour changes what the lose reads (need.by): its component's declared example (its archetypes
  *   contract) goes on them: the loop's AI participants, or for the play spec's opponent the placed archetypes of the
- *   kind that example declares. Ties: the idea's words (relevance), id.
+ *   kind that example declares. Several such drivers: the first in the document's systems (the order selection chose them).
  * Returns what it did, or null when the document's drivers provide nothing (reported for the planner to re-plan).
- * @param {Record<string, any>} doc @param {RegistryLike} registry @param {import('./loop-check.js').LoopNeed} n @param {string} idea @returns {string | null}
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @param {import('./loop-check.js').LoopNeed} n @returns {string | null}
  */
-function addDriver(doc, registry, n, idea) {
+function addDriver(doc, registry, n) {
   /** @type {any[]} */
   const systems = doc.systems;
   const arches = objects(prop(doc.content, 'archetypes'));
@@ -789,9 +781,9 @@ function addDriver(doc, registry, n, idea) {
     return { value, on: n.loop ? targets : targets.filter(a => kinds.includes(String(prop(arches.find(x => x.id === a), 'kind')))) };
   };
   const ranked = driversIn(doc, registry).filter(d => d.drives.control === n.control && d.drives.components.length && !d.drives.components.some(C => targets.some(a => carries(a, C))) && (!by || drivesBy(d.drives, by, d.effects)))
-    .map(d => ({ d, ex: d.drives.components.map(C => ({ C, ex: exampleFor(d.use, C) })).find(x => x.ex && x.ex.on.length) || null, score: idea ? relevance({ verb: '', description: idea }, /** @type {any} */ ({ id: d.use, ...d.card })) : 0 }))
+    .map(d => ({ d, ex: d.drives.components.map(C => ({ C, ex: exampleFor(d.use, C) })).find(x => x.ex && x.ex.on.length) || null }))
     .filter(x => x.ex)
-    .sort((a, b) => b.score - a.score || a.d.use.localeCompare(b.d.use));
+    .sort((a, b) => a.d.index - b.d.index);
   const best = ranked[0];
   if (!best?.ex?.ex) return null;
   const why = n.loop ? `the ${n.loop} AI participants` : `the play spec's ${n.control} opponent`;
@@ -801,23 +793,14 @@ function addDriver(doc, registry, n, idea) {
 }
 
 /**
- * preset({ decomposition, selection, registry, logic, seed, prompt }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
+ * preset({ decomposition, selection, registry, logic, seed }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
  * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec
  */
-export function preset({ decomposition, selection, registry, logic, seed, prompt = '' }) {
+export function preset({ decomposition, selection, registry, logic, seed }) {
   const st = structureOf(decomposition, selection, registry);
-  const state = { rng: seed >>> 0 || 1 };
-  const rand = () => random(state);
-  const words = [...new Set((`${decomposition.title} ${decomposition.premise} ${prompt}`.match(/[A-Za-z]{4,}/g) || []).filter(w => !STOP.has(w.toLowerCase())))];
-  const cap = (/** @type {string} */ w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
-  const usedNames = new Set();
-  const placeName = (/** @type {number} */ i) => {
-    for (let k = 0; k < 8; k++) {
-      const n = `${words.length ? cap(words[Math.floor(rand() * words.length)]) + ' ' : ''}${PLACES[Math.floor(rand() * PLACES.length)]}`;
-      if (!usedNames.has(n)) { usedNames.add(n); return n; }
-    }
-    return `Place ${i + 1}`;
-  };
+  // Code writes the zones' ids (place_1, place_2... across the document); their names and descriptions are content
+  // the model writes (outline-form.js), never words picked from the prompt.
+  let places = 0;
   const capsOf = (/** @type {string} */ use, /** @type {Record<string, unknown>} */ w = {}) => {
     const p = registry.get(use); if (!p) return /** @type {string[]} */ ([]);
     const config = { ...defaultsOf(p.card), ...w };
@@ -846,16 +829,14 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const prefs = st.win ? st.loops.find(l => l.use === st.win?.use)?.loop.space || [] : [];
   if (st.win && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0])))
     gaps.push({ mechanic: st.win.use, description: `needs adapter: ${st.win.use} on ${selSpaces[0].use}`, importance: 'supporting', kind: 'adapter', primitive: st.win.use, why: `${st.win.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
-  // The world each space gets is what the collection's declarations need (world.js planWorld), re-planned for the
-  // final collection: a generator a mechanic named is kept; one the selection planned for a mover the structure took
-  // out (a board whose pieces are seated, not walked) is not. A board that needs only cells gets no rooms generator.
-  const intent = [decomposition.premise, ...(decomposition.mechanics || []).map(m => m.description)].filter(Boolean).join('. ');
+  // The world each space gets is what its card declares it needs (card.needs.content) and the final collection does not
+  // already give it (world.js selectedContent, planWorld), re-planned for the final collection: a generator a mechanic
+  // named is kept; the selection's own plan is redone. A board that needs only cells gets no rooms generator.
   const worldFor = (/** @type {typeof selSpaces[number]} */ s, /** @type {number} */ si) => {
     const named = (selection.generators || []).filter(g => g.space === s.id && !g.auto).map(g => g.id);
-    const moved = st.systems.some(id => isMovement(registry, id) && (selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
-    if (!moved || !needSets(registry, s.use).length) return named;
-    const have = [...OUTLINE_AUTHORS, ...named.flatMap(id => contentOfGenerator(registry, id))];
-    return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, intent, exclude: named }).generators];
+    if (!needSets(registry, s.use).length) return named;
+    const have = [...selectedContent(registry, s), ...named.flatMap(id => contentOfGenerator(registry, id))];
+    return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, exclude: named, set: selection.worlds?.[s.id] ?? null }).generators];
   };
   /** @type {OutlineSpace[]} */
   const spaces = selSpaces.map((s, si) => {
@@ -867,13 +848,9 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     const on = st.systems.filter(id => (nested.find(x => x.use === id)?.space ?? selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
     const generators = worldFor(s, si).map(use => ({ use }));
     const n = shape.exits || (st.zones && !isNested) ? placesFor(registry, s, shape, { systems: on, generators: generators.map(g => g.use), story: si === 0 && st.narrative ? decomposition.zones ?? 0 : 0, needed: st.zones && !isNested }) : 0;
-    /** @type {string[]} */
-    const ids = [];
     const zones = Array.from({ length: n }, (_, i) => {
-      const name = placeName(i + si * 10);
-      let id = slug(name); while (ids.includes(id)) id += '_b'; ids.push(id);
       /** @type {OutlineZone} */
-      const z = { id, name, description: `${name}${decomposition.tone ? `, ${decomposition.tone}` : ''}.` };
+      const z = { id: `place_${++places}` };
       placeZone(z, i, n, shape);
       return z;
     });
@@ -927,7 +904,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // Every adapter instance carries the instance fields the planner owns (its id, its host binding).
   ensureInstanceFields({ spaces, systems }, registry);
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
-  const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
+  const playerArch = st.avatar ? { id: 'player_avatar', kind: 'player', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
   const extent = primaryShape.extent;
   const at = primary.zones.length ? (primaryShape.exits ? primary.zones[0].id : zoneStart(primary.zones[0])) : extent ? extent.map(v => Math.floor(v / 2)) : null;
   /** @type {any} */
@@ -936,7 +913,8 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     views: { primary: decomposition.views[0] || registry.get(primary.use)?.card.views?.[0] || 'any', alternates: decomposition.views.slice(1) },
     spaces,
     systems,
-    plot: { premise: decomposition.premise, characters: [] },
+    // The premise only: cast and story are content the model writes for the primitives that read them.
+    plot: { premise: decomposition.premise },
     content: { archetypes: [playerArch] },
     player: { archetype: playerArch.id, space: primary.id, ...(at !== null && at !== undefined ? { at } : {}) },
   };
@@ -962,7 +940,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   const seated = placeParticipants(applySkins(doc, registry), registry);
   // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the
   // components the win reads, an action that changes it, the win and lose wired. What cannot be derived is reported.
-  const looped = repairLoop(seated.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) });
+  const looped = repairLoop(seated.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null });
   // Nested encounters' outcomes act on the outer participants: the defeated side is taken out of play the way the
   // final document declares (card.defeats), the player's side known from the outer loop's seated groups.
   for (const why of configureEncounters(looped.doc, registry, encounters)) gaps.push({ mechanic: 'mashup', description: `needs: ${why}`, importance: 'core', kind: 'adapter', why });
@@ -973,7 +951,7 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // draft only fails for that, engage it and repair again.
   if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
   // Repair may have written what the loops' wiring runs through (a required list's first entry): wire it too.
-  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null, idea: loopIdea(decomposition) }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
+  if (repaired.ok) { const again = repairLoop(repaired.doc, registry, { logic, core: st.core, opponent: decomposition.core?.opponent ?? null }); if (again.fixes.length) { looped.fixes.push(...again.fixes); repaired = repairDocument(again.doc, { registry, logic, protect: keep }); } }
   // A space still empty after repair (no generator selected) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
   // The static loop check of the finished structure, before any model call: the planner re-plans what it reports.

@@ -670,12 +670,15 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const archetypes = content.archetypes;
   const pid = slug(prop(f.player, 'archetype') || '');
   let playerArch = archetypes.find(a => a.id === pid) || archetypes.find(a => a.kind === 'player');
-  if (!playerArch) { const made = asObject(structuredClone(list(skeleton.content?.archetypes).find(a => prop(a, 'id') === skeleton.player?.archetype) || { id: 'hero', components: { name: 'You' } })); made.kind ??= 'player'; playerArch = made; archetypes.push(made); }
+  // The player archetype the form left out is the skeleton's (code wrote it); a skeleton without one gets none stamped here.
+  const own = playerArch ? null : list(skeleton.content?.archetypes).find(a => prop(a, 'id') === skeleton.player?.archetype);
+  if (own) { const made = asObject(structuredClone(own)); made.kind ??= 'player'; playerArch = made; archetypes.push(made); }
   out.content.archetypes = archetypes;
   const items = content.items;
   for (const it of skeleton.content?.items || []) if (!items.some(x => x.id === it.id)) items.push(structuredClone(it));
   if (items.length) out.content.items = items;
-  out.plot.characters = content.characters;
+  // The cast the form wrote (an empty list is no section: nothing stamps one).
+  if (content.characters.length) out.plot.characters = content.characters;
   if (content.dialogue) out.plot.dialogue = content.dialogue;
   if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {
@@ -709,7 +712,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const space = out.spaces.find(s => s.id === skeleton.player?.space) || out.spaces[0];
   const startZone = listOf(space.zones).find(z => prop(z, 'id') === slug(prop(f.player, 'zone'))) || listOf(space.zones)[0];
   const exits = layout.find(l => l.id === space.id)?.exits;
-  out.player = { ...structuredClone(skeleton.player || {}), archetype: playerArch.id, space: space.id, at: exits ? prop(startZone, 'id') : (startZone && zoneStart(startZone)) || skeleton.player?.at };
+  out.player = { ...structuredClone(skeleton.player || {}), ...(playerArch ? { archetype: playerArch.id } : {}), space: space.id, at: exits ? prop(startZone, 'id') : (startZone && zoneStart(startZone)) || skeleton.player?.at };
   keepReferenced(out, skeleton, offered);
   return out;
 }

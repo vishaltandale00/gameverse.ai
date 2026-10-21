@@ -1,29 +1,29 @@
 // The document's structure is composed from the idea's collection of primitives: the play spec (decomposition.core,
 // no mode) and what the chosen cards declare (card.loop / card.mode, locomotion, needs) decide avatar, zones, story,
-// the win and endings; no one shape is stamped onto every idea. Offline: real catalogue, lexical selection, the
-// preset and a form-filling fake writer.
+// the win and endings; no one shape is stamped onto every idea. Offline: real catalogue, the collection each idea's
+// mechanics map to (a fixed selection: selection itself is the model's build), the preset and a form-filling fake writer.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize, decompositionSchema } from '../v2/planner/decompose.js';
-import { selectPrimitives } from '../v2/planner/select.js';
 import { adapterStepsOnSelection, makeAsk } from '../v2/planner/build-steps.js';
-import { ensureAgency, writeOutline } from '../v2/planner/outline.js';
+import { writeOutline } from '../v2/planner/outline.js';
 import { preset, structureOf } from '../v2/planner/presets.js';
 import { kindViewPreserved } from '../v2/planner/census.js';
 import { coreLoopProblems } from '../v2/planner/core-loop.js';
 import { cardLoop, endsGame, loopOf } from '../v2/planner/loop.js';
 import { preflight } from '../v2/kernel/document.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, selectionOf } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 
 /** A decomposition as the model would write it (with the play spec), normalized against the catalogue. */
 const idea = (prompt, mechanics, views, core, spaces = []) => normalize({ title: prompt, premise: `${prompt}.`, mechanics: mechanics.map((d, i) => ({ id: `m${i}`, verb: d.split(' ')[0], description: d, importance: 'core' })), views, spaces, acts: 2, zones: 4, core }, prompt, registry);
+/** What each idea's mechanics map to (by title): the collection the preset composes. @type {Map<string, Parameters<typeof selectionOf>[2]>} */
+const COLLECTIONS = new Map();
 async function plan(d) {
-  const sel = await selectPrimitives({ decomposition: d, registry });
-  const a = await ensureAgency({ decomposition: d, selection: sel, registry, logic, seed: 7 });
-  return { sel: a.selection, p: preset({ decomposition: d, selection: a.selection, registry, logic, seed: 7 }) };
+  const sel = selectionOf(registry, d, /** @type {any} */ (COLLECTIONS.get(d.title)));
+  return { sel, p: preset({ decomposition: d, selection: sel, registry, logic, seed: 7 }) };
 }
 const isBase = id => registry.get(id)?.card.locomotion === 'base';
 const zoneBeats = doc => (doc.plot?.storyboard?.acts || []).flatMap(a => a.beats || []).filter(b => JSON.stringify(b.when || {}).includes('"zone"'));
@@ -44,6 +44,11 @@ const PLATFORMER = idea('a Mario-style platformer', ['run and jump across platfo
   { interaction: 'avatar-realtime', opponent: 'hazards', win: 'reach the flag', lose: 'lose every life', theme: 'bright', narrative: false, mashup: [] }, [{ role: 'level', kind: 'tiles-side', description: 'a side-view level' }]);
 const MINE = idea('mine and build in a blocky world', ['mine blocks', 'place blocks to build'], ['3p'],
   { interaction: 'avatar-realtime', opponent: 'none', win: 'build the biggest castle', lose: '', theme: 'blocky', narrative: false, mashup: [] }, [{ role: 'world', kind: 'continuous-3d', description: '' }]);
+COLLECTIONS.set(CHESS.title, { id: 'board', space: 'engine.space.grid', map: { m0: ['gameplay.turns'], m1: ['gameplay.creature.battle'], m2: ['gameplay.turns'] }, systems: ['gameplay.creature.party'] });
+COLLECTIONS.set(CARDS.title, { id: 'table', space: 'engine.space.none', map: { m0: ['gameplay.cards'], m1: ['gameplay.cards'] } });
+COLLECTIONS.set(MATCH.title, { id: 'board', space: 'engine.space.grid', map: { m0: ['gameplay.match'], m1: ['gameplay.match'] } });
+COLLECTIONS.set(PLATFORMER.title, { id: 'level', space: 'engine.space.tilemap', map: { m0: ['gameplay.move.platformer'], m1: ['gameplay.combat.health'], m2: ['gameplay.collectible', 'gameplay.goal'] }, generators: ['engine.generate.tilemap.rooms'] });
+COLLECTIONS.set(MINE.title, { space: 'engine.space.voxel', map: { m0: ['gameplay.blocks.mine'], m1: ['gameplay.blocks.place'] }, systems: ['gameplay.move.walk'], generators: ['engine.generate.terrain.noise'] });
 
 test('the play spec has no mode: interaction, opponent, win, lose, theme, narrative and mashup relations', () => {
   const s = decompositionSchema(registry);
@@ -89,11 +94,10 @@ const CHESS_X = { ...structuredClone(CHESS), concepts: [{ id: 'chess', name: 'ch
   core: { ...CHESS.core, loop: 'm0', mashup: [{ relation: 'nested', mechanics: ['m0', 'm1'], why: 'a capture is decided by a creature battle' }] } };
 /** The selection with the build's adapter steps run over it (build-steps.js adapterSteps; a scripted model picks the trigger). */
 async function planNested(d) {
-  const sel = await selectPrimitives({ decomposition: d, registry });
+  const sel = selectionOf(registry, d, { id: 'board', space: 'engine.space.grid', map: { m0: ['gameplay.turns'], m1: ['gameplay.creature.battle'], m2: ['gameplay.turns'] }, systems: ['gameplay.creature.party'] });
   const writer = fakeWriter([req => JSON.stringify({ pick: req.schema.schema.properties.pick.enum.find(x => x === 'attack_hit' || x === 'gameplay.creature.battle') || 'none', why: 'scripted', spec: '' })]);
   const steps = await adapterStepsOnSelection({ registry, decomposition: d, selection: sel, ask: makeAsk({ writer }) });
-  const a = await ensureAgency({ decomposition: d, selection: sel, registry, logic, seed: 7 });
-  return { sel: a.selection, steps, p: preset({ decomposition: d, selection: a.selection, registry, logic, seed: 7 }) };
+  return { sel, steps, p: preset({ decomposition: d, selection: sel, registry, logic, seed: 7 }) };
 }
 
 test('chess × creatures: the nested step adds the nested adapter for the battle loop, and the document preflights', async () => {
@@ -147,6 +151,8 @@ test('the genre and view survive the outline for ideas across td, side, 3p, boar
     idea('a 3D Zelda dungeon inside a giant clock', ['walk through dungeon rooms', 'fight clockwork guardians with a sword', 'pull levers to open doors'], ['3p'], { interaction: 'avatar-realtime', opponent: 'hazards', win: 'stop the clock', lose: 'fall', theme: 'brass', narrative: true, mashup: [] }, [{ role: 'dungeon', kind: 'continuous-3d', description: 'the clock' }]),
     CHESS, CARDS,
   ];
+  COLLECTIONS.set(ideas[0].title, { id: 'farm', space: 'engine.space.grid', map: { m0: ['gameplay.farming'], m1: ['gameplay.move.walk'] }, generators: ['engine.generate.grid.board'] });
+  COLLECTIONS.set(ideas[2].title, { id: 'dungeon', space: 'engine.space.mesh3d', map: { m0: ['gameplay.move.walk'], m1: ['gameplay.combat.melee', 'gameplay.combat.health'], m2: ['gameplay.mechanism'] }, generators: ['engine.generate.dungeon.rooms'] });
   for (const d of ideas) {
     const { p, sel } = await plan(d);
     const kv = kindViewPreserved(d, /** @type {any} */ (p.doc), registry);
@@ -161,7 +167,10 @@ test('the genre and view survive the outline for ideas across td, side, 3p, boar
 
 test('structureOf reports what it changed and why', () => {
   const st = structureOf(CHESS, { systems: ['gameplay.move.grid', 'gameplay.turns', 'plot.storyboard'], spaces: [], generators: [], graphics: [], bind: {}, mechanics: [{ id: 'm0', importance: 'core', primitives: ['gameplay.turns'] }], gaps: [] }, registry);
-  assert.deepEqual(st.removed.map(r => r.use).sort(), ['gameplay.move.grid', 'plot.storyboard']);
+  // No avatar: its base locomotion leaves, with why. The story runner the selection chose stays (the play spec's
+  // narrative flag removes nothing): a chosen story reader is what makes the game tell a story.
+  assert.deepEqual(st.removed.map(r => r.use).sort(), ['gameplay.move.grid']);
   assert.ok(st.removed.every(r => r.why));
+  assert.ok(st.systems.includes('plot.storyboard') && st.narrative === true);
   assert.equal(st.win.use, 'gameplay.turns');
 });

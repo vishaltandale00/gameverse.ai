@@ -23,16 +23,17 @@ function memoryCtx() {
 
 /** A stand-in spec model: answers each layer's request from the prompt it is given. */
 function scriptedModel() {
-  // The iterative decomposition's forms, from the decomposition the model wrote: the mystery brings the loop, the tides
+  // The iterative decomposition's forms, from the decomposition the model wrote: the mystery brings the loop (its story,
+  // told in acts: the story runner is the model's pick for it, never the play spec's narrative flag), the tides
   // (named by the idea after "with") only their content.
-  const decompose = decomposer(planFrom({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: 'lighthouse mystery', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: 'tides', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
-    core: { loop: 'collect', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } }, { lighthouse_mystery: { kind: 'genre', quote: 'a lighthouse mystery', keeps: ['clues'] }, tides: { kind: 'other', quote: 'tides' } }));
+  const decompose = decomposer(planFrom({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', mechanics: [{ id: 'mystery', verb: 'solve', description: 'solve the mystery, told in acts', from: 'lighthouse mystery', importance: 'core' }, { id: 'collect', verb: 'collect', description: 'find and collect items', from: 'lighthouse mystery', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: 'tides', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4,
+    core: { loop: 'mystery', interaction: 'avatar-realtime', opponent: 'hazards', win: 'find the lamp', lose: '', theme: 'salt and fog', narrative: true, mashup: [] } }, { lighthouse_mystery: { kind: 'genre', quote: 'a lighthouse mystery', keeps: ['clues'] }, tides: { kind: 'other', quote: 'tides' } }));
   return fakeWriter([(req) => {
     // The template pick: no template is this idea, so the step path builds it (what this test exercises).
     const picked = stepPick(req); if (picked) return picked;
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
-    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });
+    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { mystery: ['plot.storyboard'], collect: ['gameplay.inventory'], tides: ['gameplay.hazard'] } });
     if (built) return built;
     if (String(req.schema?.name || '').startsWith('game_outline')) {
       // The outline form: the scaffold's zones, named; params, story and endings left to the scaffold's defaults.
@@ -43,9 +44,10 @@ function scriptedModel() {
       const acts = [{ id: 'act_1', title: 'The climb', beats: [{ id: 'lamp', title: 'The lamp', when_json: JSON.stringify({ zone: zones.at(-1) }), after: [], optional: false, do_json: JSON.stringify([{ do: 'give_item', item: 'lens' }, { do: 'end_game', ending: 'victory' }]) }] }];
       return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, acts, dialogue: [], quests: [], items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
     }
-    if (/Write the detail patch for zone "([^"]+)"/.test(req.user)) {
-      const zone = req.user.match(/zone "([^"]+)"/)[1];
-      return JSON.stringify({ plot: { characters: [{ id: 'gull', name: 'A gull' }], storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'gull', when: { zone }, do: [{ do: 'say', character: 'gull', text: 'Kee!' }] }] }] } } });
+    // The tweak form: the declared inventory slots param for "more inventory slots", else "none" (the change goes to ops).
+    if (req.schema?.name === 'tweak_param') {
+      const slots = /inventory slots/.test(req.user) ? req.schema.schema.properties.param.enum.find(p => /\.with\.slots$/.test(p)) : null;
+      return JSON.stringify({ param: slots ?? 'none', number: slots ? 48 : null, flag: null, why: 'scripted' });
     }
     if (/Change request:.*dragon/.test(req.user)) return JSON.stringify({ ops: [], unsupported: [{ request: 'a dragon that breathes fire', why: 'no primitive breathes fire' }], summary: 'not possible yet' });
     if (/Change request:/.test(req.user)) return JSON.stringify({ ops: [{ op: 'set', path: 'title', value: 'Lamp of the Deep' }], unsupported: [], summary: 'renamed' });
@@ -53,29 +55,26 @@ function scriptedModel() {
   }]);
 }
 
-test('end to end with a stubbed model: decompose, select, outline, first playable, parallel detail, revise', async () => {
+test('end to end with a stubbed model: decompose, select, outline, first playable, revise; no post-publish pass', async () => {
   const base = buildCatalogue();
   const spec = scriptedModel();
   const pipeline = createKernelPipeline({ catalogue: async () => base, writers: { spec }, decisions: null });
   const { ctx, versions, stages } = memoryCtx();
   const out = await pipeline({ gameId: 'g', prompt: 'a lighthouse mystery with tides', kind: 'create', seed: 5 }, ctx);
-  // The only publish before detail patches is the gated, themed version (no early preset publish).
-  assert.equal(versions[0].stage, 'first_playable');
-  assert.equal(versions.filter(v => !v.stage.startsWith('detail:')).length, 1, versions.map(v => v.stage).join(' '));
+  // The only publish is the gated, themed version: no early preset publish, and no later pass adds content (ARCHITECTURE §5).
+  assert.deepEqual(versions.map(v => v.stage), ['first_playable']);
   const themed = versions[0];
   assert.equal(themed.doc.title, 'Lamp of the Drowned');
   assert.equal(themed.report.outline.source, 'fake-writer');
   assert.ok(themed.report.timings.firstPlayableBuildMs < 1000);
   for (const m of themed.report.selection.mechanics) assert.ok(m.primitives.length || themed.report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
-  assert.ok(out.detail.accepted >= 1 && out.detail.proposed >= out.detail.accepted);
-  assert.ok(versions.slice(versions.indexOf(themed) + 1).every(v => v.stage.startsWith('detail:') && v.report.added));
   for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
   assert.ok(stages.some(s => s.name === 'complete'));
-  // Revise: a parameter tweak takes no model call; a content change goes to the model as targeted ops.
+  // Revise: a parameter tweak is one strict call among the declared params; a content change goes to the model as targeted ops.
   const calls = spec.calls.length;
   const tweaked = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'more inventory slots' }, ctx);
   assert.equal(tweaked.report.path, 'tweak');
-  assert.equal(spec.calls.length, calls, 'no model call for a tweak');
+  assert.deepEqual(spec.calls.slice(calls).map(c => c.schema?.name), ['tweak_param'], 'one small strict call for a tweak');
   // Every new version restarts a running session on its own start (ARCHITECTURE §4: checked like a new game).
   assert.equal(tweaked.report.hot, 'restart');
   const renamed = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'rename the game to Lamp of the Deep' }, ctx);
@@ -106,7 +105,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   assert.equal(game.meta.kind, 'kernel');
   const { json: versions } = await call('GET', `/api/v2/games/${created.gameId}/versions`);
   assert.equal(versions.versions[0].stage, 'first_playable');
-  assert.ok(versions.versions.length > 1, 'detail versions follow');
+  assert.equal(versions.versions.length, 1, 'no post-publish pass adds versions');
   // A tweak, then a request nothing in this game can carry out: reported as a gap.
   let wait = done(created.gameId);
   await call('POST', `/api/v2/games/${created.gameId}/revise`, { change: 'more inventory slots' });
@@ -127,7 +126,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   assert.match(refused.json.error, /retired genre engine/);
 });
 
-test('the benchmark records latency, pass rates, detail acceptance and determinism with its context', async () => {
+test('the benchmark records latency, pass rates and determinism with its context', async () => {
   // Offline (no live model): a scripted spec writer answers the plan and the build's questions, since nothing is picked without one.
   const r = await runBench({ prompts: ['collect coins in a maze'], n: 1, offline: true, writers: { spec: mazeWriter(), code: null } });
   assert.equal(r.summary.succeeded, 1);
@@ -136,5 +135,5 @@ test('the benchmark records latency, pass rates, detail acceptance and determini
   assert.equal(r.summary.preflightFirstPassRate, null, 'not measured offline: null with a reason, never zero');
   assert.ok(r.summary.preflightFirstPassUnavailable);
   assert.ok(r.context.catalogHash && r.context.machine.node && Array.isArray(r.context.machine.loadavg));
-  assert.ok(r.summary.detailAcceptance.proposed >= 1);
+  assert.equal(r.summary.detailAcceptance, undefined, 'there is no detail stage to measure');
 });

@@ -1,12 +1,11 @@
 // The loop steps of the iterative build (v2/planner/build-steps.js), on the real catalogue with scripted fake writers
 // (no network): after the mechanic steps, the win, the lose, the drivers of AI opponents and what lets play change
 // the win's reads are each one small strict enum question over candidates that compose and pass the loop check of the
-// partial collection. The preset only wires what selection chose; re-planning asks the same questions.
+// partial collection. The preset only wires what selection chose.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { preset } from '../v2/planner/presets.js';
-import { diagnose, replan } from '../v2/planner/replan.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { cardLoop, endsGame, loopServes } from '../v2/planner/loop.js';
@@ -89,7 +88,7 @@ test('(a) a grid collect-and-evade spec: the win step offers wins played on the 
   assertStrict(w);
 });
 
-test('(b) when no candidate fits, the step is a gap for the gap layer and nothing is added: in the build, in the preset and in re-planning', async () => {
+test('(b) when no candidate fits, the step is a gap for the gap layer and nothing is added: in the build and in the preset', async () => {
   const d = spec(PACMAN);
   // The model finds no listed win fits ("none"): a core win gap with the primitive signature, carrying the spec's sentence.
   const w = writer({ space: ['engine.space.grid'], picks: PACMAN_PICKS, steps: { win: [], lose: [] } });
@@ -109,21 +108,9 @@ test('(b) when no candidate fits, the step is a gap for the gap layer and nothin
   assert.equal(p.structure.win, null);
   assert.ok(p.gaps.some(g => g.kind === 'win' && g.importance === 'core'));
   assert.ok(!p.doc.systems.some(s => endsGame(cardLoop(card(s.use))?.win)));
-  // Re-planning asks the same win step, never offering what the build's step already offered; without a model it
-  // chooses nothing at all. Either way the need is unresolved with the signature, for the gap layer.
-  const ds = diagnose([], { selection: sel, registry });
-  assert.ok(ds.some(x => x.kind === 'win'));
-  const w2 = writer({ steps: { win: [] } });
-  const again = await replan(sel, ds.filter(x => x.kind === 'win'), { registry, decomposition: d, tried: new Map(), writer: w2 });
-  for (const c of asked(w2, 'pick_win')) for (const id of step.candidates.map(x => x.id)) assert.ok(!c.schema.schema.properties.pick.enum.includes(id), id);
-  assert.deepEqual(again.actions.filter(a => a.action === 'add'), []);
-  assert.deepEqual(again.unresolved.map(x => x.kind), ['win']);
-  const offline = await replan(sel, ds.filter(x => x.kind === 'win'), { registry, decomposition: d, tried: new Map() });
-  assert.deepEqual([offline.actions, offline.unresolved.length], [[], 1]);
-  assert.match(offline.unresolved[0].signature, /game-ending win/);
 });
 
-test('(c) AI opponents nothing drives: the driver step adds a driver, offered only drivers; re-planning asks the same question', async () => {
+test('(c) AI opponents nothing drives: the driver step adds a driver, offered only drivers', async () => {
   const d = spec({ ...PACMAN, core: { ...PACMAN.core, opponent: 'ai-rival' } });
   const w = writer({ space: ['engine.space.grid'], picks: PACMAN_PICKS, steps: { lose: ['gameplay.death'], driver: ['gameplay.ai.brain'] } });
   const sel = await selectPrimitives({ decomposition: d, registry, writer: w });
@@ -140,19 +127,6 @@ test('(c) AI opponents nothing drives: the driver step adds a driver, offered on
   const p = preset({ decomposition: d, selection: structuredClone(sel), registry, logic, seed: 1 });
   assert.deepEqual(p.loop.filter(x => x.code === LOOP_CODES.inert), []);
   assertPresetAddsNone(p, sel);
-  // The gate later finds ghosts placed and nothing driving them (a selection made without the step): re-planning goes
-  // through the same driver step, and the model's pick is added.
-  const undriven = { ...structuredClone(sel), systems: sel.systems.filter(id => id !== 'gameplay.ai.brain'), build: undefined };
-  const doc = structuredClone(preset({ decomposition: d, selection: structuredClone(undriven), registry, logic, seed: 1 }).doc);
-  doc.content.archetypes.push({ id: 'ghost', kind: 'enemy', components: { name: 'Ghost' } });
-  doc.systems.find(s => s.use === 'engine.spawner')?.with.rules.push({ id: 'g1', archetype: 'ghost', count: [2, 2] }) ?? doc.systems.unshift({ use: 'engine.spawner', with: { rules: [{ id: 'g1', archetype: 'ghost', count: [2, 2] }] } });
-  assert.deepEqual(loopProblems(doc, registry, { logic, opponent: 'ai-rival' }).map(x => x.code), [LOOP_CODES.inert]);
-  const ds = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: the ghosts never moved' }], { selection: undriven, registry, doc, opponent: 'ai-rival' });
-  assert.deepEqual(ds.map(x => [x.kind, x.loop?.code]), [['structure', LOOP_CODES.inert]]);
-  const w2 = writer({ steps: { driver: ['gameplay.ai.brain'] } });
-  const r = await replan(undriven, ds, { registry, decomposition: d, tried: new Map(), writer: w2 });
-  assert.deepEqual(r.actions.map(a => [a.action, a.primitive]), [['add', 'gameplay.ai.brain']]);
-  assert.deepEqual(w2.calls.map(c => c.schema.name), ['pick_driver']);
   assertStrict(w);
 });
 

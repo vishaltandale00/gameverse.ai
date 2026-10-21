@@ -7,10 +7,9 @@ import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { outlineForm } from '../v2/planner/outline-form.js';
 import { proceduralOutline, writeOutline } from '../v2/planner/outline.js';
-import { selectPrimitives } from '../v2/planner/select.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { dependencyLayers } from '../v2/planner/build.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, selectionOf } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 const SYSTEMS = ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'];
@@ -21,7 +20,7 @@ async function setup() {
     mechanics: [{ id: 'fight', verb: 'fight', description: 'fight monsters with a sword', from: '', importance: 'core' }, { id: 'loot', verb: 'collect', description: 'collect keys and potions', from: '', importance: 'supporting' }],
     spaces: [{ role: 'dungeon', kind: 'tiles-topdown', description: '' }], core: { loop: 'fight', interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: 'grim', narrative: true, mashup: [] } }, 'dungeon', registry);
   // A fixed collection (selection is not the point here): the melee loop, what it requires, and the rest.
-  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: SYSTEMS, mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }, { id: 'loot', description: 'collect', importance: 'supporting', primitives: ['gameplay.inventory'] }], bind: {} };
+  const sel = selectionOf(registry, d, { id: 'dungeon', space: 'engine.space.tilemap', map: { fight: ['gameplay.combat.melee'], loot: ['gameplay.inventory'] }, systems: SYSTEMS, generators: ['engine.generate.tilemap.rooms'] });
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   return { d, sel, sk, form: outlineForm({ registry, skeleton: sk, selection: sel }) };
 }

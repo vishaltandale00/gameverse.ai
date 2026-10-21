@@ -1,13 +1,11 @@
 // The checks after EVERY mechanic step of the build (v2/planner/build.js, build-steps.js), on the real catalogue with
 // scripted writers (no network): never two wins (one small enum question picks the game's win from the play spec's
 // win sentence, the others are left unwired), and every wired end whose reads no player verb or effect of the
-// collection can change gets the coverage step for its primitive and that primitive's mechanic. Re-planning answers
-// the same need with the same step, and a diagnosis it takes no action for says why.
+// collection can change gets the coverage step for its primitive and that primitive's mechanic.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectPrimitives } from '../v2/planner/select.js';
 import { preset, loopCore } from '../v2/planner/presets.js';
-import { diagnose, replan, missingText } from '../v2/planner/replan.js';
 import { partialCheck, selectionCollection } from '../v2/planner/build-steps.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
@@ -112,41 +110,6 @@ test('(b) two wins in the collection are resolved by one question from the play 
   assert.ok(sel.systems.includes('gameplay.turns') && endsGame(cardLoop(card('gameplay.turns')).win));
   assert.equal(stepIndex(sel, 'wins', 'play_cards'), stepIndex(sel, 'mechanic', 'play_cards') + 1);
   assert.deepEqual([sel.win?.use, sel.win?.unwired], ['gameplay.cards', ['gameplay.turns']]);
-});
-
-test('(c) re-planning a loop_win_unaffected diagnosis returns a coverage action; a diagnosis it takes no action for says why', async () => {
-  const d = spec(PACMAN);
-  const w0 = writer({ steps: { lose: ['gameplay.death'], coverage: ['gameplay.collectible'], wins: ['gameplay.collectible'] } });
-  const built = await selectPrimitives({ decomposition: d, registry, writer: w0 });
-  // The live selection: the score pick without the coverage the build now adds (as before this change).
-  const live = structuredClone(built);
-  delete live.build; delete live.win;
-  live.systems = live.systems.filter(id => id !== 'gameplay.collectible');
-  for (const m of live.mechanics) m.primitives = m.primitives.filter(id => id !== 'gameplay.collectible');
-  // The outline's static loop check of that selection's document: the score win play cannot reach.
-  const doc = preset({ decomposition: d, selection: structuredClone(live), registry, logic, seed: 1 }).doc;
-  const problems = loopProblems(doc, registry, { logic, core: loopCore(d, live, registry), opponent: 'hazards' });
-  assert.deepEqual(problems.map(p => [p.code, p.primitive]), [[LOOP_CODES.unaffected, 'gameplay.score']]);
-  const ds = diagnose(problems, { selection: live, registry, doc });
-  assert.deepEqual(ds.map(x => [x.kind, x.mechanic, x.loop?.code]), [['structure', 'eat_dots', LOOP_CODES.unaffected]]);
-  // The same coverage step the build runs: one question, the pick joins eat_dots, then the wins question.
-  const w = fakeWriter([req => buildAnswer(req, { steps: { coverage: ['gameplay.collectible'], wins: ['gameplay.collectible'] } }) ?? '{}']);
-  const r = await replan(live, ds, { registry, decomposition: d, tried: new Map(), writer: w });
-  assert.deepEqual(r.actions.map(a => [a.action, a.mechanic, a.primitive]), [['add', 'eat_dots', 'gameplay.collectible']]);
-  assert.deepEqual(w.calls.map(c => c.schema.name), ['pick_coverage', 'pick_game_win']);
-  assert.ok(named(w, 'pick_coverage')[0].schema.schema.properties.pick.enum.includes('gameplay.collectible'));
-  assert.equal(r.selection.win?.use, 'gameplay.collectible');
-  assert.ok(r.selection.mechanics.find(m => m.id === 'eat_dots').primitives.includes('gameplay.collectible'));
-  assert.deepEqual(r.unresolved, []);
-  // The model finds none fits, or there is no model: no action, reported as such with the reason.
-  const none = await replan(live, ds, { registry, decomposition: d, tried: new Map(), writer: fakeWriter([req => buildAnswer(req, { steps: { coverage: [] } }) ?? '{}']) });
-  assert.deepEqual(none.actions, []);
-  assert.match(none.unresolved[0].reason, /^coverage step: /);
-  assert.match(missingText(none.unresolved)[0], /; no action: coverage step: /);
-  const offline = await replan(live, ds, { registry, decomposition: d, tried: new Map() });
-  assert.deepEqual([offline.actions, offline.unresolved[0].reason], [[], 'coverage step: no model to choose a candidate']);
-  // The selection's collection carries the decided win into the loop check of the partial collection.
-  assert.equal(selectionCollection(registry, r.selection, 'navigate_maze_avoid_ghosts').win, 'gameplay.collectible');
 });
 
 // (d) Unrelated ideas: the checks after every mechanic step ask only what each collection lacks.
