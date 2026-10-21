@@ -5,8 +5,6 @@
 // block) and the `unbreakable` tag. Drops go to the bag or into the world as
 // pickups; tools wear through tool_used events; protected zones refuse.
 import { compare } from '../../kernel/logic.js';
-import { checkParam } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 import { give, bag } from './inventory.js';
 import { item as itemDef, items as allItems, blocks, roll, lookCell, cellDist, cellKey, cellOf, isVec, api as spaceApi, center } from './items-lib.js';
 
@@ -20,11 +18,10 @@ const BLOCKS = { type: 'list', of: { type: 'object', open: true, fields: {
   drops: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] dropped (default 1)' }, p: { type: 'number', min: 0, max: 1, effect: 'chance it drops (default always)' } } }, effect: 'what breaking it drops (default: the item whose block it is)' },
 } } };
 const ITEMS = { type: 'list', of: { type: 'object', open: true, fields: {
-  tool: { type: 'object', fields: { kind: { type: 'string' }, tier: { type: 'integer', min: 0, effect: 'its tier (0 = wood...)' } } },
+  // Open: other cards read more of an item's tool (equipment its durability), and a document need not use them.
+  tool: { type: 'object', open: true, fields: { kind: { type: 'string' }, tier: { type: 'integer', min: 0, effect: 'its tier (0 = wood...)' } } },
   block: { type: 'ref', to: 'block', effect: 'the block it places (and that drops it by default)' },
 } } };
-/** ITEMS as this validate re-checks it: other cards declare more fields of an item's tool (its durability...). */
-const ITEMS_OWN = { ...ITEMS, of: { ...ITEMS.of, fields: { ...ITEMS.of.fields, tool: { ...ITEMS.of.fields.tool, open: true } } } };
 
 /** The best tool in `who`'s bag (or equipped, with toolFrom 'equipped') for a block: {item, tier, kind} | null. */
 export function bestTool(rt, who, block, from = 'best') {
@@ -70,13 +67,6 @@ export default {
   },
   logic(logic) {
     logic.predicate('mined', { refs: p => [['block', p.mined]], test: (p, rt) => compare(rt.state.counts[`block_mined:${p.mined}`] ?? 0, p) });
-  },
-  validate(config, doc, ctx) {
-    const errors = [];
-    // The declared section shapes (card.data), checked as errors here only until preflight enforces declared shapes
-    // itself (kernel/document.js DECLARATIONS_ENFORCED): delete this validate with the flag.
-    if (!DECLARATIONS_ENFORCED) for (const [section, shape] of [['blocks', BLOCKS], ['items', ITEMS_OWN]]) { const v = doc.content?.[section]; if (v != null) checkParam(shape, v, `content.${section}`, errors, ctx); }
-    return errors;
   },
   /** Solver key: which cell is being mined (progress is replayed by the option's steps). */
   solverKey(rt) { return Object.entries(rt.state.prim[KEY]?.work || {}).map(([w, j]) => [w, j.cell]); },

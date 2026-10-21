@@ -5,8 +5,6 @@
 // forbidNear refuse; `snap` requires a solid neighbour. set_blocks fills a box
 // from plot or scripts.
 import { take, bag } from './inventory.js';
-import { checkParam } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 import { item as itemDef, lookDir, eyeOf, cellDist, cellOf, isVec, api as spaceApi, inBox, add, v3 } from './items-lib.js';
 
 const KEY = 'gameplay.blocks.place';
@@ -53,13 +51,6 @@ export default {
         rt.emit('blocks_set', { space: sid, block: e.block ?? null, box: e.box ?? null, cells: e.cells?.length ?? null });
       },
     });
-  },
-  validate(config, doc, ctx) {
-    const errors = [];
-    // The declared section shape (card.data), checked as errors here only until preflight enforces declared shapes
-    // itself (kernel/document.js DECLARATIONS_ENFORCED): delete this validate with the flag.
-    if (!DECLARATIONS_ENFORCED && doc.content?.items != null) checkParam(ITEMS, doc.content.items, 'content.items', errors, ctx);
-    return errors;
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.selected ??= {}; s.ghost ??= {}; return s; };

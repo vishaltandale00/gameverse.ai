@@ -12,8 +12,7 @@
 // mf, phase, stun, combo}, components.versus {meter, juggle, air, guard},
 // components.body.facing, and rt.service('melee').moves(entity) for frame data.
 import { round6, dead, spaceOf, continuous } from './ai-lib.js';
-import { checkParam, ENTITY_KINDS } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
+import { ENTITY_KINDS } from '../../kernel/params.js';
 
 const ID = 'gameplay.ai.versus';
 /** Kit difficulty table (index = level). */
@@ -111,13 +110,6 @@ export default {
     provides: { events: ['cpu_intent'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
-  },
-  validate(config, doc, ctx) {
-    const errors = [];
-    // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
-    // (kernel/document.js DECLARATIONS_ENFORCED): delete this validate with the flag.
-    if (!DECLARATIONS_ENFORCED) (doc.content?.archetypes || []).forEach((a, i) => { const c = a?.components?.cpu; if (c !== undefined) checkParam(CPU_COMPONENT, c, `content.archetypes[${i}].components.cpu`, errors, ctx); });
-    return errors;
   },
   install(rt, config) {
     rt.system('ai', rt => {

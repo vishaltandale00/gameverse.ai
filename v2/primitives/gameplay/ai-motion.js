@@ -10,9 +10,6 @@
 // the kit; speeds are space units per second.
 import { v3, add, sub, mul, len, norm, dot, r6, round6, clamp, wrapAng, steerAng, spaceOf, can, continuous, moverOwned, dead, between, selfRelative, cleanupOnDespawn, TAU } from './ai-lib.js';
 
-import { checkParam } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
-
 const ID = 'gameplay.ai.motion';
 export const MOTIONS = ['straight', 'sine', 'zigzag', 'dive', 'hover', 'turret', 'orbit', 'chase', 'wander', 'split', 'snake', 'gravity', 'saucer', 'rock', 'path'];
 const n = (extra = {}) => ({ type: 'number', ...extra });
@@ -76,9 +73,7 @@ export default {
     (doc.content?.archetypes || []).forEach((a, i) => {
       const m = a?.components?.motion; if (m === undefined) return;
       const path = `content.archetypes[${i}].components.motion`;
-      // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
-      // (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
-      if (!DECLARATIONS_ENFORCED) checkParam(MOTION, m, path, errors, ctx);
+      // The component's shape is its declaration (card.components.motion), which preflight enforces.
       if (!m || typeof m !== 'object' || Array.isArray(m)) return;
       if (!m.program && !m.kind) errors.push({ code: 'motion_program_missing', path, message: 'motion needs a program or a kind' });
       (Array.isArray(m.program) ? m.program : []).forEach((s, j) => { if (s?.kind === 'path' && !s.pts) errors.push({ code: 'motion_path_points', path: `${path}.program[${j}].pts`, message: 'a path step needs pts' }); });

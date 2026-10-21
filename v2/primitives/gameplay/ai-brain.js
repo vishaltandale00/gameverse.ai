@@ -11,8 +11,7 @@ import {
   centerOf, clearLine, deltaTo, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
 import { touchDefeats } from './combat-lib.js';
-import { checkParam, ENTITY_KINDS } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
 const ID = 'gameplay.ai.brain';
@@ -231,9 +230,7 @@ export default {
 };
 
 function validateAi(ai, path, errors, ctx) {
-  // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
-  // (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
-  if (!DECLARATIONS_ENFORCED) checkParam(AI, ai, path, errors, ctx);
+  // The component's shape is its declaration (card.components.ai), which preflight enforces: only cross-field rules here.
   (Array.isArray(ai?.brain) ? ai.brain : []).forEach((b, j) => {
     if (!b || typeof b !== 'object') return;
     const bp = `${path}.brain[${j}]`;

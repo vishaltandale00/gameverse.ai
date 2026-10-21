@@ -11,7 +11,6 @@
 import { v3, r6, round6, len, sub, spaceOf, can, continuous, distBetween, zonePoint, dead, moverOwned, ensureLocomotion } from './ai-lib.js';
 
 import { checkParam } from '../../kernel/params.js';
-import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 
 const ID = 'gameplay.ai.schedule';
 const st = rt => rt.store(ID);
@@ -23,8 +22,8 @@ export const SLOT = {
 };
 /** A routine: the slots of a day. */
 const ROUTINE = { type: 'list', of: { type: 'object', fields: SLOT }, effect: 'daily routine slots by hour' };
-/** A rule example's slot: every field unset but the hours. @param {number} from @param {number} to */
-const slot = (from, to) => ({ from, to, zone: null, at: null, doing: null, space: null });
+/** The kind examples' document fragment: the character a set_schedule names. */
+const BAKER = { plot: { characters: [{ id: 'baker', name: 'Bea' }] } };
 
 /** Index of the slot covering hour h (wrap-around slots like 22→6 included), or -1. */
 export function slotAt(schedule, h) {
@@ -67,8 +66,8 @@ export default {
     // Effects carry no declared shape the kernel checks: the check holds the routine to ROUTINE and its rules.
     logic.effect('set_schedule', { refs: e => [['character', e.character]],
       codes: [
-        { code: 'schedule_place', fields: ['schedule[].at', 'schedule[].zone'], message: 'a slot names its place: at or zone', example: { do: 'set_schedule', character: 'nobody', schedule: [{ from: 1, to: 2 }] } },
-        { code: 'schedule_overlap', fields: ['schedule[].from', 'schedule[].to'], message: 'the slots of a routine do not overlap', example: { do: 'set_schedule', character: 'nobody', schedule: [{ from: 1, to: 5, at: [0, 0] }, { from: 2, to: 3, at: [0, 0] }] } },
+        { code: 'schedule_place', fields: ['schedule[].at', 'schedule[].zone'], message: 'a slot names its place: at or zone', example: { doc: BAKER, example: { do: 'set_schedule', character: 'baker', schedule: [{ from: 1, to: 2 }] } } },
+        { code: 'schedule_overlap', fields: ['schedule[].from', 'schedule[].to'], message: 'the slots of a routine do not overlap', example: { doc: BAKER, example: { do: 'set_schedule', character: 'baker', schedule: [{ from: 1, to: 5, at: [0, 0] }, { from: 2, to: 3, at: [0, 0] }] } } },
       ],
       check: (e, path, errs, ctx) => { const p = `${path}.schedule`, list = e.schedule ?? []; checkParam(ROUTINE, list, p, errs, ctx); routineRules(list, p, errs); },
       run: (e, rt) => { (st(rt).overrides ??= {})[e.character] = e.schedule ?? null; const ent = rt.entity(e.character); if (ent?.components.schedule && !Array.isArray(ent.components.schedule)) { ent.components.schedule.slot = -2; if (e.schedule) ent.components.schedule.routine = structuredClone(e.schedule); } rt.emit('schedule_changed', { who: e.character }); } });
@@ -78,9 +77,7 @@ export default {
     (doc.plot?.characters || []).forEach((c, i) => {
       if (c?.schedule === undefined) return;
       const path = `plot.characters[${i}].schedule`;
-      // The declared routine shape (card.data), checked as errors here only until preflight enforces declared shapes
-      // itself (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
-      if (!DECLARATIONS_ENFORCED) checkParam(ROUTINE, c.schedule, path, errors, ctx);
+      // The routine's shape is its declaration (card.data plot.characters), which preflight enforces.
       routineRules(c.schedule, path, errors);
     });
     return errors;
