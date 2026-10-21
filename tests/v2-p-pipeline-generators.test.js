@@ -282,6 +282,10 @@ test('live documents: Mario Kart (track and the 3D outline), the platformer and 
   const cases = [['kart.json', 'race_tracks'], ['kart3d-outline.json', 'race_track'], ['platformer.json', 'tower_climb'], ['zelda3d-standin.json', 'clock_dungeon']];
   for (const [file, sid] of cases) {
     const doc = structuredClone(live(file));
+    // mesh3d declares two worlds (terrain and roads, or rooms): which one is the step path's model choice (select.js
+    // pick_world), never the idea's words. This stored stand-in predates that choice, so it is given the one a dungeon
+    // makes (its rooms generator); the planner's pass configures it.
+    if (file === 'zelda3d-standin.json' && !doc.spaces[0].generators?.length) doc.spaces[0].generators = [{ use: 'engine.generate.dungeon.rooms' }];
     configureGenerators(doc, registry); // the planner's pass over a draft, then furnishing
     const f = furnishWorld(doc, registry, logic, { seed: doc.seed });
     const { rt, doc: pre } = boot(f.doc), c = contentOf(rt, sid);

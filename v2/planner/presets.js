@@ -35,7 +35,7 @@
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { defaultsOf } from './catalog.js';
 import { repairDocument } from './repair.js';
-import { configureGenerators, furnishWorld, planWorld, needSets, isMovement, contentOfGenerator, OUTLINE_AUTHORS } from './world.js';
+import { configureGenerators, furnishWorld, planWorld, needSets, contentOfGenerator, selectedContent } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
 import { isAvatar, mashupSides } from './play-spec.js';
 import { cardLoop, composeLoop } from './loop.js';
@@ -829,14 +829,13 @@ export function preset({ decomposition, selection, registry, logic, seed }) {
   const prefs = st.win ? st.loops.find(l => l.use === st.win?.use)?.loop.space || [] : [];
   if (st.win && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0])))
     gaps.push({ mechanic: st.win.use, description: `needs adapter: ${st.win.use} on ${selSpaces[0].use}`, importance: 'supporting', kind: 'adapter', primitive: st.win.use, why: `${st.win.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
-  // The world each space gets is what the collection's declarations need (world.js planWorld), re-planned for the
-  // final collection: a generator a mechanic named is kept; one the selection planned for a mover the structure took
-  // out (a board whose pieces are seated, not walked) is not. A board that needs only cells gets no rooms generator.
+  // The world each space gets is what its card declares it needs (card.needs.content) and the final collection does not
+  // already give it (world.js selectedContent, planWorld), re-planned for the final collection: a generator a mechanic
+  // named is kept; the selection's own plan is redone. A board that needs only cells gets no rooms generator.
   const worldFor = (/** @type {typeof selSpaces[number]} */ s, /** @type {number} */ si) => {
     const named = (selection.generators || []).filter(g => g.space === s.id && !g.auto).map(g => g.id);
-    const moved = st.systems.some(id => isMovement(registry, id) && (selection.bind?.[id] ?? selSpaces[0]?.id) === s.id);
-    if (!moved || !needSets(registry, s.use).length) return named;
-    const have = [...OUTLINE_AUTHORS, ...named.flatMap(id => contentOfGenerator(registry, id))];
+    if (!needSets(registry, s.use).length) return named;
+    const have = [...selectedContent(registry, s, st.systems), ...named.flatMap(id => contentOfGenerator(registry, id))];
     return [...named, ...planWorld(registry, s, { view: si === 0 ? decomposition.views?.[0] ?? null : null, have, exclude: named, set: selection.worlds?.[s.id] ?? null }).generators];
   };
   /** @type {OutlineSpace[]} */

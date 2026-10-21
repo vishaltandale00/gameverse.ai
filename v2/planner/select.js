@@ -10,7 +10,7 @@ import { isSpace, isGenerator, spaceVariants, requirementsOf, satisfying } from 
 import { isAvatar, mashupProblem, unplayedLoops } from './play-spec.js';
 import { askMashup } from './decompose.js';
 import { resolveAdapters, keepMashupAdapters } from './adapters.js';
-import { planWorld, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
+import { planWorld, needSets, contentOfGenerator, targets, selectedContent } from './world.js';
 import { str, isStr, prop } from '../kernel/guards.js';
 import { buildSelection } from './build.js';
 import { makeAsk } from './build-steps.js';
@@ -215,19 +215,19 @@ export async function selectPrimitives({ decomposition, registry, writer = null,
   }
   for (const d of dropped) for (const m of mechanics) m.primitives = m.primitives.filter(x => x !== d.id);
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
-  // A space something moves through gets a world even when no mechanic mapped to a generator (the mapping rarely
-  // names one): the generators whose cards declare the content the space card says it needs (planWorld). Zones
-  // are the outline's own; the outline's scaffold pass fills each generator's params. A space that declares
+  // Every space gets the world its card declares it needs (card.needs.content), as the composition check reads it
+  // (space-content.js): what it lacks once what it carries, the outline's zones and the collection give it are counted
+  // is built by the generators whose cards declare that content (planWorld), even when no mechanic named one; the
+  // outline's scaffold pass fills each generator's params. A space that declares
   // alternative worlds (card.needs.alternatives: terrain and roads, or rooms) none of which the collection already
   // meets gets one small model choice among them (pick_world): the idea's words never decide it.
-  const movers = systems.filter(id => isMovement(registry, id));
   /** @type {Record<string, string[]>} */
   const worlds = {};
   const ask = makeAsk({ writer, attempts, log, deadline });
   for (const s of spaces) {
     const sets = needSets(registry, s.use);
-    if (!sets.length || !movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
-    const have = [...OUTLINE_AUTHORS, ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
+    if (!sets.length) continue;
+    const have = [...selectedContent(registry, s, systems), ...generators.filter(g => g.space === s.id).flatMap(g => contentOfGenerator(registry, g.id))];
     const exclude = generators.filter(g => g.space === s.id).map(g => g.id);
     let set = sets.find(x => x.every(k => have.includes(k))) ?? null;
     if (!set && sets.length > 1) {
