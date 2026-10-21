@@ -16,6 +16,9 @@ import { compare } from '../../kernel/logic.js';
 import { alive, matchesAny, sortedEntities, has, err, runBound, r6 } from './modes-lib-util.js';
 import { allowInTurnModal } from './turns.js';
 
+/** The space a zone belongs to (a stage's spawn into a zone lands in that zone's space, not the player's). */
+const zoneSpace = (rt, zone) => (zone ? (rt.doc.spaces || []).find(s => (s.zones || []).some(z => z.id === zone))?.id : undefined);
+
 const ID = 'gameplay.stage.sequence';
 export const GOALS = ['lines', 'score', 'survive', 'chain', 'viruses', 'blockers', 'jelly', 'collect', 'tile', 'when', 'none'];
 /** How each goal kind is measured (overridable per goal with event/field/var/block/archetype/tag). */
@@ -74,7 +77,7 @@ export default {
         clear: { type: 'predicate' }, fail: { type: 'predicate' },
         onStart: { type: 'effects', default: [] }, onClear: { type: 'effects', default: [] }, onFail: { type: 'effects', default: [] },
         space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' },
-        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'json' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' } } } },
+        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'json' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space', effect: 'the space to spawn in (default: the zone\'s, else the player\'s)' } } } },
         clearOut: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'despawn entities (id/archetype/tag) at stage start, e.g. the previous opponent' },
       } } },
       apply: { type: 'list', default: [], of: { type: 'object', fields: { target: { type: 'string', required: true }, table: { type: 'list', of: { type: 'json' }, min: 1, required: true }, op: { type: 'string', options: ['set', 'mul', 'add'], default: 'set' }, loopScale: { type: 'number', default: 0, min: 0, max: 10, effect: 'numeric values grow by this fraction per loop' } } }, effect: 'per-stage columns: stage i uses table[min(i, last)]' },
@@ -262,7 +265,7 @@ function install(rt, config) {
       if (d.space && d.space !== p.space) rt.moveToSpace(p, d.space, d.at ?? null, d.zone);
       else rt.space(p.space).teleport(p, { zone: d.zone, at: d.at }, rt);
     }
-    for (const sp of d.spawn) { if (sp.id && rt.entity(sp.id)) rt.despawn(sp.id); const e = rt.spawn(sp.archetype, { id: sp.id, space: sp.space, at: sp.at }); if (sp.zone) rt.space(e.space).teleport(e, { zone: sp.zone }, rt); }
+    for (const sp of d.spawn) { if (sp.id && rt.entity(sp.id)) rt.despawn(sp.id); const e = rt.spawn(sp.archetype, { id: sp.id, space: sp.space ?? zoneSpace(rt, sp.zone), at: sp.at }); if (sp.zone) rt.space(e.space).teleport(e, { zone: sp.zone }, rt); }
     runBound(rt, d.onStart, { actor: 'player' });
     rt.emitTyped('stage_intro', s.stageId, { stage: s.stageId, index: i, number: i + 1, loop: s.loop, name: d.name ?? s.stageId, intro: d.intro ?? '' });
     if (!F(config.introSec)) begin(s);

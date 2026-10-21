@@ -1,7 +1,8 @@
 // Feature checks (ARCHITECTURE.md §6.3): one check per feature a document mixes in, generated from what its primitives
 // declare. For every primitive instance whose card declares a loop with verbs or progress events:
-//   exists        it installs in the world, and the document sections its loop declares it needs (loop.needs.content)
-//                 are not empty;
+//   exists        it installs in the world, the document sections its loop declares it needs (loop.needs.content)
+//                 are not empty, and every participant it declares (sides, teams, racers, fighters) is an entity of the
+//                 world at the start of play (planner/content.js absentParticipants);
 //   controllable  each of its loop verbs has a control a person has (a key, an axis, or a UI primitive the host mounts:
 //                 controls.js uncontrolledVerbs);
 //   works         pressing each verb's control (through the controls: controls.js), from states the gate's play
@@ -17,10 +18,11 @@
 import { cardLoop, loopExists } from '../planner/loop.js';
 import { uncontrolledVerbs } from './controls.js';
 import { instanceVerbs, choiceValues } from '../primitives/engine/runtime-lib-controls.js';
+import { absentParticipants, startOfPlay } from '../planner/content.js';
 
 export const FEATURES_VERSION = 'features/0.1';
 /** Problem codes, by check. */
-export const FEATURE_CODES = Object.freeze({ exists: ['feature_missing', 'feature_content_empty'], controllable: ['feature_uncontrolled'], works: ['feature_inert', 'feature_unreached'] });
+export const FEATURE_CODES = Object.freeze({ exists: ['feature_missing', 'feature_content_empty', 'feature_participant_absent'], controllable: ['feature_uncontrolled'], works: ['feature_inert', 'feature_unreached'] });
 
 const defaults = card => Object.fromEntries(Object.entries(card?.params || {}).filter(([, s]) => s && typeof s === 'object' && 'default' in s).map(([k, s]) => [k, s.default]));
 /** Is a declared content path non-empty in a document ('content.items'; 'spaces.zones': some space has zones)? */
@@ -66,6 +68,7 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
   const pool = [start, ...early, ...states.filter(Boolean)], picked = [];
   for (let i = 0; i < Math.min(maxStates, pool.length); i++) picked.push(pool[Math.floor((i * pool.length) / Math.min(maxStates, pool.length))]);
   const moves = (rt.controls.controls.map?.axes?.move || []).length ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [];
+  const absent = absentParticipants(doc, registry, startOfPlay(rt)); rt.restore(start);
   for (const f of featuresOf(doc, registry)) {
     const declared = [...new Set([...f.loop.progress, ...(f.card.provides?.events || [])])];
     const row = { use: f.use, path: f.path, exists: true, controllable: true, verbs: {} };
@@ -74,6 +77,7 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
     if (!rt.has(f.use)) { row.exists = false; fail('feature_missing', `${f.use} is in the document but does not install`); }
     const empty = (f.loop.needs.content || []).filter(p => !contentMet(doc, p));
     if (empty.length) { row.exists = false; fail('feature_content_empty', `${f.use}: the content its loop needs is empty (${empty.join(', ')})`); }
+    if (absent.some(x => x.path === f.path)) row.exists = false;
     const loose = uncontrolledVerbs(doc, registry, f.verbs);
     for (const v of loose) { const verb = v.split(' ')[0]; row.controllable = false; row.verbs[verb] = { controllable: false, works: false }; fail('feature_uncontrolled', `${f.use}: no control a person has issues '${v}'`, verb); }
     for (const verb of f.verbs) {
@@ -86,6 +90,7 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
     if (!f.verbs.length) row.events = declared.slice(0, 8);
     table.push(row);
   }
+  for (const a of absent) problems.push({ code: 'feature_participant_absent', path: a.path, message: a.message, use: a.use });
   rt.restore(start);
   return { version: FEATURES_VERSION, table, problems };
 }

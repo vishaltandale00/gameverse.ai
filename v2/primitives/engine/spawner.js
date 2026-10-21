@@ -9,7 +9,7 @@
 // the arcade ghost house, waves leaving a gate, a queue at a door.
 // The spawn/despawn effects place entities through the same code.
 import { ENTITY_KINDS } from '../../kernel/params.js';
-import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds } from './runtime-lib.js';
+import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds, standable as standsAt } from './runtime-lib.js';
 
 const ID = 'engine.spawner';
 const pair = (effect, dflt) => ({ type: 'list', of: { type: 'integer', min: 0 }, min: 1, max: 2, default: dflt, effect });
@@ -115,15 +115,8 @@ export default {
       const b = rt.service('biomeAt'); return (typeof b === 'function' ? b : b.at)(at[0], at.length >= 3 ? at[2] : at[1], space) === r.biome;
     };
     const spaceOfRule = (r, z = r.zone ? zoneDef(rt.doc, r.zone) : null) => r.space ?? z?.space ?? instance?.space ?? rt.player()?.space ?? rt.doc.spaces[0].id;
-    // Can the archetype stand at `at` in a cell space (one with getCell)? Inside its bounds (a wrapping axis has no edge),
-    // and in a cell it may enter: the blocks service's solidity, else the space's own passability (cellRules: a floor
-    // block is passable, a door only some classes pass), else any cell is solid. A space without cells: anywhere.
-    const standable = (api, space, at, archetype) => {
-      if (!api.getCell) return true;
-      const b = api.bounds?.();
-      if (b && at.slice(0, b.min.length).some((v, i) => !b.wrap?.[i] && (v < b.min[i] || v >= b.max[i]))) return false;
-      return !(rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : typeof api.passable === 'function' ? !api.passable(at, { archetype, components: {} }) : api.getCell(at) != null);
-    };
+    // Can the archetype stand at `at` (runtime-lib standable: inside a cell space, in a cell it may enter)?
+    const standable = (api, space, at, archetype) => standsAt(rt, api, space, at, { archetype, components: {} });
     const rectCells = (x0, y0, x1, y1) => { const out = []; for (let y = Math.ceil(y0); y < y1; y++) for (let x = Math.ceil(x0); x < x1; x++) out.push([x, y]); return out; };
     const discCells = (c, rad) => rectCells(c[0] - rad, c[1] - rad, c[0] + rad + 1, c[1] + rad + 1).filter(q => Math.hypot(q[0] - c[0], q[1] - c[1]) <= rad);
     const zoneCells = zone => (Array.isArray(zone.rect) ? rectCells(...zone.rect) : Array.isArray(zone.cells) ? zone.cells.filter(isVec) : []);

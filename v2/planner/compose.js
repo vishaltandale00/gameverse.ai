@@ -31,10 +31,15 @@
 //            composes only when preflight, the composition check and the loop check pass, else it fails with the named
 //            problem (the adapter compose-check names: adapterSignature).
 //
+//   world    a composed document (nested or union) that passes the checks is booted on its seed: every participant its
+//            loops declare must be an entity of the world as generated at the start of play (content.js
+//            startProblems), and the player must stand where it can, else it fails (compose_participants_absent: a board's
+//            pieces on a board of gems; compose_player_misplaced: an avatar's start on it).
+//
 // Every problem has a stable code (COMPOSE_RULES). Nothing here names a primitive, a template or a pair.
 import { cardLoop } from './loop.js';
 import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
-import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, participantsOf, placeParticipants, ZONES, SECTIONS } from './content.js';
+import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, participantsOf, placeParticipants, startProblems, ZONES, SECTIONS } from './content.js';
 import { declaredOutcomes, wireOutcomes, configureInner, configureEncounters, skinSections } from './presets.js';
 import { checkComposition } from './compose-check.js';
 import { loopProblems, movesPlayer } from './loop-check.js';
@@ -65,6 +70,8 @@ export const COMPOSE_RULES = Object.freeze({
   union_incompatible: 'the united document fails the composition check where no adapter helps (a conflict, a control a person lacks for a loop verb): the check names each failure',
   union_loop_problem: 'the united document fails the loop check',
   compose_preflight: 'the composed document fails preflight',
+  compose_player_misplaced: 'the composed document\'s player stands, at the start of play, outside its space or in a cell it cannot stand in (its start comes from a world the composition replaced, or the world fills its cells): content.js startProblems',
+  compose_participants_absent: 'a participant a loop of the composed document declares (sides, teams, racers, fighters) is no entity of its world at the start of play: the world as generated has no place for it (content.js startProblems)',
 });
 
 const PROBE = '\u0001ref';
@@ -250,13 +257,15 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
  * other's, equal values are kept, lists (and effects) are joined (entries with an id must not collide), objects with
  * declared fields join field by field, and anything else that differs is a conflict. `space`: the added side's host
  * space, written on its list entries that declare a space field and leave it out (they keep where they spawn).
- * @param {Record<string, any>} params @param {Record<string, any>} a @param {Record<string, any>} b @param {string} path @param {ComposeProblem[]} problems @param {string | null} space
+ * `own`: `b` alone is written into an empty `a` with `space` on its located entries (the host's own entries).
+ * @param {Record<string, any>} params @param {Record<string, any>} a @param {Record<string, any>} b @param {string} path @param {ComposeProblem[]} problems @param {string | null} space @param {boolean} [own]
  */
-function joinConfig(params, a, b, path, problems, space) {
+function joinConfig(params, a, b, path, problems, space, own = false) {
   /** @type {Record<string, any>} */
   const out = { ...a };
   for (const [k, v] of Object.entries(b)) {
     const spec = params?.[k], cur = out[k];
+    if (cur === undefined && own && Array.isArray(v)) { out[k] = joinConfig(params, { [k]: [] }, { [k]: v }, path, problems, space)[k]; continue; }
     if (cur === undefined) { out[k] = structuredClone(v); continue; }
     if (same(cur, v)) continue;
     if (Array.isArray(cur) && Array.isArray(v)) {
@@ -284,8 +293,17 @@ export function mergeDocuments(host, add, { registry, keepSpaces, bind }) {
   const doc = structuredClone(host);
   /** @type {ComposeProblem[]} */
   const problems = [];
-  if (keepSpaces) doc.spaces = [...objects(doc.spaces), ...structuredClone(objects(add.spaces))];
   doc.systems = objects(doc.systems);
+  // The host's list entries that leave their space implicit (spawn rules: the space the instance is bound to, else the
+  // player's) live in the host's space; once the added document's spaces (and maybe its player) join, they would follow
+  // the player into another world: the host's space is written on them, as the added document's is on its own.
+  const home = objects(doc.spaces)[0]?.id;
+  if (keepSpaces && isStr(home)) for (const x of doc.systems) {
+    const card = registry.get(String(x.use))?.card;
+    if (!card?.params || !isObj(x.with)) continue;
+    x.with = joinConfig(card.params, {}, x.with, '', problems, isStr(x.space) ? x.space : home, true);
+  }
+  if (keepSpaces) doc.spaces = [...objects(doc.spaces), ...structuredClone(objects(add.spaces))];
   for (const s of objects(add.systems)) {
     const card = registry.get(String(s.use))?.card;
     const twin = card?.adapts ? null : doc.systems.find((/** @type {Record<string, any>} */ x) => x.use === s.use);
@@ -322,6 +340,17 @@ export function mergeDocuments(host, add, { registry, keepSpaces, bind }) {
   // The added document's player starts where it did: its own first space, unless it names one.
   if (!doc.player && isObj(add.player)) doc.player = { ...structuredClone(add.player), ...(add.player.space === undefined && keepSpaces && isStr(objects(add.spaces)[0]?.id) ? { space: objects(add.spaces)[0].id } : {}) };
   return { doc, problems };
+}
+
+/**
+ * The composed world as generated, booted on the document's seed (content.js startProblems): every participant its
+ * loops declare must be in it at the start of play, and the player must stand where it can; else that world has no
+ * place for them.
+ * @param {Record<string, any>} doc @param {RegistryLike} registry @param {LogicLike} logic @returns {ComposeProblem[]}
+ */
+function absentProblems(doc, registry, logic) {
+  const r = startProblems(doc, registry, logic, Number.isInteger(doc.seed) ? doc.seed : 1);
+  return [...r.absent.map(a => problem('compose_participants_absent', `${a.path}.with.${a.param}`, a.message)), ...r.misplaced.map(m => problem('compose_player_misplaced', 'player', m.message))];
 }
 
 /** The loop primitives (card.mode) a document plays, as its cards declare them. @param {Record<string, any>} doc @param {RegistryLike} registry */
@@ -414,6 +443,7 @@ export function composeNested(outer, inner, { registry, logic }) {
   for (const m of configureEncounters(doc, registry, [{ id, outer: trigger.use }])) problems.push(problem('nested_unwired', 'systems', m));
   const skin = skinFor(doc, registry, { owners: [...new Set([trigger.use, ...playedLoops(outer.doc, registry)])], joined: [...new Set(objects(inner.doc.systems).map(s => String(s.use)))], taken });
   const out = skin ? applySkins(/** @type {any} */ (doc), registry) : doc;
+  if (!problems.length) problems.push(...absentProblems(out, registry, logic));
   return { doc: problems.length ? null : out, problems, nested: { id, on: trigger.event, use: trigger.use, inner: loops, skin: skin ? skin.with.maps.map((/** @type {any} */ m) => ({ from: m.from, to: m.to })) : [] } };
 }
 
@@ -497,12 +527,19 @@ export function uniteDocuments(primary, secondary, { registry, logic }) {
   // secondary's loops (card.engage.participants, card.loop needs.participants) is seated by the host's start as
   // card.engage declares it (beside the player: its declared anchor field, `selects`, on the player); any other is a
   // piece of the replaced world and goes with it.
+  // A participant is an entry of the param (a selector) or a member a group entry lists (card.engage.join.field).
   const participants = new Set(objects(doc2.systems).flatMap(x => {
     const card = cardOf(x.use), param = card?.engage?.participants?.param ?? cardLoop(card)?.needs.participants;
-    return isStr(param) ? list(prop(x.with, param) ?? prop(card?.params?.[param], 'default')).filter(isStr) : [];
+    if (!isStr(param)) return [];
+    const join = prop(card?.engage, 'join'), field = prop(join, 'param') === param ? prop(join, 'field') : null;
+    return list(prop(x.with, param) ?? prop(card?.params?.[param], 'default')).flatMap(e => (isStr(e) ? [e] : isStr(field) ? list(prop(e, field)).filter(isStr) : []));
   }));
   for (const x of objects(doc2.systems)) {
     for (const [k, spec] of Object.entries(cardOf(x.use)?.params || {})) {
+      // A param that is itself a position (or a list of them) in the replaced world: where the round starts its fighters.
+      if ((prop(spec, 'scale') === 'world' || prop(prop(spec, 'of'), 'scale') === 'world') && isObj(x.with) && x.with[k] !== undefined && !(Array.isArray(x.with[k]) && !x.with[k].length)) {
+        delete x.with[k]; (replaced.entries ??= []).push(`${x.use}.${k}`); continue;
+      }
       const fields = prop(prop(spec, 'of'), 'fields');
       if (prop(spec, 'type') !== 'list' || !isObj(fields) || !Array.isArray(prop(x.with, k))) continue;
       const located = Object.keys(fields).filter(f => prop(fields[f], 'scale') === 'world');
@@ -589,5 +626,7 @@ export function composeUnion(primary, secondary, { registry, logic }) {
   }
   const loop = loopProblems(merged.doc, registry, { logic });
   if (loop.length) return { doc: null, problems: loop.map(p => problem('union_loop_problem', p.path, `[${p.code}] ${p.message}`)), union: null, united: u.doc };
+  const absent = absentProblems(merged.doc, registry, logic);
+  if (absent.length) return { doc: null, problems: absent, union: null, united: u.doc };
   return { doc: merged.doc, problems, union: { space: host?.id, loops: u.loops, replaced: u.replaced }, united: u.doc };
 }

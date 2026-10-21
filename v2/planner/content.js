@@ -27,6 +27,9 @@ import { spawnerId } from './engage.js';
 import { cardLoop } from './loop.js';
 import { spaceExtent } from './world.js';
 import { matches } from '../primitives/gameplay/modes-lib-util.js';
+import { createWorld } from '../kernel/world.js';
+import { preflight } from '../kernel/document.js';
+import { standable } from '../primitives/engine/runtime-lib.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -404,6 +407,42 @@ export function absentParticipants(doc, registry, worlds) {
   list(prop(doc, 'systems')).forEach((s, i) => visit(s, `systems[${i}]`));
   list(prop(doc, 'spaces')).forEach((sp, i) => list(prop(sp, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)));
   return out;
+}
+
+/** The frames of the start of play a participant must be in the world by (an intro or a countdown runs then). */
+export const START_FRAMES = Object.freeze([0, 2, 30, 60]);
+/**
+ * The entity maps of a world at the start of play (START_FRAMES; idle input, while it plays); `seen(frame)` is called
+ * at each of those frames with the world there.
+ * @param {{ state: any, step: (input: {}) => void }} rt @param {(frame: number) => void} [seen] @returns {Array<Record<string, any>>}
+ */
+export function startOfPlay(rt, seen) {
+  seen?.(0);
+  const out = [structuredClone(rt.state.entities)];
+  for (let f = 1; f <= START_FRAMES[START_FRAMES.length - 1] && rt.state.status === 'playing'; f++) { rt.step({}); if (START_FRAMES.includes(f)) { seen?.(f); out.push(structuredClone(rt.state.entities)); } }
+  return out;
+}
+/** The player standing where it cannot at the start of play (engine runtime-lib standable). @typedef {{ id: string, space: string, at: unknown, message: string }} Misplaced */
+/**
+ * Boot a document on `seed` and judge its world at the start of play: the participants its loops declare that are
+ * absent (absentParticipants), and the player when, once play has begun (START_FRAMES[1]), it stands outside its space
+ * or in a cell it cannot stand in (a start carried from a world the composition replaced, a board filled with tiles).
+ * A document that does not preflight has nothing to judge here (preflight reports it).
+ * @param {unknown} doc @param {RegistryLike} registry @param {import('../kernel/types.js').LogicLike} logic @param {number} [seed]
+ * @returns {{ absent: AbsentParticipant[], misplaced: Misplaced[] }}
+ */
+export function startProblems(doc, registry, logic, seed = 1) {
+  const pre = preflight(structuredClone(doc), registry, logic);
+  if (!pre.ok) return { absent: [], misplaced: [] };
+  const rt = createWorld(pre.doc, registry, logic, { seed });
+  /** @type {Misplaced[]} */
+  const misplaced = [];
+  const worlds = startOfPlay(rt, f => {
+    if (f !== START_FRAMES[1]) return;
+    const p = rt.player(), api = p?.space ? rt.space(p.space) : null;
+    if (p && api && !standable(rt, api, p.space, p.at, p)) misplaced.push({ id: p.id, space: String(p.space), at: p.at, message: `the player stands at ${JSON.stringify(p.at)} in ${p.space}, outside it or in a cell it cannot stand in` });
+  });
+  return { absent: absentParticipants(pre.doc, registry, worlds), misplaced };
 }
 
 /** Problems as model-facing text, grouped (each with the shape to add). @param {Array<{ code: string, path: string, message: string, hint?: string }>} problems @param {number} [limit] */
