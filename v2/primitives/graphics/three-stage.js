@@ -124,6 +124,8 @@ function createStage(rt, preset = {}) {
     disposers: [],
     get disposed() { return disposed; },
   };
+  // Unloading the game releases GL, listeners and workers even when no further frame runs.
+  view.onDispose?.(() => stage.dispose());
   stage.models = createModelLibrary(stage);
   installEffectAdapters(stage);
   view.container.gvThree = stage;

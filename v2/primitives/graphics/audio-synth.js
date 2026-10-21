@@ -221,6 +221,7 @@ function install(rt, config) {
   const host = uiHost(rt); if (!host) return;
   const seed = String(rt.doc.id || rt.doc.title || 'gameverse');
   const mixer = createMixer({ seed, AudioContextImpl: globalThis.AudioContext || globalThis.webkitAudioContext, duck: config.duck });
+  rt.view?.onDispose?.(() => mixer.dispose());
   const table = cueTable(config), vol = config.volume || {};
   let pending = [], last = {}, musicIdx, musicBpm, plan = null, mode = 'play', ended = false;
 

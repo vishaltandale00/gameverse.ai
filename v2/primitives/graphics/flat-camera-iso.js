@@ -12,7 +12,11 @@ export function installIso2d(rt, config, instance) {
     let rot = 0;
     const set = () => H.projOpts.set(space, { ...(H.projOpts.get(space) || {}), kind: 'iso', angle: config.angle, rot, flipY: rt.doc.spaces.find(s => s.id === space)?.with?.yAxis !== 'down' });
     set();
-    if (config.rotatable && typeof window !== 'undefined' && window.addEventListener) window.addEventListener('keydown', e => { if (e.key === 'q' || e.key === 'Q') { rot = (rot + 3) % 4; set(); } if (e.key === 'e' || e.key === 'E') { rot = (rot + 1) % 4; set(); } });
+    if (config.rotatable && typeof window !== 'undefined' && window.addEventListener) {
+      const onKey = e => { if (e.key === 'q' || e.key === 'Q') { rot = (rot + 3) % 4; set(); } if (e.key === 'e' || e.key === 'E') { rot = (rot + 1) % 4; set(); } };
+      window.addEventListener('keydown', onKey);
+      rt.view?.onDispose?.(() => window.removeEventListener('keydown', onKey));
+    }
     H.cameras.set(space, (F, cam) => {
       const base = (F.stage.renderer?.baseZoom?.(F) ?? 32) * config.zoom;
       if (config.follow && F.player) driveTopDown(F, cam, { smoothing: config.smoothing, target: config.target, deadzone: [2, 2] }, base);

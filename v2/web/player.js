@@ -70,8 +70,13 @@ export function mountGame(container, record, { onState, primitives = null, now =
   // uiPaused: view.pause() from the game's UI; away: the window lost focus (the host holds the game until it returns).
   let uiPaused = false, away = false, timeScale = 1, first = null, last = performance.now(), acc = 0, raf = 0, version = record.version, disposed = false;
   const held = () => uiPaused || away;
+  // Everything a mounted game holds outside its container (window listeners, audio, GL, workers) is
+  // released through view.onDispose when the game is unloaded or rebuilt.
+  let disposers = [];
+  const release = () => { const list = disposers; disposers = []; for (const fn of list.reverse()) try { fn(); } catch (error) { console.warn('dispose failed', error); } };
   const makeView = () => ({
     container, THREE, input: null, now, createRenderer,
+    onDispose: fn => { if (typeof fn === 'function') disposers.push(fn); },
     act: actions => { pending.push(actions); queueMicrotask(() => tick(performance.now(), true)); },
     onFrame: fn => frames.push(fn),
     pause: on => { uiPaused = Boolean(on); last = performance.now(); acc = 0; },
@@ -125,14 +130,14 @@ export function mountGame(container, record, { onState, primitives = null, now =
       if (!ok.ok) return false;
       const state = rt.snapshot();
       for (const b of cat.boxes) if (nextCat !== cat) b.dispose?.();
-      container.replaceChildren(); frames = []; view = makeView();
+      release(); container.replaceChildren(); frames = []; view = makeView();
       cat = nextCat;
       rt = createWorld(ok.doc, cat.registry, cat.logic, { headless: false, view });
       first = rt.snapshot();
       try { rt.restore({ ...state, docId: ok.doc.id }); } catch { /* incompatible state: start fresh */ }
       version = next.version; return true;
     },
-    dispose() { disposed = true; cancelAnimationFrame(raf); detachHost(); for (const b of cat.boxes) b.dispose?.(); container.replaceChildren(); },
+    dispose() { if (disposed) return; disposed = true; cancelAnimationFrame(raf); release(); detachHost(); for (const b of cat.boxes) b.dispose?.(); container.replaceChildren(); },
   };
 }
 

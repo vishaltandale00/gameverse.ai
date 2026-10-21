@@ -129,6 +129,7 @@ export default {
       [container, 'contextmenu', ev => ev.preventDefault()],
     ];
     for (const [t, name, fn, opts] of listeners) t.addEventListener(name, fn, opts);
+    rt.view.onDispose?.(() => { for (const [t, name, fn, opts] of listeners) t.removeEventListener(name, fn, opts); dev.down.clear(); });
     const pads = () => {
       const list = navigator.getGamepads?.() || [];
       const gp = [...list].find(g => g && g.connected); if (!gp) return;

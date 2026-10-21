@@ -16,8 +16,13 @@ const promotedReady = loadPromoted();
 const mountAny = async (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? (await import('/v2/web/arcade-player.js')).mountArcade(el, record)
   : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? (await import('/v2/web/kit-player.js')).mountKit(el, record) : mountGame(el, record);
 // A game that will not load says why, on its screen and in a toast, instead of a silent blank board.
+// Every mount belongs to one generation: switching or deleting games starts a new one, and a mount that
+// finishes for an older generation is unloaded at once (no game keeps running behind the one on screen).
+let mountGen = 0;
+const unloadGame = () => { mountGen++; player?.dispose(); player = null; $('#game')?.replaceChildren(); };
 const mount = async (el, record) => {
-  try { return await mountAny(el, record); }
+  const gen = ++mountGen;
+  try { const p = await mountAny(el, record); if (gen !== mountGen) { p?.dispose?.(); return { dispose() {}, extend() {}, update() { return false; } }; } return p; }
   catch (error) {
     console.error(error, error.errors);
     const why = (error.errors || []).slice(0, 4).map(e => `${e.path}: ${e.message}`).join("\n");
@@ -84,11 +89,12 @@ async function refreshLibrary() {
 $('#games').addEventListener('click', async e => {
   const id = e.target.closest('[data-remove]')?.dataset.remove; if (!id) return;
   e.preventDefault();
-  try { await api(`/api/v2/games/${id}`, null, 'DELETE'); if (id === selected) location.hash = ''; refreshLibrary(); }
+  try { if (id === selected) unloadGame(); await api(`/api/v2/games/${id}`, null, 'DELETE'); if (id === selected) location.hash = ''; refreshLibrary(); }
   catch (error) { toast(error.message); }
 });
 $('#clear').addEventListener('click', async () => {
   if (!confirm('Delete all your games? Games still being built are kept.')) return;
+  unloadGame();
   for (const g of games) if (g.status !== 'generating') await api(`/api/v2/games/${g.id}`, null, 'DELETE').catch(() => {});
   location.hash = ''; refreshLibrary();
 });
@@ -351,7 +357,7 @@ function qualityChecks(q) {
 // ---------- selection ----------
 async function select(id) {
   const token = ++selecting;
-  selected = id || null; player?.dispose(); player = null; shownVersion = null;
+  selected = id || null; unloadGame(); shownVersion = null;
   drawer(false); $('#checks').innerHTML = ''; $('#stage').onclick = null;
   document.body.classList.toggle('has-game', Boolean(selected)); dispatchEvent(new Event('resize'));
   await refreshLibrary(); if (token !== selecting) return;
