@@ -18,7 +18,7 @@
 import { withDefaults, drawSeed, stream, Raster, spaceOf, cellWriter, addZones, publish, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.grid.board';
-const piece = { type: 'object', fields: { piece: { type: 'string', required: true }, weight: { type: 'number', min: 0, default: 1 } } };
+const piece = { type: 'object', fields: { piece: { type: 'string', required: true, effect: 'the cell token: a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 } } };
 const terrain = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, weight: { type: 'number', min: 0, default: 1 }, blocks: { type: 'boolean', default: false, effect: 'impassable' } } };
 const biome = { type: 'object', fields: { block: { type: 'string', required: true, effect: 'a content.blocks id' }, elevation: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, moisture: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, 1] }, blocks: { type: 'boolean', default: false } } };
 

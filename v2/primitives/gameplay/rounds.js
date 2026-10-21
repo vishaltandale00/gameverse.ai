@@ -5,6 +5,7 @@
 // best-of-N with draws extending the match, and stock mode (lives per match
 // with respawns). Phase timings and scoring follow the fighting kit
 // (sim.js phaseClock / timeOver / scoreRound / endRound).
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { alive, hpOf, matchesAny, sortedEntities, err, runBound, bindRoles } from './modes-lib-util.js';
 
 const ID = 'gameplay.rounds';
@@ -25,7 +26,7 @@ export default {
     intent: 'Versus match rules: round intro, round timer, KO (health or a predicate), double KO, time over decided by health, perfect rounds, best-of-N rounds with draws, or stock mode with respawns; match result effects and scoring. Fighting, arena and duel games of any space use it.',
     views: ['any'],
     params: {
-      fighters: { type: 'list', of: { type: 'string' }, default: ['player'], effect: 'entity ids, archetypes or tags; the first match is side 1 (the player)' },
+      fighters: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: ['player'], effect: 'entity ids, archetypes or tags; the first match is side 1 (the player)' },
       bestOf: { type: 'integer', default: 3, min: 1, max: 99, effect: 'rounds: first to ceil(bestOf/2) wins' },
       maxRounds: { type: 'integer', default: 0, min: 0, max: 199, effect: 'hard cap including draw rounds (0 = bestOf + 2)' },
       roundSec: { type: 'number', default: 99, min: 0, max: 3600, unit: 's', effect: 'round timer (0 = untimed)' },

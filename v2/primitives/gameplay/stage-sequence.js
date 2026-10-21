@@ -11,6 +11,7 @@
 // Targets: 'var:<name>' and 'flag:<name>' write state; 'use:<primitive id>[#n].<path>'
 // writes in place into the n-th instance's `with` (primitives that read config
 // lazily see it). Config writes are re-applied after restore() and extend().
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { compare } from '../../kernel/logic.js';
 import { alive, matchesAny, sortedEntities, has, err, runBound, r6 } from './modes-lib-util.js';
 
@@ -69,7 +70,7 @@ export default {
         onStart: { type: 'effects', default: [] }, onClear: { type: 'effects', default: [] }, onFail: { type: 'effects', default: [] },
         space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'json' },
         spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'json' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' } } } },
-        clearOut: { type: 'list', of: { type: 'string' }, default: [], effect: 'despawn entities (id/archetype/tag) at stage start, e.g. the previous opponent' },
+        clearOut: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'despawn entities (id/archetype/tag) at stage start, e.g. the previous opponent' },
       } } },
       apply: { type: 'list', default: [], of: { type: 'object', fields: { target: { type: 'string', required: true }, table: { type: 'list', of: { type: 'json' }, min: 1, required: true }, op: { type: 'string', options: ['set', 'mul', 'add'], default: 'set' }, loopScale: { type: 'number', default: 0, min: 0, max: 10, effect: 'numeric values grow by this fraction per loop' } } }, effect: 'per-stage columns: stage i uses table[min(i, last)]' },
       introSec: { type: 'number', default: 1.5, min: 0, max: 60, unit: 's' },

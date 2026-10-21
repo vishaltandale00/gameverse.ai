@@ -10,7 +10,7 @@
 // (revives at home after a delay), plus splitOnDeath (asteroid rocks).
 // Physics impacts (`impact {who, speed}` events) and contact damage from
 // components.touch also go through the pipeline.
-import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, hooks, overlapping, displace, round, err, archetypes, hasArchetype, touchDefeats } from './combat-lib.js';
+import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, targetRefs, hooks, overlapping, displace, round, err, archetypes, hasArchetype, touchDefeats } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.health';
 const RESPAWN = ['none', 'home', 'spawn'];
@@ -64,10 +64,10 @@ const health = {
     });
     // `alive` is owned by plot.character (it reads died {id}); health keeps components.health.dead.
     const amountCheck = (e, path, errors) => { if (e.amount !== undefined && !Number.isFinite(e.amount)) errors.push(err('effect_invalid', `${path}.amount`, 'amount must be a number')); };
-    logic.effect('damage', { check: amountCheck, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) { const src = e.from ?? e.by, by = src ? resolveWho(rt, src, c)?.id : c.by ?? (c.self !== t.id ? c.self : null); /* frozen: damage {who, amount, type?, from?} */ rt.service('combat').hit(t, { amount: e.amount ?? 1, type: e.type, by: by ?? undefined, source: 'effect', knockback: e.knockback, ignoreIframes: e.ignoreIframes }); } } });
-    logic.effect('heal', { check: amountCheck, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').heal(t, e.amount ?? Infinity, c.self); } });
-    logic.effect('kill', { run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').kill(t, { by: c.self, source: 'effect' }); } });
-    logic.effect('revive', { run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').revive(t, { frac: e.frac ?? 1 }); } });
+    logic.effect('damage', { refs: targetRefs, check: amountCheck, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) { const src = e.from ?? e.by, by = src ? resolveWho(rt, src, c)?.id : c.by ?? (c.self !== t.id ? c.self : null); /* frozen: damage {who, amount, type?, from?} */ rt.service('combat').hit(t, { amount: e.amount ?? 1, type: e.type, by: by ?? undefined, source: 'effect', knockback: e.knockback, ignoreIframes: e.ignoreIframes }); } } });
+    logic.effect('heal', { refs: targetRefs, check: amountCheck, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').heal(t, e.amount ?? Infinity, c.self); } });
+    logic.effect('kill', { refs: targetRefs, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').kill(t, { by: c.self, source: 'effect' }); } });
+    logic.effect('revive', { refs: targetRefs, run: (e, rt, c) => { for (const t of targetsOf(rt, e, c)) rt.service('combat').revive(t, { frac: e.frac ?? 1 }); } });
   },
   validate(config, doc) {
     const errors = [], types = new Set(config.types);

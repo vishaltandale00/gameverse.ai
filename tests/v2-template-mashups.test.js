@@ -18,6 +18,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { TEMPLATES, templateById } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
+import { createWorld } from '../v2/kernel/world.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
 import { verifyDocument } from '../v2/planner/verify-adapter.js';
@@ -57,6 +58,21 @@ test('prefix: every template\'s document prefixed preflights, defines only prefi
     assert.deepEqual(t.doc, templateById(t.id).doc, 'the template is never mutated');
   }
   timings.prefixMs = Math.round(performance.now() - t0);
+});
+
+// A reference the prefixer misses (a field the cards do not declare as one, or a declaration it does not read) leaves the
+// prefixed world pointing at ids that no longer exist: pieces spawned bare, cells drawn with no block. Booting both
+// documents a few steps and comparing what exists, with the prefix taken off, finds that class on every template.
+test('prefix: every template\'s world boots the same prefixed: the same entities (archetype and components) and spaces', () => {
+  const t0 = performance.now();
+  const world = doc => {
+    const rt = createWorld(preflight(structuredClone(doc), registry, logic).doc, registry, logic, { seed: 1 });
+    for (let i = 0; i < 3; i++) rt.step({});
+    const bare = v => JSON.parse(JSON.stringify(v, (k, x) => (k === 'vh' ? undefined : x)).split('px_').join(''));
+    return { entities: Object.values(rt.state.entities).map(e => `${String(e.archetype).replace(/^px_/, '')}:${Object.keys(e.components || {}).sort()}`).sort(), spaces: bare(rt.state.spaces) };
+  };
+  for (const t of TEMPLATES) assert.deepEqual(world(prefixDocument(t.doc, 'px_', cat).doc), world(t.doc), t.id);
+  timings.prefixWorldMs = Math.round(performance.now() - t0);
 });
 
 test(`nested: every ordered pair with an entry event and an enterable inner loop (${NESTED.length} pairs) composes from declarations, or names why the documents cannot share an instance`, t => {

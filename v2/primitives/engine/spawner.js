@@ -8,6 +8,7 @@
 // a global counter switched on by an event, an idle timer, or a predicate:
 // the arcade ghost house, waves leaving a gate, a queue at a door.
 // The spawn/despawn effects place entities through the same code.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds } from './runtime-lib.js';
 
 const ID = 'engine.spawner';
@@ -23,7 +24,7 @@ export default {
         of: { type: 'object', fields: {
           id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
           space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' },
-          at: { type: 'json', effect: 'a point or a list of points to spawn at' }, near: { type: 'string', effect: 'entity id or archetype to spawn around (falls back to the zone)' },
+          at: { type: 'json', effect: 'a point or a list of points to spawn at' }, near: { type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
           spread: { type: 'number', default: 0, min: 0, effect: 'scatter radius around at/near/group anchor' },
           count: pair('[min, max] alive target, rolled each time the rule activates', [1, 1]),
           per1000m2: { type: 'number', min: 0, effect: 'density; with a zone of known area the target is area x density, clamped to count' },
@@ -70,6 +71,7 @@ export default {
       run: (e, rt, c) => rt.service('spawner').spawn(e, c),
     });
     logic.effect('despawn', {
+      refs: e => [...(typeof e.archetype === 'string' ? [['archetype', e.archetype]] : []), ...(typeof e.rule === 'string' ? [['spawn_rule', e.rule]] : [])],
       check: (e, path, errors) => { if (e.who === undefined && e.archetype === undefined && e.rule === undefined) errors.push({ code: 'spawn_effect_invalid', path, message: 'despawn needs who, archetype or rule' }); },
       run: (e, rt, c) => rt.service('spawner').despawn(e, c),
     });

@@ -45,7 +45,7 @@ export default {
       guardsPerRoom: { type: 'integer', min: 0, max: 8, default: 1 },
       roomSize: { type: 'list', of: { type: 'integer', min: 3 }, min: 2, max: 2, default: [5, 9], effect: 'room side range in cells' },
       corridor: { type: 'integer', min: 1, max: 4, default: 1, effect: 'corridor width in cells' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'stone' }, door: { type: 'string', default: 'locked_door' } } },
+      palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'stone', effect: 'a content.blocks id' }, door: { type: 'string', default: 'locked_door', effect: 'a content.blocks id' } } },
       archetypes: { type: 'object', default: {}, fields: { key: { type: 'string', default: 'key' }, lock: { type: 'string', default: 'locked_door' }, chest: { type: 'string', default: 'chest' } } },
       autoPickup: { type: 'boolean', default: true, effect: 'the player picks up a key by stepping on it (give_item if the inventory exists, else flag has:<item>)' },
       autoUnlock: { type: 'boolean', default: true, effect: 'a lock opens when the player reaches it holding its key' },

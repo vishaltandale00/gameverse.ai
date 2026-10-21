@@ -192,7 +192,9 @@ export function resolveWho(rt, who, ctx = {}) {
   if (who === 'by' || who === 'source') return rt.entity(ctx.by) || null;
   return rt.resolve(who, ctx);
 }
-/** All entities an effect addresses: `who`, or every entity of `archetype`. */
+/** The references an effect addressed by targetsOf declares (its `refs`): the archetype it names, when it names one. */
+export const targetRefs = e => (typeof e?.archetype === 'string' ? [['archetype', e.archetype]] : []);
+/** All entities an effect addresses: `who`, or every entity of `archetype` (declared by targetRefs). */
 export function targetsOf(rt, e, ctx = {}) {
   if (e.archetype) return Object.values(rt.state.entities).filter(x => x.archetype === e.archetype);
   const one = resolveWho(rt, e.who, ctx);

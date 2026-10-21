@@ -5,6 +5,7 @@
 // the winner, lap/best-lap times, and ghosts: the player's best lap is
 // recorded as a position trace, published with `ghost_saved` (for
 // engine.replay and renderers) and optionally replayed by a ghost entity.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { compare } from '../../kernel/logic.js';
 import { matchesAny, sortedEntities, has, spaceOf, r6, r6v, err, runBound, instancesOf } from './modes-lib-util.js';
 
@@ -28,7 +29,7 @@ export default {
       id: { type: 'string', default: 'race', effect: 'race id used by the race predicate and start_race/reset_race' },
       laps: { type: 'integer', default: 3, min: 1, max: 99, effect: 'laps to finish' },
       checkpoints: { type: 'list', of: { type: 'ref', to: 'zone' }, min: 1, required: true, effect: 'ordered checkpoint zones; the first is the start/finish line' },
-      racers: { type: 'list', of: { type: 'string' }, default: [], effect: 'rival entity ids, archetypes or tags' },
+      racers: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'rival entity ids, archetypes or tags' },
       includePlayer: { type: 'boolean', default: true, effect: 'the player races' },
       vehicleOnly: { type: 'boolean', default: false, effect: 'checkpoints only count for racers seated in a vehicle' },
       autoStart: { type: 'boolean', default: true, effect: 'arm the race at game start (otherwise use start_race or startWhen)' },

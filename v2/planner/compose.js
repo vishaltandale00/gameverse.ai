@@ -105,6 +105,12 @@ function walker(w) {
   const value = (spec, v) => {
     if (v === undefined || v === null || !isObj(spec)) return v;
     if (spec.type === 'ref') { const d = domainOfKind(registry, spec.to); return d && isStr(v) ? w.ref(d, v) : v; }
+    // An entity selector (spec.selects): a value that is an id of one of its kinds refers to that entry; others are free.
+    if (spec.type === 'string' && Array.isArray(spec.selects)) {
+      if (!isStr(v)) return v;
+      const named = list(spec.selects).filter(isStr).map(kind => domainOfKind(registry, kind)).filter(isStr).map(d => w.ref(d, v)).find(x => x !== v);
+      return named ?? v;
+    }
     if (spec.type === 'string') { const d = referenceOf(registry, spec); return d && d !== SECTIONS && isStr(v) ? w.ref(d, v) : v; }
     if (spec.type === 'list') {
       if (!Array.isArray(v)) return v;
@@ -113,7 +119,13 @@ function walker(w) {
       if (d && d !== SECTIONS) { const out = v.map(x => (isStr(x) ? w.ref(d, x) : x)); return w.list && out.every(isStr) ? w.list(d, /** @type {string[]} */ (out)) : out; }
       return v.map(x => value(of, x));
     }
-    if (spec.type === 'object') return isObj(v) && isObj(spec.fields) ? fields(spec.fields, v) : v;
+    if (spec.type === 'object') {
+      if (!isObj(v)) return v;
+      if (isObj(spec.fields)) fields(spec.fields, v);
+      // A map with free keys: every value under a key `fields` does not name has the declared `values` shape.
+      if (isObj(spec.values)) for (const k of Object.keys(v)) if (!isObj(spec.fields) || !(k in spec.fields)) v[k] = value(spec.values, v[k]);
+      return v;
+    }
     if (spec.type === 'effects') { list(v).forEach(effect); return v; }
     if (spec.type === 'predicate') { predicate(v); return v; }
     return v;
