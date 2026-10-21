@@ -42,10 +42,16 @@ export function raceMacros(rt, every) {
   const seated = Boolean(rt.player()?.components.seat);
   if (!seated && rt.availableOptions().some(o => o.actions?.enter_vehicle !== undefined)) return [{ label: 'enter vehicle', input: { actions: { enter_vehicle: true } }, frames: 1 }];
   if (seated) return [['drive', [0, 1], 45], ['drive left', [-1, 1], 20], ['drive right', [1, 1], 20], ['brake', [0, -1], 15]].map(([label, move, frames]) => ({ label, input: { axes: { move } }, frames }));
-  return DIRS8.slice(1).map(([x, y]) => ({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } }, frames: every }));
+  const walk = DIRS8.slice(1).map(([x, y]) => ({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } }, frames: every }));
+  // On foot where a key presses jump (a side-view level's pits and ledges): a jump that goes down on the first frame and
+  // stays held, with each horizontal direction or none.
+  const jump = rt.controls ? rt.controls.presses('jump').includes(true) : rt.actions().includes('jump');
+  const hops = jump ? [[1, 0], [-1, 0], [0, 0]].map(([x, y]) => ({ label: `jump ${x},${y}`, first: { actions: { jump: true }, axes: { move: [x, y] } }, input: { held: { jump: true }, axes: { move: [x, y] } }, frames: every * 2 })) : [];
+  return [...walk, ...hops];
 }
 
-const playMacro = (rt, m, b) => hold(rt, m.input, m.frames, b);
+/** A macro: its first frame's input (a press going down), then its held input for the rest of its frames. */
+const playMacro = (rt, m, b) => { if (m.first) { hold(rt, m.first, 1, b); hold(rt, m.input, m.frames - 1, b); } else hold(rt, m.input, m.frames, b); };
 
 /** Replay a recorded path of macro labels from a fresh world. */
 export function replayRace(make, seed, path, { every = 12 } = {}) {
