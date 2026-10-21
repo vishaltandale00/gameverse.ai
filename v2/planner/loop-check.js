@@ -278,7 +278,9 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
       if (!changesComponent(doc, registry, lg, l, C, used)) push(LOOP_CODES.unaffected, l, l.path, `its win reads the ${of}' "${C}", and no player verb or action changes it (no action effect owned by ${owners.join(' or ') || 'its owner'}, no primitive with player verbs that requires it)`, `add an action whose effects change ${C} (the card's declared example), or a primitive whose player verbs do`, { kind: 'action', component: C, owners, of });
     } else if (reads.event || reads.var) {
       const what = reads.event ? 'event' : 'var', name = /** @type {string} */ (reads.event || reads.var);
-      if (!changesSignal(doc, registry, what, name, used)) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name });
+      const signal = changesSignal(doc, registry, lg, what, name, used);
+      // A provider whose drive is content not written yet (the events its config listens to) is pending until a draft.
+      if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? ' (its providers are driven by nothing in the document yet)' : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(signal === 'idle' ? { pending: 'drive' } : {}) });
     }
   }
   // Wiring: the owner's win to a won ending; its lose and the core loops' losses to a lost one. (A collection whose
@@ -334,22 +336,39 @@ function changesComponent(doc, registry, logic, l, C, used) {
 }
 
 /**
- * Does a player-driven primitive of the document produce the event (or var)? It provides it and the player drives
- * it: its own player verbs, the player's movement (a primitive with card.locomotion) for one that needs space
- * capabilities (touching, passing), or a primitive with player verbs that requires it.
- * @param {unknown} doc @param {RegistryLike} registry @param {'event' | 'var'} what @param {string} name @param {Set<unknown>} used
+ * Does a player-driven primitive of the document produce the event (or var)? A provider is driven by the player
+ * through its own player verbs, the player's movement (a primitive with card.locomotion and verbs) when it needs
+ * space capabilities (touching, passing), a primitive with player verbs that requires it, an effect it owns written
+ * in the document's data, or an event its config names that a driven primitive provides.
+ * -> true (driven), 'idle' (provided, but nothing drives it yet: content to write), false (nothing provides it).
+ * @param {unknown} doc @param {RegistryLike} registry @param {LogicLike} logic @param {'event' | 'var'} what @param {string} name @param {Set<unknown>} used
+ * @returns {true | 'idle' | false}
  */
-function changesSignal(doc, registry, what, name, used) {
+function changesSignal(doc, registry, logic, what, name, used) {
+  const insts = list(prop(doc, 'systems')).filter(isObj);
   const cards = [...used].map(id => registry.get(String(id))?.card).filter(c => c !== undefined);
-  const base = name.split(':')[0];
-  const provides = (/** @type {any} */ c) => (what === 'event' ? (c.provides?.events || []).some((/** @type {string} */ e) => e === name || e === base || e === `${base}:*`) : (c.provides?.vars || []).some((/** @type {string} */ v) => v === name || name.startsWith(v + '.') || v.endsWith('*') && name.startsWith(v.slice(0, -1))));
+  const base = (/** @type {string} */ n) => n.split(':')[0];
+  const emits = (/** @type {any} */ c, /** @type {string} */ n) => (c.provides?.events || []).some((/** @type {string} */ e) => e === n || e === base(n) || e === `${base(n)}:*`);
+  const provides = (/** @type {any} */ c) => (what === 'event' ? emits(c, name) : (c.provides?.vars || []).some((/** @type {string} */ v) => v === name || name.startsWith(v + '.') || v.endsWith('*') && name.startsWith(v.slice(0, -1))));
   const mover = cards.some(c => isStr(c?.locomotion) && (cardLoop(c)?.verbs || []).length);
-  for (const c of cards.filter(provides)) {
+  const dataEffects = effectsIn([insts.map(s => s.with), prop(doc, 'plot')]).map(e => logic.owners.effect.get(String(e.do)));
+  /** @type {Set<string>} */
+  const seen = new Set();
+  /** @param {any} c @returns {boolean} */
+  const driven = c => {
+    if (!c || seen.has(c.id)) return false;
+    seen.add(c.id);
     if ((cardLoop(c)?.verbs || []).length) return true;
-    if (mover && (c?.requires?.capabilities || []).length) return true;
-    if (cards.some(o => (cardLoop(o)?.verbs || []).length && (o?.requires?.primitives || []).some(r => satisfies(c?.id, r)))) return true;
-  }
-  return false;
+    if (mover && (c.requires?.capabilities || []).length) return true;
+    if (cards.some(o => (cardLoop(o)?.verbs || []).length && (o?.requires?.primitives || []).some(r => satisfies(c.id, r)))) return true;
+    if (dataEffects.includes(c.id)) return true;
+    // The events its config names (rules it runs on) come from a driven primitive.
+    const named = new Set(JSON.stringify(insts.filter(s => s.use === c.id).map(s => s.with)).match(/"[a-z][a-z0-9_]*(?::[A-Za-z0-9_*-]+)?"/g)?.map(x => x.slice(1, -1)) || []);
+    return cards.some(o => o !== c && [...named].some(n => emits(o, n)) && driven(o));
+  };
+  const providers = cards.filter(provides);
+  if (providers.some(driven)) return true;
+  return providers.length ? 'idle' : false;
 }
 
 /** Problems as one line each (failure reports, model feedback). @param {LoopProblem[]} problems */
