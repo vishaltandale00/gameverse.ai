@@ -44,6 +44,11 @@ function scriptedModel() {
       const acts = [{ id: 'act_1', title: 'The climb', beats: [{ id: 'lamp', title: 'The lamp', when_json: JSON.stringify({ zone: zones.at(-1) }), after: [], optional: false, do_json: JSON.stringify([{ do: 'give_item', item: 'lens' }, { do: 'end_game', ending: 'victory' }]) }] }];
       return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, acts, dialogue: [], quests: [], items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
     }
+    // The tweak form: the declared inventory slots param for "more inventory slots", else "none" (the change goes to ops).
+    if (req.schema?.name === 'tweak_param') {
+      const slots = /inventory slots/.test(req.user) ? req.schema.schema.properties.param.enum.find(p => /\.with\.slots$/.test(p)) : null;
+      return JSON.stringify({ param: slots ?? 'none', number: slots ? 48 : null, flag: null, why: 'scripted' });
+    }
     if (/Change request:.*dragon/.test(req.user)) return JSON.stringify({ ops: [], unsupported: [{ request: 'a dragon that breathes fire', why: 'no primitive breathes fire' }], summary: 'not possible yet' });
     if (/Change request:/.test(req.user)) return JSON.stringify({ ops: [{ op: 'set', path: 'title', value: 'Lamp of the Deep' }], unsupported: [], summary: 'renamed' });
     return '{}';
@@ -65,11 +70,11 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   for (const m of themed.report.selection.mechanics) assert.ok(m.primitives.length || themed.report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
   for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
   assert.ok(stages.some(s => s.name === 'complete'));
-  // Revise: a parameter tweak takes no model call; a content change goes to the model as targeted ops.
+  // Revise: a parameter tweak is one strict call among the declared params; a content change goes to the model as targeted ops.
   const calls = spec.calls.length;
   const tweaked = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'more inventory slots' }, ctx);
   assert.equal(tweaked.report.path, 'tweak');
-  assert.equal(spec.calls.length, calls, 'no model call for a tweak');
+  assert.deepEqual(spec.calls.slice(calls).map(c => c.schema?.name), ['tweak_param'], 'one small strict call for a tweak');
   // Every new version restarts a running session on its own start (ARCHITECTURE §4: checked like a new game).
   assert.equal(tweaked.report.hot, 'restart');
   const renamed = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'rename the game to Lamp of the Deep' }, ctx);

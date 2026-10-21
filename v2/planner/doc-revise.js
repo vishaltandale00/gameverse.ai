@@ -1,10 +1,10 @@
 // @ts-check
 // Layer 5 of ARCHITECTURE.md §4 plus targeted revisions, for kernel documents.
-// - tweakDocument: parameter patches with no model and no code (<1 s). Requests
-//   are matched against the cards' own params (name, effect text, unit) of the
-//   instances in the document, so it works for any primitive; values are
-//   clamped to each param's declared range. A decision model, when present,
-//   confirms which candidate params the request means.
+// - tweakDocument: a parameter patch, no code: ONE small strict model choice among the params the cards declare on the
+//   document's instances (a template game: its tune slots; their effect, unit, range and current value listed), or the
+//   world's size when its spaces declare scale params, with the new value checked against the declared range (an
+//   answer outside it is asked again, never clamped). No words of the request are matched: without a model nothing
+//   is tweaked.
 // - reviseDocument: a writer proposes targeted ops (set/add/remove at
 //   identity-aware paths); nothing else in the document can change.
 // - reviewChange: the notes on a change (removals, look changes, finishability, applied-or-not). What may publish
@@ -13,18 +13,11 @@
 import { regressed } from './verify-adapter.js';
 import { cardText, vocabulary, dataShapes } from './catalog.js';
 
-// The tweak path's word match of a change request against param names (no model). It is the revise path's (agent REV's
-// area); the tokenizer moved here from select.js when the step path's lexical ranking was deleted.
-const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this their them they you your player players game games can each every any one two three when where which who what than then there these those over under up down out about via per such so not no only also more most some between'.split(' '));
-/** @param {string} w */
-const stem = w => w.length > 4 ? w.replace(/(ings|ing|ers|er|ed|es|ions|ion|ments|ment|ies|s)$/, m => m === 'ies' ? 'y' : '') : w;
-/** @param {unknown} text @returns {string[]} */
-const tokens = text => (String(text || '').toLowerCase().match(/[a-z][a-z0-9]*/g) || []).filter(w => !STOP.has(w) && w.length > 1).map(stem);
 import { parsePath } from './repair.js';
 import { contentDiff, changeSummary, shrunkLists, asksToRemove, checkRevision, noulOf } from './revision-check.js';
 import { parseReply } from './writer.js';
 import { scaleWorld } from './world.js';
-import { isObj, list, obj, prop } from '../kernel/guards.js';
+import { isObj, list, obj, prop, str, messageOf } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Instance} Instance */
@@ -35,7 +28,7 @@ import { isObj, list, obj, prop } from '../kernel/guards.js';
 /** @typedef {import('./revision-check.js').Decisions} Decisions */
 /** @typedef {import('./repair.js').Key} Key */
 /** @typedef {import('./repair.js').Bag} Bag */
-/** A tweakable param of an instance in the document. @typedef {{ path: string, use: string, param: string, schema: ParamSchema, score: number, current: unknown }} TweakCandidate */
+/** A tweakable param of an instance in the document, with the range a value must keep (the card's, narrowed by `limits`). @typedef {{ path: string, use: string, param: string, schema: ParamSchema, current: unknown, min?: number, max?: number }} TweakOption */
 /** A param change (or, for a world-size request, a scaled section: `use` null, `to` '×factor'). @typedef {{ path: string, use: string | null, param: string, from: unknown, to: number | boolean | string }} TweakOp */
 /**
  * The verification fields reviewChange reads (a verifyDocument result satisfies it).
@@ -49,21 +42,6 @@ import { isObj, list, obj, prop } from '../kernel/guards.js';
 
 export const REVISE_VERSION = 'doc-revise/0.1';
 
-const UP = /\b(more|faster|quicker|bigger|larger|higher|longer|stronger|harder|tougher|increase\w*|boost\w*|extra|double|wider|taller|heavier|louder|denser|busier|raise|max)\b/;
-const DOWN = /\b(less|fewer|slower|smaller|lower|shorter|weaker|easier|gentler|decrease\w*|reduc\w*|half|lighter|narrower|quieter|sparser|calmer|min)\b/;
-// What comparative adjectives are about, as param vocabulary (not primitive ids).
-/** @type {Array<[RegExp, string]>} */
-const IMPLIED = [
-  [/\b(fast|faster|quick|quicker|slow|slower|speed)\b/, 'speed velocity rate pace accel run move'],
-  [/\b(hard|harder|tough|tougher|easy|easier|difficult\w*|gentler)\b/, 'damage difficulty aggression spawn enemy count rate'],
-  [/\b(big|bigger|large|larger|small|smaller|wide|wider|size)\b/, 'size width height radius scale count zones'],
-  [/\b(long|longer|short|shorter)\b/, 'duration seconds time length'],
-  [/\b(strong|stronger|weak|weaker)\b/, 'damage strength power force'],
-  [/\b(busy|busier|dense|denser|sparse|sparser|crowd\w*)\b/, 'density count spawn population per'],
-  [/\b(high|higher|low|lower|jump\w*)\b/, 'height jump gravity'],
-];
-const ENABLE = /\b(enable|turn on|add|allow|let me|with)\b/, DISABLE = /\b(disable|turn off|no|without|remove|stop|don'?t)\b/;
-
 /** @param {Doc} doc @returns {Array<{ inst: Instance, path: string }>} */
 function instancesOf(doc) {
   /** @type {Array<{ inst: Instance, path: string }>} */
@@ -74,45 +52,29 @@ function instancesOf(doc) {
   return out;
 }
 
+/** A tighter range for a tweakable param than its card's (a template's tune slot), by its document path ('systems[2].with.speed'). @typedef {Map<string, { minimum?: number, maximum?: number }>} TweakLimits */
+
 /**
- * Candidate params for a request: numeric and boolean params of the document's instances, scored by vocabulary overlap.
- * @param {Doc} doc @param {string} request @param {RegistryLike} registry @returns {TweakCandidate[]}
+ * The params a tweak may set (see the header): every number, integer or boolean param the cards declare on the
+ * document's instances, in document order; for a template game (`limits` given), only its tune slots. Each with its
+ * declared range narrowed by its limit. @param {Doc} doc @param {RegistryLike} registry @param {TweakLimits | null} [limits] @returns {TweakOption[]}
  */
-export function tweakCandidates(doc, request, registry) {
-  const text = request.toLowerCase();
-  const want = new Set([...tokens(text), ...IMPLIED.filter(([re]) => re.test(text)).flatMap(([, w]) => tokens(w))]);
-  /** @type {TweakCandidate[]} */
+export function tweakOptions(doc, registry, limits = null) {
+  /** @type {TweakOption[]} */
   const out = [];
   for (const { inst, path } of instancesOf(doc)) {
     const p = registry.get(inst.use); if (!p) continue;
-    const idTokens = new Set(tokens(inst.use.split('.').slice(1).join(' ')));
     for (const [name, s] of Object.entries(p.card.params || {})) {
       if (!['number', 'integer', 'boolean'].includes(s.type)) continue;
-      const own = new Set(tokens(`${name.replace(/([a-z])([A-Z])/g, '$1 $2')} ${s.effect || ''} ${s.unit || ''}`));
-      const nameHits = tokens(name.replace(/([a-z])([A-Z])/g, '$1 $2')).filter(t => want.has(t)).length;
-      const hits = [...own].filter(t => want.has(t)).length + nameHits + [...idTokens].filter(t => want.has(t)).length * 0.5;
-      if (hits > 0) out.push({ path: `${path}.with.${name}`, use: inst.use, param: name, schema: s, score: hits, current: inst.with?.[name] ?? s.default });
+      const at = `${path}.with.${name}`;
+      if (limits && !limits.has(at)) continue;
+      const l = limits?.get(at) || {};
+      const min = [s.min, l.minimum].filter(x => typeof x === 'number').reduce((a, b) => Math.max(a, b), -Infinity);
+      const max = [s.max, l.maximum].filter(x => typeof x === 'number').reduce((a, b) => Math.min(a, b), Infinity);
+      out.push({ path: at, use: inst.use, param: name, schema: s, current: inst.with?.[name] ?? s.default, ...(Number.isFinite(min) ? { min } : {}), ...(Number.isFinite(max) ? { max } : {}) });
     }
   }
-  return out.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
-}
-
-/** @param {number} v */
-const round = v => Math.round(v * 1000) / 1000;
-/** A tighter range for a tweakable param than its card's (a template's tune slot), by its document path ('systems[2].with.speed'). @typedef {Map<string, { minimum?: number, maximum?: number }>} TweakLimits */
-/** @param {TweakCandidate} c @param {number} direction @param {string} request @param {{ minimum?: number, maximum?: number }} [limit] @returns {number | boolean} */
-function nextValue(c, direction, request, limit = {}) {
-  const s = c.schema, cur = c.current;
-  if (s.type === 'boolean') return DISABLE.test(request) ? false : ENABLE.test(request) ? true : !cur;
-  const number = request.match(/\b(\d+(?:\.\d+)?)\b/);
-  let v;
-  if (number && /\b(to|=|at|of)\s+\d/.test(request)) v = Number(number[1]);
-  else if (typeof cur !== 'number') v = s.min ?? 1;
-  else if (/\bdouble|twice\b/.test(request)) v = cur * 2 * (direction < 0 ? 0.25 : 1);
-  else if (/\bhalf|halve\b/.test(request)) v = cur / 2;
-  else v = cur === 0 ? (direction > 0 ? (s.max !== undefined ? Math.min(s.max, 1) : 1) : 0) : cur * (direction > 0 ? 1.35 : 0.74);
-  v = Math.min(s.max ?? Infinity, limit.maximum ?? Infinity, Math.max(s.min ?? -Infinity, limit.minimum ?? -Infinity, v));
-  return s.type === 'integer' ? Math.round(v) : round(v);
+  return out;
 }
 
 /** @param {unknown} v @returns {v is Bag} a non-null object or list */
@@ -124,21 +86,6 @@ function setPath(doc, path, value) {
   let o = doc;
   for (const k of keys.slice(0, -1)) { const next = (o[k] ??= {}); if (!isBag(next)) return; o = next; }
   o[keys[keys.length - 1]] = value;
-}
-
-// "Bigger world", "a larger map", "make the city twice as big": requests about the size of the world itself.
-const WORLD_NOUN = /\b(world|map|maze|level|levels|island|city|dungeon|area|arena|track|course|board|land|realm|overworld|space)\b/;
-const GROW = /\b(bigger|larger|huge|vast|wider|expand\w*|grow|enlarge\w*|more room|twice as big|double)\b/, SHRINK = /\b(smaller|tiny|compact|shrink\w*|tighter|half)\b/;
-/** The scale factor a world-size request asks for, or null when the request is not about the world's size. @param {unknown} request @returns {number | null} */
-export function worldScaleRequest(request) {
-  const t = String(request || '').toLowerCase();
-  if (!WORLD_NOUN.test(t) || !(GROW.test(t) || SHRINK.test(t))) return null;
-  const times = t.match(/\b(\d+(?:\.\d+)?)\s*(?:x|×|times)\b/);
-  if (times) return Math.max(0.25, Math.min(4, Number(times[1])));
-  if (/\b(double|twice)\b/.test(t)) return 2;
-  if (/\bhalf\b/.test(t)) return 0.5;
-  if (/\b(huge|vast|much bigger|much larger|way bigger)\b/.test(t)) return 2;
-  return GROW.test(t) && !SHRINK.test(t) ? 1.5 : SHRINK.test(t) && !GROW.test(t) ? 0.67 : null;
 }
 
 /** Params of a space card marked scale: 'world' (its extent). @param {RegistryLike} registry @param {string} use @returns {string[]} */
@@ -171,49 +118,66 @@ export function routeWorldScale(before, ops, registry) {
   return { doc, ops: rest, scaled };
 }
 
-const TWEAK_Q = 'Would changing this parameter in the stated direction carry out the request? Answer no if it is about a different thing than the request names.';
+/** The tweak option for the world's size (scaleWorld over the spaces' scale: 'world' params), when a space declares one. */
+export const WORLD_SIZE = 'world_size';
+/** The factors a world-size tweak may scale by. */
+export const WORLD_FACTOR = Object.freeze({ min: 0.25, max: 4 });
+const TWEAK_SYSTEM = `You turn a change request for a game into ONE parameter change, or "none". Pick the listed parameter whose declared effect carries out the request, and give its new value: for a number, the value itself within the listed range; for a switch, true or false; for ${WORLD_SIZE}, the factor the whole world is scaled by (${WORLD_FACTOR.min} to ${WORLD_FACTOR.max}). Answer "none" when no single listed parameter carries the request out (it needs content, a mechanic, or several changes).`;
+const nul = (/** @type {Record<string, unknown>} */ t) => ({ anyOf: [t, { type: 'null' }] });
 
 /**
- * tweakDocument(doc, request, { registry, decisions? }) -> { doc, ops: [{ path, use, param, from, to }], matched, ms, source }
- * Only parameter values change; never code, never content lists. `limits`: tighter ranges than the cards' for some
- * params (a template game's tune slots: the range its template tunes them in), applied when a value is chosen.
+ * tweakDocument(doc, request, { registry, writer, limits }) -> { doc, ops: [{ path, use, param, from, to }], matched, scaled?, ms, source }
+ * See the header. Only parameter values change; never code, never content lists. `limits`: a template game's tune
+ * slots and the ranges its template tunes them in (version-gate.js tuneLimits): only those are offered.
  * @param {Doc} input @param {unknown} request
- * @param {{ registry: RegistryLike, decisions?: Decisions | null, limit?: number, limits?: TweakLimits | null }} options
- * @returns {Promise<{ doc: Doc, ops: TweakOp[], matched: boolean, scaled?: { factor: number, unscaled: unknown[] }, ms: number, source: string }>}
+ * @param {{ registry: RegistryLike, writer?: Writer | null, limits?: TweakLimits | null, attempts?: number }} options
+ * @returns {Promise<{ doc: Doc, ops: TweakOp[], matched: boolean, scaled?: { factor: number, unscaled: unknown[] }, ms: number, source: string, asked?: Array<{ pick: string, problem?: string }> }>}
  */
-export async function tweakDocument(input, request, { registry, decisions = null, limit = 4, limits = null }) {
+export async function tweakDocument(input, request, { registry, writer = null, limits = null, attempts = 2 }) {
   const started = performance.now();
-  const text = String(request || '').toLowerCase();
-  // A world-size request grows the content with the container (declared scale params, generators re-fitted): scaleWorld.
-  const factor = worldScaleRequest(text);
-  if (factor) {
-    const r = scaleWorld(input, registry, factor);
-    /** @type {TweakOp[]} */
-    const ops = r.changes.map(c => ({ path: c.path, use: null, param: c.params.join(','), from: null, to: `×${factor}` }));
-    if (ops.length) return { doc: r.doc, ops, matched: true, scaled: { factor, unscaled: r.unscaled }, ms: Math.round(performance.now() - started), source: 'scaleWorld' };
+  const none = (/** @type {string} */ source, /** @type {Array<{ pick: string, problem?: string }>} */ asked = []) => ({ doc: input, ops: [], matched: false, ms: Math.round(performance.now() - started), source, asked });
+  if (!writer?.complete) return none('no_model');
+  const options = tweakOptions(input, registry, limits);
+  const world = !limits && (input.spaces || []).some(sp => worldParams(registry, sp.use).length);
+  const ids = [...options.map(o => o.path), ...(world ? [WORLD_SIZE] : [])];
+  if (!ids.length) return none('no_params');
+  const schema = { name: 'tweak_param', schema: { type: 'object', additionalProperties: false, required: ['param', 'number', 'flag', 'why'], properties: {
+    param: { type: 'string', enum: [...ids, 'none'] }, number: nul({ type: 'number' }), flag: nul({ type: 'boolean' }), why: { type: 'string', description: 'one line' } } } };
+  const line = (/** @type {TweakOption} */ o) => `- ${o.path} (${o.use}.${o.param}, ${o.schema.type}${o.min !== undefined || o.max !== undefined ? `, ${o.min ?? ''}..${o.max ?? ''}` : ''}${o.schema.unit ? ` ${o.schema.unit}` : ''}; now ${JSON.stringify(o.current)}): ${String(o.schema.effect || '').slice(0, 160)}`;
+  const base = `Change request: ${String(request || '')}\n\nParameters:\n${options.map(line).join('\n')}${world ? `\n- ${WORLD_SIZE}: scale the whole world (its spaces' extent and what their generators build) by a factor` : ''}`;
+  /** @type {Array<{ pick: string, problem?: string }>} */
+  const asked = [];
+  let problem = '';
+  for (let i = 0; i < Math.max(1, attempts); i++) {
+    /** @type {unknown} */
+    let a;
+    try { a = parseReply((await writer.complete({ system: TWEAK_SYSTEM, user: problem ? `${base}\n\nYour previous answer failed: ${problem}` : base, schema })).text); }
+    catch (error) { problem = messageOf(error).slice(0, 160); asked.push({ pick: '', problem }); continue; }
+    const pick = str(prop(a, 'param')), n = prop(a, 'number'), flag = prop(a, 'flag');
+    if (pick === 'none') { asked.push({ pick }); return none(writer.model || 'model', asked); }
+    if (pick === WORLD_SIZE && world) {
+      if (typeof n !== 'number' || !Number.isFinite(n) || n < WORLD_FACTOR.min || n > WORLD_FACTOR.max || n === 1) { problem = `${WORLD_SIZE} needs a factor from ${WORLD_FACTOR.min} to ${WORLD_FACTOR.max}, not 1`; asked.push({ pick, problem }); continue; }
+      const r = scaleWorld(input, registry, n);
+      /** @type {TweakOp[]} */
+      const ops = r.changes.map(c => ({ path: c.path, use: null, param: c.params.join(','), from: null, to: `×${n}` }));
+      asked.push({ pick });
+      if (!ops.length) return none(writer.model || 'model', asked);
+      return { doc: r.doc, ops, matched: true, scaled: { factor: n, unscaled: r.unscaled }, ms: Math.round(performance.now() - started), source: 'scaleWorld', asked };
+    }
+    const o = options.find(x => x.path === pick);
+    if (!o) { problem = `'${pick.slice(0, 80)}' is not a listed parameter`; asked.push({ pick, problem }); continue; }
+    /** @type {number | boolean | undefined} */
+    let to;
+    if (o.schema.type === 'boolean') to = typeof flag === 'boolean' ? flag : undefined;
+    else if (typeof n === 'number' && Number.isFinite(n) && (o.schema.type !== 'integer' || Number.isInteger(n)) && n >= (o.min ?? -Infinity) && n <= (o.max ?? Infinity)) to = n;
+    if (to === undefined) { problem = `${o.path} needs ${o.schema.type === 'boolean' ? 'flag true or false' : `a${o.schema.type === 'integer' ? 'n integer' : ' number'} from ${o.min ?? '-∞'} to ${o.max ?? '∞'}`}`; asked.push({ pick, problem }); continue; }
+    asked.push({ pick });
+    if (to === o.current) return none(writer.model || 'model', asked);
+    const doc = structuredClone(input);
+    setPath(doc, o.path, to);
+    return { doc, ops: [{ path: o.path, use: o.use, param: o.param, from: o.current, to }], matched: true, ms: Math.round(performance.now() - started), source: writer.model || 'model', asked };
   }
-  const direction = UP.test(text) && !DOWN.test(text) ? 1 : DOWN.test(text) && !UP.test(text) ? -1 : (/\b(harder|tougher)\b/.test(text) ? 1 : /\beasier\b/.test(text) ? -1 : 0);
-  let candidates = tweakCandidates(input, text, registry).filter(c => c.schema.type === 'boolean' ? (ENABLE.test(text) || DISABLE.test(text)) && c.score >= 2 : direction !== 0 || /\b(to|=)\s+\d/.test(text));
-  let source = 'rules';
-  if (decisions && candidates.length > 1) {
-    try {
-      const top = candidates.slice(0, 8);
-      const { answers, provider } = await decisions.decide({ state: { request, direction: direction > 0 ? 'increase' : direction < 0 ? 'decrease' : 'set' }, questions: Object.fromEntries(top.map((c, i) => [`p${i}`, { type: 'noul', instructions: `${TWEAK_Q}\nParameter: ${c.use} → ${c.param} (${c.schema.effect || c.schema.type}${c.schema.unit ? ', ' + c.schema.unit : ''})` }])) });
-      const bar = provider === 'd1' ? 0.6 : 0.5;
-      candidates = top.filter((_, i) => (noulOf(answers, `p${i}`) ?? 0) >= bar);
-      source = provider;
-    } catch { /* rules decide */ }
-  } else candidates = candidates.filter(c => c.score >= Math.max(1, (candidates[0]?.score || 0) * 0.6));
-  const doc = structuredClone(input);
-  /** @type {TweakOp[]} */
-  const ops = [];
-  for (const c of candidates.slice(0, limit)) {
-    const to = nextValue(c, direction || 1, text, limits?.get(c.path));
-    if (to === c.current || to === undefined) continue;
-    setPath(doc, c.path, to);
-    ops.push({ path: c.path, use: c.use, param: c.param, from: c.current, to });
-  }
-  return { doc, ops, matched: ops.length > 0, ms: Math.round(performance.now() - started), source };
+  return none(writer.model || 'model', asked);
 }
 
 // ---------- model revisions as targeted ops ----------
@@ -278,6 +242,23 @@ export function applyOps(input, ops) {
   return { doc, applied, failed };
 }
 
+/**
+ * The document a revision is written against: its fields and instances, and only the plot and content sections a
+ * primitive it uses reads (card.reads), or the kernel (archetypes). @param {Doc} doc @param {RegistryLike} registry
+ */
+export function declaredDocument(doc, registry) {
+  const reads = new Set(['content.archetypes', ...instancesOf(doc).flatMap(({ inst }) => list(registry.get(inst.use)?.card.reads).filter(r => typeof r === 'string'))]);
+  const read = (/** @type {string} */ key) => [...reads].some(r => key === r || key.startsWith(`${r}.`));
+  /** @type {Record<string, unknown>} */
+  const out = { ...doc };
+  for (const root of /** @type {const} */ (['plot', 'content'])) {
+    const sec = doc[root];
+    if (!isObj(sec)) continue;
+    out[root] = Object.fromEntries(Object.entries(sec).filter(([k]) => (root === 'plot' && k === 'premise') || read(`${root}.${k}`)));
+  }
+  return out;
+}
+
 /** @param {RegistryLike} registry @param {LogicLike} logic @param {Doc} doc @returns {string} */
 export function reviseSystem(registry, logic, doc) {
   const v = vocabulary(logic), used = new Set([...doc.spaces.map(s => s.use), ...(doc.systems || []).map(s => s.use), ...(doc.graphics || []).map(g => g.use)]);
@@ -309,13 +290,14 @@ ${dataShapes(registry, [...used]).join('\n')}`;
  * @returns {Promise<{ ops: unknown[], unsupported: Unsupported[], summary: string, ms: number, model: string }>}
  */
 export async function reviseDocument({ writer, doc, change, registry, logic, errors = null, previous = null }) {
-  const user = `Document:\n${JSON.stringify(doc).slice(0, 60000)}\n\nChange request: ${change}${errors ? `\n\nYour previous ops produced a document that failed checks:\n${errors}\nPrevious ops: ${JSON.stringify(previous).slice(0, 6000)}\nReturn corrected ops.` : ''}`;
+  // The document as its declarations make it: every instance, and the plot and content sections a primitive it uses
+  // reads (card.reads; the kernel's archetypes). Nothing is cut: a section no primitive reads is no part of the game.
+  const user = `Document:\n${JSON.stringify(declaredDocument(doc, registry))}\n\nChange request: ${change}${errors ? `\n\nYour previous ops produced a document that failed checks:\n${errors}\nPrevious ops: ${JSON.stringify(previous).slice(0, 6000)}\nReturn corrected ops.` : ''}`;
   const reply = await writer.complete({ system: reviseSystem(registry, logic, doc), user });
   const out = obj(parseReply(reply.text));
   return { ops: Array.isArray(out.ops) ? out.ops : [], unsupported: list(out.unsupported).slice(0, 6).filter(/** @returns {u is Unsupported} */ u => isObj(u)), summary: String(out.summary || '').slice(0, 300), ms: reply.ms, model: reply.model };
 }
 
-const LOOKS = /\b(look|looks|color|colour|art|style|sprite|model|graphic\w*|theme|palette|visual\w*|draw\w*|paint\w*|night|day|lighting|font|ui)\b/i;
 /** @param {Doc} doc */
 const artOf = doc => ({ graphics: doc.graphics || [], models: doc.content?.models || {}, art: doc.art || null });
 
@@ -342,7 +324,7 @@ export async function reviewChange({ before, after, change, decisions = null, un
   const dropped = shrunk.length && !(await asksToRemove(decisions, change, shrunk)) ? shrunk : [];
   if (dropped.length) notes.push(`removed ${dropped.map(d => d.path).join(', ')}`);
   const artChanged = JSON.stringify(artOf(before)) !== JSON.stringify(artOf(after));
-  if (artChanged && !LOOKS.test(change)) notes.push('changed the look');
+  if (artChanged) notes.push('changed the look (graphics or models)');
   if (verifyBefore && verifyAfter && regressed(verifyBefore, verifyAfter)) notes.push('the game could be finished before this change and no longer provably can');
   const diff = contentDiff(strip(before), strip(after));
   const revisionCheck = await checkRevision(decisions, { change, engine: 'gameverse kernel document', before: strip(before), after: strip(after), unsupported });

@@ -85,7 +85,11 @@ test('a tweak of a template game chooses its value within the template\'s tune r
   const t = templateById('race'), base = preflight(structuredClone(t.doc), registry, logic).doc;
   const key = [...tuneLimits(t, base, cat).keys()].find(k => k.endsWith('.with.speed'));
   const narrow = new Map([[key, { maximum: 18 }]]);
-  const r = await tweakDocument(base, 'make the rivals much faster: set the speed to 400', { registry, limits: narrow });
+  // Only the template's tune slots are offered, each with its range; an answer outside it is asked again, never clamped.
+  const writer = fakeWriter([req => JSON.stringify({ param: key, number: 400, flag: null, why: 'as asked' }), req => JSON.stringify({ param: key, number: 18, flag: null, why: 'the top of its range' })]);
+  const r = await tweakDocument(base, 'make the rivals much faster: set the speed to 400', { registry, limits: narrow, writer });
+  assert.deepEqual(writer.calls[0].schema.schema.properties.param.enum, [key, 'none']);
+  assert.match(writer.calls[1].user, /needs a number from .* to 18/);
   const op = r.ops.find(o => o.path === key);
   assert.ok(op && op.to === 18, JSON.stringify(r.ops));
 });

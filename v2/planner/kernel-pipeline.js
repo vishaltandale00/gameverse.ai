@@ -4,7 +4,7 @@
 //   template is, the step path: decompose -> select (capability-aware) -> outline (preflight + repair rounds)
 //   -> first playable (no model, <1 s) -> gate -> gaps (new primitives through the experiments sandbox) -> complete.
 // No post-publish pass adds content the declarations did not ask for (ARCHITECTURE §5).
-// Revisions: tweak (params, no model, <1 s) else targeted model ops, both behind
+// Revisions: a tweak (one strict model choice among the declared params) else targeted model ops, both behind
 // the revision-check guards. Every stage reports measured durations; values that
 // were not measured are null, never zero (AGENTS.md).
 import { hashOf } from '../server/store.js';
@@ -16,7 +16,7 @@ import { writeOutline } from './outline.js';
 import { applySkins, mashupAdapterProblems } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
-import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale, REVISE_VERSION } from './doc-revise.js';
+import { tweakDocument, reviseDocument, applyOps, reviewChange, routeWorldScale, REVISE_VERSION } from './doc-revise.js';
 import { gateVersion, gateError, versionTemplate, tuneLimits, VERSION_GATE_VERSION } from './version-gate.js';
 import { contentGrowth } from './revision-check.js';
 import { describeErrors } from './repair.js';
@@ -410,7 +410,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
   /**
    * A revision: a new immutable version checked like a new game (ARCHITECTURE §4). The change applies to the version
    * the job names, else to the game's latest version when the job runs (a change queued behind another builds on it).
-   * A parameter tweak (no model; on a template game within the ranges its template tunes them) else the model's ops,
+   * A parameter tweak (one strict model choice among the declared params; on a template game its tune slots within the ranges its template tunes them) else the model's ops,
    * preflighted (a failing draft goes back to the model with the errors; nothing is repaired around, stubbed or
    * dropped). Then the version gate (version-gate.js) on the document a person plays, against the base version
    * verified with the same budgets: preflight, the template's tune ranges, composition, loop, controls, the publish
@@ -440,9 +440,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // A revise job carries its change (api.mjs); a missing one is written to the models as empty.
     const change = str(job.change);
     ctx.stage('revising', { change: job.change, base: baseVersion });
-    // Layer 5 first: a parameter tweak with no model.
+    // A parameter tweak first: one small strict model choice among the declared params (doc-revise.js tweakDocument).
     let t = performance.now();
-    const tweak = await tweakDocument(before, job.change, { registry, decisions, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
+    const tweak = await tweakDocument(before, job.change, { registry, writer: spec, attempts: cfg.modelAttempts, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
     timings.tweakMs = ms(t);
     /** @type {Doc | null} */
     let after = null;
@@ -509,9 +509,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // The revision check as published: the checker's, or (when the world did not grow) at least notApplied and why.
     /** @type {Partial<import('./revision-check.js').RevisionCheck> | null} */
     let revisionCheck = guard.revisionCheck;
-    if (scaled || worldScaleRequest(job.change)) {
+    if (scaled) {
       growth = contentGrowth(before, published, registry, logic);
-      const wantGrow = (scaled?.factor ?? worldScaleRequest(job.change) ?? 1) > 1;
+      const wantGrow = scaled.factor > 1;
       if (wantGrow && !growth.grew) revisionCheck = { ...(revisionCheck || {}), notApplied: true, why: 'Only the world\'s container grew: nothing it generates (cells, rooms, zones, entities) got bigger.' };
     }
     const notApplied = revisionCheck?.notApplied || (guard.diff === 0);

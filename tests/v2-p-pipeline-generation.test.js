@@ -11,7 +11,7 @@ import { locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js'
 import { normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner/doc-revise.js';
+import { tweakDocument, routeWorldScale, WORLD_SIZE } from '../v2/planner/doc-revise.js';
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
 import { preflight } from '../v2/kernel/document.js';
@@ -273,10 +273,10 @@ test('repair never removes a primitive to pass: a validate() error only the mode
 
 test('revisions: "Bigger world" grows the generated content, and a container-only resize is caught', async () => {
   const pac = fixture('pacman-library').doc;
-  assert.equal(worldScaleRequest('Bigger world'), 1.5);
-  assert.equal(worldScaleRequest('make the maze twice as big'), 2);
-  assert.equal(worldScaleRequest('faster ghosts'), null);
-  const t = await tweakDocument(pac, 'Bigger world', { registry });
+  // The world's size is one of the tweak's declared options (its spaces declare scale params); the model picks it and
+  // the factor. No words of the request decide it.
+  const writer = fakeWriter([req => JSON.stringify({ param: req.schema.schema.properties.param.enum.includes(WORLD_SIZE) ? WORLD_SIZE : 'none', number: 1.5, flag: null, why: 'scripted' })]);
+  const t = await tweakDocument(pac, 'Bigger world', { registry, writer });
   assert.ok(t.matched && t.scaled?.factor === 1.5, JSON.stringify(t.ops));
   const grown = contentGrowth(pac, t.doc, registry, logic);
   assert.ok(grown.grew, JSON.stringify(grown));

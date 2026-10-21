@@ -171,9 +171,8 @@ export function shrunkLists(before, after, path = '', depth = 0, out = []) {
 }
 
 const REMOVE_QUESTION = 'Does the request explicitly ask for fewer of these items, or to merge them into one? Answer yes only when the request itself says fewer, less, one, only, remove or similar about them. Answer no when the request is about something else, such as size, speed, looks or a new feature, even if fewer items would be one way to do it.';
-const REMOVE_WORDS = /\b(fewer|less|remove|delete|drop|cut|shorter|smaller|reduce|only|just one|single|one level|no more)\b/i;
 /**
- * Does the change request ask to remove or reduce these lists? Decision model when available, words otherwise.
+ * Does the change request ask to remove or reduce these lists? The decision model's answer; without one, not known (false).
  * @param {Decisions | null | undefined} decisions @param {string | null | undefined} change @param {Shrunk[]} shrunk @returns {Promise<boolean>}
  */
 export async function asksToRemove(decisions, change, shrunk) {
@@ -187,7 +186,8 @@ export async function asksToRemove(decisions, change, shrunk) {
       if (remove != null) return remove >= (provider === 'd1' ? 0.9 : 0.5);
     } catch {}
   }
-  return REMOVE_WORDS.test(change);
+  // Without a decision model it is not known to be asked for: the removal is noted (a note, never a refusal).
+  return false;
 }
 
 /**
