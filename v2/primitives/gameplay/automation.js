@@ -49,8 +49,8 @@ export default {
     data: { 'content.recipes': RECIPES },
     rules: {
       automation_empty: { fields: ROLES, message: 'at least one cell id is mapped to a role (belts, inserters, machines, sources or sinks)', example: alone({}) },
-      automation_role: { fields: ROLES, message: 'a cell id has one role: it is a key of one role map only', example: { doc: { systems: [{ use: ID, with: { belts: { conveyor: { dir: 'e' } }, sinks: { conveyor: {} } } }], content: { blocks: [{ id: 'conveyor', name: 'Conveyor' }] }, player: null } } },
-      automation_block_unknown: { fields: ROLES, message: 'the role maps\' keys are content.blocks ids (when the document declares blocks)', example: { doc: { systems: [{ use: ID, with: { sinks: { crate: {} } } }], content: { blocks: [{ id: 'stone', name: 'Stone' }] }, player: null } } },
+      automation_role: { fields: ROLES, message: 'a cell id has one role: it is a key of one role map only', example: { doc: { systems: [{ use: ID, with: { belts: { conveyor: { dir: 'e' } }, sinks: { conveyor: {} } } }], content: { blocks: [{ id: 'conveyor', name: 'Conveyor' }] }, spaces: [{ id: 'floor', use: 'engine.space.grid', with: { size: [8, 8] } }], graphics: [], player: null } } },
+      automation_block_unknown: { fields: ROLES, message: 'the role maps\' keys are content.blocks ids (when the document declares blocks)', example: { doc: { systems: [{ use: ID, with: { sinks: { crate: {} } } }], content: { blocks: [{ id: 'stone', name: 'Stone' }] }, spaces: [{ id: 'floor', use: 'engine.space.grid', with: { size: [8, 8] } }], graphics: [], player: null } } },
     },
   },
   logic(logic) {
