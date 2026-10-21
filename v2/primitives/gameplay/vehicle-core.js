@@ -64,6 +64,8 @@ export default {
       services: ['vehicles'],
       actions: ['enter_vehicle', 'exit_vehicle', 'horn', 'radio'],
     },
+    // The driver steers and throttles with the move axis (x = steer, y = throttle); hosts bind it from this.
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
     // The player sits in the vehicle a motion primitive provides (role 'vehicle'); AI participants likewise.

@@ -42,7 +42,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'gravity', 'surface', 'bounds', 'chunks', 'light', 'procedural'],
       capabilityMethods: { chunks: ['chunkCells', 'chunkOf', 'chunksNear', 'blockDef', 'cellOf'], light: ['lightAt'], procedural: ['model', 'standAt', 'objects'] },
-      events: ['enter_zone', 'leave_zone', 'cell_changed', 'generated', 'fluid_flow'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'generated', 'fluid_flow'],
       services: ['surface'],
     },
     reads: ['content.blocks'],
@@ -265,9 +265,32 @@ export default {
       return r.path ? r.path.map(c => centreOf(c, p)) : null;
     }
     /** Flood fill of standable feet cells: a Set of cellKey keys plus the ids of zones reached (.truncated when the budget ran out). */
+    // Movement option listing calls reachable() every step from where the player stands (~50 ms a fill).
+    // Results are memoised per start cell, options and world state: generation version, the edit map
+    // (identity: restore replaces it), the edit log's length and last entry, fluid cells and zones.
+    const reachMemo = { world: null, map: new Map(), tokens: new WeakMap(), next: 1 };
+    const worldKey = () => {
+      const s = st(), log = s.log;
+      if (!reachMemo.tokens.has(s.edits)) reachMemo.tokens.set(s.edits, reachMemo.next++);
+      return `${model.ensure().version}|${reachMemo.tokens.get(s.edits)}|${Object.keys(s.edits).length}|${log.length}|${JSON.stringify(log[log.length - 1] ?? null)}|${Object.keys(s.fluidLevel || {}).length}|${JSON.stringify(zones())}`;
+    };
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
-      const p = pathOpts(opts), a = snap(from, p), out = new Set();
+      const p = pathOpts(opts), a = snap(from, p);
+      const memoKey = a && !p.avoid ? `${keyOf(a)}|${JSON.stringify({ ...p, avoid: undefined })}|${opts.coarse !== false}` : null;
+      if (memoKey) {
+        const world = worldKey();
+        if (reachMemo.world !== world) { reachMemo.world = world; reachMemo.map.clear(); }
+        const hit = reachMemo.map.get(memoKey); if (hit) return hit;
+        const out = reachableFill(a, p, opts);
+        if (reachMemo.map.size >= 16) reachMemo.map.delete(reachMemo.map.keys().next().value);
+        reachMemo.map.set(memoKey, out);
+        return out;
+      }
+      return reachableFill(a, p, opts);
+    }
+    function reachableFill(a, p, opts) {
+      const out = new Set();
       out.truncated = false;
       if (!a) return out;
       const seen = new Set([keyOf(a)]), queue = [a];

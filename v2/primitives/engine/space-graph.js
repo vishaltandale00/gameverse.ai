@@ -8,7 +8,7 @@ export default {
     views: ['text', 'map', 'scene-cards'],
     needs: { content: ['zones'] },
     params: {},
-    provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'blocked'] },
+    provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },
     reads: [],
   },
   validate(config, doc, ctx) {
@@ -30,8 +30,12 @@ export default {
     const exitsFrom = id => zones().get(id)?.exits || [];
     const api = {
       kind: 'graph', anchor: 'slot', get zones() { return zones(); },
-      place(entity) { if (entity.at == null) entity.at = [...zones().keys()][0] ?? null; },
-      remove() {},
+      place(entity, rt) {
+        const at = zones().has(entity.at) ? entity.at : [...zones().keys()][0] ?? null;
+        entity.at = null; entity.zone = null;
+        if (at != null) api.move(entity, at, rt, { force: true });
+      },
+      remove(entity, rt) { const from = entity.at; entity.zone = null; if (from != null && zones().has(from)) rt.emitTyped('leave_zone', from, { who: entity.id, zone: from }); },
       pos: entity => entity.at,
       setPos(entity, at, rt) { api.move(entity, at, rt, { force: true }); },
       entitiesAt: at => Object.values(rt.state.entities).filter(e => e.space === instance.id && e.at === at).map(e => e.id),
@@ -55,8 +59,11 @@ export default {
       move(entity, to, rt, { force = false } = {}) {
         if (!zones().has(to)) return false;
         if (!force && !api.canMove(entity, to, rt, true)) { rt.emit('blocked', { who: entity.id, from: entity.at, to }); return false; }
-        const from = entity.at; entity.at = to;
-        rt.emit('leave_zone', { who: entity.id, zone: from }); rt.emit('enter_zone', { who: entity.id, zone: to });
+        const from = entity.at; entity.at = to; entity.zone = to;
+        if (from === to) return true;
+        // Typed zone events (KERNEL_API §3) so beats and quests can wait on enter_zone:<location>.
+        if (from != null) rt.emitTyped('leave_zone', from, { who: entity.id, zone: from });
+        rt.emitTyped('enter_zone', to, { who: entity.id, zone: to });
         return true;
       },
       distance(a, b) { // hop count ignoring gates

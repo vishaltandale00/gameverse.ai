@@ -31,7 +31,7 @@ export default {
     provides: { services: ['input'], events: [] },
     requires: {},
   },
-  validate(config) {
+  validate(config, doc = {}, ctx = null, info = {}) {
     const errors = [], verbs = new Set(config.verbs);
     config.verbs.forEach((v, i) => { if (!SLUG.test(v)) errors.push({ code: 'input_verb_invalid', path: `verbs[${i}]`, message: `verb '${v}' must be a slug` }); });
     if (verbs.size !== config.verbs.length) errors.push({ code: 'input_verb_invalid', path: 'verbs', message: 'duplicate verbs' });
@@ -45,6 +45,19 @@ export default {
     }
     if (!errors.length) for (const c of conflicts(config.bindings, config.shareKeys)) errors.push({ code: 'input_binding_conflict', path: `bindings.${c.view}`, message: `'${c.key}' is bound to both ${c.verbs.join(' and ')}`, hint: 'rebind one, or list both verbs in a shareKeys group' });
     config.shareKeys.forEach((g, i) => g.forEach((v, j) => { if (!verbs.has(v)) errors.push({ code: 'input_verb_unknown', path: `shareKeys[${i}][${j}]`, message: `'${v}' is not in verbs` }); }));
+    // Static check: a bound key must reach something. A verb no instance's card declares (provides.actions or
+    // actionSpace) is a dead key unless a primitive reads it undeclared, so it is a warning, not an error.
+    const registry = ctx?.registry;
+    if (registry && typeof ctx.warn === 'function') {
+      const declared = new Set(['look', 'menu', 'pause', 'inventory', 'journal', 'map']); // camera look and UI hotkeys
+      for (const inst of [...(doc.spaces || []), ...(doc.systems || []), ...(doc.graphics || [])]) {
+        const card = registry.get?.(inst.use)?.card;
+        for (const a of card?.provides?.actions || []) declared.add(a);
+        for (const a of Object.keys(card?.actionSpace || {})) declared.add(a);
+      }
+      for (const [view, map] of Object.entries(config.bindings)) for (const verb of Object.keys(map || {}))
+        if (verbs.has(verb) && !declared.has(verb)) ctx.warn({ code: 'input_verb_unread', path: `${info.path ? info.path + '.with.' : ''}bindings.${view}.${verb}`, message: `'${verb}' is bound but no primitive in the document declares it (card.provides.actions or card.actionSpace)`, hint: 'bind a verb a primitive provides, or declare the verb in the card of the primitive that reads it' });
+    }
     return errors;
   },
   install(rt, config, instance) {

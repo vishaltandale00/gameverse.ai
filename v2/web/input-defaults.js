@@ -58,7 +58,10 @@ export function withDefaultInput(doc, registry, { touch = false } = {}) {
   const systems = (doc.systems || []).map(s => ({ ...s }));
   if (!registry?.has?.(INPUT)) return systems;
   const view = doc.views?.primary || 'side', threeD = FIRST_PERSON.has(view) || /space\.(voxel|mesh3d)$/.test(doc.spaces?.[0]?.use || '');
-  const provided = new Set(systems.flatMap(s => registry.get(s.use)?.card?.provides?.actions || []));
+  // Verbs the systems register, plus input axes they read (an actionSpace vector such as a car's move).
+  const cardOf = s => registry.get(s.use)?.card;
+  const provided = new Set(systems.flatMap(s => [...(cardOf(s)?.provides?.actions || []),
+    ...Object.entries(cardOf(s)?.actionSpace || {}).filter(([v, a]) => v in AXIS_SOURCES && a?.type === 'vector').map(([v]) => v)]));
   const device = [...provided].filter(v => (v in AXIS_SOURCES ? pick(AXIS_SOURCES[v], threeD).length > 0 : v in KEYS && pressable(registry, systems, v)));
   let i = systems.findIndex(s => s.use === INPUT);
   if (i < 0) {
@@ -72,7 +75,9 @@ export function withDefaultInput(doc, registry, { touch = false } = {}) {
   const rank = v => { const i = Object.keys(KEYS).indexOf(v); return i < 0 ? -1 : i; };
   for (const v of device.sort((a, b) => rank(a) - rank(b))) if (!verbs.includes(v)) verbs.push(v);
   if (threeD && verbs.includes('move') && !verbs.includes('look')) verbs.push('look');
-  if (!verbs.length) verbs.push('move');
+  // verbs needs one entry; a document with nothing to steer (graph or none spaces driven by options)
+  // gets the UI verb, which binds no key, rather than a move axis no primitive reads.
+  if (!verbs.length) verbs.push('menu');
   const bindings = structuredClone(w.bindings || {});
   const map = bindings[view] ??= {};
   const used = new Map(); // key -> verbs bound to it in this view
