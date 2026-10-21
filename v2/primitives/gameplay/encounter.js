@@ -27,6 +27,11 @@ const TRAINER = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "areas", "min": 1, "why": "wild encounters need areas (zones) with weighted species tables", "example": [{"id": "meadow_grass", "zone": "meadow", "rate": 0.12, "table": [{"species": "sprout", "weight": 3, "minLevel": 2, "maxLevel": 4}]}]},
+      {"need": "param", "param": "trainers", "min": 1, "why": "trainers give the player battles worth winning", "example": [{"id": "ranger_ivy", "party": [{"species": "ember_pup", "level": 5}]}]},
+    ],
     intent: 'Creature encounters: tall-grass/zone/cell-tagged areas with per-step rates and weighted level-ranged tables, grace steps and repel; data-defined trainers whose battles start from effects and are remembered when beaten.',
     views: ['td', 'side', 'any'],
     params: {

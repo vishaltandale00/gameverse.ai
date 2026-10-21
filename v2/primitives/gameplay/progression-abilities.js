@@ -9,6 +9,10 @@ const owned = (rt, who = 'player') => ((st(rt).owned ??= {})[who] ??= {});
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "abilities", "min": 2, "why": "abilities to unlock"},
+    ],
     intent: 'Ability registry: unlockable abilities that grant verbs (double jump, dash, drive...), with optional requirement predicates; the `ability` and `grants` predicates gate plot, portals and movement; unlock_ability/lock_ability effects; a service other primitives query.',
     views: ['any'],
     params: {

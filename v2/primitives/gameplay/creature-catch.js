@@ -10,6 +10,10 @@ const ID = 'gameplay.creature.catch';
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "balls", "min": 1, "why": "catching needs ball items", "example": [{"item": "orb", "bonus": 1}]},
+    ],
     intent: 'Creature capture: ball items with catch bonuses, hp/status-weighted odds, four shake checks; catches go to the party/box and dex.',
     views: ['any'],
     params: {

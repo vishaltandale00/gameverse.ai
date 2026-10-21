@@ -8,10 +8,12 @@ import { parseReply } from './writer.js';
 export const DECOMPOSITION_VERSION = 'decompose/0.1';
 const SPACE_KINDS = ['continuous-3d', 'continuous-2d', 'tiles-side', 'tiles-topdown', 'board', 'locations', 'none'];
 const VIEWS = ['1p', '3p', 'td', 'side', 'iso', 'board', 'ui', 'text'];
+// How the player's avatar moves (movement cards declare the same `medium`); none = no avatar moves (cards, boards, menus).
+export const MOVEMENT = ['ground', 'air', 'water', 'track', 'none'];
 const str = { type: 'string' };
 export const DECOMPOSITION_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'premise', 'references', 'mechanics', 'spaces', 'views', 'acts', 'zones', 'tone'],
+  required: ['title', 'premise', 'references', 'mechanics', 'spaces', 'views', 'movement', 'acts', 'zones', 'tone'],
   properties: {
     title: str, premise: str, tone: str,
     references: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['name', 'kind', 'keeps'], properties: {
@@ -21,6 +23,7 @@ export const DECOMPOSITION_SCHEMA = {
     spaces: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['role', 'kind', 'description'], properties: {
       role: str, kind: { type: 'string', enum: SPACE_KINDS }, description: str } } },
     views: { type: 'array', items: { type: 'string', enum: VIEWS } },
+    movement: { type: 'string', enum: MOVEMENT },
     acts: { type: 'integer' }, zones: { type: 'integer' },
   },
 };
@@ -29,7 +32,8 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - references: every game, genre, setting or character the idea names or clearly implies. For each, "keeps" lists what the idea takes from it (its core loop and defining mechanics, or only its setting/characters/look).
 - mechanics: the concrete mechanics the game needs, as short verb-led phrases that make sense in any game ("real-time melee combat with stamina and dodge rolls", "catch wild creatures and keep a party", "turn-based battles between party members", "mine and place blocks", "drive vehicles", "talk to characters with dialogue choices"). A mashup keeps the defining mechanics of EVERY game it references, unless the idea says otherwise. Mark the core loop "core". Don't invent mechanics the idea doesn't need. id is a lowercase slug.
 - spaces: the kinds of space the game is played in (an overworld and a separate battle screen are two spaces). kind: continuous-3d, continuous-2d, tiles-side (side view), tiles-topdown, board (discrete turn-based grid), locations (rooms/places joined by exits), none (cards, menus, dialogue).
-- views: camera/presentation views (1p 3p td side iso board ui text).
+- views: camera/presentation views (1p 3p td side iso board ui text). The FIRST view is the game's main camera: keep the genre's own (a platformer is side, a top-down farm is td, a 3D adventure is 3p, a board or puzzle grid is board, a card game is ui).
+- movement: how the player's avatar moves most of the time: ground (walking, running, jumping, driving on foot-level terrain), air (flying is the core loop), water (swimming/sailing is the core loop), track (lanes or a fixed course), none (no avatar: cards, boards, falling pieces, menus).
 - acts and zones: a sensible size for a first version (acts 2-4, zones 3-8).
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
@@ -70,9 +74,13 @@ export function normalize(d, prompt = '') {
     mechanics: mechanics.slice(0, 16),
     spaces: (Array.isArray(d?.spaces) ? d.spaces : []).slice(0, 4).map(s => ({ role: String(s.role || 'world').slice(0, 40), kind: SPACE_KINDS.includes(s.kind) ? s.kind : 'locations', description: String(s.description || '').slice(0, 200) })),
     views: (Array.isArray(d?.views) ? d.views : []).filter(v => VIEWS.includes(v)),
+    movement: MOVEMENT.includes(d?.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
     acts: clampInt(d?.acts, 1, 6, 3), zones: clampInt(d?.zones, 2, 12, 5),
   };
 }
+
+/** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. */
+export const movementFrom = text => /\b(fly|flying|flight|soar\w*|jetpack|airship|plane)\b/.test(text) ? 'air' : /\b(swim\w*|underwater|dive|diving|sail\w*)\b/.test(text) ? 'water' : /\b(runner|lanes?)\b/.test(text) ? 'track' : 'ground';
 
 const titleFrom = prompt => (prompt.match(/[A-Za-z0-9']+/g) || ['Untitled']).slice(0, 5).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 

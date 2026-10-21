@@ -27,6 +27,12 @@ const MATERIAL_SCHEMA = { type: 'object', open: true, fields: { hp: { type: 'num
 export default {
   id: ID,
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { destructible: { type: 'object', fields: { material: { type: 'string', required: true, effect: 'a materials key: wood, stone, glass, tnt...' }, hp: { type: 'number', min: 0 }, scale: { type: 'number', min: 0 } }, effect: 'breaks from impacts and blasts' } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "destructible", "min": 2, "placed": 6, "why": "structures are entities with a destructible component {material} (wood, stone, glass, tnt...), placed to be broken", "example": {"id": "wood_plank", "kind": "prop", "components": {"destructible": {"material": "wood"}}}},
+    ],
     intent: 'Destructible materials (wood, stone, glass, TNT, targets, pegs) that take impulse damage from contacts above a floor, break with score and shards, and blast neighbours when explosive.',
     views: ['side', 'td', '3p'],
     params: {

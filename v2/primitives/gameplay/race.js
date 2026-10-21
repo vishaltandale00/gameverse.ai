@@ -14,6 +14,11 @@ const STATES = ['idle', 'countdown', 'running', 'finished'];
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "racers", "min": 3, "why": "a race needs rivals: racers lists the player and at least two other racer ids or archetypes", "example": ["player", "rival_1", "rival_2", "rival_3"]},
+      {"need": "param", "param": "checkpoints", "min": 3, "why": "laps run through ordered checkpoint zones", "example": ["start_straight", "harbor_turn", "summit_loop"]},
+    ],
     intent: 'Checkpoint racing: laps through ordered checkpoint zones with a countdown, live race positions, lap and best-lap times, wrong-way warnings, optional arcade time limit with checkpoint time bonuses, DNF after the winner, and best-lap ghosts. Works on foot, in vehicles or on mounts.',
     views: ['any'],
     params: {

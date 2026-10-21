@@ -25,12 +25,11 @@ function memoryCtx() {
 function scriptedModel() {
   return fakeWriter([(req) => {
     if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4 });
-    if (/A valid skeleton/.test(req.user)) {
-      const doc = JSON.parse(req.user.split('placeholder names):\n')[1].split('\n\nWrite the outline')[0]);
-      doc.title = 'Lamp of the Drowned'; doc.plot.premise = 'A keeper lost the lamp.';
-      // A model fills the content its core mechanics play with (the core-loop gate requires it).
-      doc.content ??= {}; if (!(doc.content.items || []).length) doc.content.items = [{ id: 'lamp', name: 'The lamp' }, { id: 'tide_chart', name: 'Tide chart' }];
-      return JSON.stringify(doc);
+    if (req.schema?.name === 'game_outline') {
+      // The outline form: the scaffold's zones, named; params, story and endings left to the scaffold's defaults.
+      const scaffold = JSON.parse(req.user.split('not the game):\n')[1].split('\n\nWrite the outline')[0]);
+      const spaces = Object.fromEntries(scaffold.spaces.map(s => [s.id, { zones: s.zones.map(z => ({ id: z.id, name: z.id.replace(/_/g, ' '), description: `the ${z.id}`, exits: (z.exits || []).map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) })) }]));
+      return JSON.stringify({ title: 'Lamp of the Drowned', logline: 'Find the lamp.', premise: 'A keeper lost the lamp.', spaces, items: [{ id: 'lens', name: 'Lens', kind: 'quest', desc: 'a lamp lens', value: null, more_json: null }, { id: 'oilcan', name: 'Oil can', kind: 'tool', desc: 'oil', value: null, more_json: null }] });
     }
     if (/Write the detail patch for zone "([^"]+)"/.test(req.user)) {
       const zone = req.user.match(/zone "([^"]+)"/)[1];

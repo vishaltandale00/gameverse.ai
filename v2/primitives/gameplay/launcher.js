@@ -18,6 +18,11 @@ const rotate = (v, a) => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.s
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "shots", "min": 3, "why": "the shot queue is what the player fires"},
+      {"need": "archetypes", "component": "health", "kinds": ["enemy", "prop", "creature", "boss"], "min": 1, "placed": 3, "why": "shots need targets with health placed in the world", "example": {"id": "pig_guard", "kind": "enemy", "components": {"health": {"max": 3}}}},
+    ],
     intent: 'Cannon or slingshot launcher: aim/pull and fire one projectile per turn from a shot queue, with mid-flight abilities (split, boost, bomb, heavy dive) and turn end when the shot settles.',
     views: ['side', 'td'],
     params: {

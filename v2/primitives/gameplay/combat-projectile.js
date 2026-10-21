@@ -66,6 +66,10 @@ const WEAPON = {
 export default {
   id: KEY,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc", "prop"], "min": 1, "placed": 3, "zones": 2, "why": "shots need targets with health, placed in the world", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},
+    ],
     // The player fires the first defined weapon when the document named none.
     engage: { config: { playerWeapon: '$first:with.weapons' } },
     intent: 'Projectiles for any entity: ballistic shots with gravity, pierce, homing, bounces and terrain stops; volley patterns (single, lanes, spread, laser, missile, ring, spiral, burst) with tiers; blasts in a circle or a plus along open cells with fuses and breakable cells; ammo per life, from events or inventory items; drawn bows. Includes the shmup shot/spread/laser/homing preset.',

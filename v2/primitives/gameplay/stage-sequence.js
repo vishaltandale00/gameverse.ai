@@ -48,6 +48,10 @@ const GOAL_FIELDS = {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "stages", "min": 3, "why": "a level sequence needs several stages, each with its own goal and parameters"},
+    ],
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {

@@ -64,7 +64,7 @@ function instances(doc, registry) {
 }
 
 /** The spawner the document uses or should use: the primitive that owns the `spawn` effect. */
-function spawnerId(registry) {
+export function spawnerId(registry) {
   for (const id of registry.ids()) { const c = registry.get(id).card; if (c.params?.rules && (c.defines || []).some(d => d.kind === 'spawn_rule')) return id; }
   return null;
 }

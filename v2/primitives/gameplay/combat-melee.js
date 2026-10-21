@@ -26,6 +26,10 @@ const MOVE_FIELDS = { id: { type: 'string', required: true } };
 export default {
   id: KEY,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature", "npc"], "min": 1, "placed": 3, "zones": 2, "why": "melee needs opponents with health to hit, placed where the player meets them", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},
+    ],
     // A basic swing (attack) and heavy blow for a player the document gave no moveset; selected like a weapon's w1/heavy.
     engage: { player: { components: { melee: { moves: {
       w1: { name: 'Strike', damage: 3, reach: 1.2, arc: 100, startup: 8, active: 6, recovery: 14, hitstun: 18, units: 'world' },

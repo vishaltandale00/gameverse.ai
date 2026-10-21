@@ -174,6 +174,12 @@ function reachedBy(set, sp, e) {
 export default {
   id: 'gameplay.interact',
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { interact: { type: 'object', fields: { prompt: { type: 'string' }, range: { type: 'number', min: 0 }, kind: { type: 'string' }, id: { type: 'string', effect: 'interactable id (used:<id> events)' } }, effect: 'something the player can use' } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "interact", "min": 1, "placed": 2, "why": "interactables are entities with an interact component {prompt, range}, placed where the player can use them", "example": {"id": "old_lever", "kind": "prop", "components": {"interact": {"prompt": "Pull", "range": 1.5}}}},
+    ],
     intent: 'Contextual use of interactables (archetype `interact` components): talk, pick up, open, sit, pull, read, harvest, loot. Range, facing and hold-to-use; prompts for the HUD; used:<id> events for quests; solver options for every interactable in reach or reachable.',
     views: ['any'],
     params: {

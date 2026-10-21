@@ -98,6 +98,12 @@ export function hostile(rt, a, b) {
 export default {
   id: ID,
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { ai: { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "ai", "min": 1, "placed": 2, "why": "the AI runs on archetypes with an ai component (a behavior list), placed in the world", "example": {"id": "patroller", "kind": "enemy", "components": {"ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "wander", "range": 6}], "speed": 2}}}},
+    ],
     intent: 'NPC behavior: each `ai` component lists behaviors (wander patrol chase flee follow guard flyer circle ambush sit work goto target-tile sight-challenge) with predicates; shared perception (sight cone + line of sight, hearing, memory), factions, aggro leash, group alert, a scatter/chase mode schedule, and distance LOD. Agents only write movement intents.',
     views: ['any'],
     params: {

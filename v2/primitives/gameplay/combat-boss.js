@@ -51,6 +51,10 @@ const BOSS = {
 export default {
   id: KEY,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "health", "kinds": ["boss"], "min": 1, "placed": 1, "why": "a boss encounter needs a boss archetype with health (and attacks) that bosses[].archetype names", "example": {"id": "gate_golem", "kind": "boss", "components": {"health": {"max": 60}, "attacks": [{"id": "stomp", "range": 4, "windup": 0.9, "active": 0.3, "recover": 1.2, "damage": 2, "shape": "circle", "weight": 2}]}}},
+    ],
     intent: 'Boss encounters: arena lock, boss health bar vars, phases by hp fraction or predicate that switch attack patterns and speed, summon adds, run effects, phase invulnerability and bullet cancels, time limits, enrage, tiring/dazed windows, required bosses and retry reset.',
     views: ['any'],
     params: {

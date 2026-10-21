@@ -15,6 +15,12 @@ const counterOf = e => { const c = e.components.collectible; return typeof c ===
 export default {
   id: 'gameplay.collectible',
   card: {
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { collectible: { type: 'json', effect: 'a counter id, or {counter, value?, points?, item?}' } },
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "archetypes", "component": "collectible", "kinds": ["pickup", "prop"], "min": 1, "placed": 8, "zones": 3, "why": "pickups are entities with a collectible component (counter id or {counter, value, points}), placed through every zone", "example": {"id": "coin", "kind": "pickup", "components": {"collectible": {"counter": "coins", "points": 10}}}},
+    ],
     intent: 'Pickups and counters (coins, shards, pages, pellets): touch or use to collect, magnet pull, per-zone totals, a var per counter, level clear when a counter completes, and timed bonus prizes spawned at chosen counts.',
     views: ['any'],
     params: {

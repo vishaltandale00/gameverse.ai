@@ -13,6 +13,10 @@ const PHASES = ['waiting', 'intro', 'fight', 'ko', 'round_end', 'match_end'];
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "fighters", "min": 2, "why": "a match needs the player and an opponent (entity ids or archetypes)", "example": ["player", "rival"]},
+    ],
     intent: 'Versus match rules: round intro, round timer, KO (health or a predicate), double KO, time over decided by health, perfect rounds, best-of-N rounds with draws, or stock mode with respawns; match result effects and scoring. Fighting, arena and duel games of any space use it.',
     views: ['any'],
     params: {

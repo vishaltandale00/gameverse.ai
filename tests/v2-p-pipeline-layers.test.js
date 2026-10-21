@@ -49,11 +49,13 @@ test('few-shot material only teaches registered primitives', () => {
   for (const g of shots) for (const i of [...g.spaces, ...g.systems, ...g.graphics]) assert.ok(registry.has(i.use), i.use);
 });
 
-test('model outline: errors are repaired by code first, then sent back to the model; fall back to the skeleton if it never validates', async () => {
+test('model outline: errors are repaired by code first, then sent back to the model; never substituted by the skeleton', async () => {
   const { d, sel } = await plan(['find and collect items']);
   const skeleton = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc;
+  // Content the chosen primitives need (inventory: items to hold), so these drafts are not hollow.
+  const full = doc => { const x = structuredClone(doc); x.content.items = [...(x.content.items || []), { id: 'lantern', name: 'Lantern' }, { id: 'rope', name: 'Rope' }]; return x; };
   // Draft 1: fixable by code (unknown param, near-miss item, out-of-range slots).
-  const draft = structuredClone(skeleton);
+  const draft = full(skeleton);
   draft.title = 'The Drowned Lamp';
   draft.systems.find(s => s.use === 'gameplay.inventory').with = { slots: 99999, sparkle: true };
   const writer = fakeWriter([draft]);
@@ -64,30 +66,53 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   assert.equal(writer.calls.length, 1, 'code repair sufficed: no second model call');
   assert.match(writer.calls[0].system, /plot\.storyboard/);
   assert.match(writer.calls[0].user, /A valid skeleton/);
+  assert.equal(writer.calls[0].schema?.name, 'game_outline', 'the model fills a strict form derived from the chosen cards');
   // A code only the model can fix goes back to it with code, path and hint; the second draft fixes it.
   const p = testCatalogue([picky]);
-  const needsModel = { ...structuredClone(skeleton), title: 'Drowned Lamp', systems: [...skeleton.systems, { use: 'gameplay.test.picky' }] };
+  const needsModel = { ...full(skeleton), title: 'Drowned Lamp', systems: [...skeleton.systems, { use: 'gameplay.test.picky' }] };
   const two = fakeWriter([needsModel, { ...needsModel, title: 'The Drowned Lamp' }]);
   const m = await writeOutline({ writer: two, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1 });
   assert.ok(m.ok && !m.fellBack);
   assert.equal(two.calls.length, 2);
   assert.match(two.calls[1].user, /\[picky_title\] title: the title must start with "The" \(hint: rename the game\)/, 'the repair round names the stable code, path and hint');
   assert.deepEqual(m.rounds.map(x => x.kind), ['procedural', 'model', 'model_repair']);
-  // A model that never validates: bounded rounds, then the primitive it can't configure is isolated (a reported gap)
-  // and the model's world and story are kept.
+  // A model that never validates: bounded rounds, then the (non-core) primitive it can't configure is isolated
+  // (a reported gap) and the model's world and story are kept.
   const stubborn = fakeWriter([needsModel]);
   const f = await writeOutline({ writer: stubborn, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
   assert.equal(stubborn.calls.length, 2);
   assert.ok(f.ok && f.isolated && f.source === 'fake-writer' && f.doc.title === 'Drowned Lamp');
   assert.deepEqual(f.removed.map(r => r.use), ['gameplay.test.picky']);
-  // No usable draft at all: the valid skeleton, and the report says so.
+  // A primitive of a core mechanic is never isolated: the same stubborn model now fails the job with the reason.
+  const core = { ...sel, mechanics: [...sel.mechanics, { id: 'pick', description: 'picky titles', importance: 'core', primitives: ['gameplay.test.picky'] }] };
+  const g = await writeOutline({ writer: fakeWriter([needsModel]), prompt: 'idea', decomposition: d, selection: core, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
+  assert.equal(g.ok, false);
+  assert.ok(g.errors.some(e => e.code === 'picky_title'), 'the reason is the core primitive\'s own error');
+  // No usable draft at all: no substitution with the skeleton; the job fails and says why.
   const garbage = await writeOutline({ writer: fakeWriter(['no json here']), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, maxRounds: 1 });
-  assert.ok(garbage.ok && garbage.fellBack && garbage.source === 'procedural');
+  assert.ok(!garbage.ok && !garbage.fellBack);
+  assert.ok(garbage.errors.length);
+});
+
+test('model outline: a hollow draft gets the missing content back as concrete problems, with the shape to add', async () => {
+  const { d, sel } = await plan(['find and collect items']);
+  const skeleton = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc;
+  const hollow = structuredClone(skeleton); hollow.content.items = [];
+  const filled = structuredClone(skeleton); filled.content.items = [{ id: 'lantern', name: 'Lantern' }, { id: 'rope', name: 'Rope' }];
+  const writer = fakeWriter([hollow, filled]);
+  const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
+  assert.ok(r.ok);
+  assert.equal(writer.calls.length, 2);
+  assert.match(writer.calls[1].user, /\[content_(missing|thin)\] content\.items/);
+  assert.match(writer.calls[1].user, /Shape: \{"id":"brass_key"/, 'the card\'s example shape reaches the model');
+  assert.ok(r.rounds[1].content > 0 && r.rounds[2].content === 0);
+  assert.equal(r.doc.content.items.length >= 2, true);
 });
 
 test('model outline: static plot analysis (plotGraph) and verification problems drive repair rounds', async () => {
   const { d, sel } = await plan(['find and collect items']);
   const skeleton = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc;
+  skeleton.content.items = [...(skeleton.content.items || []), { id: 'lantern', name: 'Lantern' }, { id: 'rope', name: 'Rope' }];
   // Preflight-valid, but the first exit needs an item nothing gives: the story can never be finished.
   const locked = structuredClone(skeleton);
   locked.content.items = [...(locked.content.items || []), { id: 'silver_key', name: 'Silver key' }];
@@ -96,9 +121,9 @@ test('model outline: static plot analysis (plotGraph) and verification problems 
   const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
   assert.ok(r.ok && !r.fellBack);
   assert.equal(writer.calls.length, 2);
-  assert.match(writer.calls[1].user, /failed verification/);
   assert.match(writer.calls[1].user, /\[item_unobtainable\]/, 'the cause, from plotGraph, reaches the model');
   assert.ok(r.rounds[1].staticErrors > 0);
+  assert.equal(r.doc.spaces[0].zones[0].exits.some(x => x.gate?.item === 'silver_key'), false, 'the repaired draft, not the locked one, is kept');
 });
 
 test('first playable: no model, well under a second, deterministic; an install that throws is isolated', async () => {

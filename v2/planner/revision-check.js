@@ -3,6 +3,36 @@
 // engine can't really make ("bigger map" faked by switching maze styles) is
 // reported as not possible yet instead of being passed off as done, and the
 // player sees a plain summary of what did change.
+import { createWorld } from '../kernel/world.js';
+import { preflight } from '../kernel/document.js';
+import { contentOf } from './world.js';
+
+/**
+ * What a document generates when booted: cells and entities per space (the player excluded), zones, and the entries
+ * its generators were configured with. -> { cells, entities, zones, generated, measured } (cells null when unmeasurable).
+ */
+export function measureContent(doc, registry, logic, { frames = 2 } = {}) {
+  const zones = (doc.spaces || []).reduce((n, s) => n + (s.zones || []).length, 0);
+  const generated = (doc.spaces || []).reduce((n, s) => n + (s.generators || []).reduce((m, g) => m + Object.values(g.with || {}).reduce((k, v) => k + (Array.isArray(v) ? v.length : 0), 0), 0), 0);
+  try {
+    const pre = preflight(doc, registry, logic);
+    const rt = createWorld(pre.ok ? pre.doc : doc, registry, logic, { seed: doc.seed });
+    for (let i = 0; i < frames && rt.state.status === 'playing'; i++) rt.step();
+    let cells = null, entities = 0;
+    for (const s of doc.spaces || []) { const c = contentOf(rt, s.id); if (!c) continue; entities += c.entities; if (c.cells != null) cells = (cells ?? 0) + c.cells; }
+    return { cells, entities, zones, generated, measured: true };
+  } catch (error) { return { cells: null, entities: null, zones, generated, measured: false, error: String(error?.message || error).slice(0, 120) }; }
+}
+
+/**
+ * Did the generated content grow (not only a container param)? Cells, entities, zones or generator entries must
+ * increase. -> { grew, what: [names that grew], before, after }
+ */
+export function contentGrowth(before, after, registry, logic) {
+  const a = measureContent(before, registry, logic), b = measureContent(after, registry, logic);
+  const what = ['cells', 'entities', 'zones', 'generated'].filter(k => Number.isFinite(a[k]) && Number.isFinite(b[k]) && b[k] > a[k]);
+  return { grew: what.length > 0, what, before: a, after: b };
+}
 
 /** Paths whose values differ between two JSON values, e.g. "levels[2].maze.style: classic → sprawling". */
 const keyOf = x => x && typeof x === 'object' && !Array.isArray(x) ? (typeof x.id === 'string' && x.id) || (typeof x.name === 'string' && x.name) || (typeof x.kind === 'string' && x.kind) || null : null;

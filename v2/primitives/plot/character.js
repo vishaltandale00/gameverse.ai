@@ -54,6 +54,10 @@ function spawnCharacter(rt, c, config) {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "plot.characters", "min": 2, "why": "people the player meets, each with a role, a home zone and (with dialogue) their lines", "example": {"id": "keeper", "name": "Old Maren", "role": "lighthouse keeper", "home": "lighthouse", "bio": "Kept the light for forty years.", "dialogue": [{"id": "keeper_intro"}]}},
+    ],
     intent: 'Named people and creatures from plot.characters: spawned as entities (id = character id) with their archetype, model, home zone and schedule; the player talks to one in range with `talk`, which marks them met, emits talked:<id> and opens their first matching dialogue.',
     views: ['any'],
     params: {

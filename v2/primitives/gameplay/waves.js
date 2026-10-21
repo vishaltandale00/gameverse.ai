@@ -22,6 +22,11 @@ const SPAWN = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "param", "param": "waves", "min": 3, "why": "scripted waves list which archetypes arrive, how many and when", "example": [{"id": "w1", "spawn": [{"archetype": "grunt", "count": 4}]}]},
+      {"need": "archetypes", "component": "health", "kinds": ["enemy", "boss", "creature"], "min": 2, "why": "waves need enemy archetypes with health to send", "example": {"id": "thornling", "kind": "enemy", "components": {"health": {"max": 6}, "touch": {"damage": 1}, "ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "patrol", "range": 5}], "speed": 2.5}}}},
+    ],
     intent: 'Enemy waves: scripted wave lists (time, delay, predicate or clear-gated), staggered and telegraphed spawns in formations at lanes, zones or around the player, entry flight paths, a live-enemy cap, must-clear gating, generated growing waves, loop scaling and clear bonuses.',
     views: ['any'],
     params: {

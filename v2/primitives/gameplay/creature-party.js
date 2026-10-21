@@ -11,6 +11,12 @@ const ID = 'gameplay.creature.party';
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "content.species", "min": 4, "why": "creatures come from species with types, base stats and learnsets", "example": {"id": "sprout", "name": "Sprout", "types": ["grass"], "base": {"hp": 45, "atk": 49, "def": 49, "spa": 65, "spd": 65, "spe": 45}, "catchRate": 45, "expYield": 64, "growth": "medium", "learnset": [{"level": 1, "move": "tackle"}, {"level": 7, "move": "vine"}], "evolves": {"level": 16, "to": "bloom"}}},
+      {"need": "section", "at": "content.moves", "min": 4, "why": "species learn moves", "example": {"id": "vine", "name": "Vine Whip", "type": "grass", "category": "physical", "power": 45, "accuracy": 100, "pp": 25}},
+      {"need": "param", "param": "start", "min": 1, "why": "the player starts with a creature", "example": [{"species": "sprout", "level": 5}]},
+    ],
     // The player starts with a creature (the first species) so battles and catching have someone to fight with.
     engage: { config: { start: [{ species: '$first:content.species', level: 5 }] } },
     intent: 'Creature collection: party (6) and PC box per owner, stats/IVs/growth curves, learnsets, evolution, dex of seen and caught species; the creatures service used by battles, catching and encounters.',

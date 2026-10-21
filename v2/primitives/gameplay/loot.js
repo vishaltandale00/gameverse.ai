@@ -36,6 +36,10 @@ export function rollTable(rt, id, context = {}, depth = 0) {
 export default {
   id: 'gameplay.loot',
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "content.tables", "min": 1, "why": "loot drops roll from tables", "example": {"id": "drop_small", "rolls": [1, 1], "entries": [{"item": "coin", "weight": 3}]}},
+    ],
     intent: 'Loot tables for drops, chests, forage and fishing: weighted rolls with `when` predicates, nested tables, a drop chance with a pity meter, drops into a bag or into the world as magnet pickups; entities with a `loot` component drop on death.',
     views: ['any'],
     params: {

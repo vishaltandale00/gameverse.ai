@@ -8,8 +8,11 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
+import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
-import { vocabIndex, selectPrimitives } from './select.js';
+import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
+import { outlineForm, formPath } from './outline-form.js';
+import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
@@ -159,17 +162,14 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
     // The space may be right and only movement missing: add the movement primitive that fits it best (a card with a
     // movement envelope whose capabilities the space provides and whose views fit), before giving the space up.
     if (o.ok && !(fp?.errors || []).some(e => e.code !== 'no_options')) {
-      const space = current.spaces[0], caps = new Set(space.caps || []);
-      // The idea's primary view decides the kind of movement (td -> top-down, side -> platformer...): a mover must support
-      // it. Ties go to the mover that asks least of the space, never to the one with the biggest jump.
+      const space = current.spaces[0];
+      // The idea's primary view and the avatar's medium decide the kind of movement (td -> top-down, side -> platformer,
+      // a walking dungeon -> ground): a mover must support the view; ties go to the medium, then to the fewest requirements.
+      // An idea whose avatar does not move (cards, boards, falling pieces) gets no locomotion here.
       const primary = (decomposition.views || []).find(v => v !== 'ui') || null;
-      // The medium the idea moves through (cards declare medium): ground unless the idea is about flying, swimming or a track.
-      const text = JSON.stringify(decomposition.mechanics || []).toLowerCase();
-      const wanted = /\b(fly|flying|flight|soar|jetpack)\b/.test(text) ? 'air' : /\b(swim|underwater|dive)\b/.test(text) ? 'water' : /\b(runner|lanes?)\b/.test(text) ? 'track' : 'ground';
-      const movers = registry.cards('gameplay').filter(c => c.locomotion === 'base' && (c.envelope || registry.get(c.id).envelope) && !current.systems.includes(c.id) && (c.requires?.capabilities || []).every(x => caps.has(x))
-          && (!primary || (c.views || []).includes(primary) || (c.views || []).includes('any')))
-        .map(c => ({ id: c.id, score: ((c.views || []).includes(primary) ? 10 : 1) + (c.medium === wanted ? 5 : 0) - (c.requires?.capabilities || []).length * 0.1 }))
-        .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 3);
+      const medium = decomposition.movement || movementFrom(JSON.stringify(decomposition.mechanics || []).toLowerCase());
+      const movers = medium === 'none' ? [] : baseLocomotion(registry, { caps: space.caps || [], view: primary, medium, exclude: current.systems })
+        .filter(c => registry.get(c.id).envelope || registry.get(c.id).card.envelope).slice(0, 3);
       let moved = null;
       for (const m of movers) {
         const sel = { ...current, systems: [...current.systems, m.id].sort((a, b) => (a.startsWith('engine.') ? 0 : a.startsWith('gameplay.') ? 1 : 2) - (b.startsWith('engine.') ? 0 : b.startsWith('gameplay.') ? 1 : 2) || a.localeCompare(b)) };
@@ -183,6 +183,10 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
     excluded = [...excluded, current.spaces[0].use];
     const next = await selectPrimitives({ decomposition, registry, decisions: null, excludeSpaces: excluded });
     if (!next.spaces.length || [...kept(selection)].some(id => !kept(next).has(id))) break;
+    // Never change the game's kind or view: a replacement space must support the idea's primary view.
+    const view = (decomposition.views || []).find(v => v !== 'ui');
+    const nextViews = registry.get(next.spaces[0].use)?.card.views || [];
+    if (view && !nextViews.includes(view) && !nextViews.includes('any')) break;
     current = { ...next, mechanics: selection.mechanics, provider: selection.provider };
   }
   const gap = { mechanic: 'player_agency', description: `move the player between places in ${selection.spaces[0]?.use || 'the world'}`, importance: 'core', kind: 'capability', why: 'no registered primitive gives the player a way to act or travel in a space that the chosen mechanics can use' };
@@ -211,61 +215,86 @@ export function fewShot(registry, { maxChars = 9000 } = {}) {
   return out;
 }
 
-export function outlineSystem(registry, logic, selection) {
-  const chosen = new Set([...selection.spaces.map(s => s.use), ...selection.systems, ...selection.generators.map(g => g.id), ...selection.graphics.map(g => g.id)]);
-  const v = vocabulary(logic);
-  return `You write game documents (schema ${DOC_SCHEMA}) for a kernel where every game is JSON composed of primitives. There are no genre engines: mechanics come only from primitives in the catalogue below.
+/** Primitives bound to a core mechanic: never isolated or dropped; their errors go back to the model. */
+export function coreOf(selection, registry = null) {
+  const ids = new Set();
+  for (const m of selection?.mechanics || []) if (m.importance === 'core') for (const id of m.primitives || []) if (!isSpace(id)) ids.add(id);
+  // A core primitive's requirements are core too (removing melee's health would remove melee).
+  if (registry) for (let grew = true; grew;) { grew = false; for (const id of [...ids]) for (const r of registry.get(id)?.card.requires?.primitives || []) { const s = [...(selection.systems || [])].find(x => x === r || x.startsWith(r + '.')); if (s && !ids.has(s)) { ids.add(s); grew = true; } } }
+  return ids;
+}
 
-Document shape:
-{ schema, id (lowercase slug), title, logline, seed, views:{primary,alternates},
-  spaces:[{ id, use:"engine.space.*", with:{params}, zones:[...], generators:[{use:"engine.generate.*", with}] }],
-  systems:[{ use, with, space? }]   // every engine.* (not spaces/generators), plot.* and gameplay.* instance, installed in order
-  graphics:[{ use, with, space? }], // graphics.* instances
-  plot:{ premise, characters:[{id,name,role,...}], storyboard:{acts:[{id,title,beats:[{id,title?,when?:predicate,after?:[beatId],do?:[effect],optional?:bool}]}]}, endings:[{id,title,text,outcome}], ...sections the chosen primitives read },
-  content:{ items:[{id,name}], archetypes:[{id,components:{}}], models:{}, ...sections the chosen primitives read },
-  player:{ archetype, space, at } }
+export function outlineSystem(registry, logic, selection, form = null) {
+  const chosen = new Set([...selection.spaces.map(s => s.use), ...selection.systems, ...selection.generators.map(g => g.id), ...selection.graphics.map(g => g.id), ...(form?.systems || [])]);
+  const v = vocabulary(logic);
+  return `You write game outlines for a kernel where every game is JSON composed of primitives (document schema ${DOC_SCHEMA}). There are no genre engines: mechanics come only from primitives in the catalogue below, and a primitive with no content is a hollow game.
+
+You fill a FORM (a JSON object matching the given schema exactly). The spaces, views and chosen primitives are fixed by the selection; you write everything that makes this idea a real, full game:
+- spaces.<id>.zones: named zones, each different from the others in what is there (terrain, hazards, residents, enemies, treasures). Exits/gates only where the schema has them.
+- systems.<primitive id>.with: each chosen primitive's params, tuned to the idea (null = the card's default). Primitives that keep data in their params (racers, waves, crops, stages, shops, bosses, areas...) need that data here.
+- archetypes: EVERY kind of entity the game needs (enemies with health and behavior, creatures, pickups, props, vehicles, rivals), each with the components its role needs. An archetype with only a name is hollow.
+- spawns: where those entities appear: each zone gets its own mix (count = min..max alive).
+- items, characters (with home zones and their dialogue ids), dialogue (node graphs), quests (objectives use the goal kinds), and the plot/content sections the primitives read.
+- acts/beats and endings: a completable story through the zones; the last beat ends the game (effect end_game).
+JSON-text fields (*_json, and params the card types as json/predicate/effects) hold a JSON value encoded as a string, or null.
 Rules:
-- Use only primitive ids listed below. Params must match the card's types, ranges and options; omit a param to use its default. Instances of a primitive with "needs capabilities" must sit on (or be bound with "space") a space that provides them.
-- Every id is a lowercase slug and unique in its kind; every reference (zone, item, character, archetype, beat, ending, space...) must exist in the document.
+- Every id is a lowercase slug, unique in its kind; every reference (zone, item, character, archetype, beat, ending, dialogue node) must exist.
 - Predicates: objects whose first key names the kind (${v.predicates.join(', ')}); numbers take comparators gte lte gt lt eq ne, e.g. {"item":"key"}, {"zone":"hall"}, {"all":[...]}.
 - Effects: {"do": kind, ...} with kind one of ${v.effects.join(', ')}.
-- Zones: use the zone shape the space card describes ("zones" on space cards) and the skeleton uses (exits/gate, rect, range or bounds), inside the space's size. Generators that create zones list those zone ids in their own config, so references to them preflight.
-- The story must be completable: every beat's trigger reachable, gated exits opened by items or flags the story grants, and a beat that ends the game with an ending.
-- Do not pretend a mechanic exists: the request lists mechanics no primitive covers; leave them out of the document (they are built separately).
+- The story must be completable: every beat's trigger reachable, gated exits opened by items or flags the story grants.
+- Do not pretend a mechanic exists: mechanics no primitive covers are left out (they are built separately).
 
-Chosen primitives (full cards):
+Content this game must contain (from the chosen primitives' content contracts; shapes are exact):
+${form?.contracts?.length ? contractText(form.contracts) : '(none declared)'}
+
+Chosen primitives (full cards; for plot.storyboard and every other one):
 ${[...chosen].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}
 
 Shapes of the document sections these primitives read:
 ${dataShapes(registry, [...chosen]).join('\n')}
 
-Other primitives you may add if the idea needs them:
-${registry.cards().filter(c => !chosen.has(c.id)).map(c => cardText(c)).join('\n') || '(none)'}
+Other primitives (add through extra_systems only if the idea needs one):
+${registry.cards().filter(c => !chosen.has(c.id) && !c.id.startsWith('graphics.') && !c.id.startsWith('engine.space.') && !c.id.startsWith('engine.generate.')).map(c => `${c.id}: ${String(c.intent || '').slice(0, 110)}`).join('\n') || '(none)'}
 
-Example documents (excerpts):
-${fewShot(registry).join('\n')}`;
+Example documents (excerpts; the form maps onto this shape):
+${fewShot(registry, { maxChars: 6000 }).join('\n')}`;
 }
+
+/** The scaffold as the model sees it: structure only (zone count and shape, acts, the chosen primitives). */
+const scaffoldView = doc => ({ title: doc.title, views: doc.views, spaces: (doc.spaces || []).map(s => ({ id: s.id, use: s.use, zones: (s.zones || []).map(z => ({ id: z.id, ...(z.exits ? { exits: z.exits } : {}) })) })), systems: (doc.systems || []).map(s => s.use), acts: (doc.plot?.storyboard?.acts || []).map(a => ({ id: a.id, beats: (a.beats || []).map(b => b.id) })) });
 
 export function outlineUser({ prompt, answers = [], decomposition, selection, skeleton }) {
   return `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}
 
-Decomposition: ${JSON.stringify({ references: decomposition.references, mechanics: decomposition.mechanics.map(m => `${m.importance}: ${m.description}`), spaces: decomposition.spaces, views: decomposition.views, tone: decomposition.tone })}
+Decomposition: ${JSON.stringify({ references: decomposition.references, mechanics: decomposition.mechanics.map(m => `${m.importance}: ${m.description}`), spaces: decomposition.spaces, views: decomposition.views, movement: decomposition.movement, tone: decomposition.tone })}
 Mechanics → primitives: ${selection.mechanics.map(m => `${m.id} → ${m.primitives.join('+') || 'NONE'}`).join('; ')}
 Mechanics no primitive covers (do not fake them): ${selection.gaps.map(g => g.description).join('; ') || 'none'}
 
-A valid skeleton built from those primitives (structure only, placeholder names):
-${JSON.stringify(skeleton)}
+A valid skeleton built from those primitives (structure only, placeholder names; it is a scaffold, not the game):
+${JSON.stringify(scaffoldView(skeleton))}
 
-Write the outline document for this idea from the skeleton: an evocative title and premise, ${decomposition.acts} acts of beats, ${decomposition.zones} or more named zones with one-line descriptions, characters with roles, key items, params tuned to the idea, and an ending. Keep the skeleton's spaces/primitives unless the idea needs another listed primitive. Keep it an outline (zone content is detailed later). Reply with the complete document as one JSON object.`;
+Write the outline for THIS idea: an evocative title and premise, ${decomposition.acts} acts of beats, ${decomposition.zones} or more distinct named zones, the archetypes and their spawns zone by zone, characters with roles and lines, items, quests where the primitives run them, params tuned to the idea, and an ending. Fill every content requirement listed in the instructions.`;
 }
+
+/** The draft's problems as repair text: stable code, document path, the form path to edit, message and hint. */
+function describeProblems(problems, doc, limit = 16) {
+  return problems.slice(0, limit).map(p => { const fp = formPath(p.path, doc); return `- [${p.code}] ${p.path}${fp && fp !== p.path ? ` (form: ${fp})` : ''}: ${p.message}${p.hint ? ` (hint: ${String(p.hint).slice(0, 500)})` : ''}`; }).join('\n');
+}
+
+const isDocShape = x => x && typeof x === 'object' && (Array.isArray(x.spaces) || x.schema === DOC_SCHEMA);
 
 /**
  * writeOutline({ writer?, prompt, answers, decomposition, selection, registry, logic, seed, maxRounds })
- *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms }], firstPassOk, modelMs, removed }
+ *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms, ... }], firstPassOk, modelMs, removed, content, errors }
+ * The model fills the outline form (strict schema from the chosen cards). Each draft is converted, repaired by code,
+ * furnished, populated (deterministic placement), engaged, booted and gated by the playtest agent; what is still wrong
+ * (preflight errors, crashes, static plot errors, missing content) goes back to the model as targeted problems.
+ * The published outline is always the model's draft: when no draft can be made to run, the result is ok:false with the
+ * reason (no substitution with the procedural skeleton). Without a writer the procedural outline is the explicit
+ * offline mode. Primitives of core mechanics are never isolated.
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500 }) {
-  let lastProblems = null;
-  // The publish gate (verify-adapter viability): what fails it goes back to the model with the agent's reason first.
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null }) {
+  const keep = protect || coreOf(selection, registry);
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
     const core = coreLoopProblems(doc, selection?.mechanics, registry);
@@ -280,90 +309,106 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
   if (!writer) return { doc: skeleton.doc, ok: skeleton.ok, source: 'procedural', rounds, firstPassOk: skeleton.ok, modelMs: 0, removed: skeleton.removed, errors: skeleton.errors };
   const fallbackSpace = { id: skeleton.doc.spaces?.[0]?.id, use: skeleton.doc.spaces?.[0]?.use, with: skeleton.doc.spaces?.[0]?.with || {} };
-  const system = outlineSystem(registry, logic, selection);
-  let user = outlineUser({ prompt, answers, decomposition, selection, skeleton: skeleton.doc });
-  let modelMs = 0, firstPassOk = null, last = null, model = null;
+  const form = outlineForm({ registry, skeleton: skeleton.doc, selection });
+  const system = outlineSystem(registry, logic, selection, form);
+  const base = outlineUser({ prompt, answers, decomposition, selection, skeleton: skeleton.doc });
+  const skeletonPlot = verify ? await staticPlot(skeleton.doc, logic) : { problems: [] };
+  let user = base, modelMs = 0, firstPassOk = null, last = null, model = null, best = null, lastProblems = null;
   for (let round = 0; round <= maxRounds; round++) {
-    let draft;
+    let reply, value;
     const t = performance.now();
     try {
-      const reply = await writer.complete({ system, user });
+      reply = await writer.complete({ system, user, schema: form.schema });
       modelMs += reply.ms ?? Math.round(performance.now() - t); model = reply.model;
-      draft = parseReply(reply.text);
+      value = parseReply(reply.text);
     } catch (error) {
-      rounds.push({ kind: 'model', ok: false, error: String(error.message || error).slice(0, 160), ms: Math.round(performance.now() - t) });
+      rounds.push({ kind: round ? 'model_repair' : 'model', ok: false, error: String(error.message || error).slice(0, 160), ms: Math.round(performance.now() - t) });
+      lastProblems = [{ code: error.code || 'model_failed', path: '$', message: String(error.message || error).slice(0, 200) }];
       if (error.code !== 'model_output_not_json') break;
+      user = `${base}\n\nYour previous reply was not one JSON object (${String(error.message || error).slice(0, 120)}). Reply with the form as one JSON object.`;
       continue;
     }
+    // A reply in the document's own shape (older prompts, some writers) is a draft as is; otherwise it is the form.
+    const draft = isDocShape(value) ? value : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
-    // A draft that drops the player (models do) would publish a world nobody plays: keep the skeleton's player,
-    // placed at the start of the draft's first zone in its own space.
-    if (!draft.player && skeleton.doc.player && Array.isArray(draft.spaces) && draft.spaces.length) {
-      const sp = draft.spaces.find(s => s?.id === skeleton.doc.player.space) || draft.spaces[0], z = (Array.isArray(sp.zones) ? sp.zones : [])[0];
-      const at = typeof skeleton.doc.player.at === 'string' ? z?.id ?? skeleton.doc.player.at : (z && zoneStart(z)) || skeleton.doc.player.at;
-      draft.player = { ...structuredClone(skeleton.doc.player), space: sp.id, at };
-      if (!(draft.content?.archetypes || []).some(a => a?.id === draft.player.archetype)) {
-        const arch = (skeleton.doc.content?.archetypes || []).find(a => a.id === draft.player.archetype);
-        if (arch && draft.content && typeof draft.content === 'object' && (draft.content.archetypes === undefined || Array.isArray(draft.content.archetypes))) (draft.content.archetypes ??= []).push(structuredClone(arch));
-        else if (arch && !draft.content) draft.content = { archetypes: [structuredClone(arch)] };
-      }
-    }
+    keepPlayer(draft, skeleton.doc);
+    // Data nobody reads (quests with no quest runner): add the primitive that reads it.
+    for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(s => s?.use === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
-    const repaired = repairDocument(draft, { registry, logic, fallbackSpace });
-    // The world must not be empty: a draft whose cell space has no generator gets the best-fitting one (deterministic);
-    // what no generator can fill goes back to the model as world_empty, unless the skeleton has the same limit.
-    let worldLeft = [], worldAdded = [];
+    const repaired = repairDocument(draft, { registry, logic, fallbackSpace, protect: keep });
+    let worldAdded = [], placed = [], staticErrors = [];
     if (repaired.ok) {
       const w = furnishWorld(repaired.doc, registry, logic, { seed });
       if (w.added.length) { repaired.doc = w.doc; worldAdded = w.added.map(a => a.use); }
-      if (!skeleton.world?.problems?.length) worldLeft = w.problems;
-      // Wire the player and AI participants into the chosen mechanics (card.engage) before booting and playtesting.
+      // Archetypes the draft defines but never puts in the world are placed zone by zone (deterministic).
+      const p = placeContent(repaired.doc, registry); repaired.doc = p.doc; placed = p.added;
       repaired.doc = engageDocument(repaired.doc, registry, logic).doc;
-      // Boot it (ms): a primitive that throws on install or on its first steps is isolated with what pointed at it;
-      // when isolation cannot save the world, the error (naming the primitive, install or step) goes to the model.
-      const fp = firstPlayable(repaired.doc, registry, logic, { seed, furnish: false });
+      // Boot it (ms): a primitive that throws is isolated with what pointed at it, unless it is a core mechanic's;
+      // then the error (naming the primitive, install or step) goes to the model.
+      const fp = firstPlayable(repaired.doc, registry, logic, { seed, furnish: false, protect: keep });
       if (fp.ok && fp.removed.length) { repaired.doc = fp.doc; repaired.removed = [...(repaired.removed || []), ...fp.removed]; }
       else if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
     }
-    const before = repaired.fixes.length ? repaired.fixes.length : 0;
-    if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
-    rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ...(worldAdded.length ? { worldAdded } : {}), ms: Math.round(performance.now() - t) });
+    const fixes = repaired.fixes.length;
+    if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
+    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    rounds.push(entry);
     last = repaired;
     let problems = [];
     if (repaired.ok) {
-      // Every round, the last included, must pass the publish gate: a playtest agent plays it to the end, nothing crashes.
       const g = verify ? await gate(repaired.doc) : { viable: true };
-      rounds.at(-1).viable = g.viable;
-      if (g.viable) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [], verification: g.v };
-      problems = g.problems;
-    }
-    lastProblems = problems.length ? problems : repaired.errors;
-    user = `${outlineUser({ prompt, answers, decomposition, selection, skeleton: skeleton.doc })}
+      entry.viable = g.viable;
+      // Static plot analysis (plotGraph): errors count against the draft; its warnings travel with them as the cause.
+      let staticNew = [];
+      if (verify) { const sp = await staticPlot(repaired.doc, logic); staticErrors = newErrors(skeletonPlot, sp); staticNew = staticErrors.length ? newProblems(skeletonPlot, sp) : []; }
+      entry.staticErrors = staticErrors.length;
+      const content = populateProblems(repaired.doc, registry);
+      entry.content = content.length;
+      if (g.viable) {
+        const score = content.length + staticErrors.length * 2;
+        if (!best || score < best.score) best = { score, doc: repaired.doc, removed: repaired.removed, verification: g.v, content, round };
+        if (!score) break;
+      }
+      problems = g.viable ? [...staticNew, ...content] : [...g.problems, ...staticNew];
+    } else problems = repaired.errors;
+    lastProblems = problems;
+    if (round === maxRounds) break;
+    user = `${base}
 
-Your previous document failed ${problems.length ? 'verification' : 'preflight'} with these problems (stable codes; fix each at its path):
-${describeErrors(problems.length ? problems : repaired.errors)}
-Previous document:
-${JSON.stringify(repaired.doc).slice(0, 30000)}
-Return the corrected complete document.`;
+Your previous outline failed ${repaired.ok ? (entry.viable === false ? 'verification' : 'the content and plot checks') : 'preflight'} with these problems (stable codes; fix each one in the form):
+${describeProblems(problems, repaired.doc)}
+Previous outline (your form):
+${JSON.stringify(value).slice(0, 30000)}
+Return the corrected complete form.`;
   }
-  // The model's last draft is usually one primitive away from valid: isolate that primitive (reported as a gap),
-  // and keep it only if it passes the same gate.
+  if (best) return { doc: best.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
+  // The model's last draft is often one non-core primitive away from running: isolate it (reported as a gap), but
+  // never a core mechanic's primitive, and keep it only if it passes the same gate.
   if (last?.doc) {
-    const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true });
-    if (isolated.ok && firstPlayable(isolated.doc, registry, logic, { seed, furnish: false }).ok) {
+    const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true, protect: keep });
+    const fp = isolated.ok ? firstPlayable(isolated.doc, registry, logic, { seed, furnish: false, protect: keep }) : null;
+    if (fp?.ok) {
       const g = verify ? await gate(isolated.doc) : { viable: true };
       rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
-      if (g.viable) return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v };
+      if (g.viable) return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
       lastProblems = g.problems;
-    }
+    } else rounds.push({ kind: 'isolate', ok: false });
   }
-  // The skeleton is published only if it passes the gate too; otherwise nothing playable came out of this idea.
-  if (skeleton.ok) {
-    const g = verify ? await gate(skeleton.doc) : { viable: true };
-    rounds.push({ kind: 'procedural_fallback', viable: g.viable });
-    if (g.viable) return { doc: skeleton.doc, ok: true, source: 'procedural', fellBack: true, rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: skeleton.removed, errors: [], verification: g.v };
+  // No substitution: the procedural skeleton is a scaffold, never the shipped game. Nothing playable came out.
+  return { doc: last?.doc || skeleton.doc, ok: false, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || [], errors: lastProblems?.length ? lastProblems : (last?.errors || [{ code: 'no_draft', path: '$', message: 'the model returned no usable outline' }]) };
+}
+
+/** A draft that drops the player (models do) would publish a world nobody plays: keep the skeleton's, in the draft's first zone. */
+function keepPlayer(draft, skeleton) {
+  if (draft.player || !skeleton.player || !Array.isArray(draft.spaces) || !draft.spaces.length) return;
+  const sp = draft.spaces.find(s => s?.id === skeleton.player.space) || draft.spaces[0], z = (Array.isArray(sp.zones) ? sp.zones : [])[0];
+  const at = typeof skeleton.player.at === 'string' ? z?.id ?? skeleton.player.at : (z && zoneStart(z)) || skeleton.player.at;
+  draft.player = { ...structuredClone(skeleton.player), space: sp.id, at };
+  if (!(draft.content?.archetypes || []).some(a => a?.id === draft.player.archetype)) {
+    const arch = (skeleton.content?.archetypes || []).find(a => a.id === draft.player.archetype);
+    if (arch && draft.content && typeof draft.content === 'object' && (draft.content.archetypes === undefined || Array.isArray(draft.content.archetypes))) (draft.content.archetypes ??= []).push(structuredClone(arch));
+    else if (arch && !draft.content) draft.content = { archetypes: [structuredClone(arch)] };
   }
-  return { doc: last?.doc || skeleton.doc, ok: false, source: model || 'procedural', rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: last?.removed || skeleton.removed, errors: lastProblems?.length ? lastProblems : (last?.errors || skeleton.errors) };
 }
 
 export { seedFrom, isSpace };

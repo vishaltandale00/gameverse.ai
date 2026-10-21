@@ -1,20 +1,32 @@
 // Layer 3 of ARCHITECTURE.md §4: detail patches, one task per zone, written in
-// parallel. A patch is additive (kernel mergePatch shape). Each one is merged
-// into the current document, repaired by stable error code, guarded (it may
-// not drop or rewrite existing content, nor put new beats on the critical
-// path), verified (no provable softlock), and then hot-loaded by hosts via
-// mergePatch + rt.extend. Without a writer a procedural detailer adds local
-// characters and finds, so the layer exists at zero model cost too.
+// parallel. A patch is additive (kernel mergePatch shape, plus `spawns`: rules for
+// the document's spawner). Each one is merged into the current document, repaired
+// by stable error code, guarded (it may not drop or rewrite existing content, nor
+// put new beats on the critical path), verified (no provable softlock), and then
+// hot-loaded by hosts via mergePatch + rt.extend.
+//
+// With a writer, the model fills a per-zone FORM (strict schema from the game's
+// primitives: archetypes with the component slots they own, spawns in this zone,
+// residents and their dialogue, items, zone quests, beats, structure generators), so
+// a zone gets content the installed primitives actually read and differs from the
+// others. Without a writer a procedural detailer adds a resident, a find, and a
+// zone-specific mix of the game's existing pickups and enemies.
 import { mergePatch } from '../kernel/document.js';
-import { cardText, vocabulary, dataShapes } from './catalog.js';
+import { cardText, vocabulary, dataShapes, isGenerator } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { repairDocument, describeErrors, idsOf } from './repair.js';
 import { verifyDocument, regressed, newErrors, staticPlot } from './verify-adapter.js';
 import { shrunkLists } from './revision-check.js';
 import { parseReply } from './writer.js';
+import { contentProps, contentFromForm, decode } from './outline-form.js';
+import { spawnerId } from './engage.js';
+import { contractsFor, contractText } from './content.js';
+import { spawnRules } from './census.js';
 
-export const DETAIL_VERSION = 'detail/0.1';
-const PATCH_KEYS = ['spaces', 'systems', 'graphics', 'plot', 'content'];
+export const DETAIL_VERSION = 'detail/0.2';
+const PATCH_KEYS = ['spaces', 'systems', 'graphics', 'plot', 'content', 'spawns'];
+const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+const listOf = v => (Array.isArray(v) ? v : []);
 
 export function detailTasks(doc, { max = 8 } = {}) {
   const tasks = [];
@@ -23,11 +35,14 @@ export function detailTasks(doc, { max = 8 } = {}) {
 }
 
 const prefixed = (id, zone) => (String(id).startsWith(`${zone}_`) ? String(id) : `${zone}_${String(id).replace(/[^a-z0-9_-]/g, '_')}`.slice(0, 63));
+/** The act a zone's beats belong to: the act whose beats already trigger in that zone, else the first. */
+const actFor = (doc, zone) => (doc.plot?.storyboard?.acts || []).find(a => (a.beats || []).some(b => JSON.stringify(b.when || {}).includes(`"${zone}"`)))?.id || doc.plot?.storyboard?.acts?.[0]?.id;
 
 /**
  * Normalize a patch for one zone: only additive sections, new ids namespaced by the zone (parallel
  * patches never collide), new beats optional (detail never changes the critical path) and appended
- * to acts that exist, existing spaces receiving generators only (zones are the outline's).
+ * to acts that exist, existing spaces receiving generators only (zones are the outline's), spawns
+ * fixed to this zone.
  */
 export function sanitizePatch(patch, task, current) {
   const out = {};
@@ -51,17 +66,38 @@ export function sanitizePatch(patch, task, current) {
     if (c.models && typeof c.models === 'object') keep.models = Object.fromEntries(Object.entries(c.models).map(([k, v]) => { const id = prefixed(k, task.zone); rename.set(k, id); return [id, v]; }));
     out.content = keep;
   }
-  if (out.spaces) out.spaces = (Array.isArray(out.spaces) ? out.spaces : []).filter(s => current.spaces.some(x => x.id === s.id)).map(s => ({ id: s.id, generators: s.generators || [] })).filter(s => s.generators.length);
+  if (out.spawns) out.spawns = remap(out.spawns).filter(r => typeof r.archetype === 'string').map(r => ({ ...r, zone: task.zone }));
+  if (out.spaces) out.spaces = (Array.isArray(out.spaces) ? out.spaces : []).filter(s => current.spaces.some(x => x.id === s.id)).map(s => ({ id: s.id, generators: listOf(s.generators).filter(g => isObj(g) && typeof g.use === 'string' && isGenerator(g.use)) })).filter(s => s.generators.length);
   for (const k of ['systems', 'graphics']) if (out[k]) out[k] = (Array.isArray(out[k]) ? out[k] : []).filter(i => i?.use && !(current[k] || []).some(x => x.use === i.use));
   // Rewrite references to renamed ids anywhere inside the patch (exact string values only).
   const walk = v => Array.isArray(v) ? v.map(walk) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)])) : typeof v === 'string' && rename.has(v) ? rename.get(v) : v;
   return walk(out);
 }
 
-/** Zero-model detail: a local character who speaks on arrival and, with an item vocabulary, a find. */
+/** mergePatch plus the patch's spawns, appended to the document's spawner (added when the game has none). */
+export function mergeDetail(current, patch, registry) {
+  const { spawns, ...rest } = patch;
+  const merged = mergePatch(current, rest);
+  if (!spawns?.length) return merged;
+  const sid = spawnerId(registry);
+  if (!sid) return merged;
+  const doc = merged.doc;
+  doc.systems = Array.isArray(doc.systems) ? doc.systems : [];
+  let sp = doc.systems.find(s => s?.use === sid);
+  if (!sp) { sp = { use: sid, with: { rules: [] } }; doc.systems.push(sp); merged.added.systems.push(doc.systems.length - 1); }
+  sp.with = isObj(sp.with) ? sp.with : {};
+  sp.with.rules = Array.isArray(sp.with.rules) ? sp.with.rules : [];
+  const taken = new Set(spawnRules(doc, registry).map(r => r.id));
+  const added = spawns.filter(r => !taken.has(r.id));
+  sp.with.rules.push(...structuredClone(added));
+  merged.added.spawns = added.map(r => r.id);
+  return merged;
+}
+
+/** Zero-model detail: a resident who speaks on arrival, a find, and a zone-specific mix of the game's own pickups and enemies. */
 export function proceduralDetail(doc, task, registry) {
   const vocab = vocabIndex(registry);
-  const firstAct = doc.plot?.storyboard?.acts?.[0]?.id;
+  const firstAct = actFor(doc, task.zone);
   if (!firstAct) return {};
   const local = { id: `${task.zone}_local`, name: `Keeper of ${task.name}`, role: 'local', home: task.zone };
   const say = [{ do: 'say', character: local.id, text: `Few travellers reach ${task.name}.` }];
@@ -70,19 +106,56 @@ export function proceduralDetail(doc, task, registry) {
     patch.content = { items: [{ id: `${task.zone}_relic`, name: `${task.name} relic` }] };
     say.push({ do: 'give_item', item: `${task.zone}_relic` });
   }
+  // The game's own pickups and enemies, a different mix per zone (the zone's index picks which and how many).
+  if (spawnerId(registry) && (doc.systems || []).some(s => s.use === spawnerId(registry))) {
+    const zones = (doc.spaces || []).flatMap(s => (s.zones || []).map(z => z.id)), k = Math.max(0, zones.indexOf(task.zone));
+    const pool = (doc.content?.archetypes || []).filter(a => a?.id && a.id !== doc.player?.archetype && ['pickup', 'enemy', 'creature', 'prop'].includes(a.kind) && Object.keys(a.components || {}).some(c => c !== 'name' && c !== 'model'));
+    const picks = pool.length ? [pool[k % pool.length], ...(pool.length > 1 && k % 2 ? [pool[(k + 1) % pool.length]] : [])] : [];
+    const spawns = picks.filter(a => !(a.kind === 'enemy' && k === 0)).map((a, i) => ({ id: `${task.zone}_more_${a.id}`.slice(0, 60), archetype: a.id, count: [1 + ((k + i) % 3), 1 + ((k + i) % 3)], respawnSec: 0 }));
+    if (spawns.length) patch.spawns = spawns;
+  }
   return patch;
+}
+
+/** The per-zone detail form: strict slots for exactly what this game's primitives read. */
+export function detailForm({ registry, doc, task }) {
+  const used = [...new Set([...(doc.spaces || []).flatMap(s => [s.use, ...(s.generators || []).map(g => g.use)]), ...(doc.systems || []).map(s => s.use)])].filter(id => registry.has(id));
+  const reads = new Set(used.flatMap(id => (registry.get(id)?.card.reads || []).filter(r => typeof r === 'string')));
+  const spawner = spawnerId(registry);
+  const { props, comps } = contentProps({ registry, used, hasQuests: reads.has('plot.quests'), hasDialogue: reads.has('plot.dialogue'), spawner, zone: task.zone });
+  const S = d => ({ type: 'string', description: d }), N = s => ({ anyOf: [s, { type: 'null' }] });
+  const O = p => ({ type: 'object', additionalProperties: false, required: Object.keys(p), properties: p });
+  props.beats = { type: 'array', description: `optional story moments in ${task.zone} (they never block the main story)`, items: O({ id: S('beat id'), title: S('title'), when_json: N(S('trigger predicate as JSON text, e.g. {"zone":"' + task.zone + '"}')), do_json: N(S('effects list as JSON text')) }) };
+  const gens = registry.ids('engine').filter(isGenerator);
+  props.generators_json = N(S(`structure/prop generators for this zone as a JSON list [{"use": one of ${gens.join(', ')}, "with": {...}}] naming zone "${task.zone}" (usually null)`));
+  const schema = { name: 'zone_detail', schema: O(props) };
+  const toPatch = form => {
+    const c = contentFromForm(isObj(form) ? form : {}, { comps, zone: task.zone });
+    const act = actFor(doc, task.zone);
+    const beats = listOf(form?.beats).filter(isObj).map(b => { const beat = { id: String(b.id || 'moment'), ...(b.title ? { title: String(b.title) } : {}), optional: true }; const w = decode(b.when_json, 'strict'); beat.when = isObj(w) ? w : { zone: task.zone }; const fx = decode(b.do_json, 'effects'); if (fx) beat.do = fx; return beat; });
+    const gensList = decode(form?.generators_json, 'strict');
+    const patch = {
+      plot: { characters: c.characters, ...(c.dialogue ? { dialogue: c.dialogue } : {}), ...(c.quests?.length ? { quests: c.quests } : {}), ...(beats.length && act ? { storyboard: { acts: [{ id: act, beats }] } } : {}) },
+      content: { archetypes: c.archetypes.filter(a => a.kind !== 'player'), items: c.items },
+      ...(c.rules.length ? { spawns: c.rules } : {}),
+      ...(Array.isArray(gensList) && gensList.length ? { spaces: [{ id: task.space, generators: gensList }] } : {}),
+    };
+    return patch;
+  };
+  return { schema, toPatch, used };
 }
 
 export function detailSystem(registry, logic, doc) {
   const v = vocabulary(logic), used = new Set([...doc.spaces.map(s => s.use), ...(doc.systems || []).map(s => s.use), ...(doc.graphics || []).map(g => g.use)]);
-  return `You add detail to one zone of a game document (schema ${doc.schema}). You write an ADDITIVE patch:
-{ plot?: { characters?:[...], dialogue?:{id:{...}}, quests?:[...], storyboard?:{ acts:[{ id: <existing act id>, beats:[...] }] } },
-  content?: { items?:[...], archetypes?:[...], models?:{...} }, spaces?:[{ id:<existing space id>, generators:[...] }], systems?:[{use,with}] }
+  return `You add detail to one zone of a game document (schema ${doc.schema}). You fill a FORM (a JSON object matching the given schema) that becomes an ADDITIVE patch for this zone.
+Make the zone its own place: its own enemies, creatures, pickups or props (spawns, using existing archetypes or new ones with the components their role needs), a resident or two with lines (dialogue) when the game has dialogue, a local quest when the game runs quests, items worth finding, and optional moments (beats). Use the components and sections the game's primitives read; content nothing reads is wasted.
 Rules:
-- Only add. Never repeat or change existing entries. New ids are lowercase slugs starting with "<zone id>_".
-- Characters, items, quests, dialogue and beats must be about this zone; beats trigger in it (e.g. "when": {"zone": "<zone id>"}).
-- Predicates: ${v.predicates.join(', ')}. Effects ({"do": kind}): ${v.effects.join(', ')}. Use only primitives the game already uses, or ones listed below.
-- Keep it small and playable: 1-3 characters, a few items or interactions, 1-4 beats.
+- Only add. Never repeat or change existing entries. New ids are lowercase slugs (they are prefixed with the zone id for you).
+- Spawns may use the game's existing archetypes (listed in the request) or ones you add here.
+- Predicates: ${v.predicates.join(', ')}. Effects ({"do": kind}): ${v.effects.join(', ')}. JSON-text fields hold a JSON value encoded as a string, or null.
+- Keep it playable: new beats are optional and must not end the game or gate the main story.
+Content the game's primitives need (exact shapes):
+${contractText(contractsFor(registry, [...used])) || '(none declared)'}
 Primitives in this game:
 ${[...used].filter(id => registry.has(id)).map(id => cardText({ id, ...registry.get(id).card }, { full: true })).join('\n')}
 Shapes of the sections they read (follow them exactly):
@@ -91,21 +164,28 @@ ${dataShapes(registry, [...used]).join('\n')}`;
 
 function detailUser(doc, task) {
   const zone = doc.spaces.find(s => s.id === task.space)?.zones?.find(z => z.id === task.zone) || {};
+  const rules = (doc.systems || []).flatMap(s => listOf(s.with?.rules)).filter(r => r?.zone);
   const summary = {
     title: doc.title, premise: doc.plot?.premise, zone: { space: task.space, ...zone },
-    otherZones: doc.spaces.flatMap(s => (s.zones || []).map(z => `${z.id}: ${z.name || ''}`)).filter(z => !z.startsWith(task.zone + ':')),
-    characters: (doc.plot?.characters || []).map(c => `${c.id}: ${c.name} (${c.role || ''})`), items: (doc.content?.items || []).map(i => i.id),
+    otherZones: doc.spaces.flatMap(s => (s.zones || []).map(z => `${z.id}: ${z.name || ''}${z.description ? ` (${String(z.description).slice(0, 80)})` : ''}`)).filter(z => !z.startsWith(task.zone + ':')),
+    archetypes: (doc.content?.archetypes || []).map(a => `${a.id} (${a.kind || '?'}: ${Object.keys(a.components || {}).join(', ')})`),
+    alreadyHere: rules.filter(r => r.zone === task.zone).map(r => `${r.archetype} x${(r.count || [1])[1] ?? r.count?.[0] ?? 1}`),
+    characters: (doc.plot?.characters || []).map(c => `${c.id}: ${c.name} (${c.role || ''})${c.home ? ` @${c.home}` : ''}`), items: (doc.content?.items || []).map(i => i.id),
     acts: (doc.plot?.storyboard?.acts || []).map(a => ({ id: a.id, title: a.title, beats: (a.beats || []).map(b => b.id) })),
   };
-  return `Game summary: ${JSON.stringify(summary)}\n\nWrite the detail patch for zone "${task.zone}". Reply with the patch JSON object only.`;
+  return `Game summary: ${JSON.stringify(summary)}\n\nWrite the detail patch for zone "${task.zone}": what makes it unlike the other zones.`;
 }
+
+const isFormShape = x => isObj(x) && (Array.isArray(x.archetypes) || Array.isArray(x.characters) || Array.isArray(x.spawns)) && !x.plot && !x.content;
 
 /** Ask the writer for a patch (null writer -> procedural). */
 export async function writeDetail({ writer, doc, task, registry, logic, errors = null, previous = null }) {
   if (!writer) return { patch: proceduralDetail(doc, task, registry), source: 'procedural', ms: 0 };
-  const user = errors ? `${detailUser(doc, task)}\n\nYour previous patch failed checks:\n${describeErrors(errors, 12)}\nPrevious patch:\n${JSON.stringify(previous).slice(0, 12000)}\nReturn a corrected patch.` : detailUser(doc, task);
-  const reply = await writer.complete({ system: detailSystem(registry, logic, doc), user });
-  return { patch: parseReply(reply.text), source: reply.model, ms: reply.ms };
+  const form = detailForm({ registry, doc, task });
+  const user = errors ? `${detailUser(doc, task)}\n\nYour previous patch failed checks:\n${describeErrors(errors, 12)}\nPrevious patch:\n${JSON.stringify(previous).slice(0, 12000)}\nReturn a corrected form.` : detailUser(doc, task);
+  const reply = await writer.complete({ system: detailSystem(registry, logic, doc), user, schema: form.schema });
+  const value = parseReply(reply.text);
+  return { patch: isFormShape(value) ? form.toPatch(value) : value, source: reply.model, ms: reply.ms, form: isFormShape(value) };
 }
 
 /**
@@ -114,7 +194,7 @@ export async function writeDetail({ writer, doc, task, registry, logic, errors =
  */
 export async function acceptPatch({ current, patch, task, registry, logic, baseVerify = null, budgetMs = 800 }) {
   const clean = sanitizePatch(patch, task, current);
-  const { doc: merged, added } = mergePatch(current, clean);
+  const { doc: merged, added } = mergeDetail(current, clean, registry);
   const repaired = repairDocument(merged, { registry, logic, rounds: 4 });
   if (!repaired.ok) return { ok: false, reason: 'preflight', errors: repaired.errors, patch: clean };
   const dropped = shrunkLists(current, repaired.doc).concat(shrunkLists(current.plot || {}, repaired.doc.plot || {}, 'plot'), shrunkLists(current.content || {}, repaired.doc.content || {}, 'content'));

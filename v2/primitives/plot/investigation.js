@@ -22,6 +22,11 @@ function find(rt, id) {
 export default {
   id: ID,
   card: {
+    // What this primitive needs in the document to be meaningful (planner/content.js reads it).
+    content: [
+      {"need": "section", "at": "plot.clues", "min": 4, "why": "a mystery is solved from clues the player finds"},
+      {"need": "section", "at": "plot.deductions", "min": 1, "why": "deductions combine clues into an answer"},
+    ],
     intent: 'Investigation: clues found by effects or conditions, and deductions that open once their clue set is known; the player deduces (right or wrong theories) and the case can fail after too many wrong ones.',
     views: ['any'],
     params: {
