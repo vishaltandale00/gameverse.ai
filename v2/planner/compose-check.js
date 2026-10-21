@@ -33,8 +33,15 @@
 //              matches `from`, everything in adapts.provides counts as provided there. Examples: a 2D
 //              side-scroller on a mesh3d plane (capabilities gravity/navigate on a chosen plane); a race course
 //              from a tilemap's zones (content 'course'); turn-based battles in a real-time space (a modal
-//              sub-space: capability 'turns'). Note preflight (v2/kernel/document.js) does not know adapters yet:
-//              see v2/kernel/requests/composition.md.
+//              sub-space: capability 'turns').
+//              adapts.subspace = { kind: param, config: param, content?: [...] }: an instance WITH an id defines a
+//              region space of that id (engine.adapt.projection): units bound to the id get the capabilities of
+//              the space kind its with[kind] names, configured by with[config], and the region has `content`
+//              from its host; the host itself gains nothing. Without an id (a compact selection that only asks
+//              whether an adapter exists) its adapts.provides count on the host as above.
+//              adapts.relation = 'union' | 'nested' | 'skin' names the play-spec mashup relation it realises.
+//              Preflight (v2/kernel/document.js) applies the same rules. planner/adapters.js resolveAdapters
+//              turns an incompatible-needs-adapter verdict into adapter instances (or adapterSignature gaps).
 //   mode       card.mode = { loop, interaction, opponent, space, needs: { content, participants }, win: { param },
 //                lose: { param }, bot } on a mechanic's primitive. The `mode` check confirms, for a selection or
 //                a document: every core mechanic (selection.mechanics importance 'core') has a primitive;
@@ -56,6 +63,7 @@
 // screenSpaces only rejects spaces for decided failures attributable to the space (never for holes), so it
 // can only replace a space the composition can't use with another one.
 import { checkFields } from '../kernel/params.js';
+import { subspaceCaps } from '../kernel/document.js';
 import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
@@ -72,10 +80,12 @@ import { list, prop } from '../kernel/guards.js';
 /** @typedef {'capabilities' | 'services' | 'primitives' | 'conflicts' | 'content' | 'engage' | 'data' | 'adapter' | 'mode'} CheckName */
 /** @typedef {'ok' | 'fail' | 'needs-adapter' | 'undeclared'} CheckState */
 /** @typedef {{ card: string, field: string, code: string, message: string }} Hole */
-/** @typedef {{ check: CheckName, code: string, unit: string, space?: string, message: string, hint?: string, adaptable: boolean }} Failure */
+/** @typedef {{ kind: keyof Needs, item: string }} Need  what an adaptable failure lacks */
+/** @typedef {{ check: CheckName, code: string, unit: string, space?: string, message: string, hint?: string, adaptable: boolean, need?: Need }} Failure */
 /** @typedef {{ capabilities: string[], content: string[], services: string[] }} Needs */
-/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string>, zones: number }} SpaceUnit */
-/** @typedef {{ use: string, space: string, slot: 'space' | 'generator' | 'system' | 'graphics', added?: string }} Unit */
+/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string>, zones: number, projected?: string, given?: string[] }} SpaceUnit  projected: the sub-space adapter defining it; given: content it has from its host */
+/** @typedef {{ use: string, space: string, slot: 'space' | 'generator' | 'system' | 'graphics', added?: string, id?: string, with?: Record<string, any> }} Unit */
+/** @typedef {{ use: string, id?: string, space?: string, with?: Record<string, any> }} AdapterInstance  an adapter systems instance (resolveAdapters output) */
 /**
  * @typedef {object} Selection  a planner selection (select.js output) or a compact composition
  * @property {Array<{ id?: string, use: string, with?: Record<string, any>, zones?: unknown }>} [spaces]
@@ -85,6 +95,7 @@ import { list, prop } from '../kernel/guards.js';
  * @property {string[]} [primitives]                                   compact: systems/generators by id
  * @property {Array<{ id: string, importance?: string, primitives?: string[] }>} [mechanics]  select.js mechanics (core ones must map)
  * @property {Record<string, string>} [bind]                            primitive id -> space id
+ * @property {AdapterInstance[]} [adapters]                              adapter instances (planner/adapters.js resolveAdapters)
  */
 /**
  * @typedef {object} CheckOptions
@@ -197,7 +208,7 @@ function spawnerOf(/** @type {RegistryLike} */ registry) {
 }
 
 /** Whether an adapter's `from` matches a space (its primitive id and its native capabilities). */
-function adapterFits(/** @type {Card} */ card, /** @type {SpaceUnit} */ space) {
+export function adapterFits(/** @type {Card} */ card, /** @type {SpaceUnit} */ space) {
   const from = card.adapts?.from || {};
   return (!from.spaces || from.spaces.includes(space.use)) && (from.capabilities || []).every(c => space.base.has(c));
 }
@@ -301,18 +312,38 @@ function normalize(input, registry) {
   });
   const first = [...spaces.keys()][0] ?? 'world';
   const bind = sel.bind || {};
-  const add = (/** @type {string | { use?: string, id?: string, space?: string }} */ x, /** @type {Unit['slot']} */ slot) => {
+  const add = (/** @type {string | { use?: string, id?: string, space?: string, with?: Record<string, any> }} */ x, /** @type {Unit['slot']} */ slot) => {
     const use = typeof x === 'string' ? x : x.use ?? x.id;
     if (!use) return;
     const space = (typeof x === 'string' ? undefined : x.space) ?? bind[use] ?? first;
-    units.push({ use, space, slot: isGenerator(use) ? 'generator' : isGraphics(use) ? 'graphics' : slot });
+    const extra = typeof x === 'string' ? {} : { ...(typeof x.id === 'string' && x.use ? { id: x.id } : {}), ...(isObj(x.with) ? { with: x.with } : {}) };
+    units.push({ use, space, slot: isGenerator(use) ? 'generator' : isGraphics(use) ? 'graphics' : slot, ...extra });
   };
   for (const g of sel.generators || []) add(g, 'generator');
   for (const s of sel.systems || []) add(s, 'system');
   for (const p of sel.primitives || []) add(p, 'system');
+  for (const a of isList(sel.adapters) ? sel.adapters : []) add(a, 'system');
   for (const g of /** @type {any[]} */ (isDoc ? sel.graphics || [] : [])) add(g, 'graphics');
+  // Sub-space adapter instances with an id define a region space of the kind they project (card.adapts.subspace).
+  for (const u of units) {
+    const sub = cardOf(registry, u.use)?.adapts?.subspace;
+    if (!sub || typeof u.id !== 'string' || spaces.has(u.id)) continue;
+    const w = u.with || {}, kind = typeof w[sub.kind] === 'string' ? w[sub.kind] : '';
+    const caps = subspaceCaps(registry, sub, w);
+    spaces.set(u.id, { use: kind || u.use, with: (sub.config && isObj(w[sub.config]) ? w[sub.config] : {}), base: caps, caps: new Set(caps), zones: list(w.zones).length, projected: u.use, given: [...(sub.content || [])] });
+  }
   const mechanics = isList(sel.mechanics) ? sel.mechanics.filter(isObj) : [];
   return { spaces, units, isDoc, mechanics };
+}
+
+/**
+ * The spaces of a composition (document, selection or compact form), with the capabilities each provides
+ * natively, including the regions sub-space adapter instances define.
+ * @param {Doc | Selection} input @param {RegistryLike} registry
+ * @returns {Array<{ id: string, use: string, with: Record<string, any>, caps: string[], projected?: string }>}
+ */
+export function compositionSpaces(input, registry) {
+  return [...normalize(input, registry).spaces].map(([id, s]) => ({ id, use: s.use, with: s.with, caps: [...s.base].sort(), ...(s.projected ? { projected: s.projected } : {}) }));
 }
 
 /**
@@ -368,8 +399,9 @@ export function checkComposition(input, registry, opts = {}) {
       const s = spaces.get(u.space); if (!s) continue;
       if (!isList(c.adapts.provides?.capabilities) && !isList(c.adapts.provides?.content) && !isList(c.adapts.provides?.services)) { hole('adapter', { card: u.use, field: 'card.adapts.provides', code: 'adapter_malformed', message: 'card.adapts needs provides.{capabilities,content,services}' }); continue; }
       if (!adapterFits(c, s)) { fail({ check: 'adapter', code: 'adapter_from_mismatch', unit: u.use, space: u.space, message: `adapter '${u.use}' does not project from '${s.use}'`, hint: `adapts.from: ${JSON.stringify(c.adapts.from || {})}`, adaptable: false }); continue; }
-      for (const cap of c.adapts.provides.capabilities || []) s.caps.add(cap);
       adapters.push(u.use);
+      if (c.adapts.subspace && typeof u.id === 'string' && spaces.get(u.id)?.projected === u.use) continue; // its region has them
+      for (const cap of c.adapts.provides.capabilities || []) s.caps.add(cap);
     }
     /** @param {(c: NonNullable<Card['adapts']>) => string[] | undefined} pick @param {string} item @param {SpaceUnit} space */
     const adapterFor = (pick, item, space) => registry.ids().filter(id => { const c = cardOf(registry, id); return c?.adapts && (pick(c.adapts) || []).includes(item) && adapterFits(c, space); })
@@ -392,7 +424,7 @@ export function checkComposition(input, registry, opts = {}) {
         const a = adapterFor(x => x.provides.capabilities, cap, s);
         if (a && propose(a, u.space, `adapts ${cap} for ${u.use}`)) continue;
         need(u.space, 'capabilities', cap, u.use);
-        fail({ check: 'capabilities', code: 'capability_missing', unit: u.use, space: u.space, message: `'${u.use}' needs ${cap} from ${s.use}`, hint: `${short(s.use)} provides: ${[...s.caps].join(', ') || 'nothing'}`, adaptable: true });
+        fail({ check: 'capabilities', code: 'capability_missing', unit: u.use, space: u.space, message: `'${u.use}' needs ${cap} from ${s.use}`, hint: `${short(s.use)} provides: ${[...s.caps].join(', ') || 'nothing'}`, adaptable: true, need: { kind: 'capabilities', item: cap } });
       }
       for (const req of c.requires.primitives || []) {
         if ([...used].some(id => satisfies(id, req))) continue;
@@ -421,7 +453,7 @@ export function checkComposition(input, registry, opts = {}) {
       if (a && propose(a, u.space, `adapts service ${sv} for ${u.use}`)) continue;
       if (!providers.length && !a) hole('services', { card: u.use, field: 'card.requires.services', code: 'service_unprovided', message: `requires service '${sv}', which no registered card provides` });
       need(u.space, 'services', sv, u.use);
-      fail({ check: 'services', code: 'service_missing', unit: u.use, space: u.space, message: `'${u.use}' needs service '${sv}'`, hint: providers.length ? `providers: ${providers.join(', ')}${resolve ? ` (none fits ${short(s.use)})` : ''}` : 'no card provides it', adaptable: true });
+      fail({ check: 'services', code: 'service_missing', unit: u.use, space: u.space, message: `'${u.use}' needs service '${sv}'`, hint: providers.length ? `providers: ${providers.join(', ')}${resolve ? ` (none fits ${short(s.use)})` : ''}` : 'no card provides it', adaptable: true, need: { kind: 'services', item: sv } });
     }
 
     // Content: each space's needs (card.needs.content, or any one of card.needs.alternatives), plus any bound
@@ -439,7 +471,7 @@ export function checkComposition(input, registry, opts = {}) {
        * @param {string} item @returns {{ how: 'have' } | { how: 'add', id: string, adapter: boolean } | { how: 'holes', ids: string[] } | null}
        */
       const coverOf = item => {
-        if ((sc.provides.content || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course)
+        if ((sc.provides.content || []).includes(item) || (s.given || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course; a region has it from its host)
         if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
         if (here.some(u => { const c = cardOf(registry, u.use); return (u.slot === 'generator' && (c?.provides.content || []).includes(item) && (!c?.spaces || c.spaces.includes(s.use))) || (adapters.includes(u.use) && (c?.adapts?.provides.content || []).includes(item)); })) return { how: 'have' };
         const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
@@ -473,7 +505,7 @@ export function checkComposition(input, registry, opts = {}) {
         }
         need(sid, 'content', item, by);
         const authoredMsg = OUTLINE_AUTHORS.includes(item) ? `the document gives ${short(s.use)} no ${item}` : `no generator provides '${item}' on ${short(s.use)}`;
-        fail({ check: 'content', code: 'content_missing', unit: by, space: sid, message: `${authoredMsg} (needed by ${by})`, hint: declared.filter(id => (cardOf(registry, id)?.provides.content || []).includes(item)).map(id => `${id} provides it on ${(cardOf(registry, id)?.spaces || []).map(short).join(', ')}`).join('; ') || `no generator declares '${item}'`, adaptable: !OUTLINE_AUTHORS.includes(item) });
+        fail({ check: 'content', code: 'content_missing', unit: by, space: sid, message: `${authoredMsg} (needed by ${by})`, hint: declared.filter(id => (cardOf(registry, id)?.provides.content || []).includes(item)).map(id => `${id} provides it on ${(cardOf(registry, id)?.spaces || []).map(short).join(', ')}`).join('; ') || `no generator declares '${item}'`, adaptable: !OUTLINE_AUTHORS.includes(item), need: { kind: 'content', item } });
       }
     }
 
@@ -530,14 +562,14 @@ export function checkComposition(input, registry, opts = {}) {
         if (!item.includes('.')) {
           if (!s) continue;
           const sc = cardOf(registry, s.use);
-          const has = (sc?.provides.content || []).includes(item) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
+          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || known.some(g => g.space === u.space && ((g.slot === 'generator' && (cardOf(registry, g.use)?.provides.content || []).includes(item)) || (adapters.includes(g.use) && (cardOf(registry, g.use)?.adapts?.provides.content || []).includes(item))));
           if (has) continue;
           const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
           if (gen && propose(gen, u.space, `generates ${item} for ${u.use}'s mode`)) continue;
           const a = adapterFor(x => x.provides.content, item, s);
           if (a && propose(a, u.space, `adapts content ${item} for ${u.use}'s mode`)) continue;
           need(u.space, 'content', item, u.use);
-          fail({ check: 'mode', code: 'mode_content_missing', unit: u.use, space: u.space, message: `'${u.use}' mode needs '${item}' on ${short(s.use)}`, adaptable: true });
+          fail({ check: 'mode', code: 'mode_content_missing', unit: u.use, space: u.space, message: `'${u.use}' mode needs '${item}' on ${short(s.use)}`, adaptable: true, need: { kind: 'content', item } });
           continue;
         }
         if (!sectionDeclared(registry, item, opts.documented)) { hole('mode', { card: u.use, field: 'card.mode.needs.content', code: 'mode_section_undeclared', message: `mode needs ${item}, whose shape no card declares` }); continue; }
@@ -568,7 +600,7 @@ export function checkComposition(input, registry, opts = {}) {
           const a = adapterFor(x => x.provides.capabilities, cap, s);
           if (a && propose(a, u.space, `adapts ${cap} for ${u.use}'s mode space`)) continue;
           need(u.space, 'capabilities', cap, u.use);
-          fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' plays on ${short(target)}; ${short(s.use)} lacks ${cap}`, adaptable: true });
+          fail({ check: 'mode', code: 'mode_space_mismatch', unit: u.use, space: u.space, message: `'${u.use}' plays on ${short(target)}; ${short(s.use)} lacks ${cap}`, adaptable: true, need: { kind: 'capabilities', item: cap } });
         }
       }
       // bot: a registered strategy.

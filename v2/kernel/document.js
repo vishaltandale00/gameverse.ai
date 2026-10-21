@@ -58,6 +58,8 @@ function buildIndexes(doc, errors, registry, instances) {
     add('space', s.id, `spaces[${i}].id`);
     (s.zones || []).forEach((z, j) => add('zone', z.id, `spaces[${i}].zones[${j}].id`));
   });
+  // Sub-space adapters (card.adapts.subspace): an instance with an id defines a region space of that id.
+  for (const { inst, path } of instances) if (registry.get(inst?.use)?.card.adapts?.subspace && typeof inst.id === 'string') add('space', inst.id, `${path}.id`);
   (doc.plot?.storyboard?.acts || []).forEach((a, i) => (a.beats || []).forEach((b, j) => add('beat', b.id, `plot.storyboard.acts[${i}].beats[${j}].id`)));
   const docDefines = [...BASE_DEFINES];
   for (const id of registry.ids()) for (const d of /** @type {RegisteredPrimitive} */ (registry.get(id)).card.defines || []) if (d.at && !docDefines.some(x => x.kind === d.kind && x.at === d.at)) docDefines.push(/** @type {{ kind: string, at: string }} */ (d));
@@ -80,6 +82,17 @@ function absolutePath(path, instancePath) {
  * @param {Set<string>} set @param {unknown} name @returns {boolean}
  */
 export function provided(set, name) { return typeof name === 'string' && (set.has(name) || (name.includes(':') && set.has(name.slice(0, name.indexOf(':')) + ':*'))); }
+
+/**
+ * Capabilities of the region a sub-space adapter instance defines: those of the space kind its `with` names
+ * (card.adapts.subspace = { kind: param, config: param }), configured by its `with[config]`.
+ * @param {RegistryLike} registry @param {{ kind: string, config?: string }} sub @param {Record<string, any>} config @returns {Set<string>}
+ */
+export function subspaceCaps(registry, sub, config) {
+  const kind = registry.get(config?.[sub.kind]); if (!kind) return new Set();
+  const kcfg = checkFields(kind.card.params || {}, (sub.config && config?.[sub.config]) || {}, '', [], null, true);
+  try { return new Set(kind.capabilities ? kind.capabilities(kcfg) : kind.card.provides.capabilities || []); } catch { return new Set(kind.card.provides.capabilities || []); }
+}
 
 /**
  * The document's containers, checked before anything reads them: spaces/systems/graphics (and zones,
@@ -189,6 +202,21 @@ export function preflight(input, registry, logic) {
     for (const v of p.card.provides.services || []) ctx.provides.services.add(v);
     used.add(p.id);
     normalized.push({ ...inst, with: config, _p: p, _path: path, _space: space, _paramErrors: paramErrors });
+  }
+  // Adapters (card.adapts) bound to a space they fit (adapts.from): a sub-space adapter's region gets its projected
+  // kind's capabilities; any other adapter adds what it projects (capabilities, services) to the space it is bound to.
+  for (const n of normalized) {
+    const a = n._p?.card.adapts; if (!a) continue;
+    const hostId = n._space ?? doc.spaces?.[0]?.id, host = (doc.spaces || []).find(s => s.id === hostId);
+    const hostCaps = spaceCaps.get(hostId) || new Set();
+    if (!(!a.from?.spaces || (host && a.from.spaces.includes(host.use))) || !(a.from?.capabilities || []).every(c => hostCaps.has(c))) {
+      errors.push({ code: 'adapter_from_mismatch', path: n._path, message: `adapter '${n.use}' does not project from space '${hostId}'`, hint: `adapts.from: ${JSON.stringify(a.from || {})}; '${hostId}' provides: ${[...hostCaps].join(', ') || 'nothing'}` });
+      continue;
+    }
+    if (a.subspace) { if (typeof n.id === 'string') spaceCaps.set(n.id, subspaceCaps(registry, a.subspace, n.with)); continue; }
+    for (const c of a.provides?.capabilities || []) hostCaps.add(c);
+    spaceCaps.set(hostId, hostCaps);
+    for (const sv of a.provides?.services || []) ctx.provides.services.add(sv);
   }
   for (const n of normalized) {
     const p = n._p; if (!p) continue;
