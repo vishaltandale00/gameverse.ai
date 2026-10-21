@@ -187,8 +187,10 @@ test('preflight rejects bad ai components and brain params with stable codes', (
   const bad = doc({ archetypes: [wolf([{ do: 'teleport_spin' }, { do: 'chase', when: { bogus: 1 }, rnage: 3 }, { do: 'target-tile' }, { do: 'sight-challenge' }], { perception: { sight: -1, smell: 3 } })] });
   bad.systems[0].with.tick = 0;
   bad.systems[0].with.modeSchedule = { table: [[7, 20]], tierBy: { var: 'level', above: [1, 4] } };
-  const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['ai_behavior_unknown', 'predicate_unknown', 'param_unknown', 'ai_target_rule', 'ai_challenge_then', 'param_range', 'ai_schedule_tiers']) assert.ok(codes.includes(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = errors.map(e => e.code);
+  for (const c of ['predicate_unknown', 'param_unknown', 'ai_target_rule', 'ai_challenge_then', 'param_range', 'ai_schedule_tiers']) assert.ok(codes.includes(c), c);
+  // A behavior's do is declared with its options (card.components.ai): an unknown kind is the kernel's param_option at it (was ai_behavior_unknown).
+  assert.ok(errors.some(e => e.code === 'param_option' && e.path.endsWith('components.ai.brain[0].do')), JSON.stringify(errors));
   const noBrain = doc({ archetypes: [{ id: 'x', components: { ai: { speed: 2 } } }] });
   assert.ok(preflight(noBrain, registry, logic).errors.some(e => e.code === 'param_missing'));
 });

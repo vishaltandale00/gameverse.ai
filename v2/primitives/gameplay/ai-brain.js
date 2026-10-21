@@ -11,6 +11,8 @@ import {
   centerOf, clearLine, deltaTo, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
 import { touchDefeats } from './combat-lib.js';
+import { checkParam, ENTITY_KINDS } from '../../kernel/params.js';
+import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
 const ID = 'gameplay.ai.brain';
@@ -33,16 +35,16 @@ const at = { type: 'json', effect: 'a position in the space (array) or node id' 
 const BEHAVIOR = {
   do: { type: 'string', options: KINDS, required: true, effect: 'behavior kind' },
   when: { type: 'predicate', effect: 'run this behavior while it holds (context.self = agent; near/zone default to who:self)' },
-  target: { type: 'string', effect: "'player', an entity/character id, or 'hostile' (nearest remembered hostile)" },
+  target: { type: 'string', selects: ENTITY_KINDS, effect: "'player', an entity/character id, or 'hostile' (nearest remembered hostile)" },
   range: n(undefined, { min: 0, effect: 'wander/patrol radius, flee distance, circle radius, sight-challenge reach' }),
   speed: n(undefined, { min: 0, effect: 'speed multiplier for this behavior (×ai.speed); absolute tiles/s for target-tile' }),
   run: { type: 'boolean', effect: 'use the run multiplier' },
   distance: n(undefined, { min: 0, effect: 'follow/chase stop distance' }),
   radius: n(undefined, { min: 0, effect: 'guard radius' }),
-  at, route: { type: 'list', of: { type: 'json' }, effect: 'patrol waypoints (positions or zone ids); a point the movement reports unreachable (move_failed) is passed over after the pause, to the next point' },
+  at, route: { type: 'list', min: 1, of: { type: 'json' }, effect: 'patrol waypoints (positions or zone ids); a point the movement reports unreachable (move_failed) is passed over after the pause, to the next point' },
   loop: { type: 'boolean', effect: 'patrol loops instead of ping-pong' },
   pause: { type: 'json', effect: 'seconds (or [min,max]) to wait at wander/patrol points' },
-  height: n(undefined, { effect: 'flyer hover height above the target' }),
+  height: n(undefined, { min: 0, effect: 'flyer hover height above the target' }),
   burst: n(undefined, { min: 0, effect: 'ambush speed multiplier for burstSec' }), burstSec: n(undefined, { min: 0 }),
   leash: n(undefined, { min: 0, effect: 'override the agent leash for this behavior' }),
   activity: { type: 'string', effect: 'work/sit activity label' },
@@ -54,7 +56,7 @@ const BEHAVIOR = {
   frightWhen: { type: 'predicate' }, homeWhen: { type: 'predicate' }, frightSpeed: n(undefined, { min: 0 }), homeSpeed: n(undefined, { min: 0 }),
   elroy: { type: 'list', of: { type: 'object', fields: { when: { type: 'predicate', required: true }, speed: n(1, { min: 0 }), chaseInScatter: { type: 'boolean', default: true } } } },
   slow: { type: 'list', of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, speed: n(0.5, { min: 0 }) } }, effect: 'speed multipliers inside zones (tunnels)' },
-  noUp: { type: 'list', of: { type: 'json' }, effect: 'cells where an upward turn is forbidden unless frightened' },
+  noUp: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, effect: 'cells where an upward turn is forbidden unless frightened' },
   // sight-challenge
   then: { type: 'effects', effect: 'effects run when a sight-challenge reaches its target (start_dialogue, start a battle...)' },
   once: { type: 'boolean' }, fov: n(undefined, { min: 0, max: 360 }), stop: n(undefined, { min: 0 }),
@@ -71,6 +73,15 @@ export const AI_COMPONENT = {
   crowd: { type: 'boolean', effect: 'pedestrian handled by gameplay.ai.crowd' },
   climbs: { type: 'boolean' }, medium: { type: 'string' }, burnsInSun: { type: 'boolean' },
 };
+
+/**
+ * A rule example's ai component: one behavior of kind `kind`, every other field of the strict form unset (null).
+ * @param {string} kind
+ */
+const aiExample = kind => ({ 'components.ai': { brain: [{ do: kind, target: null, range: null, speed: null, run: null, distance: null, radius: null, loop: null, height: null, burst: null, burstSec: null, leash: null, activity: null, personality: null, aim: null, ahead: null, partner: null, within: null, grid: null, frightSpeed: null, homeSpeed: null, once: null, fov: null, stop: null }], perception: null, speed: null, run: null, faction: null, leash: null, alert: null, pack: null, plane: null, fly: null, drive: null, crowd: null, climbs: null, medium: null, burnsInSun: null } });
+
+/** The archetype component this primitive owns. */
+const AI = { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' };
 
 const DEFAULT_FACTIONS = {
   player: { hostile: ['enemy', 'boss', 'hostile'] }, ally: { hostile: ['enemy', 'boss', 'hostile'] },
@@ -104,7 +115,9 @@ export default {
     // It acts for every non-player entity with an `ai` component: its behaviors write movement intents (chase, flee, patrol...).
     drives: { control: 'ai', components: ['ai'], movement: true, events: ['aggro', 'spotted'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { ai: { type: 'object', fields: AI_COMPONENT, effect: 'behavior list (first whose when holds runs), perception, speed' } },
+    components: { ai: AI },
+    // The archetype field the factions read (factionOf): an archetype's kind is its faction when its ai names none.
+    data: { 'content.archetypes': { type: 'list', of: { type: 'object', open: true, fields: { kind: { type: 'string', effect: "the archetype's kind (enemy, boss, npc...): its faction when its ai component names none" } } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "ai", "min": 1, "placed": 2, "why": "the AI runs on archetypes with an ai component (a behavior list), placed in the world", "example": {"id": "patroller", "kind": "enemy", "components": {"ai": {"brain": [{"do": "chase", "when": {"near": "player", "within": 6}}, {"do": "wander", "range": 6}], "speed": 2}}}},
@@ -134,6 +147,11 @@ export default {
     provides: { events: ['order_done', 'aggro', 'lost_target', 'alerted', 'leashed', 'ambush', 'spotted', 'challenge', 'challenge:*', 'ai_mode', 'ai_mode:*', 'arrived', 'arrived:*', 'move_failed'], vars: ['ai.mode'], services: ['ai.brain'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
+    rules: {
+      ai_target_rule: { fields: ['content.archetypes[].components.ai.brain[].personality', 'content.archetypes[].components.ai.brain[].aim'], message: 'a target-tile behavior has a personality or an aim', example: aiExample('target-tile') },
+      ai_challenge_then: { fields: ['content.archetypes[].components.ai.brain[].then'], message: 'a sight-challenge behavior has then effects (what reaching its target does)', example: aiExample('sight-challenge') },
+      ai_schedule_tiers: { fields: ['modeSchedule.table', 'modeSchedule.tierBy.above'], message: 'with tierBy, modeSchedule.table has one row per tier: tierBy.above thresholds + 1 rows' },
+    },
   },
   logic(logic) {
     const target = (rt, c, who) => rt.resolve(who ?? 'self', c);
@@ -143,12 +161,12 @@ export default {
       return Object.keys(a.mem || {}).some(id => p.aware === 'hostile' ? hostile(rt, e, rt.entity(id)) : p.aware === 'any' || id === p.aware || rt.entity(id)?.archetype === p.aware);
     } });
     // {behavior: kind, who?}: the agent's current behavior kind.
-    logic.predicate('behavior', { check: (p, path, errs) => { if (!KINDS.includes(p.behavior)) errs.push({ code: 'ai_behavior_unknown', path, message: `unknown behavior '${p.behavior}'`, hint: KINDS.join(', ') }); },
+    logic.predicate('behavior', { codes: [{ code: 'ai_behavior_unknown', fields: ['behavior'], message: `behavior is one of ${KINDS.join('|')}`, example: { behavior: 'dance' } }], check: (p, path, errs) => { if (!KINDS.includes(p.behavior)) errs.push({ code: 'ai_behavior_unknown', path, message: `unknown behavior '${p.behavior}'`, hint: KINDS.join(', ') }); },
       test: (p, rt, c) => { const e = target(rt, c, p.who); return agentOf(rt, e?.id)?.kind === p.behavior; } });
-    logic.effect('set_ai', { check: (e, path, errs) => { if (e.mode != null && !KINDS.includes(e.mode)) errs.push({ code: 'ai_behavior_unknown', path: `${path}.mode`, message: `unknown behavior '${e.mode}'` }); },
+    logic.effect('set_ai', { codes: [{ code: 'ai_behavior_unknown', fields: ['mode'], message: `mode is one of ${KINDS.join('|')} (or null to clear)`, example: { do: 'set_ai', who: 'player', mode: 'dance' } }], check: (e, path, errs) => { if (e.mode != null && !KINDS.includes(e.mode)) errs.push({ code: 'ai_behavior_unknown', path: `${path}.mode`, message: `unknown behavior '${e.mode}'` }); },
       run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (!ent) return; const a = ensureAgent(rt, ent); a.mode = e.mode ?? null; a.next = 0; } });
     const orderOf = o => (typeof o === 'string' ? { do: o } : o); // `order: 'follow'` is shorthand for { do: 'follow' }
-    logic.effect('command', { check: (e, path, errs) => { if (!orderOf(e.order) || !KINDS.includes(orderOf(e.order).do)) errs.push({ code: 'ai_order_invalid', path: `${path}.order`, message: 'order needs {do: <behavior kind>, ...}', hint: KINDS.join(', ') }); },
+    logic.effect('command', { codes: [{ code: 'ai_order_invalid', fields: ['order'], message: `order is a behavior kind (${KINDS.join('|')}) or { do: <kind>, ...its fields }`, example: { do: 'command', who: 'player', order: 'dance' } }], check: (e, path, errs) => { if (!orderOf(e.order) || !KINDS.includes(orderOf(e.order).do)) errs.push({ code: 'ai_order_invalid', path: `${path}.order`, message: 'order needs {do: <behavior kind>, ...}', hint: KINDS.join(', ') }); },
       run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (!ent) return; const a = ensureAgent(rt, ent); const order = orderOf(e.order); a.order = order.do === 'clear' ? null : { ...order, until: e.sec ? rt.state.time + e.sec : null }; a.next = 0; } });
     logic.effect('make_noise', { run: (e, rt, c) => { const src = rt.resolve(e.who, c); hear(rt, { at: e.at ?? src?.at, space: e.space ?? src?.space, who: src?.id ?? null, radius: e.radius ?? 10 }); } });
     logic.effect('set_hostile', { run: (e, rt) => { (st(rt).overrides ??= {})[`${e.faction}>${e.toward}`] = e.on ?? true; } });
@@ -160,8 +178,8 @@ export default {
       const path = `content.archetypes[${i}].components.ai`;
       validateAi(ai, path, errors, ctx);
     });
-    const ms = config.modeSchedule;
-    if (ms?.tierBy && ms.table.length !== (ms.tierBy.above?.length ?? 0) + 1) errors.push({ code: 'ai_schedule_tiers', path: 'modeSchedule.table', message: `table needs ${ms.tierBy.above.length + 1} rows (one per tier)` });
+    const ms = config.modeSchedule, above = Array.isArray(ms?.tierBy?.above) ? ms.tierBy.above.length : 0;
+    if (ms?.tierBy && Array.isArray(ms.table) && ms.table.length !== above + 1) errors.push({ code: 'ai_schedule_tiers', path: 'modeSchedule.table', message: `table needs ${above + 1} rows (one per tier)` });
     return errors;
   },
   install(rt, config, instance) {
@@ -213,28 +231,15 @@ export default {
 };
 
 function validateAi(ai, path, errors, ctx) {
-  if (!ai || typeof ai !== 'object' || Array.isArray(ai)) { errors.push({ code: 'param_type', path, message: 'ai component must be an object' }); return; }
-  // Field checks (types, ranges, behavior kinds) through the kernel's param checker; open for other primitives' flags.
-  for (const [k, schema] of Object.entries(AI_COMPONENT)) if (schema.required && ai[k] === undefined) errors.push({ code: 'param_missing', path: `${path}.${k}`, message: `required ${schema.type}` });
-  (Array.isArray(ai.brain) ? ai.brain : []).forEach((b, j) => {
+  // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
+  // (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
+  if (!DECLARATIONS_ENFORCED) checkParam(AI, ai, path, errors, ctx);
+  (Array.isArray(ai?.brain) ? ai.brain : []).forEach((b, j) => {
+    if (!b || typeof b !== 'object') return;
     const bp = `${path}.brain[${j}]`;
-    if (!b || typeof b !== 'object') { errors.push({ code: 'param_type', path: bp, message: 'behavior must be an object' }); return; }
-    if (!KINDS.includes(b.do)) errors.push({ code: 'ai_behavior_unknown', path: `${bp}.do`, message: `unknown behavior '${b.do}'`, hint: KINDS.join(', ') });
-    for (const k of Object.keys(b)) if (!(k in BEHAVIOR)) errors.push({ code: 'param_unknown', path: `${bp}.${k}`, message: `unknown behavior parameter '${k}'`, hint: `known: ${Object.keys(BEHAVIOR).join(', ')}` });
-    for (const k of ['when', 'frightWhen', 'homeWhen']) if (b[k] !== undefined) ctx.checkPredicate(b[k], `${bp}.${k}`, errors);
-    (b.elroy || []).forEach((x, q) => x?.when && ctx.checkPredicate(x.when, `${bp}.elroy[${q}].when`, errors));
-    (b.then || []).forEach((x, q) => ctx.checkEffect(x, `${bp}.then[${q}]`, errors));
-    for (const k of ['range', 'speed', 'distance', 'radius', 'height', 'burst', 'leash', 'within', 'stop']) if (b[k] !== undefined && !(Number.isFinite(b[k]) && b[k] >= 0)) errors.push({ code: 'param_range', path: `${bp}.${k}`, message: `${k} must be a number ≥ 0` });
     if (b.do === 'target-tile' && !b.personality && !b.aim) errors.push({ code: 'ai_target_rule', path: bp, message: 'target-tile needs a personality or an aim', hint: Object.keys(PERSONALITIES).join(', ') });
     if (b.do === 'sight-challenge' && !Array.isArray(b.then)) errors.push({ code: 'ai_challenge_then', path: `${bp}.then`, message: 'sight-challenge needs `then` effects' });
-    if (b.do === 'patrol' && b.route !== undefined && (!Array.isArray(b.route) || !b.route.length)) errors.push({ code: 'param_range', path: `${bp}.route`, message: 'route needs at least one point' });
   });
-  const p = ai.perception;
-  if (p !== undefined) for (const [k, v] of Object.entries(p)) {
-    if (!(k in PERCEPTION)) errors.push({ code: 'param_unknown', path: `${path}.perception.${k}`, message: `unknown perception field '${k}'` });
-    else if (!(Number.isFinite(v) && v >= 0) || (k === 'fov' && v > 360)) errors.push({ code: 'param_range', path: `${path}.perception.${k}`, message: `${k} out of range` });
-  }
-  for (const k of ['speed', 'leash', 'alert']) if (ai[k] !== undefined && !(Number.isFinite(ai[k]) && ai[k] >= 0)) errors.push({ code: 'param_range', path: `${path}.${k}`, message: `${k} must be a number ≥ 0` });
 }
 
 // ---------- agent state ----------
