@@ -36,7 +36,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'surface', 'gravity', 'dynamics', 'bounds', 'wrap'],
       capabilityMethods: BOUNDS_CAPS,
-      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'out_of_bounds', 'landed', 'zone_added'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'cell_changed', 'out_of_bounds', 'landed', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     reads: ['content.blocks'],
     at: 'At = [x, y] in tiles, y up; the center of the body box (components.body.size, default [1,1]). Cell [i,j] covers [i,i+1)×[j,j+1).',

@@ -27,7 +27,7 @@ export default {
     // fast_travel exists only when the instance turns it on (fastTravelBetween).
     loop: { verbs: ['fast_travel'], verbsOf: config => (config.fastTravelBetween ? ['fast_travel'] : []), progress: ['checkpoint_set'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { fast_travel: { type: 'choice', of: 'an active checkpoint' } },
+    actionSpace: { fast_travel: { type: 'choice', of: 'an active checkpoint', from: 'options', emits: ['fast_traveled'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": true}}},
@@ -41,7 +41,9 @@ export default {
       touch: { type: 'boolean', default: false, effect: 'checkpoints activate when the player overlaps them (components.checkpoint.touch overrides)' },
       save: { type: 'boolean', default: true, effect: 'activating also runs save_game when engine.save registers it' },
     },
-    provides: { events: ['checkpoint_set', 'checkpoint_set:*', 'respawned', 'respawn_enemies', 'fast_traveled'], actions: ['fast_travel'], services: ['checkpoint'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['fast_travel_denied'],
+    provides: { events: ['fast_travel_denied', 'checkpoint_set', 'checkpoint_set:*', 'respawned', 'respawn_enemies', 'fast_traveled'], actions: ['fast_travel'], services: ['checkpoint'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
   },

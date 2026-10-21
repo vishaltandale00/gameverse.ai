@@ -44,7 +44,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'boxes', 'ledges', 'scroll', 'wrap'],
       capabilityMethods: { boxes: ['boxesOf', 'setPose', 'setBoxes', 'boxHits'], ledges: ['ledgeNear'], scroll: ['scroll', 'setScroll'], ...BOUNDS_CAPS },
-      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'out_of_bounds', 'out_of_bounds:*', 'blasted', 'scrolled_out', 'landed', 'culled', 'zone_added'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'out_of_bounds', 'out_of_bounds:*', 'blasted', 'scrolled_out', 'landed', 'culled', 'zone_added', 'zone_removed', 'zone_moved'],
       // Its structures can be written in its own params (walls, stages, barriers): a document with solids or platforms has them.
       contentParams: { structures: ['solids', 'platforms'] },
     },

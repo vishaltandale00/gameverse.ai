@@ -23,7 +23,7 @@ export default {
   card: {
     loop: { verbs: ['use_item'], progress: ['used_item'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { use_item: { type: 'choice', of: 'a usable item in the bag' } },
+    actionSpace: { use_item: { type: 'choice', of: 'a usable item in the bag', from: 'options', emits: ['used_item'] } },
     intent: 'Consumables and usable items (food, potions, scrolls, tools): run the item’s use effects with per-item or per-group cooldowns, an optional usability predicate and consumption; merged crafted items apply their ingredient effects.',
     views: ['any'],
     params: {
@@ -31,6 +31,8 @@ export default {
       globalCooldown: { type: 'number', default: 0, min: 0, max: 60, unit: 's', effect: 'minimum gap between any two uses by the same entity' },
       options: { type: 'integer', default: 8, min: 0, max: 64, effect: 'usable items offered to solvers' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['use_denied'],
     provides: { events: ['used_item', 'used_item:*', 'use_denied'], actions: ['use_item'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],

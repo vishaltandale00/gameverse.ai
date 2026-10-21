@@ -45,7 +45,7 @@ export default {
   id: ID,
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { turn_act: { type: 'choice', of: 'a unit, its action and the action target', pick: 'unit' }, turn_move: { type: 'choice', of: 'a unit and a cell its move reaches', pick: 'unit' }, select_unit: { type: 'choice', of: 'a unit of the side whose turn it is', selects: 'unit' } },
+    actionSpace: { turn_act: { type: 'choice', of: 'a unit, its action and the action target', pick: 'unit', from: 'options', emits: ['turn_action', 'overwatch_set', 'intent_submitted'] }, turn_move: { type: 'choice', of: 'a unit and a cell its move reaches', pick: 'unit', from: 'options', emits: ['unit_moved', 'intent_submitted'] }, select_unit: { type: 'choice', of: 'a unit of the side whose turn it is', selects: 'unit', emits: ['unit_selected'] } },
     loop: { verbs: ['turn_act', 'turn_move', 'end_turn', 'select_unit'], progress: ['unit_moved', 'turn_action', 'attack_hit', 'unit_fallen'],
       // The participants an event names (role -> data field): a hit names the acting unit and the unit it hit.
       involves: { attack_hit: { attacker: 'who', defender: 'target' } },
@@ -94,6 +94,8 @@ export default {
       onDefeat: { type: 'effects', default: [], effect: 'when the last player-controlled side is defeated' },
       onRoundLimit: { type: 'effects', default: [], effect: 'when maxRounds is reached' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['turn_invalid'],
     provides: {
       events: ['turns_start', 'turns_over', 'unit_selected', 'round_start', 'round_end', 'turn_start', 'turn_start:*', 'turn_end', 'phase_start', 'phase_start:*', 'unit_moved', 'turn_action', 'turn_action:*', 'attack_hit', 'attack_miss', 'attack_crit', 'overwatch_set', 'overwatch_shot', 'unit_downed', 'unit_revived', 'unit_fallen', 'unit_fallen:*', 'side_defeated', 'side_defeated:*', 'turn_invalid', 'intent_submitted'],
       vars: ['turns.round', 'turns.ap', 'turns.active'],

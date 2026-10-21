@@ -14,7 +14,7 @@
 import {
   clamp, approach, round6, mv, bodyOf, state, spaceApi, frameOf, intent, motor, claim, ownedBy, registerBase, isBaseFor,
   driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset, hasAbility, wallBeside,
-  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities,
+  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities, travelZones,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.platformer';
@@ -95,7 +95,7 @@ export default {
     loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'], // The verbs one instance offers (runtime-lib-controls.js instanceVerbs): an auto-runner is not steered; dash, glide,
       // crouch and grab exist when their ability is on or the document can grant it (grantableAbilities).
       verbsOf: (config, doc) => { const c = platformerConfig(config), has = a => c.abilities[a] || grantableAbilities(doc).has(a);
-        return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : true)); },
+        return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : v === 'travel' ? travelZones(doc) : true)); },
       progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
@@ -103,7 +103,7 @@ export default {
     body: { size: [0.8, 1.4, 0.8] },
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],
-    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach', from: 'options', emits: ['arrived', 'travelled'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
     params: {
       preset: { type: 'string', options: Object.keys(PLATFORMER_PRESETS), default: 'custom', effect: 'base tuning; explicit params override it' },
       feel: { type: 'string', options: Object.keys(FEEL), default: 'snappy', effect: 'runner feel: scales gravity and jump (floaty 0.82/1.04, heavy 1.18/0.97)' },
@@ -133,7 +133,9 @@ export default {
       ledgeGrab: { type: 'object', effect: 'hang from ledges while falling past them, then climb up or drop', fields: { enabled: { type: 'boolean' }, climbSec: num(0, 2, 's'), hangSec: num(0.2, 60, 's'), dropCooldown: num(0, 5, 's') } },
       ...COMMON_PARAMS, plane: { ...COMMON_PARAMS.plane, default: 'x' }, ...MACRO_PARAMS,
     },
-    provides: { events: ['jumped', 'double_jumped', 'flapped', 'dashed', 'wall_jumped', 'wall_slide', 'landed', 'bounced', 'ledge_grab', 'ledge_climb', 'glide_start', 'glide_end', 'submerged', 'surfaced', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled'], actions: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['move_failed'],
+    provides: { events: ['evaded', 'jumped', 'double_jumped', 'flapped', 'dashed', 'wall_jumped', 'wall_slide', 'landed', 'bounced', 'ledge_grab', 'ledge_climb', 'glide_start', 'glide_end', 'submerged', 'surfaced', 'arrived', 'arrived:*', 'move_failed', 'move_mode', 'travelled'], actions: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'] },
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['overlap', 'raycast', 'editCells', 'pathfind'], services: ['character'] },
     envelope,
@@ -190,6 +192,8 @@ export function stepPlatformer(rt, e, c) {
     const reach = Math.max(1.2, Math.max(c.run, c.autoRun) * (c.jump / Math.max(1, (c.gravity > 0 ? c.gravity : fr.gmag || 60) * c.gravityScale)) * 1.1);
     if (Math.abs(it.wp[X] - e.at[X]) > reach) jumpP = jumpH = false;
   }
+  // A path waypoint above the feet with a wall ahead: walking on only presses into the wall, so jump it.
+  if (it.source === 'moveTo' && it.wp && b.grounded && !jumpP && x !== 0 && (it.wp[Y] - e.at[Y]) * up > 0.6 && wallBeside(rt, api, e, X, Math.sign(x))) jumpP = jumpH = true;
   // Path jumps are held through the rise unless that would overshoot the waypoint by a body height.
   if (it.source === 'moveTo' && it.wp && !b.grounded && b.vel[Y] * up > 0 && it.wp[Y] * up + 1 > e.at[Y] * up) jumpH = true;
   const dashP = Boolean(ctl?.pressed('dash')), grab = Boolean(ctl?.down('grab') || ctl?.down('climb'));

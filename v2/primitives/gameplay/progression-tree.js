@@ -12,7 +12,7 @@ export default {
   card: {
     loop: { verbs: ['unlock_perk'], progress: ['perk_unlocked'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { unlock_perk: { type: 'choice', of: 'an unlockable perk' } },
+    actionSpace: { unlock_perk: { type: 'choice', of: 'an unlockable perk', from: 'options', emits: ['perk_unlocked'] } },
     intent: 'Perk/skill tree: nodes with point costs, prerequisites, ranks and var modifiers (stat.*, hp.max, res.*.max); use-based nodes unlock from usage events; unlock_perk/reset_perks effects, `perk` predicate and an unlock verb.',
     views: ['any'],
     params: {
@@ -30,7 +30,9 @@ export default {
       pointsVar: { type: 'string', default: 'points', effect: 'var that holds spendable points' },
       respec: { type: 'boolean', default: true, effect: 'reset_perks refunds every point' },
     },
-    provides: { events: ['perk_unlocked', 'perk_unlocked:*', 'perks_reset'], vars: ['perk.*'], actions: ['unlock_perk'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['perk_blocked'],
+    provides: { events: ['perk_blocked', 'perk_unlocked', 'perk_unlocked:*', 'perks_reset'], vars: ['perk.*'], actions: ['unlock_perk'] },
     defines: [{ kind: 'perk', in: 'nodes' }],
     reads: [],
   },

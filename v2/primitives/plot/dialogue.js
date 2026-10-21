@@ -31,7 +31,7 @@ export default {
   card: {
     loop: { verbs: ['choose'], progress: ['choice_made', 'dialogue_end'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { choose: { type: 'choice', of: 'a dialogue choice' } },
+    actionSpace: { choose: { type: 'choice', of: 'a dialogue choice', from: 'options', emits: ['choice_made', 'dialogue_line', 'dialogue_end'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.dialogue", "min": 2, "why": "conversations are node graphs keyed by dialogue id; characters point at them with dialogue: [{id}]", "example": {"keeper_intro": {"speaker": "keeper", "start": "n1", "nodes": {"n1": {"who": "keeper", "say": "The lamp went dark at midnight.", "choices": [{"text": "Who was here?", "next": "n2"}, {"text": "Goodbye.", "next": "n3"}]}, "n2": {"who": "keeper", "say": "Only the cook, and she left early.", "end": true}, "n3": {"say": "Mind the stairs.", "end": true}}}}},
@@ -45,7 +45,7 @@ export default {
       autoAdvance: { type: 'boolean', default: false, effect: 'lines without choices advance by themselves once read (cinematic/headless)' },
       queue: { type: 'boolean', default: true, effect: 'start_dialogue while another dialogue is open waits for it to end (false: replaces it)' },
     },
-    provides: { events: ['dialogue_start', 'dialogue_end', 'dialogue_line', 'choice_made', 'skill_check', 'said:*'], services: ['dialogue'], actions: ['choose'] },
+    provides: { events: ['dialogue_error', 'dialogue_start', 'dialogue_end', 'dialogue_line', 'choice_made', 'skill_check', 'said', 'said:*'], services: ['dialogue'], actions: ['choose'] },
     reads: ['plot.dialogue'],
   },
   logic(logic) {
