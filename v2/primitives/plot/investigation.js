@@ -22,6 +22,11 @@ function find(rt, id) {
 export default {
   id: ID,
   card: {
+    // Section shapes this primitive reads (the planner's strict content form uses them).
+    data: {
+      'plot.clues': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, text: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } }, when: { type: 'predicate', effect: 'found automatically when this holds; else given by add_clue effects' } } } },
+      'plot.deductions': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, title: { type: 'string', required: true }, clues: { type: 'list', min: 1, required: true, of: { type: 'string' }, effect: 'the plot.clues ids that prove it' }, conclusion: { type: 'string' }, wrong: { type: 'boolean', effect: 'a false theory' }, auto: { type: 'boolean' }, when: { type: 'predicate' }, do: { type: 'effects', effect: 'e.g. end the game when the culprit is named' } } } },
+    },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.clues", "min": 4, "why": "a mystery is solved from clues the player finds"},

@@ -225,7 +225,7 @@ export function outlineForm({ registry, skeleton, selection = null }) {
       ? `${sec} as JSON text. REQUIRED by ${c.uses.join(', ')}: at least ${c.min || 1} entries in the shape the system prompt documents for ${sec}${c.why ? ` (${c.why})` : ''}; never "[]"`
       : `${sec} as JSON text (the list or id-keyed object the primitives read; "[]" if this game needs none)`);
   }
-  props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
+  if (skeleton.plot?.storyboard) props.acts = arr(obj({ id: str(), title: str(), beats: arr(obj({ id: str(), title: str(), when_json: nul(str(`trigger predicate (${JSON_HINT}), e.g. {"zone":"hall"}`)), after: arr(str('beat id')), optional: { type: 'boolean' }, do_json: nul(str(`effects list (${JSON_HINT}), e.g. [{"do":"say","character":"guide","text":"..."}]`)) })) }), 'the story: acts of beats, completable, the last one ending the game');
   props.endings = arr(obj({ id: str(), title: str(), text: str(), outcome: { type: 'string', enum: ['won', 'lost', 'neutral'] } }));
   props.player = obj({ archetype: str('the player archetype id (an archetypes entry of kind player)'), zone: str('start zone id') });
 

@@ -377,7 +377,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
         if (!score) break;
       }
       problems = g.viable ? [...staticNew, ...unfinished, ...content] : [...(g.problems || []), ...staticNew];
-    } else problems = repaired.errors;
+    } else problems = [...repaired.errors, ...populateProblems(repaired.doc, registry).slice(0, 8)];
     lastProblems = problems;
     if (round === maxRounds) break;
     user = `${base}
