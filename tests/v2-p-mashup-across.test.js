@@ -14,7 +14,7 @@ import { preset } from '../v2/planner/presets.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
-import { fakeWriter } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 const live = JSON.parse(readFileSync(new URL('./fixtures/v2-live/chess-pokemon-failed.json', import.meta.url), 'utf8'));
@@ -45,8 +45,9 @@ test('selection re-asks only core.mashup until the model relates the concepts ac
   let asked = 0;
   const writer = fakeWriter([req => {
     const name = String(req.schema?.name || '');
-    if (name === 'mechanic_map') return JSON.stringify({ mappings: live.selection.mechanics.map(m => ({ mechanic: m.id, primitives: m.primitives, covered: true, why: '' })) });
-    if (name === 'mapping_check') return JSON.stringify({ checks: [] });
+    // The iterative builder asks per mechanic: each picks the first primitive the live model mapped it to that is on offer.
+    const built = buildAnswer(req, { picks: Object.fromEntries(live.selection.mechanics.map(m => [m.id, m.primitives])) });
+    if (built) return built;
     if (name === 'decomposition_fields') return JSON.stringify({ field_1: answers[Math.min(asked++, answers.length - 1)] });
     throw Error(`unexpected form ${name}`);
   }]);

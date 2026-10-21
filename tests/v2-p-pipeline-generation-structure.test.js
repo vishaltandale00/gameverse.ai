@@ -48,7 +48,7 @@ test('the play spec has no mode: interaction, opponent, win, lose, theme, narrat
   const s = decompositionSchema(registry);
   assert.ok(s.required.includes('core'));
   assert.equal(s.properties.core.properties.mode, undefined, 'no closed list of modes');
-  assert.deepEqual(s.properties.core.required.sort(), ['interaction', 'lose', 'mashup', 'narrative', 'opponent', 'theme', 'win']);
+  assert.deepEqual(s.properties.core.required.sort(), ['interaction', 'loop', 'lose', 'mashup', 'narrative', 'opponent', 'theme', 'win']);
   assert.equal(CHESS.core.interaction, 'pieces-turns');
   assert.equal(CHESS.movement, 'none', 'no avatar, no avatar movement');
   assert.deepEqual(CHESS.core.mashup, [{ relation: 'nested', mechanics: ['m1'], why: 'a capture is decided by a creature battle' }]);

@@ -28,7 +28,9 @@ const endingRunner = PRIMITIVES.find(p => p.id === 'plot.ending');
 
 /** The juggling show is played on a menu (views ui): the space that shows it. */
 const uiSpace = PRIMITIVES.find(p => p.id === 'engine.space.none');
-const catalogue = () => testCatalogue([brokenJuggler, clubs, pickyLoop, endingRunner, uiSpace]);
+// engine.input.actions is the input primitive the real catalogue declares for menu interaction (card.interactions).
+const inputActions = PRIMITIVES.find(p => p.id === 'engine.input.actions');
+const catalogue = () => testCatalogue([brokenJuggler, clubs, pickyLoop, endingRunner, uiSpace, inputActions]);
 const memoryCtx = () => {
   const versions = [], stages = [], checkpoints = {};
   return { versions, stages, checkpoints, ctx: {
@@ -45,7 +47,7 @@ function scripted({ title = 'Torch Show' } = {}) {
     if (name === 'decomposition') return JSON.stringify({ title: 'The Torch Show', premise: 'Juggle for a crowd. Do not drop anything.', tone: 'bright', references: [], views: ['ui'], acts: 1, zones: 2,
       mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', from: '', importance: 'core' }, { id: 'titles', verb: 'insist', description: 'insists that the title starts with The', from: '', importance: 'core' }],
       spaces: [{ role: 'stage', kind: 'none', description: 'a stage' }], movement: 'none',
-      core: { interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } });
+      core: { loop: 'juggle', interaction: 'menu', opponent: 'none', win: 'keep the crowd cheering', lose: '', theme: 'circus', narrative: false, mashup: [] } });
     const built = buildAnswer(req, { picks: { juggle: ['gameplay.test.broken'], titles: ['gameplay.test.picky'] } });
     if (built) return built;
     // A field-level re-ask: the title field gets fixed.
@@ -85,7 +87,7 @@ test('a failing draft is re-planned and repaired, never substituted: the crashin
 });
 
 test('when the limits run out the build fails with every attempt and what is still missing (no degraded game)', async () => {
-  const cat = testCatalogue([brokenJuggler, pickyLoop, endingRunner, uiSpace]); // no other juggler in the catalogue
+  const cat = testCatalogue([brokenJuggler, pickyLoop, endingRunner, uiSpace, inputActions]); // no other juggler in the catalogue
   const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted() }, config: { replanAttempts: 2, maxDetailTasks: 0 } });
   const { ctx, versions } = memoryCtx();
   await assert.rejects(pipeline({ gameId: 'g', prompt: 'juggle flaming torches', kind: 'create', seed: 3 }, ctx), e => {

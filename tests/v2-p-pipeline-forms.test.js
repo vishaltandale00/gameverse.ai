@@ -19,7 +19,7 @@ const MELEE = 'gameplay__combat__melee';
 async function setup() {
   const d = normalize({ title: 'Ironhold', premise: 'Fight your way out of a dungeon with a sword.', tone: 'grim', references: [], views: ['td'], movement: 'ground', acts: 1, zones: 4,
     mechanics: [{ id: 'fight', verb: 'fight', description: 'fight monsters with a sword', from: '', importance: 'core' }, { id: 'loot', verb: 'collect', description: 'collect keys and potions', from: '', importance: 'supporting' }],
-    spaces: [{ role: 'dungeon', kind: 'tiles-topdown', description: '' }], core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: 'grim', narrative: true, mashup: [] } }, 'dungeon', registry);
+    spaces: [{ role: 'dungeon', kind: 'tiles-topdown', description: '' }], core: { loop: 'fight', interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: 'grim', narrative: true, mashup: [] } }, 'dungeon', registry);
   // A fixed collection (selection is not the point here): the melee loop, what it requires, and the rest.
   const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: SYSTEMS, mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }, { id: 'loot', description: 'collect', importance: 'supporting', primitives: ['gameplay.inventory'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
