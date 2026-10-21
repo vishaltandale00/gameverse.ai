@@ -117,3 +117,23 @@ test('chess with creatures: a model wrong once on species types is corrected by 
   const types = new Set(idsAt(r.doc, 'content.types'));
   assert.ok(r.doc.content.species.every(s => s.types.length && s.types.every(t => types.has(t))), JSON.stringify(r.doc.content.species.map(s => s.types)));
 });
+
+test('the story form (wave 2) offers the cast wave 1 wrote as enums: beats, dialogue and quests name real ids', async () => {
+  const decomposition = normalize({ title: 'Harbor tales', premise: 'talk to villagers and take their quests', mechanics: [{ id: 'talk', verb: 'talk', description: 'talk to villagers with dialogue choices', importance: 'core' }, { id: 'quests', verb: 'quest', description: 'take quests from villagers and finish them', importance: 'core' }], views: ['td'], acts: 1, zones: 3,
+    core: { interaction: 'avatar-realtime', opponent: 'none', win: 'finish the quests', lose: '', theme: '', narrative: true, mashup: [] } }, 'harbor tales', registry);
+  const selection = await selectPrimitives({ decomposition, registry });
+  const scaffold = /** @type {any} */ (proceduralOutline({ decomposition, selection, registry, logic, seed: 3 }).doc);
+  const form = outlineForm({ registry, skeleton: scaffold, selection: { ...selection, systems: [...new Set([...selection.systems, 'plot.dialogue', 'plot.quest'])] } });
+  const story = form.storyGroup({ characters: ['ana', 'bo'], archetypes: ['gull'], items: ['net'] });
+  assert.ok(story && story.keys.includes('dialogue') && story.keys.includes('quests'), JSON.stringify(story?.keys));
+  const props = story.schema.schema.properties;
+  const any = s => s.enum || (s.anyOf || []).find(x => x.enum)?.enum;
+  assert.deepEqual(any(props.dialogue.items.properties.speaker), ['ana', 'bo']);
+  assert.deepEqual(any(props.dialogue.items.properties.nodes.items.properties.who), ['ana', 'bo']);
+  assert.deepEqual(any(props.quests.items.properties.giver), ['ana', 'bo']);
+  const objective = props.quests.items.properties.objectives.items.properties;
+  assert.deepEqual(any(objective.item), ['net']);
+  assert.deepEqual(any(objective.archetype), ['gull']);
+  assert.ok(any(objective.zone)?.length, 'zones are the scaffold\'s');
+  assert.ok(props.acts, 'the story itself is asked when the collection reads plot.storyboard');
+});
