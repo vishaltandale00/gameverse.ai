@@ -3,8 +3,9 @@
 // test primitives and the real catalogue; no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSelection, worklist, loopMechanicOf, spaceCandidates, dependencyLayers, MAX_CANDIDATES } from '../v2/planner/build.js';
-import { selectPrimitives, servesInteraction } from '../v2/planner/select.js';
+import { buildSelection, worklist, loopMechanicOf, spaceCandidates, dependencyLayers, MAX_LIST } from '../v2/planner/build.js';
+import { selectPrimitives } from '../v2/planner/select.js';
+import { servesContext } from '../v2/planner/retrieval.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
@@ -65,12 +66,12 @@ test('(a) the collection grows one mechanic at a time, with a composition check 
   for (const s of b.steps.filter(x => x.primitive)) assert.ok(s.checks && ['compatible', 'undeclared', 'compatible-via-adapter'].includes(s.checks.compose), JSON.stringify(s.checks));
   assert.deepEqual(b.steps[2].checks.closure, ['gameplay.inventory']);
   assert.deepEqual(b.steps[0].checks.closure, []);
-  // One small strict question per mechanic (plus the space and the one re-ask), never the catalogue.
-  assert.deepEqual(w.calls.map(c => c.schema.name), ['pick_space', 'pick_primitive', 'pick_primitive', 'pick_primitive', 'pick_primitive', 'pick_primitive']);
+  // One small strict question per mechanic (plus the space); the glide that needs lift nobody projects is never offered.
+  assert.deepEqual(w.calls.map(c => c.schema.name), ['pick_space', 'pick_primitive', 'pick_primitive', 'pick_primitive', 'pick_primitive']);
   assert.equal(b.calls, w.calls.length);
   for (const c of w.calls) {
     const field = c.schema.schema.properties.space || c.schema.schema.properties.pick;
-    assert.ok(field.enum.length <= MAX_CANDIDATES + 1, `${field.enum.length} options`);
+    assert.ok(field.enum.length <= MAX_LIST + 1, `${field.enum.length} options`);
     assert.equal(c.schema.schema.additionalProperties, false);
     assert.ok(c.user.length < 2500, `${c.user.length} chars`);
   }
@@ -81,19 +82,19 @@ test('(a) the collection grows one mechanic at a time, with a composition check 
   assert.equal(b.mapping.warp.primitives.length, 0);
 });
 
-test('(b) a pick that fails its checks is dropped and the next candidate taken, without restarting', async () => {
+test('(b) an option that needs a capability the space lacks is never offered when no adapter projects it', async () => {
   const { registry } = catalogue();
   const w = writer();
   const b = await buildSelection({ decomposition: spec(), registry, writer: w });
   const glideStep = b.steps.find(s => s.mechanic === 'glide');
-  assert.deepEqual(glideStep.asks.map(a => [a.pick, a.ok]), [['gameplay.test.glide', false], ['gameplay.test.float', true]]);
-  assert.match(glideStep.asks[0].problem, /needs an adapter no registered primitive provides/);
-  // The re-ask names the exact problem and no longer offers the dropped pick; the earlier picks stand.
-  const reask = w.calls.filter(c => c.schema.name === 'pick_primitive' && /\nMechanic glide /.test(c.user))[1];
-  assert.match(reask.user, /Your pick gameplay\.test\.glide was dropped: needs an adapter/);
-  assert.ok(!reask.schema.schema.properties.pick.enum.includes('gameplay.test.glide'));
-  assert.match(reask.user, /Collection so far: gameplay\.test\.hop\n/);
-  assert.equal(w.calls.filter(c => /\nMechanic hop /.test(c.user)).length, 1, 'the earlier mechanic is not asked again');
+  // The lift adapter fits the field but its adapt() proposes nothing: glide is not valid, so it is not an option.
+  assert.ok(!glideStep.candidates.some(c => c.id === 'gameplay.test.glide'));
+  assert.match(glideStep.rejected.find(r => r.id === 'gameplay.test.glide').why, /needs an adapter no registered primitive provides|lift/);
+  assert.deepEqual(glideStep.asks.map(a => [a.pick, a.ok]), [['gameplay.test.float', true]]);
+  const asked = w.calls.filter(c => c.schema.name === 'pick_primitive' && /\nMechanic glide /.test(c.user));
+  assert.equal(asked.length, 1);
+  assert.ok(!asked[0].schema.schema.properties.pick.enum.includes('gameplay.test.glide'));
+  assert.match(asked[0].user, /Collection so far: gameplay\.test\.hop\n/);
   assert.deepEqual(b.mapping.glide.primitives, ['gameplay.test.float']);
   assert.ok(!b.systems.includes('gameplay.test.glide'));
 });
@@ -130,7 +131,7 @@ test('selectPrimitives with a model builds iteratively, keeps the space it built
   assert.deepEqual(sel.mechanics.find(m => m.id === 'glide').primitives, ['gameplay.test.float']);
   for (const id of ['gameplay.test.hop', 'gameplay.test.float', 'gameplay.test.score', 'gameplay.inventory']) assert.ok(sel.systems.includes(id), id);
   assert.ok(sel.gaps.some(g => g.mechanic === 'warp'));
-  assert.equal(sel.build.calls, 6);
+  assert.equal(sel.build.calls, 5);
 });
 
 // (e) The same machinery on unrelated ideas, real catalogue: nothing here knows a genre.
@@ -161,18 +162,20 @@ test('(e) the same machinery builds a turn-based sides game, a real-time collect
     // The space fits how it is played and shows the idea's view; it was chosen before the first mechanic.
     assert.ok((registry.get(b.space.use).card.views || []).some(v => x.views.includes(v) || v === 'any'), `${name}: ${b.space.use}`);
     assert.deepEqual(spaceCandidates(registry, d).map(s => s.use).includes(b.space.use), true);
-    // One step per mechanic, the loop mechanic first, each offered only candidates that serve the play spec; then the loop steps.
+    // One step per mechanic, the loop mechanic first, each offered every valid option that serves the play spec; then the loop steps.
     assert.deepEqual(b.steps.filter(s => s.kind === 'mechanic').map(s => s.mechanic), worklist(d).map(m => m.id), name);
     assert.equal(b.steps[0].mechanic, x.mechanics[0][0]);
-    for (const s of b.steps) {
-      assert.ok(s.candidates.length <= MAX_CANDIDATES && (s.kind !== 'mechanic' || s.candidates.length > 0), `${name}/${s.mechanic}: ${s.candidates.length}`);
-      for (const c of s.candidates) if (c.id !== b.space.use) assert.ok(servesInteraction({ id: c.id, ...registry.get(c.id).card }, x.core.interaction), `${name}: ${c.id}`);
-      if (s.kind === 'mechanic' && s.primitive) assert.ok(s.checks.compose, `${name}/${s.mechanic} checked`);
+    const mech = b.steps.filter(s => s.kind === 'mechanic');
+    for (const s of mech) {
+      assert.ok(s.outcome === 'covered' || s.candidates.length > 0, `${name}/${s.mechanic}: ${s.candidates.length}`);
+      for (const c of s.candidates) if (c.id !== b.space.use) assert.ok(servesContext(registry.get(c.id).card, x.core.interaction), `${name}: ${c.id}`);
+      if (s.primitive && s.outcome !== 'covered') assert.ok(s.checks.compose, `${name}/${s.mechanic} checked`);
     }
-    // Only small strict questions: the space (when more than one fits), one per mechanic and one per loop step asked.
-    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage'].includes(c.schema.name)));
+    // Only small strict questions: the space (when more than one fits), per mechanic its coverage question or pick (a
+    // category first over a long list), and one per loop step asked.
+    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_category', 'covered_by', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage'].includes(c.schema.name)));
     assert.equal(w.calls.filter(c => /^pick_(win|lose|driver|coverage)$/.test(c.schema.name)).length, b.steps.filter(s => s.kind !== 'mechanic' && s.asks.length).length, name);
-    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, x.mechanics.length);
+    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.filter(s => s.outcome !== 'covered').length, name);
     assert.ok(b.systems.length > 0, name);
   }
   // Each idea built its own collection on its own space: nothing is stamped from one onto another.

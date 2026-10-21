@@ -120,7 +120,8 @@ test('(c) relation nested keeps both loops and names the primary event that ente
   const d = await decomposeIdea({ writer, prompt: 'chess but with pokemon', registry });
   assert.deepEqual(d.mechanics.filter(m => loopsOf(d).includes(m.id)).map(m => [m.id, m.importance]), [['chess_match', 'core'], ['creature_battle', 'core']]);
   assert.equal(unplayedLoops(d).size, 0);
-  assert.deepEqual(worklist(d).map(m => m.id).slice(0, 3), ['chess_match', 'capture_pieces', 'creature_battle']);
+  // The joined concept's loop is built right after the primary one: its mechanics are played in (or covered by) it.
+  assert.deepEqual(worklist(d).map(m => m.id).slice(0, 3), ['chess_match', 'creature_battle', 'capture_pieces']);
   const [entry] = d.core.mashup;
   assert.equal(entry.relation, 'nested');
   assert.deepEqual(mashupSides(entry, d.mechanics), { outer: ['capture_pieces'], inner: ['creature_battle', 'type_advantages'] }, 'the capture enters the battle');

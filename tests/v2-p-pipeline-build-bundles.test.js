@@ -4,11 +4,15 @@
 // Scripted fake writers; test primitives and the real catalogue; no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSelection, MAX_CANDIDATES } from '../v2/planner/build.js';
+import { buildSelection, MAX_LIST } from '../v2/planner/build.js';
 import { formBundle, companionsOf, requiredBy, MAX_BUNDLE } from '../v2/planner/bundles.js';
 import { selectPrimitives } from '../v2/planner/select.js';
-import { checkComposition } from '../v2/planner/compose-check.js';
-import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
+import { checkComposition, documentedBy } from '../v2/planner/compose-check.js';
+import { resolveAdapters } from '../v2/planner/adapters.js';
+import { buildCatalogue, spaceVariants, dataShapes } from '../v2/planner/catalog.js';
+import { preflight, DOC_SCHEMA } from '../v2/kernel/document.js';
+import { Logic } from '../v2/kernel/logic.js';
+import { buildLogic } from '../v2/kernel/world.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { testCatalogue, fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 
@@ -32,9 +36,18 @@ const writer = picks => fakeWriter([req => buildAnswer(req, { space: ['engine.sp
 /** The options a pick_primitive question offered for a mechanic, by enum id. */
 const offeredFor = (w, mechanic) => w.calls.filter(c => c.schema.name === 'pick_primitive' && c.user.includes(`\nMechanic ${mechanic} (`));
 
+const documented = documentedBy(dataShapes);
+/** Preflight's capability, service, requirement and conflict errors on the partial document a collection is (adapters as resolveAdapters projects them). */
+function structural(registry, space, systems) {
+  const r = resolveAdapters({ spaces: [space], systems }, registry, { documented });
+  const doc = { schema: DOC_SCHEMA, id: 'partial', title: 'partial', spaces: [space], systems: [...systems.map(use => ({ use, ...(r.bind[use] ? { space: r.bind[use] } : {}) })), ...r.adapters] };
+  return new Set(preflight(doc, registry, buildLogic(registry, Logic)).errors.filter(e => /^(capability_missing|service_missing|requires_unmet|primitive_conflict|adapter_from_mismatch)$/.test(e.code)).map(e => `${e.code}:${e.message}`));
+}
+
 /**
  * (d) for a built selection: every option it offered is at most MAX_BUNDLE primitives and already composes with the
- * collection before it (no new failure or type hole), on the configuration it was offered with.
+ * collection before it (no new failure or type hole), on the configuration it was offered with, and adds no
+ * capability, service, requirement or conflict error to the partial document preflight checks.
  */
 function assertOffersCompose(b, registry, w, label) {
   const keys = r => new Set([...r.failures.map(f => `${f.code}:${f.unit}:${f.need?.item || ''}`), ...r.holes.map(h => `${h.code}:${h.card}`)]);
@@ -47,12 +60,14 @@ function assertOffersCompose(b, registry, w, label) {
       assert.equal(c.members[0], c.id);
       if (c.id === b.space.use) continue;
       const space = { id: b.space.id, use: b.space.use, with: variants[c.variant]?.with || {} };
-      const base = keys(checkComposition({ spaces: [space], systems: before }, registry, { resolve: true }));
-      const r = checkComposition({ spaces: [space], systems: [...new Set([...before, ...c.members])] }, registry, { resolve: true });
+      const base = keys(checkComposition({ spaces: [space], systems: before }, registry, { resolve: true, documented }));
+      const r = checkComposition({ spaces: [space], systems: [...new Set([...before, ...c.members])] }, registry, { resolve: true, documented });
       assert.deepEqual([...keys(r)].filter(k => !base.has(k)), [], `${label}/${s.mechanic}: ${c.members.join(' + ')} offered with ${before.join(', ')}`);
+      const had = structural(registry, space, before);
+      assert.deepEqual([...structural(registry, space, [...new Set([...before, ...c.members])])].filter(k => !had.has(k)), [], `${label}/${s.mechanic}: ${c.members.join(' + ')} fails preflight`);
     }
   }
-  for (const c of w.calls.filter(x => x.schema.name === 'pick_primitive')) assert.ok(c.schema.schema.properties.pick.enum.length <= MAX_CANDIDATES + 1);
+  for (const c of w.calls.filter(x => x.schema.name === 'pick_primitive')) assert.ok(c.schema.schema.properties.pick.enum.length <= MAX_LIST + 1);
 }
 
 test('(a) a mechanic whose only fitting primitive needs an adapter on the chosen space is offered with that adapter, and it composes', async () => {
@@ -130,19 +145,20 @@ test('(b) picking the vehicle bundle adds both members and checks them as one co
   assertOffersCompose(b, registry, w, 'race');
 });
 
-test('(c) one bundle covering two mechanics marks both covered; the second is skipped without a question', async () => {
+test('(c) a companion a bundle brought covers a later mechanic of the same concept by its declarations; no question', async () => {
   const { registry } = catalogue();
   const w = writer({ sail: ['gameplay.test.sail'] });
   const d = spec([['sail', 'core', 'sail across open water'], ['wind', 'supporting', 'harness gusts for speed']]);
   const b = await buildSelection({ decomposition: d, registry, writer: w });
   const opt = b.steps[0].candidates.find(c => c.id === 'gameplay.test.sail');
   assert.deepEqual(opt.members, ['gameplay.test.sail', 'gameplay.test.wind']);
-  assert.deepEqual(opt.covers, [{ mechanic: 'wind', by: 'gameplay.test.wind' }]);
-  assert.match(offeredFor(w, 'sail')[0].user, /\[also covers wind via gameplay\.test\.wind\]/);
+  // The wind came with the sail; its declared loop verb is the whole of the mechanic's verb (harness).
   assert.deepEqual(b.steps.map(s => [s.mechanic, s.outcome]), [['sail', 'added'], ['wind', 'covered']]);
   assert.deepEqual(b.steps[0].covers, ['wind']);
   assert.equal(b.steps[1].coveredBy, 'sail');
   assert.equal(b.steps[1].primitive, 'gameplay.test.wind');
+  assert.match(b.steps[1].coverage.why, /gameplay\.test\.wind declares harness/);
+  assert.equal(b.steps[1].coverage.asked, false);
   assert.deepEqual(b.mapping.sail.primitives, ['gameplay.test.sail']);
   assert.deepEqual(b.mapping.wind.primitives, ['gameplay.test.wind']);
   assert.equal(offeredFor(w, 'wind').length, 0, 'the covered mechanic is never asked');
@@ -161,7 +177,6 @@ test('(c) a companion never covers a mechanic of another source concept: that me
   const d = spec([['sail', 'core', 'sail across open water'], ['wind', 'supporting', 'harness gusts for speed']]);
   d.mechanics.find(m => m.id === 'wind').from = 'weather';
   const b = await buildSelection({ decomposition: d, registry, writer: w });
-  assert.deepEqual(b.steps[0].candidates.find(c => c.id === 'gameplay.test.sail').covers, []);
   assert.deepEqual(b.steps.map(s => [s.mechanic, s.outcome]), [['sail', 'added'], ['wind', 'reused']]);
   assert.equal(offeredFor(w, 'wind').length, 1);
 });
@@ -214,7 +229,7 @@ test('(e) bundles work the same on unrelated ideas: every option composes, withi
     assert.equal(mech.length, x.mechanics.length, name);
     assert.ok(b.steps.slice(mech.length).every(s => s.kind !== 'mechanic'), name);
     for (const s of mech.filter(s => s.outcome === 'covered')) assert.ok(mech.find(t => t.mechanic === s.coveredBy)?.covers?.includes(s.mechanic), `${name}/${s.mechanic}`);
-    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.filter(s => s.outcome !== 'covered').length + mech.reduce((n, s) => n + Math.max(0, s.asks.length - 1), 0), name);
+    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.reduce((n, s) => n + s.asks.filter(a => !a.question).length, 0), name);
     // Every bundle member the collection gained is in it, and every option shown is labelled with its members.
     for (const s of b.steps.filter(s => s.checks)) for (const id of s.checks.bundle.filter(id => !id.startsWith('engine.adapt.'))) assert.ok(b.systems.includes(id) || id === b.space.use, `${name}: ${id}`);
     for (const c of w.calls.filter(c => c.schema.name === 'pick_primitive')) {

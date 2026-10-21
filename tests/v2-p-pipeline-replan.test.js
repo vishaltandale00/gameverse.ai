@@ -50,7 +50,8 @@ function scripted({ title = 'Torch Show' } = {}) {
     const name = String(req.schema?.name || '');
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
-    const built = buildAnswer(req, { picks: { juggle: ['gameplay.test.broken'], titles: ['gameplay.test.picky'] } });
+    // The build picks the juggler first; re-planning (the same retrieval, without it) picks the clubs.
+    const built = buildAnswer(req, { picks: { juggle: ['gameplay.test.broken', 'gameplay.test.clubs'], titles: ['gameplay.test.picky'] } });
     if (built) return built;
     // A field-level re-ask: the title field gets fixed.
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, /^title/.test(p.description) ? `The ${title}` : null])));
@@ -103,19 +104,27 @@ test('when the limits run out the build fails with every attempt and what is sti
   assert.equal(versions.length, 0, 'nothing publishes');
 });
 
-test('diagnose and replan: a failing primitive gets the next untried one; a missing win is never filled without the model (the win step asks it)', async () => {
+test('diagnose and replan: a failing primitive gets the model\'s pick among the valid untried ones; nothing without the model', async () => {
   const { registry } = catalogue();
   const selection = { systems: ['gameplay.test.broken'], spaces: [{ id: 'w', use: 'engine.space.graph', with: {}, role: 'w', caps: [...registry.get('engine.space.graph').card.provides.capabilities] }], generators: [], graphics: [], bind: {}, gaps: [],
     mechanics: [{ id: 'juggle', verb: 'juggle', description: 'juggling flaming torches for a crowd', importance: 'core', primitives: ['gameplay.test.broken'], candidates: [], source: 'x', score: 1, from: '' }] };
+  const decomposition = /** @type {any} */ ({ premise: '', views: ['ui'], mechanics: [], core: null });
   const ds = diagnose([{ code: 'install_threw', path: 'systems[0]', message: "'gameplay.test.broken' threw while installing: boom", primitive: 'gameplay.test.broken' }, { code: 'win_unwired', path: 'plot.endings', message: 'nothing in the game ends it with a win' }], { selection, registry });
   assert.deepEqual(ds.map(d => d.kind).sort(), ['primitive', 'win']);
+  // Without a model nothing is picked: the failing primitive's mechanic is unresolved, with the gap layer's signature.
+  const offline = await replan(selection, ds.filter(d => d.kind === 'primitive'), { registry, decomposition, tried: new Map() });
+  assert.deepEqual([offline.actions.length, offline.unresolved.length], [0, 1]);
+  assert.match(offline.unresolved[0].signature, /^juggle: a primitive whose loop/);
   const tried = new Map();
-  const r = await replan(selection, ds, { registry, decomposition: /** @type {any} */ ({ premise: '', core: null }), tried });
-  assert.ok(r.actions.some(a => a.action === 'replace' && a.by === 'gameplay.test.clubs'));
+  const w = fakeWriter([req => buildAnswer(req, { picks: { juggle: ['gameplay.test.clubs'] }, steps: { win: [] } }) ?? '{}']);
+  const r = await replan(selection, ds, { registry, decomposition, tried, writer: w });
+  assert.ok(r.actions.some(a => a.action === 'replace' && a.by === 'gameplay.test.clubs'), JSON.stringify(r.actions));
   assert.ok(r.selection.systems.includes('gameplay.test.clubs') && !r.selection.systems.includes('gameplay.test.broken'));
-  assert.ok(!r.actions.some(a => a.action === 'add'), 'no win provider is picked without the model');
-  // Nothing is chosen twice: a second re-plan for the same mechanic finds nothing left and says so.
-  const again = await replan(r.selection, [{ kind: 'primitive', primitive: 'gameplay.test.clubs', mechanic: 'juggle', codes: ['x'], message: 'still failing' }], { registry, decomposition: /** @type {any} */ ({ premise: '' }), tried });
+  // The failing primitive is never offered again.
+  assert.ok(w.calls.filter(c => c.schema.name === 'pick_primitive').every(c => !c.schema.schema.properties.pick.enum.includes('gameplay.test.broken')));
+  // Nothing is chosen twice: a second re-plan for the same mechanic offers neither, and "none" leaves it to the gap layer.
+  const w2 = fakeWriter([req => buildAnswer(req, { picks: { juggle: ['gameplay.test.clubs', 'gameplay.test.broken'] } }) ?? '{}']);
+  const again = await replan(r.selection, [{ kind: 'primitive', primitive: 'gameplay.test.clubs', mechanic: 'juggle', codes: ['x'], message: 'still failing' }], { registry, decomposition, tried, writer: w2 });
   assert.equal(again.actions.filter(a => a.action === 'replace').length, 0);
   assert.equal(again.unresolved.length, 1);
   assert.equal(selection.systems[0], 'gameplay.test.broken', 'the input selection is not mutated');
