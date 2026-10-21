@@ -238,6 +238,10 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
     },
   };
 
+  // A step drives the world even when a read runs it (a provider probing what inputs do, then restoring).
+  const stepOnce = rt.step;
+  rt.step = input => { const outer = reading; reading = 0; try { return stepOnce(input); } finally { reading = outer; } };
+
   /** @param {Instance} instance @param {string} key */
   const install = (instance, key) => {
     const p = registry.get(instance.use);
