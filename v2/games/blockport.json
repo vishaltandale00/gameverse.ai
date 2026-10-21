@@ -2362,7 +2362,7 @@
       "size": [8,8],
       "hits": 5,
       "persist": true,
-      "gate": "foundation_vault_gate",
+      "gate": {"gate":"foundation_vault_gate"},
       "hitsWith": {"vault_key":1}
      },
      {"id":"rail_fuse_box","kind":"lever","at":[-80,24,-400],"size":[1,2],"signal":"fuse","persist":true},

@@ -2115,8 +2115,8 @@
      {"id":"arena_ash","kind":"plate","at":[670,312],"size":[6,1],"signal":"arena","persist":false},
      {"id":"door_thistle","kind":"door","at":[240,390],"size":[1,4],"opens":["arena"],"gate":{"not":{"boss":"thistle","state":"active"}}},
      {"id":"door_bell","kind":"door","at":[480,330],"size":[1,4],"gate":{"not":{"boss":"bellkeeper","state":"active"}}},
-     {"id":"door_forge","kind":"door","at":[640,400],"size":[1,4],"gate":"forge_door"},
-     {"id":"door_cantor","kind":"door","at":[400,230],"size":[1,4],"gate":"cantor_door"},
+     {"id":"door_forge","kind":"door","at":[640,400],"size":[1,4],"gate":{"gate":"forge_door"}},
+     {"id":"door_cantor","kind":"door","at":[400,230],"size":[1,4],"gate":{"gate":"cantor_door"}},
      {"id":"door_regent","kind":"door","at":[660,300],"size":[1,4],"gate":{"not":{"boss":"regent","state":"active"}}},
      {"id":"door_sovereign","kind":"door","at":[420,118],"size":[1,4],"gate":{"not":{"boss":"sovereign","state":"active"}}}
     ]
