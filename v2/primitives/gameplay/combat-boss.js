@@ -58,7 +58,7 @@ export default {
     intent: 'Boss encounters: arena lock, boss health bar vars, phases by hp fraction or predicate that switch attack patterns and speed, summon adds, run effects, phase invulnerability and bullet cancels, time limits, enrage, tiring/dazed windows, required bosses and retry reset.',
     views: ['any'],
     params: {
-      bosses: { type: 'list', min: 1, of: { type: 'object', fields: BOSS } },
+      bosses: { type: 'list', min: 1, required: true, of: { type: 'object', fields: BOSS } },
       retryReset: { type: 'boolean', default: true, effect: 'the player dying mid-fight resets the boss' },
     },
     provides: { events: ['boss_start', 'boss_start:*', 'boss_phase', 'boss_phase:*', 'boss_defeated', 'boss_defeated:*', 'boss_escaped', 'boss_reset', 'boss_dazed', 'boss_hit', 'boss_invulnerable', 'boss_enraged', 'arena_locked'], vars: ['boss.hp', 'boss.hp.max', 'boss.phase', 'boss.id', 'bosses.remaining'] },
@@ -73,12 +73,12 @@ export default {
   validate(config, doc) {
     const errors = [], arch = new Map(archetypes(doc).map(a => [a.id, a]));
     const lib = new Set((doc.systems || []).filter(s => s.use === 'gameplay.combat.melee').flatMap(s => (s.with?.moves || []).map(m => m.id)));
-    config.bosses.forEach((b, i) => {
+    (config.bosses || []).forEach((b, i) => {
       const path = `with.bosses[${i}]`, a = arch.get(b.archetype);
-      b.phases.forEach((p, j) => { if (j && p.at > b.phases[j - 1].at && !p.when) errors.push(err('boss_phase_order', `${path}.phases[${j}].at`, 'phases must be listed from highest hp fraction to lowest')); });
+      (b.phases || []).forEach((p, j) => { if (j && p.at > b.phases[j - 1].at && !p.when) errors.push(err('boss_phase_order', `${path}.phases[${j}].at`, 'phases must be listed from highest hp fraction to lowest')); });
       if (!a) return;
       const moves = new Set([...(a.components?.attacks || []).map(x => x.id), ...(Array.isArray(a.components?.melee?.moves) ? a.components.melee.moves : Object.keys(a.components?.melee?.moves || {})), ...lib]);
-      b.phases.forEach((p, j) => p.pattern.forEach((id, k) => { if (!moves.has(id)) errors.push(err('boss_pattern_unknown', `${path}.phases[${j}].pattern[${k}]`, `'${b.archetype}' has no attack '${id}'`, `attacks: ${[...moves].slice(0, 12).join(', ') || 'none'}`)); }));
+      (b.phases || []).forEach((p, j) => (p.pattern || []).forEach((id, k) => { if (!moves.has(id)) errors.push(err('boss_pattern_unknown', `${path}.phases[${j}].pattern[${k}]`, `'${b.archetype}' has no attack '${id}'`, `attacks: ${[...moves].slice(0, 12).join(', ') || 'none'}`)); }));
       if (!a.components?.health && b.hp === undefined) errors.push(err('boss_health_missing', `${path}.archetype`, `boss archetype '${b.archetype}' has no health component`));
     });
     return errors;

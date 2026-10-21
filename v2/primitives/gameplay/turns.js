@@ -57,7 +57,7 @@ export default {
       sides: { type: 'list', min: 1, default: DEFAULT_SIDES, of: { type: 'object', fields: SIDE_FIELDS }, effect: 'teams; units join by components.turns.side or members (id/archetype/tag)' },
       ap: { type: 'integer', default: 2, min: 0, max: 99, effect: 'action points per unit per turn' },
       movePerAp: { type: 'integer', default: 4, min: 0, max: 64, effect: 'cells (or path cost) moved per action point; 0 disables moving' },
-      actions: { type: 'list', default: [{ id: 'attack', range: 6, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions' },
+      actions: { type: 'list', default: [{ id: 'attack', range: 6, target: 'unit', hostile: true, hit: { base: 65 }, onHit: [] }], of: { type: 'object', fields: ACTION_FIELDS }, effect: 'data-defined unit actions' },
       overwatch: { type: 'boolean', default: true, effect: 'units may spend remaining AP to react to enemy movement in sight' },
       overwatchAction: { type: 'string', effect: 'action fired on overwatch (default: first hostile unit action)' },
       overwatchPenalty: { type: 'number', default: 15, min: 0, max: 100, effect: 'aim penalty for reaction shots' },

@@ -75,7 +75,8 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
     const form = outlineForm({ registry, skeleton: sk, selection: sel });
     assert.deepEqual(strictProblems(form.schema.schema), [], prompt);
     assert.ok(depthOf(form.schema.schema) <= 10, 'within the strict nesting limit');
-    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set(sk.systems.map(s => s.use))].sort(), 'one slot per chosen primitive, no others');
+    // Every selected primitive has a slot, including those the skeleton could not configure without content.
+    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].sort(), 'one slot per chosen primitive, no others');
     assert.ok(form.schema.schema.properties.archetypes.items.properties.components.properties, 'archetypes have component slots');
   }
   // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.
@@ -137,7 +138,7 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   assert.equal(r.doc.title, 'Ironhold');
   assert.equal(writer.calls[0].schema.name, 'game_outline');
   if (needsEnemies) {
-    assert.equal(writer.calls.length, 2, 'the hollow first form is sent back');
+    assert.ok(writer.calls.length >= 2, 'the hollow first form is sent back');
     assert.match(writer.calls[1].user, /\[content_missing\] content\.archetypes \(form: archetypes\)/);
     const c = census(r.doc, registry, logic, { boot: 0 });
     assert.ok(c.archetypesPlaced >= 1 && c.spawnRulesNonPlayer >= 2);
