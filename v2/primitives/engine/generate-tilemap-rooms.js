@@ -89,6 +89,9 @@ export default {
     },
     provides: { content: ['cells', 'rooms'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
+    // A feature or entity whose ref is a character spawns that character's archetype.
+    reads: ['plot.characters'],
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', open: true, fields: { archetype: { type: 'ref', to: 'archetype' } } } } },
     problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable', 'pit_unclearable'],
     // The guarantee: the published `targets` (every exit and every feature) are reachable from `from` by the document's
     // player, its envelope and body (generate2d-lib documentMover), on the space's navigation, taking the published

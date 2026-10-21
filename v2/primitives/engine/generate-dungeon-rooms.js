@@ -54,6 +54,7 @@ export default {
     },
     provides: { content: ['cells', 'rooms', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
+    reads: ['content.tables'], // loot names a table
     defines: [],
     // The guarantee: the published `targets` (every room centre) are reachable from `from` by the player's body, keys
     // before their locks.

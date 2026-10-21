@@ -55,7 +55,7 @@ test('nature: preflight accepts the worlds and rejects bad generator configs wit
   assert.ok(codes(isle({ caves: { minY: 50, maxY: 10 } })).includes('range_reversed'));
   assert.ok(codes(isle({ caves: { lavaBlock: 'magma' } })).includes('ref_unknown'));
   assert.ok(codes(isle({ ores: { veins: [{ block: 'mithril' }] } })).includes('ref_unknown'));
-  const badPred = isle(); badPred.systems = [{ use: 'plot.storyboard' }]; badPred.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { biome: 'swamp' }, do: [] }] }] } };
+  const badPred = isle(); badPred.systems = [{ use: 'plot.storyboard' }]; badPred.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { biome: ['swamp'] }, do: [] }] }] } };
   assert.ok(codes(badPred).includes('ref_unknown'));
 });
 
@@ -89,7 +89,7 @@ test('nature: island falloff, land zones, column layers and biome surfaces on vo
 
 test('nature: the biome predicate drives the story through rt.step', () => {
   const doc = isle(); doc.systems = [{ use: 'plot.storyboard' }];
-  doc.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'in_plains', when: { biome: 'plains' }, do: [{ do: 'set_flag', flag: 'saw_plains' }] }, { id: 'in_desert', when: { biome: ['desert', 'tundra'] }, do: [{ do: 'set_flag', flag: 'saw_far' }] }] }] } };
+  doc.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'in_plains', when: { biome: ['plains'] }, do: [{ do: 'set_flag', flag: 'saw_plains' }] }, { id: 'in_desert', when: { biome: ['desert', 'tundra'] }, do: [{ do: 'set_flag', flag: 'saw_far' }] }] }] } };
   const { rt } = make(doc);
   rt.step();
   assert.equal(rt.state.flags.saw_plains, true);

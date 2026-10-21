@@ -65,6 +65,9 @@ export default {
     },
     provides: { content: ['cells', 'rooms', 'zones', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
+    // A feature or entity whose ref is a character spawns that character's archetype.
+    reads: ['plot.characters'],
+    data: { 'plot.characters': { type: 'list', of: { type: 'object', open: true, fields: { archetype: { type: 'ref', to: 'archetype' } } } } },
     defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
     // The guarantee: the published `targets` (every warp tile) are reachable from `from` by the player's body, walking
     // and taking the published `passes` (warps).

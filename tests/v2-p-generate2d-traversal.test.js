@@ -54,6 +54,7 @@ const FIXTURES = {
       { id: 'city', kind: 'town', services: ['heal'], connects: [{ to: 'route1' }] },
     ], starters: ['sprout'] },
     blocks: [...solid(['tree', 'rock', 'wall', 'roof', 'window', 'fence', 'sign', 'counter', 'shelf', 'statue', 'barrier', 'boulder', 'pc', 'heal_machine', 'table']), { id: 'water', name: 'Water', solid: false, tags: ['liquid'] }, { id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] }],
+    items: [{ id: 'potion', name: 'Potion' }],
   }],
 };
 
