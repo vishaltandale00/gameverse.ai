@@ -29,6 +29,9 @@ const IDEAS = {
   board: { idea: 'Checkers with garden gnomes', game: 'checkers', themes: [['garden gnomes', 'theme']] },
   rts: { idea: 'StarCraft with ants in a backyard', game: 'StarCraft', themes: [['ants in a backyard', 'setting']] },
   'match-board': { idea: 'Candy Crush with sushi', game: 'Candy Crush', themes: [['sushi', 'theme']] },
+  fighting: { idea: 'Street Fighter with kitchen utensils', game: 'Street Fighter', themes: [['kitchen utensils', 'theme']] },
+  'ball-sport': { idea: 'Soccer on the moon', game: 'soccer', themes: [['on the moon', 'setting']] },
+  shmup: { idea: 'Galaga in a coral reef', game: 'Galaga', themes: [['coral reef', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 

@@ -33,7 +33,7 @@ export const SEEDS = Object.freeze([1, 2, 3]);
 export const GATE = Object.freeze({ budgetMs: 800, playtestMs: 1500 });
 /** A named bot's wall budget, and the run options particular bots take (their own params, by strategy id). */
 export const BOT_BUDGET_MS = 60000;
-export const BOT_OPTS = Object.freeze({ 'danger-field': Object.freeze({ maxFrames: 15000 }) });
+export const BOT_OPTS = Object.freeze({ 'danger-field': Object.freeze({ maxFrames: 15000 }), dodge: Object.freeze({ seconds: 60, every: 8 }) });
 /** Param types a tune path may name: a single value the frame_tune form can ask for. */
 export const SCALAR_TYPES = Object.freeze(['number', 'integer', 'boolean', 'string']);
 /** A template id: a lowercase slug (a promoted template's file name and an enum value of the pick form). */

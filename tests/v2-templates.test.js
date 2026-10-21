@@ -28,7 +28,8 @@ export function tuneTarget(doc, path, reg = registry) {
   return spec ? { use, param, spec, instances: instancesIn(doc).filter(i => i.use === use) } : null;
 }
 const checked = t => { const r = preflight(structuredClone(t.doc), registry, logic); assert.ok(r.ok, `${t.id}: ${JSON.stringify(r.errors?.slice(0, 5))}`); return r; };
-const BOT_OPTS = { 'danger-field': { maxFrames: 15000 }, race: {}, crawl: {} };
+// One source for the options a template's bot runs with: the admission contract's (v2/templates/contract.js).
+import { BOT_OPTS } from '../v2/templates/contract.js';
 /** The world seeds every template is proven on: a template's guarantees hold for the world any job seed generates. */
 const WORLD_SEEDS = [1, 2, 3];
 const seeded = (t, seed) => ({ ...t, doc: { ...structuredClone(t.doc), seed } });
