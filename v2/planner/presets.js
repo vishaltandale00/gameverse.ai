@@ -1,48 +1,53 @@
 // @ts-check
-// Presets (FABLE design, step 4): the deterministic skeleton of a game, composed from the play spec
-// (decomposition.core) and what the chosen cards declare (card.mode), never one default shape for every idea.
-//   preset(spec) -> { doc, ok, errors, fixes, removed, world, structure }
-// - The mode's primitive (and the one its params live on, `via`) is installed and configured so the mode applies.
-// - The space follows mode.space (a listed space primitive, or any space with the listed capabilities).
-// - An avatar exists only for avatar interaction; otherwise the player is a side/controller with no locomotion.
-// - Zones exist only when the space is made of places (exits), the avatar travels, the story needs places, or a
-//   chosen mode needs them ('spaces.zones' in needs.content).
-// - A storyboard exists only when the idea has narrative; then the story preset (zones visited in act order, gated
-//   progression, a finale) applies, ending the game unless a loop owns the win.
-// - Endings come from the core loop: mode.win / mode.lose (an effects param gets end_game, an `end` boolean is set,
-//   a `when` template becomes a plot ending) are wired to victory / defeat.
-// - A nested secondary mode gets its own sub-space when it plays elsewhere (a battle screen).
-// The model then fills content and tuning through the outline form; code owns this structure.
-// A decomposition without a play spec (older callers) gets the story preset, as before.
+// Presets: the deterministic structure of a game, composed from what its collection of primitives declares
+// (card.loop, card.mode the richer form; loop.js), never one shape stamped onto every idea and never a mode.
+//   preset(spec) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
+// - The collection is the selection's primitives; its core is what the idea's core mechanics map to (coreOf).
+// - The win: the first core primitive whose loop declares a game-ending win owns it; else another primitive of the
+//   collection that does; else a catalogue primitive that declares one and fits the chosen spaces is added (the
+//   structure says which and why). With none, the missing win is a core gap naming the collection (a type hole).
+// - Win and lose declarations are wired to endings: an effects param gets end_game, an `end` boolean is set, a `when`
+//   template becomes a plot ending, an `ending` declaration (the story) gets a victory ending its beats reach.
+// - An avatar exists only for avatar interaction (the play spec's, else what the collection declares); otherwise the
+//   player is a side/controller with no locomotion.
+// - Zones exist only when the space is made of places (exits), the avatar travels, the story needs places, or a loop
+//   of the collection needs them ('spaces.zones' in its needs.content).
+// - A story exists only when the idea has narrative; the model writes it (the preset authors no acts or beats).
+// - A core loop played elsewhere (its card has a space param and declares another space) gets its own sub-space.
+// Nothing is isolated or dropped to make the structure pass: what does not fit is reported (gaps, errors) for the
+// planner to re-plan, repair or have written. The model then fills content and tuning through the outline form.
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random } from '../kernel/rng.js';
 import { defaultsOf } from './catalog.js';
-import { vocabIndex } from './select.js';
+import { relevance } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld } from './world.js';
-import { modeOf, isAvatar, STORY } from './modes.js';
+import { isAvatar } from './play-spec.js';
+import { cardLoop, composeLoop, winProviders } from './loop.js';
 import { engageDocument } from './engage.js';
 import { isList, isObj, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
-/** @typedef {import('./modes.js').Mode} Mode */
+/** @typedef {import('./loop.js').Loop} Loop */
+/** @typedef {import('./loop.js').LoopEnd} LoopEnd */
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./select.js').Selection} Selection */
 /** How a space's zones are written. @typedef {{ exits: boolean, rect: boolean, range?: boolean, bounds: boolean, slot?: boolean, extent: number[] | null, length?: number }} ZoneShape */
 /** @typedef {{ to: string, gate?: { item: string } }} Exit */
 /** @typedef {{ id: string, name: string, description: string, rect?: number[], range?: number[], bounds?: { min: number[], max: number[] }, exits?: Exit[] }} OutlineZone */
 /** @typedef {{ id: string, use: string, with?: Record<string, unknown>, zones: OutlineZone[], generators?: Array<{ use: string }>, _shape?: ZoneShape }} OutlineSpace */
-/** @typedef {{ id: string, title?: string, when?: Record<string, unknown>, after?: string[], do: any[] }} OutlineBeat */
-/** @typedef {{ id: string, title: string, beats: OutlineBeat[] }} OutlineAct */
 /** @typedef {{ use: string, with?: Record<string, any>, space?: string }} SystemInstance */
-/** @typedef {{ mode: string, relation: string, why: string, entry: Mode }} SecondaryMode */
+/** @typedef {{ mechanic: string, description: string, importance: string, kind: 'adapter' | 'no_primitive' | 'capability' | 'win', why: string, primitive?: string }} PresetGap */
 /**
- * What the play spec asks the document to be.
- * @typedef {{ mode: Mode | null, secondary: SecondaryMode[], avatar: boolean, narrative: boolean, zones: boolean, systems: string[], added: string[], removed: Array<{ use: string, why: string }> }} Structure
+ * What the collection composes: its core, its loops, which one owns the win, avatar, story and zones, and the
+ * selection adjusted to the play spec (with why).
+ * @typedef {{ core: string[], loops: Array<{ use: string, loop: Loop }>, win: { use: string, end: LoopEnd, added?: boolean } | null, lose: Array<{ use: string, end: LoopEnd }>,
+ *   holes: Array<{ code: string, primitives: string[], message: string }>, avatar: boolean, narrative: boolean, zones: boolean, systems: string[],
+ *   added: Array<{ use: string, why: string }>, removed: Array<{ use: string, why: string }> }} Structure
  */
 
-export const PRESETS_VERSION = 'presets/0.2';
+export const PRESETS_VERSION = 'presets/0.3';
 /** @param {unknown} s @param {string} [sep] */
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
 const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this where who you your player game games like style meets world'.split(' '));
@@ -82,60 +87,77 @@ export const zoneStart = z => {
   return null;
 };
 
+
 /**
- * Primitives bound to a core mechanic (and what they require), plus the mode's: never isolated or dropped; their
- * errors go back to the model. Spaces, generators and engine runtime are infrastructure the planner may replace.
- * @param {{ mechanics?: Array<{ importance?: string, primitives?: string[] }>, systems?: string[], mode?: { use?: string, via?: string } | null } | null | undefined} selection
+ * The core collection: the gameplay/plot primitives the idea's core mechanics map to (in the idea's order) and what
+ * they require. Spaces, generators and engine runtime are the world and infrastructure around it.
+ * @param {{ mechanics?: Array<{ importance?: string, primitives?: string[] }>, systems?: string[] } | null | undefined} selection
  * @param {RegistryLike | null} [registry] @returns {Set<string>}
  */
 export function coreOf(selection, registry = null) {
   /** @type {Set<string>} */
   const ids = new Set();
   for (const m of selection?.mechanics || []) if (m.importance === 'core') for (const id of m.primitives || []) if (/^(gameplay|plot)\./.test(id)) ids.add(id);
-  for (const id of [selection?.mode?.use, selection?.mode?.via]) if (id) ids.add(id);
   if (registry) for (let grew = true; grew;) { grew = false; for (const id of [...ids]) for (const r of registry.get(id)?.card.requires?.primitives || []) { const s = [...(selection?.systems || [])].find(x => x === r || x.startsWith(r + '.')); if (s && !ids.has(s)) { ids.add(s); grew = true; } } }
   return ids;
 }
 
-/** Does a space satisfy a mode.space entry (a space primitive id, or a capability list)? @param {string | string[]} entry @param {{ use: string, caps: string[] }} space */
+/** Does a space satisfy a declared space entry (a space primitive id, or a capability list)? @param {string | string[]} entry @param {{ use: string, caps: string[] }} space */
 const spaceFits = (entry, space) => (Array.isArray(entry) ? entry.every(c => space.caps.includes(c)) : entry === space.use);
-/** @param {Mode | null | undefined} m */
-const needsZones = m => Boolean(m?.needs?.content?.includes('spaces.zones'));
+/** The primitive that runs the story (reads plot.storyboard), as the catalogue declares it. @param {RegistryLike} registry */
+const storyRunner = registry => registry.cards().find(c => (c.reads || []).includes('plot.storyboard'))?.id || null;
+/** @param {RegistryLike} registry @param {string} id */
+const readsStory = (registry, id) => (registry.get(id)?.card.reads || []).includes('plot.storyboard');
 
 /**
- * The structure a play spec asks for, from the cards: which mode, avatar or not, zones or not, story or not, and the
- * selection adjusted to it (mode primitives in; base locomotion out without an avatar; the story runner out without
- * narrative). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
+ * The structure a collection composes, from the cards and the play spec: its core and loops, the win (added from the
+ * catalogue when the collection declares none), avatar or not, story or not, zones or not, and the selection
+ * adjusted to the play spec (base locomotion out without an avatar, a story runner out without narrative and in
+ * with it). @param {Decomposition} decomposition @param {Selection} selection @param {RegistryLike} registry @returns {Structure}
  */
 export function structureOf(decomposition, selection, registry) {
-  const core = decomposition.core;
-  const mode = core ? modeOf(registry, core.mode) : null;
-  const avatar = core ? isAvatar(core.interaction) : true;
-  const narrative = core ? Boolean(core.narrative) || core.mode === STORY : true;
-  /** @type {SecondaryMode[]} */
-  const secondary = [];
-  for (const s of core?.secondary || []) { const entry = modeOf(registry, s.mode); if (entry) secondary.push({ ...s, entry }); }
+  const spec = decomposition.core;
   let systems = [...selection.systems];
-  /** @type {string[]} */
+  const core = [...coreOf(selection, registry)];
+  /** @type {Array<{ use: string, why: string }>} */
   const added = [];
   /** @type {Array<{ use: string, why: string }>} */
   const removed = [];
-  const add = (/** @type {string | undefined} */ id) => { if (id && registry.has(id) && !systems.includes(id) && !id.startsWith('engine.space.')) { systems.push(id); added.push(id); } };
-  if (mode && mode.id !== STORY) { add(mode.use); add(mode.via); }
-  for (const s of secondary) if (s.relation !== 'skin' && s.entry.id !== STORY) { add(s.entry.use); add(s.entry.via); }
+  const add = (/** @type {string | null | undefined} */ id, /** @type {string} */ why) => { if (id && registry.has(id) && !systems.includes(id)) { systems.push(id); added.push({ use: id, why }); } };
   const drop = (/** @type {string} */ id, /** @type {string} */ why) => { systems = systems.filter(x => x !== id); removed.push({ use: id, why }); };
+  // A loop played through another primitive (card.mode.via) brings it.
+  for (const id of core) add(cardLoop(registry.get(id)?.card)?.via, `${id} plays through it`);
+  const declared = core.map(id => cardLoop(registry.get(id)?.card)?.interaction).filter(/** @returns {x is string} */ x => typeof x === 'string');
+  // Undecided by the spec: an avatar when a core loop declares avatar interaction or the collection moves a body (base locomotion).
+  const avatar = spec?.interaction ? isAvatar(spec.interaction) : declared.some(isAvatar) || systems.some(id => registry.get(id)?.card.locomotion === 'base');
+  const narrative = typeof spec?.narrative === 'boolean' ? spec.narrative : core.some(id => readsStory(registry, id));
   if (!avatar) for (const id of [...systems]) if (registry.get(id)?.card.locomotion === 'base') drop(id, 'no avatar: the player plays a side, not a walking character');
-  if (!narrative) for (const id of [...systems]) { const c = registry.get(id)?.card; if (c && c.mode?.loop === STORY) drop(id, 'no narrative: the core loop ends the game, not a story'); }
-  const zones = avatar || narrative || needsZones(mode) || secondary.some(s => s.relation !== 'skin' && needsZones(s.entry));
-  return { mode: mode && mode.id !== STORY ? mode : null, secondary, avatar, narrative, zones, systems, added, removed };
+  if (!narrative) for (const id of [...systems]) if (readsStory(registry, id) && !core.includes(id)) drop(id, 'no narrative: the core loop ends the game, not a story');
+  if (narrative && !systems.some(id => readsStory(registry, id))) add(storyRunner(registry), 'the idea has a story told in acts');
+  // The win: declared by the collection, else added from the catalogue (the primitive that best fits the idea's win).
+  let composed = composeLoop(systems, registry, { core });
+  /** @type {Structure['win']} */
+  let win = composed.win;
+  if (!win) {
+    const text = [spec?.win, ...(selection.mechanics || []).filter(m => m.importance === 'core').map(m => m.description)].filter(Boolean).join('. ');
+    const caps = (selection.spaces || []).map(s => s.caps || []);
+    const best = winProviders(registry, { caps: caps.length ? caps : [[]], exclude: systems, score: card => relevance({ verb: '', description: text || decomposition.premise }, card) })[0];
+    if (best) {
+      add(best.id, `the collection (${(core.length ? core : systems.filter(id => /^(gameplay|plot)\./.test(id))).join(', ')}) declares no way to win; ${best.id} declares one (card.loop.win)`);
+      composed = composeLoop(systems, registry, { core });
+      win = composed.win ? { ...composed.win, added: true } : null;
+    }
+  }
+  const zones = avatar || narrative || composed.loops.some(l => core.includes(l.use) && l.loop.needs.content.includes('spaces.zones'));
+  return { core, loops: composed.loops, win, lose: composed.lose, holes: win ? composed.holes.filter(h => h.code !== 'loop_win_undeclared') : composed.holes, avatar, narrative, zones, systems, added, removed };
 }
 
 /**
- * Make an instance satisfy a mode's `applies` (the mode exists only when its config matches, e.g. a counter that clears
- * the level). @param {SystemInstance} inst @param {Mode} mode @param {RegistryLike} registry
+ * Make an instance satisfy a declared `applies` (the declaration exists only when its config matches, e.g. a counter
+ * that clears the level). @param {SystemInstance} inst @param {LoopEnd['applies']} a @param {RegistryLike} registry
  */
-function apply(inst, mode, registry) {
-  const a = mode.applies; if (!a?.param) return;
+function apply(inst, a, registry) {
+  if (!a?.param) return;
   const spec = registry.get(inst.use)?.card.params?.[a.param];
   /** @type {Record<string, any>} */
   const w = inst.with ??= {};
@@ -143,14 +165,14 @@ function apply(inst, mode, registry) {
     /** @type {any[]} */
     const cur = Array.isArray(w[a.param]) ? w[a.param] : [];
     const field = a.field;
-    if (!cur.some(x => (field ? x?.[field] : x) === a.is)) w[a.param] = [...cur, field ? { ...(spec.of?.fields?.id ? { id: mode.id.replace(/[^a-z0-9]+/g, '_') } : {}), [field]: a.is } : a.is];
+    if (!cur.some(x => (field ? x?.[field] : x) === a.is)) w[a.param] = [...cur, field ? { ...(spec.of?.fields?.id ? { id: 'win' } : {}), [field]: a.is } : a.is];
   } else w[a.param] = a.field ? { ...(w[a.param] || {}), [a.field]: a.is } : a.is;
 }
 
 /**
  * Wire a declared win/lose to an ending: an effects param ('onWin', or 'list.field' for the entries of a list param)
  * gets end_game; an `end` boolean param is set; a `when` template is returned for a plot ending.
- * @param {SystemInstance} inst @param {RegistryLike} registry @param {Record<string, any> | undefined} spec @param {string} ending
+ * @param {SystemInstance} inst @param {RegistryLike} registry @param {LoopEnd | null | undefined} spec @param {string} ending
  * @returns {{ wired: boolean, when: Record<string, unknown> | null }}
  */
 function wire(inst, registry, spec, ending) {
@@ -167,9 +189,8 @@ function wire(inst, registry, spec, ending) {
   }
   if (typeof spec?.end === 'string' && params[spec.end]?.type === 'boolean') { w[spec.end] = true; wired = true; }
   const when = isObj(spec?.when) ? JSON.parse(JSON.stringify(spec?.when).replace(/"\$target"/g, String(DEFAULT_TARGET))) : null;
-  return { wired: wired || Boolean(when), when };
+  return { wired: wired || Boolean(when) || typeof spec?.ending === 'string', when };
 }
-
 /**
  * Content packs (card.pack): mechanically valid default content the installed primitives ship, put where the document
  * has none (a list section that already has entries only gets the pack entries whose ids it lacks, e.g. a ball item).
@@ -194,44 +215,65 @@ export function applyPacks(doc, registry) {
 }
 
 /**
- * Re-apply the play spec's loop wiring to a document (a model draft may have rewritten the params the preset wired):
- * the mode applies, and its win/lose end the game. Idempotent; the input is not modified. -> { doc, wired }
- * @param {any} input @param {Decomposition} decomposition @param {RegistryLike} registry
+ * Wire the collection's declared win and losses into a document's instances and endings (an instance missing from
+ * the document is left to the checks that report it). Mutates `doc`. -> { wired, endings }
+ * @param {any} doc @param {Pick<Structure, 'win' | 'lose'>} structure @param {RegistryLike} registry
+ * @param {{ win?: string, lose?: string, title?: string }} [text] ending texts
  */
-export function wireCore(input, decomposition, registry) {
-  const mode = decomposition.core ? modeOf(registry, decomposition.core.mode) : null;
-  if (!mode || mode.id === STORY || !input || !Array.isArray(input.systems)) return { doc: input, wired: false };
-  const doc = structuredClone(input);
-  const own = doc.systems.find((/** @type {any} */ s) => s?.use === mode.use);
-  if (own) apply(own, mode, registry);
-  const host = doc.systems.find((/** @type {any} */ s) => s?.use === (mode.via || mode.use)) || own;
-  if (!host) return { doc: input, wired: false };
-  const win = wire(host, registry, mode.win, 'victory'), lose = wire(host, registry, mode.lose, 'defeat');
+function wireLoop(doc, structure, registry, text = {}) {
+  /** @type {any[]} */
+  const systems = Array.isArray(doc.systems) ? doc.systems : [];
   doc.plot = isObj(doc.plot) ? doc.plot : {};
   /** @type {any[]} */
   const endings = Array.isArray(doc.plot.endings) ? doc.plot.endings : [];
-  const ensure = (/** @type {string} */ id, /** @type {string} */ outcome, /** @type {Record<string, unknown> | null} */ when) => {
+  const ensure = (/** @type {string} */ id, /** @type {string} */ outcome, /** @type {Record<string, unknown> | null} */ when, /** @type {string} */ words) => {
     const e = endings.find(x => x?.id === id);
-    if (!e) endings.push({ id, title: id === 'victory' ? 'Victory' : 'Defeat', text: '', outcome, ...(when ? { when } : {}) });
+    if (!e) endings.push({ id, title: id === 'victory' ? 'Victory' : 'Defeat', text: words, outcome, ...(when ? { when } : {}) });
     else if (when && !isObj(e.when)) e.when = when;
   };
-  if (win.wired) ensure('victory', 'won', win.when);
-  if (lose.wired) ensure('defeat', 'lost', lose.when);
+  let wired = false;
+  /** @param {string} use @param {LoopEnd} end @param {'victory' | 'defeat'} ending */
+  const one = (use, end, ending) => {
+    const loop = cardLoop(registry.get(use)?.card);
+    const host = systems.find(s => s?.use === (loop?.via || use)) || systems.find(s => s?.use === use);
+    const own = systems.find(s => s?.use === use);
+    if (!host) return false;
+    if (own) apply(own, end.applies, registry);
+    const r = wire(host, registry, end, ending);
+    if (r.wired) ensure(ending, ending === 'victory' ? 'won' : 'lost', r.when, ending === 'victory' ? `${text.title ? `${text.title}: ` : ''}${text.win || 'won'}.` : `${text.lose || 'lost'}.`);
+    return r.wired;
+  };
+  if (structure.win) wired = one(structure.win.use, structure.win.end, 'victory');
+  for (const l of structure.lose || []) one(l.use, l.end, 'defeat');
   doc.plot.endings = endings;
-  return { doc, wired: win.wired };
+  // A `when` ending needs the primitive that evaluates plot.endings (the catalogue declares which one reads them).
+  if (endings.some(e => isObj(e.when)) && !systems.some(s => (registry.get(s?.use)?.card.reads || []).includes('plot.endings') && !cardLoop(registry.get(s?.use)?.card))) {
+    const reader = registry.cards().find(c => (c.reads || []).includes('plot.endings') && !cardLoop(c) && !(c.requires?.capabilities || []).length);
+    if (reader) systems.push({ use: reader.id });
+  }
+  return { wired, endings: endings.map(e => String(e.id)) };
 }
 
 /**
- * preset({ decomposition, selection, registry, logic, seed, prompt }) -> { doc, ok, errors, fixes, removed, world, structure }
+ * Re-apply the collection's loop wiring to a document (a model draft may have rewritten the params the preset
+ * wired): the declared win and losses end the game. Idempotent; the input is not modified. -> { doc, wired }
+ * @param {any} input @param {Pick<Structure, 'win' | 'lose'> | null | undefined} structure @param {RegistryLike} registry
+ */
+export function wireCore(input, structure, registry) {
+  if (!structure?.win || !input || !Array.isArray(input.systems)) return { doc: input, wired: false };
+  const doc = structuredClone(input);
+  const { wired } = wireLoop(doc, structure, registry);
+  return { doc, wired };
+}
+
+/**
+ * preset({ decomposition, selection, registry, logic, seed, prompt }) -> { doc, ok, errors, fixes, removed, gaps, world, structure }
  * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec
  */
 export function preset({ decomposition, selection, registry, logic, seed, prompt = '' }) {
   const st = structureOf(decomposition, selection, registry);
   const state = { rng: seed >>> 0 || 1 };
   const rand = () => random(state);
-  const vocab = vocabIndex(registry);
-  const hasItems = Boolean(vocab.effects.give_item && vocab.predicates.item);
-  const hasStory = st.narrative && st.systems.some(id => (registry.get(id)?.card.reads || []).includes('plot.storyboard'));
   const words = [...new Set((`${decomposition.title} ${decomposition.premise} ${prompt}`.match(/[A-Za-z]{4,}/g) || []).filter(w => !STOP.has(w.toLowerCase())))];
   const cap = (/** @type {string} */ w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
   const usedNames = new Set();
@@ -247,28 +289,29 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     const config = { ...defaultsOf(p.card), ...w };
     try { return [...(p.capabilities ? p.capabilities(config) : p.card.provides?.capabilities || [])]; } catch { return [...(p.card.provides?.capabilities || [])]; }
   };
-  // The idea's space stays. A mode whose declared spaces do not fit it is reported (an adapter is needed), never swapped in.
+  // The idea's space stays. A loop whose declared spaces do not fit it is reported (an adapter would project it), never swapped in.
   /** @type {Array<{ id: string, use: string, with?: Record<string, unknown>, role?: string, caps: string[] }>} */
-  let selSpaces = selection.spaces.map(s => ({ ...s, caps: [...(s.caps || [])] }));
-  /** @type {Array<{ mechanic: string, description: string, importance: string, kind: 'adapter' | 'no_primitive' | 'capability', why: string, primitive?: string }>} */
+  const selSpaces = selection.spaces.map(s => ({ ...s, caps: [...(s.caps || [])] }));
+  /** @type {PresetGap[]} */
   const gaps = [];
-  if (decomposition.core?.problem) gaps.push({ mechanic: 'core', description: decomposition.core.problem, importance: 'core', kind: 'no_primitive', why: decomposition.core.problem });
-  const prefs = Array.isArray(st.mode?.space) ? st.mode.space : [];
-  if (st.mode && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0]))) {
-    const description = `needs adapter: ${st.mode.id} on ${selSpaces[0].use}`;
-    gaps.push({ mechanic: st.mode.id, description, importance: 'core', kind: 'adapter', primitive: st.mode.use, why: `${st.mode.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
-  }
-  // A nested secondary mode that plays in another space (a battle screen) gets that space.
-  /** @type {Array<{ mode: Mode, space: string }>} */
+  for (const p of decomposition.core?.problems || []) gaps.push({ mechanic: 'core', description: `play spec: ${p}`, importance: 'core', kind: 'no_primitive', why: p });
+  for (const h of st.holes) gaps.push({ mechanic: h.code === 'loop_win_undeclared' ? 'win' : 'loop', description: h.message, importance: 'core', kind: h.code === 'loop_win_undeclared' ? 'win' : 'no_primitive', why: `${h.message}; no catalogue primitive that declares one fits the chosen spaces`, primitive: h.primitives[0] });
+  // A core loop played elsewhere (its card has a space param and declares another space primitive) gets that space.
+  /** @type {Array<{ use: string, space: string, param: string }>} */
   const nested = [];
-  for (const s of st.secondary) {
-    if (s.relation !== 'nested') continue;
-    const want = (Array.isArray(s.entry.space) ? s.entry.space : []).find(e => typeof e === 'string' && registry.has(e));
-    if (typeof want !== 'string' || selSpaces.some(x => x.use === want)) continue;
-    const id = slug(`${s.entry.id}_space`);
-    selSpaces.push({ id, use: want, role: s.entry.id, caps: capsOf(want) });
-    nested.push({ mode: s.entry, space: id });
+  for (const { use, loop } of st.loops) {
+    if (!st.core.includes(use) || use === st.win?.use) continue;
+    const param = Object.entries(registry.get(use)?.card.params || {}).find(([, p]) => p.type === 'ref' && p.to === 'space')?.[0];
+    const want = loop.space.find(e => typeof e === 'string' && registry.has(e));
+    if (!param || typeof want !== 'string' || selSpaces.some(x => x.use === want)) continue;
+    const id = slug(`${use.split('.').pop()}_space`);
+    selSpaces.push({ id, use: want, role: use, caps: capsOf(want) });
+    nested.push({ use, space: id, param });
   }
+  // The win owner prefers other spaces than the idea's: an adapter would project its loop (reported; the world stays).
+  const prefs = st.win ? st.loops.find(l => l.use === st.win?.use)?.loop.space || [] : [];
+  if (st.win && prefs.length && selSpaces[0] && !prefs.some(e => spaceFits(e, selSpaces[0])))
+    gaps.push({ mechanic: st.win.use, description: `needs adapter: ${st.win.use} on ${selSpaces[0].use}`, importance: 'supporting', kind: 'adapter', primitive: st.win.use, why: `${st.win.use} declares other spaces than ${selSpaces[0].use}; the idea's world is kept, an adapter would project the loop` });
   /** @type {OutlineSpace[]} */
   const spaces = selSpaces.map((s, si) => {
     const card = registry.get(s.use)?.card || { views: [] };
@@ -296,88 +339,22 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     return { id: s.id, use: s.use, ...(Object.keys(s.with || {}).length ? { with: s.with } : {}), zones, ...(generators.length ? { generators } : {}), _shape: shape };
   });
   const primary = spaces[0];
-  /** @type {Array<{ id: string, name: string }>} */
-  const items = [];
-  /** @type {OutlineAct[]} */
-  const acts = [];
-  /** @type {Array<{ id: string, name: string, role: string }>} */
-  const characters = [];
-  const loopWins = Boolean(st.mode?.win && (st.mode.win.param || st.mode.win.end || st.mode.win.when));
-  if (hasStory && primary.zones.length) {
-    const actCount = Math.max(1, Math.min(decomposition.acts, primary.zones.length - 1));
-    const perAct = Math.ceil((primary.zones.length - 1) / actCount);
-    const guide = decomposition.references.find(r => r.kind === 'character')?.name || 'Guide';
-    characters.push({ id: slug(guide), name: guide, role: 'guide' });
-    acts.push({ id: 'act_1', title: 'Arrival', beats: [{ id: 'arrival', title: decomposition.title, do: [{ do: 'say', character: characters[0].id, text: decomposition.premise.slice(0, 220) }] }] });
-    primary.zones.slice(1).forEach((z, i) => {
-      const a = Math.min(actCount - 1, Math.floor(i / perAct));
-      acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-      /** @type {OutlineBeat} */
-      const beat = { id: `reach_${z.id}`, title: z.name, when: { zone: z.id }, do: [{ do: 'say', character: characters[0].id, text: `${z.name}. Keep going.` }] };
-      // Key items gate the next act's first exit on spaces with gated exits.
-      const lastOfAct = (i + 1) % perAct === 0 && i + 1 < primary.zones.length - 1;
-      if (hasItems && primary._shape?.exits && lastOfAct) {
-        const key = `${z.id}_key`, next = primary.zones[i + 2];
-        items.push({ id: key, name: `${z.name} key` });
-        beat.do.push({ do: 'give_item', item: key });
-        const exit = z.exits?.find(x => x.to === next.id); if (exit) exit.gate = { item: key };
-      }
-      acts[a].beats.push(beat);
-    });
-    for (let a = 0; a < actCount; a++) acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-    const last = acts[acts.length - 1], finalZone = primary.zones[primary.zones.length - 1];
-    // A second space (one primary can't host a chosen primitive) is visited before the end; nested modes have their own entry.
-    const tail = spaces.slice(1).filter(x => x.zones.length && !nested.some(n => n.space === x.id));
-    for (const extra of tail) {
-      last.beats.push({ id: `enter_${extra.id}`, after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, when: { zone: finalZone.id }, do: [{ do: 'teleport', space: extra.id, zone: extra.zones[0].id }] });
-      for (const b of last.beats) if (b.after === undefined) delete b.after;
-    }
-    // The story's own finale only when no loop owns the win.
-    if (!loopWins) {
-      const endZone = tail.length ? tail[tail.length - 1].zones[0] : finalZone;
-      last.beats.push({ id: 'finale', title: 'Finale', after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, ...(tail.length ? {} : { when: { zone: endZone.id } }), do: [{ do: 'end_game', ending: 'victory' }] });
-      for (const b of last.beats) if (b.after === undefined) delete b.after;
-    }
-  }
   const primaryShape = /** @type {ZoneShape} */ (primary._shape);
   for (const s of spaces) delete s._shape;
-  // Primitives no space of this game can host leave, reported: guesses leave as removals; a primitive a core mechanic
-  // relies on is never dropped silently, it stays out of the removals and becomes a gap.
-  const loopIds = new Set([st.mode?.use, st.mode?.via, ...st.secondary.map(x => x.entry.use)].filter(Boolean));
+  // A primitive no space of this game can host stays in the collection and is reported with what it needs: the
+  // planner re-plans (another primitive for the mechanic), or the gap layer writes the adapter. Never removed here.
   const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
-  const coreMech = (/** @type {string} */ id) => (selection.mechanics || []).find(m => m.importance === 'core' && (m.primitives || []).includes(id));
-  for (const id of [...st.systems]) {
-    if (loopIds.has(id) || hosted(id)) continue;
+  for (const id of st.systems) {
+    if (hosted(id)) continue;
     const missing = (registry.get(id)?.card.requires?.capabilities || []).filter(c => !selSpaces.some(sp => sp.caps.includes(c)));
-    const why = `needs ${(registry.get(id)?.card.requires?.capabilities || []).join(', ')}, which no space of this game provides`;
-    const m = coreMech(id);
-    st.systems = st.systems.filter(x => x !== id);
-    if (m) gaps.push({ mechanic: m.id, description: `needs adapter: ${id} on ${selSpaces[0]?.use || 'the space'}${missing.length ? ` (${missing.join(', ')})` : ''}`, importance: 'core', kind: 'adapter', primitive: id, why });
-    else st.removed.push({ use: id, why });
+    const m = (selection.mechanics || []).find(x => (x.primitives || []).includes(id));
+    gaps.push({ mechanic: m?.id || id, description: `needs adapter: ${id} on ${selSpaces[0]?.use || 'the space'}${missing.length ? ` (${missing.join(', ')})` : ''}`, importance: m?.importance || 'core', kind: 'adapter', primitive: id, why: `needs ${missing.join(', ')}, which no space of this game provides` });
   }
   for (const g of gaps) if (Array.isArray(selection.gaps) && !selection.gaps.some(x => x.description === g.description)) selection.gaps.push(/** @type {any} */ (g));
   /** @type {SystemInstance[]} */
   const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] && selSpaces.some(sp => sp.id === selection.bind[id]) ? { space: selection.bind[id] } : {}) }));
-  // The mode applies (its config matches), nested modes point at their space, and the core loop's win/lose end the game.
-  /** @type {Array<{ id: string, title: string, text: string, outcome: string, when?: Record<string, unknown> }>} */
-  const endings = [];
-  /** @type {Mode[]} */
-  const loops = [...(st.mode ? [st.mode] : []), ...st.secondary.filter(s => s.relation !== 'skin' && s.entry.id !== STORY).map(s => s.entry)];
-  for (const m of loops) {
-    const own = systems.find(s => s.use === m.use);
-    if (own) apply(own, m, registry);
-    const n = nested.find(x => x.mode.id === m.id);
-    if (own && n) for (const [k, p] of Object.entries(registry.get(m.use)?.card.params || {})) if (p.type === 'ref' && p.to === 'space') { own.with = { ...(own.with || {}), [k]: n.space }; break; }
-    if (m !== st.mode) continue; // secondaries never end the game on their own
-    const host = systems.find(s => s.use === (m.via || m.use)) || own;
-    if (!host) continue;
-    const win = wire(host, registry, m.win, 'victory'), lose = wire(host, registry, m.lose, 'defeat');
-    if (win.wired) endings.push({ id: 'victory', title: 'Victory', text: `${decomposition.title}: ${decomposition.core?.win || 'won'}.`, outcome: 'won', ...(win.when ? { when: win.when } : {}) });
-    if (lose.wired) endings.push({ id: 'defeat', title: 'Defeat', text: `${decomposition.core?.lose || 'lost'}.`, outcome: 'lost', ...(lose.when ? { when: lose.when } : {}) });
-    // A `when` ending needs the primitive that evaluates plot.endings.
-    if (endings.some(e => e.when)) { const reader = registry.cards().find(c => (c.reads || []).includes('plot.endings') && !c.mode && !(c.requires?.capabilities || []).length); if (reader && !systems.some(s => s.use === reader.id)) systems.push({ use: reader.id }); }
-  }
-  if (hasStory && !endings.some(e => e.id === 'victory')) endings.push({ id: 'victory', title: 'Victory', text: `${decomposition.title}: the end.`, outcome: 'won' });
+  // Nested loops point at their space.
+  for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
   // The player: an avatar entity for avatar interaction; otherwise the side the player commands (no body, no locomotion).
   const playerArch = st.avatar ? { id: 'hero', components: { name: 'You' } } : { id: 'player_side', kind: 'player', components: { name: 'You' } };
   const extent = primaryShape.extent;
@@ -388,24 +365,26 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     views: { primary: decomposition.views[0] || registry.get(primary.use)?.card.views?.[0] || 'any', alternates: decomposition.views.slice(1) },
     spaces,
     systems,
-    graphics: selection.graphics.map(g => ({ use: g.id, ...(g.space ? { space: g.space } : {}) })),
-    plot: { premise: decomposition.premise, characters, ...(hasStory ? { storyboard: { acts } } : {}), ...(endings.length ? { endings } : {}) },
-    content: { ...(items.length ? { items } : {}), archetypes: [playerArch] },
+    plot: { premise: decomposition.premise, characters: [] },
+    content: { archetypes: [playerArch] },
     player: { archetype: playerArch.id, space: primary.id, ...(at !== null && at !== undefined ? { at } : {}) },
   };
-  if (!doc.graphics.length) delete doc.graphics;
+  // The collection's declared win and losses end the game.
+  const loopWired = wireLoop(doc, st, registry, { title: decomposition.title, win: decomposition.core?.win, lose: decomposition.core?.lose });
   const packed = applyPacks(doc, registry);
   // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
   const scaffolded = configureGenerators(doc, registry);
-  const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
-  const keep = coreOf({ ...selection, systems: st.systems, mode: st.mode }, registry);
-  let repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true, protect: keep });
-  // Engagement fills what a mode needs from the content (a starting deck from the cards, sides from the units): when the
+  // Every primitive of the collection is kept: repair fixes fields and reports what it cannot fix.
+  const keep = new Set(doc.systems.map((/** @type {SystemInstance} */ s) => s.use));
+  let repaired = repairDocument(doc, { registry, logic, protect: keep });
+  // Engagement fills what a loop needs from the content (a starting deck from the cards, sides from the units): when the
   // draft only fails for that, engage it and repair again.
-  if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, fallbackSpace, isolate: true, protect: keep }); }
-  // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
+  if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, protect: keep }); }
+  // A space still empty after repair (no generator selected) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
-  const structure = { version: PRESETS_VERSION, packs: packed, mode: st.mode?.id || (decomposition.core ? STORY : null), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed, endings: endings.map(e => e.id), nested: nested.map(n => n.space) };
-  const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure };
+  const structure = { version: PRESETS_VERSION, packs: packed, core: st.core, loop: st.loops.filter(l => st.core.includes(l.use) || l.use === st.win?.use).map(l => ({ use: l.use, progress: l.loop.progress })),
+    win: st.win ? { use: st.win.use, added: Boolean(st.win.added) } : null, lose: st.lose.map(l => l.use), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed,
+    endings: loopWired.endings, nested: nested.map(n => n.space), holes: st.holes };
+  const rest = { gaps, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure, st };
   return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: /** @type {true} */ (true), ...rest } : { doc: /** @type {unknown} */ (repaired.doc), ok: /** @type {false} */ (false), ...rest };
 }

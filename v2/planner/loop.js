@@ -55,7 +55,8 @@ export function cardLoop(card) {
   };
   const needs = isObj(own?.needs) ? own.needs : isObj(mode?.needs) ? mode.needs : {};
   const interaction = typeof own?.interaction === 'string' ? own.interaction : typeof mode?.interaction === 'string' && mode.interaction !== 'any' ? mode.interaction : null;
-  const space = isList(own?.space) ? own.space : isList(mode?.space) ? mode.space : [];
+  const asList = (/** @type {unknown} */ v) => (isList(v) ? v : typeof v === 'string' ? [v] : null);
+  const space = asList(own?.space) || asList(mode?.space) || [];
   return {
     verbs: strs(own?.verbs), progress: [...new Set([...strs(own?.progress), ...strs(mode?.progress)])],
     win: end('win'), lose: end('lose'),
@@ -144,7 +145,9 @@ export function composeLoop(ids, registry, { core = [] } = {}) {
 
 /**
  * Catalogue primitives that declare a game-ending win and can join a collection on these spaces (their required
- * capabilities are provided by one of them), best first by `score` (the caller's relevance to the idea's win).
+ * capabilities are provided by one of them), best first by `score` (the caller's relevance to the idea's win). A
+ * primitive that owns a whole loop (card.mode: its own interaction, opponent and spaces) is not added just for its win:
+ * it would make another game.
  * @param {RegistryLike} registry @param {{ caps: string[][], exclude?: Iterable<string>, score?: (card: any) => number }} options
  * @returns {Array<{ id: string, score: number, end: LoopEnd }>}
  */
@@ -155,7 +158,7 @@ export function winProviders(registry, { caps, exclude = [], score = () => 0 }) 
   for (const card of registry.cards()) {
     if (skip.has(card.id) || !/^(gameplay|plot)\./.test(card.id)) continue;
     const loop = cardLoop(card);
-    if (!loop || !endsGame(loop.win)) continue;
+    if (!loop || !endsGame(loop.win) || card.mode) continue;
     const need = card.requires?.capabilities || [];
     if (!caps.some(c => need.every(x => c.includes(x)))) continue;
     out.push({ id: card.id, score: score(card), end: /** @type {LoopEnd} */ (loop.win) });

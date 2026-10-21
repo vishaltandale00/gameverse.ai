@@ -11,11 +11,13 @@ test('offline decomposition splits references and finds mechanics as verbs, dete
   assert.deepEqual(a, decomposeOffline('A lighthouse mystery × a fishing village: talk to the keeper and find the missing key'));
   assert.ok(a.references.length >= 2, 'the × splits references');
   const ids = a.mechanics.map(m => m.id);
-  for (const m of ['talk', 'collect', 'story', 'explore']) assert.ok(ids.includes(m), `${m} in ${ids}`);
+  for (const m of ['talk', 'collect', 'story']) assert.ok(ids.includes(m), `${m} in ${ids}`);
+  // Only what the sentence asks for: nothing (exploring, a story) is added to an idea that does not name it.
+  assert.ok(!decomposeOffline('swap gems to match three').mechanics.some(m => ['explore', 'story'].includes(m.id)));
   assert.equal(a.source, 'offline');
 });
 
-test('a writer decomposes with a strict schema; a failing writer falls back offline', async () => {
+test('a writer decomposes with a strict schema; a failing writer is asked again, then reported, never replaced offline', async () => {
   const reply = { title: 'Ashen Pact', premise: 'Catch creatures; survive brutal bosses.', tone: 'grim', references: [{ name: 'Dark Souls', kind: 'game', keeps: ['stamina combat'] }, { name: 'Pokémon', kind: 'game', keeps: ['catching', 'party'] }],
     mechanics: [{ id: 'Stamina Combat', verb: 'fight', description: 'real-time melee combat with stamina', from: 'Dark Souls', importance: 'core' }, { id: 'catch', verb: 'catch', description: 'catch creatures and keep a party', from: 'Pokémon', importance: 'core' }],
     spaces: [{ role: 'overworld', kind: 'continuous-3d', description: 'ruined kingdom' }], views: ['3p'], acts: 3, zones: 6 };
@@ -26,9 +28,14 @@ test('a writer decomposes with a strict schema; a failing writer falls back offl
   assert.deepEqual(d.references.map(r => r.name), ['Dark Souls', 'Pokémon']);
   assert.equal(d.mechanics[0].id, 'stamina_combat', 'ids are normalized to slugs');
   assert.equal(d.source, 'fake-writer');
-  const broken = await decomposeIdea({ writer: fakeWriter(['not json at all']), prompt: 'a mystery' });
-  assert.equal(broken.source, 'offline');
-  assert.match(broken.error, /JSON/);
+  const failing = fakeWriter(['not json at all']);
+  await assert.rejects(decomposeIdea({ writer: failing, prompt: 'a mystery' }), e => e.status === 422 && e.code === 'decomposition_failed' && /2 attempt/.test(e.message) && /JSON/.test(e.message));
+  assert.equal(failing.calls.length, 2, 'asked again before failing');
+  assert.match(failing.calls[1].user, /previous reply failed/);
+  // A second answer that is valid is used.
+  const once = await decomposeIdea({ writer: fakeWriter(['not json', reply]), prompt: 'Dark Souls Pokémon' });
+  assert.equal(once.source, 'fake-writer');
+  assert.equal(once.attempts, 2);
 });
 
 test('lexical relevance matches mechanics to cards and stays low for unrelated ones', () => {
@@ -61,12 +68,14 @@ test('spaces are chosen to provide what the chosen primitives require, including
   assert.equal(graph.spaces[0].use, 'engine.space.graph');
 });
 
-test('selection maps mechanics to primitives, adds foundations, and reports uncovered mechanics as gaps', async () => {
+test('selection maps mechanics to primitives, adds the story runner only for a story, and reports uncovered mechanics as gaps', async () => {
   const { registry } = testCatalogue();
   const d = decomposition(['dash through enemies with a burst of speed', 'find and collect items', 'warp through wormholes between distant stars', 'brew potions in a cauldron over many days']);
   const sel = await selectPrimitives({ decomposition: d, registry });
   assert.deepEqual(sel.mechanics.map(m => m.primitives[0] || null), ['gameplay.test.dash', 'gameplay.inventory', null, null]);
-  assert.ok(sel.systems.includes('plot.storyboard'), 'the story runner is a foundation');
+  assert.ok(!sel.systems.includes('plot.storyboard'), 'no story unless the idea has one');
+  const story = await selectPrimitives({ decomposition: { ...d, core: { interaction: null, opponent: 'none', win: '', lose: '', theme: '', narrative: true } }, registry });
+  assert.ok(story.systems.includes('plot.storyboard'), 'the play spec says the idea has a story told in acts');
   assert.ok(sel.spaces[0].caps.includes('gravity'), 'a space with what the dash needs');
   const kinds = Object.fromEntries(sel.gaps.map(g => [g.mechanic, g.kind]));
   assert.equal(kinds.m2, 'capability', 'warp: chosen, but no space provides wormholes, so it is dropped as a capability gap');
@@ -89,6 +98,14 @@ test('a decision model picks among the candidates per mechanic; "none" makes a g
   assert.equal(sel.mechanics[1].primitives.length, 0);
   assert.equal(sel.gaps[0].mechanic, 'm1');
   assert.equal(sel.provider, 'fake');
+});
+
+test('a connected model that cannot map the mechanics fails selection after a retry; the lexical ranking never stands in', async () => {
+  const { registry } = testCatalogue();
+  const d = decomposition(['dash through enemies with a burst of speed']);
+  const writer = fakeWriter(['{"mappings": []}']);
+  await assert.rejects(selectPrimitives({ decomposition: d, registry, writer }), e => e.code === 'selection_failed' && /2 attempt/.test(e.message));
+  assert.equal(writer.calls.filter(c => c.schema.name === 'mechanic_map').length, 2);
 });
 
 test('the vocabulary index names which primitive registers each predicate and effect', () => {
