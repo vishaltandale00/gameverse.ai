@@ -58,7 +58,12 @@ test('defaults: the quiet manor plays in the browser host with only default UI',
   const zoneBefore = m.rt.player().at;
   m.key('1'); m.frame(2);
   assert.notEqual(m.rt.player().at, zoneBefore, 'choosing with a number key moved the player');
-  assert.match(optionLabel(d, { label: 'go x', actions: { go: d.spaces[0].zones[0].id } }), /^Go to /);
+  // Each choice reads the text its primitive writes for people (the travel exits name their places), never the solver label.
+  const shown = [...m.qa('.gv-story .gv-choices .gv-btn')].map(b => b.textContent.replace(/^\d+/, ''));
+  const offered = m.rt.availableOptions();
+  assert.deepEqual(shown, offered.map(o => optionLabel(d, o)));
+  for (const o of offered) assert.ok(o.text && o.text !== o.label, `option '${o.label}' carries its own text`);
+  assert.ok(offered.filter(o => o.actions?.go).every(o => /^Go to /.test(o.text)), 'travel options name their places');
   m.key('Escape'); m.frame(1);
   assert.equal(m.view.modal, 'menu', 'pause still opens over the story');
 });
