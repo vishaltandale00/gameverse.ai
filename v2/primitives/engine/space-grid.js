@@ -21,6 +21,9 @@ export default {
   card: {
     intent: 'A discrete board of square, hex or iso cells (tactics, puzzles, mazes, board games, ARC-style grids). Per-cell rules give passability by entity class, one-way cells, speed/cost, cover and line of sight; optional wrap-around; column settling for falling and match puzzles.',
     views: ['board', 'td', 'iso'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: config => ({ up: null, handed: config.yAxis === 'down' ? 'left' : 'right' }),
     needs: { content: ['cells'] },
     params: {
       topology: { type: 'string', options: ['square', 'hex', 'iso'], default: 'square', effect: 'square, hex (odd-r offset rows) or iso (square logic, diamond projection)' },

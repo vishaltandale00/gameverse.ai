@@ -17,6 +17,9 @@ export default {
   card: {
     intent: 'Chunked editable 3D block world (Minecraft-like). Terrain, caves, ores, water, roads, cities and structures come from its generators lazily per chunk; only edits are saved. Supports walking/jumping pathfinding, voxel raycasts, collide-and-slide bodies, light and optional flowing fluids.',
     views: ['1p', '3p', 'iso'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: { up: 1, handed: 'right' },
     needs: { content: ['terrain'] },
     params: {
       chunk: { type: 'list', of: { type: 'integer', min: 8, max: 128 }, min: 3, max: 3, default: [16, 64, 16], effect: 'chunk size in cells [x, y, z]; generation and meshing work per chunk' },

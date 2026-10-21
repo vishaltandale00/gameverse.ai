@@ -20,6 +20,9 @@ export default {
   card: {
     intent: 'Canvas renderer for physics2d spaces: rotated circles, boxes, polygons and segments in physical materials (wood, stone, glass, metal, ice, rubber, TNT) with damage cracks, impact flashes, trails and break shards; sprite bodies for characters; walls, sensors and joints.',
     views: ['side', 'td'],
+    // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
+    // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
+    projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
     params: {
       materials: { type: 'object', default: {}, open: true, effect: 'archetype id or tag → material (wood, stone, glass, tnt, rock, metal, ice, rubber, ball, plastic)' },
       colors: { type: 'object', default: {}, open: true, effect: 'archetype id → tint hex' },

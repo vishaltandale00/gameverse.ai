@@ -2,6 +2,7 @@
 // with the area). Item lookups and tag tokens, deterministic rolls, entity
 // geometry through space capabilities, and optional cross-primitive effects
 // (run only when their owner registered them).
+import { spaceFrame } from '../engine/runtime-lib-frame.js';
 
 /** Item definitions by id, re-indexed whenever rt.doc changes (hot-loaded items appear). */
 export function items(rt) {
@@ -159,7 +160,39 @@ export const cellOf = at => v3(at).map(Math.floor);
 /** The point to look an entity's own cell up with getCell: its box centre cell on min-anchored spaces, else its position (cell and centre anchors round/floor it themselves). */
 export function cellPoint(rt, e) { const p = pos(rt, e); return anchor(rt, e.space) === 'min' ? center(rt, e).map(Math.floor) : v3(p).slice(0, p.length); }
 /** Look direction: components.body.look, else facing; null if neither. */
-export function lookDir(e) { const l = e?.components?.body?.look; return isVec(l) ? norm(l) : facing(e); }
+export function lookDir(e) { const l = e?.components?.body?.look; return isVec(l) ? norm(l) : faceDir(e); }
+/**
+ * The direction an entity faces: body.dir (movement keeps the full direction there; in 2D body.facing is only the
+ * ±1 of x), else body.facing.
+ */
+export function faceDir(e) { const d = e?.components?.body?.dir; return isVec(d) && len(d) > 1e-6 ? norm(d) : facing(e); }
+/** Views that look at the world from above or behind the player (the faced cell is in front), not from the side. */
+const FRONT_VIEWS = new Set(['td', 'board', 'iso', '1p', '3p']);
+/**
+ * The cell a ground verb acts on when it names none (farming's till, plant, water, harvest), from the space's frame
+ * (runtime-lib-frame.js) and the document's view: in a plane seen from above (frame.up null) the cell the player faces;
+ * with an up axis, below the feet in a side view and the ground cell in front in the views from above or behind. Pure.
+ * @param {{ up: number | null } | null} frame @param {string | undefined} view @param {number[]} feet @param {number[] | null} dir
+ */
+export function actionCellAt(frame, view, feet, dir) {
+  if (!frame) return null;
+  const up = frame.up, f = v3(feet), front = () => {
+    if (!dir) return null;
+    const axes = [0, 1, 2].filter(i => i !== up && (up !== null || i < 2)), d = v3(dir);
+    const i = axes.reduce((m, k) => (Math.abs(d[k]) > Math.abs(d[m]) ? k : m), axes[0]);
+    if (Math.abs(d[i]) < 1e-6) return null;
+    const step = [0, 0, 0]; step[i] = Math.sign(d[i]); return step;
+  };
+  if (up === null || up === undefined) { const s = front(); return s ? add(f, s) : null; }
+  const down = [0, 0, 0]; down[up] = -1;
+  if (!FRONT_VIEWS.has(view)) return add(f, down);
+  const s = front(); return s ? add(add(f, s), down) : null;
+}
+/** The cell an entity's ground verbs act on now (actionCellAt over its space's frame, the document's view, its feet and facing). */
+export function actionCell(rt, e) {
+  const p = center(rt, e); if (!isVec(p)) return null;
+  return actionCellAt(spaceFrame(rt, e.space), rt.doc.views?.primary, p.map(Math.floor), faceDir(e));
+}
 /** Eye point: box centre raised by components.body.eye (default 0). */
 export function eyeOf(rt, e) { const c = center(rt, e); return isVec(c) ? add(c, [0, e.components?.body?.eye ?? 0, 0]) : c; }
 /** The cell an entity looks at within reach: { cell, normal } or null (raycast capability). */

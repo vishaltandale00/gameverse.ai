@@ -6,6 +6,9 @@ export default {
   card: {
     intent: 'A world of named locations connected by exits; entities are at one location at a time. Exits can be gated by predicates (keys, flags, abilities).',
     views: ['text', 'map', 'scene-cards'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: null,
     needs: { content: ['zones'] },
     params: {},
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },

@@ -51,6 +51,9 @@ export const testSpace = {
   card: {
     intent: 'Reference space for tests: integer cells (solid or empty) and box-shaped entities in up to 3D, y up.',
     views: ['any'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: config => (config.gravity || (config.size?.[2] ?? 1) > 1 ? { up: 1, handed: 'right' } : { up: null, handed: 'right' }),
     params: {
       size: { type: 'list', of: { type: 'integer', min: 1, max: 512 }, default: [16, 16, 1], effect: 'cells along x, y, z' },
       gravity: { type: 'number', default: 0, effect: 'cells/s² along -y; 0 disables gravity' },

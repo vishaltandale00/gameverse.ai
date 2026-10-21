@@ -23,6 +23,9 @@ export default {
   card: {
     intent: 'Continuous 2D rigid-body physics: circles, boxes, polygons and capsule segments with restitution, friction, joints (distance, rope, revolute with motor and limits), sensors, kinematic movers, fast bullets and sleeping. For physics puzzles, pinball, breakout, slingshot toys and top-down driving.',
     views: ['side', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: config => { const g = config.gravity || [0, 0], i = Math.abs(g[1] ?? 0) >= Math.abs(g[0] ?? 0) ? 1 : 0; return g[i] ? { up: i, handed: 'right' } : { up: null, handed: 'right' }; },
     needs: { content: ['structures'] },
     params: {
       gravity: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, -9.8], unit: 'm/s²', effect: 'gravity vector (y up)' },

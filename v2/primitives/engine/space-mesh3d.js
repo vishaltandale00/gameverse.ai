@@ -83,6 +83,9 @@ export default {
   card: {
     intent: 'Continuous 3D world: heightfield terrain plus placed box/cylinder colliders and props, with ground/slope/water queries, terrain+collider raycasts, collide-and-slide bodies and grid navigation. For open worlds, cities, racing and 3D action.',
     views: ['1p', '3p', 'iso', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: { up: 1, handed: 'right' },
     needs: { content: ['terrain', 'road-network'], alternatives: [['rooms']] },
     params: {
       size: { type: 'list', of: { type: 'number', min: 64, max: 16384 }, min: 2, max: 2, default: [2048, 2048], unit: 'm', scale: 'world', effect: 'world extent [x, z]; x and z run from 0 to size' },

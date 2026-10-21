@@ -18,6 +18,9 @@ export default {
   card: {
     intent: 'Canvas renderer for arena2d spaces (fighters, shmups, asteroids, runners): side or top view, themed solid blocks and plank platforms, a camera that fits the scroll window, frames all fighters or follows the player, wrap ghosts and optional hit/hurt box overlays.',
     views: ['side', 'td'],
+    // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
+    // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
+    projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
     params: {
       view: { type: 'string', default: 'auto', options: ['auto', 'side', 'top'], effect: 'auto: top when the arena has no gravity' },
       theme: { type: 'string', default: '', effect: 'tileset theme id for solids (default: the first theme, else stone)' },

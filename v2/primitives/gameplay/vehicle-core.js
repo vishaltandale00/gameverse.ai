@@ -6,6 +6,7 @@
 // for any entity (steer / moveTo), which the vehicle they sit in carries out (intentControl).
 import { alive, dist, spaceOf, bindRoles, planeFor, planeUW, fromPlane, matches, sortedEntities, err, needFields, clamp, r6 } from './modes-lib-util.js';
 import { zonePoint } from './ai-lib.js';
+import { spaceFrame, turnSign } from '../engine/runtime-lib-frame.js';
 
 const ID = 'gameplay.vehicle.core';
 const MOTION = ['car', 'boat', 'aircraft'];
@@ -58,8 +59,12 @@ function controlsFor(rt, v, pref = 'auto') {
     const inp = rt.input || {}, held = inp.held || {}, act = inp.actions || {}, dv = act.drive && typeof act.drive === 'object' ? act.drive : null;
     const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : inp.axes?.move || [0, 0];
     const throttle = clamp((mv[1] ?? 0) + (held.accelerate ? 1 : 0) - (held.reverse ? 1 : 0), -1, 1);
-    const steer = clamp((mv[0] ?? 0) + (held.right ? 1 : 0) - (held.left ? 1 : 0), -1, 1);
-    return { throttle, steer, pitch: mv[1] ?? 0, roll: mv[0] ?? 0, brake: Boolean(held.brake), handbrake: Boolean(held.handbrake || held.drift),
+    // The player's input frame: right (move x > 0) turns right, clockwise seen from above, in whatever handedness the
+    // space's plane has (runtime-lib-frame.js turnSign). The motion primitives turn the heading by -steer, so the
+    // player's right becomes steer * turnSign (AI drivers' controls are already in that convention).
+    const api = spaceOf(rt, v), t = api ? turnSign(spaceFrame(rt, v.space), v.components.drive?.plane ?? planeFor(pref, api, v)) : 1;
+    const steer = clamp((mv[0] ?? 0) + (held.right ? 1 : 0) - (held.left ? 1 : 0), -1, 1) * t;
+    return { throttle, steer, pitch: mv[1] ?? 0, roll: (mv[0] ?? 0) * t, brake: Boolean(held.brake), handbrake: Boolean(held.handbrake || held.drift),
       boost: Boolean(act.boost || held.boost), jump: Boolean(act.jump || held.jump), up: Boolean(held.throttle_up || held.accelerate), down: Boolean(held.throttle_down || held.brake) };
   }
   const o = rt.entity(driver), intent = o ? intentControl(rt, v, o, pref) : null;

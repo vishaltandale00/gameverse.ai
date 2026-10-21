@@ -55,6 +55,9 @@ export default {
   card: {
     intent: 'Pseudo-3D rail/lane track renderer for track spaces: bending, rolling track with lanes, sleepers and rails, fogged roadside scenery by theme, 3D obstacle boxes, billboarded runners and pickups, chase camera and speed lines.',
     views: ['3p', 'side'],
+    // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
+    // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
+    projection: { '3p': { kind: 'chase', forward: '+x', right: '+y', up: '+z' }, side: { kind: 'chase', forward: '+x', right: '+y', up: '+z' } },
     params: {
       scenery: { type: 'string', default: 'auto', options: ['auto', 'city', 'forest', 'desert', 'space', 'snow', 'none'], effect: 'roadside dressing' },
       curvature: { type: 'number', default: 1, min: 0, max: 3, effect: 'how much the track bends' },

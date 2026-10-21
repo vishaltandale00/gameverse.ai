@@ -19,6 +19,9 @@ export default {
   card: {
     intent: 'A bounded continuous 2D arena with kinematic box bodies: solid blocks, one-way platforms, wrap-around or kill edges, a moving scroll window, blast zones, and per-pose hurt/hit/push box sets for fighting. For fighters, shmups, asteroids-likes and side runners.',
     views: ['side', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: config => (config.gravity ? { up: 1, handed: 'right' } : { up: null, handed: 'right' }),
     needs: { content: ['structures'] },
     params: {
       size: { type: 'list', of: { type: 'number', min: 1, max: 1e6 }, min: 2, max: 2, default: [16, 9], unit: 'u', scale: 'world', effect: 'arena width and height from the origin' },

@@ -19,6 +19,9 @@ export default {
   card: {
     intent: 'A 2D map of tile layers, side view with gravity (platformers, metroidvanias) or top-down (adventure maps, roguelikes). Solid tiles, one-way platforms and slopes come from content.blocks; editable cells with an edit log; ability-aware pathfinding and reachability for verification.',
     views: ['side', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: config => (config.mode === 'side' ? { up: 1, handed: 'right' } : { up: null, handed: 'right' }),
     needs: { content: ['cells'] },
     params: {
       tile: { type: 'integer', min: 8, max: 64, unit: 'px', default: 16, effect: 'pixels per tile (renderers)' },

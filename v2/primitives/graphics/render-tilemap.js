@@ -52,6 +52,9 @@ export default {
   card: {
     intent: 'Canvas renderer for tilemap spaces (side or top-down): cached chunked layers in order, autotiled themed tiles, overhang shadows, live liquids and hazards, and every entity drawn with interpolated, animated sprites, rigs or generated art.',
     views: ['side', 'td'],
+    // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
+    // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
+    projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
     params: {
       pixelSnap: { type: 'boolean', default: true, effect: 'integer pixel scale and pixel-aligned camera for crisp pixel art' },
       scale: { type: 'integer', default: 3, min: 1, max: 8, unit: 'screen px per art px', effect: 'how big one tile pixel is on screen' },

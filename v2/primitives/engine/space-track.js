@@ -16,6 +16,9 @@ export default {
   card: {
     intent: 'A track with a progress axis and a lane/height cross-section: endless runners (switch lanes, jump, slide, ride on obstacles), lane racers and rail shooters. Optional loop with lap counting; a window around the leader culls passed obstacles.',
     views: ['3p', 'side', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: { up: 2, handed: 'left' },
     needs: { content: ['course'] },
     params: {
       lanes: { type: 'integer', min: 1, max: 16, default: 3, effect: 'number of lanes (lane index 0..lanes-1; positions may be fractional mid-switch)' },

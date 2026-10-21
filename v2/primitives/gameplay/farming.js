@@ -5,7 +5,7 @@
 // in the cell above the farmland.
 import { compare } from '../../kernel/logic.js';
 import { give, take, count, bag } from './inventory.js';
-import { item as itemDef, tokens, roll, cellDist, cellKey, cellOf, isVec, api as spaceApi, add, center, whoKey } from './items-lib.js';
+import { item as itemDef, tokens, roll, cellDist, cellKey, cellOf, isVec, api as spaceApi, add, whoKey, actionCell } from './items-lib.js';
 
 const KEY = 'gameplay.farming';
 const parse = v => (isVec(v) ? { cell: v } : v || {});
@@ -86,8 +86,9 @@ export default {
     }
     function at(who, v, action) {
       const e = rt.entity(who), sp = e && spaceApi(rt, e); if (!sp) return {};
-      const cell = isVec(v.cell) ? cellOf(v.cell) : isVec(e.at) ? add(center(rt, e).map(Math.floor), [0, -1, 0]) : null;
-      if (!cell) return {};
+      // No cell named: the ground cell the view puts in front of the player (actionCell: faced from above, below the feet from the side).
+      const cell = isVec(v.cell) ? cellOf(v.cell) : isVec(e.at) ? actionCell(rt, e) : null;
+      if (!cell) { deny(who, action, 'facing', null); return {}; }
       if (cellDist(rt, e, cell) > config.reach + 0.5) { deny(who, action, 'range', cell); return {}; }
       return { e, sp, cell, key: `${e.space}|${cellKey(cell)}` };
     }

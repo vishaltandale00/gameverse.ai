@@ -33,6 +33,9 @@ export default {
   card: {
     intent: 'Canvas board for grid spaces (square, hex, iso): raised, tiled, neon-maze or flat walls, checker or terrain floors, animated piece cells, gliding pieces, hover/selection/move/attack highlights and click-to-act.',
     views: ['board', 'td', 'iso'],
+    // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
+    // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
+    projection: space => (space?.topology === 'iso' ? {} : { td: { kind: 'plane', right: '+x', up: space?.yAxis === 'down' ? '-y' : '+y' }, board: { kind: 'plane', right: '+x', up: space?.yAxis === 'down' ? '-y' : '+y' } }),
     params: {
       style: { type: 'string', default: 'board', options: ['board', 'tiles', 'neon', 'flat'], effect: 'wall and floor look family' },
       floor: { type: 'string', default: 'auto', options: ['auto', 'checker', 'plain', 'tiles', 'none'], effect: 'floor look (auto follows style)' },

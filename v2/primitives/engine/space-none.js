@@ -10,6 +10,9 @@ export default {
   card: {
     intent: 'No spatial state: for card, dialogue, UI and management games (or a battle screen). Entities may sit in named slots (hand, deck, table) declared as zones.',
     views: ['ui'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: null,
     params: {},
     provides: { capabilities: [], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'zone_added'] },
     at: 'At = a slot (zone) id or null',

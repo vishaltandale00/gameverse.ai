@@ -4,11 +4,14 @@
 // service and the bag through the inventory service, and plans each decision: water a growing plot that is still dry
 // today, harvest a ripe one, plant free farmland while it holds seeds, till more soil while it holds more seeds than
 // there is free farmland, else wait for the next day. A press acts on the cell the farming primitive targets from where
-// the farmer stands: the bot learns that cell by pressing on a snapshot (the event names it), walks to a cell from which
-// the press lands on the planned plot, and keeps a press only when it acted there.
+// the farmer stands and the way it faces (items-lib.js actionCellAt, the same function the primitive uses): the bot
+// searches the farmer's (cell, facing) states (a held direction steps into a free cell, or turns toward a blocked one)
+// for the nearest one whose target is the planned plot, walks there and presses; a press is kept only when it acted.
 import { hold, posOf, velOf } from '../drive.js';
 import { budget as makeBudget } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
+import { actionCellAt, faceDir } from '../../primitives/gameplay/items-lib.js';
+import { spaceFrame } from '../../primitives/engine/runtime-lib-frame.js';
 import { stepsFrom } from '../../kernel/testing.js';
 import { multiSeed, problem, pathOf } from './common.js';
 
@@ -17,81 +20,70 @@ const FARMING = 'gameplay.farming';
 const DONE = { till: 'tilled', plant: 'planted', water: 'watered', harvest: 'harvested' };
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const v3 = a => [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
-const keyOf = c => c.join(',');
+const keyOf = c => v3(c).join(',');
 /** The cell a position is in, as the space defines it (api.cellOf honours its anchor). */
 const cellIn = (api, at) => (typeof api.cellOf === 'function' ? api.cellOf({ at }).split(',').map(Number) : at.map(v => Math.floor(v)));
-const playerCell = rt => { const p = rt.player(); return p ? cellIn(rt.space(p.space), posOf(rt)) : null; };
+const playerCell = rt => { const p = rt.player(); return p ? v3(cellIn(rt.space(p.space), posOf(rt))) : null; };
 
-/** Press `verb` on a snapshot: the cell the press targets from here (the farming event's `at`), or null. */
-function aimOf(rt, verb) {
-  const snap = rt.snapshot();
-  rt.step({ actions: { [verb]: true } });
-  const ev = rt.state.events.find(e => (e.name === DONE[verb] || (e.name === 'farm_denied' && e.action === verb)) && Array.isArray(e.at));
-  rt.restore(snap);
-  return ev ? v3(ev.at) : null;
-}
 /** Press `verb` for real; kept only when it acted on cell `want` (else the state is restored). */
 function press(rt, verb, want, b) {
   const snap = rt.snapshot();
   hold(rt, { actions: { [verb]: true } }, 1, b);
-  if (rt.state.events.some(e => e.name === DONE[verb] && Array.isArray(e.at) && keyOf(v3(e.at)) === keyOf(want))) return true;
+  if (rt.state.events.some(e => e.name === DONE[verb] && Array.isArray(e.at) && keyOf(e.at) === keyOf(want))) return true;
   rt.restore(snap);
   return false;
 }
-/** Walk to the adjacent cell `want` with a held move axis (each tried on a snapshot); true when the farmer got there. */
-function stepTo(rt, want, b, maxFrames = 40) {
-  const snap = rt.snapshot(), from = keyOf(playerCell(rt));
-  for (const [x, y] of DIRS) {
-    rt.restore(snap);
-    const f0 = rt.state.frame;
-    for (let f = 0; f < maxFrames && rt.state.status === 'playing'; f++) { rt.step({ axes: { move: [x, y] } }); if (keyOf(playerCell(rt)) !== from) break; }
-    if (keyOf(playerCell(rt)) === keyOf(want)) { b?.step(rt.state.frame - f0); return true; }
+/** Hold the move axis `d` until the farmer's cell or facing changes (or maxFrames); true when something changed. */
+function pressDir(rt, d, b, maxFrames = 40) {
+  const p0 = rt.player(), from = keyOf(playerCell(rt)), face = JSON.stringify(faceDir(p0)), f0 = rt.state.frame;
+  for (let f = 0; f < maxFrames && rt.state.status === 'playing'; f++) {
+    rt.step({ axes: { move: d } });
+    if (keyOf(playerCell(rt)) !== from) break;
+    if (JSON.stringify(faceDir(rt.player())) !== face && f > 0) break;
   }
-  rt.restore(snap);
-  hold(rt, {}, 1, b);
-  return false;
+  b?.step(rt.state.frame - f0);
+  return keyOf(playerCell(rt)) !== from || JSON.stringify(faceDir(rt.player())) !== face;
 }
 
 /**
- * The plan from here: a BFS over the cells the farmer can walk to (its own moves, stepsFrom), each judged by the cell
- * a press made there would target (aim offset). -> the nearest standing cell per job, and the free farmland in reach.
+ * The plan from here: a BFS over the farmer's (cell, facing) states, the moves a held direction makes (its own steps,
+ * stepsFrom, else a turn toward the blocked cell); each state is judged by the cell a press there targets
+ * (actionCellAt). -> the first direction toward the nearest state per job, the free farmland and soil in reach.
  */
-function survey(rt, config, aim, skip) {
-  const p = rt.player(), api = rt.space(p.space), here = playerCell(rt);
-  const plots = new Map(rt.service('farming').plots().filter(x => x.space === p.space).map(x => [keyOf(v3(x.at)), x]));
+function survey(rt, config, frame, view, skip) {
+  const p = rt.player(), api = rt.space(p.space), here = playerCell(rt), dir0 = faceDir(p);
+  const plots = new Map(rt.service('farming').plots().filter(x => x.space === p.space).map(x => [keyOf(x.at), x]));
   const crops = new Map(config.crops.map(c => [c.item, c]));
   const bag = rt.service('inventory').bag('player');
   const seeds = config.crops.reduce((n, c) => n + (bag[c.seed ?? c.item] || 0), 0);
-  const jobs = {}, seen = new Map([[keyOf(here), here]]), q = [here];
-  let freeLand = 0, soil = 0;
-  for (let h = 0; h < q.length; h++) {
-    const s = q[h];
-    for (const verb of Object.keys(DONE)) {
-      if (jobs[verb] || !aim[verb]) continue;
-      const t = v3(s).map((v, i) => v + aim[verb][i]), k = keyOf(t);
-      if (skip.has(`${verb}@${k}`)) continue;
-      const plot = plots.get(k), block = api.getCell(t);
-      const ok = verb === 'harvest' ? plot?.ripe
-        : verb === 'water' ? plot && !plot.ripe && !plot.watered && crops.get(plot.crop)?.water !== false
-          : verb === 'plant' ? !plot && block === config.farmland && seeds > 0
-            : !plot && config.tillable.includes(block);
-      if (ok) jobs[verb] = { stand: s, target: t };
+  const job = (verb, t) => {
+    const k = keyOf(t), plot = plots.get(k), block = api.getCell(t);
+    if (skip.has(`${verb}@${k}`)) return false;
+    return verb === 'harvest' ? Boolean(plot?.ripe)
+      : verb === 'water' ? Boolean(plot && !plot.ripe && !plot.watered && crops.get(plot.crop)?.water !== false)
+        : verb === 'plant' ? !plot && block === config.farmland && seeds > 0
+          : !plot && config.tillable.includes(block);
+  };
+  const jobs = {}, start = { cell: here, dir: dir0 ? v3(dir0) : null, first: null }, seen = new Set([`${keyOf(here)}|${JSON.stringify(start.dir)}`]), q = [start];
+  const free = new Set(), soil = new Set();
+  for (let h = 0; h < q.length && h < 4000; h++) {
+    const s = q[h], t = actionCellAt(frame, view, s.cell, s.dir);
+    if (t) {
+      for (const verb of Object.keys(DONE)) if (!jobs[verb] && job(verb, t)) jobs[verb] = { first: s.first, target: v3(t) };
+      if (api.getCell(t) === config.farmland && !plots.has(keyOf(t))) free.add(keyOf(t));
+      if (config.tillable.includes(api.getCell(t)) && !plots.has(keyOf(t))) soil.add(keyOf(t));
     }
-    const t = aim.plant && v3(s).map((v, i) => v + aim.plant[i]);
-    if (t && api.getCell(t) === config.farmland && !plots.has(keyOf(t))) freeLand++;
-    const u = aim.till && v3(s).map((v, i) => v + aim.till[i]);
-    if (u && config.tillable.includes(api.getCell(u)) && !plots.has(keyOf(u))) soil++;
-    for (const n of stepsFrom(api, p, s, rt)) { const nk = keyOf(n); if (!seen.has(nk)) { seen.set(nk, s); q.push(n); } }
+    const moves = stepsFrom(api, p, s.cell, rt).map(v3);
+    for (const d of DIRS) {
+      const n = v3([s.cell[0] + d[0], s.cell[1] + d[1], s.cell[2]]), into = moves.some(m => keyOf(m) === keyOf(n));
+      const next = { cell: into ? n : s.cell, dir: [d[0], d[1], 0], first: s.first ?? d };
+      const k = `${keyOf(next.cell)}|${JSON.stringify(next.dir)}`;
+      if (!seen.has(k)) { seen.add(k); q.push(next); }
+    }
   }
   // Tilling is worth it only while the bag holds more seeds than there is free farmland to plant them in.
-  if (jobs.till && seeds <= freeLand) delete jobs.till;
-  return { jobs, seen, seeds, plots, freeLand, soil };
-}
-/** First step on the BFS tree from here toward `goal` (the parent map the survey built). */
-function firstStep(seen, here, goal) {
-  let c = goal;
-  while (seen.get(keyOf(c)) && keyOf(seen.get(keyOf(c))) !== keyOf(here)) c = seen.get(keyOf(c));
-  return c;
+  if (jobs.till && seeds <= free.size) delete jobs.till;
+  return { jobs, seeds, plots, freeLand: free.size, soil: soil.size };
 }
 
 export default {
@@ -106,30 +98,36 @@ export default {
     const play = seed => {
       const rt = ctx.make(seed), presses = { till: 0, plant: 0, water: 0, harvest: 0 };
       let stuck = '', stalls = 0, skip = new Set(), day = null;
+      const axis = [1, 1];
+      const frame = spaceFrame(rt, rt.player()?.space ?? ctx.doc.spaces[0].id), view = ctx.doc.views?.primary;
       hold(rt, {}, 1, b);
       if (!rt.hasService('farming') || !rt.hasService('inventory')) stuck = 'the farming and inventory services are missing';
       while (!stuck && rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
         const p = rt.player(); if (!p) { stuck = 'no player'; break; }
         const today = rt.service('farming').day();
         if (today !== day) { day = today; skip = new Set(); }
-        // Stand still before aiming: a press acts where the farmer is.
+        // Stand still before planning: a press acts where the farmer is.
         for (let f = 0; f < settleFrames && velOf(p).some(v => Math.abs(v) > 1e-6); f++) hold(rt, {}, 1, b);
-        const aim = Object.fromEntries(Object.keys(DONE).map(v => [v, aimOf(rt, v)]).filter(([, t]) => t).map(([v, t]) => [v, t.map((x, i) => x - (v3(playerCell(rt))[i]))]));
-        if (!Object.keys(aim).length) { stuck = 'no farming verb targets a cell from where the farmer stands'; break; }
-        const { jobs, seen, seeds: held, plots, freeLand, soil } = survey(rt, config, aim, skip);
+        const { jobs, seeds: held, plots, freeLand, soil } = survey(rt, config, frame, view, skip);
         const verb = ['water', 'harvest', 'plant', 'till'].find(v => jobs[v]);
         if (!verb) {
           if (!plots.size && !held) { stuck = 'no seeds left and nothing growing'; break; }
           if (!plots.size && !freeLand && !soil) { stuck = 'no tillable soil or free farmland within the farmer\'s reach'; break; }
           hold(rt, {}, waitFrames, b); continue; // everything tended: wait for the day to turn
         }
-        const { stand, target } = jobs[verb], here = playerCell(rt);
-        if (keyOf(stand) === keyOf(here)) {
+        const { first, target } = jobs[verb];
+        if (!first) {
           if (press(rt, verb, target, b)) { presses[verb]++; stalls = 0; } else { skip.add(`${verb}@${keyOf(target)}`); hold(rt, {}, 1, b); }
           continue;
         }
-        if (stepTo(rt, firstStep(seen, here, stand), b)) stalls = 0;
-        else if (++stalls > 60) { stuck = `cannot walk toward ${keyOf(stand)}`; break; }
+        // Which way a held axis moves on the board is learned from what it did, never assumed (a grid's rows may grow down).
+        const from = playerCell(rt);
+        if (pressDir(rt, [first[0] * axis[0], first[1] * axis[1]], b)) {
+          stalls = 0;
+          const to = playerCell(rt);
+          for (const i of [0, 1]) if (to[i] !== from[i] && Math.sign(to[i] - from[i]) !== Math.sign(first[i])) axis[i] = -axis[i];
+        }
+        else if (++stalls > 60) { stuck = `cannot walk toward ${keyOf(target)}`; break; }
       }
       const harvested = rt.state.counts.harvested || 0;
       return { seed, won: rt.state.status === 'won', status: rt.state.status, harvested, presses, days: rt.hasService('farming') ? rt.service('farming').day() : null, frames: rt.state.frame, stuck: stuck || null, budget: rt.state.status === 'playing' && Boolean(b.hit) };
