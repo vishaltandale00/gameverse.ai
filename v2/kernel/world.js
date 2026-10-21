@@ -213,7 +213,8 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
      * should read document data lazily from rt.doc (re-index when rt.doc
      * changes); those that keep derived caches implement extend(rt, cfg, added).
      */
-    extend(normalizedDoc, added) {
+    extend(source, added) {
+      const normalizedDoc = structuredClone(source); // this world's own copy, as at creation
       const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)),
         generators: new Map((rt.doc.spaces || []).map(s => [s.id, (s.generators || []).length])) };
       rt.doc = normalizedDoc;

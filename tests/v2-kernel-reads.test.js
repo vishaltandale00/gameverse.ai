@@ -58,4 +58,8 @@ test('documents: each world owns a copy of its document', () => {
   a.doc.systems[0].with.changed = true;
   assert.equal(b.doc.systems[0].with.changed, undefined);
   assert.equal(c.doc.systems[0].with.changed, undefined, 'nor the document it was made from');
+  const next = structuredClone(c.doc);
+  a.extend(next, { zones: [], beats: [], systems: [] }); b.extend(next, { zones: [], beats: [], systems: [] });
+  a.doc.systems[0].with.changed = true;
+  assert.equal(b.doc.systems[0].with.changed, undefined, 'and so is a document hot-loaded into it');
 });
