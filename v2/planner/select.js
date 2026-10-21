@@ -8,7 +8,9 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
-import { cardLoop } from './loop.js';
+import { cardLoop, endsGame } from './loop.js';
+import { isAvatar, mashupProblem } from './play-spec.js';
+import { askMashup } from './decompose.js';
 import { resolveAdapters } from './adapters.js';
 import { planWorld, unfurnishable, needSets, contentOfGenerator, targets, isMovement, OUTLINE_AUTHORS } from './world.js';
 import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.js';
@@ -36,6 +38,9 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
 /** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null, gap?: string }} LocomotionResult */
 /** @typedef {{ mechanic: string, added?: string, removed?: string, gap?: boolean, why: string }} MappingChange */
 /** @typedef {{ checked: string[], changes: MappingChange[], ms?: number | null, error?: string }} MappingCheck */
+/** A mechanic's primitive that does not serve the play spec's interaction, and what serves the mechanic instead. @typedef {{ mechanic: string, removed: string, by: string | null, why: string }} InteractionChange */
+/** The interaction fit of the mapping (fitInteraction). @typedef {{ interaction: string | null, changes: InteractionChange[] }} InteractionFit */
+/** The play spec's mashup post-check (play-spec.js mashupProblem) and its field re-ask. @typedef {{ problem: string, asked: number, mashup: import('./play-spec.js').Mashup[], model?: string, ms?: number, unresolved?: boolean }} MashupCheck */
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
 /** @typedef {{ primitives: string[], covered: boolean, why: string }} MechanicMapping */
 /** A space kind not offered because no registered generator can furnish what it needs. @typedef {{ use: string, missing: string[], why: string }} ExcludedSpace */
@@ -52,7 +57,7 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @property {Record<string, string>} bind  primitive id -> space id (primitives not on the first space)
  * @property {Gap[]} gaps
  * @property {string | null} provider
- * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null }} completeness
+ * @property {{ locomotion: LocomotionResult, mapping: MappingCheck | null, interaction?: InteractionFit, mashup?: MashupCheck }} completeness
  * @property {DroppedGenerator[]} [droppedGenerators]
  * @property {ExcludedSpace[]} [excludedSpaces]
  * @property {AdapterInstance[]} [adapters]  adapter instances (with their config) the preset writes into the document's systems
@@ -128,6 +133,86 @@ export function relevance(mechanic, card) {
 /** @param {{ verb: string, description: string }} mechanic @param {IdCard[]} cards @param {number} [limit] @returns {Candidate[]} */
 export function rankCandidates(mechanic, cards, limit = 6) {
   return cards.map(card => ({ id: card.id, score: relevance(mechanic, card) })).filter(c => c.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit);
+}
+
+/**
+ * Does a card serve the play spec's interaction, by its declarations? Locomotion cards (card.locomotion) move an
+ * avatar: they serve avatar interactions only. Cards that list the interactions they serve (card.interactions, e.g.
+ * input) serve those. Nothing else is constrained here; an undecided interaction constrains nothing.
+ * @param {any} card @param {string | null | undefined} interaction
+ */
+export function servesInteraction(card, interaction) {
+  if (!interaction || !card) return true;
+  if (card.locomotion) return isAvatar(interaction);
+  if (Array.isArray(card.interactions)) return card.interactions.includes(interaction);
+  return true;
+}
+
+/** @param {string[]} names verbs or event names @returns {string[]} */
+const nameTokens = names => tokens(names.join(' ').replace(/[:_*.]/g, ' '));
+
+/**
+ * How well a card's declarations fit a mechanic played the play spec's way, or null when they do not. Required: a
+ * declared loop (card.loop / card.mode with verbs or progress), the interaction served (servesInteraction), and, for a
+ * loop declared for another interaction that would own the game (a game-ending win: falling pieces for chess), a
+ * mechanic a mashup relation joins (`joined`). The score is the declarations first: the loop's verbs and progress events
+ * fitting the mechanic, its verbs doing what `verbs` did (the primitive being replaced), the loop declared for this
+ * interaction, how participants take part (card.engage: joining a side without an avatar, the player entity with one);
+ * then the card's lexical relevance. A card with no fit at all scores null.
+ * @param {{ verb: string, description: string }} mechanic @param {any} card
+ * @param {{ interaction?: string | null, joined?: boolean, verbs?: string[] }} [options]
+ * @returns {number | null}
+ */
+export function declaredFit(mechanic, card, { interaction = null, joined = false, verbs = [] } = {}) {
+  const loop = cardLoop(card);
+  if (!loop || (!loop.verbs.length && !loop.progress.length) || !servesInteraction(card, interaction)) return null;
+  const other = Boolean(interaction && loop.interaction && loop.interaction !== interaction);
+  if (other && endsGame(loop.win) && !joined) return null;
+  const direct = [...new Set(tokens(`${mechanic.verb} ${mechanic.description}`))];
+  const hits = (/** @type {string[]} */ words) => { const w = new Set(words); return direct.filter(t => w.has(t) || neighbours(t).some(n => w.has(n))).length; };
+  const own = nameTokens(loop.verbs), was = new Set(nameTokens(verbs));
+  const declared = hits(own) * 2 + hits(nameTokens(loop.progress)) + Math.min(2, own.filter(t => was.has(t)).length * 2)
+    + (interaction && loop.interaction === interaction ? 3 : other ? -1 : 0)
+    + (interaction && card.engage ? (isAvatar(interaction) ? (card.engage.player ? 1 : 0) : (card.engage.join ? 1 : 0)) : 0);
+  const score = declared + relevance(mechanic, card);
+  return score > 0 ? +score.toFixed(3) : null;
+}
+
+/** Does a card's loop do what the given verbs did (shares a verb token)? @param {any} card @param {string[]} verbs */
+export const sharesVerbs = (card, verbs) => { const was = new Set(nameTokens(verbs)); return nameTokens(cardLoop(card)?.verbs || []).some(t => was.has(t)); };
+
+/**
+ * The mapping fits the play spec's interaction (card declarations): a primitive mapped to a mechanic that does not
+ * serve the interaction (avatar locomotion for pieces moved in turns) is removed from it, and what it did is served by
+ * the primitive whose loop is declared for the interaction and does it (its loop verbs share the removed one's: piece
+ * movement belongs to the turns loop's move, never to avatar steps). Already mapped first, else the best declared fit
+ * in the catalogue (declaredFit). Mutates the mechanics' primitive lists; returns what it changed.
+ * @param {{ mechanics: SelectedMechanic[], interaction: string | null, registry: RegistryLike, cards: IdCard[], joined?: (mechanic: string) => boolean }} options
+ * @returns {InteractionFit}
+ */
+export function fitInteraction({ mechanics, interaction, registry, cards, joined = () => false }) {
+  /** @type {InteractionChange[]} */
+  const changes = [];
+  if (!interaction) return { interaction, changes };
+  for (const m of mechanics) {
+    const off = m.primitives.filter(id => !servesInteraction(registry.get(id)?.card, interaction));
+    if (!off.length) continue;
+    m.primitives = m.primitives.filter(id => !off.includes(id));
+    for (const id of off) {
+      const card = registry.get(id)?.card;
+      const was = cardLoop(card)?.verbs || [];
+      const playedHere = (/** @type {any} */ c) => cardLoop(c)?.interaction === interaction && (!was.length || sharesVerbs(c, was));
+      const kept = m.primitives.find(x => playedHere(registry.get(x)?.card));
+      const found = kept ? null : cards.filter(c => /^(gameplay|plot)\./.test(c.id) && playedHere(c))
+        .map(c => ({ id: c.id, score: declaredFit(m, c, { interaction, joined: joined(m.id), verbs: was }) }))
+        .filter(c => c.score !== null).sort((a, b) => Number(b.score) - Number(a.score) || a.id.localeCompare(b.id))[0]?.id || null;
+      if (found) m.primitives.push(found);
+      const by = kept || found;
+      const how = card?.locomotion ? 'is avatar locomotion (card.locomotion)' : `serves ${(card?.interactions || []).join(', ') || 'other interactions'} (card.interactions)`;
+      changes.push({ mechanic: m.id, removed: id, by, why: `${id} ${how}; the play spec is ${interaction}${by ? `: ${by} declares the loop played that way (card.loop verbs ${(cardLoop(registry.get(by)?.card)?.verbs || []).join(', ')})` : ': no catalogue primitive declares a loop played that way that does it'}` });
+    }
+  }
+  return { interaction, changes };
 }
 
 /** @typedef {{ predicates: Record<string, string>, effects: Record<string, string> }} VocabIndex */
@@ -319,7 +404,10 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // primitives, source and score are set for every mechanic in the loop below (in this key order).
   /** @type {SelectedMechanic[]} */
   const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards), primitives: [], source: '', score: 0 }));
-  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log, attempts });
+  // The model maps onto the cards that serve the play spec's interaction (no avatar locomotion for pieces moved in turns).
+  const playedAs = decomposition.core?.interaction || null;
+  const playable = cards.filter(c => servesInteraction(c, playedAs));
+  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards: playable, registry, log, attempts });
   /** @type {Record<string, DecisionAnswer> | null} */
   let decided = null;
   /** @type {string | null} */
@@ -333,7 +421,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     } catch (error) { log(`selection decisions failed: ${messageOf(error)}`); }
   }
   // Selection completeness: each core mechanic must have the primitive that defines it (a model check, when a writer is connected).
-  const checked = mapped ? await checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log }) : null;
+  const checked = mapped ? await checkMapping({ writer, decomposition, mechanics, mapped, cards: playable, registry, log }) : null;
   /** @type {Set<string>} */
   const chosen = new Set();
   /** @type {Gap[]} */
@@ -366,6 +454,33 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     m.primitives.forEach(id => chosen.add(id));
     if (!pick) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: m.candidates.length ? `closest primitives (${m.candidates.slice(0, 3).map(c => c.id).join(', ')}) don't implement it` : 'no primitive covers it' });
   }
+  // The mapping fits how the idea is played: what does not serve the interaction leaves its mechanic, and what it did
+  // is served by the loop declared for the interaction (fitInteraction), else the mechanic is a gap.
+  const joinedBy = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
+  const interactionFit = fitInteraction({ mechanics, interaction: playedAs, registry, cards, joined: joinedBy });
+  for (const c of interactionFit.changes) {
+    if (!mechanics.some(m => m.primitives.includes(c.removed))) chosen.delete(c.removed);
+    if (c.by) chosen.add(c.by);
+    const m = mechanics.find(x => x.id === c.mechanic);
+    if (m && !m.primitives.length && !gaps.some(g => g.mechanic === m.id)) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: c.why });
+  }
+  // The play spec's post-check: joined ideas whose loops each declare their own win need a mashup relation. Only that
+  // field goes back to the model (askMashup, field-level); without a model the finding is recorded, never guessed.
+  /** @type {MashupCheck | undefined} */
+  let mashupCheck;
+  const core = decomposition.core;
+  const primitivesOf = (/** @type {string} */ id) => mechanics.find(m => m.id === id)?.primitives || [];
+  const problem = core ? mashupProblem(decomposition, primitivesOf, registry) : null;
+  if (core && problem) {
+    if (writer?.complete) {
+      const r = await askMashup({ writer, decomposition, registry, problem, attempts, recheck: mashup => mashupProblem({ mechanics: decomposition.mechanics, core: { ...core, mashup } }, primitivesOf, registry) });
+      core.mashup = r.mashup;
+      mashupCheck = { problem: problem.message, asked: r.attempts, mashup: r.mashup, model: r.model, ms: r.ms };
+    } else {
+      core.problems = [...new Set([...(core.problems || []), problem.message])];
+      mashupCheck = { problem: problem.message, asked: 0, mashup: core.mashup, unresolved: true };
+    }
+  }
   // Foundations: the story runner (reads plot.storyboard) only when the play spec says the idea has a story told in
   // acts (an undecided spec leaves it to the mechanics' mapping), and whatever registers the item vocabulary.
   const vocab = vocabIndex(registry);
@@ -382,7 +497,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   for (const id of [...chosen]) for (const c of registry.get(id)?.card.conflicts || []) if (chosen.has(c) && c !== id) chosen.delete(c);
   // Input mapping: when anything offers player actions, the catalogue's input primitive (if one is registered) binds them.
   if ([...chosen].some(id => registry.get(id)?.card.provides?.actions?.length)) {
-    const input = registry.cards('engine').filter(c => c.id.startsWith('engine.input.')).map(c => ({ id: c.id, score: relevance({ verb: 'map', description: 'map device keys and buttons to player verbs and actions' }, c) })).sort((a, b) => b.score - a.score)[0];
+    const input = registry.cards('engine').filter(c => c.id.startsWith('engine.input.') && servesInteraction(c, playedAs)).map(c => ({ id: c.id, score: relevance({ verb: 'map', description: 'map device keys and buttons to player verbs and actions' }, c) })).sort((a, b) => b.score - a.score)[0];
     if (input) chosen.add(input.id);
   }
 
@@ -392,7 +507,6 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   // it cannot host become adapter gaps below rather than pulling the game into another space. A declared space that
   // does not show the idea's views, or a loop the spec does not say is played that way, is not forced.
   const wantViews = decomposition.views || [];
-  const playedAs = decomposition.core?.interaction || null;
   const coreLoops = mechanics.filter(m => m.importance === 'core').flatMap(m => m.primitives).map(id => cardLoop(registry.get(id)?.card)).filter(l => l && playedAs && l.interaction === playedAs);
   const modeSpace = coreLoops.map(l => (l?.space || []).find(e => typeof e === 'string' && registry.has(e) && !excludeSpaces.includes(e)
     && (registry.get(e)?.card.views || []).some((/** @type {string} */ v) => v === 'any' || wantViews.includes(v)))).find(Boolean);
@@ -480,7 +594,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces
     // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
-    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, mapping: checked }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ...(adapters.length ? { adapters } : {}), completeness: { locomotion: loco, mapping: checked, ...(interactionFit.changes.length ? { interaction: interactionFit } : {}), ...(mashupCheck ? { mashup: mashupCheck } : {}) }, ...(dropped.length ? { droppedGenerators: dropped } : {}), ...(excludedSpaces.length ? { excludedSpaces } : {}), ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
@@ -578,7 +692,7 @@ export function locomotionCompleteness({ decomposition, registry, chosen, space,
  * platformer needs the platformer movement, not grid steps)? The model sees the mapped primitives and the closest
  * alternatives (lexical candidates and siblings of what was mapped) and names the central one and any wrong ones.
  * Applies its answer to `mapped` (adds the central primitive, removes wrong ones). -> { checked, changes } or null.
- * @param {{ writer?: Writer | null, decomposition: { premise: string, views?: string[], movement?: string }, mechanics: SelectedMechanic[], mapped: Record<string, MechanicMapping>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
+ * @param {{ writer?: Writer | null, decomposition: { premise: string, views?: string[], movement?: string, core?: { interaction?: string | null } | null }, mechanics: SelectedMechanic[], mapped: Record<string, MechanicMapping>, cards: IdCard[], registry: RegistryLike, log?: (msg: string) => void }} options
  * @returns {Promise<MappingCheck | null>}
  */
 export async function checkMapping({ writer, decomposition, mechanics, mapped, cards, registry, log = () => {} }) {
@@ -593,7 +707,7 @@ export async function checkMapping({ writer, decomposition, mechanics, mapped, c
     return `Mechanic ${m.id}: ${m.description}\n  mapped:\n${have.map(id => `    ${line(id)}`).join('\n') || '    (none)'}\n  alternatives:\n${alts.map(id => `    ${line(id)}`).join('\n') || '    (none)'}`;
   }).join('\n\n');
   const system = 'You check a mechanic mapping for a game built from composable primitives. For each core mechanic decide which single primitive DEFINES it (the one without which the mechanic is not there at all: platforming needs the platformer movement, falling-block stacking needs the falling-pieces primitive, catching creatures needs the catch primitive). It may be one already mapped or one of the alternatives. Also list mapped primitives that implement a DIFFERENT mechanic than this one (a wrong sibling, e.g. grid steps for a jump-and-run, flying for a walking dungeon); supporting primitives that help are not wrong. Use exact ids from the lists. When none of them implements the mechanic as the game needs it (e.g. chess piece movement and checkmate), answer central "none" and write the spec of the primitive that would.';
-  const user = `Game idea: ${decomposition.premise}\nMain view: ${primaryOf(decomposition) || 'any'}; the avatar moves: ${decomposition.movement || 'unknown'}\n\n${blocks}`;
+  const user = `Game idea: ${decomposition.premise}\nMain view: ${primaryOf(decomposition) || 'any'}; the avatar moves: ${decomposition.movement || 'unknown'}; played as: ${decomposition.core?.interaction || 'undecided'}\n\n${blocks}`;
   const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why', 'spec'], properties: { mechanic: { type: 'string' }, central: { type: 'string', description: 'the defining primitive id, or "none" when no listed primitive implements this mechanic' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' }, spec: { type: 'string', description: 'when central is "none": what a new primitive must do (its rules, inputs, state, events and win condition), precise enough to build it; else empty' } } } } } } };
   try {
     const reply = await writer.complete({ system, user, schema });
