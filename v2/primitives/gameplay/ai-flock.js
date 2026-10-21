@@ -6,19 +6,21 @@
 // Ground herds move in the space's ground plane; flyers in 3D within an
 // altitude band. Velocities live in rt.store, positions move through slide or
 // setPos (or a steer intent for move.*-owned bodies).
+import { ENTITY_KINDS } from '../../kernel/params.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, planar, upAt, randomPoint, moverOwned, dead, between, displace, zonePoint, centerOf } from './ai-lib.js';
 
 const ID = 'gameplay.ai.flock';
 const st = rt => rt.store(ID);
 const n = (d, extra = {}) => ({ type: 'number', default: d, ...extra });
 const FLOCK = {
-  id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
-  count: { type: 'integer', default: 8, min: 0, max: 400 }, at: { type: 'json', effect: 'home position' }, zone: { type: 'ref', to: 'zone', effect: 'home zone (its point)' },
+  id: { type: 'string', pattern: ID_PATTERN, required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
+  count: { type: 'integer', default: 8, min: 0, max: 400 }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'home position' }, zone: { type: 'ref', to: 'zone', effect: 'home zone (its point)' },
   spread: n(4, { min: 0 }), maxSpeed: n(5, { min: 0 }), maxForce: n(10, { min: 0 }), neighbor: n(5, { min: 0 }), sepDist: n(1.5, { min: 0 }),
   separation: n(1.6, { min: 0 }), alignment: n(1, { min: 0 }), cohesion: n(0.9, { min: 0 }), wander: n(0.3, { min: 0 }),
   leash: n(25, { min: 0, effect: 'pull back toward home beyond this distance (0 = free)' }), leashWeight: n(1, { min: 0 }),
   fly: { type: 'boolean', default: false }, altitude: { type: 'list', of: { type: 'number' }, min: 2, max: 2, effect: 'flyers: [min, max] height above home' },
-  avoid: { type: 'list', default: [{ target: 'player', radius: 8, weight: 3 }], of: { type: 'object', fields: { target: { type: 'string', required: true }, radius: n(8, { min: 0 }), weight: n(3, { min: 0 }) } } },
+  avoid: { type: 'list', default: [{ target: 'player', radius: 8, weight: 3 }], of: { type: 'object', fields: { target: { type: 'string', selects: ENTITY_KINDS, required: true, effect: "'player', an archetype id or an entity id" }, radius: n(8, { min: 0 }), weight: n(3, { min: 0 }) } } },
   obstacles: { type: 'boolean', default: true, effect: 'raycast ahead and steer off walls' },
 };
 
@@ -36,13 +38,20 @@ export default {
     provides: { events: ['flock_spawn', 'flock_scatter'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    rules: {
+      flock_duplicate: { fields: ['flocks[].id'], message: 'each flock has its own id' },
+      flock_home: { fields: ['flocks[].at', 'flocks[].zone', 'flocks[].count'], message: 'a flock that spawns members (count > 0) has a home: at or zone',
+        example: { flocks: [{ id: 'birds', archetype: 'ball', count: 4, at: null, zone: null, spread: null, maxSpeed: null, maxForce: null, neighbor: null, sepDist: null, separation: null, alignment: null, cohesion: null, wander: null, leash: null, leashWeight: null, fly: null, altitude: null, obstacles: null }] } },
+      flock_altitude: { fields: ['flocks[].altitude'], message: 'altitude is [min, max] with min at most max',
+        example: { flocks: [{ id: 'birds', archetype: 'ball', count: 4, at: [1, 1, 0], zone: null, spread: null, maxSpeed: null, maxForce: null, neighbor: null, sepDist: null, separation: null, alignment: null, cohesion: null, wander: null, leash: null, leashWeight: null, fly: null, altitude: [9, 2], obstacles: null }] } },
+    },
   },
   validate(config) {
     const errors = [], ids = new Set();
     config.flocks.forEach((f, i) => {
       if (ids.has(f.id)) errors.push({ code: 'flock_duplicate', path: `flocks[${i}].id`, message: `duplicate flock '${f.id}'` }); ids.add(f.id);
       if (f.at === undefined && f.zone === undefined && f.count > 0) errors.push({ code: 'flock_home', path: `flocks[${i}]`, message: 'a flock that spawns needs at or zone' });
-      if (f.altitude && f.altitude[0] > f.altitude[1]) errors.push({ code: 'param_range', path: `flocks[${i}].altitude`, message: 'min above max' });
+      if (f.altitude && f.altitude[0] > f.altitude[1]) errors.push({ code: 'flock_altitude', path: `flocks[${i}].altitude`, message: 'min above max' });
     });
     return errors;
   },

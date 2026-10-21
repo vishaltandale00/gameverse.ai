@@ -89,5 +89,6 @@ test('preflight rejects bad flock/director configs with stable codes', () => {
   bad.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', do: [{ do: 'set_director', phase: 'chaos' }] }] }] } };
   bad.systems.push({ use: 'plot.storyboard' });
   const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['flock_duplicate', 'flock_home', 'ref_unknown', 'param_range', 'director_thresholds', 'director_phase']) assert.ok(codes.includes(c), c);
+  // Pairs out of order are the cards' cross-field rules (flock_altitude, director_group, director_distance; were the kernel's param_range).
+  for (const c of ['flock_duplicate', 'flock_home', 'ref_unknown', 'flock_altitude', 'director_group', 'director_distance', 'director_thresholds', 'director_phase']) assert.ok(codes.includes(c), c);
 });

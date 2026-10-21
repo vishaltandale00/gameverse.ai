@@ -35,6 +35,13 @@ export default {
     provides: { events: ['director_phase', 'director_phase:*', 'director_spawn'], vars: ['director.intensity', 'director.phase', 'director.alive'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
+    rules: {
+      director_distance: { fields: ['distance'], message: 'distance is [near, far] with near at most far' },
+      director_group: { fields: ['spawns[].group'], message: 'group is [min, max] with min at most max', example: { spawns: [{ archetype: 'ball', cost: null, weight: null, group: [3, 1] }] } },
+      director_thresholds: { fields: ['calm', 'peak'], message: 'calm is at or below peak' },
+      // A set_director effect's phase (code and templates write effects; no form asks for them).
+      director_phase: { fields: ['set_director.phase'], message: `phase is one of ${PHASES.join('|')}`, in: 'effect', kind: 'set_director', example: { do: 'set_director', phase: 'chaos' } },
+    },
   },
   logic(logic) {
     logic.effect('set_director', { check: (e, path, errs) => { if (e.phase !== undefined && !PHASES.includes(e.phase)) errs.push({ code: 'director_phase', path: `${path}.phase`, message: `phase is one of ${PHASES.join('|')}` }); },
@@ -42,9 +49,9 @@ export default {
   },
   validate(config) {
     const errors = [];
-    if (config.distance[0] > config.distance[1]) errors.push({ code: 'param_range', path: 'distance', message: 'min above max' });
+    if (config.distance[0] > config.distance[1]) errors.push({ code: 'director_distance', path: 'distance', message: 'min above max' });
     if (config.calm > config.peak) errors.push({ code: 'director_thresholds', path: 'calm', message: 'calm must be at or below peak' });
-    config.spawns.forEach((x, i) => { if (x.group[0] > x.group[1]) errors.push({ code: 'param_range', path: `spawns[${i}].group`, message: 'min above max' }); });
+    (Array.isArray(config.spawns) ? config.spawns : []).forEach((x, i) => { if (Array.isArray(x?.group) && x.group[0] > x.group[1]) errors.push({ code: 'director_group', path: `spawns[${i}].group`, message: 'min above max' }); });
     return errors;
   },
   install(rt, config) {
