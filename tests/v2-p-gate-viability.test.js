@@ -135,3 +135,34 @@ test('the gate blocks a game whose objective score rises while the win quantity 
   assert.equal(moving.playtest?.progress?.high, 1);
   assert.equal(moving.viable, true, String(moving.viability));
 });
+
+test('an avatar-less real-time game: the playtest keeps lines of play that run longer, so orders play out', async () => {
+  const { buildCatalogue } = await import('../v2/planner/catalog.js');
+  const { preflight } = await import('../v2/kernel/document.js');
+  const { templateById } = await import('../v2/templates/index.js');
+  const { registry, logic } = buildCatalogue();
+  const doc = preflight(structuredClone(templateById('rts').doc), registry, logic).doc;
+  assert.equal(doc.player, undefined, 'the strategy template has no avatar');
+  const pt = playtest(doc, registry, logic, { seed: doc.seed, budgetMs: 1500, maxRounds: 400 });
+  const more = loopEvents(doc, registry).filter(e => (pt.eventsFired[e] || 0) > (pt.idle.counts[e] || 0));
+  assert.ok(more.includes('unit_produced') || more.includes('gathered'), `the player's orders played out: ${JSON.stringify(more)}`);
+});
+
+test('objective counts: false scores by the primitives\' progress hooks alone (every side emits the same loop events)', async () => {
+  const { objective } = await import('../v2/verify/objective.js');
+  const { buildCatalogue } = await import('../v2/planner/catalog.js');
+  const { preflight } = await import('../v2/kernel/document.js');
+  const { createWorld } = await import('../v2/kernel/world.js');
+  const { templateById } = await import('../v2/templates/index.js');
+  const { registry, logic } = buildCatalogue();
+  const doc = preflight(structuredClone(templateById('tactics').doc), registry, logic).doc;
+  const rt = createWorld(doc, registry, logic, { seed: 1, headless: true });
+  rt.step({});
+  const all = objective(doc, registry, logic), sided = objective(doc, registry, logic, { counts: false });
+  rt.state.counts.attack_hit = (rt.state.counts.attack_hit || 0) + 5; // an opponent's hits
+  const a = all.score(rt), s = sided.score(rt);
+  rt.state.counts.attack_hit -= 5;
+  assert.ok(a > all.score(rt), 'event counts move the default score');
+  assert.equal(s, sided.score(rt), 'they do not move the side-aware score');
+  assert.ok(sided.hooks > 0);
+});

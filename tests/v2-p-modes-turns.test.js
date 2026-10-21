@@ -130,3 +130,28 @@ test('turns: preflight rejects bad configs with stable codes', () => {
   for (const c of ['param_option', 'turns_sides', 'turns_action', 'turns_phase', 'turns_overwatch']) assert.ok(codes.has(c), c);
   assert.ok(preflight(tactics(), registry, logic).ok);
 });
+
+test('turns: actionsPerTurn passes the turn after that many actions, with any unit of the side; the AI side picks its unit', () => {
+  const rt = setup({ actionsPerTurn: 1, ap: 1, movePerAp: 1, hitChance: false, overwatch: false, actions: [{ id: 'capture', range: 1.5, los: false, onHit: [{ do: 'damage', who: 'target', amount: 99 }] }] }, rt => {
+    rt.spawn('soldier', { id: 's2', at: [5, 1, 0] }); rt.spawn('alien', { id: 'x1', at: [9, 9, 0] }); rt.spawn('alien', { id: 'x2', at: [6, 3, 0] });
+  });
+  const labels = rt.availableOptions().map(o => o.label);
+  assert.ok(labels.some(l => l.startsWith('player move')) && labels.some(l => l.startsWith('s2 move')), `every unit of the side is offered: ${labels}`);
+  rt.step({ actions: { turn_move: { unit: 's2', to: [5, 2, 0] } } });
+  assert.deepEqual(rt.entity('s2').at.slice(0, 2), [5, 2]);
+  assert.ok(rt.test({ turn: 'enemy' }), 'one action, then the turn passes');
+  drive(rt, 3);
+  assert.equal(rt.state.counts['turn_action:capture'], 1, 'the AI side took its one action with the unit that could capture');
+  assert.equal(rt.state.counts.unit_fallen, 1);
+  assert.ok(rt.test({ turn: 'player' }));
+});
+
+test('turns: every move option is a move the unit can make (path cost within its AP, nothing in the way)', () => {
+  const rt = setup({ ap: 1, movePerAp: 3 }, rt => { rt.spawn('soldier', { id: 's2', at: [2, 1, 0] }); rt.spawn('soldier', { id: 's3', at: [1, 2, 0] }); rt.spawn('alien', { id: 'x1', at: [11, 11, 0] }); });
+  const snap = rt.snapshot(), moves = rt.availableOptions().filter(o => o.actions.turn_move);
+  assert.ok(moves.length > 0);
+  for (const o of moves) {
+    rt.restore(snap); rt.step({ actions: o.actions });
+    assert.equal(rt.state.counts.turn_invalid ?? 0, 0, `${o.label} was offered but rejected`);
+  }
+});

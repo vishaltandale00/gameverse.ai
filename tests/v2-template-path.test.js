@@ -23,6 +23,9 @@ const IDEAS = {
   race: { idea: 'Mario Kart with shopping carts', game: 'Mario Kart', themes: [['shopping carts', 'theme']] },
   dungeon: { idea: 'Zelda-style dungeon inside a giant clock', game: 'Zelda', themes: [['inside a giant clock', 'setting']] },
   farm: { idea: 'A cozy farming game on a floating island', game: 'farming game', themes: [['floating island', 'setting']] },
+  tactics: { idea: 'XCOM-style squad tactics in a sunken city', game: 'XCOM', themes: [['sunken city', 'setting']] },
+  board: { idea: 'Checkers with garden gnomes', game: 'checkers', themes: [['garden gnomes', 'theme']] },
+  rts: { idea: 'StarCraft with ants in a backyard', game: 'StarCraft', themes: [['ants in a backyard', 'setting']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 

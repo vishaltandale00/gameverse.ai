@@ -19,7 +19,9 @@ const DT = 1 / 60;
 function cellKeyOf(rt, score, quantum) {
   const p = rt.player();
   const at = posOf(rt, p);
-  const q = Array.isArray(at) ? at.map(v => Math.floor(v / quantum)).join(',') : String(at);
+  // Without an avatar (board, card and strategy games) there is no position to tell states apart: the seconds played
+  // are, so a line of play that runs longer (orders playing out in real time) is kept instead of collapsing onto its start.
+  const q = Array.isArray(at) ? at.map(v => Math.floor(v / quantum)).join(',') : p ? String(at) : `t${Math.floor(rt.state.time)}`;
   return `${p?.space}|${q}|${Math.round(score * 2) / 2}|${rt.state.status}`;
 }
 
