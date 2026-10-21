@@ -12,6 +12,8 @@
 // mf, phase, stun, combo}, components.versus {meter, juggle, air, guard},
 // components.body.facing, and rt.service('melee').moves(entity) for frame data.
 import { round6, dead, spaceOf, continuous } from './ai-lib.js';
+import { checkParam, ENTITY_KINDS } from '../../kernel/params.js';
+import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 
 const ID = 'gameplay.ai.versus';
 /** Kit difficulty table (index = level). */
@@ -66,11 +68,20 @@ export function macroFrames(rt, config, motion, btn) {
   return fr.map(f => { const ax = f.axes.move ?? Object.values(f.axes)[0] ?? [0, 0]; return [ax[0], -ax[1], f.held[config.buttons.a] ? 1 : 0, f.held[config.buttons.b] ? 1 : 0]; });
 }
 
+/** A special the CPU performs: the fighter's melee move archetype and the motion that issues it. */
+const SPECIAL = { type: 'object', fields: {
+  id: { type: 'string' }, archetype: { type: 'string', required: true, effect: 'the melee move archetype it performs (fireball, axe_kick, teleport...)' },
+  motion: { type: 'string', options: MOTION_NAMES, required: true }, air: { type: 'boolean', effect: 'performed in the air' },
+} };
 const CPU = {
   level: { type: 'integer', min: 1, max: 5 }, style: { type: 'string', options: Object.keys(PREF) },
-  opponent: { type: 'string' },
-  specials: { type: 'list' }, super: { type: 'object' }, throwRange: { type: 'number', min: 0 }, platform: { type: 'boolean' },
+  opponent: { type: 'string', selects: ENTITY_KINDS, effect: 'the entity it fights (default: the nearest fighter)' },
+  specials: { type: 'list', of: SPECIAL, effect: "its specials (default: the fighter's melee moves with a motion)" },
+  super: { type: 'object', fields: { motion: { type: 'string', options: MOTION_NAMES }, button: { type: 'string', options: ['a', 'b'] }, cost: { type: 'number', min: 0, effect: 'meter it needs (default 100)' } }, effect: "its super (default: the fighter's super move)" },
+  throwRange: { type: 'number', min: 0 }, platform: { type: 'boolean', effect: 'false: no platform recovery' },
 };
+/** The archetype component this primitive owns. */
+const CPU_COMPONENT = { type: 'object', fields: CPU, effect: 'difficulty level, style and the specials it performs' };
 const st = rt => rt.store(ID);
 
 export default {
@@ -80,6 +91,7 @@ export default {
     // It plays every fighter with a `cpu` component through the real input path: moves and the button verbs (defaults).
     // Its presses are the fighter's melee moves (gameplay.combat.melee), whose hits deal damage (gameplay.combat.health).
     drives: { control: 'ai', components: ['cpu'], actions: ['attack', 'heavy', 'block', 'throw'], effects: ['damage'], movement: true, events: ['cpu_intent'] },
+    components: { cpu: CPU_COMPONENT },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "cpu", "min": 1, "placed": 1, "why": "the CPU opponent is an archetype with a cpu component {level, style}", "example": {"id": "rival", "kind": "npc", "components": {"cpu": {"level": 3}}}},
@@ -100,17 +112,11 @@ export default {
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
   },
-  validate(config, doc) {
+  validate(config, doc, ctx) {
     const errors = [];
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const c = a.components?.cpu; if (c === undefined) return;
-      const path = `content.archetypes[${i}].components.cpu`;
-      if (!c || typeof c !== 'object') { errors.push({ code: 'param_type', path, message: 'cpu must be an object' }); return; }
-      for (const k of Object.keys(c)) if (!(k in CPU)) errors.push({ code: 'param_unknown', path: `${path}.${k}`, message: `unknown cpu field '${k}'`, hint: Object.keys(CPU).join(', ') });
-      if (c.level !== undefined && !(Number.isInteger(c.level) && c.level >= 1 && c.level <= 5)) errors.push({ code: 'param_range', path: `${path}.level`, message: 'level is 1-5' });
-      if (c.style !== undefined && !PREF[c.style]) errors.push({ code: 'param_option', path: `${path}.style`, message: `style is one of ${Object.keys(PREF).join('|')}` });
-      (c.specials || []).forEach((s, j) => { if (!s?.motion || !s?.archetype) errors.push({ code: 'cpu_special', path: `${path}.specials[${j}]`, message: 'a special needs {archetype, motion}' }); else if (!MOTION_NAMES.includes(s.motion)) errors.push({ code: 'cpu_motion_unknown', path: `${path}.specials[${j}].motion`, message: `unknown motion '${s.motion}'`, hint: MOTION_NAMES.join(' ') }); });
-    });
+    // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
+    // (kernel/document.js DECLARATIONS_ENFORCED): delete this validate with the flag.
+    if (!DECLARATIONS_ENFORCED) (doc.content?.archetypes || []).forEach((a, i) => { const c = a?.components?.cpu; if (c !== undefined) checkParam(CPU_COMPONENT, c, `content.archetypes[${i}].components.cpu`, errors, ctx); });
     return errors;
   },
   install(rt, config) {

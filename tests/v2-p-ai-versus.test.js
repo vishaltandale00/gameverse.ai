@@ -119,6 +119,8 @@ test('neutral game: approaches from far, keeps its style range; replays determin
 test('preflight rejects bad cpu components with stable codes', () => {
   const { registry, logic } = catalogue([testSpace, fighter]);
   const d = doc({ level: 9, style: 'turtle', specials: [{ archetype: 'fireball', motion: 'qcz' }, { motion: 'qcf' }], mood: 1 });
-  const codes = preflight(d, registry, logic).errors.map(e => e.code);
-  for (const c of ['param_range', 'param_option', 'cpu_motion_unknown', 'cpu_special', 'param_unknown']) assert.ok(codes.includes(c), c);
+  const errors = preflight(d, registry, logic).errors, at = (code, path) => errors.some(e => e.code === code && e.path.endsWith(path));
+  // The cpu component is declared (card.components.cpu): a special's motion is a declared option and its archetype and
+  // motion are required, so the kernel reports them (were cpu_motion_unknown and cpu_special from the hand check).
+  for (const [code, path] of [['param_range', 'cpu.level'], ['param_option', 'cpu.style'], ['param_option', 'cpu.specials[0].motion'], ['param_missing', 'cpu.specials[1].archetype'], ['param_unknown', 'cpu.mood']]) assert.ok(at(code, path), `${code} at ${path}: ${JSON.stringify(errors)}`);
 });
