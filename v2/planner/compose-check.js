@@ -582,7 +582,7 @@ export function checkComposition(input, registry, opts = {}) {
       const md = /** @type {Record<string, any> | null} */ (cardLoop(c));
       if (!md) continue;
       const s = spaces.get(u.space);
-      const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || [])].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
+      const inst = docLike ? [...(docLike.systems || []), ...(docLike.graphics || []), ...(docLike.spaces || []).flatMap((/** @type {any} */ sp) => (isObj(sp) && isList(sp.generators) ? sp.generators : []))].find((/** @type {any} */ x) => isObj(x) && x.use === u.use) : null;
       // needs.content: document sections (declared, non-empty) and world content (generators / adapters).
       for (const item of isList(md.needs?.content) ? md.needs.content : []) {
         if (typeof item !== 'string') continue;

@@ -11,6 +11,10 @@
 // `maxShift` cells per step, never through a `blocks` char); impassable chunks
 // are dropped from the pool with a problem, and an empty pool falls back to a
 // plain gap. Runtime choice uses rt.random(), so courses replay exactly.
+// The course owns the distance run along it: var `course.distance` is how far
+// along the axis the followed entity has got from where it first stood, and a
+// course with a `goal` distance is a run to win (the runner mode): reaching it
+// emits course_goal and runs onGoal once.
 import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.chunks';
@@ -57,7 +61,11 @@ export function passable(chunk, along, legend, maxShift) {
 export default {
   id: ID,
   card: {
-    intent: 'Streams authored chunks along an axis ahead of the player for endless runners, flyers and climbers: tiered by a speed curve, spaced by density, every chunk proven passable.',
+    intent: 'Streams authored chunks along an axis ahead of the player for endless runners, flyers and climbers: tiered by a speed curve, spaced by density, every chunk proven passable. Tracks the distance run along the course; with a goal distance the run is won on reaching it.',
+    // The runner: an endless course run to a goal distance. Only a course with a goal is one (mode.applies); without
+    // one the course is world, not a loop. The course owns the distance (var course.distance, written from the followed
+    // entity's position), so the player changes it by moving.
+    mode: { loop: 'runner', applies: { param: 'goal', given: true }, interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.tilemap'], progress: ['chunk_placed', 'course_goal'], needs: { content: [], participants: null }, win: { param: 'onGoal', reads: { var: 'course.distance', by: { movement: true } } }, lose: { param: null }, bot: 'beam' },
     views: ['side', 'td', '3p'],
     spaces: ['engine.space.track', 'engine.space.tilemap', 'engine.space.arena2d'],
     params: {
@@ -73,6 +81,8 @@ export default {
       origin: { type: 'list', of: { type: 'number' }, default: [0, 0, 0], effect: 'space position of progress 0, cross 0' },
       firstAt: { type: 'number', default: 10, scale: 'world', effect: 'progress of the first chunk' },
       end: { type: 'number', min: 0, scale: 'world', effect: 'progress where the course ends: no chunk starts at or beyond it (default: endless)' },
+      goal: { type: 'number', min: 1, scale: 'world', effect: 'distance to run along the axis, from where the followed entity starts, that wins: onGoal runs once on reaching it (unset: no distance win); it must end inside the space' },
+      onGoal: { type: 'effects', default: [], effect: 'effects when the followed entity reaches goal (self = that entity); course_goal is always emitted' },
       speed: { type: 'object', default: {}, fields: { start: { type: 'number', min: 0, default: 10 }, max: { type: 'number', min: 0, default: 22 }, rampSeconds: { type: 'number', min: 1, default: 90 } }, effect: 'speed curve (units/s) that sets tiers' },
       tierBy: { type: 'string', options: ['time', 'distance'], default: 'time' },
       tierDistance: { type: 'list', of: { type: 'number' }, default: [300, 900], min: 2, max: 2, effect: 'distance thresholds for tiers 2 and 3' },
@@ -85,10 +95,10 @@ export default {
       clearBehind: { type: 'boolean', default: true, effect: 'clear placed cells behind as well as entities' },
       chunkZones: { type: 'boolean', default: false, effect: 'add a zone chunk_<n> per placed chunk (x/y axes; spaces with addZone, which keep zones in state) so solvers can name the chunk a run fails in' },
     },
-    provides: { content: ['course', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['generation', 'chunks'] },
+    provides: { content: ['course', 'cells', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*', 'course_goal'], vars: ['course.distance'], services: ['generation', 'chunks'] },
     requires: { capabilities: ['position'] },
     problems: ['chunk_impassable', 'chunk_tier_missing', 'chunks_fallback'],
-    validates: ['chunk_duplicate', 'chunk_rows_ragged', 'chunk_char_unknown', 'chunk_axis_invalid', 'chunk_legend_invalid'],
+    validates: ['chunk_duplicate', 'chunk_rows_ragged', 'chunk_char_unknown', 'chunk_axis_invalid', 'chunk_legend_invalid', 'chunk_goal_outside'],
   },
   /**
    * Planner hook (v2/planner/world.js), track spaces: a finite course over the zones' progress span (the track's
@@ -125,9 +135,13 @@ export default {
       ...(given > 0 ? {} : { space: { with: { length: +end.toFixed(2) } } }),
     };
   },
-  validate(raw) {
+  validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [], legend = config.legend, ids = new Set();
+    // A goal past the space's far edge along the axis can never be reached (run from the player's start when it is followed).
+    const sp = (doc?.spaces || []).find(s => s.id === inst.space), size = sp?.with?.size, ax = AX[config.axis];
+    const from = config.follow === 'player' && Array.isArray(doc?.player?.at) && Number.isFinite(doc.player.at[ax]) ? doc.player.at[ax] : (config.origin[ax] ?? 0);
+    if (config.goal !== undefined && Array.isArray(size) && Number.isFinite(size[ax]) && from + config.goal >= size[ax]) errors.push(problem('chunk_goal_outside', 'goal', `a run of ${config.goal} from ${from} along ${config.axis} ends past the space's far edge (${size[ax]})`, { hint: `a goal below ${size[ax] - from}` }));
     if (config.axis === config.cross) errors.push(problem('chunk_axis_invalid', 'cross', 'cross must differ from axis'));
     for (const [ch, v] of Object.entries(legend || {})) if ([...ch].length !== 1 || !v || typeof v !== 'object') errors.push(problem('chunk_legend_invalid', `legend.${ch}`, 'legend keys are single chars mapping to {archetype?, block?, blocks?, hazard?}'));
     config.chunks.forEach((c, i) => {
@@ -146,7 +160,7 @@ export default {
     const fallback = !pool.length;
     if (fallback) { problems.push(problem('chunks_fallback', 'chunks', 'no passable chunk; the course is plain gaps')); pool = [{ id: 'plain', tier: 1, spacing: 1, rows: ['.'], index: -1 }]; }
     const ax = AX[config.axis], cx = AX[config.cross], join = Math.max(config.gap.min, config.gap.base / config.density);
-    const st = () => { const s = rt.store(instance.key); s.nextAt ??= config.firstAt; s.chunkN ??= 0; s.lastChunk ??= null; s.log ??= []; s.placed ??= []; s.cells ??= []; return s; };
+    const st = () => { const s = rt.store(instance.key); s.nextAt ??= config.firstAt; s.chunkN ??= 0; s.lastChunk ??= null; s.log ??= []; s.placed ??= []; s.cells ??= []; s.from ??= null; s.best ??= null; s.goal ??= false; return s; };
     const progressOf = () => { const e = rt.entity(config.follow); return e?.space === space.sid && Array.isArray(e.at) ? e.at[ax] - (config.origin[ax] ?? 0) : null; };
     const place = (chunk, start) => {
       const g = chunkGrid(chunk, config.along), writer = cellWriter(rt, space), s = st(), ids = [];
@@ -176,8 +190,16 @@ export default {
       s.nextAt = start + length; s.lastChunk = chunk.id; s.chunkN++; s.log.push(chunk.id); if (s.log.length > 8) s.log.shift();
       rt.emitTyped('chunk_placed', chunk.id, { at: start, length, tier, n: s.chunkN });
     };
+    /** The distance run: how far the followed entity has got from where it first stood; the goal once it is reached. */
+    const track = p => {
+      const s = st(); s.from ??= p;
+      const d = Math.round((p - s.from) * 1e6) / 1e6;
+      if (s.best === null || d > s.best) { s.best = d; rt.state.vars['course.distance'] = d; }
+      if (config.goal !== undefined && !s.goal && s.best >= config.goal) { s.goal = true; rt.emit('course_goal', { who: config.follow, at: s.best, goal: config.goal }); rt.run(config.onGoal, { self: config.follow }); }
+    };
     const stream = () => {
       const p = progressOf(); if (p === null) return;
+      track(p);
       for (let guard = 0; st().nextAt < p + config.ahead && (config.end === undefined || st().nextAt + (st().chunkN ? join : 0) < config.end) && guard < 64; guard++) spawnChunk();
       const s = st(), cut = p - config.behind;
       if (s.placed.length && s.placed[0].p < cut) { const keep = []; for (const e of s.placed) { if (e.p < cut) rt.despawn(e.id); else keep.push(e); } s.placed = keep; }
@@ -187,7 +209,7 @@ export default {
     rt.system('late', stream, ID);
     const limits = chunkLimits(config.speed, pool);
     publish(rt, instance, space, ID, { problems, pool: pool.map(c => c.id), limits, fallback, join }, {
-      chunks: { pool: () => pool.map(c => c.id), limits: () => limits, tier: t => tierAt(config.speed, t ?? rt.state.time), speed: t => speedAt(config.speed, t ?? rt.state.time), nextAt: () => st().nextAt, log: () => st().log.slice(), problems: () => problems },
+      chunks: { distance: () => st().best ?? 0, goal: () => config.goal ?? null, pool: () => pool.map(c => c.id), limits: () => limits, tier: t => tierAt(config.speed, t ?? rt.state.time), speed: t => speedAt(config.speed, t ?? rt.state.time), nextAt: () => st().nextAt, log: () => st().log.slice(), problems: () => problems },
     });
   },
 };

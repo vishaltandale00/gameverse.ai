@@ -11,8 +11,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, endsGame } from '../v2/planner/loop.js';
-import { loopReport, movesPlayer, playerChanges, evaluatesEndings, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
+import { cardLoop, endsGame, loopOf } from '../v2/planner/loop.js';
+import { loopReport, loopInstances, movesPlayer, playerChanges, evaluatesEndings, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
 
 const { registry, logic } = buildCatalogue();
 const cards = registry.cards();
@@ -25,6 +25,23 @@ const DEMANDS = [LOOP_CODES.win, LOOP_CODES.unaffected, LOOP_CODES.reads, LOOP_C
 const resolve = req => (registry.has(req) ? req : cards.find(c => c.id.startsWith(`${req}.`))?.id ?? null);
 
 /**
+ * The instance config in which a card's win exists, from its declarations: the `applies` configuration (a value for a
+ * `given` param, the list field or value it tests); {} when it always exists.
+ */
+function present(card) {
+  const end = cardLoop(card)?.win, w = {};
+  if (end?.applies?.given === true) {
+    // `given`: the win exists once the instance sets the param at all; any value its spec declares sets it.
+    const spec = card.params?.[end.applies.param] || {};
+    w[end.applies.param] = spec.type === 'list' ? [{}] : spec.default ?? spec.min ?? spec.options?.[0] ?? true;
+  } else if (end?.applies) {
+    const { param, field, is } = end.applies;
+    w[param] = card.params?.[param]?.type === 'list' ? [field ? { [field]: is } : is] : field ? { [field]: is } : is;
+  }
+  return w;
+}
+
+/**
  * The instance config that wires a card's game-ending win in its own instance, from its declarations (the `applies`
  * configuration it exists in, an end_game effect in its param or list field, its `end` boolean); null when its win is
  * not wired in its own instance (a `when` or story ending, or a `via` host).
@@ -32,11 +49,7 @@ const resolve = req => (registry.has(req) ? req : cards.find(c => c.id.startsWit
 function wiring(card) {
   const loop = cardLoop(card), end = loop?.win;
   if (!endsGame(end) || loop.via || (typeof end.param !== 'string' && typeof end.end !== 'string')) return null;
-  const w = {};
-  if (end.applies) {
-    const { param, field, is } = end.applies;
-    w[param] = card.params?.[param]?.type === 'list' ? [field ? { [field]: is } : is] : field ? { [field]: is } : is;
-  }
+  const w = present(card);
   if (typeof end.param === 'string') {
     const [p, field] = end.param.split('.');
     if (field) w[p] = (Array.isArray(w[p]) && w[p].length ? w[p] : [{}]).map(e => ({ ...(isObj(e) ? e : {}), [field]: won }));
@@ -81,7 +94,8 @@ test('win owner: a document that wires no win still fails (loop_win_unwired), fo
   const failures = [];
   for (const a of wins) for (const b of wins) {
     if (a.id === b.id) continue;
-    const report = loopReport({ systems: [{ use: a.id }, { use: b.id }] }, registry, { logic });
+    // Both wins exist in their instances (their `applies` configuration) and neither is wired.
+    const report = loopReport({ systems: [{ use: a.id, with: present(a) }, { use: b.id, with: present(b) }] }, registry, { logic });
     if (!report.problems.some(p => p.code === LOOP_CODES.win && p.primitive === report.owner)) failures.push(`${a.id} + ${b.id}: no loop_win_unwired (owner ${report.owner})`);
   }
   assert.deepEqual(failures, []);
@@ -147,4 +161,19 @@ test('player movement: every mover drives every win that reads the player\'s mov
     }
   }
   assert.deepEqual(failures, []);
+});
+
+test('loop instances: the loop check reads every loop-carrying generator where loop.js loopOf does (spaces[].generators[])', () => {
+  const gens = cards.filter(c => /^engine\.generate\./.test(c.id) && cardLoop(c));
+  assert.ok(gens.length >= 2, gens.map(c => c.id).join(', '));
+  for (const g of gens) {
+    const doc = { spaces: [{ id: 's', use: 'engine.space.grid', generators: [{ use: g.id, with: present(g) }] }], systems: [] };
+    assert.deepEqual(loopInstances(doc, registry).map(l => [l.use, l.path]), [[g.id, 'spaces[0].generators[0]']], g.id);
+    assert.deepEqual(loopOf(doc, registry).primitives.map(l => [l.use, l.path]), [[g.id, 'spaces[0].generators[0]']], g.id);
+    // A mode that does not apply to the instance is no loop of it (a dungeon without a boss, a course without a goal).
+    if (!g.loop && g.mode?.applies) {
+      const bare = { spaces: [{ id: 's', use: 'engine.space.grid', generators: [{ use: g.id, with: {} }] }], systems: [] };
+      assert.deepEqual([loopInstances(bare, registry).length, loopOf(bare, registry).primitives.length], [0, 0], g.id);
+    }
+  }
 });

@@ -124,6 +124,12 @@ const DOCS = {
     { items: [{ id: 'hoe', name: 'Hoe', kind: 'tool', tool: { kind: 'hoe', tier: 0 } }, { id: 'bean_seed', name: 'Bean seed', kind: 'material' }, { id: 'bean', name: 'Bean', kind: 'food' }, { id: 'leek_seed', name: 'Leek seed', kind: 'material' }, { id: 'leek', name: 'Leek', kind: 'food' }],
       blocks: [{ id: 'dirt', name: 'Dirt', solid: false }, { id: 'farmland', name: 'Farmland', solid: false }], archetypes: [{ id: 'hero', components: {} }] },
     { plot: { endings: [{ id: 'harvest', title: 'Harvest', when: { count: 'harvested', gte: 3 }, outcome: 'won' }] }, player: { archetype: 'hero', at: [0, 0] } }),
+  runner: () => base('runner', [{ id: 'run', use: 'engine.space.tilemap', with: { size: [256, 8], mode: 'side' },
+    generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'hop', rows: ['..o...', '......', '..#..^'] }], along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 8,
+      legend: { '.': {}, '#': { block: 'crate', blocks: true }, '^': { block: 'spikes', hazard: true }, o: { archetype: 'coin' } }, gap: { base: 4, min: 3 }, goal: 50, onGoal: won } }] }],
+    [{ use: 'gameplay.move.platformer', with: { preset: 'runner' } }, { use: 'gameplay.combat.health' }, { use: 'gameplay.hazard', with: { types: [{ id: 'spikes', damage: 1 }] } }],
+    { archetypes: [{ id: 'hero', components: { health: { max: 1 }, body: { size: [0.7, 1.1] } } }, { id: 'coin', components: { body: { size: [0.6, 0.6] } } }],
+      blocks: [{ id: 'crate', solid: true }, { id: 'spikes', solid: false, hazard: 'spikes' }] }, { player: { archetype: 'hero', at: [2, 0.55] } }),
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
@@ -143,7 +149,7 @@ const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loo
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
   placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {}, crawl: {},
-  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {},
+  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {}, beam: {},
 };
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
 const strip = runs => runs.map(({ budget, ...x }) => x);
@@ -223,7 +229,7 @@ test('mode creature-battle: the greedy battler wins the trainer battle the story
   assert.equal(a.metrics.rate, 1, JSON.stringify(a.metrics.runs));
 });
 
-for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
+for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl', 'runner']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });
 
 test('mode farm: the farming bot tills, plants, waters and harvests through the controls to the win', () => {
   const { runs } = playMode('farm');

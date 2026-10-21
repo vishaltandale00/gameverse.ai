@@ -32,7 +32,7 @@
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
 // structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
-import { cardLoop, endsGame, appliesTo } from './loop.js';
+import { cardLoop, endsGame, appliesTo, loopExists } from './loop.js';
 import { contractsOf, participantsOf } from './content.js';
 import { spawnRules } from './census.js';
 import { defaultsOf } from './catalog.js';
@@ -180,15 +180,20 @@ export function actionEffects(card, config, wiring) {
 export function loopInstances(doc, registry) {
   /** @type {LoopInstance[]} */
   const out = [];
-  list(prop(doc, 'systems')).forEach((s, index) => {
+  /** @param {unknown} s @param {string} path */
+  const visit = (s, path) => {
     const use = prop(s, 'use'); if (!isStr(use) || !isObj(s)) return;
     const card = registry.get(use)?.card; const loop = cardLoop(card);
     if (!card || !loop) return;
     /** @type {Record<string, unknown>} */
     let config = {};
     try { config = { ...defaultsOf(/** @type {any} */ (card)), ...(isObj(s.with) ? s.with : {}) }; } catch { config = isObj(s.with) ? { ...s.with } : {}; }
-    out.push({ use, index, path: `systems[${index}]`, loop, card, config, inst: s });
-  });
+    if (!loopExists(card, config)) return; // a mode that does not apply to this instance: no loop here
+    out.push({ use, index: out.length, path, loop, card, config, inst: s });
+  };
+  // Systems, then the generators of every space (a generator can carry a loop: a crawl, a course run to a goal), as loop.js loopOf reads them.
+  list(prop(doc, 'systems')).forEach((s, i) => visit(s, `systems[${i}]`));
+  list(prop(doc, 'spaces')).forEach((sp, i) => list(prop(sp, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)));
   return out;
 }
 
@@ -204,7 +209,9 @@ export function winOwner(doc, registry, loops, core) {
   const order = core ? [...core] : [];
   const wins = loops.filter(l => endsGame(l.loop.win));
   const wired = new Set(wins.filter(l => !unwired(doc, l, /** @type {LoopEnd} */ (l.loop.win), 'won', registry)));
-  return wins.sort((a, b) => rank(order, a.use) - rank(order, b.use) || Number(wired.has(b)) - Number(wired.has(a)) || a.index - b.index)[0] || null;
+  // Then a win that exists in the instance's config (its `applies`) before one that does not (a course without a goal).
+  const applies = new Set(wins.filter(l => appliesTo(l.loop.win?.applies, l.config)));
+  return wins.sort((a, b) => rank(order, a.use) - rank(order, b.use) || Number(wired.has(b)) - Number(wired.has(a)) || Number(applies.has(b)) - Number(applies.has(a)) || a.index - b.index)[0] || null;
 }
 /** @param {string[]} order @param {string} id */
 const rank = (order, id) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
@@ -293,7 +300,8 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
   const problems = [];
   /** @param {string} code @param {LoopInstance} l @param {string} path @param {string} message @param {string} hint @param {LoopNeed} need @param {'error' | 'warning'} [severity] */
   const push = (code, l, path, message, hint, need, severity = 'error') => problems.push({ code, path, message: `${l.use}: ${message}`, hint, severity, stage: 'loop', primitive: l.use, need });
-  const used = new Set(list(prop(doc, 'systems')).map(s => prop(s, 'use')).filter(isStr));
+  // The document's primitives: its systems and the generators of its spaces.
+  const used = new Set([...list(prop(doc, 'systems')), ...list(prop(doc, 'spaces')).flatMap(sp => list(prop(sp, 'generators')))].map(s => prop(s, 'use')).filter(isStr));
   const arches = objects(prop(prop(doc, 'content'), 'archetypes'));
   const playerArch = prop(prop(doc, 'player'), 'archetype');
   const participants = participantsOf(doc, registry);
