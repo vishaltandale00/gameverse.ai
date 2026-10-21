@@ -96,8 +96,11 @@ export function tuneProblems(t, registry) {
  * through the controls a person has (v2/verify/controls.js).
  */
 export function playContext(checked, registry, logic) {
-  const make = controlledMaker(checked.doc, registry, logic);
-  return { doc: checked.doc, registry, logic, make, seed: SEEDS[0], capabilities: checked.capabilities, used: usedPrimitives(checked.doc), playerSpace: make(SEEDS[0]).player()?.space ?? checked.doc.spaces[0].id };
+  // Hosting is idempotent: a preflighted document or its host document gives the same document a person plays.
+  const host = hostPreflight(checked.doc, registry, logic);
+  if (!host.ok) throw Object.assign(Error(`the host document does not preflight: ${JSON.stringify(host.errors.slice(0, 3))}`), { code: 'preflight_failed' });
+  const make = controlledMaker(host.doc, registry, logic);
+  return { doc: host.doc, registry, logic, make, seed: SEEDS[0], capabilities: host.capabilities, used: usedPrimitives(host.doc), playerSpace: make(SEEDS[0]).player()?.space ?? host.doc.spaces[0].id };
 }
 
 const runsOf = r => r?.metrics?.runs ?? r?.metrics?.matches ?? [];
