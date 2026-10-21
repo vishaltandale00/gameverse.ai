@@ -13,7 +13,7 @@ import { budget as makeBudget } from '../util.js';
 import { multiSeed, problem } from './common.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
-export const DANGER = 3, MARGIN = 2, FIELD_CAP = 24, FAR = 32767;
+export const DANGER = 3, MARGIN = 2, FIELD_CAP = 24, FAR = 32767, SAFE_LEAD = 8;
 const keyOf = c => (Array.isArray(c) ? c.join(',') : String(c));
 /** The cell a position is in, as the space defines it (api.cellOf honours its anchor); integer floors only for spaces without one. */
 const cellIn = (api, at) => (!Array.isArray(at) ? at : typeof api?.cellOf === 'function' ? api.cellOf({ at }).split(',').map(Number) : at.map(v => Math.floor(v)));
@@ -55,6 +55,16 @@ export function safeSearch(api, who, rt, here, hd, isGoal, { limit = Infinity, d
     }
   }
   return best;
+}
+
+/** Steps from each cell to the nearest goal cell, over the moves `who` can make (a BFS from `here` outward, then from the goals). */
+function distanceTo(api, who, rt, here, isGoal) {
+  const cells = [here], seen = new Set([keyOf(here)]);
+  for (let h = 0; h < cells.length; h++) for (const m of stepsFrom(api, who, cells[h], rt)) { const k = keyOf(m); if (!seen.has(k)) { seen.add(k); cells.push(m); } }
+  const d = new Map(), q = cells.filter(c => isGoal(c, keyOf(c)));
+  for (const c of q) d.set(keyOf(c), 0);
+  for (let h = 0; h < q.length; h++) { const n = d.get(keyOf(q[h])) + 1; for (const m of stepsFrom(api, who, q[h], rt)) { const k = keyOf(m); if (!d.has(k)) { d.set(k, n); q.push(m); } } }
+  return k => d.get(k) ?? FAR;
 }
 
 /** Candidate move macros: the runtime's options, else held move axes in the 4 grid directions. */
@@ -111,7 +121,9 @@ export default {
         let next = prey.size ? (why = 'hunt', safeSearch(api, p, rt, here, hd, (c, k) => prey.has(k), { limit: 14, margin })) : null;
         if (!next) { why = 'eat'; next = safeSearch(api, p, rt, here, hd, isFood, { margin }); }
         if (!next) { why = 'eat!'; next = safeSearch(api, p, rt, here, hd, isFood, { limit: 20, danger: 0, margin: 0 }); }
-        if (!next) { why = 'escape'; next = safeSearch(api, p, rt, here, hd, () => false, { limit: 30, danger: 0, margin: 0, score: (k, d) => Math.min(hd(k), 40) - d * 0.5 }); }
+        // Escape to the cell with the biggest lead, closer to the targets among equally safe ones (a lead beyond
+        // SAFE_LEAD is safe enough), so a hunter circling the last targets is waited out at their edge, not far away.
+        if (!next) { why = 'escape'; const fd = distanceTo(api, p, rt, here, isFood); next = safeSearch(api, p, rt, here, hd, () => false, { limit: 30, danger: 0, margin: 0, score: (k, d) => Math.min(hd(k), SAFE_LEAD) - d * 0.5 - fd(k) * 0.25 }); }
         if (!next) { why = 'flee'; next = stepsFrom(api, p, here, rt).sort((x, y) => hd(keyOf(y)) - hd(keyOf(x)))[0] || null; }
         counts[why] = (counts[why] || 0) + 1;
         if (next) stepTo(rt, next, { b }); else hold(rt, {}, 1, b);

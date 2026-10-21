@@ -44,6 +44,15 @@ export const PROBLEM_CODES = {
 const RANK = { error: 0, warning: 1, info: 2 };
 
 /**
+ * Run a bot on the world a person plays: the gate's seed (the document's own seed), never the bot's default seed
+ * list. Every caller that proves a document with a bot (this gate, the template suite) runs it through here.
+ * `opts` are the bot's other run options; a caller's explicit `seeds` there are not allowed to replace the world.
+ */
+export function playBot(strategy, ctx, opts = {}) {
+  return strategy.run(ctx, { ...opts, seeds: [ctx.seed] });
+}
+
+/**
  * verify(doc, registry, logic, opts) → report
  * opts: { seed, budgetMs, plot: {...solver opts} | false, spatial: {...} | false, playtest: {...} | false,
  *         strategies: { only?: [ids], budgetMs?: reserved for the bots, [id]: {...run opts} } | false, invariants: {...} | false }
@@ -90,7 +99,7 @@ export async function verify(doc, registry, logic, opts = {}) {
       chosen.forEach(({ s, reason }, i) => {
         const share = (botBudget !== null ? Math.max(50, botBudget - (now() - tb)) : left() * 0.6) / (chosen.length - i);
         try {
-          const r = s.run(ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
+          const r = playBot(s, ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
           ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget });
           tag(r.problems.map(p => ({ ...p, strategy: s.id })), 'strategy');
         } catch (error) { ran.push({ id: s.id, reason, ok: false, error: String(error?.message || error) }); problems.push(problem('runtime_error', 'systems', `strategy '${s.id}' threw: ${error?.message || error}`, { stage: 'strategy', strategy: s.id })); }

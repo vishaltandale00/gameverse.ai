@@ -1,7 +1,8 @@
 // The template suite (ARCHITECTURE.md §5): every template is a verified document. Each one preflights against the
 // live catalogue, passes the static composition and loop checks, its `tune` names only declared params of its own
-// instances, the publish gate finds it viable, and the bot its loop's card names wins it through the controls and
-// replays deterministically.
+// instances, and on every world seed in WORLD_SEEDS (the pipeline sets doc.seed to the job's seed) the publish gate
+// finds it viable and the bot its loop's card names, run by the gate on the document's own seed, wins it through the
+// controls and replays deterministically.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TEMPLATES, templateById } from '../v2/templates/index.js';
@@ -10,6 +11,7 @@ import { preflight } from '../v2/kernel/document.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
 import { verifyDocument } from '../v2/planner/verify-adapter.js';
+import { verify, playBot } from '../v2/verify/index.js';
 import { maker } from '../v2/verify/drive.js';
 import { usedPrimitives } from '../v2/verify/util.js';
 import { strategies, select, modeBots } from '../v2/verify/strategies/index.js';
@@ -27,6 +29,9 @@ export function tuneTarget(doc, path, reg = registry) {
 }
 const checked = t => { const r = preflight(structuredClone(t.doc), registry, logic); assert.ok(r.ok, `${t.id}: ${JSON.stringify(r.errors?.slice(0, 5))}`); return r; };
 const BOT_OPTS = { 'danger-field': { maxFrames: 15000 }, race: {}, crawl: {} };
+/** The world seeds every template is proven on: a template's guarantees hold for the world any job seed generates. */
+const WORLD_SEEDS = [1, 2, 3];
+const seeded = (t, seed) => ({ ...t, doc: { ...structuredClone(t.doc), seed } });
 
 test('templates: unique ids, a one-line concept, a document and declared tune params', () => {
   assert.ok(TEMPLATES.length >= 2);
@@ -52,25 +57,31 @@ for (const t of TEMPLATES) {
     assert.deepEqual(loopProblems(r.doc, registry, { logic }), []);
   });
 
-  test(`template ${t.id}: the publish gate finds it viable`, async () => {
-    const v = await verifyDocument(structuredClone(t.doc), registry, logic, { budgetMs: 800, playtestMs: 1500 });
-    assert.ok(v.viable, `${t.id}: ${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`);
-  });
+  for (const seed of WORLD_SEEDS) {
+    test(`template ${t.id} on world seed ${seed}: the publish gate finds it viable`, async () => {
+      const v = await verifyDocument(seeded(t, seed).doc, registry, logic, { budgetMs: 800, playtestMs: 1500 });
+      assert.ok(v.viable, `${t.id} seed ${seed}: ${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`);
+    });
 
-  test(`template ${t.id}: the bot its loop names wins and replays`, () => {
-    const r = checked(t), make = maker(r.doc, registry, logic);
-    const ctx = { doc: r.doc, registry, logic, make, seed: 1, capabilities: r.capabilities, used: usedPrimitives(r.doc), playerSpace: make(1).player()?.space ?? r.doc.spaces[0].id };
-    const named = modeBots(ctx).map(x => x.s.id);
-    assert.ok(named.length, `${t.id}: a loop in the document names its bot (card.mode.bot)`);
-    assert.deepEqual(select(ctx).chosen.map(c => c.s.id), named, 'the gate plays the bots the loops name');
-    for (const id of named) {
-      const bot = strategies.get(id), opts = { budgetMs: 60000, seeds: [1], ...BOT_OPTS[id] };
-      const a = bot.run(ctx, opts), b = bot.run(ctx, opts);
-      const runs = a.metrics.runs ?? a.metrics.matches;
-      assert.equal(a.ok, true, `${t.id} ${id}: ${JSON.stringify(a.problems)}`);
-      assert.equal(runs[0].status, 'won', `${t.id} ${id}: the game ended won (${JSON.stringify(runs[0]).slice(0, 300)})`);
-      const strip = xs => xs.map(({ budget, ...x }) => x);
-      assert.deepEqual(strip(b.metrics.runs ?? b.metrics.matches), strip(runs), `${t.id}: the same document and seed replay to the same result`);
-    }
-  });
+    test(`template ${t.id} on world seed ${seed}: the gate plays the bot its loop names on that seed, it wins and replays`, async () => {
+      const r = checked(seeded(t, seed)), make = maker(r.doc, registry, logic);
+      const ctx = { doc: r.doc, registry, logic, make, seed, capabilities: r.capabilities, used: usedPrimitives(r.doc), playerSpace: make(seed).player()?.space ?? r.doc.spaces[0].id };
+      const named = modeBots(ctx).map(x => x.s.id);
+      assert.ok(named.length, `${t.id}: a loop in the document names its bot (card.mode.bot)`);
+      assert.deepEqual(select(ctx).chosen.map(c => c.s.id), named, 'the gate plays the bots the loops name');
+      // The gate's own bot stage (v2/verify/index.js), alone: it plays the world of the document's seed.
+      const opts = Object.fromEntries(named.map(id => [id, { ...BOT_OPTS[id] }]));
+      const gate = await verify(r.doc, registry, logic, { seed: r.doc.seed, plot: false, spatial: false, playtest: false, invariants: false, strategies: { budgetMs: 60000, ...opts } });
+      assert.deepEqual(gate.strategies.ran.map(x => x.id), named);
+      for (const ran of gate.strategies.ran) {
+        const id = ran.id, runs = ran.metrics.runs ?? ran.metrics.matches;
+        assert.equal(ran.ok, true, `${t.id} seed ${seed} ${id}: ${JSON.stringify(gate.problems.filter(p => p.strategy === id)).slice(0, 600)}`);
+        assert.deepEqual(runs.map(x => x.seed), [seed], `${t.id} ${id}: the gate's bot played the document's world seed`);
+        assert.equal(runs[0].status, 'won', `${t.id} seed ${seed} ${id}: the game ended won (${JSON.stringify(runs[0]).slice(0, 300)})`);
+        const again = playBot(strategies.get(id), ctx, { budgetMs: 60000, ...opts[id] });
+        const strip = xs => xs.map(({ budget, ...x }) => x);
+        assert.deepEqual(strip(again.metrics.runs ?? again.metrics.matches), strip(runs), `${t.id} seed ${seed}: the same document and seed replay to the same result`);
+      }
+    });
+  }
 }

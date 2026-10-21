@@ -4,8 +4,10 @@
 //   `matchLength`; the proof re-scans for runs and requires at least one swap
 //   that makes a match (`ensureMove`), reshuffling with a sub-seed otherwise.
 // - tactics: weighted terrain with obstacles, optional mirror/rotational
-//   symmetry for fairness and deploy strips per team; proof: every open cell
-//   connected (closed pockets are filled) and every deploy strip reachable.
+//   symmetry for fairness and deploy strips per team; every cell no terrain
+//   covers (the deploy strips among them) is `ground` when it is set, else
+//   empty; proof: every open cell connected (closed pockets are filled) and
+//   every deploy strip reachable, so every open cell joins the strips.
 // - lanes: bases at opposite corners joined by `lanes` corridors through a
 //   filled field (MOBA/tower-defense); proof: each lane alone joins the bases.
 // - hex-continent: odd-r offset hexes; continents grown from seeds to a land
@@ -39,6 +41,7 @@ export default {
       fillNoMatch: { type: 'boolean', default: true }, matchLength: { type: 'integer', min: 2, max: 6, default: 3 }, ensureMove: { type: 'boolean', default: true },
       terrain: { type: 'list', of: terrain, default: [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }], effect: 'tactics: obstacle/feature terrain' },
       density: { type: 'number', min: 0, max: 0.8, default: 0.18, effect: 'tactics: share of cells given terrain; lanes: field fill' },
+      ground: { type: 'string', effect: 'tactics: block of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
       symmetry: { type: 'string', options: ['none', 'mirror', 'rotate'], default: 'rotate' },
       teams: { type: 'integer', min: 1, max: 4, default: 2 }, deployDepth: { type: 'integer', min: 1, max: 8, default: 2 },
       lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'string', default: 'jungle', effect: 'lanes: field block' },
@@ -51,7 +54,7 @@ export default {
     provides: { content: ['cells'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'board'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
-    validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open'],
+    validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open', 'board_ground_blocks'],
   },
   /** The cells the board fills: origin + size, or the whole space when size is unset (provides.extent: 'own'). */
   extentOf(raw, space) {
@@ -69,6 +72,7 @@ export default {
     if (!config.size && !Array.isArray(sp?.with?.size)) errors.push(problem('board_size_missing', 'size', 'give size or bind to a space with a size'));
     if (config.kind === 'match' && config.fillNoMatch && config.fill.filter(p => p.weight > 0).length < 3) errors.push(problem('board_pieces_few', 'fill', 'a no-match fill needs at least 3 pieces'));
     if (config.kind === 'tactics' && !config.terrain.length) errors.push(problem('board_terrain_open', 'terrain', 'tactics boards need terrain'));
+    if (config.kind === 'tactics' && config.ground != null && config.terrain.some(t => t.blocks && t.block === config.ground)) errors.push(problem('board_ground_blocks', 'ground', `ground '${config.ground}' is a blocking terrain block; open cells must be walkable`));
     return errors;
   },
   install(rt, raw, instance) {
@@ -149,6 +153,7 @@ function tactics(config, W, H, r, plain) {
   // Closed pockets become obstacles (they could never be entered); a broken board stays broken for the proof.
   const fillBlock = [...blocking][0];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (open(x, y) && !main.has(`${x},${y}`) && !inDeploy(x, y) && fillBlock) g.set(x, y, fillBlock);
+  if (config.ground != null) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g.get(x, y) == null) g.set(x, y, config.ground);
   const problems = [], reach = flood(W, H, [[0, 0]], open);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (open(x, y) && !reach.has(`${x},${y}`)) { problems.push(problem('cells_disconnected', 'terrain', `open cell (${x},${y}) is cut off`)); y = H; break; }
   deploy.forEach((d, t) => { let ok = false; for (let y = d[1]; y < d[3] && !ok; y++) for (let x = d[0]; x < d[2] && !ok; x++) ok = reach.has(`${x},${y}`); if (!ok) problems.push(problem('deploy_unreachable', `teams`, `team ${t + 1}'s deploy strip is cut off`)); });

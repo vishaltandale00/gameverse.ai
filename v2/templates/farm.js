@@ -1,5 +1,7 @@
-// Farm: a top-down field on a grid the farmer walks cell by cell. The field is a generated board of grass with rocks
-// (an open yard along the bottom edge where the farmer starts); a hoe and two kinds of seed in the inventory; till
+// Farm: a top-down field on a grid the farmer walks cell by cell. The field is a generated board of grass with rocks:
+// every cell no rock covers is grass (the board's `ground`), the open yard along the bottom edge where the farmer starts
+// is never rocked, and the board proves every grass cell joins that yard, so tillable soil is in reach at every rock
+// `density` the tune range allows; a hoe and two kinds of seed in the inventory; till
 // grass into farmland, plant, water each plot every day (a day lasts `daySec`), and harvest what ripens. Turnips are
 // done after one harvest, carrots grow back. Harvesting the target number of crops wins (farming's declared
 // `when: { count: 'harvested', gte: '$target' }`, wired to a won plot ending evaluated by plot.ending).
@@ -9,7 +11,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'farm', title: 'Farm', seed: 5,
     spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [12, 10] },
-      generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'grass', weight: 5 }, { block: 'rock', weight: 1, blocks: true }], density: 0.75, symmetry: 'none', teams: 1, deployDepth: 2 } }] }],
+      generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', ground: 'grass', terrain: [{ block: 'rock', weight: 1, blocks: true }], density: 0.15, symmetry: 'none', teams: 1, deployDepth: 2 } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'step' } },
       { use: 'gameplay.inventory', with: { start: [{ item: 'hoe' }, { item: 'turnip_seed', count: 3 }, { item: 'carrot_seed', count: 3 }] } },

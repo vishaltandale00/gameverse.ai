@@ -143,10 +143,16 @@ export default {
       if (solidAt(b, e, obstacles)) return false;
       return true;
     };
-    const blockerAt = (c, e) => inSpace(rt, sid, o => o !== e && o.components.body?.blocking !== false && cellKey(cellOf(o.at)) === cellKey(c)).length > 0;
+    // Both scans run inside every navigation step: they stop at the first hit and allocate nothing (same tests as inSpace).
+    const blockerAt = (c, e) => { const k = cellKey(c); for (const id in rt.state.entities) { const o = rt.state.entities[id]; if (o !== e && o.space === sid && o.components.body?.blocking !== false && cellKey(cellOf(o.at)) === k) return true; } return false; };
     // Entity obstacles (body.solid): always block real moves; in navigation only static ones do unless
     // obstacles: 'all' (doors and pushable crates are dynamic, assumed passable) or 'none'.
-    const solidAt = (c, e, mode = 'all') => mode !== 'none' && inSpace(rt, sid, o => o !== e && obstacleOf(o) === 'solid' && (mode === 'all' || !dynamicObstacle(o)) && cellKey(cellOf(o.at)) === cellKey(c)).length > 0;
+    const solidAt = (c, e, mode = 'all') => {
+      if (mode === 'none') return false;
+      const k = cellKey(c);
+      for (const id in rt.state.entities) { const o = rt.state.entities[id]; if (o !== e && o.space === sid && obstacleOf(o) === 'solid' && (mode === 'all' || !dynamicObstacle(o)) && cellKey(cellOf(o.at)) === k) return true; }
+      return false;
+    };
     const speedAt = (c, e) => { const cls = classesOf(e); let s = 1; for (const x of rulesIn(cellOf(c))) if (applies(x.rule, cls) && x.rule.speed) s *= x.rule.speed; return s; };
     const costTo = (c, e) => { const cls = classesOf(e); let k = 1; for (const x of rulesIn(c)) if (applies(x.rule, cls)) { if (x.rule.cost !== undefined) k = Math.max(k, x.rule.cost); else if (x.rule.speed) k = Math.max(k, 1 / x.rule.speed); } return k; };
     const opaqueAt = c => !inBounds(c) || rulesIn(c).some(x => x.opaque);
