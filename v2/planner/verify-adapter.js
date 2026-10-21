@@ -6,10 +6,11 @@
 import { preflight } from '../kernel/document.js';
 import { solve } from '../verify/solve.js';
 import { createWorld } from '../kernel/world.js';
-import { worldProblems } from './world.js';
+import { worldProblems, spacesNeedingWorld } from './world.js';
 
 /** world_empty problems (v2/planner/world.js) for a preflighted document; a world that won't boot is reported elsewhere. */
 function worldCheck(doc, registry, logic) {
+  if (!spacesNeedingWorld(doc, registry).length) return []; // nothing moves through a cell space: no boot needed
   try { const rt = createWorld(doc, registry, logic, { seed: doc.seed }); for (let i = 0; i < 3 && rt.state.status === 'playing'; i++) rt.step(); return worldProblems(rt, doc, registry); }
   catch { return []; }
 }

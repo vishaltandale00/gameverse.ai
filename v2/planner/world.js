@@ -105,7 +105,7 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   const started = performance.now();
   const done = (doc, added, fixes, problems) => ({ doc, added, fixes, problems, ms: Math.round(performance.now() - started), version: WORLD_VERSION });
   const pre = preflight(input, registry, logic);
-  if (!pre.ok) return done(input, [], [], []);
+  if (!pre.ok || !spacesNeedingWorld(pre.doc, registry).length) return done(input, [], [], []);
   try { rt ??= boot(pre.doc, registry, logic, seed); } catch { return done(input, [], [], []); }
   const empty = worldProblems(rt, pre.doc, registry);
   if (!empty.length) return done(input, [], [], []);
