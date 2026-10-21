@@ -46,3 +46,9 @@ test('loopEvents reads the progress the document\'s primitives declare', () => {
   const doc = { spaces: [], systems: [{ use: 'a' }, { use: 'b' }, { use: 'c' }] };
   assert.deepEqual(loopEvents(doc, registry).sort(), ['harvest', 'lap']);
 });
+
+test('an exhaustively unreachable ending blocks unless play actually won; the solver softlock report does not block', () => {
+  assert.equal(code(viability(play(), [{ code: 'plot_uncompletable', message: 'no ending is reachable', severity: 'error', stage: 'plot' }], bots(), loop)), 'plot_uncompletable');
+  assert.equal(viability(play({ winnable: true }), [{ code: 'plot_uncompletable', message: 'no ending is reachable', severity: 'error', stage: 'plot' }], bots(), loop).viable, true);
+  assert.equal(viability(play(), [{ code: 'softlock', message: 'AI turn', severity: 'error', stage: 'plot' }], bots(), loop).viable, true);
+});

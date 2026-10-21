@@ -93,6 +93,12 @@ function unplayable(play, problems, strategies, loop) {
   if (!pt) return ['not_played: the playtest agent did not play the game'];
   const stuck = problems.find(p => p.code === 'stuck_state');
   if (stuck) return [`cannot_act: ${stuck.message}`];
+  // The plot solver's exhaustive proof that no ending is reachable blocks, unless a player actually won (the solver
+  // searches player options only, so it can miss wins that need other participants to act). Its softlock report has
+  // the same blind spot (the AI's turn offers the player no options) and is not used here.
+  const won0 = Boolean(pt.winnable) || (strategies?.ran || []).some(b => (b.proven || []).length);
+  const unreachable = problems.find(p => p.severity === 'error' && p.code === 'plot_uncompletable');
+  if (unreachable && !won0) return [`plot_uncompletable: ${unreachable.message}`];
   /** @type {string[]} */
   const out = [];
   for (const b of strategies?.ran || []) if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);
