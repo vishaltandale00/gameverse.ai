@@ -14,6 +14,7 @@ import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath } from './outline-form.js';
 import { preset, coreOf, zoneStart, wireCore } from './presets.js';
+import { isAvatar } from './modes.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
@@ -69,7 +70,7 @@ import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.j
 /**
  * writeOutline's result: `doc` is a Doc exactly when `ok`.
  * @typedef {{ source: string | null, rounds: OutlineRound[], firstPassOk: boolean | null, modelMs: number, removed: Array<Removed | Removal>, errors: ProblemLike[],
- *   verification?: Verification, isolated?: boolean, fellBack?: boolean, content?: ContentProblem[], contentComplete?: boolean } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
+ *   verification?: Verification, isolated?: boolean, fellBack?: boolean, content?: ContentProblem[], contentComplete?: boolean, structure?: unknown } & ({ ok: true, doc: Doc } | { ok: false, doc: unknown })} OutlineResult
  */
 
 export const OUTLINE_VERSION = 'outline/0.1';
@@ -96,6 +97,9 @@ export function proceduralOutline(spec) { return /** @type {ProceduralOutline} *
 export async function ensureAgency({ decomposition, selection, registry, logic, seed, prompt = '', decisions = null, tries = 4 }) {
   /** @type {Array<{ spaces: string[], added?: string, options: number | null, ok: boolean }>} */
   const attempts = [];
+  // Agency is an avatar's question: without one, the player acts through the mode (moves, cards, cells), whose options
+  // exist once the model has written its content. Nothing to add here, and no reason to change the space.
+  if (decomposition.core && !isAvatar(decomposition.core.interaction)) return { selection, attempts, agency: true };
   let current = selection;
   /** @type {string[]} */
   let excluded = [];
@@ -383,7 +387,7 @@ Previous outline (your form):
 ${JSON.stringify(value).slice(0, 30000)}
 Return the corrected complete form.`;
   }
-  if (best) return { doc: best.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
+  if (best) return { doc: best.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, rounds, firstPassOk, modelMs, removed: best.removed, errors: [], verification: best.verification, content: best.content, contentComplete: !best.content.length };
   // The model's last draft is often one non-core primitive away from running: isolate it (reported as a gap), but
   // never a core mechanic's primitive, and keep it only if it passes the same gate.
   if (last?.doc) {
@@ -393,7 +397,7 @@ Return the corrected complete form.`;
       /** @type {Gate} */
       const g = verify ? await gate(isolated.doc) : { viable: true };
       rounds.push({ kind: 'isolate', ok: true, viable: g.viable, removed: isolated.removed.map(r => r.use) });
-      if (g.viable) return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
+      if (g.viable) return { doc: isolated.doc, ok: true, structure: /** @type {any} */ (skeleton).structure, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [], verification: g.v, content: populateProblems(isolated.doc, registry) };
       lastProblems = g.problems || null;
     } else rounds.push({ kind: 'isolate', ok: false });
   }
