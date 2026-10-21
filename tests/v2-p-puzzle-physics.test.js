@@ -88,7 +88,9 @@ const sling = (w = {}, entities = [], dw = {}) => {
     { use: 'gameplay.launcher', with: { mode: 'sling', origin: [2, 3], forward: [1, 0], aim: [-0.5, 1.4], speed: 22, shots: [{ archetype: 'bird', count: 2 }], motion: 'self', ...w } },
     { use: 'gameplay.destructible', with: { ...dw } },
   ]);
-  d.content.archetypes.push({ id: 'glass_block', components: { body: { size: [1, 2, 1] }, destructible: { material: 'glass' } } }, { id: 'tnt_block', components: { body: { size: [1, 1, 1] }, destructible: { material: 'tnt' } } }, { id: 'peg', components: { body: { size: [0.4, 0.4, 1], static: true }, destructible: { material: 'peg' } } });
+  d.content.archetypes.push({ id: 'glass_block', components: { body: { size: [1, 2, 1] }, destructible: { material: 'glass' } } }, { id: 'tnt_block', components: { body: { size: [1, 1, 1] }, destructible: { material: 'tnt' } } });
+  // A peg is an archetype of the material peg: only where the instance declares that material (a destructible's material is a materials key).
+  if (dw.materials?.peg) d.content.archetypes.push({ id: 'peg', components: { body: { size: [0.4, 0.4, 1], static: true }, destructible: { material: 'peg' } } });
   d.systems.push(...entities);
   return d;
 };
@@ -166,5 +168,5 @@ test('physics primitives: preflight rejects bad configs with stable codes', () =
   assert.ok(codes(sling({ forward: [1, 1] })).includes('launcher_forward'));
   assert.ok(codes(sling({ aim: [1, -1] })).includes('launcher_aim'));
   assert.ok(codes(sling({ shots: [{ archetype: 'nope' }] })).includes('ref_unknown'));
-  assert.ok(codes(sling({}, [], { materials: { mud: { hp: -1 } } })).includes('material_invalid'));
+  assert.ok(codes(sling({}, [], { materials: { mud: { hp: -1 } } })).includes('param_range'), 'materials values are a declared material shape (was material_invalid)');
 });

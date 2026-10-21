@@ -17,7 +17,8 @@ export const ITEM = Object.freeze({
   value: { type: 'number', min: 0, effect: 'base price' },
   block: { type: 'ref', to: 'block', effect: 'the block it places' },
   stack: { type: 'integer', min: 1, effect: 'items per inventory stack' },
-  tool: { type: 'object', fields: { kind: { type: 'string', effect: 'tool kind (tool:<kind> token)' }, durability: { type: 'number', min: 0 } }, effect: 'a tool' },
+  // Open: several cards read parts of one tool (gameplay.blocks.mine reads its tier).
+  tool: { type: 'object', open: true, fields: { kind: { type: 'string', effect: 'tool kind (tool:<kind> token)' }, durability: { type: 'number', min: 0 } }, effect: 'a tool' },
   ingredient: { type: 'object', fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tokens tag recipe inputs match' } }, effect: 'a crafting ingredient' },
   weapon: { type: 'object', fields: {
     damage: { type: 'number', min: 0 }, reach: { type: 'number', min: 0 }, arc: { type: 'number', min: 0, max: 360, unit: 'deg' }, speed: { type: 'number', min: 0, effect: 'swing speed (1 = normal; below 0.2 counts as 0.2)' },
