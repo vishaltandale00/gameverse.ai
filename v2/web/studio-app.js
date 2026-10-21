@@ -325,7 +325,26 @@ function kernelChecks(record) {
     r.detail ? `<div class="muted">Detail ${esc(r.detail.task)}: ${r.detail.ok ? 'accepted' : `rejected (${esc(r.detail.reason)})`} in ${sec(r.detail.ms)}</div>` : '',
     r.path ? `<div class="muted">Change made by ${r.path === 'tweak' ? 'a parameter tweak (no model)' : r.path === 'model' ? 'targeted model edits' : 'nothing'}${t.totalMs != null ? ` in ${sec(t.totalMs)}` : ''}</div>` : '',
     ...(r.selection?.mechanics || []).slice(0, 8).map(m => `<div class="muted">${esc(m.description)} → ${m.primitives?.length ? m.primitives.map(x => `<code>${esc(x)}</code>`).join(' ') : '<em>no primitive</em>'}</div>`),
+    qualityChecks(r.quality),
     `<div class="muted">Seed ${esc(record.provenance?.seed ?? '')}, doc ${esc((record.docHash || '').slice(0, 8))}, ${esc(record.provenance?.pipeline || '')}</div>`,
+  ].join('');
+}
+
+// How the game plays (v2/verify/quality.js): measured after the publish gate, never blocking. Unmeasured values are null and show as —.
+function qualityChecks(q) {
+  if (!q) return '';
+  if (q.error) return `<p class="checks-head">Quality</p><div class="muted">Not measured: ${esc(q.error)}</div>`;
+  const pct = x => (x == null ? '—' : `${Math.round(x * 100)}%`), s = x => (x == null ? '—' : `${x} s`), a = q.agency, c = q.coverage, p = q.pacing, d = q.deadTime, v = q.variety?.perMinute;
+  const missed = (c?.items || []).filter(m => m.exercised === false || !m.primitives?.length).map(m => m.id);
+  return [
+    `<p class="checks-head">Quality${q.budget?.truncated ? ' (budget-limited)' : ''}</p>`,
+    `<div class="muted">Agency: ${a ? `${pct(a.share)} of ${a.choices} choices change the game at ${a.cells} sampled spots` : '—'}</div>`,
+    `<div class="muted">Mechanics seen in play: ${c?.measured ? `${c.exercised}/${c.measured}${missed.length ? `, not seen: ${missed.map(id => `<code>${esc(id)}</code>`).join(' ')}` : ''}` : '—'}</div>`,
+    `<div class="muted">Pacing: ${p ? `progress every ${s(p.medianGap)} (p90 ${s(p.p90Gap)}), longest wait ${s(p.longestGap)} on the ${q.progression?.source === 'win' ? 'winning' : 'best'} path` : '—'}</div>`,
+    `<div class="muted">Dead time: ${d ? `${pct(d.share)}${d.longest ? `, longest ${s(d.longest)}` : ''}` : '—'}</div>`,
+    `<div class="muted">Variety per minute: ${v ? `${v.cells} spots, ${v.zones} zones, ${v.eventNames} kinds of event, ${v.labels} choices` : '—'}</div>`,
+    ...(q.findings || []).slice(0, 4).map(f => `<div class="muted">${esc(f.message)}</div>`),
+    q.ms != null ? `<div class="muted">Measured in ${q.ms} ms</div>` : '',
   ].join('');
 }
 

@@ -47,11 +47,15 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
       const problems = [...world, ...(r?.problems || [])];
-      return { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
-        playtest: r?.playtest ? { winnable: r.playtest.winnable, win: r.playtest.win, losses: r.playtest.losses, idle: r.playtest.idle, explored: r.playtest.explored } : null,
-        ...viability(r?.playtest, problems),
+      const pt = r?.playtest;
+      const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
+        playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })) } : null,
+        ...viability(pt, problems),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, ms: Math.round(performance.now() - started) };
+      // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.
+      if (pt) Object.defineProperty(result, 'playtestRun', { value: pt, enumerable: false });
+      return result;
     } catch (error) { out.problems.push({ code: 'verify_threw', message: String(error?.message || error).slice(0, 200) }); }
   }
   try {

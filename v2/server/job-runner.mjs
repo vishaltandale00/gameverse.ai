@@ -4,7 +4,7 @@
 // thread (v2/server/job-worker.mjs, supervised by v2/server/isolate.js), so the
 // registry, logic and model clients are always built where the job runs.
 import { loadCatalogue } from '../planner/catalog.js';
-import { createKernelPipeline, summarizeVerify } from '../planner/kernel-pipeline.js';
+import { createKernelPipeline, summarizeVerify, qualityReport } from '../planner/kernel-pipeline.js';
 import { createDecisions } from '../planner/decisions.js';
 import { loadOpenAIKey } from '../planner/openai.js';
 import { createWriters } from '../planner/writer.js';
@@ -46,7 +46,7 @@ async function experimentJob({ experiments, catalogue }, job, ctx) {
     const next = withoutExperiment(doc, job.experimentId);
     const { registry, logic } = await catalogue(next);
     const v = await verifyDocument(next, registry, logic, { budgetMs: 600 });
-    return ctx.publish({ doc: v.doc || next, stage: 'experiment removed', report: { ...latest.report, change: null, changes: changeSummary(contentDiff(doc, next)), gaps: [], verification: summarizeVerify(v), hot: 'reload' }, provenance: { ...latest.provenance, base: latest.version } });
+    return ctx.publish({ doc: v.doc || next, stage: 'experiment removed', report: { ...latest.report, change: null, changes: changeSummary(contentDiff(doc, next)), gaps: [], quality: qualityReport(v, registry, logic, { mechanics: latest.report?.selection?.mechanics }), verification: summarizeVerify(v), hot: 'reload' }, provenance: { ...latest.provenance, base: latest.version } });
   }
   if (!experiments) throw Object.assign(Error('Experiments need a code model; set OPENAI_API_KEY or Anthropic credentials.'), { status: 503 });
   ctx.stage('experimenting', { model: experiments.model });
@@ -58,7 +58,7 @@ async function experimentJob({ experiments, catalogue }, job, ctx) {
   ctx.stage('experimented', { ms: Math.round(performance.now() - t), attempts: filled.report?.attempts?.length ?? null });
   return ctx.publish({
     doc: v.doc || filled.doc, stage: `experiment: ${filled.experiment.label}`,
-    report: { ...latest.report, kind: 'kernel', change: job.change, changes: [`experimental primitive: ${filled.experiment.label} (${filled.experiment.card.id})`], gaps: [], experiment: { id: filled.experiment.id, label: filled.experiment.label, primitive: filled.experiment.card.id, check: filled.experiment.check.report }, verification: summarizeVerify(v), hot: 'reload', timings: { experimentMs: Math.round(performance.now() - t), modelAttempts: filled.report?.attempts?.length ?? null } },
+    report: { ...latest.report, kind: 'kernel', change: job.change, changes: [`experimental primitive: ${filled.experiment.label} (${filled.experiment.card.id})`], gaps: [], experiment: { id: filled.experiment.id, label: filled.experiment.label, primitive: filled.experiment.card.id, check: filled.experiment.check.report }, quality: qualityReport(v, registry, logic, { mechanics: latest.report?.selection?.mechanics }), verification: summarizeVerify(v), hot: 'reload', timings: { experimentMs: Math.round(performance.now() - t), modelAttempts: filled.report?.attempts?.length ?? null } },
     provenance: { ...latest.provenance, base: latest.version, experiment: filled.experiment.id },
   });
 }
