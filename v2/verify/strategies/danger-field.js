@@ -9,8 +9,7 @@
 // a snapshot and the one that lands on the planned cell is played.
 import { posOf, threats, collectibles, isVulnerable, vitality, hold, applyOption, optionLabels } from '../drive.js';
 import { plotZones } from '../objective.js';
-import { budget as makeBudget } from '../util.js';
-import { multiSeed, problem, yieldToEncounter } from './common.js';
+import { multiSeed, problem, yieldToEncounter, seedBudgets } from './common.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
 export const DANGER = 3, MARGIN = 2, FIELD_CAP = 24, FAR = 32767, SAFE_LEAD = 8;
@@ -74,22 +73,21 @@ function moveMacros(rt) {
   return [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([x, y]) => ({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } } }));
 }
 /** Run a macro until the player's cell changes (or maxFrames). */
-function runMacro(rt, m, maxFrames, b) {
-  const p0 = keyOf(playerCell(rt)), f0 = rt.state.frame;
+function runMacro(rt, m, maxFrames) {
+  const p0 = keyOf(playerCell(rt));
   if (m.option !== undefined) { const o = rt.availableOptions()[m.option]; if (o) applyOption(rt, o); }
   else for (let f = 0; f < maxFrames && rt.state.status === 'playing'; f++) { hold(rt, m.input, 1); if (keyOf(playerCell(rt)) !== p0) break; }
-  b?.step(rt.state.frame - f0);
   return rt.player() ? keyOf(playerCell(rt)) : null;
 }
 /** Step the player to the adjacent cell `want` through the real controls; returns true if it moved there. */
-export function stepTo(rt, want, { maxFrames = 30, b = null } = {}) {
+export function stepTo(rt, want, { maxFrames = 30 } = {}) {
   const snap = rt.snapshot(), macros = moveMacros(rt);
   for (const m of macros) {
     rt.restore(snap);
-    if (runMacro(rt, m, maxFrames, b) === keyOf(want)) return true; // keep this run: it is the real move
+    if (runMacro(rt, m, maxFrames) === keyOf(want)) return true; // keep this run: it is the real move
   }
   rt.restore(snap);
-  hold(rt, {}, 1, b);
+  hold(rt, {}, 1);
   return false;
 }
 
@@ -98,19 +96,21 @@ export default {
   intent: 'Chase games on navigable spaces: a danger-field BFS bot collects targets while staying ahead of threats; it must clear most targets.',
   requires: { capabilities: ['navigate'] },
   detect(ctx) { const rt = ctx.make(ctx.seed); return threats(rt).length > 0 && (collectibles(rt).length > 0 || plotZones(ctx.doc).size > 0); },
-  run(ctx, { maxFrames = 6000, seeds = [1], bar = 0.6, budgetMs = 2000, maxSteps = Infinity, margin = MARGIN } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { maxFrames = 6000, seeds = [1], bar = 0.6, maxSteps = Infinity, margin = MARGIN } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const goals = [...plotZones(ctx.doc).keys()];
     const play = seed => {
       // Pickups and threats placed by spawn rules arrive after frame 0: idle until targets exist (up to 1 s).
-      const rt = ctx.make(seed);
+      const rt = (b = sb.budget()).meter(ctx.make(seed));
       for (let i = 0; i < 60 && rt.state.status === 'playing' && !collectibles(rt).length; i++) rt.step({});
       hold(rt, {}, 2);
       const total = collectibles(rt).length;
       let deaths = 0, hunted = 0, lastHp = vitality(rt).hp, lastLives = vitality(rt).lives, why = '';
       const counts = {};
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
-        if (yieldToEncounter(ctx, rt, ['navigate'], b)) continue; // an encounter holds this loop: play the one the player is in
+        if (yieldToEncounter(ctx, rt, ['navigate'])) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player(); if (!p) break;
         const api = rt.space(p.space), here = cellIn(api, posOf(rt));
         const hs = threats(rt), sources = [];
@@ -127,7 +127,7 @@ export default {
         if (!next) { why = 'escape'; const fd = distanceTo(api, p, rt, here, isFood); next = safeSearch(api, p, rt, here, hd, () => false, { limit: 30, danger: 0, margin: 0, score: (k, d) => Math.min(hd(k), SAFE_LEAD) - d * 0.5 - fd(k) * 0.25 }); }
         if (!next) { why = 'flee'; next = stepsFrom(api, p, here, rt).sort((x, y) => hd(keyOf(y)) - hd(keyOf(x)))[0] || null; }
         counts[why] = (counts[why] || 0) + 1;
-        if (next) stepTo(rt, next, { b }); else hold(rt, {}, 1, b);
+        if (next) stepTo(rt, next); else hold(rt, {}, 1);
         for (const e of rt.state.events) if (e.name.startsWith('defeated') && e.subject !== 'player' && e.who !== 'player') hunted++;
         const v = vitality(rt);
         if ((v.hp !== null && lastHp !== null && v.hp < lastHp) || (v.lives !== null && lastLives !== null && v.lives < lastLives)) deaths++;
@@ -137,11 +137,11 @@ export default {
       const pct = total ? collected / total : rt.state.status === 'won' ? 1 : 0;
       return { seed, won: rt.state.status === 'won' || pct >= bar, status: rt.state.status, collected, total, clearedPct: Math.round(pct * 1000) / 10, deaths, hunted, frames: rt.state.frame, decisions: counts, budget: rt.state.status === 'playing' && Boolean(b.hit) };
     };
-    const r = multiSeed(play, { seeds, passRate: 1 / seeds.length, b });
+    const r = multiSeed(play, { seeds, passRate: 1 / seeds.length });
     const best = r.runs.reduce((m, x) => (x.clearedPct > (m?.clearedPct ?? -1) ? x : m), null);
     const problems = [];
     if (best && !best.won && !best.budget) problems.push(problem('too_hard', 'systems', `a danger-field bot cleared only ${best.clearedPct}% of the targets (${best.status}, ${best.deaths} hits)`, { hint: 'add escape routes, lower threat speed or count, or add power-ups' }));
     if (best?.budget && !best.won) problems.push(problem('budget_exhausted', 'systems', `danger-field play stopped by its budget at ${best.clearedPct}%`, { severity: 'warning' }));
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a danger-field bot cleared ${best.clearedPct}% of the targets`] : [], problems, metrics: { runs: r.runs }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a danger-field bot cleared ${best.clearedPct}% of the targets`] : [], problems, metrics: { runs: r.runs }, exhaustive: false, budget: sb.report() };
   },
 };

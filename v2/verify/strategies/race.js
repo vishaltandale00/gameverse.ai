@@ -4,11 +4,16 @@
 // directions), and picks the line that makes the most race progress
 // (checkpoints passed) and ends nearest the next checkpoint, searching two
 // choices deep. It presses the enter key when a vehicle is in reach (vehicle-only
-// races need it). It must finish first.
-import { hold, DIRS8 } from '../drive.js';
-import { budget as makeBudget, stateHash } from '../util.js';
+// races need it). On foot in a space with gravity and paths (a side-view level: the
+// race united onto a platformer's world), the course is pits, ledges and hazards a
+// held direction cannot cross: it runs to the next checkpoint zone the way the
+// platformer bot runs to its goal (platformer.js platformRunner: a route of walks,
+// falls and jumps through the move axis and the jump key). It must finish first.
+import { hold, DIRS8, posOf } from '../drive.js';
+import { platformRunner } from './platformer.js';
+import { stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
-import { multiSeed, problem, pathOf, yieldToEncounter } from './common.js';
+import { multiSeed, problem, pathOf, yieldToEncounter, seedBudgets } from './common.js';
 
 const RACE = 'gameplay.race';
 
@@ -51,7 +56,7 @@ export function raceMacros(rt, every) {
 }
 
 /** A macro: its first frame's input (a press going down), then its held input for the rest of its frames. */
-const playMacro = (rt, m, b) => { if (m.first) { hold(rt, m.first, 1, b); hold(rt, m.input, m.frames - 1, b); } else hold(rt, m.input, m.frames, b); };
+const playMacro = (rt, m) => { if (m.first) { hold(rt, m.first, 1); hold(rt, m.input, m.frames - 1); } else hold(rt, m.input, m.frames); };
 
 /** Replay a recorded path of macro labels from a fresh world. */
 export function replayRace(make, seed, path, { every = 12 } = {}) {
@@ -71,16 +76,18 @@ export default {
   requires: { capabilities: ['position'] },
   hints: [RACE],
   detect(ctx) { return modesIn(ctx.doc, ctx.registry).some(m => m.use === RACE); },
-  run(ctx, { seeds = [1], passRate = 1, every = 12, depth = 2, maxFrames = 7200, budgetMs = 2000, maxSteps = Infinity } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { seeds = [1], passRate = 1, every = 12, depth = 2, maxFrames = 7200, maxSteps = Infinity } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const inst = modesIn(ctx.doc, ctx.registry).find(m => m.use === RACE), where = pathOf(ctx.doc, [RACE]);
-    if (!inst) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no race' }, exhaustive: false, budget: b.report() };
+    if (!inst) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no race' }, exhaustive: false, budget: sb.report() };
     const config = inst.config, score = rt => raceScore(rt, ctx.doc, config);
     const best = (rt, d) => {
       const snap = rt.snapshot(), ms = raceMacros(rt, every);
       let top = { v: -Infinity, m: null };
       for (const m of ms) {
-        rt.restore(snap); playMacro(rt, m, b); b.state();
+        rt.restore(snap); playMacro(rt, m); b.state();
         const v = d > 1 && rt.state.status === 'playing' ? best(rt, d - 1).v : score(rt);
         if (v > top.v) top = { v, m };
       }
@@ -88,21 +95,26 @@ export default {
       return top;
     };
     const play = seed => {
-      const rt = ctx.make(seed), path = [];
+      const rt = (b = sb.budget()).meter(ctx.make(seed)), path = [];
+      // On foot on a side-view level: the platform runner, toward the next checkpoint zone.
+      const caps = new Set(ctx.capabilities?.[rt.player()?.space] || []), runner = ['gravity', 'pathfind'].every(c => caps.has(c)) ? platformRunner(ctx, rt, b) : null;
+      const zoneX = id => { const z = (ctx.doc.spaces || []).flatMap(sp => sp.zones || []).find(x => x.id === id); return Array.isArray(z?.rect) ? (z.rect[0] + z.rect[2]) / 2 : posOf(rt)?.[0] ?? 0; };
       // Countdown: wait until the race runs (positions only start counting then).
-      while (rt.state.status === 'playing' && raceView(rt, ctx.doc, config).s?.state !== 'running' && rt.state.frame < 600) { hold(rt, {}, every, b); path.push('wait'); }
+      while (rt.state.status === 'playing' && raceView(rt, ctx.doc, config).s?.state !== 'running' && rt.state.frame < 600) { hold(rt, {}, every); path.push('wait'); }
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !raceView(rt, ctx.doc, config).done && !b.over()) {
-        if (yieldToEncounter(ctx, rt, ['position'], b)) continue; // an encounter holds this loop: play the one the player is in
+        if (yieldToEncounter(ctx, rt, ['position'])) continue; // an encounter holds this loop: play the one the player is in
+        const onFoot = !rt.player()?.components.seat && !rt.availableOptions().some(o => o.actions?.enter_vehicle !== undefined);
+        if (runner && onFoot) { const cp = raceView(rt, ctx.doc, config).cp; path.push(`run ${cp}`); if (runner.advance({ to: cp, x: zoneX(cp) }) === 'stuck') break; continue; }
         const { m } = best(rt, depth); if (!m) break;
-        playMacro(rt, m, b); path.push(m.label);
+        playMacro(rt, m); path.push(m.label);
       }
       const v = raceView(rt, ctx.doc, config), won = rt.state.status === 'won' || v.r?.place === 1;
       return { seed, won, status: rt.state.status, place: v.r?.place ?? null, lap: v.r?.lap ?? 0, frames: rt.state.frame, path, hash: stateHash(rt.state), budget: !won && Boolean(b.hit) };
     };
-    const r = multiSeed(play, { seeds, passRate, b });
+    const r = multiSeed(play, { seeds, passRate });
     const finished = r.runs.filter(x => !x.budget), problems = [];
     if (!finished.length) problems.push(problem('budget_exhausted', where, 'the race driver ran out of budget before the race ended', { severity: 'warning' }));
     else if (finished.filter(x => x.won).length / finished.length < passRate) problems.push(problem('too_hard', where, `a lookahead driver won ${finished.filter(x => x.won).length}/${finished.length} races (best: place ${finished.map(x => x.place).filter(Boolean).sort()[0] ?? 'none'}, lap ${Math.max(...finished.map(x => x.lap))})`, { hint: 'wider checkpoints, fewer laps, a longer time limit, or slower rivals' }));
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a lookahead driver won ${r.wins}/${r.runs.length} races`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a lookahead driver won ${r.wins}/${r.runs.length} races`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: sb.report() };
   },
 };

@@ -20,7 +20,8 @@ import { uiControls, choiceVerbs, verbControl, verbInstances, instanceVerbs } fr
 import { cardLoop } from '../planner/loop.js';
 import { hostDocument } from '../web/host-doc.js';
 
-const INPUT = 'engine.input.actions';
+/** The input primitive: the device -> verb mapping a person's keys go through (its state is what the devices held, not the game). */
+export const INPUT = 'engine.input.actions';
 export const CONTROLS_VERSION = 'controls/0.1';
 
 /** A verb, value or axis the intent asks for that no control a person has can issue. */

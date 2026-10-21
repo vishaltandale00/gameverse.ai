@@ -57,7 +57,10 @@ function controlsFor(rt, v, pref = 'auto') {
   if (!driver || c.destroyed) return zero;
   if (driver === 'player') {
     const inp = rt.input || {}, held = inp.held || {}, act = inp.actions || {}, dv = act.drive && typeof act.drive === 'object' ? act.drive : null;
-    const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : inp.axes?.move || [0, 0];
+    // The drive verb's value (card.actionSpace drive: steer and throttle) as the host gives a person it: an action
+    // record, or the held axis its continuous declaration binds (axes.drive, [steer, throttle]); else the move axis.
+    const ax = inp.axes || {}, held2 = v => Array.isArray(v) && Boolean(v[0] || v[1]);
+    const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : held2(ax.drive) ? ax.drive : ax.move || [0, 0];
     const throttle = clamp((mv[1] ?? 0) + (held.accelerate ? 1 : 0) - (held.reverse ? 1 : 0), -1, 1);
     // The player's input frame: right (move x > 0) turns right, clockwise seen from above, in whatever handedness the
     // space's plane has (runtime-lib-frame.js turnSign). The motion primitives turn the heading by -steer, so the

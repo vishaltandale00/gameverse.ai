@@ -4,8 +4,8 @@
 // still for `stuckSeconds` while play continues is stuck, one that leaves
 // the space bounds (or turns non-finite) escaped.
 import { hold, velOf } from '../drive.js';
-import { budget as makeBudget, prng } from '../util.js';
-import { problem, entityPath } from './common.js';
+import { prng } from '../util.js';
+import { problem, entityPath, seedBudgets } from './common.js';
 
 const speed = e => Math.hypot(...velOf(e));
 /** Space bounds from the space API: the `bounds` capability ({min, max, wrap}), a [min, max] pair, or `size`; null if unknown. Wrapping axes are unbounded. */
@@ -24,17 +24,21 @@ export default {
   intent: 'Physics toys with free-moving bodies (pinball, marble runs, physics puzzles): random play must never leave a body stuck or let one escape the space.',
   requires: { capabilities: ['position'] },
   detect(ctx) { const rt = ctx.make(ctx.seed); hold(rt, {}, 20); return Object.values(rt.state.entities).some(e => free(e) && speed(e) > 0); },
-  run(ctx, { runs = 4, seconds = 25, stuckSeconds = 3, toggleEvery = 6, pressRate = 0.3, slow = 0.01, margin = 1, budgetMs = 2000, maxSteps = Infinity } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { runs = 4, seconds = 25, stuckSeconds = 3, toggleEvery = 6, pressRate = 0.3, slow = 0.01, margin = 1, maxSteps = Infinity, seeds = [ctx.seed] } = {}) {
+    const sb = seedBudgets(maxSteps);
     const problems = [], stats = { runs: 0, seconds: 0, stuck: 0, escaped: 0 };
-    for (let r = 0; r < runs && !b.over(); r++) {
-      const rt = ctx.make(ctx.seed), rand = prng(`random-policy:${ctx.seed ?? ''}:${r}`), verbs = rt.actions();
+    // `runs` random runs on the world of every seed given, each seed on its own step budget.
+    for (const seed of seeds) for (let r = 0, b = sb.budget(); r < runs && !b.over(); r++) {
+      // The verbs a person can press (a controlled runtime: v2/verify/controls.js), toggled as keys: down on the toggle
+      // frame, held until the next.
+      const rt = b.meter(ctx.make(seed)), rand = prng(`random-policy:${seed ?? ''}:${r}`), verbs = rt.controls ? rt.controls.pressable() : rt.actions();
       const still = {}, moved = new Set(), gone = new Set();
       let held = {};
       stats.runs++;
       for (let f = 0; f < seconds * 60 && rt.state.status === 'playing' && !b.over(); f++) {
-        if (f % toggleEvery === 0) { held = {}; for (const v of verbs) if (rand() < pressRate) held[v] = true; }
-        hold(rt, { actions: held, held }, 1, b);
+        const toggle = f % toggleEvery === 0;
+        if (toggle) { held = {}; for (const v of verbs) if (rand() < pressRate) held[v] = true; }
+        hold(rt, toggle ? { actions: held, held } : { held }, 1);
         for (const e of Object.values(rt.state.entities)) {
           if (!free(e) || gone.has(e.id)) continue;
           const bd = boundsOf(rt.space(e.space));
@@ -48,6 +52,6 @@ export default {
       }
     }
     stats.seconds = Math.round(stats.seconds);
-    return { ok: !problems.some(p => p.severity === 'error'), proven: !problems.length ? [`${stats.runs} random runs (${stats.seconds} s) never left a body stuck or let one escape`] : [], problems, metrics: stats, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: !problems.length ? [`${stats.runs} random runs (${stats.seconds} s) never left a body stuck or let one escape`] : [], problems, metrics: stats, exhaustive: false, budget: sb.report() };
   },
 };

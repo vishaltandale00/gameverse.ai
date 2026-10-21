@@ -78,7 +78,7 @@ async function experimentJob({ experiments, catalogue }, job, ctx) {
   if (job.kind === 'experiment-remove') {
     const next = withoutExperiment(doc, job.experimentId);
     const { registry, logic } = await catalogue(next);
-    const v = await verifyDocument(next, registry, logic, { budgetMs: 600 });
+    const v = await verifyDocument(next, registry, logic);
     return ctx.publish({ doc: v.doc || next, stage: 'experiment removed', report: { ...report, change: null, changes: changeSummary(contentDiff(doc, next)), gaps: [], quality: qualityReport(v, registry, logic, { mechanics }), verification: summarizeVerify(v), hot: 'reload' }, provenance: { ...obj(latest.provenance), base: latest.version } });
   }
   if (!experiments) throw Object.assign(Error('Experiments need a code model; set OPENAI_API_KEY or Anthropic credentials.'), { status: 503 });
@@ -87,7 +87,7 @@ async function experimentJob({ experiments, catalogue }, job, ctx) {
   const filled = await experiments.fill({ doc, request: job.change });
   if (!filled.ok) throw Object.assign(Error(`The experiment didn't pass its checks: ${(filled.problems || []).slice(0, 3).join(', ')}`), { status: 422 });
   const { registry, logic } = await catalogue(filled.doc);
-  const v = await verifyDocument(filled.doc, registry, logic, { budgetMs: 800 });
+  const v = await verifyDocument(filled.doc, registry, logic);
   const experiment = filled.experiment, primitive = prop(experiment.card, 'id');
   ctx.stage('experimented', { ms: Math.round(performance.now() - t), attempts: filled.report?.attempts?.length ?? null });
   return ctx.publish({

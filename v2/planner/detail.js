@@ -241,9 +241,9 @@ export async function writeDetail({ writer, doc, task, registry, logic, errors =
 /**
  * Merge, repair, guard and verify one patch against the current document.
  * -> { ok, doc, added, verify, fixes, reason?, errors? }
- * @param {{ current: Doc, patch: unknown, task: DetailTask, registry: RegistryLike, logic: LogicLike, baseVerify?: Verification | null, budgetMs?: number }} args
+ * @param {{ current: Doc, patch: unknown, task: DetailTask, registry: RegistryLike, logic: LogicLike, baseVerify?: Verification | null }} args
  */
-export async function acceptPatch({ current, patch, task, registry, logic, baseVerify = null, budgetMs = 800 }) {
+export async function acceptPatch({ current, patch, task, registry, logic, baseVerify = null }) {
   const clean = sanitizePatch(patch, task, current);
   const { doc: merged, added } = mergeDetail(current, clean, registry);
   const repaired = repairDocument(merged, { registry, logic, rounds: 4 });
@@ -254,7 +254,7 @@ export async function acceptPatch({ current, patch, task, registry, logic, baseV
   // Static plot analysis first (milliseconds): a patch that creates a gate cycle or an unobtainable item never reaches simulation.
   const staticErrors = newErrors(await staticPlot(current, logic), await staticPlot(repaired.doc, logic));
   if (staticErrors.length) return { ok: false, reason: 'plot_static', errors: staticErrors, patch: clean };
-  const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs });
+  const v = await verifyDocument(repaired.doc, registry, logic);
   if (!v.ok) return { ok: false, reason: 'verify', errors: v.problems, patch: clean };
   if (regressed(baseVerify, v)) return { ok: false, reason: 'verify_regressed', errors: [...newErrors(baseVerify, v), ...(v.completable === false && baseVerify?.completable ? [{ code: 'plot_regressed', path: '$', message: 'the patch makes the game impossible to finish' }] : [])], patch: clean };
   return { ok: true, doc: v.doc, added, verify: v, fixes: repaired.fixes, patch: clean };

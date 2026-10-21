@@ -265,18 +265,18 @@ const isDocShape = x => isObj(x) && (Array.isArray(x.spaces) || x.schema === DOC
  * planner to re-plan. A form the default model fails twice is asked of the escalation writer (that form only), with
  * a round to check its answer. Without a writer the preset is the explicit offline mode.
  * @param {{ writer?: Writer | null, prompt: string, answers?: Array<{ question?: unknown, answer?: unknown }>, decomposition: Decomposition, selection: Selection,
- *   registry: RegistryLike, logic: LogicLike, seed: number, maxRounds?: number, verify?: boolean, verifyBudgetMs?: number, playtestMs?: number,
+ *   registry: RegistryLike, logic: LogicLike, seed: number, maxRounds?: number, verify?: boolean,
  *   protect?: Set<string> | null, forms?: 'split' | 'single', escalate?: Writer | null }} args
  * @returns {Promise<OutlineResult>}
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null, forms = 'split', escalate = null }) {
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, protect = null, forms = 'split', escalate = null }) {
   // The core: the core mechanics' gameplay/plot primitives (and what they require).
   const core = protect || coreOf(selection, registry);
   /** @param {Doc} doc @returns {Promise<Gate & { problems: VerifyProblem[], v: Verification }>} */
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
     const coreProblems = coreLoopProblems(doc, selection?.mechanics, registry);
-    const v = await verifyDocument(doc, registry, logic, { budgetMs: verifyBudgetMs, playtestMs });
+    const v = await verifyDocument(doc, registry, logic, { playable: true });
     const problems = [...coreProblems, ...(v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability ?? 'verification reported no viability', severity: 'error', hint: 'the game must run without crashing, the player must act, and the loop its primitives declare must happen from play' },
       ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)])];
     return { viable: Boolean(v.viable) && !coreProblems.length, problems, v };

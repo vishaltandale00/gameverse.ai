@@ -32,6 +32,8 @@ function contentMet(doc, path) {
 }
 /** The pseudo event a run records for how far the player moved (axis verbs are checked by movement, not by events). */
 const MOVED = '(moved)';
+/** Frames a feature check waits for play to reach its next decision after taking a choice (a shot settling). */
+const WAIT = 600;
 const matches = (declared, name) => declared.some(d => d === name || (d.endsWith(':*') && name.startsWith(d.slice(0, -1))) || (d.endsWith(':') && name.startsWith(d)));
 
 /** The loop features of a document: [{ use, path, card, loop, config }]. */
@@ -63,8 +65,10 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
   // countdowns run then), then the states the play reached.
   const early = [2, 30, 60].map(n => { rt.restore(start); for (let i = 0; i < n && rt.state.status === 'playing'; i++) rt.step({}); return rt.state.status === 'playing' ? rt.snapshot() : null; }).filter(Boolean);
   rt.restore(start);
-  const pool = [start, ...early, ...states.filter(Boolean)], picked = [];
-  for (let i = 0; i < Math.min(maxStates, pool.length); i++) picked.push(pool[Math.floor((i * pool.length) / Math.min(maxStates, pool.length))]);
+  // The start and the first second are always tried; the states play reached fill the rest, spread over their order (a
+  // spread over all of them would skip the first second whenever play reached many).
+  const reached = states.filter(Boolean), room = Math.max(0, maxStates - 1 - early.length), picked = [start, ...early];
+  for (let i = 0; i < Math.min(room, reached.length); i++) picked.push(reached[Math.floor((i * reached.length) / Math.min(room, reached.length))]);
   const moves = (rt.controls.controls.map?.axes?.move || []).length ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [];
   for (const f of featuresOf(doc, registry)) {
     const declared = [...new Set([...f.loop.progress, ...(f.card.provides?.events || [])])];
@@ -137,20 +141,40 @@ function works(rt, verb, declared, states, moves, frames, budget) {
     }
     // A press that applies only in what play leads to next (an ability in a shot's flight, a skip on a screen a choice
     // opens): take one of the choices the game offers here, then press at a few moments of what follows, against the
-    // same choice without the press.
+    // same choice without the press; and the same one decision further on (the choice taken, play run to the next
+    // decision: the next shot loaded, the next screen), where what the press acts on may first appear (a later shot's
+    // ability). Every candidate is tried in order until one works or the verb's step budget is spent, so the table
+    // is the same for the same document and states.
     if (!axis && rt.controls.presses(verb).length) {
+      const press = { actions: { [verb]: rt.controls.presses(verb)[0] } };
+      const choices = () => rt.availableOptions().filter(o => o.actions && Object.keys(o.actions).length && o.actions[verb] === undefined).slice(0, 3);
+      const after = from => {
+        rt.restore(from);
+        for (const o of choices()) for (const at of [6, 15, 30]) {
+          if (steps > budget) return null;
+          const choose = i => (i === 0 ? { actions: o.actions } : i === at ? press : {}), plain = i => (i === 0 ? { actions: o.actions } : {});
+          let pressed, idle;
+          try { pressed = run(from, choose, null, frames + at); idle = run(from, plain, null, frames + at); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
+          tried++;
+          const event = sooner(pressed, idle);
+          if (event) return event;
+        }
+        return undefined;
+      };
+      let event = after(snap);
+      if (event === null) return { works: false, tried };
+      // One decision further: each choice taken and play run (empty input, as a person waiting) to the next decision.
       rt.restore(snap);
-      const next = rt.availableOptions().filter(o => o.actions && Object.keys(o.actions).length && o.actions[verb] === undefined).slice(0, 3);
-      for (const o of next) for (const at of [6, 15, 30]) {
-        if (steps > budget) return { works: false, tried };
-        const press = { actions: { [verb]: rt.controls.presses(verb)[0] } };
-        const choose = i => (i === 0 ? { actions: o.actions } : i === at ? press : {}), plain = i => (i === 0 ? { actions: o.actions } : {});
-        let pressed, idle;
-        try { pressed = run(snap, choose, null, frames + at); idle = run(snap, plain, null, frames + at); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
-        tried++;
-        const event = sooner(pressed, idle);
-        if (event) { rt.restore(snap); return { works: true, event, tried }; }
+      for (const o of event ? [] : choices()) {
+        rt.restore(snap);
+        try { rt.step({ actions: o.actions }); steps++; } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
+        for (let k = 0; k < WAIT && rt.state.status === 'playing' && !choices().length; k++) { rt.step({}); steps++; }
+        if (rt.state.status !== 'playing' || !choices().length) continue;
+        event = after(rt.snapshot());
+        if (event === null) return { works: false, tried };
+        if (event) break;
       }
+      if (event) { rt.restore(snap); return { works: true, event, tried }; }
     }
   }
   return { works: false, tried };

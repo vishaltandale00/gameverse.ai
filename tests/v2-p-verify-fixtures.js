@@ -28,8 +28,10 @@ const hp = e => e.components.health.hp;
 
 /** Discrete steps on a cell space: options (one per open direction) and held move axes. */
 export const step = fx('gameplay.fixture.step', 'test: one-cell steps on a cell space', { every: 4, options: true, envelope: null }, {
-  // It steps by the held move axis (and by the step verb's value): it declares the axis, so the host binds it.
-  card: { provides: { actions: ['step'] }, actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, step: { type: 'enum', options: ['up', 'down', 'left', 'right'] } }, envelope: (config, abilities) => ({ run: 1, jumpHeight: abilities.has('high_jump') ? 5 : 1 }) },
+  // It steps by the held move axis (and by the step verb's value): it declares the axis, so the host binds it, and the
+  // step verb is a verb the player plays (loop.verbs), so the host gives each of its values a key and the options that
+  // offer a step are ones a person can take.
+  card: { provides: { actions: ['step'] }, loop: { verbs: ['step'] }, actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, step: { type: 'enum', options: ['up', 'down', 'left', 'right'] } }, envelope: (config, abilities) => ({ run: 1, jumpHeight: abilities.has('high_jump') ? 5 : 1 }) },
   install(rt, cfg) {
     const D = { up: [0, 1, 0], down: [0, -1, 0], left: [-1, 0, 0], right: [1, 0, 0] };
     const go = d => { const p = rt.player(); if (!p) return; const api = rt.space(p.space); api.move(p, fl(p.at).map((v, i) => v + d[i]), rt); };
@@ -93,7 +95,8 @@ export const rows = { id: 'engine.generate.fixture-rows', card: { intent: 'test:
 
 /** Side-view platforming on a gravity space via slide(): move axes run, `jump` from the ground, a second jump with double_jump. */
 export const platformer = fx('gameplay.fixture.platformer', 'test: run and jump', { run: 6, jump: 17 }, {
-  card: { provides: { actions: ['jump'] }, envelope: (c, abilities) => ({ mode: 'continuous', run: c.run, jumpHeight: c.jump ** 2 / 120, jumpDistance: c.run * 2 * c.jump / 60, doubleJump: abilities.has('double_jump') }) }, // physical reach (units), as card envelopes report it
+  // It runs by the held move axis: it declares the axis, so the host binds it (a person steers it with keys).
+  card: { provides: { actions: ['jump'] }, actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } }, envelope: (c, abilities) => ({ mode: 'continuous', run: c.run, jumpHeight: c.jump ** 2 / 120, jumpDistance: c.run * 2 * c.jump / 60, doubleJump: abilities.has('double_jump') }) }, // physical reach (units), as card envelopes report it
   install(rt, cfg) {
     rt.action('jump', () => {
       const p = rt.player(); if (!p) return; const b = p.components.body, s = rt.store('gameplay.fixture.platformer');

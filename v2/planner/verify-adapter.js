@@ -153,11 +153,15 @@ export function winQuantity(doc, registry, core = null) {
 }
 
 /**
+ * The gate's verdict depends only on the document, its seed and the budgets (v2/verify GATE_BUDGET: states and
+ * simulated frames per stage, never wall time). `playable`: the playability checks apply (the playtest agents' run:
+ * the bots the loops name, the loop, progress toward the win). `budget` overrides stage budgets; `wallMs` caps total
+ * wall time between stages (a stage it stops leaves the verdict budget_limited, never a different one).
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic
- * @param {{ budgetMs?: number, maxStates?: number, playtestMs?: number | null }} [opts]
+ * @param {{ playable?: boolean, budget?: Record<string, number> | null, wallMs?: number | null }} [opts]
  * @returns {Promise<Verification>}
  */
-export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, maxStates = 20000, playtestMs = null } = {}) {
+export async function verifyDocument(doc, registry, logic, { playable = false, budget = null, wallMs = null } = {}) {
   const started = performance.now();
   // The gate verifies what the host mounts (ARCHITECTURE §6.3): the document with the host's default input and UI
   // (v2/web/host-doc.js, the same function the browser player mounts), so the controls the bots play through are the
@@ -175,17 +179,17 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
     try {
       // The playtest steers by, and reports progress on, the quantity the core loop's win reads.
       const win = winQuantity(pre.doc, registry);
-      const r = await m.verify(pre.doc, registry, logic, { budgetMs: budgetMs + (playtestMs || 0), seed: pre.doc.seed, plot: { maxStates }, ...(playtestMs || win ? { playtest: { ...(playtestMs ? { budgetMs: playtestMs } : {}), ...(win ? { win } : {}) } } : {}),
-        // The playtest agents (§6.3) include the bots the loops name: they get the playtest agents' budget of their own.
-        ...(playtestMs ? { strategies: { budgetMs: playtestMs } } : {}) });
+      const r = await m.verify(pre.doc, registry, logic, { seed: pre.doc.seed, ...(budget ? { budget } : {}), ...(Number.isFinite(wallMs) ? { wallMs } : {}), ...(win ? { playtest: { win } } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
       const problems = [...world, ...(r?.problems || [])];
       const pt = r?.playtest;
+      // Stages the wall-time cap stopped (verify opts.wallMs): no verdict, never a different one.
+      const limited = /** @type {string[]} */ (Array.isArray(r?.budgetLimited) ? r.budgetLimited : []);
       /** @type {Verification} */
       const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
         playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })), progress: pt.progress ?? null } : null,
-        ...(playtestMs ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
+        ...(limited.length ? { viable: false, viability: `budget_limited: the wall-time cap (${wallMs} ms) passed before ${limited.join(', ')} ran` } : playable ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, features: r?.features ?? null, ms: Math.round(performance.now() - started) };
       // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.
@@ -194,7 +198,7 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
     } catch (error) { out.problems.push({ code: 'verify_threw', message: errorText(error).slice(0, 200) }); }
   }
   try {
-    const s = solve(pre.doc, registry, logic, { budgetMs, maxStates });
+    const s = solve(pre.doc, registry, logic, { maxStates: budget?.plotStates ?? 2000 });
     return { ...out, source: 'solve', completable: s.completable, exhaustive: s.exhaustive, solve: s, ms: Math.round(performance.now() - started) };
   } catch (error) {
     return { ...out, ok: false, source: 'solve', problems: [...out.problems, { code: 'solve_threw', message: errorText(error).slice(0, 200) }], ms: Math.round(performance.now() - started) };

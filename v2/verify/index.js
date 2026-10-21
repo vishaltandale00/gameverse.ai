@@ -7,10 +7,14 @@
 // snapshots and space capabilities. Problems carry stable codes, document
 // paths and hints so the planner's repair loop can fix the document; each
 // stage reports whether it was exhaustive or stopped by its budget.
+// Every budget that decides what is played is counted in states and simulated frames (GATE_BUDGET), never wall
+// time, so the same document and seed always give the same verdict, under load or across a laptop's sleep. The only
+// wall-clock limit is an optional total cap (opts.wallMs), checked between whole stages and bots: a stage it stops is
+// not run at all and the report says so (budgetLimited), never a different verdict.
 import { preflight } from '../kernel/document.js';
 import { verifyPlot } from './plot.js';
 import { verifySpatial } from './spatial.js';
-import { playtest } from './playtest.js';
+import { playtest, PLAYTEST_BUDGET } from './playtest.js';
 import { checkInvariants } from './invariants.js';
 import { select } from './strategies/index.js';
 import { maker } from './drive.js';
@@ -48,6 +52,15 @@ export const PROBLEM_CODES = {
 const RANK = { error: 0, warning: 1, info: 2 };
 
 /**
+ * What each stage of the gate plays when its caller names nothing else: plot solver states and frames, the explorer's rounds and
+ * frames, each bot's frames (per seed, lookahead included), the feature checks' frames per verb and the invariant
+ * script's macros. Sized from the template
+ * suite's measured runs so a gate spends about what it spent when its stages were cut by wall time (the turnaround
+ * report in the change that introduced it); override per call with opts.budget.
+ */
+export const GATE_BUDGET = Object.freeze({ plotStates: 2000, plotSteps: 2000, playtestRounds: PLAYTEST_BUDGET.rounds, playtestFrames: PLAYTEST_BUDGET.frames, botSteps: 10000, featureSteps: 40000, invariantMacros: 120 });
+
+/**
  * Run a bot on the world a person plays: the gate's seed (the document's own seed), never the bot's default seed
  * list. Every caller that proves a document with a bot (this gate, the template suite) runs it through here.
  * `opts` are the bot's other run options; a caller's explicit `seeds` there are not allowed to replace the world.
@@ -58,24 +71,28 @@ export function playBot(strategy, ctx, opts = {}) {
 
 /**
  * verify(doc, registry, logic, opts) → report
- * opts: { seed, budgetMs, plot: {...solver opts} | false, spatial: {...} | false, playtest: {...} | false,
- *         strategies: { only?: [ids], budgetMs?: reserved for the bots, [id]: {...run opts} } | false, invariants: {...} | false }
+ * opts: { seed, budget: Partial<GATE_BUDGET>, wallMs, plot: {...solver opts} | false, spatial: {...} | false,
+ *         playtest: {...} | false, strategies: { only?: [ids], [id]: {...run opts} } | false, invariants: {...} | false }
+ * `wallMs` (default none) caps total wall time between stages: a stage or bot not started because it passed is listed
+ * in report.budgetLimited, with a budget_exhausted warning.
  */
 export async function verify(doc, registry, logic, opts = {}) {
   const t0 = now(), timings = {};
-  const total = opts.budgetMs ?? 4000, seed = opts.seed;
-  // The bots' own budget (opts.strategies.budgetMs), when given, is reserved: it is not taken from the shared pool the
-  // other stages split, and their time does not count against it. The bots the loops name are the gate's players.
-  const botBudget = Number.isFinite(opts.strategies?.budgetMs) ? opts.strategies.budgetMs : null;
-  let reservedSpent = 0;
-  const left = () => Math.max(50, total - (now() - t0 - reservedSpent));
+  const seed = opts.seed, B = { ...GATE_BUDGET, ...(opts.budget || {}) };
+  const wallMs = Number.isFinite(opts.wallMs) ? opts.wallMs : Infinity;
   const time = async (name, fn) => { const t = now(); try { return await fn(); } finally { timings[name] = Math.round(now() - t); } };
-  const problems = [];
+  const problems = [], budgetLimited = [];
+  /** Has the total wall cap passed? Then `what` does not run, and the report says so. */
+  const capped = what => {
+    if (now() - t0 < wallMs) return false;
+    budgetLimited.push(what);
+    return true;
+  };
 
   // Every stage verifies the document a person plays: the host's default input and UI added (v2/web/host-doc.js).
   const reachedStates = [];
   const pre = await time('preflight', () => preflight(hostDocument(doc, registry), registry, logic));
-  const report = { ok: false, seed: seed ?? null, preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, plot: null, spatial: null, playtest: null, strategies: null, invariants: null, problems, timings, exhaustive: {} };
+  const report = { ok: false, seed: seed ?? null, budget: B, budgetLimited, preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, plot: null, spatial: null, playtest: null, strategies: null, invariants: null, problems, timings, exhaustive: {} };
   for (const e of pre.errors) problems.push(problem(e.code, e.path, e.message, { hint: e.hint, severity: 'error', stage: 'preflight' }));
   for (const w of pre.warnings) problems.push(problem(w.code, w.path, w.message, { hint: w.hint, severity: 'warning', stage: 'preflight' }));
   if (!pre.ok) { timings.total = Math.round(now() - t0); return report; }
@@ -83,20 +100,19 @@ export async function verify(doc, registry, logic, opts = {}) {
   const tag = (list, stage) => { for (const p of list) problems.push({ ...p, stage: p.stage || stage }); };
   const guard = async (stage, fn) => { try { return await fn(); } catch (error) { problems.push(problem('runtime_error', 'systems', `${stage} stage threw: ${error?.message || error}`, { stage })); return null; } };
 
-  if (opts.plot !== false) {
-    report.plot = await time('plot', () => guard('plot', () => verifyPlot(nd, registry, logic, { seed, budgetMs: left() * 0.35, ...(opts.plot || {}) })));
+  if (opts.plot !== false && !capped('plot')) {
+    report.plot = await time('plot', () => guard('plot', () => verifyPlot(nd, registry, logic, { seed, maxStates: B.plotStates, maxSteps: B.plotSteps, ...(opts.plot || {}) })));
     if (report.plot) { tag(report.plot.problems, 'plot'); report.exhaustive.plot = report.plot.exhaustive; }
   }
-  if (opts.spatial !== false) {
+  if (opts.spatial !== false && !capped('spatial')) {
     report.spatial = await time('spatial', () => guard('spatial', () => verifySpatial(nd, registry, logic, { seed, plot: report.plot, settleSteps: opts.plot?.settleSteps ?? 2, ...(opts.spatial || {}) })));
     if (report.spatial) tag(report.spatial.problems, 'spatial');
   }
-  if (opts.playtest !== false) {
-    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, budgetMs: left() * 0.4, ...(opts.playtest || {}) })));
+  if (opts.playtest !== false && !capped('playtest')) {
+    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, maxRounds: B.playtestRounds, maxFrames: B.playtestFrames, ...(opts.playtest || {}) })));
     if (report.playtest) tag(report.playtest.problems, 'playtest');
   }
-  if (opts.strategies !== false) {
-    const ts = now();
+  if (opts.strategies !== false && !capped('strategies')) {
     report.strategies = await time('strategies', () => guard('strategies', () => {
       // The bots are playtest agents too (§6.3): every runtime they play is measured on the win quantity the playtest
       // steers by (opts.playtest.win), so the gate sees how far their play moved it toward the win.
@@ -106,12 +122,12 @@ export async function verify(doc, registry, logic, opts = {}) {
       const make = recording(wm ? measured(controlledMaker(nd, registry, logic), wm, reached) : controlledMaker(nd, registry, logic), reachedStates), probe = make(seed);
       const ctx = { doc: nd, registry, logic, make, seed, capabilities: pre.capabilities, used: usedPrimitives(nd), playerSpace: probe.player()?.space ?? nd.spaces[0]?.id, plot: report.plot };
       const { chosen, skipped } = select(ctx, { only: opts.strategies?.only || null });
-      const ran = [], tb = now();
-      chosen.forEach(({ s, reason }, i) => {
+      const ran = [];
+      chosen.forEach(({ s, reason }) => {
+        if (capped(`strategies:${s.id}`)) { ran.push({ id: s.id, reason, ok: null, budgetLimited: true }); return; }
         if (wm) reached.high = 0;
-        const share = (botBudget !== null ? Math.max(50, botBudget - (now() - tb)) : left() * 0.6) / (chosen.length - i);
         try {
-          const r = playBot(s, ctx, { budgetMs: share, ...(opts.strategies?.[s.id] || {}) });
+          const r = playBot(s, ctx, { maxSteps: B.botSteps, ...(opts.strategies?.[s.id] || {}) });
           ran.push({ id: s.id, reason, ok: r.ok, proven: r.proven, metrics: r.metrics, exhaustive: r.exhaustive, budget: r.budget, ...(wm ? { progress: reached.high } : {}) });
           tag(r.problems.map(p => ({ ...p, strategy: s.id })), 'strategy');
         } catch (error) {
@@ -124,18 +140,18 @@ export async function verify(doc, registry, logic, opts = {}) {
       });
       return { ran, skipped };
     }));
-    if (botBudget !== null) reservedSpent += now() - ts;
   }
   // Feature checks (features.js): every primitive the document mixes in exists, is controllable and works when its
   // controls are pressed from states the bots' and the explorer's play reached.
-  if (opts.features !== false && opts.strategies !== false) {
-    report.features = await time('features', () => guard('features', () => featureChecks(nd, registry, controlledMaker(nd, registry, logic), { seed, states: [...(report.playtest?.sample || []).map(c => c.snap), ...reachedStates], ...(opts.features || {}) })));
+  if (opts.features !== false && opts.strategies !== false && !capped('features')) {
+    report.features = await time('features', () => guard('features', () => featureChecks(nd, registry, controlledMaker(nd, registry, logic), { seed, stepsPerVerb: B.featureSteps, states: [...(report.playtest?.sample || []).map(c => c.snap), ...reachedStates], ...(opts.features || {}) })));
     if (report.features) tag(report.features.problems.map(p => ({ severity: 'error', hint: 'every primitive the game mixes in must work through its controls', ...p })), 'features');
   }
-  if (opts.invariants !== false) {
-    report.invariants = await time('invariants', () => guard('invariants', () => checkInvariants(nd, registry, logic, { seed, budgetMs: left(), ...(opts.invariants || {}) })));
+  if (opts.invariants !== false && !capped('invariants')) {
+    report.invariants = await time('invariants', () => guard('invariants', () => checkInvariants(nd, registry, logic, { seed, steps: B.invariantMacros, ...(opts.invariants || {}) })));
     if (report.invariants) tag(report.invariants.problems, 'invariants');
   }
+  if (budgetLimited.length) problems.push(problem('budget_exhausted', 'systems', `the verification's wall-time cap (${wallMs} ms) passed before these ran: ${budgetLimited.join(', ')}`, { severity: 'warning', stage: 'verify', wall: true, skipped: [...budgetLimited] }));
   // One record per code + path, most severe first.
   const seen = new Map();
   for (const p of problems) { const k = `${p.code}|${p.path}`; const o = seen.get(k); if (!o || RANK[p.severity] < RANK[o.severity]) seen.set(k, p); }
@@ -178,7 +194,7 @@ function measured(make, wm, reached) {
 export { solve } from './solve.js';
 export { verifyPlot, staticPlot, beatStructure, solverProblems } from './plot.js';
 export { verifySpatial, movementEnvelope } from './spatial.js';
-export { playtest, replayPlay, progressTimeline } from './playtest.js';
+export { playtest, replayPlay, progressTimeline, explorerWorlds, PLAYTEST_BUDGET } from './playtest.js';
 export { quality, QUALITY_CODES, QUALITY_THRESHOLDS } from './quality.js';
 export { artQuality, ART_QUALITY_CODES, ART_QUALITY_TOLERANCE } from './art-quality.js';
 export { checkInvariants, stepChecker, findNonFinite } from './invariants.js';

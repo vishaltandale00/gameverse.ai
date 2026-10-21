@@ -50,8 +50,8 @@ import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offered
  * the stage fails); outlineRepairRounds bounds the model's field repairs inside one build attempt; replanAttempts bounds the build
  * attempts (each after diagnosing and re-planning a failure); maxGapPrimitives bounds the primitives the gap layer
  * writes (only with gaps 'auto'). When they are exhausted the build fails with what it tried and what is missing.
- * @typedef {{ detailConcurrency: number, maxDetailTasks: number, playtestMs: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
- *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number, modelAttempts: number }} PipelineConfig
+ * @typedef {{ detailConcurrency: number, maxDetailTasks: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
+ *   gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number, modelAttempts: number }} PipelineConfig
  */
 /** Stage durations: null when not measured (AGENTS.md). @typedef {Record<string, number | null>} Timings */
 /** @typedef {{ code: string, path?: string, message: string }} PatchProblem */
@@ -62,8 +62,8 @@ import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offered
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze(/** @type {PipelineConfig} */ ({
-  detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
-  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3, modelAttempts: 2,
+  detailConcurrency: 3, maxDetailTasks: 8, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
+  gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3, modelAttempts: 2,
 }));
 
 const ms = (/** @type {number} */ t) => Math.round(performance.now() - t);
@@ -170,7 +170,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
     timings.composeMs = Math.round(clock.codeMs);
     const tg = performance.now();
-    const v = await verifyDocument(fp.doc, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+    const v = await verifyDocument(fp.doc, registry, logic, { playable: true });
     timings.gateMs = ms(tg);
     if (!v.viable) throw fail('not_playable', 'gate', [{ code: 'not_playable', path: '$', message: String(v.viability || 'not viable') }, ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)]);
     t = performance.now();
@@ -270,7 +270,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       // The publish gate: a playtest agent plays this exact document; nothing may crash and the declared loop must happen.
       const tg = performance.now();
       const base = outline.verification && hashOf(outline.verification.doc ?? null) === hashOf(doc) ? outline.verification
-        : await verifyDocument(doc, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
+        : await verifyDocument(doc, registry, logic, { playable: true });
       timings.gateMs = ms(tg);
       if (!base.viable) return { ok: /** @type {const} */ (false), stage: 'gate', problems: [{ code: 'not_playable', path: '$', message: String(base.viability || 'not viable') }, ...(base.problems || []).filter(p => p.severity === 'error').slice(0, 8)], doc, outline, base };
       const core = coreLoopProblems(doc, sel.mechanics, registry);
@@ -377,7 +377,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         // Cast: acceptPatch (detail.js) does not declare its result, so `ok` widens to boolean and does not narrow;
         // PatchResult is what it returns. Remove once detail.js declares it.
         /** @param {unknown} patch @returns {Promise<PatchResult>} */
-        const accept = patch => acceptPatch({ current, patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs })
+        const accept = patch => acceptPatch({ current, patch, task, registry, logic, baseVerify })
           .then(r => /** @type {PatchResult} */ (r))
           .catch(error => ({ ok: false, reason: 'threw', errors: [{ code: 'patch_threw', path: '$', message: errorText(error).slice(0, 200) }], patch }));
         let result = await accept(written.patch);
@@ -487,8 +487,8 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     }
     t = performance.now();
     ctx.checkpoint?.('revision', { base: job.base, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
-    const v = await verifyDocument(after, registry, logic, { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
-    const vBefore = await verifyDocument(before, registry, logic, { budgetMs: cfg.solveBudgetMs });
+    const v = await verifyDocument(after, registry, logic, { playable: true });
+    const vBefore = await verifyDocument(before, registry, logic);
     const guard = await reviewChange({ before, after, change, decisions, unsupported, verifyBefore: vBefore, verifyAfter: v });
     timings.guardMs = ms(t); timings.verifyMs = timings.guardMs;
     if (guard.block) throw Object.assign(Error(guard.block.message), { status: 422, code: guard.block.code });

@@ -78,7 +78,7 @@ export async function runBench({ prompts = DEFAULT_PROMPTS, n = 1, offline = tru
       const fp = versions.find(v => v.stage === 'first_playable');
       const finalDoc = out.doc;
       const cat = await catalogue(finalDoc);
-      const final = await verifyDocument(finalDoc, cat.registry, cat.logic, { budgetMs: 1500 });
+      const final = await verifyDocument(finalDoc, cat.registry, cat.logic);
       const replay = replayCheck(final.doc || finalDoc, cat.registry, cat.logic, { seed: finalDoc.seed, steps: 240 });
       Object.assign(run, {
         ok: true, ms: Math.round(performance.now() - t), timings: out.timings,

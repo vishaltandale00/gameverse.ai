@@ -60,7 +60,7 @@ for (const t of TEMPLATES) {
 
   for (const seed of WORLD_SEEDS) {
     test(`template ${t.id} on world seed ${seed}: the publish gate finds it viable`, async () => {
-      const v = await verifyDocument(seeded(t, seed).doc, registry, logic, { budgetMs: 800, playtestMs: 1500 });
+      const v = await verifyDocument(seeded(t, seed).doc, registry, logic, { playable: true });
       assert.ok(v.viable, `${t.id} seed ${seed}: ${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`);
     });
 

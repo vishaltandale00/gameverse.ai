@@ -15,7 +15,9 @@
 //   features     every primitive the document mixes in exists, is controllable and works when its controls are pressed
 //                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
-//                on every world seed in SEEDS through the real controls, and replays to the same runs
+//                on every world seed in SEEDS through the real controls, and replays to the same runs; and the input
+//                its winning world was played with, replayed at a human edge rate (HUMAN_INPUT, verify/human.js), still
+//                wins: a person can play the line the bot found
 //
 // Static stages stop the check when one fails (nothing simulates a document that is malformed or fails its
 // declarations); the dynamic stages (gate, bots) both run once the static ones pass.
@@ -31,16 +33,29 @@ import { strategies, select, modeBots } from '../verify/strategies/index.js';
 import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
+import { recordingMaker, humanCheck } from '../verify/human.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
 /** The world seeds every named bot must win on (and replay). */
 export const SEEDS = Object.freeze([1, 2, 3]);
-/** The publish gate's budgets, as the template suite runs it. */
-export const GATE = Object.freeze({ budgetMs: 800, playtestMs: 1500 });
-/** A named bot's wall budget, and the run options particular bots take (their own params, by strategy id). */
-export const BOT_BUDGET_MS = 60000;
+/** The publish gate as the template suite runs it: the playability checks, on the gate's own budgets (verify GATE_BUDGET). */
+export const GATE = Object.freeze({ playable: true });
+/**
+ * A named bot's budget per world seed, in simulated frames (lookahead included: verify/util.js budget.meter), never wall
+ * time, so the bots stage gives the same runs on a loaded machine or across a laptop's sleep; and the run options
+ * particular bots take (their own params, by strategy id).
+ */
+export const BOT_STEPS = Infinity;
 export const BOT_OPTS = Object.freeze({ 'danger-field': Object.freeze({ maxFrames: 15000 }), dodge: Object.freeze({ seconds: 60, every: 8 }) });
+/**
+ * The fastest a person changes their input: what they hold (the move axis, the keys down) changes at most this many
+ * times a second, and a press is down for at least that long. 10 per second (a change every 100 ms, 6 frames at 60 Hz)
+ * is the edge of human speed: a single finger taps about 5-7 times a second sustained and near 10 in short bursts, and
+ * a visual reaction takes over 150 ms, so a line that needs faster changes is one only a bot plays. Used by the bots
+ * stage's human-rate replay (verify/human.js).
+ */
+export const HUMAN_INPUT = Object.freeze({ changesPerSecond: 10 });
 /** Param types a tune path may name: a single value the frame_tune form can ask for. */
 export const SCALAR_TYPES = Object.freeze(['number', 'integer', 'boolean', 'string']);
 /** A template id: a lowercase slug (a promoted template's file name and an enum value of the pick form). */
@@ -58,7 +73,7 @@ export const CODES = Object.freeze({
   gate: Object.freeze(['gate_not_viable']),
   controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
-  bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
+  bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch', 'bot_path_unreplayed', 'bot_superhuman']),
 });
 export const STAGES = Object.freeze(Object.keys(CODES));
 const DYNAMIC = STAGES.indexOf('gate');
@@ -114,13 +129,19 @@ function botProblems(checked, registry, logic, evidence) {
   const chosen = select(ctx).chosen.map(c => c.s.id);
   if (!isDeepStrictEqual(chosen, named)) out.push(problem('bot_selection_mismatch', `the gate plays ${chosen.join(', ') || 'no bot'}; the loops name ${named.join(', ')}`));
   for (const id of named) {
-    const bot = strategies.get(id), opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] };
+    const bot = strategies.get(id), opts = { maxSteps: BOT_STEPS, seeds: [...SEEDS], ...BOT_OPTS[id] };
     const t0 = performance.now();
     let a, b;
     // A bot that asks for a verb no control issues, or that throws, fails here with what it needed.
-    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
-    const runs = runsOf(a);
-    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), ms: Math.round(performance.now() - t0) });
+    // The first run records the input its worlds were played with, for the human-rate replay.
+    const rec = recordingMaker(ctx.make);
+    try { a = bot.run({ ...ctx, make: rec.make }, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
+    const runs = runsOf(a), human = SEEDS.map(seed => humanCheck(ctx.make, rec.worlds, seed, HUMAN_INPUT.changesPerSecond));
+    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), human, ms: Math.round(performance.now() - t0) });
+    for (const h of human.filter(Boolean)) {
+      if (h.full !== 'won') out.push(problem('bot_path_unreplayed', `${id}: world seed ${h.seed}: the input its winning world was played with (${h.frames} frames) ended ${h.full} when replayed`, { bot: id, seed: h.seed }));
+      else if (h.human !== 'won') out.push(problem('bot_superhuman', `${id}: world seed ${h.seed}: its winning line ends ${h.human} when its input changes at most ${HUMAN_INPUT.changesPerSecond} times a second (every ${h.window} frames): only a superhuman hand plays it`, { bot: id, seed: h.seed }));
+    }
     if (a.ok !== true) out.push(problem('bot_failed', `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`, { bot: id }));
     for (const seed of SEEDS) {
       const r = runs.find(x => x.seed === seed);

@@ -1,18 +1,25 @@
-// Headless playtest: Go-Explore snapshot search over any document. Cells are
-// (space, quantized player position, progress bucket); each round restores a
-// promising or novel cell and plays a few macros from it: the options the
-// primitives expose, or generic input macros (held axes and verbs) when there
-// are none. Progress is the document's own objective (objective.js) plus a
-// pull toward the zones the plot points at, and the quantity the core loop's
-// win reads (opts.win: winMeasure), which the search steers by and reports as
-// `progress` (how far idling and play moved it toward the win). Every macro is
-// checked against the runtime invariants; any win is replayed from a fresh
-// world to prove it.
-import { maker, hold, applyOption, optionLabels, inputMacros, posOf } from './drive.js';
+// Headless playtest: Go-Explore snapshot search over any document, played through the controls a person has
+// (ARCHITECTURE.md §6.3): it plays the document the host mounts (v2/web/host-doc.js) on controlled worlds
+// (v2/verify/controls.js), so every input it issues is a key, an axis or a mounted UI's action sampled through the host
+// document's bindings, exactly as a person's would be. Cells are (space, quantized player position, progress bucket);
+// each round restores a promising or novel cell and plays a few macros from it: the options the primitives expose (hints
+// of what the controls issue: an option's actions go through the controls, a travel macro is held input along the
+// space's path, an option no control can take is reported as controls_missing and never taken), or generic input
+// macros (held axes and the verbs a key presses, a press going down once and staying held) when there are none.
+// Progress is the document's own objective (objective.js) plus a pull toward the zones the plot points at, and the
+// quantity the core loop's win reads (opts.win: winMeasure), which the search steers by and reports as `progress` (how
+// far idling and play moved it toward the win). Every macro is checked against the runtime invariants; any win is
+// replayed from a fresh world to prove it. The search is bounded by rounds and simulated frames, never wall time: the
+// same document and seed always give the same report.
+import { hold, holdInput, optionLabels, inputMacros, posOf } from './drive.js';
 import { objective, plotZones, PROGRESS_EVENTS, winMeasure, WIN_WEIGHT } from './objective.js';
 import { stepChecker } from './invariants.js';
-import { withTravel } from './macros.js';
+import { withTravel, takeOption, steerable } from './macros.js';
+import { controlledMaker, hostPreflight } from './controls.js';
 import { prng, problem, budget as makeBudget, walkJson } from './util.js';
+
+/** The explorer's budget when its caller names none: rounds of the search and frames simulated (lookahead included). */
+export const PLAYTEST_BUDGET = Object.freeze({ rounds: 1500, frames: 12000 });
 
 const DT = 1 / 60;
 
@@ -25,18 +32,24 @@ function cellKeyOf(rt, score, quantum) {
   return `${p?.space}|${q}|${Math.round(score * 2) / 2}|${rt.state.status}`;
 }
 
+/** Play one playtest record on a world: an option by its label (taken as a person takes it), else held input. -> false when the option is not offered. */
+function playRecord(rt, r, registry) {
+  if (r.o !== undefined) { const options = rt.availableOptions(), j = optionLabels(options).indexOf(r.o); if (j < 0) return false; takeOption(rt, options[j], registry); return true; }
+  holdInput(rt, r.i, r.n); hold(rt, {}, 1);
+  return true;
+}
+
 /**
- * Replay a playtest path [{o:label}|{i:input,n:frames}] from a fresh world.
- * onRecord(rt, record) runs before each record; onFrame(rt) after every step (macro steps included).
+ * Replay a playtest path [{o:label}|{i:input,n:frames}] from a fresh world of `make` (the explorer's worlds:
+ * explorerWorlds). onRecord(rt, record) runs before each record; onFrame(rt) after every step (macro steps included).
  */
-export function replayPlay(make, seed, path, { onFrame = null, onRecord = null } = {}) {
+export function replayPlay(make, seed, path, { onFrame = null, onRecord = null, registry = null } = {}) {
   const rt = make(seed);
   if (onFrame) { const step = rt.step; rt.step = input => { const s = step(input); onFrame(rt); return s; }; }
   for (const r of path) {
     if (rt.state.status !== 'playing') break;
     onRecord?.(rt, r);
-    if (r.o !== undefined) { const options = rt.availableOptions(), j = optionLabels(options).indexOf(r.o); if (j < 0) break; applyOption(rt, options[j]); }
-    else { hold(rt, r.i, r.n); hold(rt, {}, 1); }
+    if (!playRecord(rt, r, registry)) break;
   }
   return rt;
 }
@@ -56,7 +69,7 @@ export function progressMatcher(doc, weights = PROGRESS_EVENTS) {
  * player movement and no event besides `action` (dead time), and the cells, zones, event names and choice
  * labels the path touched. Returns the timeline plus the replayed world as `rt` (callers drop it).
  */
-export function progressTimeline(make, seed, path, { goal, isProgress, quantum = 1, source = 'path', step = 0.1, deadFrames = 30, maxMarks = 120, maxStretches = 40, maxNames = 60 } = {}) {
+export function progressTimeline(make, seed, path, { goal, isProgress, quantum = 1, source = 'path', step = 0.1, deadFrames = 30, maxMarks = 120, maxStretches = 40, maxNames = 60, registry = null } = {}) {
   const marks = [], dead = [], zones = new Set(), cells = new Set(), names = new Set(), labels = new Set();
   let prev = null, prevPos = null, high = 0, start = 0, still = null, deadTotal = 0, marksTotal = 0, stretches = 0, longest = 0;
   const posKey = (rt, q) => {
@@ -94,7 +107,7 @@ export function progressTimeline(make, seed, path, { goal, isProgress, quantum =
     if (active) close(f); else still ??= f;
   };
   const onRecord = (rt, r) => { if (!prev) init(rt); if (labels.size < maxNames) labels.add(r.o ?? r.label ?? 'input'); };
-  const rt = replayPlay(make, seed, path, { onFrame, onRecord });
+  const rt = replayPlay(make, seed, path, { onFrame, onRecord, registry });
   const frames = rt.state.frame;
   close(frames);
   return {
@@ -106,23 +119,38 @@ export function progressTimeline(make, seed, path, { goal, isProgress, quantum =
 }
 
 /**
+ * The worlds the explorer plays: the host document (hosting is idempotent: verify() passes it already), controlled
+ * (every input through the controls a person has), with travel macros the controls realize (held move axes along the
+ * space's path, never warps) on spaces that offer no options of their own, unless `travel` is false.
+ * -> { ok: true, doc, make, travel } | { ok: false, errors } (the host document does not preflight)
+ */
+export function explorerWorlds(doc, registry, logic, { seed, travel: wanted = true } = {}) {
+  const host = hostPreflight(doc, registry, logic);
+  if (!host.ok) return { ok: false, errors: host.errors };
+  let make = controlledMaker(host.doc, registry, logic), travel = null;
+  if (wanted !== false) {
+    const probe = make(seed), p = probe.player();
+    if (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function' && steerable(probe)) { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
+  }
+  return { ok: true, doc: host.doc, make, travel };
+}
+
+/**
  * playtest(doc, registry, logic, opts) → report
- * opts: { seed, budgetMs, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline, win }
+ * opts: { seed, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline, win } (maxFrames and
+ * maxRounds default to PLAYTEST_BUDGET; a wall-time budget is not an option: nothing here reads the clock)
  * Besides the verdict it returns `timeline` (progressTimeline of the winning path, else of the best-scoring
  * archived path; null when that path is empty), `verbsUsed` (verbs the search pressed, by count) and
  * `sample`: a few archive cells { key, frames, score, path, snap } spread over the search, for quality
  * measurements (v2/verify/quality.js) to restore.
  */
 export function playtest(doc, registry, logic, opts = {}) {
-  const { seed, budgetMs = 1500, maxFrames = 200000, maxRounds = Infinity, idleSeconds = 10, quantum = 1, limits } = opts;
-  const b = makeBudget({ ms: budgetMs, steps: maxFrames, states: maxRounds });
-  // Spaces without options get steered travel macros (real controls, never warps): they extend the
-  // reach of the random macros without claiming anything the controls cannot do.
-  let make = maker(doc, registry, logic), travel = null;
-  if (opts.travel !== false) {
-    const probe = make(seed), p = probe.player();
-    if (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function') { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
-  }
+  const { seed, maxFrames = PLAYTEST_BUDGET.frames, maxRounds = PLAYTEST_BUDGET.rounds, idleSeconds = 10, quantum = 1, limits } = opts;
+  const b = makeBudget({ steps: maxFrames, states: maxRounds });
+  const worlds = explorerWorlds(doc, registry, logic, { seed, travel: opts.travel });
+  if (!worlds.ok) return { ok: false, winnable: false, win: null, idle: null, explored: 0, rounds: 0, framesSimulated: 0, problems: worlds.errors.map(e => problem('preflight', e.path, `the host document does not preflight: ${e.code} ${e.message}`, { stage: 'preflight' })), budget: b.report(), progress: null, timeline: null, sample: [], eventsFired: {}, verbsUsed: {}, losses: {} };
+  doc = worlds.doc;
+  const { make, travel } = worlds;
   const goal = objective(doc, registry, logic, { win: opts.win ?? null });
   // The win quantity (null without one): progress toward the win is what play moves it beyond what idling does.
   const wm = winMeasure(opts.win);
@@ -147,13 +175,13 @@ export function playtest(doc, registry, logic, opts = {}) {
   };
 
   // 1. Idle: what happens if the player does nothing?
-  const idle = make(seed);
+  const idle = b.meter(make(seed));
   const idleFrames = Math.round(idleSeconds / DT);
   let idleCarry = wm ? wm.start(idle) : null;
   try {
     // In stretches, so the win quantity sees what idling removes along the way.
     for (let f = 0; f < idleFrames && idle.state.status === 'playing'; f += 30) {
-      const token = wm?.track(idle); hold(idle, {}, Math.min(30, idleFrames - f), b);
+      const token = wm?.track(idle); hold(idle, {}, Math.min(30, idleFrames - f));
       if (wm) idleCarry = wm.carry(idleCarry, token, idle);
     }
     record(idle);
@@ -168,7 +196,7 @@ export function playtest(doc, registry, logic, opts = {}) {
   if (idle.state.status === 'lost' && idle.state.time < 2) problems.push(problem('instant_loss', 'systems', `the game is lost after ${idle.state.time.toFixed(2)} s with no input`, { hint: 'give the player a grace period: spawn hazards away from the start' }));
 
   // 2. Search.
-  const start = make(seed);
+  const start = b.meter(make(seed));
   const checker = stepChecker(limits);
   const startCarry = wm ? wm.start(start) : null;
   const startScore = score(start, startCarry);
@@ -179,6 +207,16 @@ export function playtest(doc, registry, logic, opts = {}) {
   const rt = start;
   let win = null, rounds = 0, broke = false;
   const losses = {};
+  // Options the game offers that no control a person has can take (a verb nothing issues, a macro with no actions):
+  // never taken, reported once each (the game's defect: a choice offered that a person cannot make).
+  const uncontrolled = new Map();
+  const takeable = (options, labels) => options.map((o, i) => ({ o, label: labels[i] })).filter(({ o, label }) => {
+    if (o.zone !== undefined && typeof o.apply === 'function') return true; // a travel macro: held input (takeOption)
+    const acts = o.actions || {}, issues = Object.keys(acts).some(v => acts[v] !== undefined && acts[v] !== null && acts[v] !== false);
+    const missing = !issues && typeof o.apply === 'function' ? [{ verb: label, why: 'the option is a macro (apply) and issues no action' }] : rt.controls.missing({ actions: acts });
+    if (missing.length && !uncontrolled.has(label)) uncontrolled.set(label, missing);
+    return !missing.length;
+  });
   while (!b.over() && !broke) {
     rounds++; b.state();
     const cells = [...archive.values()];
@@ -195,18 +233,20 @@ export function playtest(doc, registry, logic, opts = {}) {
     let frames = cell.frames, carry = cell.carry;
     const n = 1 + rand.int(4);
     for (let k = 0; k < n; k++) {
-      const options = rt.availableOptions();
+      const all = rt.availableOptions(), options = takeable(all, optionLabels(all));
       let rec;
       const f0 = rt.state.frame, c0 = { ...rt.state.counts };
       const token = wm?.track(rt);
       try {
-        if (options.length && (opts.optionsOnly || rand() < 0.75)) { const labels = optionLabels(options), j = rand.int(options.length); rec = { o: labels[j] }; used(options[j].actions); applyOption(rt, options[j]); }
-        else { const macros = opts.macros || inputMacros(rt); const m = macros[rand.int(macros.length)], len = 4 + rand.int(32); rec = { i: m.input, n: len, label: m.label }; used(m.input.actions); hold(rt, m.input, len); hold(rt, {}, 1); }
+        if (options.length && (opts.optionsOnly || rand() < 0.75)) { const j = rand.int(options.length); rec = { o: options[j].label }; used(options[j].o.actions); takeOption(rt, options[j].o, registry); }
+        else { const macros = opts.macros || inputMacros(rt); const m = macros[rand.int(macros.length)], len = 4 + rand.int(32); rec = { i: m.input, n: len, label: m.label }; used(m.input.actions); playRecord(rt, rec, registry); }
       } catch (error) {
-        problems.push(problem('runtime_error', 'systems', `step threw at frame ${rt.state.frame}: ${error?.message || error}`, { repro: [...path, rec].filter(Boolean) }));
+        // A macro asking for a control a person does not have is the explorer's own request, not the game crashing.
+        if (error?.code === 'controls_missing') problems.push(problem('controls_missing', 'systems', `the explorer needed ${String(error.message).replace(/^controls_missing: /, '')}`, { missing: error.missing, repro: [...path, rec].filter(Boolean) }));
+        else problems.push(problem('runtime_error', 'systems', `step threw at frame ${rt.state.frame}: ${error?.message || error}`, { repro: [...path, rec].filter(Boolean) }));
         broke = true; break;
       }
-      b.step(rt.state.frame - f0); frames += rt.state.frame - f0;
+      frames += rt.state.frame - f0;
       record(rt, c0);
       path.push(rec);
       if (wm) { carry = wm.carry(carry, token, rt); advanceHigh = Math.max(/** @type {number} */ (advanceHigh), wm.advance(rt, carry)); }
@@ -225,16 +265,17 @@ export function playtest(doc, registry, logic, opts = {}) {
   const timelinePath = win ? win.path : best.path;
   let timeline = null, replayed = null;
   if (opts.timeline !== false && timelinePath.length) {
-    try { timeline = progressTimeline(make, seed, timelinePath, { goal, isProgress: progressMatcher(doc), quantum, source: win ? 'win' : 'best' }); }
+    try { timeline = progressTimeline(make, seed, timelinePath, { goal, isProgress: progressMatcher(doc), quantum, source: win ? 'win' : 'best', registry }); }
     catch { timeline = null; } // a throw here replays a path the search already ran; its problem is reported there
   }
   if (win) {
-    const r = timeline?.rt ?? replayPlay(make, seed, win.path);
+    const r = timeline?.rt ?? replayPlay(make, seed, win.path, { registry });
     replayed = r.state.status === 'won';
     if (!replayed) problems.push(problem('nondeterministic', '$', 'the winning input path did not reproduce the win on replay', { repro: win.path, hint: 'simulation must depend only on rt.state, inputs and rt.random()' }));
   } else if (!problems.some(p => p.severity === 'error') && (doc.plot?.endings || []).length) {
     problems.push(problem('goal_not_reached', 'plot.endings', `the playtest did not reach an ending within its budget (${archive.size} cells, ${rounds} rounds, stopped by ${b.hit || 'limit'})`, { severity: 'warning', hint: 'budget-limited: not a proof of a softlock' }));
   }
+  for (const [label, missing] of uncontrolled) problems.push(problem('controls_missing', 'systems', `the game offers '${label}', which no control a person has can take: ${missing.map(m => `${m.verb} (${m.why})`).join('; ')}`, { missing, hint: 'every option the game offers must be issuable through a key, an axis or a mounted UI' }));
   // Events the document refers to (count predicates) that never happened in play.
   const referenced = new Map();
   walkJson(doc.plot || {}, (o, path) => { if (typeof o.count === 'string' && !referenced.has(o.count)) referenced.set(o.count, `plot.${path}`); });
