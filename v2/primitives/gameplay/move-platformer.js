@@ -24,7 +24,7 @@ export const FEEL = { snappy: { g: 1, j: 1 }, floaty: { g: 0.82, j: 1.04 }, heav
 
 const BASE = {
   run: 9, accel: 70, decel: 90, airControl: 0.85, jump: 22, jumpCut: 0.5, gravity: 0, gravityScale: 1, fallMax: 30, fallMultiplier: 1,
-  coyoteMs: 90, bufferMs: 100, doubleJumps: 1, doubleJumpScale: 0.9, autoRun: 0,
+  coyoteMs: 90, bufferMs: 100, doubleJumps: 1, doubleJumpScale: 0.9, autoRun: 0, stompBounce: 0.6,
   dash: { speed: 30, sec: 0.18, cooldown: 0.55, airOnce: true, iframes: 0.12, eightWay: false, keep: 0.5 },
   wallSlide: 3.5, wallJump: { x: 9, y: 0.9, lockMs: 160 }, wallClimb: { speed: 4 }, wallClimbStamina: 0, climbPool: 'stamina', climbStaminaMax: 110,
   glide: { fall: 2.5 }, swim: { speed: 5, stroke: 8, buoyancy: 0.25, drag: 4 }, crouchSpeed: 0.35,
@@ -85,6 +85,9 @@ function envelope(config, abilities = new Set(), ctx = {}) {
   };
 }
 
+// The envelope of an installed controller's resolved config, computed once per config (stepPlatformer runs per entity per frame).
+const ENVELOPES = new WeakMap();
+const envelopeOf = c => { let env = ENVELOPES.get(c); if (!env) { env = envelope(c); ENVELOPES.set(c, env); } return env; };
 const num = (min, max, unit, effect) => ({ type: 'number', min, max, unit, effect });
 export default {
   id: ID,
@@ -104,6 +107,7 @@ export default {
       fallMax: num(1, 200, 'units/s', 'terminal fall speed (30)'), fallMultiplier: num(0.2, 4, '', 'extra gravity while falling (1)'),
       coyoteMs: num(0, 400, 'ms', 'jump grace after leaving a ledge (90)'), bufferMs: num(0, 400, 'ms', 'early jump press still fires on landing (100)'),
       autoRun: num(0, 60, 'units/s', 'constant forward run (endless runners); 0 = player-controlled'),
+      stompBounce: num(0, 2, '× jump', 'take-off speed after stomping a body (combat touch.stomp), as a fraction of jump (0.6); 0 = no bounce'),
       abilities: { type: 'object', default: {}, effect: 'abilities on from the start (otherwise granted by unlock_ability)', fields: Object.fromEntries(ABILITIES.map(a => [a, { type: 'boolean', default: false }])) },
       doubleJumps: { type: 'integer', min: 0, max: 3, effect: 'extra air jumps with doubleJump (1)' }, doubleJumpScale: num(0.2, 1.5, '', 'air jump speed × jump (0.9)'),
       dash: { type: 'object', effect: 'dash tuning', fields: { speed: num(1, 120, 'units/s'), sec: num(0.02, 1, 's'), cooldown: num(0, 5, 's'), airOnce: { type: 'boolean' }, iframes: num(0, 1, 's'), eightWay: { type: 'boolean' }, keep: num(0, 1, '', 'speed kept after the dash') } },
@@ -143,6 +147,8 @@ export default {
     ensureShared(rt, { speed: Math.max(c.run, c.autoRun, 1), ...config.macro });
     verbs(rt, ['move', 'jump', 'dash', 'grab', 'glide', 'crouch']);
     rt.system('input', rt => { for (const e of driven(rt, c, instance)) if (isBaseFor(rt, e, owner, ID, 'platformer')) claim(rt, e, 'platformer', 0, owner); }, ID);
+    // A stomp (gameplay.combat.health touch.stomp) bounces the stomper this controller drives on its next movement step.
+    rt.on('stomped', d => { const e = d.by && rt.entity(d.by); if (e && ownedBy(rt, e, owner)) state(e, 'plat').stomp = true; });
     rt.system('movement', rt => { for (const e of driven(rt, c, instance)) if (ownedBy(rt, e, owner)) stepPlatformer(rt, e, c); }, ID);
     rt.options(rt => {
       const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
@@ -162,7 +168,7 @@ export function stepPlatformer(rt, e, c) {
   if (fr.vert === null || !fr.plane.length) return;
   const X = fr.plane[0], Y = fr.vert, up = fr.upSign, b = bodyOf(e), s = state(e, 'plat'), dt = rt.dt, now = rt.state.time;
   const has = a => c.abilities[a] || hasAbility(rt, e, a);
-  const it = intent(rt, e, api, fr, { envelope: envelope(c) }), ctl = it.ctl;
+  const it = intent(rt, e, api, fr, { envelope: envelopeOf(c) }), ctl = it.ctl;
   const gBase = c.gravity > 0 ? c.gravity : fr.gmag || 60, g = gBase * c.gravityScale;
   let x = clamp(it.dir[X] ?? 0, -1, 1);
   const y = ctl ? ctl.move[1] : it.vert;
@@ -178,6 +184,7 @@ export function stepPlatformer(rt, e, c) {
   const dashP = Boolean(ctl?.pressed('dash')), grab = Boolean(ctl?.down('grab') || ctl?.down('climb'));
   const glideH = Boolean(ctl?.down('glide')) || jumpH;
   let vx = b.vel[X], vy = b.vel[Y] * up;
+  if (s.stomp) { s.stomp = false; if (c.stompBounce > 0) { vy = c.jump * c.stompBounce; s.cut = true; s.jumps = c.doubleJumps; rt.emit('bounced', { who: e.id, stomp: true }); } }
   const grounded = Boolean(b.grounded);
   s.jumps ??= c.doubleJumps; s.cut ??= true;
   const facing = s.face ?? 1;

@@ -24,7 +24,7 @@ const health = {
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: {
       health: { type: 'object', fields: { max: { type: 'number', min: 0.01, required: true, effect: 'hit points' }, hp: { type: 'number', min: 0 }, regen: { type: 'number', effect: 'hp per second' }, iframeSec: { type: 'number', min: 0 }, respawn: { type: 'json', effect: 'none|home|spawn or {mode, sec}' }, resist: { type: 'object', open: true, effect: 'damage type -> fraction resisted' }, armor: { type: 'object', open: true } }, effect: 'hit points' },
-      touch: { type: 'object', fields: { damage: { type: 'number', min: 0, required: true }, type: { type: 'string' }, knockback: { type: 'number', min: 0 } }, effect: 'contact damage to hostile entities it overlaps' },
+      touch: { type: 'object', fields: { damage: { type: 'number', min: 0, required: true }, type: { type: 'string' }, knockback: { type: 'number', min: 0 }, stomp: { type: 'boolean', effect: 'a hostile body falling onto it from above (with the space gravity) defeats it instead of being hurt' } }, effect: 'contact damage to hostile entities it overlaps' },
     },
     // The effect that takes a holder of a component it owns out of play (an encounter's defeated participant, planner/presets.js).
     defeats: { health: 'kill' },
@@ -53,7 +53,7 @@ const health = {
       playerDeath: { type: 'string', options: ['lose', 'none'], default: 'lose', effect: 'without gameplay.death: lose ends the game when the player dies' },
     },
     provides: {
-      events: ['damaged', 'damaged:*', 'healed', 'died', 'died:*', 'defeated', 'defeated:*', 'revived', 'revived:*', 'immune', 'knockback', 'split', 'returning'],
+      events: ['damaged', 'damaged:*', 'healed', 'died', 'died:*', 'defeated', 'defeated:*', 'revived', 'revived:*', 'immune', 'knockback', 'split', 'returning', 'stomped'],
       vars: ['hp', 'hp.max'], services: ['combat'],
     },
     reads: ['content.archetypes'],
@@ -253,6 +253,17 @@ const health = {
         displace(rt, e, h.push); h.push = mul(v3(h.push), PUSH_DECAY).map(v => round(v));
       }
     }, KEY);
+    // A stomp (components.touch.stomp): the toucher's body moves with the space gravity and its feet were, a frame ago,
+    // above the middle of the stompable body (it fell onto it, not into its side).
+    const stompsOn = (o, e, eb) => {
+      const sp = rt.space(e.space), g = typeof sp?.gravityAt === 'function' ? v3(sp.gravityAt(posOf(e)) || []) : null;
+      if (!g || !g.some(Boolean)) return false;
+      const ax = g.reduce((m, v, i) => (Math.abs(v) > Math.abs(g[m]) ? i : m), 0), down = Math.sign(g[ax]);
+      const v = o.components.body?.vel?.[ax] ?? 0;
+      if (!(v * down > 0)) return false;
+      const ob = boxOf(rt, o), feet = (down < 0 ? ob.min[ax] : ob.max[ax]) - v * rt.dt, mid = (eb.min[ax] + eb.max[ax]) / 2;
+      return down < 0 ? feet >= mid : feet <= mid;
+    };
     if (config.contact) rt.system('interaction', rt => {
       for (const e of Object.values(rt.state.entities)) {
         const t = e.components.touch; if (!t || !tangible(e) || !e.space) continue;
@@ -267,6 +278,7 @@ const health = {
             continue;
           }
           if (!hostile(rt, e, o, config.friendlyFire)) continue;
+          if (t.stomp && stompsOn(o, e, bx)) { api.kill(e, { by: o.id, source: 'stomp' }); rt.emit('stomped', { who: e.id, by: o.id }); break; }
           api.hit(o, { amount: t.damage, type: t.type, by: e.id, source: 'contact', knockback: t.knockback, dir: posOf(o) && posOf(e) ? sub(posOf(o), posOf(e)) : undefined });
         }
       }
