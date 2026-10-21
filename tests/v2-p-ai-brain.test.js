@@ -68,6 +68,30 @@ test('patrol ping-pongs, wander stays near home, both replay deterministically',
   assert.deepEqual(a.snapshot(), end, 'restore + replay');
 });
 
+test('patrol: a point the movement cannot reach is reported and passed over; the agent keeps patrolling the rest', () => {
+  // [12, 4] is walled in: the shared AI locomotion stays blocked from it, and so does a move.* controller's path.
+  const solid = [];
+  for (let x = 11; x <= 13; x++) for (let y = 3; y <= 5; y++) if (x !== 12 || y !== 4) solid.push([x, y, 0]);
+  const route = [[4, 4, 0], [12, 4, 0], [4, 12, 0]];
+  for (const systems of [[], [{ use: 'gameplay.move.walk' }]]) {
+    const guard = { id: 'guard', kind: 'npc', components: { ai: { brain: [{ do: 'patrol', route, pause: 0.1 }], speed: 4 }, ...(systems.length ? { move: {} } : {}) } };
+    const { rt } = compile(doc({ archetypes: [guard], solid, systems }), { primitives: [...P, ...catalogue().registry.ids().filter(id => id === 'gameplay.move.walk').map(id => catalogue().registry.get(id))] });
+    const g = rt.spawn('guard', { at: [4, 4, 0] }), failed = [];
+    rt.on('move_failed', d => { if (d.who === g.id) failed.push({ ...d, t: rt.state.time }); });
+    const visits = { a: 0, c: 0 };
+    let near = null;
+    for (let i = 0; i < 1500; i++) {
+      rt.step();
+      const at = dist(g.at, route[0]) < 0.6 ? 'a' : dist(g.at, route[2]) < 0.6 ? 'c' : null;
+      if (at && at !== near) visits[at]++;
+      near = at ?? near;
+    }
+    const label = systems.length ? 'move.walk' : 'ai locomotion';
+    assert.ok(failed.length >= 1 && failed.every(d => d.by === 'ai' && JSON.stringify(d.at) === JSON.stringify(route[1])), `${label}: the unreachable point is reported (${JSON.stringify(failed.slice(0, 2))})`);
+    assert.ok(visits.c >= 2 && visits.a >= 2, `${label}: still patrols the reachable points (${JSON.stringify(visits)})`);
+  }
+});
+
 test('target-tile: greedy target cell, never reversing, tie order U L D R; personalities as data', () => {
   // A plus-shaped junction at (10,10): open arms up, left, down, right.
   const solid = [];

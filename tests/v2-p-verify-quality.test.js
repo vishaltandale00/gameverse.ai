@@ -18,13 +18,17 @@ import { viability } from '../v2/planner/verify-adapter.js';
 const { registry, logic } = buildCatalogue();
 const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/v2-live/${name}.json`, import.meta.url), 'utf8'));
 const docs = new Map();
-const engaged = name => {
-  if (!docs.has(name)) { const f = fixture(name); docs.set(name, { doc: preflight(engageDocument(f.doc, registry, logic).doc, registry, logic).doc, mechanics: f.report.selection.mechanics }); }
-  return docs.get(name);
+const engaged = (name, edit = d => d) => {
+  const k = `${name}:${edit}`;
+  if (!docs.has(k)) { const f = fixture(name); docs.set(k, { doc: preflight(engageDocument(edit(f.doc), registry, logic).doc, registry, logic).doc, mechanics: f.report.selection.mechanics }); }
+  return docs.get(k);
 };
+// The live platformer as recorded: its shaft rooms stack platforms up through the falling-piece board's spawn rows (the
+// rooms are proven for the player's real jump, which needs six of them to reach that high), so it is lost on frame 1.
+const blockedBoard = d => ({ ...d, spaces: d.spaces.map(s => ({ ...s, generators: (s.generators || []).map(g => (g.use === 'engine.generate.tilemap.rooms' ? { ...g, with: { ...g.with, rooms: g.with.rooms.map(r => ({ ...r, platforms: 6 })) } } : g)) })) });
 const BOUNDED = { budgetMs: Infinity, maxRounds: 24 };
 const runs = new Map();
-const play = name => { if (!runs.has(name)) { const { doc } = engaged(name); runs.set(name, playtest(doc, registry, logic, { seed: doc.seed, ...BOUNDED })); } return runs.get(name); };
+const play = (name, edit) => { const k = `${name}:${edit}`; if (!runs.has(k)) { const { doc } = engaged(name, edit); runs.set(k, playtest(doc, registry, logic, { seed: doc.seed, ...BOUNDED })); } return runs.get(k); };
 const SECTIONS = ['agency', 'coverage', 'progression', 'pacing', 'deadTime', 'variety', 'budget', 'exhaustive'];
 const stable = q => JSON.parse(JSON.stringify(q, (k, v) => (k === 'ms' ? undefined : v)));
 
@@ -75,8 +79,8 @@ test('quality: every section is measured on a playable document, findings are in
 
 test('quality: what was not measured is null, never 0', () => {
   // The live platformer is lost on its first frame: no path survives past the start.
-  const { doc, mechanics } = engaged('platformer');
-  const q = quality(doc, registry, logic, { playtest: play('platformer'), mechanics, budgetMs: Infinity });
+  const { doc, mechanics } = engaged('platformer', blockedBoard);
+  const q = quality(doc, registry, logic, { playtest: play('platformer', blockedBoard), mechanics, budgetMs: Infinity });
   for (const k of ['progression', 'pacing', 'deadTime', 'variety']) { assert.equal(q[k], null, k); assert.equal(typeof q.unmeasured[k], 'string'); }
   assert.ok(q.agency, 'agency is still measured at the start cell');
   assert.ok(q.findings.some(f => f.code === 'agency_low'));

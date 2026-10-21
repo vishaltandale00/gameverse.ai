@@ -8,9 +8,12 @@ import { preflight } from '../v2/kernel/document.js';
 import generators from '../v2/primitives/engine/generate2d.index.js';
 import SPACES2D from '../v2/primitives/engine/spaces2d.index.js';
 import { Raster } from '../v2/primitives/engine/generate2d-lib.js';
-import { reachSide, reachTop, movementFor, ROLE } from '../v2/primitives/engine/generate2d-reach.js';
+import { proveReach, navMover, ROLE } from '../v2/primitives/engine/generate2d-reach.js';
+import platformer from '../v2/primitives/gameplay/move-platformer.js';
+import walk from '../v2/primitives/gameplay/move-walk.js';
 
-const PRIMS = [testSpace, ...generators];
+// The proof holds for the document's player: its movement (gameplay.move.platformer here) and body.
+const PRIMS = [testSpace, ...generators, platformer, walk];
 const KEY = 'spaces.w.generators[0]';
 const rooms = () => [
   { id: 'hall', zone: 'a', rect: [0, 0, 30, 20], style: 'hall', gaps: 2, hazards: ['spikes'], exits: [{ side: 'r' }, { side: 't' }], features: [{ kind: 'bench', id: 'bench_1' }, { kind: 'spawn', ref: 'slime', count: 2 }] },
@@ -23,6 +26,7 @@ const doc = (w = {}, seed = 3) => ({
   schema: 'gameverse.v2.game/0.2', id: 'rooms', title: 'Rooms', seed,
   spaces: [{ id: 'w', use: 'engine.space.test', with: { size: [100, 60, 1] }, zones: [{ id: 'a', rect: [0, 0, 60, 60] }, { id: 'b', rect: [60, 0, 100, 60] }],
     generators: [{ use: 'engine.generate.tilemap.rooms', with: { rooms: rooms(), ...w } }] }],
+  systems: [{ use: w.mode === 'topdown' ? 'gameplay.move.walk' : 'gameplay.move.platformer' }],
   content: { archetypes: [{ id: 'hero', components: {} }, { id: 'slime', components: {} }, { id: 'golem', components: {} }] },
   player: { archetype: 'hero', at: [3, 3] },
 });
@@ -60,24 +64,43 @@ test('tilemap.rooms: unreachable positions and dangling exits are reported, neve
   assert.equal(rt.state.counts.generate_problem, st.problems.length);
 });
 
-test('tilemap.rooms: the movement model proves jumps, gaps and abilities', () => {
+test('tilemap.rooms: the proof walks the mover\'s envelope and body on the tilemap\'s own navigation', () => {
   const floor = () => { const g = new Raster(20, 12, ROLE.EMPTY); g.rect(0, 0, 20, 1, ROLE.SOLID); return g; };
   const at = (g, x, y) => new Map([[y * g.w + x, 'goal']]);
+  const hits = (g, mover, goal, from = { x: 1, y: 1 }, mode = 'side') => proveReach(g, mode, navMover(mover), [from], goal).hit.has('goal');
   const plat = h => { const g = floor(); g.rect(8, h, 3, 1, ROLE.SOLID); return g; };
-  const base = movementFor({ jumpHeight: 3, jumpDistance: 4 });
-  assert.ok(reachSide(plat(3), base, [{ x: 1, y: 1 }], at(plat(3), 9, 4)).hit.has('goal'), 'a 3-high ledge is in reach');
-  assert.ok(!reachSide(plat(4), base, [{ x: 1, y: 1 }], at(plat(4), 9, 5)).hit.has('goal'), 'a 4-high ledge is not');
-  assert.ok(reachSide(plat(4), movementFor({ jumpHeight: 3 }, ['double_jump']), [{ x: 1, y: 1 }], at(plat(4), 9, 5)).hit.has('goal'));
+  // The envelope is physical reach; navigation offers whole tiles with the arc's clearance: a 3.6 rise lands 3 rows up.
+  const base = { envelope: { jumpHeight: 3.6, jumpGap: 4 } };
+  assert.ok(hits(plat(3), base, at(plat(3), 9, 4)), 'a 3-high ledge is in reach');
+  assert.ok(!hits(plat(3), { envelope: { jumpHeight: 3.2, jumpGap: 4 } }, at(plat(3), 9, 4)), 'a rise that only just reaches its top does not land on it');
+  assert.ok(!hits(plat(5), base, at(plat(5), 9, 6)), 'a 5-high one is not');
+  assert.ok(hits(plat(5), { envelope: { ...base.envelope, doubleJump: true } }, at(plat(5), 9, 6)), 'double jump reaches it');
   const pit = w => { const g = floor(); g.rect(5, 0, w, 1, ROLE.HAZARD); return g; };
-  assert.ok(reachSide(pit(3), base, [{ x: 1, y: 1 }], at(pit(3), 15, 1)).hit.has('goal'), 'a 3-wide pit is cleared');
-  assert.ok(!reachSide(pit(4), base, [{ x: 1, y: 1 }], at(pit(4), 15, 1)).hit.has('goal'), 'a 4-wide pit is not');
-  assert.ok(reachSide(pit(4), movementFor({ jumpHeight: 3, jumpDistance: 4 }, ['ember_step'], { ember_step: { dash: 3 } }), [{ x: 1, y: 1 }], at(pit(4), 15, 1)).hit.has('goal'), 'document abilities extend the model');
-  const wall = () => { const g = floor(); g.rect(10, 0, 1, 12, ROLE.SOLID); g.rect(11, 0, 9, 1, ROLE.SOLID); g.set(10, 11, ROLE.EMPTY); return g; };
-  assert.ok(!reachSide(wall(), base, [{ x: 1, y: 1 }], at(wall(), 15, 1)).hit.has('goal'));
-  assert.ok(reachSide(wall(), movementFor({}, ['climb']), [{ x: 1, y: 1 }], at(wall(), 15, 1)).hit.has('goal'), 'climbing scales the wall');
+  assert.ok(hits(pit(3), base, at(pit(3), 15, 1)), 'a 3-wide pit is cleared');
+  assert.ok(!hits(pit(6), base, at(pit(6), 15, 1)), 'a 6-wide pit is not');
+  const low = w => { const g = pit(w); g.rect(4, 4, w + 2, 1, ROLE.SOLID); return g; }; // a ceiling 3 rows above the floor
+  assert.ok(!hits(low(3), base, at(low(3), 15, 1)), 'under a low ceiling only a low arc fits, and a low arc is a short hop');
+  assert.ok(hits(pit(6), { envelope: { ...base.envelope, dash: 3 } }, at(pit(6), 15, 1)), 'the envelope\'s dash extends the jump');
+  const wall = () => { const g = floor(); g.rect(10, 0, 1, 9, ROLE.SOLID); g.rect(11, 0, 9, 1, ROLE.SOLID); return g; };
+  assert.ok(!hits(wall(), base, at(wall(), 15, 1)));
+  assert.ok(hits(wall(), { envelope: { ...base.envelope, wallJump: true } }, at(wall(), 15, 1)), 'wall jumping scales the wall');
+  // The body: a one-tile crawlspace passes a one-tile body and stops a 1.4-tall one.
+  const crawl = () => { const g = floor(); g.rect(6, 2, 6, 10, ROLE.SOLID); return g; };
+  assert.ok(hits(crawl(), { ...base, width: 0.8, height: 0.95 }, at(crawl(), 15, 1)));
+  assert.ok(!hits(crawl(), { ...base, width: 0.8, height: 1.4 }, at(crawl(), 15, 1)), 'a body taller than the gap cannot pass');
   const td = new Raster(5, 5, ROLE.EMPTY); td.rect(2, 0, 1, 5, ROLE.WATER);
-  assert.ok(!reachTop(td, base, [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
-  assert.ok(reachTop(td, movementFor({}, ['swim']), [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
+  assert.ok(!proveReach(td, 'topdown', navMover({}), [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
+  assert.ok(proveReach(td, 'topdown', navMover({ envelope: { swim: true } }), [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
+});
+
+test('tilemap.rooms: the generated layout is proven for the player\'s real body and envelope', () => {
+  for (const size of [[0.8, 0.95], [0.8, 1.4]]) {
+    const d = doc(); d.content.archetypes[0].components = { body: { size } }; d.player.at = [3.5, 3.5];
+    const { rt } = compile(d, { primitives: PRIMS });
+    const st = rt.store(KEY);
+    assert.deepEqual(st.problems, [], `${size}: ${JSON.stringify(st.problems)}`);
+    assert.ok(st.targets.length > 0 && Array.isArray(st.from), 'the proof publishes what it guarantees');
+  }
 });
 
 test('tilemap.rooms: top-down mode generates and proves too', () => {
@@ -97,7 +120,7 @@ test('tilemap.rooms: preflight rejects bad configs with stable codes', () => {
   const rs = d.spaces[0].generators[0].with.rooms;
   rs[1].rect = [20, 0, 50, 20];                // overlaps hall
   rs[2].style = 'volcano';                      // unknown style
-  rs[3].requiresAbilities = ['teleport_jump'];  // no movement effect
+  rs[3].requiresAbilities = ['teleport_jump'];  // neither defined by the document nor a movement ability
   rs.push({ id: 'tiny', zone: 'b', rect: [90, 50, 93, 52] }, { id: 'out', zone: 'a', rect: [50, 50, 70, 60] });
   const got = codes(d);
   for (const c of ['room_overlap', 'room_style_unknown', 'ability_unknown', 'room_rect_invalid', 'room_outside_zone']) assert.ok(got.includes(c), `${c} in ${got}`);

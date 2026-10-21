@@ -11,6 +11,35 @@ import { astar, flood, key2, unkey, mod } from './spaces2d-lib.js';
 
 export const DEFAULT_ABILITIES = { jumpHeight: 3, jumpDistance: 4, doubleJump: false, dash: 0, climb: false, wallJump: false, swim: false, fly: false, dropThrough: true };
 
+/** Landing clearance of a jump arc (tiles): an arc onto a ledge dy rows up rises at least dy + LIP (arcTemplates). */
+export const LIP = 0.6;
+
+/**
+ * Navigation options from the kernel reachability opts ({abilities, envelope, who}, KERNEL_API §3) plus the body box.
+ * The movement envelope is physical reach (card.envelope: the feet's rise, the gap crossed at speed); navigation
+ * counts whole tiles the controller makes: a ledge N rows up only when the rise clears it by the arc's LIP
+ * (N = floor(rise − LIP), the rise of both jumps with a double jump), gaps and dashes rounded down (jumpGap is the envelope's name for jumpDistance).
+ * Ability flags and navigation-native fields in `abilities` apply on top as given. The body width and height are in
+ * tiles (1 × 1 when the mover declares no body, as spaces size undeclared bodies). The tilemap's path/reachable/canReach
+ * and every generator proof over a tile raster read movers through this one mapping.
+ */
+export function navOptions(o = {}) {
+  const env = { ...(o.envelope || {}) };
+  if (env.jumpGap !== undefined && env.jumpDistance === undefined) env.jumpDistance = env.jumpGap;
+  // With a double jump the graph doubles jumpHeight, so the clearance applies to the combined rise.
+  if (Number.isFinite(env.jumpHeight)) { const k = env.doubleJump ? 2 : 1; env.jumpHeight = Math.max(0, Math.floor(env.jumpHeight * k - LIP + 1e-9)) / k; }
+  for (const k of ['jumpDistance', 'dash']) if (Number.isFinite(env[k])) env[k] = Math.max(0, Math.floor(env[k] + 1e-9));
+  const ab = { ...env, ...(o.abilities || {}) };
+  if (ab.jumpGap !== undefined && (o.abilities || {}).jumpDistance === undefined && (o.abilities || {}).jumpGap !== undefined) ab.jumpDistance = ab.jumpGap;
+  return { abilities: ab, width: o.width ?? (o.radius != null ? o.radius * 2 : 1), height: o.height ?? 1, avoid: o.avoid, diagonals: o.diagonals, maxNodes: o.maxNodes, obstacles: o.obstacles ?? 'static', who: o.who };
+}
+
+/** Jump reach in tiles of navigation abilities (as makeNav reads them): double jump doubles height and adds half the distance, dash adds tiles. */
+export function jumpReach(abilities = {}) {
+  const ab = { ...DEFAULT_ABILITIES, ...abilities };
+  return { height: ab.jumpHeight * (ab.doubleJump ? 2 : 1), distance: ab.jumpDistance * (ab.doubleJump ? 1.5 : 1) + (ab.dash || 0) };
+}
+
 /**
  * q = { W, H, mode, wrapX, wrapY, kindAt(x,y) → 'solid'|'oneway'|'slope'|'none', tagsAt(x,y) → string[], costAt(x,y) → n }
  * opts = { abilities, width=1, height=1 (tiles), avoid=['hazard'], diagonals=false, maxNodes }
@@ -57,11 +86,12 @@ export function makeNav(q, opts = {}) {
     return null;
   };
   // Jump reach (tiles). Double jump roughly doubles height and adds half the distance; dash adds tiles.
-  const JH = ab.jumpHeight * (ab.doubleJump ? 2 : 1), JD = ab.jumpDistance * (ab.doubleJump ? 1.5 : 1) + (ab.dash || 0);
+  const { height: JH, distance: JD } = jumpReach(ab);
   // Arc clearance: parabolas from feet (x0,y0) to (x1,y1), a low arc first and then higher apexes up to
   // the jump height (clearing hazards or lips needs a taller arc). The cells each arc sweeps depend only on
-  // (dx, dy, apex, body size), so they come from precomputed templates (arcTemplates).
-  const templates = arcTemplates(w, h, JH);
+  // (dx, dy, apex, body size), so they come from precomputed templates (arcTemplates). An arc covers only the
+  // distance its height gives it: a lower arc (under a ceiling) is a shorter hop, never the full jump distance.
+  const templates = arcTemplates(w, h, JH, JD);
   const arcClear = (x0, y0, x1, y1) => {
     for (const cells of templates(x1 - x0, y1 - y0)) {
       let ok = true;
@@ -139,18 +169,24 @@ export function makeNav(q, opts = {}) {
   };
 }
 
-// Arc templates: for a body w×h tiles and jump height JH, the relative cells swept by each candidate apex of a
-// jump (dx, dy), as flat [dc, dr, endColumn] triples. Pure and shared by every nav object.
+// Arc templates: for a body w×h tiles, jump height JH and distance JD, the relative cells swept by each candidate apex
+// of a jump (dx, dy), as flat [dc, dr, endColumn] triples. Ballistic reach: the full arc (apex JH + LIP) spans JD on
+// the flat; an arc of apex a landing dy higher stays aloft √a + √(a − dy) in those units, so it spans
+// JD/2 · (√(a/A) + √((a − dy)/A)) with A = JH + LIP. Apexes that cannot span |dx| are not candidates. Pure and shared.
 const TEMPLATES = new Map();
-function arcTemplates(w, h, JH) {
-  const key = `${w},${h},${JH}`;
+export function arcSpan(JH, JD, apex, dy) {
+  const A = JH + LIP; if (!(A > 0)) return 0;
+  return (JD / 2) * (Math.sqrt(Math.max(0, apex) / A) + Math.sqrt(Math.max(0, apex - dy) / A));
+}
+function arcTemplates(w, h, JH, JD) {
+  const key = `${w},${h},${JH},${JD}`;
   let table = TEMPLATES.get(key);
   if (!table) { table = new Map(); TEMPLATES.set(key, table); if (TEMPLATES.size > 64) TEMPLATES.delete(TEMPLATES.keys().next().value); }
   return (dx, dy) => {
     const k = dx * 4096 + dy; let list = table.get(k);
     if (list) return list;
-    const low = Math.max(0, dy) + 0.6;
-    list = [...new Set([low, (low + JH + 0.6) / 2, JH + 0.6])].filter(a => a >= low).map(apex => {
+    const low = Math.max(0, dy) + LIP;
+    list = [...new Set([low, (low + JH + LIP) / 2, JH + LIP])].filter(a => a >= low && (dx === 0 || Math.abs(dx) <= arcSpan(JH, JD, a, dy) + 1e-9)).map(apex => {
       const kk = Math.max(0.15, apex - dy / 2), n = Math.max(4, Math.ceil(Math.abs(dx) * 3 + Math.abs(dy) * 2 + apex * 2)), seen = new Set(), out = [];
       for (let i = 1; i < n; i++) {
         const s = i / n, fx = 0.5 + dx * s, fy = dy * s + 4 * kk * s * (1 - s);

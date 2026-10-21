@@ -39,7 +39,7 @@ const BEHAVIOR = {
   run: { type: 'boolean', effect: 'use the run multiplier' },
   distance: n(undefined, { min: 0, effect: 'follow/chase stop distance' }),
   radius: n(undefined, { min: 0, effect: 'guard radius' }),
-  at, route: { type: 'list', of: { type: 'json' }, effect: 'patrol waypoints (positions or zone ids)' },
+  at, route: { type: 'list', of: { type: 'json' }, effect: 'patrol waypoints (positions or zone ids); a point the movement reports unreachable (move_failed) is passed over after the pause, to the next point' },
   loop: { type: 'boolean', effect: 'patrol loops instead of ping-pong' },
   pause: { type: 'json', effect: 'seconds (or [min,max]) to wait at wander/patrol points' },
   height: n(undefined, { effect: 'flyer hover height above the target' }),
@@ -358,7 +358,13 @@ function choose(rt, e, a, config, player) {
 // ---------- act: per-frame behavior execution (intents only) ----------
 function behaviorOf(e, a) { return a.i === -2 ? (a.order || { do: 'sit' }) : a.i >= 0 ? e.components.ai.brain[a.i] : { do: a.kind || 'sit' }; }
 
-function intendMove(e, goal, speed, extra = {}) { delete e.components.steer; e.components.moveTo = { at: Array.isArray(goal) ? r6(goal) : goal, zone: null, run: false, speed, by: 'ai', ...extra }; }
+function intendMove(e, goal, speed, extra = {}) {
+  delete e.components.steer;
+  const at = Array.isArray(goal) ? r6(goal) : goal, prev = e.components.moveTo;
+  // The same goal keeps what the locomotion marked on it (it is rewritten every frame): failures so far, reached, failed.
+  const kept = prev?.by === 'ai' && JSON.stringify(prev.at) === JSON.stringify(at) ? Object.fromEntries(['fails', 'reached', 'failed'].filter(k => prev[k]).map(k => [k, prev[k]])) : {};
+  e.components.moveTo = { at, zone: null, run: false, speed, by: 'ai', ...kept, ...extra };
+}
 function intendSteer(e, dir, speed, extra = {}) { delete e.components.moveTo; e.components.steer = { dir: r6(norm(dir)), speed, ...extra }; }
 function idle(e, a, face) { const c = e.components; delete c.steer; if (c.moveTo?.by === 'ai') delete c.moveTo; if (face) a.face = r6(norm(face)); }
 
@@ -393,7 +399,16 @@ function act(rt, e, a, config) {
       a.pi ??= 0; a.pdir ??= 1;
       if (a.waitUntil > rt.state.time) { idle(e, a); return; }
       const goal = route[a.pi];
-      const reached = continuous(e) ? len(planar(api, e.at, sub(goal, e.at), plane)) <= Math.max(0.15, speed * rt.dt * 2) : e.at === goal;
+      // How the movement ended this goal (marked on the intent): reached by its own arrival rule, or failed (no path,
+      // stuck). A failed point is passed over like a visited one after the pause, so a route through a pit or a wall
+      // keeps patrolling what it can reach.
+      const mt = c.moveTo, mine = mt?.by === 'ai' && JSON.stringify(mt.at) === JSON.stringify(Array.isArray(goal) ? r6(goal) : goal);
+      if (mine && mt.failed) {
+        if (b.loop || route.length < 2) a.pi = (a.pi + 1) % route.length;
+        else { if (a.pi + a.pdir < 0 || a.pi + a.pdir >= route.length) a.pdir = -a.pdir; a.pi += a.pdir; }
+        a.waitUntil = round6(rt.state.time + pauseFor()); idle(e, a); return;
+      }
+      const reached = Boolean(mine && mt.reached) || (continuous(e) ? len(planar(api, e.at, sub(goal, e.at), plane)) <= Math.max(0.15, speed * rt.dt * 2) : e.at === goal);
       if (reached) {
         if (b.loop || route.length < 2) a.pi = (a.pi + 1) % route.length;
         else { if (a.pi + a.pdir < 0 || a.pi + a.pdir >= route.length) a.pdir = -a.pdir; a.pi += a.pdir; }

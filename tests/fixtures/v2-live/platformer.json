@@ -511,11 +511,6 @@
        ],
        "requiresAbilities": [],
        "mode": "side",
-       "movement": {
-        "jumpHeight": 4,
-        "jumpDistance": 6
-       },
-       "abilities": {},
        "styles": {},
        "palette": {
         "wall": "stone",
