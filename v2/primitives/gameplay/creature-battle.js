@@ -18,6 +18,9 @@
 // best type matchup after a faint.
 import { moveOf, statsOf, speciesOf, calcDamage, accMult, clampStage, stageMult, expToLevel, levelUp, newMovesAt, learnSlot, expBar, bestMove, wildMove, bestMatchup, itemRule, chance, range, int, STRUGGLE, STAGE_STATS } from './puzzle-lib-creature.js';
 
+import { CREATURE_DATA } from './creature-party.js';
+import { itemsData } from './items-lib.js';
+
 const ID = 'gameplay.creature.battle';
 const freshStages = () => Object.fromEntries(STAGE_STATS.map(s => [s, 0]));
 const freshVol = () => ({ confusion: 0, flinch: false, protect: false, protectChain: 0 });
@@ -351,7 +354,7 @@ export default {
       currency: { type: 'string', default: 'gold', effect: 'currency for prize money (gameplay.economy give_money when present, else var money.<currency>)' },
       opening: { type: 'object', fields: {
         kind: { type: 'string', options: KINDS, default: 'trainer', effect: 'wild, trainer, leader or champion' },
-        trainer: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string' }, prize: { type: 'integer', min: 0, max: 100000 } }, effect: 'the opposing trainer (trainer battles)' },
+        trainer: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, prize: { type: 'integer', min: 0, max: 100000 } }, effect: 'the opposing trainer (trainer battles)' },
         foe: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { species: { type: 'ref', to: 'species', required: true }, level: { type: 'integer', default: 5, min: 1, max: 100 } } }, effect: "the opponent's creatures" },
       }, effect: 'the battle fought from the start of the game (with autoStart): a creature battler played on its own' },
       autoStart: { type: 'boolean', default: true, effect: 'start the opening battle at game start (otherwise battles start from start_battle)' },
@@ -366,6 +369,7 @@ export default {
     },
     requires: { primitives: ['gameplay.creature.party'], services: ['creatures'] },
     reads: ['content.species', 'content.moves', 'content.types', 'content.items'],
+    data: { ...CREATURE_DATA, ...itemsData(['creature']) },
   },
   logic(logic) {
     logic.effect('start_battle', {
@@ -377,11 +381,6 @@ export default {
       run: (e, rt) => rt.emit('battle_request', { kind: e.kind || (e.trainer ? 'trainer' : 'wild'), foe: e.foe, trainer: e.trainer || null, onWin: e.onWin || [], onLose: e.onLose || [] }),
     });
     logic.predicate('in_battle', { test: (p, rt) => Boolean(rt.state.prim[ID]?.battle) === (p.in_battle !== false) });
-  },
-  validate(config, doc) {
-    const errors = [];
-    (doc.content?.items || []).forEach((it, i) => { if (it.creature && !['ball', 'heal', 'status', 'revive'].includes(it.creature.kind)) errors.push({ code: 'battle_item_invalid', path: `content.items[${i}].creature.kind`, message: 'creature item kind is ball|heal|status|revive' }); });
-    return errors;
   },
   /** Solver progress in a battle: the foe party's lost hp fraction minus half the player's; battles won count 10 each. */
   progress(rt) {

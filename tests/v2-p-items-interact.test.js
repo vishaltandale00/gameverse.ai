@@ -124,7 +124,11 @@ test('interact: preflight rejects bad config with stable codes', () => {
   d.content.archetypes[2].components.interact.do = [{ do: 'explode' }];
   d.content.archetypes[2].components.pickup.item = 'ghost_item';
   const c = codes(check(d));
-  for (const code of ['param_range', 'param_unknown', 'interact_invalid', 'effect_unknown', 'ref_unknown']) assert.ok(c.includes(code), code);
+  for (const code of ['param_range', 'param_unknown']) assert.ok(c.includes(code), code);
+  // The interact and pickup components' declared shapes (card.components) check kind, do and pickup.item at their paths
+  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where interact_invalid and the validator's checks were.
+  const r = check(d), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_option@content.archetypes[1].components.interact.kind', 'effect_unknown@content.archetypes[2].components.interact.do[0]', 'ref_unknown@content.archetypes[2].components.pickup.item']) assert.ok(at.includes(x), `${x} in ${at}`);
 });
 
 test('interact: every instance in v2/games preflights without param errors', () => {

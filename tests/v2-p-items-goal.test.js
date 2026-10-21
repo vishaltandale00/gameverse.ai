@@ -11,7 +11,7 @@ import { PRIMITIVES } from '../v2/primitives/index.js';
 
 const won = [{ do: 'end_game', outcome: 'won' }];
 const floor = []; for (let x = 0; x < 24; x++) floor.push([x, 0, 0]);
-const doc = (goal = { onReach: won }, flag = { goal: true }) => ({
+const doc = (goal = { onReach: won }, flag = { goal: {} }) => ({
   schema: 'gameverse.v2.game/0.2', id: 'goaltest', title: 'Goal test', seed: 3,
   spaces: [{ id: 'w', use: 'engine.space.test', with: { size: [24, 12, 1], gravity: 60, solid: floor } }],
   systems: [{ use: 'gameplay.move.platformer' }, { use: 'gameplay.goal', with: goal }, { use: 'engine.spawner', with: { intervalSec: 0, rules: [{ id: 'flag', archetype: 'flag', at: [10, 1, 0], unique: true, activation: 'always', respawnSec: 0 }] } }],

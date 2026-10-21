@@ -4,6 +4,48 @@
 // (run only when their owner registered them).
 import { spaceFrame } from '../engine/runtime-lib-frame.js';
 
+/** A map from a stat (or damage type) to a number. */
+const NUMBERS = { type: 'object', values: { type: 'number' } };
+/**
+ * The fields of content.items entries the items and combat primitives read (ARCHITECTURE §1.4: each card declares the
+ * parts of a section it reads, card.data, over the kernel's base { id, name }). One declaration per field, so every card
+ * reading a field declares it the same way: a card's data picks the fields its code reads (itemsData).
+ */
+export const ITEM = Object.freeze({
+  kind: { type: 'string', effect: 'what the item is: a token accepts, buys and recipes match (weapon, tool, food...)' },
+  tags: { type: 'list', of: { type: 'string' }, effect: 'tokens accepts, buys and tag recipe inputs match' },
+  value: { type: 'number', min: 0, effect: 'base price' },
+  block: { type: 'ref', to: 'block', effect: 'the block it places' },
+  stack: { type: 'integer', min: 1, effect: 'items per inventory stack' },
+  // Open: several cards read parts of one tool (gameplay.blocks.mine reads its tier).
+  tool: { type: 'object', open: true, fields: { kind: { type: 'string', effect: 'tool kind (tool:<kind> token)' }, durability: { type: 'number', min: 0 } }, effect: 'a tool' },
+  // Open: a crafting merge sums the ingredient field its merge.stat names (default effects: effect or resource -> amount).
+  ingredient: { type: 'object', open: true, fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tokens tag recipe inputs match' }, effects: { type: 'object', values: { type: 'number' }, effect: 'merge: effect or resource -> amount the output carries' } }, effect: 'a crafting ingredient' },
+  weapon: { type: 'object', fields: {
+    damage: { type: 'number', min: 0 }, reach: { type: 'number', min: 0 }, arc: { type: 'number', min: 0, max: 360, unit: 'deg' }, speed: { type: 'number', min: 0, effect: 'swing speed (1 = normal; below 0.2 counts as 0.2)' },
+    combo: { type: 'integer', min: 1, effect: 'light hits in its combo' }, stamina: { type: 'number', min: 0 }, type: { type: 'string', effect: 'damage type' }, durability: { type: 'number', min: 0 },
+  }, effect: 'a melee weapon (gameplay.combat.melee builds its moveset)' },
+  ranged: { type: 'object', fields: {
+    speed: { type: 'number', min: 0 }, gravity: { type: 'number' }, spread: { type: 'number', min: 0, unit: 'deg' }, damage: { type: 'number', min: 0 }, type: { type: 'string', effect: 'damage type' },
+    draw: { type: 'number', min: 0, unit: 's', effect: 'charge time for full power' }, rate: { type: 'number', min: 0, unit: '/s' }, life: { type: 'number', min: 0, unit: 's' }, radius: { type: 'number', min: 0 },
+    ammo: { type: 'ref', to: 'item', effect: 'the item each shot spends' }, projectile: { type: 'ref', to: 'archetype', effect: 'the archetype of its shots' },
+  }, effect: 'a ranged weapon (gameplay.combat.projectile fires it)' },
+  armor: { type: 'object', fields: { slot: { type: 'string', effect: 'armor:<slot> token' }, def: { ...NUMBERS, effect: 'damage type -> defense' }, durability: { type: 'number', min: 0 } }, effect: 'armor' },
+  charm: { type: 'object', fields: { mods: { ...NUMBERS, effect: 'stat -> modifier while worn' }, cost: { type: 'number', min: 0, effect: 'budget it costs worn' } }, effect: 'a charm' },
+  stats: { ...NUMBERS, effect: 'stat -> modifier while worn' },
+  durability: { type: 'number', min: 0, effect: 'uses before it breaks (with equipment durability)' },
+  cost: { type: 'number', min: 0, effect: 'budget it costs worn (charms use charm.cost)' },
+  use: { type: 'object', fields: {
+    fx: { type: 'effects', required: true, effect: 'what using it does (self = the user)' }, cooldown: { type: 'number', min: 0, unit: 's' }, consume: { type: 'boolean', effect: 'using it spends one (default true)' },
+    when: { type: 'predicate', effect: 'usable only while it holds' }, group: { type: 'string', effect: 'items of one group share a cooldown' },
+  }, effect: 'a usable item (gameplay.item.use)' },
+  creature: { type: 'object', fields: { kind: { type: 'string', options: ['ball', 'heal', 'status', 'revive'], required: true, effect: 'ball catches; heal restores hp; status cures; revive brings a fainted creature back' }, value: { type: 'number', min: 0, effect: 'catch bonus (ball), hp or hp fraction <= 1 (heal, revive)' } }, effect: 'a creature-battle item' },
+});
+/** The item fields tokens() reads: a card matching item tokens (accepts, buys, tag recipe inputs, item_tag) reads them. */
+export const TOKEN_FIELDS = Object.freeze(/** @type {Array<keyof typeof ITEM>} */ (['kind', 'tags', 'ingredient', 'armor', 'tool', 'weapon', 'charm', 'block']));
+/** The card.data of a card that reads these content.items fields. @param {Array<keyof typeof ITEM>} fields */
+export const itemsData = fields => ({ 'content.items': { type: 'list', of: { type: 'object', open: true, fields: Object.fromEntries(fields.map(f => [f, ITEM[f]])) } } });
+
 /** Item definitions by id, re-indexed whenever rt.doc changes (hot-loaded items appear). */
 export function items(rt) {
   const c = rt.caches;
@@ -28,7 +70,14 @@ export function tokens(def) {
 }
 export const matches = (def, accepts) => { const t = tokens(def); return (accepts || []).some(a => t.has(a)); };
 
-/** Integer in [a, b] from rt.random(); a number n means exactly n. */
+/** A count range [a, b] (a <= b; [n, n] is exactly n): the one shape every rolled count declares. */
+export const RANGE = Object.freeze({ type: 'list', of: { type: 'integer', min: 0 }, min: 2, max: 2, effect: '[min, max] (both included; [n, n] is exactly n)' });
+/** The pickup component (a world pickup: touching or using it takes the item), read by gameplay.loot and gameplay.interact. */
+export const PICKUP = Object.freeze({ type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } }, effect: 'a world pickup: touching or using it takes the item' });
+/**
+ * Integer in [a, b] from rt.random() (RANGE). A bare number is engine/blocks.js's built-in default drop count
+ * ({ item: <block>, count: 1 }), not a document shape: documents declare RANGE.
+ */
 export function roll(rt, range, fallback = 1) {
   if (range == null) return fallback;
   if (typeof range === 'number') return range;
@@ -209,15 +258,4 @@ export function blocks(rt) {
   const c = rt.caches;
   if (c.blocksDoc !== rt.doc) { c.blocksDoc = rt.doc; c.blocks = new Map((rt.doc.content?.blocks || []).map(b => [b.id, b])); }
   return c.blocks;
-}
-
-/** Push a param-style error for list entries with duplicate ids. */
-export function uniqueIds(list, path, errors, what = 'entry') {
-  const seen = new Set();
-  (list || []).forEach((x, i) => { if (seen.has(x.id)) errors.push({ code: 'id_duplicate', path: `${path}[${i}].id`, message: `duplicate ${what} id '${x.id}'` }); seen.add(x.id); });
-}
-/** Error helper: unknown item id in content (refs checked by the kernel only for card params). */
-export function checkItem(doc, id, path, errors) {
-  if (id == null) return;
-  if (!(doc.content?.items || []).some(i => i.id === id)) errors.push({ code: 'ref_unknown', path, message: `unknown item '${id}'` });
 }

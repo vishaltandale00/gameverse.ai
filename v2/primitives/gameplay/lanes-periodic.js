@@ -21,10 +21,10 @@ export function trainAt(lane, t, [lo, hi], trainSpeed, warn) {
 }
 
 const LANE = { type: 'object', fields: {
-  id: { type: 'string', required: true }, name: { type: 'string', default: '' },
+  id: { type: 'string', required: true }, name: { type: 'string', default: '', display: true, effect: 'the name a person reads' },
   row: { type: 'number', required: true, effect: 'lane coordinate along axis' },
   kind: { type: 'string', required: true, options: ['road', 'river', 'rail'] },
-  dir: { type: 'integer', default: 1, min: -1, max: 1 },
+  dir: { type: 'integer', default: 1, min: -1, max: 1, effect: '-1 or 1: the way movers travel' },
   speed: { type: 'number', default: 3, min: 0, max: 100, unit: 'u/s', effect: 'mover speed (road, river)' },
   period: { type: 'number', default: 6, min: 0.5, max: 1000, effect: 'spacing of movers (road/river: units; rail: seconds between trains)' },
   size: { type: 'number', default: 1, min: 0.1, max: 100, effect: 'mover length (car, log, train)' },
@@ -57,13 +57,19 @@ export default {
     },
     provides: { events: ['lane_hit', 'lane_hit:*', 'near_miss', 'near_miss:*', 'train_warning', 'train_warning:*', 'carried', 'idle_caught', 'progress'], vars: ['lanes.progress', 'lanes.speed'], services: ['lanes'] },
     requires: { capabilities: ['position'] },
+    rules: {
+      lanes_axes: { fields: ['axis', 'along'], message: 'axis and along are different space axes' },
+      lanes_width: { fields: ['width'], message: 'width is [min, max] with min < max' },
+      lanes_row_duplicate: { fields: ['lanes[].row'], message: 'each lane has its own row' },
+      lanes_dir: { fields: ['lanes[].dir'], message: 'a lane dir is -1 or 1', example: { lanes: [{ id: 'road', name: null, row: 3, kind: 'road', dir: 0, speed: null, period: null, size: null, phase: null, archetype: null }] } },
+    },
   },
   validate(config) {
     const errors = [];
     if (config.axis === config.along) errors.push({ code: 'lanes_axes', path: 'with.along', message: 'axis and along must differ' });
     if (config.width[0] >= config.width[1]) errors.push({ code: 'lanes_width', path: 'with.width', message: 'width is [min, max]' });
     const rows = new Set();
-    config.lanes.forEach((l, i) => { if (rows.has(l.row)) errors.push({ code: 'lanes_row_duplicate', path: `with.lanes[${i}].row`, message: `two lanes on row ${l.row}` }); rows.add(l.row); if (l.dir === 0) errors.push({ code: 'lanes_dir', path: `with.lanes[${i}].dir`, message: 'dir is -1 or 1' }); });
+    (config.lanes || []).forEach((l, i) => { if (rows.has(l.row)) errors.push({ code: 'lanes_row_duplicate', path: `with.lanes[${i}].row`, message: `two lanes on row ${l.row}` }); rows.add(l.row); if (l.dir === 0) errors.push({ code: 'lanes_dir', path: `with.lanes[${i}].dir`, message: 'dir is -1 or 1' }); });
     return errors;
   },
   progress: rt => rt.state.vars['lanes.progress'] ?? 0,

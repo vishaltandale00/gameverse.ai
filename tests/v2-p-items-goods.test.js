@@ -49,7 +49,12 @@ test('inventory: stacks, slot limits, per-entity bags, typed events and transfer
   assert.equal(rt.state.counts['item_lost:apple'], 1);
   const bad = doc({ systems: [{ use: 'gameplay.inventory', with: { slots: 0, start: [{ item: 'ghost' }] } }], content: { items: [{ id: 'x', name: 'X', stack: 0 }], archetypes: [hero, { id: 'n', components: { inventory: { start: [{ item: 'nope' }] } } }] } });
   const c = codes(checkWith(bad));
-  for (const code of ['param_range', 'ref_unknown', 'item_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // An item's stack and a component's start items are content.items' and the inventory component's declared shapes,
+  // reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the
+  // validator's ref_unknown were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.items[0].stack', 'ref_unknown@content.archetypes[1].components.inventory.start[0].item']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.inventory')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -77,7 +82,11 @@ test('item.use: effects, cooldowns, consumption and denial reasons', () => {
   assert.ok(rt.availableOptions().some(o => o.actions.use_item === 'notch'));
   const bad = kit(); bad.content.items[0].use.cooldown = -1; bad.content.items[2].use.fx.push({ do: 'teleport_home' }); bad.systems[1].with = { cooldown: 'soon' };
   const c = codes(checkWith(bad));
-  for (const code of ['item_invalid', 'effect_unknown', 'param_type']) assert.ok(c.includes(code), code);
+  assert.ok(c.includes('param_type'));
+  // An item's use block is content.items' declared shape (items-lib ITEM.use): cooldown and fx are checked at their paths
+  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the validator's effect check were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.items[0].use.cooldown', `effect_unknown@content.items[2].use.fx[${bad.content.items[2].use.fx.length - 1}]`]) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.item.use')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -129,7 +138,12 @@ test('equipment: replay, bad config codes and game instances', () => {
   bad.systems[2].with.budget.slots = ['ring'];
   bad.content.archetypes[0].components.equipment.slots.push('tail');
   const c = codes(checkWith(bad));
-  for (const code of ['id_duplicate', 'param_range', 'equipment_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['id_duplicate', 'param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // Slots are a declared kind (card.defines equip_slot): duplicate ids are the kernel's id_duplicate, and budget.slots and
+  // components.equipment.slots are references to it (ref_unknown where equipment_invalid was; the component's at its
+  // path, a warning until kernel/document.js DECLARATIONS_ENFORCED).
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  assert.ok(at.some(x => x.startsWith('ref_unknown@content.archetypes[0].components.equipment.slots[')), at);
   for (const x of gameInstances('gameplay.equipment')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -140,7 +154,7 @@ const kitchen = (discover = 'learned') => doc({ resources: [{ id: 'stamina', max
   content: { items: ITEMS, archetypes: [hero, { id: 'campfire', kind: 'prop', components: { station: 'fire' } }],
     recipes: [
       { id: 'r_stew', station: 'cook', inputs: [{ tag: 'meat', count: 1 }, { tag: 'fruit', count: 1 }], output: { item: 'stew', count: 1 }, time: 0.5, learned: true, merge: true },
-      { id: 'r_ingot', station: 'forge', inputs: [{ item: 'ore', count: 2 }], output: { item: 'ingot', count: 1 }, learned: 'smithing' },
+      { id: 'r_ingot', station: 'forge', inputs: [{ item: 'ore', count: 2 }], output: { item: 'ingot', count: 1 }, learnedFlag: 'smithing' },
       { id: 'r_secret', station: 'fire', inputs: [{ item: 'apple', count: 2 }], output: { item: 'gem', count: 1 } },
     ] },
 });
@@ -191,7 +205,11 @@ test('crafting: replay, bad config codes and game instances', () => {
   bad.content.recipes[2].output.item = 'nothing';
   bad.systems[2].with.discover = 'osmosis';
   const c = codes(checkWith(bad));
-  for (const code of ['recipe_invalid', 'ref_unknown', 'param_option']) assert.ok(c.includes(code), code);
+  for (const code of ['recipe_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  // Input and output items are content.recipes' declared references (card.data): ref_unknown at their paths (warnings
+  // until kernel/document.js DECLARATIONS_ENFORCED) where the validator's were.
+  const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of [`ref_unknown@content.recipes[1].inputs[${bad.content.recipes[1].inputs.length - 2}].item`, 'ref_unknown@content.recipes[2].output.item']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.crafting')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 
@@ -200,12 +218,12 @@ const dungeon = () => doc({
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.loot', with: { dropTo: 'world', magnet: 3, magnetSpeed: 20, scatter: 0 } }, { use: 'gameplay.container' }],
   content: { items: ITEMS, archetypes: [hero,
     { id: 'slime', kind: 'enemy', components: { body: { size: [1, 1, 1] }, loot: 'slime_drop' } },
-    { id: 'chest', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Open' }, container: { slots: 4, items: [{ item: 'gold', count: 5 }], table: 'chest' }, lock: 'key' } },
+    { id: 'chest', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Open' }, container: { slots: 4, items: [{ item: 'gold', count: 5 }], table: 'chest' }, lock: { key: 'key' } } },
     { id: 'bush', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Gather' }, container: { slots: 2, table: 'forage', autoTake: true, respawnDays: 2 } } }],
     tables: [
-      { id: 'slime_drop', rolls: 1, chance: 0.1, pity: 4, entries: [{ item: 'gem', weight: 1 }] },
+      { id: 'slime_drop', rolls: [1, 1], chance: 0.1, pity: 4, entries: [{ item: 'gem', weight: 1 }] },
       { id: 'chest', rolls: [2, 2], unique: true, entries: [{ item: 'ore', weight: 1, count: [1, 3] }, { item: 'apple', weight: 1 }, { item: 'helm', weight: 1, when: { flag: 'lucky' } }] },
-      { id: 'forage', rolls: 1, always: [{ item: 'apple', count: 1 }], entries: [{ table: 'chest', weight: 1 }, { item: null, weight: 1 }] },
+      { id: 'forage', rolls: [1, 1], always: [{ item: 'apple', count: [1, 1] }], entries: [{ table: 'chest', weight: 1 }, { item: null, weight: 1 }] },
     ] },
 });
 
@@ -274,10 +292,16 @@ test('loot/container: replay, bad config codes and game instances', () => {
   bad.content.tables[2].rolls = [3, 1];
   bad.content.archetypes[1].components.loot = 'missing_table';
   bad.content.archetypes[2].components.container.slots = 0;
-  bad.content.archetypes[2].components.lock = 'skeleton_key';
+  bad.content.archetypes[2].components.lock = { key: 'skeleton_key' };
   bad.systems[2].with.dropTo = 'void';
   const c = codes(checkWith(bad));
-  for (const code of ['table_invalid', 'ref_unknown', 'container_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  for (const code of ['table_invalid', 'param_option']) assert.ok(c.includes(code), code);
+  // The tables, loot, container and lock values are content.tables' and the components' declared shapes (card.data,
+  // card.components), reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where
+  // table_invalid, container_invalid and the validators' ref_unknown were.
+  const r = checkWith(bad), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`);
+  for (const x of ['param_range@content.tables[0].chance', 'param_range@content.tables[0].pity', 'ref_unknown@content.tables[1].entries[3].item', 'param_range@content.tables[1].entries[3].weight', 'ref_unknown@content.tables[1].entries[4].table',
+    'ref_unknown@content.archetypes[1].components.loot', 'param_range@content.archetypes[2].components.container.slots', 'ref_unknown@content.archetypes[2].components.lock.key']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const use of ['gameplay.loot', 'gameplay.container']) for (const x of gameInstances(use)) assert.deepEqual(x.paramErrors, [], `${use} ${x.game}`);
 });
 
@@ -341,6 +365,8 @@ test('economy: replay, bad config codes and game instances', () => {
   bad.plot.storyboard = { acts: [{ id: 'a', beats: [{ id: 'b', do: [{ do: 'open_shop', shop: 'bakery' }, { do: 'give_money', amount: -5 }] }] }] };
   bad.systems.push({ use: 'plot.storyboard' });
   const c = codes(checkWith(bad));
-  for (const code of ['shop_invalid', 'ref_unknown', 'param_option', 'id_duplicate', 'effect_invalid']) assert.ok(c.includes(code), code);
+  for (const code of ['ref_unknown', 'param_option', 'id_duplicate', 'effect_invalid']) assert.ok(c.includes(code), code);
+  // A shop's currency is a reference to the currency kind (card.defines): ref_unknown at its path where shop_invalid was.
+  assert.ok(checkWith(bad).errors.some(x => x.code === 'ref_unknown' && x.path.endsWith('.shops[0].currency')));
   for (const x of gameInstances('gameplay.economy')) assert.deepEqual(x.paramErrors, [], x.game);
 });

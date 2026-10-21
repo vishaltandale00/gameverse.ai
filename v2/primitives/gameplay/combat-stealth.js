@@ -28,6 +28,7 @@ export default {
     },
     provides: { events: ['detected', 'detected:*', 'suspicious', 'lost_target', 'takedown', 'noise_heard'], vars: ['stealth.alert', 'stealth.detected'], services: ['stealth'], actions: ['takedown'] },
     requires: { primitives: ['gameplay.combat.health'] },
+    rules: { stealth_noise_duplicate: { fields: ['noise[].event'], message: 'each noise event is listed once' } },
   },
   logic(logic) {
     logic.predicate('detected', { test: (p, rt, c) => {

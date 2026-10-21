@@ -12,7 +12,7 @@ const camp = () => doc({ combat: true, resources: [{ id: 'stamina', max: 50, sta
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.rest', with: { skipTo: 'dawn', safeRequired: true, safeRadius: 6, respawnsEnemies: true } },
     { use: 'gameplay.checkpoint', with: { restoreAll: true, fastTravelBetween: true } }],
   content: { archetypes: [hero,
-    { id: 'bed', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Sleep' }, rest: {}, checkpoint: true } },
+    { id: 'bed', kind: 'prop', components: { body: { size: [1, 1, 1] }, interact: { prompt: 'Sleep' }, rest: {}, checkpoint: {} } },
     { id: 'flag', kind: 'prop', components: { body: { size: [1, 1, 1] }, checkpoint: { id: 'flag_east', touch: true } } },
     { id: 'wolf', kind: 'enemy', components: { body: { size: [1, 1, 1] } } }] },
 });
@@ -77,9 +77,9 @@ const maze = () => doc({
     { id: 'gems', zone: 'field', total: 2 },
   ] } }],
   content: { archetypes: [hero,
-    { id: 'pellet', kind: 'pickup', components: { collectible: 'dots' } },
+    { id: 'pellet', kind: 'pickup', components: { collectible: { counter: 'dots' } } },
     { id: 'power_pellet', kind: 'pickup', components: { collectible: { counter: 'power' } } },
-    { id: 'cherry', kind: 'pickup', components: { collectible: 'bonus' } },
+    { id: 'cherry', kind: 'pickup', components: { collectible: { counter: 'bonus' } } },
     { id: 'gem', kind: 'pickup', components: { collectible: { counter: 'gems', magnet: 2 } } }] },
 });
 function mazeWorld() {
@@ -125,7 +125,7 @@ test('collectible: replay is deterministic and bad configs are rejected', () => 
   d.systems[0].with.counters[0].includes = ['nope'];
   d.systems[0].with.counters[1].spawnAtCount = [{ archetype: 'cherry' }];
   d.systems[0].with.counters[2].zone = 'atlantis';
-  d.content.archetypes.push({ id: 'coin', components: { collectible: 'coins' } });
+  d.content.archetypes.push({ id: 'coin', components: { collectible: { counter: 'coins' } } });
   d.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { collected: 'nothing' } }] }] } };
   d.systems.push({ use: 'plot.storyboard' });
   const c = codes(checkWith(d));
@@ -148,7 +148,7 @@ const cave = (combat = true) => doc({
     fallDamage: { minHeight: 3, perMeter: 2 }, killY: -1, killType: 'pit', window: { margin: 0 },
   } }],
   zones: [{ id: 'yard', rect: [0, 0, 8, 16] }, { id: 'magma', rect: [20, 0, 24, 16], tags: ['hazard:lava'] }],
-  content: { statuses: [{ id: 'burning', duration: 3 }], archetypes: [{ ...hero, components: { ...hero.components, health: health(100) } }, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: 'spikes' } }] },
+  content: { statuses: [{ id: 'burning', duration: 3 }], archetypes: [{ ...hero, components: { ...hero.components, health: health(100) } }, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: { type: 'spikes' } } }] },
 });
 
 test('hazard: volumes, entities, zones, falls and kill planes', () => {
@@ -208,7 +208,8 @@ test('hazard: replay is deterministic and bad configs are rejected', () => {
   d.systems[1].with.volumes.push({ type: 'quicksand', at: [0, 0] });
   d.systems[1].with.interval = 0;
   const c = codes(checkWith(d));
-  for (const code of ['param_option', 'hazard_unknown', 'param_range']) assert.ok(c.includes(code), code);
+  // Hazard types are a declared kind (card.defines hazard_type): an unknown volume type is ref_unknown (was hazard_unknown).
+  for (const code of ['param_option', 'ref_unknown', 'param_range']) assert.ok(c.includes(code), code);
 });
 
 test('hazard: v2/games instances preflight without param errors', () => {

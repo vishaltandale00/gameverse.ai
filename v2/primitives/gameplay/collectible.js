@@ -1,6 +1,6 @@
 // Collectibles and counters: coins, shards, pages, maze pellets and power
 // pellets, timed bonus prizes. A pickup is an entity with a `collectible`
-// component ("counter" | { counter, value?, points?, item?, fx?, magnet? }) or a
+// component ({ counter, value?, points?, item?, fx?, magnet? }; card.components) or a
 // cell holding a counter's `block`. Touch collects (entities that also carry an
 // `interact` component are collected by using them instead). Each counter keeps
 // a var, per-zone tallies, a total (given or counted at start), and can clear the
@@ -11,14 +11,22 @@ import { give } from './inventory.js';
 import { addScore, boxOf, boxesTouch, center, isVec, len, sub, pull, entityByRef, whoKey, cellPoint } from './items-lib.js';
 
 const KEY = 'gameplay.collectible';
-const counterOf = e => { const c = e.components.collectible; return typeof c === 'string' ? { counter: c } : c || null; };
+const counterOf = e => e.components.collectible || null;
 
 export default {
   id: 'gameplay.collectible',
   card: {
     loop: { verbs: [], progress: ['collected', 'counter_complete'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { collectible: { type: 'json', effect: 'a counter id, or {counter, value?, points?, item?}' } },
+    components: { collectible: { type: 'object', fields: {
+      counter: { type: 'ref', to: 'counter', required: true, effect: 'the counter this pickup advances' },
+      value: { type: 'integer', min: 0, effect: "count added (default: the counter's value)" },
+      points: { type: 'number', effect: "score (default: the counter's points)" },
+      item: { type: 'ref', to: 'item', effect: 'an item given to the collector' },
+      count: { type: 'integer', min: 1, effect: 'how many of the item' },
+      fx: { type: 'effects', effect: 'effects run when collected, after the counter onCollect' },
+      magnet: { type: 'number', min: 0, effect: 'magnet radius for this pickup (default: the magnet param)' },
+    }, effect: 'a pickup of a counter' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "collectible", "kinds": ["pickup", "prop"], "min": 1, "placed": 8, "zones": 3, "why": "pickups are entities with a collectible component (counter id or {counter, value, points}), placed through every zone", "example": {"id": "coin", "kind": "pickup", "components": {"collectible": {"counter": "coins", "points": 10}}}},
@@ -41,7 +49,7 @@ export default {
         block: { type: 'ref', to: 'block', effect: 'cells holding this block are pickups of this counter (needs editCells)' },
         value: { type: 'integer', default: 1, min: 0, effect: 'count added per pickup' },
         points: { type: 'number', default: 0, effect: 'score per pickup (add_score, else var score)' },
-        includes: { type: 'list', default: [], of: { type: 'string' }, effect: 'other counters whose pickups also count here (pellets include power pellets)' },
+        includes: { type: 'list', default: [], of: { type: 'ref', to: 'counter' }, effect: 'other counters whose pickups also count here (pellets include power pellets)' },
         onCollect: { type: 'effects', default: [], effect: 'effects per pickup (self = the pickup, actor = the collector)' },
         onComplete: { type: 'effects', default: [], effect: 'effects when the counter reaches its total' },
         clearsLevel: { type: 'boolean', default: false, effect: 'reaching the total emits level_cleared' },
@@ -59,6 +67,10 @@ export default {
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
     defines: [{ kind: 'counter', in: 'counters' }],
+    rules: {
+      counter_invalid: { fields: ['counters[].includes', 'counters[].spawnAtCount'], message: 'a counter never includes itself, and each spawnAtCount entry gives a count or a fraction',
+        example: { counters: [{ id: 'pellets', var: null, total: null, block: null, value: null, points: null, includes: ['pellets'], clearsLevel: null }] } },
+    },
   },
   logic(logic) {
     logic.predicate('collected', { refs: p => [['counter', p.collected]], test: (p, rt) => {
@@ -71,15 +83,10 @@ export default {
   },
   validate(config, doc, ctx, inst = {}) {
     const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], ids = new Set(config.counters.map(c => c.id));
+    const errors = [];
     config.counters.forEach(c => {
-      for (const inc of c.includes) if (!ids.has(inc) || inc === c.id) errors.push({ code: 'counter_invalid', path: P, message: `counter '${c.id}' includes unknown or itself: '${inc}'` });
+      if (c.includes.includes(c.id)) errors.push({ code: 'counter_invalid', path: P, message: `counter '${c.id}' includes itself` });
       for (const s of c.spawnAtCount) if (s.count == null && s.fraction == null) errors.push({ code: 'counter_invalid', path: P, message: `counter '${c.id}' spawnAtCount entry needs count or fraction` });
-    });
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const k = a.components?.collectible; if (k == null) return;
-      const id = typeof k === 'string' ? k : k.counter;
-      if (!ids.has(id)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.collectible`, message: `unknown counter '${id}'`, hint: [...ids].join(', ') || 'no counters' });
     });
     return errors;
   },
@@ -167,7 +174,7 @@ export default {
         const base = config.magnet + (who.id === 'player' ? rt.state.vars['stat.magnet'] ?? 0 : 0);
         for (const e of Object.values(rt.state.entities)) {
           const k = counterOf(e); if (!k || e === who || e.space !== who.space || !isVec(e.at) || !rt.entity(e.id)) continue;
-          const reach = typeof k.magnet === 'number' ? k.magnet : k.magnet === false ? 0 : base;
+          const reach = typeof k.magnet === 'number' ? k.magnet : base;
           if (reach > 0 && !e.components.interact) { const d = len(sub(center(rt, e), wc)); if (d <= reach) pull(rt, e, wc, config.magnetSpeed * rt.dt); }
           if (e.components.interact) continue;
           if (boxesTouch(wb, boxOf(rt, e)) || len(sub(center(rt, e), wc)) <= config.radius) collect(e, who.id);

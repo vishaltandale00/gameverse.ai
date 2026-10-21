@@ -6,7 +6,7 @@
 // Each entity's worn set is mirrored in components.equipment.worn for readers.
 import { compare } from '../../kernel/logic.js';
 import { count, take, bag } from './inventory.js';
-import { item as itemDef, matches, whoKey } from './items-lib.js';
+import { item as itemDef, matches, whoKey, itemsData, TOKEN_FIELDS } from './items-lib.js';
 
 const KEY = 'gameplay.equipment';
 const parse = v => (typeof v === 'string' ? { item: v } : v || {});
@@ -36,11 +36,11 @@ export default {
     views: ['any'],
     params: {
       slots: { type: 'list', default: [{ id: 'hand', accepts: ['weapon', 'tool'], max: 1 }], min: 1, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, accepts: { type: 'list', default: ['*'], of: { type: 'string' }, effect: 'item tokens: kind, tags, armor:<slot>, tool:<kind>, charm, item ids, *' },
+        id: { type: 'string', required: true, effect: 'the slot id (components.equipment.slots and budget.slots name it)' }, accepts: { type: 'list', default: ['*'], of: { type: 'string' }, effect: 'item tokens: kind, tags, armor:<slot>, tool:<kind>, charm, item ids, *' },
         max: { type: 'integer', default: 1, min: 1, max: 64, effect: 'items the slot holds at once' },
         swap: { type: 'boolean', default: true, effect: 'equipping into a full single slot replaces the worn item' },
       } }, effect: 'equipment slots' },
-      budget: { type: 'object', fields: { pool: { type: 'string', required: true }, total: { type: 'integer', default: 3, min: 0, max: 100 }, slots: { type: 'list', of: { type: 'string' }, effect: 'slots whose items cost budget (default every slot)' } }, effect: 'loadout budget: items cost charm.cost (or `cost`); var budget.<pool> holds the capacity' },
+      budget: { type: 'object', fields: { pool: { type: 'string', required: true }, total: { type: 'integer', default: 3, min: 0, max: 100 }, slots: { type: 'list', of: { type: 'ref', to: 'equip_slot' }, effect: 'slots whose items cost budget (default every slot)' } }, effect: 'loadout budget: items cost charm.cost (or `cost`); var budget.<pool> holds the capacity' },
       durability: { type: 'boolean', default: false, effect: 'items with a durability lose it on wear events and break at 0' },
       breakRemoves: { type: 'boolean', default: true, effect: 'a broken item leaves the bag (else it stays, unequipped, at 0)' },
       statMods: { type: 'boolean', default: true, effect: 'worn items add their stats/charm mods/armor def to vars stat.*' },
@@ -55,6 +55,13 @@ export default {
     provides: { events: ['equipped', 'equipped:*', 'unequipped', 'equip_denied', 'broke', 'broke:*', 'repaired'], vars: ['stat.*', 'budget.*'], actions: ['equip', 'unequip'], services: ['equipment'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],
+    defines: [{ kind: 'equip_slot', in: 'slots' }],
+    data: itemsData([...TOKEN_FIELDS, 'stats', 'durability', 'cost']),
+    // Shapes of the archetype components this primitive owns (worn and stats are mirrored from its state at runtime).
+    components: { equipment: { type: 'object', fields: {
+      slots: { type: 'list', of: { type: 'ref', to: 'equip_slot' }, effect: 'the slots this entity has (default every slot)' },
+      start: { type: 'list', of: { type: 'ref', to: 'item' }, effect: 'items it equips at the start (with autoEquip)' },
+    }, effect: 'an entity that wears equipment' } },
   },
   logic(logic) {
     const api = rt => rt.caches.equipment;
@@ -67,17 +74,6 @@ export default {
     logic.effect('unequip', { run: (e, rt, c) => api(rt)?.unequip(whoKey(e.who, c), e.slot ?? e.item) });
     logic.effect('repair', { refs: e => (e.item ? [['item', e.item]] : []), run: (e, rt, c) => api(rt)?.repair(whoKey(e.who, c), e.item, e.amount) });
     logic.effect('wear', { refs: e => (e.item ? [['item', e.item]] : []), run: (e, rt, c) => api(rt)?.wear(whoKey(e.who, c), e.item, e.amount ?? 1) });
-  },
-  validate(config, doc, ctx, inst = {}) {
-    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], ids = new Set();
-    for (const s of config.slots) { if (ids.has(s.id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate slot '${s.id}'` }); ids.add(s.id); }
-    for (const s of config.budget?.slots || []) if (!ids.has(s)) errors.push({ code: 'equipment_invalid', path: P, message: `budget slot '${s}' is not a slot` });
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const eq = a.components?.equipment; if (!eq) return;
-      for (const s of eq.slots || []) if (!ids.has(s)) errors.push({ code: 'equipment_invalid', path: `content.archetypes[${i}].components.equipment.slots`, message: `unknown slot '${s}'`, hint: [...ids].join(', ') });
-    });
-    return errors;
   },
   install(rt, config) {
     const slots = new Map(config.slots.map(s => [s.id, s]));

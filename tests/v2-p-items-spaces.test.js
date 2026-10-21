@@ -10,7 +10,7 @@ test('grid maze: cell pellets, entity power pellets, a prize at a count, level c
     systems: [{ use: 'gameplay.collectible', with: { counters: [
       { id: 'dots', block: 'pellet', points: 10, includes: ['power'], clearsLevel: true, spawnAtCount: [{ count: 3, archetype: 'fruit', at: [8, 3], sec: 2 }] },
       { id: 'power', points: 50, onCollect: [{ do: 'set_flag', flag: 'fright' }] }, { id: 'fruit', total: 9, points: 100 }] } }],
-    content: { blocks: [{ id: 'wall', solid: true }, { id: 'pellet', solid: false }], archetypes: [{ id: 'pac', components: {} }, { id: 'energizer', components: { collectible: { counter: 'power', value: 1 } } }, { id: 'fruit', components: { collectible: 'fruit' } }] },
+    content: { blocks: [{ id: 'wall', solid: true }, { id: 'pellet', solid: false }], archetypes: [{ id: 'pac', components: {} }, { id: 'energizer', components: { collectible: { counter: 'power', value: 1 } } }, { id: 'fruit', components: { collectible: { counter: 'fruit' } } }] },
     player: { archetype: 'pac', at: [0, 1] },
   });
   assert.ok(checkWith(d).ok, JSON.stringify(checkWith(d).errors));

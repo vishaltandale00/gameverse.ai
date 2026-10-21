@@ -4,9 +4,34 @@
 // at a level. A party of up to `size`, overflow to the PC box, a dex of seen/caught
 // species. Other primitives (battle, catch, encounter, shops, quests) use the
 // `creatures` service instead of reaching into this store.
-import { createCreature, healCreature, gainExp, evolutionOf, evolve, statsOf, speciesOf, moveOf, validateContent, expBar } from './puzzle-lib-creature.js';
+import { createCreature, healCreature, gainExp, evolutionOf, evolve, statsOf, speciesOf, moveOf, expBar, STATS, STAGE_STATS, STATUSES, EFFECT_KINDS } from './puzzle-lib-creature.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 
 const ID = 'gameplay.creature.party';
+
+/** The creature sections (species, moves, the type chart): owned here, read by gameplay.creature.battle, catch and encounter. */
+export const CREATURE_DATA = Object.freeze({
+  'content.species': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, required: true, effect: 'the name a person reads' },
+    types: { type: 'list', min: 1, of: { type: 'ref', to: 'creature_type' }, required: true, effect: 'its types (content.types)' },
+    base: { type: 'object', required: true, fields: Object.fromEntries(STATS.map(k => [k, { type: 'integer', min: 1, max: 255, required: true }])), effect: 'base stats 1..255' },
+    catchRate: { type: 'integer', min: 1, max: 255 }, expYield: { type: 'integer', min: 1, max: 400 }, growth: { type: 'string', options: ['fast', 'medium', 'slow'] },
+    learnset: { type: 'list', of: { type: 'object', fields: { level: { type: 'integer', min: 1, max: 100, required: true }, move: { type: 'ref', to: 'move', required: true } } } },
+    evolves: { type: 'object', fields: { level: { type: 'integer', min: 2, max: 100, required: true }, to: { type: 'ref', to: 'species', required: true } } } } } },
+  'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, required: true, effect: 'the name a person reads' }, type: { type: 'ref', to: 'creature_type', required: true }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
+    power: { type: 'integer', min: 0, max: 250, required: true, effect: '0 for status moves' }, accuracy: { type: 'integer', min: 1, max: 100 }, pp: { type: 'integer', min: 1, max: 64, required: true }, priority: { type: 'integer', min: -7, max: 5 },
+    effect: { type: 'object', fields: { kind: { type: 'string', options: EFFECT_KINDS, required: true }, status: { type: 'string', options: STATUSES }, stat: { type: 'string', options: STAGE_STATS }, stages: { type: 'integer', min: -6, max: 6 }, chance: { type: 'number', min: 0, max: 100 }, target: { type: 'string', options: ['self', 'foe'] }, min: { type: 'integer', min: 1, effect: 'multihit: fewest hits' }, max: { type: 'integer', min: 1, effect: 'multihit: most hits' } } } } } },
+  'content.types': { type: 'object', values: { type: 'object', values: { type: 'number', min: 0 }, effect: 'defending type -> damage multiplier (missing = 1)' }, effect: 'the type chart: attacking type -> { defending type -> multiplier }; species and move types are its keys' },
+});
+
+/**
+ * A rule example (card.rules[code].example) for the creature cards: a document fragment with these systems, the player
+ * archetypes the host templates name (hero, trainer) and a minimal species, move and type chart, plus `content` sections given.
+ */
+const PLAYERS = [{ id: 'hero', name: 'Hero', components: {} }, { id: 'trainer', name: 'Trainer', components: {} }];
+export const creatureExample = (systems, content = {}) => ({ doc: { systems, content: {
+  archetypes: PLAYERS, types: { fire: {} }, moves: [{ id: 'ember', name: 'Ember', type: 'fire', category: 'special', power: 40, pp: 25 }],
+  species: [{ id: 'cub', name: 'Cub', types: ['fire'], base: { hp: 40, atk: 40, def: 40, spa: 40, spd: 40, spe: 40 }, learnset: [{ level: 1, move: 'ember' }] }], ...content,
+} } });
 
 export default {
   id: ID,
@@ -20,18 +45,8 @@ export default {
       'content.moves': [{ id: 'tackle', name: 'Tackle', type: 'normal', category: 'physical', power: 40, accuracy: 100, pp: 35 }, { id: 'growl', name: 'Growl', type: 'normal', category: 'status', power: 0, accuracy: 100, pp: 40, effect: { kind: 'stat', stat: 'atk', stages: -1, target: 'foe' } }, { id: 'ember', name: 'Ember', type: 'fire', category: 'special', power: 40, accuracy: 100, pp: 25 }, { id: 'flame_burst', name: 'Flame Burst', type: 'fire', category: 'special', power: 70, accuracy: 100, pp: 15 }, { id: 'water_gun', name: 'Water Gun', type: 'water', category: 'special', power: 40, accuracy: 100, pp: 25 }, { id: 'bubble_beam', name: 'Bubble Beam', type: 'water', category: 'special', power: 65, accuracy: 100, pp: 20 }, { id: 'vine_whip', name: 'Vine Whip', type: 'grass', category: 'physical', power: 45, accuracy: 100, pp: 25 }, { id: 'leaf_blade', name: 'Leaf Blade', type: 'grass', category: 'physical', power: 70, accuracy: 100, pp: 15 }],
       'content.types': { normal: {}, fire: { grass: 2, water: 0.5, fire: 0.5 }, water: { fire: 2, grass: 0.5, water: 0.5 }, grass: { water: 2, fire: 0.5, grass: 0.5 } },
     },
-    // Section shapes this primitive reads (the planner's strict content form uses them).
-    data: {
-      'content.species': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, types: { type: 'list', min: 1, of: { type: 'string' }, required: true, effect: 'type names from content.types' },
-        base: { type: 'object', required: true, fields: { hp: { type: 'integer', min: 1, max: 255, required: true }, atk: { type: 'integer', min: 1, max: 255, required: true }, def: { type: 'integer', min: 1, max: 255, required: true }, spa: { type: 'integer', min: 1, max: 255, required: true }, spd: { type: 'integer', min: 1, max: 255, required: true }, spe: { type: 'integer', min: 1, max: 255, required: true } }, effect: 'base stats 1..255' },
-        catchRate: { type: 'integer', min: 1, max: 255 }, expYield: { type: 'integer', min: 1, max: 400 }, growth: { type: 'string', options: ['fast', 'medium', 'slow'] },
-        learnset: { type: 'list', of: { type: 'object', fields: { level: { type: 'integer', min: 1, max: 100, required: true }, move: { type: 'string', required: true, effect: 'a content.moves id' } } } },
-        evolves: { type: 'object', fields: { level: { type: 'integer', min: 2, max: 100, required: true }, to: { type: 'string', required: true, effect: 'a content.species id' } } } } } },
-      'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, type: { type: 'string', required: true, effect: 'a type name from content.types' }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
-        power: { type: 'integer', min: 0, max: 250, required: true, effect: '0 for status moves' }, accuracy: { type: 'integer', min: 1, max: 100 }, pp: { type: 'integer', min: 1, max: 64, required: true }, priority: { type: 'integer', min: -7, max: 5 },
-        effect: { type: 'object', fields: { kind: { type: 'string', options: ['status', 'stat', 'heal', 'drain', 'recoil', 'multihit', 'flinch', 'protect'], required: true }, status: { type: 'string', options: ['burn', 'poison', 'paralysis', 'sleep', 'freeze', 'confusion'] }, stat: { type: 'string', options: ['atk', 'def', 'spa', 'spd', 'spe', 'acc', 'eva'] }, stages: { type: 'integer', min: -6, max: 6 }, chance: { type: 'number', min: 0, max: 100 }, target: { type: 'string', options: ['self', 'foe'] } } } } } },
-      'content.types': { type: 'list', min: 1, of: { type: 'string' }, effect: 'the type names (every multiplier 1), or write a chart through other fields' },
-    },
+    // The sections it owns, whole (kinds: species, move, creature_type).
+    data: CREATURE_DATA,
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.species", "min": 4, "why": "creatures come from species with types, base stats and learnsets", "example": {"id": "sprout", "name": "Sprout", "types": ["grass"], "base": {"hp": 45, "atk": 49, "def": 49, "spa": 65, "spd": 65, "spe": 45}, "catchRate": 45, "expYield": 64, "growth": "medium", "learnset": [{"level": 1, "move": "tackle"}, {"level": 7, "move": "vine"}], "evolves": {"level": 16, "to": "bloom"}}},
@@ -55,7 +70,11 @@ export default {
       actions: ['party_swap', 'deposit', 'withdraw'],
     },
     reads: ['content.species', 'content.moves', 'content.types'],
-    defines: [{ kind: 'species', at: 'content.species' }, { kind: 'move', at: 'content.moves' }],
+    defines: [{ kind: 'species', at: 'content.species' }, { kind: 'move', at: 'content.moves' }, { kind: 'creature_type', at: 'content.types' }],
+    rules: {
+      species_missing: { fields: ['content.species'], message: 'the document has content.species', example: { doc: { systems: [{ use: 'gameplay.creature.party' }], content: { archetypes: PLAYERS } } } },
+      move_invalid: { fields: ['content.moves[].category', 'content.moves[].power', 'content.moves[].effect'], message: 'a physical or special move has power > 0; a status effect names its status, a stat effect its stat' },
+    },
   },
   logic(logic) {
     const svc = rt => rt.service('creatures');
@@ -70,8 +89,14 @@ export default {
     logic.predicate('dex', { refs: p => [['species', p.dex]], test: (p, rt) => { const d = svc(rt).dex(p.who || 'player'); return Boolean((p.state === 'seen' ? d.seen : d.caught)[p.dex]); } });
   },
   validate(config, doc) {
-    const errors = validateContent(doc.content);
-    if (!(doc.content?.species || []).length) errors.push({ code: 'species_missing', path: 'content.species', message: 'creature party needs content.species' });
+    const errors = [], content = doc.content || {};
+    if (!(Array.isArray(content.species) && content.species.length)) errors.push({ code: 'species_missing', path: 'content.species', message: 'creature party needs content.species' });
+    (Array.isArray(content.moves) ? content.moves : []).forEach((m, i) => {
+      const p = `content.moves[${i}]`;
+      if ((m?.category === 'physical' || m?.category === 'special') && !(m.power > 0)) errors.push({ code: 'move_invalid', path: `${p}.power`, message: 'damaging moves need power > 0' });
+      if (m?.effect?.kind === 'status' && m.effect.status === undefined) errors.push({ code: 'move_invalid', path: `${p}.effect.status`, message: `a status effect names its status (${STATUSES.join('|')})` });
+      if (m?.effect?.kind === 'stat' && m.effect.stat === undefined) errors.push({ code: 'move_invalid', path: `${p}.effect.stat`, message: `a stat effect names its stat (${STAGE_STATS.join('|')})` });
+    });
     return errors;
   },
   install(rt, config) {

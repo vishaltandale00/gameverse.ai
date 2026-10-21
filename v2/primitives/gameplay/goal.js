@@ -1,5 +1,5 @@
 // gameplay.goal: where a level ends: a flag pole, an exit door, a finish line. An entity with a `goal` component
-// (true | { id? }) is reached when a reacher's body touches it: `goal_reached` (typed by the goal's id) fires once per
+// ({ id? }; card.components) is reached when a reacher's body touches it: `goal_reached` (typed by the goal's id) fires once per
 // goal and `onReach` runs (end_game won for a single level, clear_stage for a level of a stage sequence). Goals are
 // placed by the level (a generator feature at the end of the last room, a spawner) like any other entity.
 //
@@ -10,17 +10,17 @@ import { boxOf, boxesTouch, isVec } from './items-lib.js';
 
 const KEY = 'gameplay.goal';
 /** A goal entity's id: components.goal.id, else its archetype. */
-export const goalId = e => (typeof e.components.goal === 'object' && e.components.goal?.id) || e.archetype;
+export const goalId = e => e.components.goal?.id || e.archetype;
 
 export default {
   id: KEY,
   card: {
     loop: { verbs: [], progress: ['goal_reached'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { goal: { type: 'json', effect: 'true, or {id?}: touching this entity reaches the level\'s goal' } },
+    components: { goal: { type: 'object', fields: { id: { type: 'string', effect: 'the goal id (goal_reached:<id>); default: its archetype' } }, effect: 'touching this entity reaches the level\'s goal' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
-      { need: 'archetypes', component: 'goal', kinds: ['prop'], min: 1, placed: 1, why: 'the level ends where the player reaches an entity with a goal component (a flag pole, an exit door), placed at the far end of the level', example: { id: 'flag', kind: 'prop', components: { goal: true, body: { size: [1, 3] } } } },
+      { need: 'archetypes', component: 'goal', kinds: ['prop'], min: 1, placed: 1, why: 'the level ends where the player reaches an entity with a goal component (a flag pole, an exit door), placed at the far end of the level', example: { id: 'flag', kind: 'prop', components: { goal: {}, body: { size: [1, 3] } } } },
     ],
     // Platformer mode: run and jump through a side-view level to its goal, past pits, hazards and enemies. The goal is
     // reached by touch, so the player's movement changes what the win reads; the space must give gravity (jumps and

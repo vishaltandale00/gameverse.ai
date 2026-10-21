@@ -143,7 +143,7 @@ const elementDoc = () => base([
 ], {
   blocks: [{ id: 'turf', name: 'Turf', tags: ['grass'] }, { id: 'ash', name: 'Ash' }],
   statuses: [{ id: 'burning', duration: 5, tick: { dps: 1, type: 'fire' }, tags: ['fire'] }, { id: 'soaked', duration: 2, tags: ['water'] }, { id: 'melting', duration: 2 }],
-  archetypes: [{ id: 'bush', components: { health: { max: 10 }, tags: ['grass'] } }, { id: 'yeti', kind: 'enemy', components: { health: { max: 40 }, element: 'ice' } }],
+  archetypes: [{ id: 'bush', components: { health: { max: 10 }, tags: ['grass'] } }, { id: 'yeti', kind: 'enemy', components: { health: { max: 40 }, element: ['ice'] } }],
 });
 
 test('element: typed hits react with tags, fire spreads over grass cells and burns out, water puts out burning', () => {

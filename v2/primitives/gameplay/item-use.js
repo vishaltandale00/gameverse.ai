@@ -1,9 +1,9 @@
 // Usable items: food, potions, scrolls, tools with an on-use effect list.
-// content.items[].use = { fx, cooldown?: s, consume?: b (default true), when?: pred, group?: s }.
+// content.items[].use = { fx, cooldown?: s, consume?: b (default true), when?: pred, group?: s } (items-lib ITEM.use).
 // Effects run with self = the user and item = the item id. Crafted items that
 // carry merged ingredient effects (gameplay.crafting merge) apply them too.
 import { count, take, bag } from './inventory.js';
-import { item as itemDef, whoKey, hasEffect } from './items-lib.js';
+import { item as itemDef, whoKey, hasEffect, itemsData } from './items-lib.js';
 
 const KEY = 'gameplay.item.use';
 export const META = 'gameplay.inventory.meta';
@@ -36,22 +36,10 @@ export default {
     provides: { events: ['used_item', 'used_item:*', 'use_denied'], actions: ['use_item'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],
+    data: itemsData(['use']),
   },
   logic(logic) {
     logic.effect('use_item', { refs: e => [['item', e.item]], run: (e, rt, c) => rt.caches.useItem?.(whoKey(e.who, c), e.item, { free: e.free }) });
-  },
-  validate(config, doc, ctx) {
-    const errors = [];
-    (doc.content?.items || []).forEach((it, i) => {
-      const u = it.use; if (u == null) return;
-      const path = `content.items[${i}].use`;
-      if (typeof u !== 'object' || !Array.isArray(u.fx)) { errors.push({ code: 'item_invalid', path, message: 'use needs an fx list' }); return; }
-      u.fx.forEach((e, k) => ctx.checkEffect(e, `${path}.fx[${k}]`, errors));
-      if (u.cooldown !== undefined && !(Number.isFinite(u.cooldown) && u.cooldown >= 0)) errors.push({ code: 'item_invalid', path: `${path}.cooldown`, message: 'cooldown must be a non-negative number' });
-      if (u.consume !== undefined && typeof u.consume !== 'boolean') errors.push({ code: 'item_invalid', path: `${path}.consume`, message: 'consume must be true or false' });
-      if (u.when) ctx.checkPredicate(u.when, `${path}.when`, errors);
-    });
-    return errors;
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.ready ??= {}; s.last ??= {}; return s; };

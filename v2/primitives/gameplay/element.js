@@ -21,7 +21,7 @@ export default {
     intent: 'Element chemistry: element tags on entities, statuses and cells, and reaction rules (fire burns grass, water puts out burning, ice and fire, electricity conducts) triggered by typed hits, statuses, water and ignite effects; burning cells spread and burn out.',
     views: ['any'],
     params: {
-      reactions: { type: 'list', min: 1, of: { type: 'object', fields: {
+      reactions: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
         a: { type: 'string', required: true, effect: 'the incoming element (damage type, status tag or applied element)' },
         b: { type: 'string', required: true, effect: 'the tag it reacts with on an entity, status or cell' },
         result: { type: 'effects', default: [] },
@@ -29,7 +29,7 @@ export default {
       } } },
       burn: { type: 'object', default: { sec: 4, tickSec: 0.5, damage: 4, type: 'fire', element: 'fire' }, fields: {
         sec: { type: 'number', default: 4, min: 0.1, max: 600, unit: 's' }, tickSec: { type: 'number', default: 0.5, min: 0.05, max: 10, unit: 's' },
-        damage: { type: 'number', default: 4, min: 0 }, type: { type: 'string', default: 'fire' }, element: { type: 'string', default: 'fire' }, into: { type: 'string', effect: 'block a burnt cell becomes; omit to clear it' },
+        damage: { type: 'number', default: 4, min: 0 }, type: { type: 'string', default: 'fire', effect: 'damage type (gameplay.combat.health types)' }, element: { type: 'string', default: 'fire' }, into: { type: 'ref', to: 'block', effect: 'the block a burnt cell becomes; omit to clear it' },
       } },
       water: { type: 'boolean', default: true, effect: 'entities in water get the water element each second (needs a surface space)' },
       maxBurning: { type: 'integer', default: 256, min: 1, max: 10000 },
@@ -37,6 +37,12 @@ export default {
     provides: { events: ['reaction', 'reaction:*', 'ignited', 'burned_out'] },
     requires: { capabilities: ['overlap'] },
     reads: ['content.blocks'],
+    // Shapes of the archetype components this primitive owns.
+    components: { element: { type: 'list', of: { type: 'string' }, effect: 'the elements it carries (fire, water, ice...)' } },
+    rules: {
+      element_reaction_duplicate: { fields: ['reactions[].a', 'reactions[].b'], message: 'each a + b pair has one reaction', example: { reactions: [{ a: 'fire', b: 'grass', spread: null }, { a: 'fire', b: 'grass', spread: null }] } },
+      element_reaction_invalid: { fields: ['reactions[].a', 'reactions[].b'], message: 'a reaction joins two different elements (a is not b)' },
+    },
   },
   logic(logic) {
     const at = (rt, e, c) => (e.at === 'target' ? rt.entity(c.target)?.at ?? c.cell : e.at === 'self' || e.at === undefined ? resolveWho(rt, e.who ?? 'self', c)?.at ?? rt.entity(c.target)?.at ?? c.cell : e.at);
@@ -46,7 +52,7 @@ export default {
   },
   validate(config) {
     const errors = [], seen = new Set();
-    config.reactions.forEach((r, i) => { const k = `${r.a}|${r.b}`; if (seen.has(k)) errors.push(err('element_reaction_duplicate', `with.reactions[${i}]`, `duplicate reaction ${r.a} + ${r.b}`)); seen.add(k); if (r.a === r.b) errors.push(err('element_reaction_invalid', `with.reactions[${i}]`, 'a reaction needs two different elements')); });
+    (config.reactions || []).forEach((r, i) => { const k = `${r.a}|${r.b}`; if (seen.has(k)) errors.push(err('element_reaction_duplicate', `with.reactions[${i}]`, `duplicate reaction ${r.a} + ${r.b}`)); seen.add(k); if (r.a === r.b) errors.push(err('element_reaction_invalid', `with.reactions[${i}]`, 'a reaction needs two different elements')); });
     return errors;
   },
   install(rt, config) {
@@ -55,7 +61,7 @@ export default {
     const statusIds = e => Object.keys(e.components.status && typeof e.components.status === 'object' ? e.components.status : {});
     const statusTags = e => statusIds(e).flatMap(id => (rt.doc.content?.statuses || []).find(s => s.id === id)?.tags || []);
     const tagsOf = e => {
-      const c = e.components, out = new Set([...(Array.isArray(c.element) ? c.element : c.element ? [c.element] : []), ...(c.tags || []), ...statusTags(e), ...statusIds(e)]);
+      const c = e.components, out = new Set([...(c.element || []), ...(c.tags || []), ...statusTags(e), ...statusIds(e)]);
       const kind = rt.archetype(e.archetype)?.tags; for (const t of kind || []) out.add(t);
       return [...out];
     };

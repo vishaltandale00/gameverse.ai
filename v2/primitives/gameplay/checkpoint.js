@@ -1,5 +1,5 @@
 // Checkpoints: benches, bonfires, flags and spawn points. An entity with a
-// `checkpoint` component (true | { id?, touch?, name? }) activates when used
+// `checkpoint` component ({ id?, touch?, name? }; card.components) activates when used
 // through gameplay.interact or, with touch, when the player overlaps it. The
 // active point is where respawn_at_checkpoint (hazards, death rules) returns an
 // entity; activated points can be fast-travelled between.
@@ -7,7 +7,7 @@ import { restoreAll, runIf, whoKey, pos, boxOf, boxesTouch, isVec, dist } from '
 
 const KEY = 'gameplay.checkpoint';
 const AUTO_ID = /^e\d+$/;
-export const checkpointId = e => (typeof e.components.checkpoint === 'object' && e.components.checkpoint.id) || (AUTO_ID.test(e.id) ? e.archetype : e.id);
+export const checkpointId = e => e.components.checkpoint?.id || (AUTO_ID.test(e.id) ? e.archetype : e.id);
 const st = rt => { const s = rt.store(KEY); s.point ??= {}; s.active ??= {}; s.start ??= {}; return s; };
 
 /** Return an entity to its checkpoint (or its start); returns whether it moved. */
@@ -30,7 +30,7 @@ export default {
     actionSpace: { fast_travel: { type: 'choice', of: 'an active checkpoint', from: 'options', emits: ['fast_traveled'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
-      {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": true}}},
+      {"need": "archetypes", "component": "checkpoint", "min": 1, "placed": 1, "why": "checkpoints are entities with a checkpoint component, placed along the way", "example": {"id": "bench", "kind": "prop", "components": {"interact": {"prompt": "Rest", "range": 1.6}, "checkpoint": {}}}},
     ],
     intent: 'Bench/bonfire/flag checkpoints (entities with a `checkpoint` component): set the respawn point, optionally restore health and resources, reset ambient enemies, and fast-travel between activated points.',
     views: ['any'],
@@ -46,6 +46,12 @@ export default {
     provides: { events: ['fast_travel_denied', 'checkpoint_set', 'checkpoint_set:*', 'respawned', 'respawn_enemies', 'fast_traveled'], actions: ['fast_travel'], services: ['checkpoint'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { checkpoint: { type: 'object', fields: {
+      id: { type: 'string', effect: 'the checkpoint id (checkpoint_set:<id>, fast travel); default: the entity id, else its archetype' },
+      touch: { type: 'boolean', effect: 'activates when the player overlaps it (overrides the touch param)' },
+      name: { type: 'string', display: true, effect: 'the name a person reads' },
+    }, effect: 'a respawn point the player activates by using or touching it' } },
   },
   logic(logic) {
     logic.predicate('at_checkpoint', { test: (p, rt, c) => { const id = st(rt).point[whoKey(p.who, c)]?.id; return p.at_checkpoint === true ? Boolean(id) : id === p.at_checkpoint; } });

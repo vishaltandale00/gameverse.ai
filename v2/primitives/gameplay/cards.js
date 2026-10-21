@@ -10,6 +10,7 @@
 // Turn boundaries come from gameplay.turns (sides map to owners). Hit points
 // stay with gameplay.combat.health: unblocked damage runs its `damage` effect.
 import { compare } from '../../kernel/logic.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 import { allowInTurnModal } from './turns.js';
 import { pushModal, popModal, alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
 
@@ -18,6 +19,13 @@ const TYPES = ['attack', 'skill', 'power', 'minion', 'spell', 'curse', 'status']
 const TARGETS = ['enemy', 'self', 'none', 'all_enemies', 'random_enemy', 'minion', 'any'];
 const MODS = ['strength', 'dexterity', 'vulnerable', 'weak', 'frail', 'poison', 'thorns', 'energy_next', 'draw_next', 'barricade'];
 const DECAYS = ['vulnerable', 'weak', 'frail'];
+const INTENTS = ['attack', 'block', 'buff', 'debuff', 'effect'];
+/** A rule example (card.rules): a minimal duel document fragment with these cards and archetypes. */
+const STRIKE = id => ({ id, name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] });
+const duel = (cards, archetypes = []) => ({ doc: {
+  systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.turns', with: { actions: [], sides: [{ id: 'player', control: 'player', members: ['player'] }, { id: 'foes', control: 'external', members: ['rival'] }] } }, { use: 'gameplay.cards', with: { format: 'duel', owners: ['rival'] } }],
+  content: { archetypes: [{ id: 'hero', name: 'Hero', components: { health: { max: 30 } } }, { id: 'rival', name: 'Rival', components: { health: { max: 30 }, ...(cards ? { cards: { deck: ['a', 'b', 'c', 'd'] } } : {}) } }, ...archetypes], ...(cards ? { cards: [STRIKE('a'), STRIKE('b'), STRIKE('c'), STRIKE('d'), ...cards] } : {}) },
+} });
 
 export default {
   id: ID,
@@ -34,10 +42,31 @@ export default {
     pack: { 'content.cards': [{ id: 'strike', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'strike_b', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'guard', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'guard_b', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'heavy_blow', name: 'Heavy Blow', type: 'attack', cost: 2, target: 'enemy', effects: [{ do: 'card_damage', amount: 12, who: 'target' }] }, { id: 'quick_draw', name: 'Quick Draw', type: 'skill', cost: 0, target: 'self', effects: [{ do: 'draw_cards', count: 2 }] }, { id: 'focus', name: 'Focus', type: 'power', cost: 1, target: 'self', effects: [{ do: 'card_mod', mod: 'strength', amount: 2, who: 'owner' }] }, { id: 'spark', name: 'Spark', type: 'attack', cost: 1, target: 'all_enemies', effects: [{ do: 'card_damage', amount: 4, who: 'target' }] }] },
     // Section shapes this primitive reads (the planner's strict content form uses them).
     data: {
-      'content.cards': { type: 'list', min: 4, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', required: true }, type: { type: 'string', options: ['attack', 'skill', 'power', 'minion', 'spell', 'curse', 'status'], required: true },
-        cost: { type: 'integer', min: -1, max: 10, required: true }, target: { type: 'string', options: ['enemy', 'self', 'none', 'all_enemies', 'random_enemy', 'minion', 'any'], required: true },
-        effects: { type: 'effects', required: true, effect: 'what playing it does: card_damage {amount, who:"target"}, card_block {amount}, draw_cards {count}, gain_energy {amount}, card_mod {mod, amount, who}, add_card {card}' },
-        power: { type: 'integer', min: 0 }, health: { type: 'integer', min: 1 }, text: { type: 'string' } } } },
+      'content.cards': { type: 'list', min: 4, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads (default its id)' }, type: { type: 'string', options: TYPES },
+        cost: { type: 'integer', min: -1, max: 10, effect: '-1 = X: spends all energy (default 0)' }, target: { type: 'string', options: TARGETS, effect: 'default: enemy for attacks, else none' },
+        effects: { type: 'effects', effect: 'what playing it does: card_damage {amount, who:"target"}, card_block {amount}, draw_cards {count}, gain_energy {amount}, card_mod {mod, amount, who}, add_card {card}' },
+        power: { type: 'integer', min: 0, effect: 'minion attack' }, health: { type: 'integer', min: 1, effect: 'minion health' }, text: { type: 'string', display: true, effect: 'the rules text a person reads' },
+        keywords: { type: 'list', of: { type: 'string' }, effect: 'minion keywords: taunt (must be attacked first), charge (attacks the turn it is played)' },
+        when: { type: 'predicate', effect: 'playable only while it holds (owner = the player of the card)' }, onDeath: { type: 'effects', effect: 'minion: effects when it dies' },
+        innate: { type: 'boolean', effect: 'starts in the opening hand' }, retain: { type: 'boolean', effect: 'stays in hand at the end of the turn' }, ethereal: { type: 'boolean', effect: 'exhausts if still in hand at the end of the turn' },
+        exhaust: { type: 'boolean', effect: 'leaves the battle once played' }, unplayable: { type: 'boolean' } } } },
+    },
+    // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
+    components: { cards: { type: 'object', fields: {
+      deck: { type: 'list', of: { type: 'ref', to: 'card' }, effect: 'a duel owner: the deck it plays' },
+      intents: { type: 'list', of: { type: 'object', fields: {
+        kind: { type: 'string', options: INTENTS, required: true, effect: 'what the enemy does on its turn' }, value: { type: 'number', min: 0, effect: 'damage, block or modifier amount' },
+        times: { type: 'integer', min: 1, effect: 'attack hits' }, block: { type: 'number', min: 0, effect: 'block gained besides its kind' }, mod: { type: 'string', options: MODS, effect: 'buff/debuff: the modifier' },
+        weight: { type: 'number', min: 0, effect: 'random pattern: chance weight' }, do: { type: 'effects', effect: 'effect kind: what it runs' },
+      } }, effect: 'roguelike enemy: its intents, in turn order (pattern cycle) or by weight (random)' },
+      pattern: { type: 'string', options: ['cycle', 'random'], effect: 'how intents are chosen (default cycle)' },
+    }, effect: 'a card-battle fighter' } },
+    rules: {
+      cards_missing: { fields: ['content.cards'], message: 'the document has content.cards', example: duel(null) },
+      card_invalid: { fields: ['content.cards[].type', 'content.cards[].power', 'content.cards[].health'], message: 'a minion card gives power and health', example: duel([{ id: 'pup', name: 'Pup', type: 'minion', cost: 1, target: 'none', effects: [] }]) },
+      intent_invalid: { fields: ['content.archetypes[].components.cards.intents[].kind', 'content.archetypes[].components.cards.intents[].mod'], message: 'a buff or debuff intent names its mod', example: duel([], [{ id: 'cultist', name: 'Cultist', components: { health: { max: 20 }, cards: { intents: [{ kind: 'buff', value: 2 }] } } }]) },
+      cards_deck_empty: { fields: ['format', 'deck'], message: 'the roguelike format gives the player a starting deck' },
+      cards_owners: { fields: ['format', 'owners'], message: 'the duel format names at least one opponent in owners' },
     },
     engage: { config: { deck: '$ids:content.cards' } },
     // Duel owners on non-player sides play themselves (aiStep): the costliest affordable card, then minion attacks (hurt runs damage).
@@ -88,23 +117,12 @@ export default {
     logic.effect('add_to_deck', { refs: e => [['card', e.card]], run: (e, rt) => svc(rt).addToDeck(e.card) });
     logic.effect('remove_from_deck', { refs: e => [['card', e.card]], run: (e, rt) => svc(rt).removeFromDeck(e.card) });
   },
-  validate(config, doc, ctx) {
-    const errors = [], cards = doc.content?.cards || [];
+  validate(config, doc) {
+    const errors = [], cards = doc.content?.cards;
     if (!Array.isArray(cards) || !cards.length) errors.push(err('cards_missing', 'content.cards', 'gameplay.cards needs content.cards'));
-    (Array.isArray(cards) ? cards : []).forEach((c, i) => {
-      const path = `content.cards[${i}]`;
-      if (!Number.isInteger(c.cost ?? 0) || (c.cost ?? 0) < -1) errors.push(err('card_invalid', `${path}.cost`, 'cost must be an integer >= -1 (-1 = X: spend all)'));
-      if (c.type && !TYPES.includes(c.type)) errors.push(err('card_invalid', `${path}.type`, `type must be ${TYPES.join('|')}`));
-      if (c.target && !TARGETS.includes(c.target)) errors.push(err('card_invalid', `${path}.target`, `target must be ${TARGETS.join('|')}`));
-      if (c.type === 'minion' && !(c.power >= 0 && c.health > 0)) errors.push(err('card_invalid', path, 'minions need power >= 0 and health > 0'));
-      for (const key of ['effects', 'onDeath']) (c[key] || []).forEach((e, k) => ctx.checkEffect(e, `${path}.${key}[${k}]`, errors));
-      if (c.when) ctx.checkPredicate(c.when, `${path}.when`, errors);
-    });
-    (doc.content?.archetypes || []).forEach((a, i) => (a.components?.cards?.intents || []).forEach((t, j) => {
-      const path = `content.archetypes[${i}].components.cards.intents[${j}]`;
-      if (!['attack', 'block', 'buff', 'debuff', 'effect'].includes(t.kind)) errors.push(err('intent_invalid', `${path}.kind`, 'kind must be attack|block|buff|debuff|effect'));
-      if ((t.kind === 'buff' || t.kind === 'debuff') && !MODS.includes(t.mod)) errors.push(err('intent_invalid', `${path}.mod`, `mod must be ${MODS.join('|')}`));
-      (t.do || []).forEach((e, k) => ctx.checkEffect(e, `${path}.do[${k}]`, errors));
+    (Array.isArray(cards) ? cards : []).forEach((c, i) => { if (c?.type === 'minion' && !(c.power >= 0 && c.health > 0)) errors.push(err('card_invalid', `content.cards[${i}]`, 'minions need power >= 0 and health > 0')); });
+    (doc.content?.archetypes || []).forEach((a, i) => (Array.isArray(a?.components?.cards?.intents) ? a.components.cards.intents : []).forEach((t, j) => {
+      if ((t?.kind === 'buff' || t?.kind === 'debuff') && t.mod === undefined) errors.push(err('intent_invalid', `content.archetypes[${i}].components.cards.intents[${j}].mod`, `a ${t.kind} intent names its mod (${MODS.join('|')})`));
     }));
     if (config.format === 'roguelike' && !config.deck.length) errors.push(err('cards_deck_empty', 'with.deck', 'the player needs a starting deck'));
     if (config.format === 'duel' && !config.owners.length) errors.push(err('cards_owners', 'with.owners', 'duel format needs at least one opponent in owners'));

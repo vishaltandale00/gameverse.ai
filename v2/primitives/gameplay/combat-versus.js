@@ -51,6 +51,13 @@ export default {
     requires: { primitives: ['gameplay.combat.melee', 'gameplay.combat.health'] },
     // Fighters walk with the move axis (and crouch, jump by its y): it reads axes.move, so it declares it.
     actionSpace: { dash: { type: 'enum', options: ['fwd', 'back'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    // Shapes of the archetype components this primitive owns (its other fields are live fight state).
+    components: { versus: { type: 'object', fields: { meter: { type: 'number', min: 0, effect: 'super meter at the start' } }, effect: 'a one-on-one fighter (needs a melee component)' } },
+    rules: {
+      versus_walls_invalid: { fields: ['walls'], message: 'the left wall (walls[0]) is left of the right wall (walls[1])' },
+      versus_maxsep_invalid: { fields: ['maxSep', 'walls'], message: 'maxSep is at most the stage width (walls[1] - walls[0])' },
+      versus_needs_melee: { fields: ['content.archetypes[].components.versus', 'content.archetypes[].components.melee'], message: 'an archetype with a versus component has a melee component (a fighter preset or moves)' },
+    },
   },
   validate(config, doc) {
     const errors = [];

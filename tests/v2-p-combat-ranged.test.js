@@ -139,7 +139,8 @@ test('projectile: deterministic replay and bad configs', () => {
   const bad = rangedDoc({ weapons: [{ id: 'w1', ammo: { from: 'item' } }, { id: 'w2', ammo: { from: 'event' } }, { id: 'w3', lanes: [[0], 'x'] }, { id: 'w4', tiers: [{}, {}], maxTier: 1 }], with: { playerWeapon: 'nothing' } });
   bad.content.archetypes.push({ id: 'gunner', components: { ranged: { weapon: 'phaser' } } });
   const c = codes(bad);
-  for (const code of ['projectile_ammo_invalid', 'projectile_lanes_invalid', 'projectile_tier_invalid', 'projectile_weapon_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  for (const code of ['projectile_ammo_invalid', 'projectile_tier_invalid', 'projectile_weapon_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  assert.ok(c.includes('param_type'), 'lanes is a declared list of offset lists: a non-list lane is param_type (was projectile_lanes_invalid)');
   assert.ok(codes(rangedDoc({ weapons: [{ id: 'w5', pattern: 'zigzag' }] })).includes('param_option'));
 });
 
@@ -191,7 +192,7 @@ test('cover: snap to a wall; hits from the covered side are reduced or blocked; 
   rt.space('field').setPos(p, [1, 5, 0], rt); rt.step();
   assert.equal(count(rt, 'cover_exit'), 1);
   same(() => make(coverDoc()), [{ actions: { cover: true } }, {}, { actions: { cover: true } }]);
-  assert.ok(codes(coverDoc({ sources: [] })).includes('cover_sources_empty'));
+  assert.ok(codes(coverDoc({ sources: [] })).includes('param_range')); // sources declares min: 1
   assert.ok(codes(coverDoc({ sources: ['laser'] })).includes('param_option'));
 });
 

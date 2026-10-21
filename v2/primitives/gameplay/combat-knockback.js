@@ -25,7 +25,7 @@ export default {
       speedScale: { type: 'number', default: 0.6, min: 1e-6, max: 1e4, unit: 'units/s per kb', effect: 'world speed of one knockback unit' },
       gravity: { type: 'number', default: 20, min: 0, max: 1e4, unit: 'units/s²' },
       floor: { type: 'number', default: 0, unit: 'units', effect: 'ground height when the space has no gravity' },
-      bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 2, max: 3 }, max: { type: 'list', of: { type: 'number' }, min: 2, max: 3 } }, effect: 'blast zone box; omit to use the space bounds capability' },
+      bounds: { type: 'object', fields: { min: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true }, max: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true } }, effect: 'blast zone box; omit to use the space bounds capability' },
       stocks: { type: 'integer', default: 3, min: 1, max: 99, effect: 'stocks per entity (components.knockback.stocks overrides)' },
       respawnAt: { type: 'list', of: { type: 'number' }, effect: 'respawn point; default the entity home' },
       respawnInvulnSec: { type: 'number', default: 2.6, min: 0, max: 30, unit: 's' },
@@ -33,12 +33,11 @@ export default {
     },
     provides: { events: ['launched', 'blast_ko', 'stock_lost', 'percent'], vars: ['percent', 'stocks'] },
     requires: { primitives: ['gameplay.combat.health'] },
+    rules: { knockback_bounds_invalid: { fields: ['bounds.min', 'bounds.max'], message: 'bounds.min is below bounds.max on every axis (both of one length)' } },
   },
   validate(config) {
-    const errors = [];
-    if (config.bounds && config.bounds.min && config.bounds.max && config.bounds.min.some((v, i) => v >= config.bounds.max[i])) errors.push(err('knockback_bounds_invalid', 'with.bounds', 'bounds.min must be below bounds.max on every axis'));
-    if (config.bounds && !(config.bounds.min && config.bounds.max)) errors.push(err('knockback_bounds_invalid', 'with.bounds', 'bounds needs min and max'));
-    return errors;
+    const b = config.bounds;
+    return Array.isArray(b?.min) && Array.isArray(b?.max) && (b.min.length !== b.max.length || b.min.some((v, i) => v >= b.max[i])) ? [err('knockback_bounds_invalid', 'with.bounds', 'bounds.min must be below bounds.max on every axis')] : [];
   },
   install(rt, config) {
     const kc = e => { const k = e.components.knockback; k.percent ??= 0; k.weight ??= 5; k.stocks ??= config.stocks; k.launch ??= 0; return k; };

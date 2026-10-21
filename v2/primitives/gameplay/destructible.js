@@ -8,7 +8,6 @@
 // destructibles, chaining. Materials with `lit` only light up when hit and
 // break together at the end of the shot (Peggle pegs). Blasts can also carve
 // editCells cells.
-import { checkFields } from '../../kernel/params.js';
 import { award } from './puzzle-lib-board.js';
 import { centerOf, setVel, explode, sizeOf } from './puzzle-lib-body.js';
 
@@ -22,14 +21,17 @@ export const MATERIALS = {
   rock: { hp: 0, score: 0, density: 0 },
   target: { hp: 2.6, score: 5000, density: 0.8 },
 };
-const MATERIAL_SCHEMA = { type: 'object', open: true, fields: { hp: { type: 'number', default: 1, min: 0, max: 1e6, effect: '0 = indestructible' }, score: { type: 'number', default: 0, min: 0, max: 1e7 }, density: { type: 'number', default: 1, min: 0, max: 100 }, explode: { type: 'json' }, shards: { type: 'integer', default: 0, min: 0, max: 32 }, lit: { type: 'boolean', default: false } } };
+/** A material (the materials param's values). */
+const MATERIAL_SCHEMA = { type: 'object', fields: { hp: { type: 'number', min: 0, max: 1e6, effect: '0 = indestructible (default 1)' }, score: { type: 'number', min: 0, max: 1e7 }, density: { type: 'number', min: 0, max: 100, effect: 'for the physics space' },
+  explode: { type: 'object', fields: { r: { type: 'number', min: 0.01, max: 1000, required: true, effect: 'blast radius' }, strength: { type: 'number', min: 0, max: 1000, effect: 'blast impulse (default 13)' } }, effect: 'explosive: it blasts when it breaks' },
+  shards: { type: 'integer', min: 0, max: 32 }, lit: { type: 'boolean', effect: 'lights up when hit and breaks on litOn (pegs)' } } };
 
 export default {
   id: ID,
   card: {
     loop: { verbs: [], progress: ['destroyed', 'cracked', 'cell_broken'], win: { when: { count: 'destroyed', gte: '$target' }, reads: { event: 'destroyed', by: { effects: ['detonate', 'shatter'], events: ['contact', 'explosion', 'destructible_request'] } } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { destructible: { type: 'object', fields: { material: { type: 'string', required: true, effect: 'a materials key: wood, stone, glass, tnt...' }, hp: { type: 'number', min: 0 }, scale: { type: 'number', min: 0 } }, effect: 'breaks from impacts and blasts' } },
+    components: { destructible: { type: 'object', fields: { material: { type: 'string', required: true, effect: 'a key of the materials param: wood, stone, glass, tnt...' }, hp: { type: 'number', min: 0 }, scale: { type: 'number', min: 0 } }, effect: 'breaks from impacts and blasts' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "destructible", "min": 2, "placed": 6, "why": "structures are entities with a destructible component {material} (wood, stone, glass, tnt...), placed to be broken", "example": {"id": "wood_plank", "kind": "prop", "components": {"destructible": {"material": "wood"}}}},
@@ -37,7 +39,7 @@ export default {
     intent: 'Destructible materials (wood, stone, glass, TNT, targets, pegs) that take impulse damage from contacts above a floor, break with score and shards, and blast neighbours when explosive.',
     views: ['side', 'td', '3p'],
     params: {
-      materials: { type: 'object', open: true, default: MATERIALS, effect: 'material id -> {hp (0 = never breaks), score, density, explode?:{r,strength}, shards, lit}' },
+      materials: { type: 'object', values: MATERIAL_SCHEMA, default: MATERIALS, effect: 'material id -> {hp (0 = never breaks), score, density, explode?:{r,strength}, shards, lit}' },
       floor: { type: 'number', default: 0.9, min: 0, max: 1000, effect: 'impulse a piece shrugs off per contact' },
       projectileBonus: { type: 'number', default: 1.15, min: 0, max: 10, effect: 'damage multiplier when hit by a launched projectile' },
       toughness: { type: 'number', default: 1, min: 0.05, max: 20, effect: 'hp multiplier for every piece' },
@@ -51,6 +53,7 @@ export default {
     provides: { events: ['destructible_request', 'damaged', 'damaged:*', 'destroyed', 'destroyed:*', 'cracked', 'lit', 'lit:*', 'shards', 'explosion', 'cell_broken', 'cell_broken:*'], vars: ['destructible.left'] },
     requires: { capabilities: ['position'] },
     reads: [],
+    rules: { destructible_material_unknown: { fields: ['content.archetypes[].components.destructible.material', 'materials'], message: "a destructible's material is a key of the materials param" } },
   },
   logic(logic) {
     logic.effect('detonate', {
@@ -59,15 +62,12 @@ export default {
     });
     logic.effect('shatter', { run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) rt.emit('destructible_request', { id: who.id, amount: e.amount ?? Infinity, cause: e.cause ?? 'effect' }); } });
   },
-  validate(config) {
-    const errors = [];
-    for (const [id, m] of Object.entries(config.materials)) {
-      if (typeof m !== 'object' || m === null || Array.isArray(m)) { errors.push({ code: 'material_invalid', path: `with.materials.${id}`, message: 'material must be an object' }); continue; }
-      const errs = [];
-      checkFields(MATERIAL_SCHEMA.fields, m, `with.materials.${id}`, errs, null, true);
-      for (const e of errs) errors.push({ ...e, code: 'material_invalid' });
-      if (m.explode && !(m.explode.r > 0)) errors.push({ code: 'material_invalid', path: `with.materials.${id}.explode`, message: 'explode needs {r > 0, strength}' });
-    }
+  validate(config, doc) {
+    const errors = [], known = new Set(Object.keys(config.materials || {}));
+    (Array.isArray(doc.content?.archetypes) ? doc.content.archetypes : []).forEach((a, i) => {
+      const m = a?.components?.destructible?.material;
+      if (typeof m === 'string' && !known.has(m)) errors.push({ code: 'destructible_material_unknown', path: `content.archetypes[${i}].components.destructible.material`, message: `unknown material '${m}'`, hint: [...known].join(', ') });
+    });
     return errors;
   },
   install(rt, config) {

@@ -45,19 +45,22 @@ export default {
       quietMin: { type: 'number', default: 1.2, min: 0, max: 60, unit: 's', effect: 'earliest turn end by coming to rest' },
       quietSec: { type: 'number', default: 0.35, min: 0, max: 10, unit: 's', effect: 'rest time that ends the turn' },
       maxFlight: { type: 'number', default: 9, min: 0.5, max: 120, unit: 's', effect: 'turn ends after this flight time' },
-      bounds: { type: 'list', default: [], max: 4, of: { type: 'number' }, effect: '[minX, minY, maxX, maxY]: projectiles leaving it are removed' },
+      bounds: { type: 'list', min: 4, max: 4, of: { type: 'number' }, effect: '[minX, minY, maxX, maxY]: projectiles leaving it are removed (unset: none are)' },
       bomb: { type: 'object', default: { r: 3.6, strength: 15, fuse: 0.9 }, fields: { r: { type: 'number', default: 3.6, min: 0.1, max: 100 }, strength: { type: 'number', default: 15, min: 0, max: 1000 }, fuse: { type: 'number', default: 0.9, min: 0, max: 30 } }, effect: 'bomb blast radius, strength, fuse after first hit (s)' },
       onEmpty: { type: 'effects', default: [], effect: 'run when the last shot has ended' },
     },
     provides: { events: ['aimed', 'launched', 'launched:*', 'ability_used', 'ability_used:*', 'shot_end', 'shots_empty', 'explosion', 'contact', 'move'], vars: ['launcher.shots', 'launcher.aim', 'launcher.power'], actions: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'] },
     requires: { capabilities: ['position'] },
     actionSpace: { aim: { type: 'number', min: -3.2, max: 3.2, from: 'options', emits: ['aimed', 'launched'] }, power: { type: 'number', min: 0.2, max: 1 }, pull: { type: 'vector', min: -50, max: 50, from: 'options', emits: ['aimed', 'launched'] } },
+    rules: {
+      launcher_forward: { fields: ['forward'], message: 'forward is a unit vector (length 1)' },
+      launcher_aim: { fields: ['aim'], message: 'aim is [min, max] with min <= max' },
+    },
   },
   validate(config) {
     const errors = [];
     if (Math.abs(Math.hypot(...config.forward) - 1) > 0.01) errors.push({ code: 'launcher_forward', path: 'with.forward', message: 'forward must be a unit vector' });
     if (config.aim[0] > config.aim[1]) errors.push({ code: 'launcher_aim', path: 'with.aim', message: 'aim is [min, max]' });
-    if (config.bounds.length && config.bounds.length !== 4) errors.push({ code: 'launcher_bounds', path: 'with.bounds', message: 'bounds is [minX, minY, maxX, maxY]' });
     return errors;
   },
   install(rt, config, instance) {
@@ -126,7 +129,7 @@ export default {
         const e = rt.entity(id); if (!e) continue;
         if (config.motion === 'self') stepSelf(rt, a, e, { restitution: config.restitution, friction: 0.15, contactMemo: s.memo, filter: o => !s.active.includes(o.id) });
         const c = centerOf(a, e), bd = config.bounds;
-        if (bd.length === 4 && (c[0] < bd[0] || c[1] < bd[1] || c[0] > bd[2] || c[1] > bd[3])) rt.despawn(id);
+        if (bd && (c[0] < bd[0] || c[1] < bd[1] || c[0] > bd[2] || c[1] > bd[3])) rt.despawn(id);
       }
       s.active = s.active.filter(id => rt.entity(id));
       if (s.shot === 'bomb' && s.ability && s.firstHit >= 0 && s.flightT - s.firstHit > config.bomb.fuse) useAbility(s);

@@ -183,7 +183,10 @@ test('farming: internal day clock, replay and bad config codes', () => {
   bad.systems[1].with.farmland = 'mud'; bad.systems[1].with.crops[0].yield = 'lots'; bad.systems[1].with.crops[0].days = 0;
   bad.systems[1].with.crops.push({ item: 'wheat', seed: 'seeds' }, { item: 'ghost_corn' });
   const c = codes(checkWith(bad));
-  for (const code of ['farming_invalid', 'param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // farmland is a block reference and yield a [min, max] range (declared params): ref_unknown and param_type where
+  // farming_invalid's block and yield checks were; farming_invalid stays for the shared seed.
+  for (const code of ['farming_invalid', 'param_range', 'ref_unknown', 'param_type']) assert.ok(c.includes(code), code);
+  assert.ok(checkWith(bad).errors.some(e => e.code === 'ref_unknown' && e.path.endsWith('.with.farmland')));
   for (const x of gameInstances('gameplay.farming')) assert.deepEqual(x.paramErrors, [], x.game);
 });
 

@@ -115,7 +115,7 @@ export default {
       hidden: { type: 'integer', default: 4, min: 0, max: 20, unit: 'rows', effect: 'rows at the top where pieces spawn; locking entirely inside them tops out' },
       sets: { type: 'list', default: ['standard'], min: 1, of: { type: 'string', options: ['standard', 'small', 'custom', 'pairs'] }, effect: 'piece sets in play: standard tetrominoes, small 1-3 cell pieces, custom polyominoes, or two-colour pairs' },
       custom: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, rows: { type: 'list', required: true, min: 1, max: 6, of: { type: 'string' } } } }, effect: 'custom polyominoes: rows of chars, "." empty' },
-      tokens: { type: 'object', open: true, default: {}, effect: 'block token per piece key (I, O, T..., m1.., custom id); default piece_<key>' },
+      tokens: { type: 'object', values: { type: 'string' }, default: {}, effect: 'block token per piece key (I, O, T..., m1.., custom id); default piece_<key>' },
       pairColors: { type: 'list', default: ['red', 'green', 'blue', 'yellow'], min: 1, max: 8, of: { type: 'string' }, effect: 'tokens pair halves are drawn from' },
       link: { type: 'boolean', default: false, effect: 'pairs land as linked capsule halves (fall together until one half clears)' },
       pairStart: { type: 'string', default: 'vertical', options: ['vertical', 'horizontal'], effect: 'spawn orientation of pairs' },
@@ -156,6 +156,16 @@ export default {
     },
     requires: { capabilities: ['editCells'] },
     reads: ['content.blocks'],
+    rules: {
+      // The board rules validateBoard (puzzle-lib-board.js) emits; that file exports them as BOARD_RULES on E-gp-mz's branch.
+      board_fall: { fields: ['board.fall'], message: 'board.fall is -1 or 1 (the space-axis direction pieces fall)', example: { board: { name: null, at: null, size: null, axes: null, fall: 0, layer: null } } },
+      board_axes: { fields: ['board.axes', 'board.at'], message: 'board.axes names two different space axes, each an index of board.at' },
+      pieces_pairs_exclusive: { fields: ['sets'], message: "the pairs set is not mixed with other piece sets" },
+      pieces_custom_missing: { fields: ['sets', 'custom'], message: "the custom set comes with custom pieces" },
+      piece_shape: { fields: ['custom[].rows', 'board.size'], message: 'a custom piece is 1-9 edge-connected cells, no wider than the board' },
+      falling_archetype: { fields: ['land', 'archetype'], message: "land 'spawn' names the archetype spawned per cell" },
+      board_too_small: { fields: ['board.size', 'hidden'], message: 'the board is taller than hidden rows + 1' },
+    },
   },
   logic(logic) {
     logic.effect('add_garbage', {

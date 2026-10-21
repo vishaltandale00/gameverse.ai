@@ -26,7 +26,7 @@ const PHASE = {
 const BOSS = {
   id: { type: 'string', required: true },
   archetype: { type: 'ref', to: 'archetype', required: true },
-  name: { type: 'string' },
+  name: { type: 'string', display: true, effect: 'the name a person reads on the boss bar' },
   arena: { type: 'ref', to: 'zone' },
   entity: { type: 'string', effect: 'an existing entity id (a character) to use as the boss' },
   start: { type: 'string', options: ['zone', 'effect', 'spawn', 'sight'], default: 'zone' },
@@ -65,6 +65,14 @@ export default {
     provides: { events: ['boss_start', 'boss_start:*', 'boss_phase', 'boss_phase:*', 'boss_defeated', 'boss_defeated:*', 'boss_escaped', 'boss_reset', 'boss_dazed', 'boss_hit', 'boss_invulnerable', 'boss_enraged', 'arena_locked'], vars: ['boss.hp', 'boss.hp.max', 'boss.phase', 'boss.id', 'bosses.remaining'] },
     requires: { primitives: ['gameplay.combat.health'] },
     defines: [{ kind: 'boss', in: 'bosses' }],
+    rules: {
+      boss_phase_order: { fields: ['bosses[].phases[].at'], message: 'phases are listed from the highest hp fraction to the lowest (a phase with a when condition may break the order)',
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 0.5 }, { at: 1 }] }] } }] } } },
+      boss_pattern_unknown: { fields: ['bosses[].phases[].pattern', 'bosses[].archetype'], message: "each pattern id names an attack of the boss archetype (components.attacks ids, components.melee moves) or a gameplay.combat.melee move",
+        example: { doc: { systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'warden', archetype: 'warden', phases: [{ at: 1, pattern: ['no_such_attack'] }] }] } }] } } },
+      boss_health_missing: { fields: ['bosses[].archetype', 'bosses[].hp'], message: 'the boss archetype has a health component, or the boss gives hp',
+        example: { bosses: [{ id: 'key', archetype: 'key', name: null, entity: null, start: null, sightRange: null, hp: null, phaseInvulnSec: null, cancelBullets: null, timeLimit: null, gate: null, required: null, lockArena: null, tire: null, enrage: null }] } },
+    },
   },
   logic(logic) {
     logic.predicate('boss', { refs: p => [['boss', p.boss]], test: (p, rt) => { const s = rt.store(KEY)[p.boss]?.state ?? 'idle'; return p.state ? s === p.state : s === 'active'; } });

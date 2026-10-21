@@ -89,7 +89,7 @@ const healthDoc = (h = {}) => base([
     { id: 'ghost', kind: 'enemy', components: { health: { max: 10, respawn: { mode: 'home', sec: 2 } }, touch: { damage: 7, type: 'phys' } } },
     { id: 'rock', kind: 'enemy', components: { health: { max: 4, splitOnDeath: { into: 'pebble', count: 2, spread: 90 } }, body: { vel: [3, 0, 0] } } },
     { id: 'pebble', kind: 'enemy', components: { health: { max: 1 } } },
-    { id: 'shade', kind: 'enemy', components: { health: { max: 5, respawn: 'spawn' } } },
+    { id: 'shade', kind: 'enemy', components: { health: { max: 5, respawn: { mode: 'spawn' } } } },
   ],
 });
 
@@ -162,7 +162,11 @@ test('health: deterministic replay and bad configs', () => {
   const bad = healthDoc({ types: ['phys', 'phys'] });
   bad.content.archetypes.push({ id: 'blob', components: { health: { max: -3, respawn: 'teleport', splitOnDeath: { into: 'nope' } }, resist: { acid: 1 } } });
   const c = codes(bad);
-  for (const code of ['health_types_invalid', 'health_invalid', 'health_respawn_invalid', 'ref_unknown', 'health_type_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  for (const code of ['health_types_invalid', 'health_type_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
+  // max, respawn and splitOnDeath.into are checked by the health component's declared shape (card.components), reported
+  // as section-shape findings (warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), blob = 'content.archetypes[' + (bad.content.archetypes.length - 1) + '].components.health';
+  for (const x of [`param_range@${blob}.max`, `param_type@${blob}.respawn`, `ref_unknown@${blob}.splitOnDeath.into`]) assert.ok(at.includes(x), `${x} in ${at}`);
   assert.ok(codes(healthDoc({ iframes: 99 })).includes('param_range'));
 });
 
@@ -237,7 +241,11 @@ test('status: deterministic replay and bad configs', () => {
   const bad = statusDoc();
   bad.content.statuses.push({ id: 'broken', duration: 0, stacks: 0.5, refresh: 'sometimes', tick: { dps: 'x', type: 'acid' }, mods: { 'stat.x': 'big' } });
   const c = codes(bad);
-  for (const code of ['status_duration_invalid', 'status_stacks_invalid', 'status_refresh_invalid', 'status_tick_invalid', 'status_type_unknown', 'status_mod_invalid']) assert.ok(c.includes(code), `${code} in ${c}`);
+  assert.ok(c.includes('status_type_unknown'), `status_type_unknown in ${c}`);
+  // duration, stacks, refresh, tick.dps and mods are content.statuses' declared shape (card.data), reported at their
+  // paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where status_*_invalid were.
+  const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), st = `content.statuses[${bad.content.statuses.length - 1}]`;
+  for (const x of [`param_range@${st}.duration`, `param_type@${st}.stacks`, `param_option@${st}.refresh`, `param_type@${st}.tick.dps`, `param_type@${st}.mods.stat.x`]) assert.ok(at.includes(x), `${x} in ${at}`);
   const ref = statusDoc(); ref.systems.push({ use: 'gameplay.combat.melee', with: { moves: [] } });
   ref.content.statuses[0].onEnd = [{ do: 'apply_status', status: 'nope' }];
   assert.ok(codes(ref).includes('ref_unknown'));

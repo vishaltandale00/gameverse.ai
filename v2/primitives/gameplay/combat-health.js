@@ -10,7 +10,7 @@
 // (revives at home after a delay), plus splitOnDeath (asteroid rocks).
 // Physics impacts (`impact {who, speed}` events) and contact damage from
 // components.touch also go through the pipeline.
-import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, targetRefs, hooks, overlapping, displace, round, err, archetypes, hasArchetype, touchDefeats } from './combat-lib.js';
+import { boxOf, frames, grantInvuln, invulnFrames, FPS, v3, add, sub, mul, len, norm, posOf, like, distance, statOf, teamOf, hostile, resolveWho, targetsOf, targetRefs, hooks, overlapping, displace, round, err, archetypes, touchDefeats } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.health';
 const RESPAWN = ['none', 'home', 'spawn'];
@@ -23,7 +23,28 @@ const health = {
     loop: { verbs: [], progress: ['damaged', 'defeated'], involves: { damaged: { hurt: 'who', by: 'by' } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: {
-      health: { type: 'object', fields: { max: { type: 'number', min: 0.01, required: true, effect: 'hit points' }, hp: { type: 'number', min: 0 }, regen: { type: 'number', effect: 'hp per second' }, iframeSec: { type: 'number', min: 0 }, respawn: { type: 'json', effect: 'none|home|spawn or {mode, sec}' }, resist: { type: 'object', open: true, effect: 'damage type -> fraction resisted' }, armor: { type: 'object', open: true } }, effect: 'hit points' },
+      // The shared fields (KERNEL_API §2: hp, max, invulnerable, dead) and the authored death, regen and mitigation rules.
+      health: { type: 'object', fields: {
+        max: { type: 'number', min: 0.01, required: true, effect: 'hit points' },
+        hp: { type: 'number', min: 0, effect: 'current hit points (set at spawn from start, else max)' },
+        start: { type: 'number', min: 0, effect: 'hit points at spawn (default max)' },
+        invulnerable: { type: 'number', min: 0, unit: 's', effect: 'seconds of invulnerability left (0 when vulnerable)' },
+        dead: { type: 'boolean', effect: 'out of play (set by the death rules)' },
+        regen: { type: 'number', effect: 'hp per second' },
+        regenDelay: { type: 'number', min: 0, unit: 's', effect: 'seconds without damage before regen resumes (default the regenDelay param)' },
+        iframeSec: { type: 'number', min: 0, unit: 's' },
+        respawn: { type: 'object', fields: { mode: { type: 'string', options: RESPAWN, effect: 'none: corpse or despawn; home: walks home and revives there; spawn: revives at home after sec' }, sec: { type: 'number', min: 0, max: 600, unit: 's' } }, effect: 'death rule (default the respawn param)' },
+        resist: { type: 'object', values: { type: 'number' }, effect: 'damage type -> fraction resisted (1 immune, negative weak)' },
+        armor: { type: 'object', values: { type: 'number' }, effect: 'damage type -> flat damage removed' },
+        corpse: { type: 'boolean', effect: 'stays as a corpse when it dies (respawn none)' },
+        team: { type: 'string', effect: 'its side: hits between entities of one team need friendlyFire' },
+        splitOnDeath: { type: 'object', fields: {
+          into: { type: 'ref', to: 'archetype', effect: 'what it splits into (default its own archetype)' }, count: { type: 'integer', min: 1, effect: 'pieces (default 2)' },
+          speed: { type: 'number', min: 0 }, speedMult: { type: 'number', min: 0 }, speedAdd: { type: 'number' }, spread: { type: 'number', min: 0, max: 360, unit: 'deg' }, jitter: { type: 'number', min: 0 },
+          maxGenerations: { type: 'integer', min: 0, effect: 'how many times pieces split again (default 8)' },
+        }, effect: 'splits into pieces when it dies (asteroid rocks)' },
+      }, effect: 'hit points' },
+      resist: { type: 'object', values: { type: 'number' }, effect: 'damage type -> fraction resisted, when health.resist does not name the type' },
       touch: { type: 'object', fields: { damage: { type: 'number', min: 0, required: true }, type: { type: 'string' }, knockback: { type: 'number', min: 0 }, stomp: { type: 'boolean', effect: 'a hostile body falling onto it from above (with the space gravity) defeats it instead of being hurt' } }, effect: 'contact damage to hostile entities it overlaps' },
     },
     // The effect that takes a holder of a component it owns out of play (an encounter's defeated participant, planner/presets.js).
@@ -57,6 +78,10 @@ const health = {
       vars: ['hp', 'hp.max'], services: ['combat'],
     },
     reads: ['content.archetypes'],
+    rules: {
+      health_types_invalid: { fields: ['types'], message: 'damage types are unique' },
+      health_type_unknown: { fields: ['content.archetypes[].components.health.resist', 'content.archetypes[].components.health.armor', 'content.archetypes[].components.resist', 'content.archetypes[].components.touch.type', 'types'], message: 'every damage type a resist, armor or touch names is one of the types param' },
+    },
   },
   logic(logic) {
     logic.predicate('health', {
@@ -74,13 +99,11 @@ const health = {
     if (types.size !== config.types.length) errors.push(err('health_types_invalid', 'with.types', 'damage types must be unique'));
     archetypes(doc).forEach((a, i) => {
       const h = a.components?.health, path = `content.archetypes[${i}].components.health`;
-      if (h === undefined) return;
-      if (!h || typeof h !== 'object') { errors.push(err('health_invalid', path, 'health component must be an object {max, ...}')); return; }
-      if (h.max !== undefined && !(Number.isFinite(h.max) && h.max > 0)) errors.push(err('health_invalid', `${path}.max`, 'max must be a positive number'));
-      if (h.respawn && !RESPAWN.includes(h.respawn.mode ?? h.respawn)) errors.push(err('health_respawn_invalid', `${path}.respawn`, `respawn must be one of ${RESPAWN.join('|')}`));
-      if (h.splitOnDeath && !hasArchetype(doc, h.splitOnDeath.into ?? a.id)) errors.push(err('ref_unknown', `${path}.splitOnDeath.into`, `unknown archetype '${h.splitOnDeath.into}'`));
-      for (const [k, src] of [['resist', h.resist], ['resist', a.components.resist], ['armor', h.armor]]) for (const t of Object.keys(src || {})) if (!types.has(t)) errors.push(err('health_type_unknown', `${path.replace('.health', '')}.${k}.${t}`, `unknown damage type '${t}'`, `types: ${config.types.join(', ')}`));
-      if (a.components.touch?.type && !types.has(a.components.touch.type)) errors.push(err('health_type_unknown', `content.archetypes[${i}].components.touch.type`, `unknown damage type '${a.components.touch.type}'`));
+      if (h && typeof h === 'object') for (const [k, src] of [['resist', h.resist], ['armor', h.armor]]) for (const t of Object.keys(src && typeof src === 'object' ? src : {})) if (!types.has(t)) errors.push(err('health_type_unknown', `${path}.${k}.${t}`, `unknown damage type '${t}'`, `types: ${config.types.join(', ')}`));
+      const resist = a.components?.resist;
+      for (const t of Object.keys(resist && typeof resist === 'object' ? resist : {})) if (!types.has(t)) errors.push(err('health_type_unknown', `content.archetypes[${i}].components.resist.${t}`, `unknown damage type '${t}'`, `types: ${config.types.join(', ')}`));
+      const touch = a.components?.touch;
+      if (touch && typeof touch === 'object' && touch.type && !types.has(touch.type)) errors.push(err('health_type_unknown', `content.archetypes[${i}].components.touch.type`, `unknown damage type '${touch.type}'`));
     });
     return errors;
   },
@@ -88,7 +111,6 @@ const health = {
     const types = new Set(config.types);
     const init = e => {
       const h = e?.components?.health; if (!h || h.hp !== undefined) return;
-      if (typeof h !== 'object') { e.components.health = { max: Number(h) || 1 }; return init(e); }
       h.max ??= 1; h.hp = h.start ?? h.max; h.dead = false; h.invulnerable = h.invulnerable ?? 0; h.stun = 0; h.regenT = 0; h.push = null;
       if (isPos(e.at)) h.home ??= e.at.slice();
     };
@@ -193,7 +215,7 @@ const health = {
         const h = e.components.health;
         if (h.splitOnDeath) split(e);
         if (e.id === 'player') { if (!rt.hasService('death') && config.playerDeath === 'lose') rt.run([{ do: 'end_game', outcome: 'lost' }]); return; }
-        const rule = typeof h.respawn === 'string' ? { mode: h.respawn } : { ...config.respawn, ...(h.respawn || {}) };
+        const rule = { ...config.respawn, ...(h.respawn || {}) };
         const mode = rule.mode ?? 'none', sec = rule.sec ?? config.respawn.sec;
         if (mode === 'home') {
           h.dead = false; h.state = 'returning'; h.respawnAt = rt.state.frame + Math.max(1, frames(sec));

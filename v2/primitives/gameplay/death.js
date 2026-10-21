@@ -44,6 +44,11 @@ export default {
     },
     provides: { events: ['player_died', 'respawned', 'game_over', 'extra_life', 'retrieved', 'corpse_lost', 'checkpoint_used'], vars: ['lives', 'deaths'], services: ['death'] },
     requires: { primitives: ['gameplay.combat.health'] },
+    rules: {
+      death_zone_missing: { fields: ['respawn', 'zone'], message: "respawn 'zone' names its zone" },
+      death_thresholds_order: { fields: ['extraLifeAt'], message: 'extra life thresholds increase' },
+      death_corpse_unused: { fields: ['corpseArchetype', 'penalty.corpse'], message: 'a corpseArchetype goes with penalty.corpse true' },
+    },
   },
   logic(logic) {
     logic.effect('set_respawn', { run: (e, rt, c) => rt.service('death').setRespawn({ space: e.space ?? rt.player()?.space, at: e.at ?? null, zone: e.zone ?? null }) });

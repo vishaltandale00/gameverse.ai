@@ -5,7 +5,7 @@
 // in the cell above the farmland.
 import { compare } from '../../kernel/logic.js';
 import { give, take, count, bag } from './inventory.js';
-import { item as itemDef, tokens, roll, cellDist, cellKey, cellOf, isVec, api as spaceApi, add, whoKey, actionCell } from './items-lib.js';
+import { item as itemDef, tokens, roll, RANGE, itemsData, TOKEN_FIELDS, cellDist, cellKey, cellOf, isVec, api as spaceApi, add, whoKey, actionCell } from './items-lib.js';
 
 const KEY = 'gameplay.farming';
 const parse = v => (isVec(v) ? { cell: v } : v || {});
@@ -34,14 +34,14 @@ export default {
         seed: { type: 'ref', to: 'item', effect: 'item planted (default the produce itself)' },
         days: { type: 'integer', default: 3, min: 1, max: 365, effect: 'growing days to ripen' },
         seasons: { type: 'list', default: [], of: { type: 'string' }, effect: 'seasons it grows in (var time.season); [] = all' },
-        yield: { type: 'json', default: 1, effect: 'count n or range [a, b]' },
+        yield: { ...RANGE, default: [1, 1], effect: 'produce per harvest, [min, max]' },
         regrow: { type: 'integer', default: 0, min: 0, max: 365, effect: 'days to ripen again after harvest; 0 = harvesting removes it' },
         water: { type: 'boolean', default: true, effect: 'needs watering each day to grow' },
         block: { type: 'ref', to: 'block', effect: 'block shown above the farmland while it grows' },
         ripeBlock: { type: 'ref', to: 'block', effect: 'block shown when ripe (default block)' },
       } }, effect: 'crops' },
-      tillable: { type: 'list', default: ['dirt', 'grass'], of: { type: 'string' }, effect: 'block ids (content.blocks ids) a hoe turns into farmland' },
-      farmland: { type: 'string', default: 'farmland', effect: 'block of tilled soil (a content.blocks id)' },
+      tillable: { type: 'list', default: ['dirt', 'grass'], of: { type: 'ref', to: 'block' }, effect: 'blocks a hoe turns into farmland' },
+      farmland: { type: 'ref', to: 'block', default: 'farmland', effect: 'the block of tilled soil' },
       tool: { type: 'string', default: 'tool:hoe', effect: "item token needed to till ('' = bare hands)" },
       reach: { type: 'number', default: 4, min: 0.5, max: 32, unit: 'cells' },
       daySec: { type: 'number', default: 0, min: 0, unit: 's', effect: 'internal day length when no engine.time writes time.day; 0 = use time.day only' },
@@ -52,6 +52,8 @@ export default {
     provides: { events: ['tool_used', 'tilled', 'planted', 'planted:*', 'watered', 'ripened', 'ripened:*', 'harvested', 'harvested:*', 'withered', 'farm_denied'], actions: ['till', 'plant', 'water', 'harvest'], services: ['farming'] },
     requires: { capabilities: ['editCells'] },
     reads: ['content.items', 'content.blocks'],
+    data: itemsData(TOKEN_FIELDS),
+    rules: { farming_invalid: { fields: ['crops[].seed', 'crops[].item'], message: 'each crop has its own seed item (seed, else its produce item)' } },
   },
   logic(logic) {
     logic.predicate('crops', { test: (p, rt, c) => {
@@ -61,12 +63,8 @@ export default {
   },
   validate(config, doc, ctx, inst = {}) {
     const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], bl = new Set((doc.content?.blocks || []).map(b => b.id));
-    if (bl.size && !bl.has(config.farmland)) errors.push({ code: 'farming_invalid', path: P, message: `farmland block '${config.farmland}' is not in content.blocks` });
-    for (const t of config.tillable) if (bl.size && !bl.has(t)) errors.push({ code: 'farming_invalid', path: P, message: `tillable block '${t}' is not in content.blocks` });
-    const y = c => c.yield; for (const c of config.crops) { const v = y(c); if (!(Number.isInteger(v) && v >= 0) && !(Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) && v[0] <= v[1])) errors.push({ code: 'farming_invalid', path: P, message: `crop '${c.item}' yield must be n or [a, b]` }); }
-    const seeds = config.crops.map(c => c.seed ?? c.item); if (new Set(seeds).size !== seeds.length) errors.push({ code: 'farming_invalid', path: P, message: 'two crops share a seed item' });
-    return errors;
+    const seeds = config.crops.map(c => c.seed ?? c.item);
+    return new Set(seeds).size !== seeds.length ? [{ code: 'farming_invalid', path: P, message: 'two crops share a seed item' }] : [];
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.plots ??= {}; s.day ??= null; return s; };

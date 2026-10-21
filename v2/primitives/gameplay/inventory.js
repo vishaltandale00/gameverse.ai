@@ -6,7 +6,7 @@
 // quests and gates can address one item. Other primitives use the exported
 // functions or the `inventory` service; effects give_item/take_item/transfer_item.
 import { compare } from '../../kernel/logic.js';
-import { item as itemDef, tokens, whoKey } from './items-lib.js';
+import { item as itemDef, tokens, whoKey, itemsData, TOKEN_FIELDS } from './items-lib.js';
 
 const KEY = 'gameplay.inventory';
 const cfg = rt => rt.caches.inventory || { slots: 36, stackDefault: 999 };
@@ -77,6 +77,12 @@ export default {
     },
     provides: { events: ['item_gained', 'item_gained:*', 'item_lost', 'item_lost:*', 'inventory_full', 'item_transferred'], services: ['inventory'] },
     reads: ['content.items'],
+    data: itemsData(['stack', ...TOKEN_FIELDS]),
+    // Shapes of the archetype components this primitive owns.
+    components: { inventory: { type: 'object', fields: {
+      slots: { type: 'integer', min: 1, max: 1000, unit: 'stacks', effect: 'stacks it can hold (default otherSlots)' },
+      start: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1, max: 9999 } } }, effect: 'what a spawned entity carries' },
+    }, effect: 'an entity carrying items' } },
   },
   logic(logic) {
     logic.predicate('item', { refs: p => [['item', p.item]], test: (p, rt, c) => compare(count(rt, whoKey(p.who, c), p.item), p) });
@@ -84,14 +90,6 @@ export default {
     logic.effect('give_item', { refs: e => [['item', e.item]], check: countCheck('count'), run: (e, rt, c) => { give(rt, whoKey(e.who, c), e.item, e.count ?? 1); } });
     logic.effect('take_item', { refs: e => [['item', e.item]], check: countCheck('count'), run: (e, rt, c) => { take(rt, whoKey(e.who, c), e.item, e.count ?? 1); } });
     logic.effect('transfer_item', { refs: e => [['item', e.item]], check: countCheck('count'), run: (e, rt, c) => { transfer(rt, whoKey(e.from, c), whoKey(e.to, c), e.item, e.count ?? 1); } });
-  },
-  validate(config, doc) {
-    const errors = [];
-    (doc.content?.items || []).forEach((it, i) => { if (it.stack !== undefined && (!Number.isInteger(it.stack) || it.stack < 1)) errors.push({ code: 'item_invalid', path: `content.items[${i}].stack`, message: 'stack must be a positive integer' }); });
-    (doc.content?.archetypes || []).forEach((a, i) => (a.components?.inventory?.start || []).forEach((s, j) => {
-      if (!(doc.content?.items || []).some(it => it.id === s.item)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.inventory.start[${j}].item`, message: `unknown item '${s.item}'` });
-    }));
-    return errors;
   },
   install(rt, config) {
     rt.caches.inventory = config;

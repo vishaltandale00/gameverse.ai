@@ -2,12 +2,12 @@
 // and queues, recipe discovery (known / learned / experiment) and cooking-style
 // merges where the output carries the summed ingredient effects of what went in.
 //   recipe { id, station?: station id | station tag, inputs: [{item|tag, count}], output: {item, count},
-//            time?: s, learned?: bool | flag id, merge?: b }
+//            time?: s, learned?: b, learnedFlag?: flag id, merge?: b } (card.data)
 // A station is available when an entity with components.station = id is within
 // `stationRange`, or the crafter stands in the station's zone.
 import { compare } from '../../kernel/logic.js';
 import { bag, give, take, room } from './inventory.js';
-import { item as itemDef, tokens, whoKey, dist } from './items-lib.js';
+import { item as itemDef, tokens, whoKey, dist, itemsData, TOKEN_FIELDS } from './items-lib.js';
 import { META } from './item-use.js';
 
 const KEY = 'gameplay.crafting';
@@ -26,7 +26,7 @@ export default {
     intent: 'Recipes at stations with item or tag inputs, craft times and queues, recipe discovery (known, learned, or experiment by combining items) and cooking-style merges whose output carries the summed ingredient effects.',
     views: ['any'],
     params: {
-      stations: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string' }, tags: { type: 'list', default: [], of: { type: 'string' } }, zone: { type: 'ref', to: 'zone', effect: 'standing in this zone counts as being at the station' } } }, effect: 'crafting stations' },
+      stations: { type: 'list', default: [], of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, tags: { type: 'list', default: [], of: { type: 'string' } }, zone: { type: 'ref', to: 'zone', effect: 'standing in this zone counts as being at the station' } } }, effect: 'crafting stations' },
       handCraft: { type: 'boolean', default: true, effect: 'recipes without a station can be crafted anywhere' },
       stationRange: { type: 'number', default: 3, min: 0, max: 50, unit: 'space units', effect: 'distance to a station entity that counts as being at it' },
       queue: { type: 'boolean', default: false, effect: 'timed recipes queue up; false allows one timed job at a time' },
@@ -41,6 +41,22 @@ export default {
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.recipes', 'content.items', 'content.archetypes'],
     defines: [{ kind: 'station', in: 'stations' }],
+    data: {
+      ...itemsData([...TOKEN_FIELDS, 'value']),
+      'content.recipes': { type: 'list', of: { type: 'object', open: true, fields: {
+        station: { type: 'string', effect: 'a station id or station tag where it is crafted (none: by hand)' },
+        inputs: { type: 'list', min: 1, required: true, of: { type: 'object', open: true, fields: { item: { type: 'ref', to: 'item' }, tag: { type: 'string', effect: 'or any item answering to this token' }, count: { type: 'integer', min: 1 } } } },
+        output: { type: 'object', open: true, required: true, fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } },
+        time: { type: 'number', min: 0, unit: 's', effect: 'craft time (0: at once)' },
+        learned: { type: 'boolean', effect: "discover 'learned': known from the start" },
+        learnedFlag: { type: 'string', effect: "discover 'learned': known once this flag is set" },
+        merge: { type: 'boolean', effect: 'the output carries the summed ingredient effects (default the merge param)' },
+      } } },
+    },
+    // Shapes of the archetype components this primitive owns.
+    components: { station: { type: 'ref', to: 'station', effect: 'standing near this entity counts as being at the station' } },
+    rules: { recipe_invalid: { fields: ['content.recipes[].station', 'content.recipes[].inputs[]', 'stations'], message: "a recipe's station names a station id or tag of stations; each input gives an item or a tag",
+      example: { doc: { systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.crafting' }], content: { archetypes: [{ id: 'hero', name: 'Hero', components: {} }], items: [{ id: 'stick', name: 'Stick' }], recipes: [{ id: 'torch', station: 'forge', inputs: [{ item: 'stick', count: 1 }], output: { item: 'stick', count: 1 } }] } } } } },
   },
   logic(logic) {
     const api = rt => rt.caches.crafting;
@@ -50,19 +66,11 @@ export default {
     logic.effect('craft', { refs: e => [['recipe', e.recipe]], run: (e, rt, c) => api(rt)?.craft(whoKey(e.who, c), e.recipe, e.count ?? 1, { anywhere: e.anywhere ?? true }) });
   },
   validate(config, doc) {
-    const errors = [], items = new Set((doc.content?.items || []).map(i => i.id));
-    const stations = new Set(config.stations.flatMap(s => [s.id, ...s.tags]));
-    (doc.content?.recipes || []).forEach((r, i) => {
+    const errors = [], stations = new Set(config.stations.flatMap(s => [s.id, ...s.tags]));
+    (Array.isArray(doc.content?.recipes) ? doc.content.recipes : []).forEach((r, i) => {
       const path = `content.recipes[${i}]`;
-      if (r.station != null && !stations.has(r.station)) errors.push({ code: 'recipe_invalid', path: `${path}.station`, message: `unknown station '${r.station}'`, hint: [...stations].join(', ') || 'no stations' });
-      if (!Array.isArray(r.inputs) || !r.inputs.length) errors.push({ code: 'recipe_invalid', path: `${path}.inputs`, message: 'needs at least one input' });
-      (r.inputs || []).forEach((x, k) => {
-        if (x.item == null && x.tag == null) errors.push({ code: 'recipe_invalid', path: `${path}.inputs[${k}]`, message: 'input needs item or tag' });
-        if (x.item != null && !items.has(x.item)) errors.push({ code: 'ref_unknown', path: `${path}.inputs[${k}].item`, message: `unknown item '${x.item}'` });
-        if (x.count !== undefined && !(Number.isInteger(x.count) && x.count >= 1)) errors.push({ code: 'recipe_invalid', path: `${path}.inputs[${k}].count`, message: 'count must be a positive integer' });
-      });
-      if (!r.output?.item || !items.has(r.output.item)) errors.push({ code: 'ref_unknown', path: `${path}.output.item`, message: `unknown output item '${r.output?.item}'` });
-      if (r.time !== undefined && !(Number.isFinite(r.time) && r.time >= 0)) errors.push({ code: 'recipe_invalid', path: `${path}.time`, message: 'time must be a non-negative number' });
+      if (r?.station != null && !stations.has(r.station)) errors.push({ code: 'recipe_invalid', path: `${path}.station`, message: `unknown station '${r.station}'`, hint: [...stations].join(', ') || 'no stations' });
+      (Array.isArray(r?.inputs) ? r.inputs : []).forEach((x, k) => { if (x?.item == null && x?.tag == null) errors.push({ code: 'recipe_invalid', path: `${path}.inputs[${k}]`, message: 'input needs item or tag' }); });
     });
     return errors;
   },
@@ -74,14 +82,14 @@ export default {
     function known(id) {
       const r = recipes().get(id); if (!r) return false;
       if (config.discover === 'known' || st().known[id] || r.learned === true) return true;
-      return typeof r.learned === 'string' && Boolean(rt.state.flags[r.learned]);
+      return Boolean(r.learnedFlag && rt.state.flags[r.learnedFlag]);
     }
     function learn(id) { if (!recipes().has(id) || st().known[id]) return; st().known[id] = true; rt.emitTyped('recipe_learned', id, { recipe: id }); }
     function stationsAt(who) {
       const a = rt.entity(who), out = new Set(); if (!a) return out;
       for (const s of config.stations) if (s.zone && a.zone === s.zone) out.add(s.id);
       for (const e of Object.values(rt.state.entities)) {
-        const id = typeof e.components.station === 'string' ? e.components.station : e.components.station?.id;
+        const id = e.components.station;
         if (id && e.space === a.space && dist(rt, a, e) <= config.stationRange) out.add(id);
       }
       return out;

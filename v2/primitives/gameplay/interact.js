@@ -2,7 +2,7 @@
 // `interact` component is an interactable:
 //   interact: { prompt, kind?: talk|pickup|open|sit|pull|read|harvest|loot|use, id?, range?, hold? (s),
 //               facing?: b, when?: pred, do?: fx, once?: b, uses?: i, cooldown?: s, regrow?: s,
-//               give?: [{item, count|[a,b]}], take?: [{item, count}], consume?: b, text?, dialogue?, lockedPrompt? }
+//               give?: [{item, count: [a,b]}], take?: [{item, count}], consume?: b, text?, dialogue?, lockedPrompt? }
 // The player's focus is the nearest enabled interactable in reach (and in
 // front, when facing is required); `interact` uses it. Every use emits
 // `interacted {who, target, kind, id}` (owners of other components react to it:
@@ -11,7 +11,7 @@
 // its archetype), so `{used: "chime"}` counts every chime.
 import { compare } from '../../kernel/logic.js';
 import { give, take, count, room } from './inventory.js';
-import { dist, facing, sub, center, isVec, norm, dot, runIf, roll, entityByRef, whoKey, checkItem } from './items-lib.js';
+import { dist, facing, sub, center, isVec, norm, dot, runIf, roll, RANGE, PICKUP, entityByRef, whoKey } from './items-lib.js';
 
 const KEY = 'gameplay.interact';
 export const KINDS = ['talk', 'pickup', 'open', 'sit', 'pull', 'read', 'harvest', 'loot', 'use'];
@@ -177,7 +177,21 @@ export default {
     // The participants an event names (role -> data field): who used something and what it used.
     loop: { verbs: ['interact'], progress: ['interacted', 'used', 'read'], involves: { interacted: { user: 'who', used: 'target' } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { interact: { type: 'object', fields: { prompt: { type: 'string' }, range: { type: 'number', min: 0 }, kind: { type: 'string', options: KINDS, effect: 'how it is used (default: from its other components)' }, id: { type: 'string', effect: 'interactable id (used:<id> events)' } }, effect: 'something the player can use' } },
+    components: { interact: { type: 'object', fields: {
+      prompt: { type: 'string', display: true, effect: 'what the HUD shows: Open, Talk, Pull...' },
+      lockedPrompt: { type: 'string', display: true, effect: 'what the HUD shows while it is locked (when fails or a gate holds it)' },
+      kind: { type: 'string', options: KINDS, effect: 'how it is used (default: from its other components)' },
+      id: { type: 'string', effect: 'interactable id (used:<id> events)' },
+      range: { type: 'number', min: 0, effect: 'reach (default the range param)' }, hold: { type: 'number', min: 0, unit: 's', effect: 'hold this long to use' },
+      facing: { type: 'boolean', effect: 'usable only from in front' }, when: { type: 'predicate', effect: 'usable only while it holds (self = it, actor = the user)' },
+      do: { type: 'effects', effect: 'effects when used' }, once: { type: 'boolean' }, uses: { type: 'integer', min: 0, effect: 'uses before it is spent' },
+      cooldown: { type: 'number', min: 0, unit: 's' }, regrow: { type: 'number', min: 0, unit: 's', effect: 'harvest: time before it can be used again' },
+      give: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: RANGE } }, effect: 'items the user gets' },
+      take: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1 } } }, effect: 'items using it costs (it refuses without them)' },
+      consume: { type: 'boolean', effect: 'using it removes it (default for pickups)' },
+      text: { type: 'string', display: true, effect: 'read: the text a person reads' },
+      dialogue: { type: 'ref', to: 'dialogue', effect: 'talk: the dialogue it starts' },
+    }, effect: 'something the player can use' }, pickup: PICKUP },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "interact", "min": 1, "placed": 2, "why": "interactables are entities with an interact component {prompt, range}, placed where the player can use them", "example": {"id": "old_lever", "kind": "prop", "components": {"interact": {"prompt": "Pull", "range": 1.5}}}},
@@ -207,21 +221,6 @@ export default {
       check: (e, path, errors) => { if (!e.id) errors.push({ code: 'effect_invalid', path, message: 'enable_interactable needs an id' }); },
       run: (e, rt) => { const d = (rt.store(KEY).disabled ??= {}); if (e.on === false) d[e.id] = true; else delete d[e.id]; },
     });
-  },
-  validate(config, doc, ctx) {
-    const errors = [];
-    (doc.content?.archetypes || []).forEach((a, i) => {
-      const c = a.components?.interact; if (!c) return;
-      const path = `content.archetypes[${i}].components.interact`;
-      if (typeof c !== 'object' || Array.isArray(c)) { errors.push({ code: 'interact_invalid', path, message: 'interact must be an object' }); return; }
-      if (c.kind !== undefined && !KINDS.includes(c.kind)) errors.push({ code: 'interact_invalid', path: `${path}.kind`, message: `kind '${c.kind}' is not one of ${KINDS.join('|')}` });
-      for (const k of ['range', 'hold', 'cooldown', 'regrow']) if (c[k] !== undefined && !(Number.isFinite(c[k]) && c[k] >= 0)) errors.push({ code: 'interact_invalid', path: `${path}.${k}`, message: `${k} must be a non-negative number` });
-      if (c.when) ctx.checkPredicate(c.when, `${path}.when`, errors);
-      (c.do || []).forEach((e, k) => ctx.checkEffect(e, `${path}.do[${k}]`, errors));
-      [...(c.give || []), ...(c.take || [])].forEach((g, k) => checkItem(doc, g.item, `${path}.items[${k}]`, errors));
-      if (a.components.pickup) checkItem(doc, a.components.pickup.item, `content.archetypes[${i}].components.pickup.item`, errors);
-    });
-    return errors;
   },
   /** Solver key: uses only where they are limited (once / uses), switches and seats; cooldowns as booleans, not frame numbers. */
   solverKey(rt) {
