@@ -3646,13 +3646,13 @@
      "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
     }
    },
-   {"id":"campfire","kind":"prop","components":{"model":"campfire","station":"campfire","interact":{"prompt":"Cook","range":2.4},"rest":true}},
+   {"id":"campfire","kind":"prop","components":{"model":"campfire","station":"campfire","interact":{"prompt":"Cook","range":2.4},"rest":{}}},
    {"id":"alchemy_table","kind":"prop","components":{"model":"alchemy_table","station":"alchemy_table","interact":{"prompt":"Brew","range":2.4}}},
    {"id":"anvil","kind":"prop","components":{"model":"anvil","station":"anvil","interact":{"prompt":"Forge","range":2.4}}},
    {
     "id": "meditation_shrine",
     "kind": "prop",
-    "components": {"model":"meditation_shrine","interact":{"prompt":"Meditate","range":2.6},"checkpoint":true,"rest":true}
+    "components": {"model":"meditation_shrine","interact":{"prompt":"Meditate","range":2.6},"checkpoint":true,"rest":{}}
    },
    {"id":"seal_stone","kind":"prop","components":{"model":"seal_stone","interact":{"prompt":"Study","range":3},"mechanism":"seal_stone"}},
    {
