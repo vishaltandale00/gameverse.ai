@@ -133,7 +133,9 @@ export default {
         if (isVec(at)) {
           if (api.groundAt && at.length >= 3) { const g = api.groundAt(at[0], at[2]); if (r.surface?.length && !r.surface.includes(g.material)) continue; if (r.snap ?? sampled) at = [at[0], g.y, at[2]]; }
           else if (r.surface?.length && !api.groundAt) return null;
-          if (api.getCell && (rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : api.getCell(at) != null)) continue;
+          // A cell the spawned archetype cannot stand in: the blocks service's solidity, else the space's own passability
+          // (cellRules: a floor block is passable, a door only some classes pass), else any cell is solid.
+          if (api.getCell && (rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : typeof api.passable === 'function' ? !api.passable(at, { archetype: r.archetype, components: {} }) : api.getCell(at) != null)) continue;
           if (r.despawnDist && p?.space === space && isVec(p.at) && api.distance && api.distance(p.at, at) > r.despawnDist) continue;
           if (!biomeOk(r, at, space)) continue;
         }
