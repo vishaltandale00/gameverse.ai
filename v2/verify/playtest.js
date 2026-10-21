@@ -12,7 +12,7 @@
 // replayed from a fresh world to prove it. The search is bounded by rounds and simulated frames, never wall time: the
 // same document and seed always give the same report.
 import { hold, holdInput, optionLabels, inputMacros, posOf } from './drive.js';
-import { objective, plotZones, PROGRESS_EVENTS, winMeasure, WIN_WEIGHT } from './objective.js';
+import { objective, plotZones, PROGRESS_EVENTS, winMeasure, WIN_WEIGHT, loopShown } from './objective.js';
 import { stepChecker } from './invariants.js';
 import { withTravel, takeOption, steerable } from './macros.js';
 import { controlledMaker, hostPreflight } from './controls.js';
@@ -137,8 +137,14 @@ export function explorerWorlds(doc, registry, logic, { seed, travel: wanted = tr
 
 /**
  * playtest(doc, registry, logic, opts) → report
- * opts: { seed, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline, win } (maxFrames and
+ * opts: { seed, maxFrames, maxRounds, idleSeconds, quantum, macros, limits, sampleSize, timeline, win, prove } (maxFrames and
  * maxRounds default to PLAYTEST_BUDGET; a wall-time budget is not an option: nothing here reads the clock)
+ * `prove` ({ loop: events, won?, progress? }): what the search is run to show, for a gate that reads it
+ * (verify-adapter.js viability): the loop (one of `loop`'s events fired from play more often than idling fires it:
+ * objective.js loopShown) and progress toward the win: a win, or the win quantity moved toward it beyond what idling
+ * moves it, by this play or by other playtest agents' (`won`: a bot won the game; `progress`: the furthest a bot's play
+ * moved the quantity). The search stops after the round in which both are shown (`stopped: 'proven'`), or at a win or its
+ * budget as without `prove`: what it played up to there is decided by the document and seed alone, so the report is.
  * Besides the verdict it returns `timeline` (progressTimeline of the winning path, else of the best-scoring
  * archived path; null when that path is empty), `verbsUsed` (verbs the search pressed, by count) and
  * `sample`: a few archive cells { key, frames, score, path, snap } spread over the search, for quality
@@ -205,8 +211,14 @@ export function playtest(doc, registry, logic, opts = {}) {
   /** The furthest play moved the win quantity toward the win. */
   let advanceHigh = wm ? 0 : null;
   const rt = start;
-  let win = null, rounds = 0, broke = false;
+  let win = null, rounds = 0, broke = false, proven = false;
   const losses = {};
+  // What the caller runs the search to show (opts.prove): shown once the loop's events fired beyond idling and a win
+  // (here or a bot's) or the win quantity moved beyond idling. Read after whole rounds, from the play alone.
+  const prove = opts.prove && Array.isArray(opts.prove.loop) && opts.prove.loop.length ? opts.prove : null;
+  const idleHigh = Number.isFinite(idleAdvance) ? idleAdvance : 0;
+  const others = Number.isFinite(prove?.progress) ? Number(prove.progress) : NaN;
+  const shown = () => loopShown(prove.loop, fired, idleCounts) && (prove.won === true || (wm !== null && Math.max(round(advanceHigh ?? 0), Number.isFinite(others) ? others : -Infinity) > idleHigh));
   // Options the game offers that no control a person has can take (a verb nothing issues, a macro with no actions):
   // never taken, reported once each (the game's defect: a choice offered that a person cannot make).
   const uncontrolled = new Map();
@@ -217,7 +229,7 @@ export function playtest(doc, registry, logic, opts = {}) {
     if (missing.length && !uncontrolled.has(label)) uncontrolled.set(label, missing);
     return !missing.length;
   });
-  while (!b.over() && !broke) {
+  while (!b.over() && !broke && !proven) {
     rounds++; b.state();
     const cells = [...archive.values()];
     let cell;
@@ -257,6 +269,7 @@ export function playtest(doc, registry, logic, opts = {}) {
       const sc = score(rt, carry), key = cellKeyOf(rt, sc, quantum), old = archive.get(key);
       if (!old || frames < old.frames) archive.set(key, { key, snap: rt.snapshot(), path: path.slice(), frames, visits: old?.visits || 0, score: sc, carry });
     }
+    if (prove && !broke && shown()) proven = true;
   }
 
   // 3. Determinism: the winning path must replay to a win. The same replay (without a win, a replay of the
@@ -272,7 +285,7 @@ export function playtest(doc, registry, logic, opts = {}) {
     const r = timeline?.rt ?? replayPlay(make, seed, win.path, { registry });
     replayed = r.state.status === 'won';
     if (!replayed) problems.push(problem('nondeterministic', '$', 'the winning input path did not reproduce the win on replay', { repro: win.path, hint: 'simulation must depend only on rt.state, inputs and rt.random()' }));
-  } else if (!problems.some(p => p.severity === 'error') && (doc.plot?.endings || []).length) {
+  } else if (!proven && !problems.some(p => p.severity === 'error') && (doc.plot?.endings || []).length) {
     problems.push(problem('goal_not_reached', 'plot.endings', `the playtest did not reach an ending within its budget (${archive.size} cells, ${rounds} rounds, stopped by ${b.hit || 'limit'})`, { severity: 'warning', hint: 'budget-limited: not a proof of a softlock' }));
   }
   // A warning, not a block: the option is a hint (ARCHITECTURE §6.3), and the person may still play what it means through
@@ -295,6 +308,8 @@ export function playtest(doc, registry, logic, opts = {}) {
     win: win ? { frames: win.frames, seconds: +(win.frames * DT).toFixed(2), ending: win.ending, path: win.path.map(r => r.o ?? `${r.label}×${r.n}`), replayed } : null,
     idle: { status: idle.state.status, seconds: +idle.state.time.toFixed(2), score: idleScore, counts: idleCounts },
     explored: archive.size, rounds, framesSimulated: b.usedSteps, bestScore: best.score, travel: travel ? 'steer' : null,
+    // Why the search ended: a win, what `prove` asked was shown, a problem it found, or its budget.
+    stopped: win ? 'won' : proven ? 'proven' : broke ? 'problem' : 'budget',
     losses, eventsFired: fired, verbsUsed: verbs, timeline, sample, exhaustive: false, budget: b.report(), problems,
     // How far idling and play moved the win quantity toward the win (null: the document declares none).
     progress: wm ? { quantity: wm.label, target: wm.target, idle: idleAdvance, high: round(advanceHigh ?? 0) } : null,
