@@ -98,3 +98,14 @@ test('v2/games motion instances (if any) preflight without param errors', () => 
     assert.deepEqual(errs.filter(e => e.code !== 'capability_missing'), [], f);
   }
 });
+
+test('hover with any down vector: a mover entering from the top of a y-up screen (down [0,-1]) stops at hoverAt below the top edge', () => {
+  for (const down of [[0, 1], [0, -1]]) {
+    const top = down[1] > 0 ? 0 : 400, { rt } = compile(doc({ bounds: B, down }, [mover('h', { kind: 'hover', speed: 60, hoverAt: 80 })]), { primitives: P });
+    const h = rt.spawn('h', { at: [150, top, 0] });
+    run(rt, 240);
+    const depth = Math.abs(h.at[1] - top);
+    assert.ok(depth > 70 && depth < 95, `down ${down}: hovering ${depth} below the top edge (${h.at})`);
+    assert.equal(rt.store('gameplay.ai.motion').agents[h.id].sub, 1, `down ${down}: in the hover sweep`);
+  }
+});

@@ -26,7 +26,7 @@ export function tuneTarget(doc, path, reg = registry) {
   return spec ? { use, param, spec, instances: instancesIn(doc).filter(i => i.use === use) } : null;
 }
 const checked = t => { const r = preflight(structuredClone(t.doc), registry, logic); assert.ok(r.ok, `${t.id}: ${JSON.stringify(r.errors?.slice(0, 5))}`); return r; };
-const BOT_OPTS = { 'danger-field': { maxFrames: 15000 }, race: {}, crawl: {} };
+const BOT_OPTS = { 'danger-field': { maxFrames: 15000 }, race: {}, crawl: {}, dodge: { seconds: 60, every: 8 } };
 
 test('templates: unique ids, a one-line concept, a document and declared tune params', () => {
   assert.ok(TEMPLATES.length >= 2);

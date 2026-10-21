@@ -124,6 +124,15 @@ const DOCS = {
     { items: [{ id: 'hoe', name: 'Hoe', kind: 'tool', tool: { kind: 'hoe', tier: 0 } }, { id: 'bean_seed', name: 'Bean seed', kind: 'material' }, { id: 'bean', name: 'Bean', kind: 'food' }, { id: 'leek_seed', name: 'Leek seed', kind: 'material' }, { id: 'leek', name: 'Leek', kind: 'food' }],
       blocks: [{ id: 'dirt', name: 'Dirt', solid: false }, { id: 'farmland', name: 'Farmland', solid: false }], archetypes: [{ id: 'hero', components: {} }] },
     { plot: { endings: [{ id: 'harvest', title: 'Harvest', when: { count: 'harvested', gte: 3 }, outcome: 'won' }] }, player: { archetype: 'hero', at: [0, 0] } }),
+  waves: () => base('shooter', [{ id: 'sky', use: 'engine.space.arena2d', with: { size: [200, 300], edges: { left: 'open', right: 'open', bottom: 'open', top: 'open' }, cull: ['projectile'], solids: [[0, 140, 12, 160]] } }],
+    [{ use: 'gameplay.move.ship', with: { mode: 'eightway', speed: 190, heading: 90, margin: 10 } }, { use: 'gameplay.combat.health' },
+      { use: 'gameplay.combat.projectile', with: { weapons: [{ id: 'blaster', preset: 'shot' }], playerWeapon: 'blaster' } },
+      { use: 'gameplay.ai.motion', with: { down: [0, -1], bounds: { min: [0, 0], max: [200, 300] }, edges: 'exit', speed: 40 } },
+      { use: 'gameplay.waves', with: { mustClear: true, stagger: 0.2, lanes: [{ id: 'top', at: [100, 280] }],
+        waves: [{ id: 'w1', spawn: [{ archetype: 'drone', count: 3, lane: 'top', pattern: 'line', spacing: 40 }] }, { id: 'w2', delay: 0.5, spawn: [{ archetype: 'drone', count: 2, lane: 'top', pattern: 'line', spacing: 60 }] }], onComplete: won } }],
+    { archetypes: [{ id: 'ship', components: { body: { size: [14, 14] }, health: { max: 3 } } },
+      { id: 'drone', kind: 'enemy', components: { body: { size: [16, 16] }, health: { max: 2 }, touch: { damage: 1 }, motion: { kind: 'straight', speed: 40 } } }] },
+    { player: { archetype: 'ship', at: [100, 30] } }),
   levels: () => grid('levels', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } },
     { use: 'gameplay.stage.sequence', with: { introSec: 0, clearSec: 0.1, stages: [{ id: 'l1', goal: { kind: 'lines', target: 1 } }, { id: 'l2', goal: { kind: 'lines', target: 1 } }] } }]),
 };
@@ -143,7 +152,7 @@ const docFor = (loop, interaction) => PLAYED_AS[loop]?.[interaction] ?? DOCS[loo
 const OPTS = {
   'turn-board': { seeds: [1] }, race: {}, striker: {}, versus: { seeds: [1, 2] }, balance: { seeds: [1, 2, 3] },
   placement: { seeds: [1], depth: 1, pieces: 60 }, greedy: { seeds: [1] }, expectimax: { seeds: [1], depth: 1, samples: 2 }, 'danger-field': {}, story: {}, crawl: {},
-  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {},
+  stages: { placement: { seeds: [1], depth: 1, pieces: 60 } }, farm: {}, dodge: { every: 8 },
 };
 const runsOf = r => r.metrics.runs ?? r.metrics.matches;
 const strip = runs => runs.map(({ budget, ...x }) => x);
@@ -221,6 +230,12 @@ test('mode versus: the scripted fighter wins the rounds match', () => {
 test('mode creature-battle: the greedy battler wins the trainer battle the story starts', () => {
   const { a } = playMode('creature-battle');
   assert.equal(a.metrics.rate, 1, JSON.stringify(a.metrics.runs));
+});
+
+test('mode waves: the rollout dodger shoots down every wave through the controls to the win', () => {
+  const { runs } = playMode('waves');
+  assert.equal(runs[0].status, 'won');
+  assert.equal(runs[0].fire, 'fire', 'it found the fire verb');
 });
 
 for (const loop of ['falling-blocks', 'match-board', 'slide-merge', 'collect', 'levels', 'crawl']) test(`mode ${loop}: its bot reaches the win`, () => { playMode(loop); });

@@ -23,6 +23,10 @@ export default {
   id: ID,
   card: {
     loop: { verbs: [], progress: ['wave_clear', 'waves_complete'], win: { param: 'onComplete', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } } },
+    // Waves mode (shoot-'em-ups, arena survival): the player outlasts and destroys every wave the script sends, a boss
+    // wave last; clearing them all wins. Defeat comes from the player's health and lives (gameplay.death), not from here.
+    // Its bot dodges the enemy fire by rollouts while firing (ported from the shmup kit's dodging bots).
+    mode: { loop: 'waves', interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.arena2d', 'engine.space.physics2d', ['position', 'overlap']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'onComplete', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } }, lose: { param: null }, bot: 'dodge' },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "waves", "min": 3, "why": "scripted waves list which archetypes arrive, how many and when", "example": [{"id": "w1", "spawn": [{"archetype": "grunt", "count": 4}]}]},

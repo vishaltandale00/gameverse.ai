@@ -7,6 +7,9 @@ import mazeChase from './maze-chase.js';
 import race from './race.js';
 import dungeon from './dungeon.js';
 import farm from './farm.js';
+import fighting from './fighting.js';
+import ballSport from './ball-sport.js';
+import shmup from './shmup.js';
 
-export const TEMPLATES = Object.freeze([mazeChase, race, dungeon, farm]);
+export const TEMPLATES = Object.freeze([mazeChase, race, dungeon, farm, fighting, ballSport, shmup]);
 export const templateById = id => TEMPLATES.find(t => t.id === id) ?? null;
