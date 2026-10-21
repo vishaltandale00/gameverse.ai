@@ -5,7 +5,8 @@
 // and structures, not primitive ids), so a mechanic no primitive covers shows
 // up as a gap instead of being silently bent into something that exists.
 import { parseReply } from './writer.js';
-import { coreSchema, normalizeCore, undecidedCore, isAvatar } from './play-spec.js';
+import { coreSchema, normalizeCore, normalizeMashup, undecidedCore, isAvatar } from './play-spec.js';
+import { fieldForm } from './outline-form.js';
 import { obj, list, objects, isStr, messageOf } from '../kernel/guards.js';
 
 /** @typedef {import('./types.js').Writer} Writer */
@@ -49,7 +50,7 @@ export const DECOMPOSITION_SCHEMA = {
     references: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['name', 'kind', 'keeps'], properties: {
       name: str, kind: { type: 'string', enum: ['game', 'genre', 'setting', 'character', 'other'] }, keeps: { type: 'array', items: str } } } },
     mechanics: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'verb', 'description', 'from', 'importance'], properties: {
-      id: str, verb: str, description: str, from: str, importance: { type: 'string', enum: ['core', 'supporting', 'flavor'] } } } },
+      id: str, verb: str, description: str, from: { type: 'string', description: 'the reference (references[].name) this mechanic comes from' }, importance: { type: 'string', enum: ['core', 'supporting', 'flavor'] } } } },
     spaces: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['role', 'kind', 'description'], properties: {
       role: str, kind: { type: 'string', enum: SPACE_KINDS }, description: str } } },
     views: { type: 'array', items: { type: 'string', enum: VIEWS } },
@@ -60,7 +61,7 @@ export const DECOMPOSITION_SCHEMA = {
 
 const SYSTEM = `You decompose a player's game idea into what it is made of, before any game is built.
 - references: every game, genre, setting or character the idea names or clearly implies. For each, "keeps" lists what the idea takes from it (its core loop and defining mechanics, or only its setting/characters/look).
-- mechanics: the concrete mechanics the game needs, as short verb-led phrases that make sense in any game ("real-time melee combat with stamina and dodge rolls", "catch wild creatures and keep a party", "turn-based battles between party members", "mine and place blocks", "drive vehicles", "talk to characters with dialogue choices"). A mashup keeps the defining mechanics of EVERY game it references, unless the idea says otherwise. Mark the core loop "core". Don't invent mechanics the idea doesn't need. id is a lowercase slug.
+- mechanics: the concrete mechanics the game needs, as short verb-led phrases that make sense in any game ("real-time melee combat with stamina and dodge rolls", "catch wild creatures and keep a party", "turn-based battles between party members", "mine and place blocks", "drive vehicles", "talk to characters with dialogue choices"). A mashup keeps the defining mechanics of EVERY game it references, unless the idea says otherwise, and each joined idea's own loop (how it is played out and won: a creature battle, a race, checkmate) is a mechanic of its own. Mark the core loop of every joined idea "core". "from" names the reference the mechanic comes from. Don't invent mechanics the idea doesn't need. id is a lowercase slug.
 - spaces: the kinds of space the game is played in (an overworld and a separate battle screen are two spaces). kind: continuous-3d, continuous-2d, tiles-side (side view), tiles-topdown, board (discrete turn-based grid), locations (rooms/places joined by exits), none (cards, menus, dialogue).
 - views: camera/presentation views (1p 3p td side iso board ui text). The FIRST view is the game's main camera: keep the genre's own (a platformer is side, a top-down farm is td, a 3D adventure is 3p, a board or puzzle grid is board, a card game is ui).
 - movement: how the player's avatar moves most of the time: ground (walking, running, jumping, driving on foot-level terrain), air (flying is the core loop), water (swimming/sailing is the core loop), track (lanes or a fixed course), none (no avatar: cards, boards, falling pieces, menus).
@@ -68,7 +69,7 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
 
-const CORE = `- core: the play spec, in the idea's own terms. The core loop itself is the "core" mechanics above (a mashup keeps the core mechanics of BOTH ideas); here say only how it is played. interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost (checkmate, finish first, clear every line, catch the culprit, a full harvest). narrative: true only when the idea has a story told in acts. mashup: for a mashup, how each joined idea's core mechanics (by id) relate to the rest: nested (a loop entered from the other, e.g. a creature battle deciding a chess capture), union (both loops in one space), skin (only its content and cast); [] for a single idea.`;
+const CORE = `- core: the play spec, in the idea's own terms. The core loop itself is the "core" mechanics above (a mashup keeps the core mechanics of BOTH ideas); here say only how it is played. interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost (checkmate, finish first, clear every line, catch the culprit, a full harvest). narrative: true only when the idea has a story told in acts. mashup: an idea that combines two or more concepts (two games, a game and a genre) whose mechanics each bring their own loop IS a mashup: give one entry per joined idea, naming its mechanic ids (exactly as in mechanics) and how they relate to the primary idea: nested (its loop is entered from the other, e.g. a creature battle deciding a chess capture), union (both loops run in one space), skin (only its content and cast fill the other's slots, e.g. Pokémon as the chess pieces). [] only for a single idea.`;
 
 /** The decomposition schema; with a registry it includes the play spec (`core`). @param {RegistryLike | null} [registry] */
 export function decompositionSchema(registry = null) {
@@ -139,12 +140,51 @@ export function normalize(input, prompt = '', registry = null) {
   // The play spec: the model's (narrowed); without one (the offline mode) the collection decides what it would have said.
   if (registry) {
     out.core = normalizeCore(d.core) || undecidedCore(out);
-    // Mashup relations name mechanics by the ids the model wrote: the same slugs as the mechanics.
-    out.core.mashup = out.core.mashup.map(m => ({ ...m, mechanics: m.mechanics.map(slug).filter(id => mechanics.some(x => x.id === id)) })).filter(m => m.mechanics.length);
+    out.core.mashup = linkMashup(out.core.mashup, mechanics);
     // No avatar, no avatar movement: the medium follows the interaction (an undecided one decides nothing here).
     if (out.core.interaction && !isAvatar(out.core.interaction)) out.movement = 'none';
   }
   return out;
+}
+
+/**
+ * Mashup relations name mechanics by the ids the model wrote: the same slugs as the mechanics; entries naming none are dropped.
+ * @param {import('./play-spec.js').Mashup[]} mashup @param {Array<{ id: string }>} mechanics @returns {import('./play-spec.js').Mashup[]}
+ */
+export const linkMashup = (mashup, mechanics) => mashup.map(m => ({ ...m, mechanics: m.mechanics.map(slug).filter(id => mechanics.some(x => x.id === id)) })).filter(m => m.mechanics.length);
+
+/**
+ * Field-level repair of the play spec's mashup (outline-form fieldForm): when the post-check (play-spec.js
+ * mashupProblem, run once mechanics are mapped) finds joined ideas whose loops each declare their own win and no
+ * relation links them, only core.mashup goes back to the model, with the check's finding. `recheck` judges each answer
+ * (null = complete). Up to `attempts` calls; an answer that still fails is never completed by a guess: the spec fails
+ * (422 play_spec_incomplete) with what each attempt reported.
+ * @param {{ writer: Writer, decomposition: Decomposition, registry: RegistryLike, problem: { message: string }, recheck: (mashup: import('./play-spec.js').Mashup[]) => { message: string } | null, attempts?: number }} options
+ * @returns {Promise<{ mashup: import('./play-spec.js').Mashup[], attempts: number, model: string, ms: number }>}
+ */
+export async function askMashup({ writer, decomposition, registry, problem, recheck, attempts = 2 }) {
+  const started = performance.now();
+  const form = fieldForm({ name: 'decomposition', schema: decompositionSchema(registry) }, ['core.mashup']);
+  const current = decomposition.core?.mashup || [];
+  const facts = `Idea: ${decomposition.title}. ${decomposition.premise}\nReferences: ${decomposition.references.map(r => `${r.name} (${r.kind}; keeps ${r.keeps.join(', ') || 'nothing named'})`).join('; ') || 'none'}\nMechanics (id [from, importance]: description):\n${decomposition.mechanics.map(m => `- ${m.id} [${m.from || '?'}, ${m.importance}]: ${m.description}`).join('\n')}\nPlay spec: ${JSON.stringify({ ...decomposition.core, mashup: undefined })}`;
+  /** @type {string[]} */
+  const failed = [];
+  let finding = problem.message;
+  let last = current;
+  for (let i = 0; i < Math.max(1, attempts); i++) {
+    try {
+      const user = `${facts}\n\nThe decomposition is complete except core.mashup, which failed a check: ${finding}\nFix ONLY this field. Current value: ${JSON.stringify(last)}`;
+      const reply = await writer.complete({ system: `${SYSTEM}\n${CORE}`, user, schema: form.schema });
+      const filled = form.apply({ core: { mashup: current } }, parseReply(reply.text));
+      const mashup = linkMashup(normalizeMashup(obj(filled.core).mashup), decomposition.mechanics);
+      const still = recheck(mashup);
+      last = mashup;
+      if (!still) return { mashup, attempts: i + 1, model: reply.model, ms: Math.round(performance.now() - started) };
+      finding = still.message;
+      failed.push(still.message.slice(0, 200));
+    } catch (error) { failed.push(String(messageOf(error) || error).slice(0, 160)); }
+  }
+  throw Object.assign(Error(`The play spec is incomplete: core.mashup was asked again ${failed.length} time(s) and still fails: ${failed.join('; ')}`), { status: 422, code: 'play_spec_incomplete', attempts: failed });
 }
 
 /** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */

@@ -5,21 +5,26 @@
 // primitive that declares the missing win), the outline repairs the failing fields again, or the gap layer writes the
 // missing primitive. Then everything is verified again. The attempts are bounded by the pipeline config; when they
 // are exhausted the build fails with what it tried and what is still missing.
-import { rankCandidates, relevance } from './select.js';
+import { relevance, declaredFit, sharesVerbs, servesInteraction } from './select.js';
 import { isSpace, isGenerator, isGraphics, requirementsOf, satisfying } from './catalog.js';
-import { composeLoop, winProviders } from './loop.js';
+import { composeLoop, winProviders, cardLoop } from './loop.js';
+import { checkComposition } from './compose-check.js';
 import { isObj, list, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('./select.js').Selection} Selection */
 /** @typedef {import('./select.js').Gap} Gap */
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
+/** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
 /** A problem as stages report it. @typedef {{ code?: unknown, path?: unknown, message?: unknown, primitive?: unknown, hint?: unknown }} StageProblem */
 /**
  * What a failure is about. kind: 'primitive' (a chosen primitive cannot work here), 'mechanic' (nothing serves a
  * mechanic), 'win' (the collection cannot be won), 'loop' (the core loop does not happen in play), 'fields' (content
  * and params only the model can fix).
- * @typedef {{ kind: 'primitive' | 'mechanic' | 'win' | 'loop' | 'fields', mechanic?: string, primitive?: string, importance?: string, codes: string[], message: string }} Diagnosis
+ * `signature` (with `adapter`, compose-check's adapter card, when an adapter would fix it) is what re-planning found the
+ * catalogue lacks: the gap layer's request.
+ * @typedef {{ kind: 'primitive' | 'mechanic' | 'win' | 'loop' | 'fields', mechanic?: string, primitive?: string, importance?: string, codes: string[], message: string, signature?: string, adapter?: AdapterSpec }} Diagnosis
  */
 /** One re-planning decision. @typedef {{ action: 'replace' | 'add' | 'repair' | 'write', mechanic?: string, primitive?: string, by?: string, why: string }} Action */
 
@@ -71,11 +76,33 @@ export function diagnose(problems, { selection, registry, doc = null }) {
   return [...out.values()];
 }
 
-/** Does any chosen space host a primitive (its required capabilities)? @param {RegistryLike} registry @param {Selection} selection @param {string} id */
-const hostable = (registry, selection, id) => {
-  const need = requirementsOf(registry, id).capabilities;
-  return (selection.spaces || []).some(s => need.every(c => (s.caps || []).includes(c)));
-};
+/** @param {{ check: string, code: string, unit: string, space?: string }} f */
+const failureKey = f => `${f.check}:${f.code}:${f.unit}:${f.space ?? ''}`;
+
+/**
+ * The static composition check of a candidate against the current collection (compose-check, resolving registered
+ * providers and adapters): the candidate composes when it adds no failure and no type hole of its own. When everything
+ * it adds is adaptable, `adapter` is the adapter card that would project it (adapterSignature).
+ * @param {RegistryLike} registry @param {Selection} sel @param {string[]} systems the collection without the candidate @param {string | null} id
+ * the candidate (null: the collection alone, the baseline) @param {CompositionResult | null} [before] the baseline, when already checked
+ * @returns {{ ok: boolean, via: boolean, why: string, adapter: AdapterSpec | null, result: CompositionResult }}
+ */
+function composes(registry, sel, systems, id, before = null) {
+  const of = (/** @type {string[]} */ ids) => checkComposition({ spaces: sel.spaces, systems: ids, bind: sel.bind, ...(sel.adapters ? { adapters: sel.adapters } : {}) }, registry, { resolve: true });
+  before ??= of(systems);
+  const after = id ? of([...systems, id]) : before;
+  const had = new Set(before.failures.map(failureKey));
+  const fresh = after.failures.filter(f => !had.has(failureKey(f)));
+  const holes = after.holes.filter(h => !before.holes.some(b => b.card === h.card && b.code === h.code && b.field === h.field));
+  if (!fresh.length && !holes.length) return { ok: true, via: after.adapters.length > before.adapters.length, why: after.verdict, adapter: null, result: after };
+  return { ok: false, via: false, why: (fresh[0]?.message || holes[0]?.message || after.reason).slice(0, 200), adapter: fresh.length && !holes.length && fresh.every(f => f.adaptable) ? after.signature : null, result: after };
+}
+
+/**
+ * The primitive signature the gap layer writes when no catalogue primitive fits a mechanic: what its loop must declare.
+ * @param {{ id: string, description: string }} m @param {Selection} sel @param {string | null} interaction @param {string[]} verbs what the failing primitive did
+ */
+const primitiveSignature = (m, sel, interaction, verbs) => `${m.id}: a primitive whose loop (card.loop) ${interaction ? `is played as ${interaction}, ` : ''}${verbs.length ? `does what ${verbs.join('/')} did, ` : ''}with verbs and progress events for "${m.description}", on ${(sel.spaces || []).map(s => `${s.use} (${(s.caps || []).join(', ')})`).join(', ') || 'the chosen space'}`.slice(0, 400);
 
 /**
  * Re-plan the collection for a diagnosis: another catalogue primitive for a failing primitive's mechanic, an
@@ -98,11 +125,53 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
   const failed = triedFor('failed');
   /** Bring in what a primitive requires (closure), as selection does. @param {string} id */
   const require = id => { for (const r of requirementsOf(registry, id).primitives) { if (sel.systems.some(x => x === r || x.startsWith(r + '.'))) continue; const s = satisfying(registry, r); if (s) { sel.systems.push(s); require(s); } } };
-  /** The next untried catalogue primitive for a mechanic that the chosen spaces host. @param {{ id: string, verb: string, description: string }} m */
-  const next = m => {
+  const interaction = decomposition.core?.interaction || null;
+  const joined = (/** @type {string} */ id) => (decomposition.core?.mashup || []).some(x => x.mechanics.includes(id));
+  /**
+   * The next untried catalogue primitive for a mechanic: ranked by its declarations (declaredFit: loop verbs and
+   * progress fitting the mechanic and what the failing primitive did, the play spec's interaction, how participants
+   * take part), natively hosted before adapted, and only one that passes the static composition check against the
+   * current space and collection. When none does, `signature` (and `adapter`, when an adapter would make the best one
+   * compose) is the gap layer's request.
+   * @param {{ id: string, verb: string, description: string }} m @param {string | null} [old] the failing primitive
+   * @returns {{ id: string | null, signature: string, adapter?: AdapterSpec }}
+   */
+  const next = (m, old = null) => {
     const seen = triedFor(m.id);
-    const pool = rankCandidates(m, cards, 12).filter(c => !seen.has(c.id) && !failed.has(c.id) && !sel.systems.includes(c.id) && hostable(registry, sel, c.id));
-    return pool[0]?.id || null;
+    const verbs = old ? cardLoop(registry.get(old)?.card)?.verbs || [] : [];
+    // A primitive that failed because it does not serve how the idea is played (avatar steps for pieces moved in turns)
+    // is replaced only by one whose loop is declared for that interaction.
+    const strict = Boolean(old && interaction && !servesInteraction(registry.get(old)?.card, interaction));
+    const pool = cards.filter(c => !seen.has(c.id) && !failed.has(c.id) && !sel.systems.includes(c.id) && (!strict || cardLoop(c)?.interaction === interaction))
+      .map(c => ({ id: c.id, score: declaredFit(m, c, { interaction, joined: joined(m.id), verbs }) }))
+      .filter(c => c.score !== null).sort((a, b) => Number(b.score) - Number(a.score) || a.id.localeCompare(b.id)).slice(0, 8);
+    const rest = sel.systems.filter(x => x !== old);
+    const baseline = pool.length ? composes(registry, sel, rest, null).result : null;
+    /** @type {AdapterSpec | undefined} */
+    let adapter;
+    /** @type {string | null} */
+    let via = null;
+    for (const c of pool) {
+      const r = composes(registry, sel, rest, c.id, baseline);
+      if (r.ok && !r.via) return { id: c.id, signature: '' };
+      if (r.ok) via ??= c.id;
+      else if (!adapter && r.adapter) adapter = r.adapter;
+    }
+    if (via) return { id: via, signature: '' };
+    return { id: null, signature: adapter ? `adapter ${adapter.id}: ${adapter.card.adapts.projection}` : primitiveSignature(m, sel, interaction, verbs), ...(adapter ? { adapter } : {}) };
+  };
+  /**
+   * A primitive already in the mechanic's collection that does what the failing one did, played the play spec's way
+   * (its loop declared for the interaction, sharing the failing primitive's verbs): piece movement stays with the turns
+   * loop when avatar steps fail. @param {{ id: string, verb: string, description: string, primitives?: string[] }} m @param {string} old
+   */
+  const served = (m, old) => {
+    const verbs = cardLoop(registry.get(old)?.card)?.verbs || [];
+    if (!interaction || !verbs.length) return null;
+    return (m.primitives || []).filter(id => id !== old && !failed.has(id)).find(id => {
+      const card = { id, ...registry.get(id)?.card };
+      return cardLoop(card)?.interaction === interaction && sharesVerbs(card, verbs) && declaredFit(m, card, { interaction, joined: joined(m.id), verbs }) !== null;
+    }) || null;
   };
   const coreMechanics = (sel.mechanics || []).filter(m => m.importance === 'core');
   // Primitives first: a replacement may itself declare the missing win.
@@ -127,7 +196,7 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
       let done = false;
       for (const m of coreMechanics) {
         for (const id of m.primitives || []) triedFor(m.id).add(id);
-        const c = next(m);
+        const c = next(m).id;
         if (!c) continue;
         triedFor(m.id).add(c); sel.systems.push(c); require(c); m.primitives = [...(m.primitives || []), c];
         actions.push({ action: 'add', mechanic: m.id, primitive: c, why: `the core loop did not happen in play (${d.message.slice(0, 160)}); ${c} adds to "${m.description}"` });
@@ -138,10 +207,22 @@ export function replan(selection, diagnoses, { registry, decomposition, tried })
     }
     const m = (sel.mechanics || []).find(x => x.id === d.mechanic) || (d.primitive ? (sel.mechanics || []).find(x => (x.primitives || []).includes(/** @type {string} */ (d.primitive))) : undefined);
     if (!m) { unresolved.push(d); continue; }
+    // The mechanic already has a primitive that does what the failing one did, played the play spec's way: it takes its place.
+    const keep = d.kind === 'primitive' && d.primitive ? served(m, d.primitive) : null;
+    if (keep && d.primitive) {
+      const old = d.primitive;
+      sel.systems = sel.systems.filter(x => x !== old || (sel.mechanics || []).some(o => o !== m && (o.primitives || []).includes(old)));
+      m.primitives = (m.primitives || []).filter(x => x !== old);
+      triedFor(m.id).add(old);
+      actions.push({ action: 'replace', mechanic: m.id, primitive: old, by: keep, why: `${keep} already serves "${m.description}" as ${interaction} (card.loop verbs ${(cardLoop(registry.get(keep)?.card)?.verbs || []).join(', ')}): ${d.message}`.slice(0, 240) });
+      sel.gaps = (sel.gaps || []).filter(g => !(g.mechanic === m.id && (g.importance === 'core' || g.primitive === old)));
+      continue;
+    }
     for (const id of m.primitives || []) triedFor(m.id).add(id);
     if (d.primitive) triedFor(m.id).add(d.primitive);
-    const c = next(m);
-    if (!c) { unresolved.push({ ...d, mechanic: m.id }); continue; }
+    const found = next(m, d.primitive || null);
+    const c = found.id;
+    if (!c) { unresolved.push({ ...d, mechanic: m.id, signature: found.signature, ...(found.adapter ? { adapter: found.adapter } : {}) }); continue; }
     triedFor(m.id).add(c);
     if (d.kind === 'primitive' && d.primitive) {
       // Another primitive in its place, for this mechanic (what required the failing one keeps its own requirement).
@@ -169,9 +250,11 @@ export function gapRequest(d, selection, decomposition) {
   const m = (selection.mechanics || []).find(x => x.id === d.mechanic);
   const spaces = (selection.spaces || []).map(s => s.use).join(', ');
   const what = d.kind === 'win' ? `a primitive that declares how this game is won (card.loop.win) for: ${decomposition.core?.win || decomposition.premise}`
+    : d.adapter ? `an adapter for "${m ? m.description : d.message}": ${d.signature}`
     : `${m ? m.description : d.message}${d.primitive ? ` (instead of ${d.primitive}: ${d.message})` : ''}`;
-  return { request: `${what}. It must work on ${spaces || 'the chosen space'} and declare its loop (card.loop: verbs, progress events${d.kind === 'win' ? ', win' : ''}).`.slice(0, 500),
-    gap: { mechanic: d.mechanic || d.kind, description: what, importance: 'core', kind: d.kind === 'win' ? 'win' : 'no_primitive', why: d.message } };
+  const played = decomposition.core?.interaction ? `, be played as ${decomposition.core.interaction}` : '';
+  return { request: `${what}. It must work on ${spaces || 'the chosen space'}${played} and declare its loop (card.loop: verbs, progress events${d.kind === 'win' ? ', win' : ''}).${d.signature && !d.adapter ? ` Signature: ${d.signature}` : ''}`.slice(0, 700),
+    gap: { mechanic: d.mechanic || d.kind, description: what, importance: 'core', kind: d.kind === 'win' ? 'win' : d.adapter ? 'adapter' : 'no_primitive', why: d.message, ...(d.signature ? { signature: d.signature } : {}), ...(d.adapter ? { adapter: d.adapter } : {}) } };
 }
 
 /**
