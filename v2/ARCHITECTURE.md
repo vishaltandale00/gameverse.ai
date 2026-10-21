@@ -35,9 +35,10 @@ A cohesive engine, not a pile of patches. One architecture spans everything:
 2. **General, never special-cased.**
    - A game is a **collection of primitives**. There is no closed list of modes or genres that ideas are fitted
      into, no genre engine, and no per-game patch.
-   - No single default shape stamped onto every idea. The adventure template (default hero, named zones, plot,
-     a detail pass adding characters and pickups) applied to chess was the failure mode; none of it may exist
-     unless the idea's collection declares it.
+   - **Templates are the fast path, and they are welcome**: declared, pre-verified compositions of primitives
+     (a race, a board game with sides, a maze chase, a creature battle, a farm…) chosen by the idea and composed
+     for mashups. What is forbidden is ONE default shape stamped onto every idea: the adventure template (default
+     hero, named zones, plot, a detail pass adding characters and pickups) applied to chess was the failure mode.
    - No word lists, regexes or text-overlap scores over the idea deciding structure. Structure comes from card
      declarations; judgement comes from the model, as small checked choices.
 3. **Mashups are first-class.**
@@ -65,9 +66,10 @@ A cohesive engine, not a pile of patches. One architecture spans everything:
    - It doesn't have to be finished in N seconds, and intros and cutscenes are fine.
    - A crash, a world you can't move in, pieces you can't move, a missing opponent or an empty board blocks
      publishing, with the reason.
-6. **Fast.**
-   - Deterministic code builds structure instantly. The model writes only judgement: small enum choices,
-     theme, names, content, tuning.
+6. **Fast. A mashup of known concepts generates in seconds, faster than prompting a large model directly.**
+   - Templates give the structure instantly; adapters compose templates for mashups; the model writes only
+     judgement: which templates and relations fit the idea (a few small choices), theme, names, content, tuning.
+   - Step-by-step selection is only for the part of an idea no template covers.
    - Model calls are small, parallel where independent, and repaired field by field.
    - A retry redoes only what changed: answers for unchanged primitives and fields are kept.
 7. **Clean runtime.**
@@ -143,10 +145,17 @@ Every step is small, and its output is checked before the next step starts. Noth
 
 ```
 idea
- → decomposition, step by step (model, small strict forms, checked after each step):
-     concepts (each game concept brings a loop) → mechanics per concept → play spec (core loop mechanic,
-     interaction, opponent, win/lose sentences, theme, narrative, mashup relations across concepts) → the rest
- → selection, iterative (build.js): the space first, then one mechanic at a time from the core loop outward.
+ → concepts and play spec (model, small strict forms): the concepts the idea names, interaction, opponent,
+     win/lose sentences, theme, narrative, and how the concepts relate (nested | union | skin)
+ → templates (the fast path): each concept is matched to a declared template, a pre-verified composition of
+     primitives with its space, world, participants, controls, win/lose and content contracts. One small enum
+     pick per concept, over templates that fit the play spec. Templates for a mashup are composed through the
+     declared adapter for their relation (a race skinned with shopping carts is the race template plus a skin;
+     chess × Pokémon is the board template with the creature-battle template nested on capture). A template is
+     verified once in the test suite (it builds, preflights and its bot wins through its controls), so a
+     template-built game needs no structure checks beyond composing it.
+ → selection, iterative (build.js), ONLY for what no template covers: the space first, then one mechanic at a
+     time from the core loop outward.
      Each step offers only options code has proven valid: cards or minimal bundles (a primitive with its
      required companions or adapter) that pass the composition check, the card-derived schemas and preflight
      on the partial document, for the mechanic's interaction context. The model picks one or says none fits.

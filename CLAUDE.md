@@ -21,7 +21,10 @@ fails saying exactly what is missing. Our own mismatches between stages must nev
 - **Cards are the single source of truth.** Forms, repair, preflight and the composition check all derive from
   card declarations. If a validator enforces something the card doesn't declare, declare it on the card from
   the same constant; never paper over it in a form, a prompt or a retry.
-- **No workarounds.** No fallbacks, no defaults standing in for decisions, no templates, no isolating or
+- **Templates are the fast path.** Declared, pre-verified templates chosen by the idea and composed through
+  adapters give structure in seconds; step-by-step selection is only for what no template covers. Never stamp one
+  default template onto every idea.
+- **No workarounds.** No fallbacks, no defaults standing in for decisions, no isolating or
   dropping primitives, no swapping the world, no guessing from the idea's words, no text-overlap cut-offs, no
   loosened checks, no weakened or deleted tests. If the right fix is in another layer (including the kernel),
   fix that layer.

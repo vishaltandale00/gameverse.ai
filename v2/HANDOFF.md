@@ -35,6 +35,14 @@ but they don't yet check the properties in ARCHITECTURE §6.2, so green proves l
 
 ## Required next, in order
 
+0. **Templates, the fast path (ARCHITECTURE §1.2, §1.6, §5).** Today every idea goes through step-by-step
+   selection: many sequential model calls and re-plans, minutes per game, and failures on the app's own
+   suggestions ("Mario Kart with shopping carts" failed after 3 attempts on an empty storyboard). Build the
+   declared template library and the template path: concepts → one template pick per concept → composition
+   through adapters → content forms → gate. Every template is verified in the suite (builds, preflights, its
+   bot wins through its controls). The app's suggested ideas (`v2/web/studio-app.js` IDEAS) must build through
+   templates in seconds, and the suite checks that their template composition is valid.
+
 1. **Card-derived schemas (ARCHITECTURE §1.4, §3, §6.1).** One schema per card section, derived from the
    declarations, used by the model's forms, field repair, preflight and the composition check. Move every rule
    the validators enforce (closed value sets, ranges, required fields, references, cross-field rules) into card
