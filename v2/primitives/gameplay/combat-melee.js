@@ -13,11 +13,12 @@
 // components.melee.intent = {press, dir, hold, motion}, consumed every frame.
 // Hits go through the combat service; block, parry, poise and counters are
 // interceptors, so projectiles and contact damage respect them too.
-import { frames, msFrames, invulnFrames, v3, sub, norm, dot, posOf, facingOf, facingSign, spaceOf, distance, statOf, hostile, resolveWho, intercept, hooks, hitShape, overlapping, displace, combat, service, held, setFacing, like, err, archetypes } from './combat-lib.js';
+import { inputOf, controlDir, frames, msFrames, invulnFrames, v3, sub, norm, dot, posOf, facingOf, facingSign, spaceOf, distance, statOf, hostile, resolveWho, intercept, hooks, hitShape, overlapping, displace, combat, service, held, setFacing, like, err, archetypes } from './combat-lib.js';
 import { compileFighter, compileWeapon, base, phaseOf, advantage, MOTION_ORDER, BUILD, SPECIAL_ARCHETYPES, SUPER_ARCHETYPES, BEHAVIORS, LEVELS, HEIGHT, AIR_SPECIAL_OK } from './combat-lib-moves.js';
 
 const KEY = 'gameplay.combat.melee';
 const PRESSES = ['light', 'heavy', 'special', 'super', 'throw'];
+const VERBS = ['attack', 'heavy', 'special', 'super', 'throw', 'block'];
 const FREE = new Set(['idle', undefined]);
 const TECH_WINDOW = 9;
 
@@ -165,19 +166,40 @@ export default {
     const pose = (e, name) => { const api = spaceOf(rt, e), b = e.components.body; if (!api?.setPose || !b?.poses) return; const p = b.poses[name] ? name : b.poses.idle ? 'idle' : null; if (b.pose !== p) api.setPose(e, p); };
     const mhooks = () => (rt.caches.meleeHooks ??= { canStart: [], onStart: [], onConnect: [], select: [], canGrab: [] });
 
-    /** numpad direction (1-9) of the player's move axis relative to facing. */
-    const dirOf = e => {
-      if (e.id !== 'player') return e.components.melee?.intent?.dir ?? 5;
-      const [x = 0, y = 0] = rt.input?.axes?.move || [];
-      const fx = Math.abs(x) > 0.5 ? Math.sign(x) * facingSign(e) : 0, fy = Math.abs(y) > 0.5 ? Math.sign(y) : 0;
-      return 5 + fx + 3 * fy;
-    };
+    /** numpad direction (1-9) the entity holds relative to facing: its controls, or an NPC's melee intent. */
+    const dirOf = e => controlDir(rt, e);
     const press = (e, kind, value) => {
       const m = st(e);
       m.buffer = { press: kind, value: value === true ? null : value, dir: dirOf(e), at: rt.state.frame };
       if (kind === 'block') { m.blockAt = rt.state.frame; rt.emit('guard_up', { who: e.id }); } // the guard goes up (held(block) keeps it)
     };
-    for (const a of ['attack', 'heavy', 'special', 'super', 'throw', 'block']) rt.action(a, (v, rt) => { const p = rt.player(); if (p?.components.melee) press(p, a === 'attack' ? 'light' : a, v); });
+    for (const a of VERBS) rt.action(a, (v, rt) => { const p = rt.player(); if (p?.components.melee) press(p, a === 'attack' ? 'light' : a, v); });
+    // An NPC with controls (components.input, written by a CPU such as gameplay.ai.versus in the ai phase) presses the
+    // same verbs a person does, on the step the input layer and the motion parser see them (the next step's input
+    // phase, KERNEL_API §2): engine.input.actions' resolved view when it is installed, else the presses as they stood
+    // in this step's input phase (taken here, before the CPU writes again).
+    rt.system('input', rt => {
+      if (rt.hasService('input')) return;
+      for (const e of Object.values(rt.state.entities)) if (e.id !== 'player' && e.components.melee && e.components.input) st(e).pressed = { ...(e.components.input.actions || {}) };
+    }, KEY);
+    const npcPresses = e => {
+      if (e.id === 'player' || !e.components.input || e.components.melee.intent?.press) return;
+      const m = st(e), actions = rt.hasService('input') ? inputOf(rt, e)?.actions : m.pressed;
+      m.pressed = null;
+      for (const a of VERBS) { const v = actions?.[a]; if (v !== undefined && v !== null && v !== false) press(e, a === 'attack' ? 'light' : a, v); }
+    };
+    // A motion completed with a button (engine.input.motions, for the player and every entity with controls) is the
+    // special (or, for qcf2, the super) of that motion: the button's verb picks the variant, as a special press does.
+    rt.on('motion', ev => {
+      const e = rt.entity(ev.who), set = e?.components.melee && ev.button ? setOf(e) : null; if (!set) return;
+      const kind = ev.motion === 'qcf2' && set.moves.super ? 'super' : set.specials.some(sp => sp.motion === ev.motion) ? 'special' : null;
+      if (kind) st(e).motionPress = { kind, motion: ev.motion, button: ev.button === 'heavy' ? 'heavy' : 'light', at: rt.state.frame };
+    });
+    const motionPress = e => {
+      const m = st(e), mp = m.motionPress; if (!mp) return;
+      m.motionPress = null;
+      if (mp.at === rt.state.frame) press(e, mp.kind, { motion: mp.motion, button: mp.button });
+    };
 
     const select = (e, set, buf, cancelFrom) => {
       for (const fn of mhooks().select) { const id = fn(e, set, buf, cancelFrom); if (id) return id; }
@@ -499,6 +521,7 @@ export default {
       for (const e of Object.values(rt.state.entities)) {
         if (!e.components.melee) continue;
         const m = st(e), set = setOf(e); if (!set) continue;
+        npcPresses(e); motionPress(e);
         if (m.intent) { if (m.intent.press) { press(e, m.intent.press, m.intent.value ?? m.intent.move ?? m.intent.motion ?? true); m.buffer.dir = m.intent.dir ?? 5; if (m.intent.press === 'block') m.blockAt = rt.state.frame; } m.intent.press = null; }
         if (e.components.poise?.lastHit != null && rt.state.frame - e.components.poise.lastHit > frames(config.poiseResetSec)) { e.components.poise.value = e.components.poise.max; e.components.poise.lastHit = null; }
         if (e.components.health?.dead) { Object.assign(m, { st: 'idle', move: null, phase: null, buffer: null, grab: null }); continue; }

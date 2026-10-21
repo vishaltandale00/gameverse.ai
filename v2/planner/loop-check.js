@@ -32,9 +32,9 @@
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
 // structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
-import { cardLoop, endsGame, appliesTo, loopExists } from './loop.js';
+import { cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
 import { contractsOf, participantsOf } from './content.js';
-import { spawnRules } from './census.js';
+import { spawnRules, placedBy } from './census.js';
 import { defaultsOf } from './catalog.js';
 import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
@@ -67,7 +67,10 @@ import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
  * @typedef {{ code: string, path: string, message: string, hint: string, severity: 'error' | 'warning', stage: 'loop', primitive: string, need: LoopNeed }} LoopProblem
  */
 /** @typedef {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null }} LoopCheckOptions */
-/** A loop instance of a document. @typedef {{ use: string, index: number, path: string, loop: Loop, card: Record<string, any>, config: Record<string, unknown>, inst: Record<string, unknown> }} LoopInstance */
+/** @typedef {import('./loop.js').LoopInstance} LoopInstance */
+
+// The win reading the composition check shares (planner/loop.js): re-exported for this module's callers.
+export { effectsIn, loopInstances, winOwner, unwired, evaluatesEndings };
 
 export const LOOP_CHECK_VERSION = 'loop-check/0.1';
 /** The stable problem codes. */
@@ -114,6 +117,8 @@ export function logicOf(registry) {
   return l;
 }
 
+/** A registered card with its id (registry.get's card does not carry it; registry.cards() adds it). @param {RegistryLike} registry @param {unknown} id */
+const cardWithId = (registry, id) => { const c = registry.get(String(id))?.card; return c ? { ...c, id: String(id) } : undefined; };
 /** @param {unknown} id @param {string} req a required primitive id (or prefix) */
 const satisfies = (id, req) => id === req || (isStr(id) && id.startsWith(req + '.'));
 
@@ -147,13 +152,6 @@ export function readsOf(end) {
 /** Cards that own a component (declare card.components[component]). @param {RegistryLike} registry @param {string} component @returns {string[]} */
 export const ownersOf = (registry, component) => registry.cards().filter(c => isObj(c.components) && c.components[component] !== undefined).map(c => c.id).sort();
 
-/** Every effect object (an object with a string `do`) inside a value. @param {unknown} v @param {Array<Record<string, unknown>>} [out] */
-export function effectsIn(v, out = []) {
-  if (Array.isArray(v)) for (const x of v) effectsIn(x, out);
-  else if (isObj(v)) { if (isStr(v.do)) out.push(v); for (const x of Object.values(v)) if (typeof x === 'object') effectsIn(x, out); }
-  return out;
-}
-
 /**
  * The effects an instance's params hold (its data-defined actions, phases, triggers), except the params its win and
  * lose are wired through. -> [{ param, effect }]
@@ -176,96 +174,11 @@ export function actionEffects(card, config, wiring) {
   return out;
 }
 
-/** The loop instances of a document (systems and generators whose card declares a loop). @param {unknown} doc @param {RegistryLike} registry @returns {LoopInstance[]} */
-export function loopInstances(doc, registry) {
-  /** @type {LoopInstance[]} */
-  const out = [];
-  /** @param {unknown} s @param {string} path */
-  const visit = (s, path) => {
-    const use = prop(s, 'use'); if (!isStr(use) || !isObj(s)) return;
-    const card = registry.get(use)?.card; const loop = cardLoop(card);
-    if (!card || !loop) return;
-    /** @type {Record<string, unknown>} */
-    let config = {};
-    try { config = { ...defaultsOf(/** @type {any} */ (card)), ...(isObj(s.with) ? s.with : {}) }; } catch { config = isObj(s.with) ? { ...s.with } : {}; }
-    if (!loopExists(card, config)) return; // a mode that does not apply to this instance: no loop here
-    out.push({ use, index: out.length, path, loop, card, config, inst: s });
-  };
-  // Systems, then the generators of every space (a generator can carry a loop: a crawl, a course run to a goal), as loop.js loopOf reads them.
-  list(prop(doc, 'systems')).forEach((s, i) => visit(s, `systems[${i}]`));
-  list(prop(doc, 'spaces')).forEach((sp, i) => list(prop(sp, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)));
-  return out;
-}
-
 /**
- * The loop that owns the game's win. A game is won one way (build-steps.js askWins): of the loops declaring a
- * game-ending win, the planner's core order decides first (`core`: the decided win first, presets.js loopCore); among
- * loops that order does not separate (none core, or no core known), the one whose win the document wires to a won
- * ending owns it: the other declared wins are ways to win this document does not use. With none wired, the first
- * declaring one owns it (and its unwired win is reported). @param {unknown} doc @param {RegistryLike} registry
- * @param {LoopInstance[]} loops @param {Iterable<string> | null} core @returns {LoopInstance | null}
- */
-export function winOwner(doc, registry, loops, core) {
-  const order = core ? [...core] : [];
-  const wins = loops.filter(l => endsGame(l.loop.win));
-  const wired = new Set(wins.filter(l => !unwired(doc, l, /** @type {LoopEnd} */ (l.loop.win), 'won', registry)));
-  // Then a win that exists in the instance's config (its `applies`) before one that does not (a course without a goal).
-  const applies = new Set(wins.filter(l => appliesTo(l.loop.win?.applies, l.config)));
-  return wins.sort((a, b) => rank(order, a.use) - rank(order, b.use) || Number(wired.has(b)) - Number(wired.has(a)) || Number(applies.has(b)) - Number(applies.has(a)) || a.index - b.index)[0] || null;
-}
-/** @param {string[]} order @param {string} id */
-const rank = (order, id) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
-
-/** Does an effect end the game with this outcome (directly, or through the plot ending it names)? @param {Record<string, unknown>} e @param {Map<unknown, Record<string, unknown>>} endings @param {'won' | 'lost'} outcome */
-function ends(e, endings, outcome) {
-  if (e.do !== 'end_game') return false;
-  if (isStr(e.outcome)) return e.outcome === outcome;
-  if (isStr(e.ending)) return (endings.get(e.ending)?.outcome ?? 'won') === outcome;
-  return outcome === 'won';
-}
-
-/**
- * Is an ending's `when` trigger this loop end's `when` template filled in: every key the template fixes (the count or
- * var it tests) equal, every placeholder ('$target': a number the content picks) present?
- * @param {Record<string, unknown>} template @param {Record<string, unknown>} when
- */
-const fills = (template, when) => Object.entries(template).every(([k, v]) => (isStr(v) && v.startsWith('$') ? when[k] !== undefined : JSON.stringify(when[k]) === JSON.stringify(v)));
-
-/** The primitive that evaluates plot.endings `when` triggers: a loop that reads them and declares no win of its own. @param {unknown} card */
-export const evaluatesEndings = card => Boolean(card) && list(prop(card, 'reads')).includes('plot.endings') && Boolean(cardLoop(card)) && !cardLoop(card)?.win && !list(prop(prop(card, 'requires'), 'capabilities')).length;
-
-/**
- * Is a declared loop end wired to an ending of `outcome` in the document? -> null when wired, else why not.
- * @param {unknown} doc @param {LoopInstance} l @param {LoopEnd} end @param {'won' | 'lost'} outcome @param {RegistryLike} registry @returns {string | null}
- */
-export function unwired(doc, l, end, outcome, registry) {
-  if (!appliesTo(end.applies, l.config)) return `its ${outcome === 'won' ? 'win' : 'lose'} applies only when ${end.applies?.param}${end.applies?.field ? `.${end.applies.field}` : ''} is ${JSON.stringify(end.applies?.is)}`;
-  const endings = new Map(objects(prop(prop(doc, 'plot'), 'endings')).map(e => [e.id, e]));
-  const systems = list(prop(doc, 'systems'));
-  const host = l.loop.via ? systems.find(s => prop(s, 'use') === l.loop.via) : l.inst;
-  const w = prop(host, 'with');
-  const wired = (/** @type {unknown} */ v) => effectsIn(v).some(e => ends(e, endings, outcome));
-  if (isStr(end.param)) {
-    const [p, field] = end.param.split('.');
-    const v = prop(w, p);
-    if (!field && wired(v)) return null;
-    if (field && objects(v).some(x => wired(x[field]))) return null;
-  }
-  if (isStr(end.end) && prop(w, end.end) === true) return null;
-  if (isObj(end.when)) {
-    const has = [...endings.values()].some(e => isObj(e.when) && (e.outcome ?? 'won') === outcome && fills(/** @type {Record<string, unknown>} */ (end.when), e.when));
-    const evaluator = systems.some(s => evaluatesEndings(registry.get(String(prop(s, 'use')))?.card));
-    if (has && evaluator) return null;
-    if (has) return `its ending's \`when\` trigger has no evaluator in the document (a loop that reads plot.endings)`;
-  }
-  if (isStr(end.ending) && [...endings.values()].some(e => (e.outcome ?? 'won') === outcome)) return null;
-  const how = [isStr(end.param) && `an end_game effect in ${l.loop.via ? `${l.loop.via} ` : ''}with.${end.param}`, isStr(end.end) && `with.${end.end} = true`, isObj(end.when) && 'a plot ending with its `when` and the evaluator', isStr(end.ending) && 'a plot ending'].filter(Boolean).join(' or ');
-  return `nothing wires it to a ${outcome} ending (${how || 'no wiring declared'})`;
-}
-
-/**
- * Members of a loop's object groups that are placed in the world: archetype ids (spawned by rules) per group id.
- * A rule belongs to a group through its own component override, its archetype's group field, or the group's members.
+ * Members of a loop's object groups that are placed in the world: archetype ids per group id, placed by any instance
+ * of the document that declares an archetype reference in its params (census.js placedBy: spawner rules, a stage's
+ * spawns, waves...). A placement belongs to a group through its own component override, its archetype's group field,
+ * or the group's members (its archetype or its entity id).
  * @param {unknown} doc @param {RegistryLike} registry @param {import('./content.js').Participants} P @returns {Map<string, Set<string>>}
  */
 function placedMembers(doc, registry, P) {
@@ -273,7 +186,7 @@ function placedMembers(doc, registry, P) {
   const fieldOf = (/** @type {unknown} */ comps) => (P.field ? prop(prop(comps, P.component), P.field) : undefined);
   /** @type {Map<string, Set<string>>} */
   const out = new Map(P.groups.map(g => [g.id, new Set()]));
-  for (const r of spawnRules(doc, registry)) {
+  for (const r of placedBy(doc, registry)) {
     const a = prop(r, 'archetype'); if (!isStr(a)) continue;
     const own = fieldOf(prop(r, 'components')), base = fieldOf(prop(arches.get(a), 'components'));
     const g = P.groups.find(x => (own ?? base) === x.id || x.members.includes(a) || x.members.includes(String(prop(r, 'id'))));
@@ -317,9 +230,14 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
   const aiCore = new Set();
   const isCore = (/** @type {LoopInstance} */ l) => l === owner || !coreIds || coreIds.includes(l.use);
 
-  for (const l of loops) {
+  /**
+   * The participants a loop's `needs.participants` param seats, on the instance that holds the param (`l`: the loop,
+   * or the card.mode.via host it plays through): its problems pushed once per holder, and the opponents and AI-controlled
+   * archetypes it seats. @param {LoopInstance} l
+   * @returns {{ opponents: Set<string> | null, hasAI: boolean, aiArch: Set<string> }}
+   */
+  const seat = l => {
     const P = l.loop.needs.participants;
-    const reads = l === owner ? readsOf(l.loop.win) : null;
     /** Opponent members (archetype ids) of this loop, for the component its win reads; null when it has no groups. @type {Set<string> | null} */
     let opponents = null;
     /** Whether the loop declares AI-controlled participants, and their archetypes placed in the world. */
@@ -327,57 +245,87 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
     /** @type {Set<string>} */
     let aiArch = new Set();
     const loopAI = aiOpponent(l.loop.opponent);
-    if (isStr(P)) {
-      const spec = l.card.params?.[P];
-      const entries = list(l.config[P]);
-      const contract = contractsOf(registry, l.use).find(c => c.need === 'param' && c.param === P);
-      const min = contract?.min ?? 2;
-      const path = `${l.path}.with.${P}`;
-      if (entries.length < min) push(LOOP_CODES.participants, l, path, `its loop needs at least ${min} ${P} (card.loop needs.participants), the document has ${entries.length}`, `write with.${P} from the card's default or example${contract?.example ? `: ${JSON.stringify(contract.example).slice(0, 200)}` : ''}`, { kind: 'participants', param: P, min });
-      const join = prop(l.card.engage, 'join');
-      const where = prop(join, 'param') === P && isObj(prop(join, 'where')) ? /** @type {Record<string, unknown>} */ (prop(join, 'where')) : null;
-      const groups = objects(entries).filter(g => isStr(g.id));
-      const fieldDefault = (/** @type {string} */ k) => prop(prop(prop(prop(spec, 'of'), 'fields'), k), 'default');
-      const seats = (/** @type {Record<string, unknown>} */ g) => Boolean(where) && Object.entries(/** @type {Record<string, unknown>} */ (where)).every(([k, v]) => (g[k] ?? fieldDefault(k)) === v);
-      const declaresOpponent = Boolean(l.loop.opponent && l.loop.opponent !== 'none');
-      if (where && groups.length) {
-        if (!groups.some(seats)) push(LOOP_CODES.seat, l, path, `no ${P} entry seats the player (card.engage.join.where ${JSON.stringify(where)})`, `set ${Object.keys(where).join(', ')} on the player's ${P} entry as card.engage says`, { kind: 'seat', param: P, where });
-        else if (declaresOpponent && groups.every(seats)) push(LOOP_CODES.opponent, l, path, `every ${P} entry is the player's: its loop declares an opponent (${l.loop.opponent}) and none plays against the player`, `give the opponent its own ${P} entry, not ${JSON.stringify(where)}`, { kind: 'opponent', param: P, where });
-      }
-      const seated = participants.find(p => p.path === l.path);
-      if (seated) {
-        const members = placedMembers(doc, registry, seated);
-        seated.groups.forEach((g, j) => {
-          if (!(members.get(g.id)?.size)) push(LOOP_CODES.group, l, `${path}[${groups.findIndex(x => x.id === g.id) >= 0 ? groups.findIndex(x => x.id === g.id) : j}]`, `${P} '${g.id}' has no entities in the world (archetypes with a "${seated.component}" component on it, placed by spawns)`, `seat ${seated.component} archetypes for '${g.id}' (the card's content example)`, { kind: 'group', param: P, group: g.id, component: seated.component });
-        });
-        opponents = new Set(seated.groups.filter(g => !(where && seats(objects(entries).find(x => x.id === g.id) || {}))).flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
-        // AI control: a group that does not seat the player whose seating field (engage.join.where) is 'ai'; with no
-        // `where`, every group without the player when the loop's declared opponent is AI-controlled.
-        const ai = seated.groups.filter(g => {
-          const entry = objects(entries).find(x => x.id === g.id) || {};
-          if (where) return !seats(entry) && Object.keys(where).some(k => (entry[k] ?? fieldDefault(k)) === 'ai');
-          return loopAI && !g.members.includes('player') && !members.get(g.id)?.has('player');
-        });
-        hasAI = ai.length > 0;
-        aiArch = new Set(ai.flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
-      } else if (!groups.length && entries.length) {
-        const others = entries.filter(isStr).filter(x => x !== 'player' && x !== playerArch);
-        if (declaresOpponent && !others.length) push(LOOP_CODES.opponent, l, path, `${P} lists only the player: its loop declares an opponent (${l.loop.opponent})`, `add the opponents' ids or archetypes to with.${P}`, { kind: 'opponent', param: P });
-        opponents = new Set(others.filter(x => arches.some(a => a.id === x)));
-        hasAI = loopAI && others.length > 0;
-        aiArch = opponents;
-      } else if (groups.length && isStr(prop(join, 'field')) && prop(join, 'param') === P) {
-        // Groups that list their members (engage.join.field) with no component seating them: the AI-controlled ones
-        // are those not seating the player whose seating field is 'ai', or (no `where`, an AI opponent) those whose
-        // members do not include the player.
-        const field = String(prop(join, 'field'));
-        const isPlayer = (/** @type {string} */ m) => m === 'player' || m === playerArch;
-        const ai = groups.filter(g => (where ? !seats(g) && Object.keys(where).some(k => (g[k] ?? fieldDefault(k)) === 'ai') : loopAI && !list(g[field]).some(m => isStr(m) && isPlayer(m))));
-        const others = ai.flatMap(g => list(g[field]).filter(isStr).map(String)).filter(m => !isPlayer(m));
-        hasAI = others.length > 0;
-        aiArch = new Set(others.filter(x => arches.some(a => a.id === x)));
-      }
+    if (!isStr(P)) return { opponents, hasAI, aiArch };
+    const spec = l.card.params?.[P];
+    const entries = list(l.config[P]);
+    const contract = contractsOf(registry, l.use).find(c => c.need === 'param' && c.param === P);
+    const min = contract?.min ?? 2;
+    const path = `${l.path}.with.${P}`;
+    if (entries.length < min) push(LOOP_CODES.participants, l, path, `its loop needs at least ${min} ${P} (card.loop needs.participants), the document has ${entries.length}`, `write with.${P} from the card's default or example${contract?.example ? `: ${JSON.stringify(contract.example).slice(0, 200)}` : ''}`, { kind: 'participants', param: P, min });
+    const join = prop(l.card.engage, 'join');
+    const where = prop(join, 'param') === P && isObj(prop(join, 'where')) ? /** @type {Record<string, unknown>} */ (prop(join, 'where')) : null;
+    const groups = objects(entries).filter(g => isStr(g.id));
+    const fieldDefault = (/** @type {string} */ k) => prop(prop(prop(prop(spec, 'of'), 'fields'), k), 'default');
+    const seats = (/** @type {Record<string, unknown>} */ g) => Boolean(where) && Object.entries(/** @type {Record<string, unknown>} */ (where)).every(([k, v]) => (g[k] ?? fieldDefault(k)) === v);
+    const declaresOpponent = Boolean(l.loop.opponent && l.loop.opponent !== 'none');
+    if (where && groups.length) {
+      if (!groups.some(seats)) push(LOOP_CODES.seat, l, path, `no ${P} entry seats the player (card.engage.join.where ${JSON.stringify(where)})`, `set ${Object.keys(where).join(', ')} on the player's ${P} entry as card.engage says`, { kind: 'seat', param: P, where });
+      else if (declaresOpponent && groups.every(seats)) push(LOOP_CODES.opponent, l, path, `every ${P} entry is the player's: its loop declares an opponent (${l.loop.opponent}) and none plays against the player`, `give the opponent its own ${P} entry, not ${JSON.stringify(where)}`, { kind: 'opponent', param: P, where });
     }
+    const seated = participants.find(p => p.path === l.path);
+    if (seated) {
+      const members = placedMembers(doc, registry, seated);
+      seated.groups.forEach((g, j) => {
+        if (!(members.get(g.id)?.size)) push(LOOP_CODES.group, l, `${path}[${groups.findIndex(x => x.id === g.id) >= 0 ? groups.findIndex(x => x.id === g.id) : j}]`, `${P} '${g.id}' has no entities in the world (archetypes with a "${seated.component}" component on it, placed by spawns)`, `seat ${seated.component} archetypes for '${g.id}' (the card's content example)`, { kind: 'group', param: P, group: g.id, component: seated.component });
+      });
+      opponents = new Set(seated.groups.filter(g => !(where && seats(objects(entries).find(x => x.id === g.id) || {}))).flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
+      // AI control: a group that does not seat the player whose seating field (engage.join.where) is 'ai'; with no
+      // `where`, every group without the player when the loop's declared opponent is AI-controlled.
+      const ai = seated.groups.filter(g => {
+        const entry = objects(entries).find(x => x.id === g.id) || {};
+        if (where) return !seats(entry) && Object.keys(where).some(k => (entry[k] ?? fieldDefault(k)) === 'ai');
+        return loopAI && !g.members.includes('player') && !members.get(g.id)?.has('player');
+      });
+      hasAI = ai.length > 0;
+      aiArch = new Set(ai.flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
+    } else if (!groups.length && entries.length) {
+      const others = entries.filter(isStr).filter(x => x !== 'player' && x !== playerArch);
+      if (declaresOpponent && !others.length) push(LOOP_CODES.opponent, l, path, `${P} lists only the player: its loop declares an opponent (${l.loop.opponent})`, `add the opponents' ids or archetypes to with.${P}`, { kind: 'opponent', param: P });
+      opponents = new Set(others.filter(x => arches.some(a => a.id === x)));
+      hasAI = loopAI && others.length > 0;
+      aiArch = opponents;
+    } else if (groups.length && isStr(prop(join, 'field')) && prop(join, 'param') === P) {
+      // Groups that list their members (engage.join.field) with no component seating them: the AI-controlled ones
+      // are those not seating the player whose seating field is 'ai', or (no `where`, an AI opponent) those whose
+      // members do not include the player.
+      const field = String(prop(join, 'field'));
+      const isPlayer = (/** @type {string} */ m) => m === 'player' || m === playerArch;
+      const ai = groups.filter(g => (where ? !seats(g) && Object.keys(where).some(k => (g[k] ?? fieldDefault(k)) === 'ai') : loopAI && !list(g[field]).some(m => isStr(m) && isPlayer(m))));
+      const others = ai.flatMap(g => list(g[field]).filter(isStr).map(String)).filter(m => !isPlayer(m));
+      hasAI = others.length > 0;
+      aiArch = new Set(others.filter(x => arches.some(a => a.id === x)));
+    }
+    return { opponents, hasAI, aiArch };
+  };
+  /** @type {Map<string, { opponents: Set<string> | null, hasAI: boolean, aiArch: Set<string> }>} */
+  const seated = new Map();
+  /**
+   * A loop played through another primitive (card.mode.via) seats the participants its host's params hold: the host's
+   * loop instance (checked once, as that loop), or the host's instance read with this loop's declaration.
+   * @param {LoopInstance} l @returns {LoopInstance}
+   */
+  const holder = l => {
+    if (!l.loop.via) return l;
+    const host = loops.find(x => x.use === l.loop.via);
+    if (host) return host;
+    const systems = list(prop(doc, 'systems')), i = systems.findIndex(s => prop(s, 'use') === l.loop.via), inst = systems[i];
+    const card = registry.get(String(l.loop.via))?.card;
+    if (!isObj(inst) || !card) return l;
+    /** @type {Record<string, unknown>} */
+    let config = {};
+    try { config = { ...defaultsOf(/** @type {any} */ (card)), ...(isObj(inst.with) ? inst.with : {}) }; } catch { config = isObj(inst.with) ? { ...inst.with } : {}; }
+    return { ...l, use: String(l.loop.via), path: `systems[${i}]`, card, config, inst };
+  };
+
+  for (const l of loops) {
+    const reads = l === owner ? readsOf(l.loop.win) : null;
+    const H = holder(l);
+    if (!seated.has(H.path)) seated.set(H.path, seat(H));
+    const { opponents, aiArch } = /** @type {{ opponents: Set<string> | null, hasAI: boolean, aiArch: Set<string> }} */ (seated.get(H.path));
+    // The host's own loop checks that its AI participants are driven; a loop through it shares them.
+    const hasAI = Boolean(seated.get(H.path)?.hasAI) && (H === l || !loops.includes(H));
+    const loopAI = aiOpponent(l.loop.opponent);
+    const P = H.loop.needs.participants;
     // Its AI-controlled participants act: a primitive drives them, and (when its lose ends the game) what they do can
     // change what that lose reads.
     if (hasAI) {
@@ -412,12 +360,12 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       if (!changesComponent(doc, registry, lg, l, C, used)) push(LOOP_CODES.unaffected, l, l.path, `its win reads the ${of}' "${C}", and no player verb or action changes it (no action effect owned by ${owners.join(' or ') || 'its owner'}, no primitive with player verbs that requires it)`, `add an action whose effects change ${C} (the card's declared example), or a primitive whose player verbs do`, { kind: 'action', component: C, owners, of });
     } else if (reads.event || reads.var) {
       const what = reads.event ? 'event' : 'var', name = /** @type {string} */ (reads.event || reads.var);
-      const signal = changesSignal(doc, registry, lg, what, name, used);
+      const signal = changesSignal(doc, registry, lg, what, name, used, reads);
       // A provider whose drive is content not written yet (the events its config listens to, the effects data runs) is
       // pending until a draft, but only when the document declares a player-driven way to change it (what its reads.by
       // names: playerChanges, or the player's own movement, which selection completes with a base locomotion for avatar
       // play); otherwise no content can drive it and the collection lacks a primitive.
-      const hooked = signal === 'idle' && (!reads.by || Boolean(reads.by.movement) || [...used].some(id => playerChanges(registry, registry.get(String(id))?.card, /** @type {import('./loop.js').ReadsBy} */ (reads.by), { logic: lg, used })));
+      const hooked = signal === 'idle' && (!reads.by || Boolean(reads.by.movement) || [...used].some(id => playerChanges(registry, cardWithId(registry, id), /** @type {import('./loop.js').ReadsBy} */ (reads.by), { logic: lg, used })));
       if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? hooked ? ' (its providers are driven by nothing in the document yet)' : ` (its providers are driven by nothing in the document, and no player-driven primitive of it declares what changes it: ${byText(reads.by || {})})` : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(hooked ? { pending: 'drive' } : {}) });
     }
   }
@@ -542,14 +490,18 @@ function changesComponent(doc, registry, logic, l, C, used) {
  * through its own player verbs, the player's movement (a primitive that moves the player's body: movesPlayer) when it needs
  * space capabilities (touching, passing), a primitive with player verbs that requires it, an effect it owns written
  * in the document's data, the document's data it plays out (a section of its card.reads the document has written:
- * story beats whose triggers play satisfies), or an event its config names that a driven primitive provides.
- * -> true (driven), 'idle' (provided, but nothing drives it yet: content to write), false (nothing provides it).
+ * story beats whose triggers play satisfies), an event its config names that a driven primitive provides, or an event
+ * its code runs on that a driven primitive provides: the reads.by.events of the read being checked (for its `from`
+ * writer, or every provider when it names none) and of the provider's own loop ends reading the same quantity ('*': any
+ * event). -> true (driven), 'idle' (provided, but nothing drives it yet: content to write), false (nothing provides it).
  * @param {unknown} doc @param {RegistryLike} registry @param {LogicLike} logic @param {'event' | 'var'} what @param {string} name @param {Set<unknown>} used
+ * @param {LoopReads | null} [reads] the read being checked
  * @returns {true | 'idle' | false}
  */
-function changesSignal(doc, registry, logic, what, name, used) {
+function changesSignal(doc, registry, logic, what, name, used, reads = null) {
   const insts = list(prop(doc, 'systems')).filter(isObj);
-  const cards = [...used].map(id => registry.get(String(id))?.card).filter(c => c !== undefined);
+  // The used cards with their ids (a registered card does not carry its own id: registry.cards() adds it).
+  const cards = [...used].flatMap(id => { const c = registry.get(String(id))?.card; return c ? [{ ...c, id: String(id) }] : []; });
   const base = (/** @type {string} */ n) => n.split(':')[0];
   const emits = (/** @type {any} */ c, /** @type {string} */ n) => (c.provides?.events || []).some((/** @type {string} */ e) => e === n || e === base(n) || e === `${base(n)}:*`);
   const provides = (/** @type {any} */ c) => (what === 'event' ? emits(c, name) : (c.provides?.vars || []).some((/** @type {string} */ v) => v === name || name.startsWith(v + '.') || v.endsWith('*') && name.startsWith(v.slice(0, -1))));
@@ -568,8 +520,18 @@ function changesSignal(doc, registry, logic, what, name, used) {
     if ((c.reads || []).some((/** @type {string} */ r) => written(prop(doc, r.split('.')[0]), r.split('.').slice(1)))) return true;
     // The events its config names (rules it runs on) come from a driven primitive.
     const named = new Set(JSON.stringify(insts.filter(s => s.use === c.id).map(s => s.with)).match(/"[a-z][a-z0-9_]*(?::[A-Za-z0-9_*-]+)?"/g)?.map(x => x.slice(1, -1)) || []);
-    return cards.some(o => o !== c && [...named].some(n => emits(o, n)) && driven(o));
+    if (cards.some(o => o !== c && [...named].some(n => emits(o, n)) && driven(o))) return true;
+    // The events its code runs on (declared reads.by.events) come from a driven primitive.
+    const on = runsOn(c);
+    return cards.some(o => o !== c && (on.has('*') ? (o.provides?.events || []).length > 0 : [...on].some(n => emits(o, n))) && driven(o));
   };
+  /** The same quantity as the signal: its event (typed or not) or its var. @param {LoopReads | null} r */
+  const same = r => Boolean(r) && (what === 'event' ? isStr(r?.event) && base(String(r?.event)) === base(name) : r?.var === name);
+  /** @param {any} c @returns {Set<string>} */
+  const runsOn = c => new Set([
+    ...(same(reads) && (!reads?.from || reads.from === c.id) ? reads?.by?.events || [] : []),
+    ...[cardLoop(c)?.win, cardLoop(c)?.lose].map(readsOf).filter(same).flatMap(r => r?.by?.events || []),
+  ]);
   const providers = cards.filter(provides);
   if (providers.some(driven)) return true;
   return providers.length ? 'idle' : false;

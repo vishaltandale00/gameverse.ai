@@ -39,6 +39,9 @@ export default {
   card: {
     loop: { verbs: ['left', 'right', 'jump', 'slide', 'crouch', 'move'], progress: ['lane_switch', 'jumped', 'slide'], lose: { param: 'onCaught', reads: { event: 'caught', by: { actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] } } } },
     locomotion: 'base', medium: 'track', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
+    // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
+    body: { size: [0.8, 1.4, 0.8] },
     intent: 'Endless-runner lanes: auto-run forward with a speed ramp, switch lanes, jump low barriers, slide under high ones, dive from the air into a slide, and stumble on trips with a chaser that catches you on a second stumble.',
     views: ['3p', 'td'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

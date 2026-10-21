@@ -35,6 +35,9 @@ export default {
   card: {
     loop: { verbs: ['move', 'jump', 'sprint', 'run', 'crouch', 'walk', 'travel'], progress: ['jumped', 'travelled', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
+    // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
+    body: { size: [0.6, 1.8, 0.6] },
     intent: 'Ground locomotion for the player and NPCs: walk, run, sprint (drains a stamina pool), crouch and jump, with acceleration, air control, coyote time, jump buffer and feel presets. Works in 3D, side and top-down continuous spaces and steps cell by cell on grid or graph spaces.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
     actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

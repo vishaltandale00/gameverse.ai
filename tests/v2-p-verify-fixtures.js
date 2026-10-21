@@ -90,7 +90,7 @@ export const rows = { id: 'engine.generate.fixture-rows', card: { intent: 'test:
 
 /** Side-view platforming on a gravity space via slide(): move axes run, `jump` from the ground, a second jump with double_jump. */
 export const platformer = fx('gameplay.fixture.platformer', 'test: run and jump', { run: 6, jump: 17 }, {
-  card: { provides: { actions: ['jump'] }, envelope: (c, abilities) => ({ mode: 'continuous', run: c.run, jumpHeight: Math.floor(c.jump ** 2 / 120), jumpDistance: Math.floor(c.run * 2 * c.jump / 60), doubleJump: abilities.has('double_jump') }) },
+  card: { provides: { actions: ['jump'] }, envelope: (c, abilities) => ({ mode: 'continuous', run: c.run, jumpHeight: c.jump ** 2 / 120, jumpDistance: c.run * 2 * c.jump / 60, doubleJump: abilities.has('double_jump') }) }, // physical reach (units), as card envelopes report it
   install(rt, cfg) {
     rt.action('jump', () => {
       const p = rt.player(); if (!p) return; const b = p.components.body, s = rt.store('gameplay.fixture.platformer');

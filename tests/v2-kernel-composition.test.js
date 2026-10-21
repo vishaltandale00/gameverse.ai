@@ -236,3 +236,18 @@ test('mode in a document: win must reach an ending and participants must be pres
   const wired = verdictOf(reg, doc({ sides: [{ id: 'a' }, { id: 'b' }], onWin: [{ do: 'end_game', ending: 'victory' }] }));
   assert.equal(wired.checks.mode, 'ok', wired.reason);
 });
+
+test('mode via another primitive in a document (card.mode.via, e.g. gameplay.cards via turns): its params are read on that primitive\'s instance, and the check never throws', () => {
+  // The via card has no params of its own: its win and participants are the host's (gameplay.stub-mode).
+  const viaCard = { id: 'gameplay.stub-via', card: { intent: 'Stub mode played through the stub host.', params: {}, provides: {}, requires: {},
+    mode: { via: 'gameplay.stub-mode', win: { param: 'onWin' }, needs: { participants: { param: 'sides', min: 2 } } } } };
+  const reg = withDeclarations(registry, { ...DECLARED, ...INPUTS }, [moded({}), viaCard]);
+  const doc = w => ({ schema: 'gameverse.v2.game/0.2', id: 'm', title: 'M', spaces: [{ id: 'world', use: 'engine.space.none' }],
+    systems: [{ use: 'gameplay.stub-mode', with: w }, { use: 'gameplay.stub-via' }], plot: { endings: [{ id: 'victory' }] } });
+  const codes = r => r.failures.filter(f => f.unit === 'gameplay.stub-via').map(f => f.code).sort();
+  const bare = verdictOf(reg, doc({ sides: [{ id: 'a' }] }));
+  assert.deepEqual(codes(bare), ['mode_participants_missing', 'mode_win_unwired']);
+  assert.ok(!bare.holes.some(h => h.card === 'gameplay.stub-via'), JSON.stringify(bare.holes));
+  const wired = verdictOf(reg, doc({ sides: [{ id: 'a' }, { id: 'b' }], onWin: [{ do: 'end_game', ending: 'victory' }] }));
+  assert.deepEqual(codes(wired), [], wired.reason);
+});

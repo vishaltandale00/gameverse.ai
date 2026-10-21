@@ -41,9 +41,13 @@ export const invulnFrames = e => Math.round((e?.components?.health?.invulnerable
 export const isPos = at => Array.isArray(at) && at.every(Number.isFinite);
 export const posOf = e => (isPos(e?.at) ? v3(e.at) : null);
 
-/** Unit facing vector. */
+/**
+ * Unit facing vector. In 2D, body.facing is only the side-view sign (KERNEL_API §2), so the heading movement keeps in
+ * body.dir (move-lib-core setFacing: a top-down walker, a ship heading up the screen) is the facing when it is set.
+ */
 export function facingOf(e) {
-  const f = e?.components?.body?.facing ?? e?.components?.facing;
+  const f = e?.components?.body?.facing ?? e?.components?.facing, dir = e?.components?.body?.dir;
+  if (typeof f === 'number' && Array.isArray(dir) && dir.length === 2 && len(v3(dir)) > 1e-9) return norm(v3(dir));
   if (typeof f === 'number') return [f < 0 ? -1 : 1, 0, 0];
   if (Array.isArray(f)) return norm(v3(f));
   return [1, 0, 0];
@@ -217,9 +221,33 @@ export function displace(rt, e, delta) {
   else if (api.setPos) api.setPos(e, like(e.at, add(v3(e.at), d)), rt);
 }
 
-/** Held verbs for an entity this step: the player's input, or an NPC's components.melee.intent.hold. */
+/**
+ * An entity's controls this step, in the player's input shape {actions, held, axes} (KERNEL_API §2): the player's step
+ * input, or what a CPU/AI primitive wrote to an NPC's components.input (gameplay.ai.versus). With engine.input.actions
+ * installed, an NPC's input is the view it resolved in this step's input phase (the frame the motion parser saw);
+ * without it, the input as written. null for an NPC no primitive gives controls.
+ */
+export function inputOf(rt, e) {
+  if (!e) return null;
+  if (e.id === 'player') return rt.input ?? null;
+  if (!e.components?.input) return null;
+  return rt.hasService('input') ? rt.service('input').of(e.id) : e.components.input;
+}
+/**
+ * Numpad direction (1-9) an entity holds this step, relative to its facing (6 toward where it faces, 2 down): from
+ * its controls (inputOf), or an NPC's components.melee.intent.dir when that intent is written instead.
+ */
+export function controlDir(rt, e) {
+  const input = inputOf(rt, e);
+  if (e.id !== 'player' && (e.components?.melee?.intent || !input)) return e.components?.melee?.intent?.dir ?? 5;
+  const [x = 0, y = 0] = input?.axes?.move || [];
+  return 5 + (Math.abs(x) > 0.5 ? Math.sign(x) * facingSign(e) : 0) + 3 * (Math.abs(y) > 0.5 ? Math.sign(y) : 0);
+}
+
+/** Held verbs for an entity this step: its controls (inputOf), or an NPC's components.melee.intent.hold. */
 export function held(rt, e, verb) {
-  if (e.id === 'player') return Boolean(rt.input?.held?.[verb]);
+  if (inputOf(rt, e)?.held?.[verb]) return true;
+  if (e.id === 'player') return false;
   return Boolean(e.components?.melee?.intent?.hold?.includes?.(verb) || e.components?.intent?.hold?.includes?.(verb));
 }
 

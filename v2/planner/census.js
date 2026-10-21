@@ -100,6 +100,36 @@ export function spawnRules(doc, registry) {
   return rules;
 }
 
+/**
+ * Entities a document's instances bring into the world from their own params: every value at a param position the
+ * card declares as an archetype reference (`{ type: 'ref', to: 'archetype' }`, through list entries and object fields:
+ * spawner rules, a stage's spawns, waves, bosses, flocks, physics bodies...), with the list entry or object holding it
+ * (its id, zone, components). An archetype is a template for entities, so a primitive's declared reference to one is
+ * the primitive placing entities of it. -> [{ ...entry, archetype, _path, _use }]
+ * @param {unknown} doc @param {RegistryLike} registry @returns {SpawnRule[]}
+ */
+export function placedBy(doc, registry) {
+  /** @type {SpawnRule[]} */
+  const out = [];
+  /** @param {unknown} schema @param {unknown} v @param {string} path @param {string} use @param {Record<string, unknown>} holder */
+  const walk = (schema, v, path, use, holder) => {
+    if (!isObj(schema) || v === undefined || v === null) return;
+    if (schema.type === 'ref' && schema.to === 'archetype') { if (isStr(v) && v) out.push({ ...holder, archetype: v, _path: path, _use: use }); return; }
+    if (schema.type === 'list' && Array.isArray(v)) { v.forEach((x, i) => walk(schema.of, x, `${path}[${i}]`, use, {})); return; }
+    if (isObj(schema.fields) && isObj(v)) for (const [k, f] of Object.entries(schema.fields)) walk(f, v[k], `${path}.${k}`, use, v);
+  };
+  /** @param {unknown} inst @param {string} path */
+  const visit = (inst, path) => {
+    const use = prop(inst, 'use'); if (!isStr(use)) return;
+    const card = registry.get(use)?.card; if (!card) return;
+    const w = obj(prop(inst, 'with'));
+    for (const [k, spec] of Object.entries(card.params || {})) walk(spec, w[k], `${path}.with.${k}`, use, {});
+  };
+  list(obj(doc).systems).forEach((s, i) => visit(s, `systems[${i}]`));
+  list(obj(doc).spaces).forEach((s, i) => { visit(s, `spaces[${i}]`); list(prop(s, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)); });
+  return out;
+}
+
 /** `{do:'spawn'}` effects anywhere in the document. @param {unknown} doc @returns {SpawnEffect[]} */
 export function spawnEffects(doc) {
   /** @type {SpawnEffect[]} */

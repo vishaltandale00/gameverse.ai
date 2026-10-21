@@ -10,6 +10,7 @@
 // room...), so retries never consume the world RNG unpredictably.
 import { seedFrom, random } from '../../kernel/rng.js';
 import { checkFields } from '../../kernel/params.js';
+import { moverOptions, playerBodySize, gravityMagnitude } from '../gameplay/move-lib-envelope.js';
 
 /**
  * Generator configs with defaults applied. Kernel preflight normalizes `with`
@@ -129,7 +130,7 @@ export function docPath(rt, instance) {
   const si = rt.doc.spaces.findIndex(s => s.id === instance.space), gj = /generators\[(\d+)\]$/.exec(instance.key || '')?.[1];
   return si >= 0 && gj !== undefined ? `spaces[${si}].generators[${gj}]` : instance.key;
 }
-const WARNINGS = new Set(['exit_unmatched', 'chunk_impassable', 'chunk_tier_missing', 'role_shortfall', 'dungeon_cramped', 'start_crowded', 'warp_unpaired']);
+const WARNINGS = new Set(['pit_unclearable', 'exit_unmatched', 'chunk_impassable', 'chunk_tier_missing', 'role_shortfall', 'dungeon_cramped', 'start_crowded', 'warp_unpaired']);
 const INFO = new Set(['graph_fallback', 'board_fallback', 'dungeon_fallback', 'chunks_fallback']);
 
 /**
@@ -180,6 +181,28 @@ export function vocabulary(rt, type, kind) {
   if (owner === 'kernel') return true;
   const used = [...(rt.doc.systems || []), ...(rt.doc.spaces || []), ...(rt.doc.spaces || []).flatMap(s => s.generators || [])].map(x => x.use);
   return used.includes(owner);
+}
+
+/**
+ * The mover a traversal proof must hold for (card.traversal): the document's player, with the abilities it starts with
+ * plus `held` (ability ids a proof assumes), the document's movement envelope for them at the space's gravity, and the
+ * player's declared body size (spaces give an undeclared body one unit per axis). The same moverOptions the verifier's
+ * navOptions use, so a proof here is the check the verifier repeats. -> kernel reachability opts + { width?, height? }
+ */
+export function documentMover(rt, space, held = [], at = null) {
+  const gravity = gravityMagnitude(space.api, at ?? [0, 0]);
+  return moverOptions(rt.doc, rt.registry, [...(rt.doc.player?.abilities || []), ...held], playerBodySize(rt.doc), gravity ? { gravity } : {}).opts;
+}
+
+/**
+ * The player's body footprint in cells for a cell proof on this space: how many cells its box covers along the two
+ * axes of the proof's plane (`axes`, default x and y; `unit` space units per cell), as the space's navigation clears a
+ * body (an undeclared body is one unit per axis); one cell on cell-anchored spaces, where an entity holds a cell.
+ */
+export function bodyCells(rt, space, { axes = [0, 1], unit = 1 } = {}) {
+  if (space.api.anchor === 'cell') return [1, 1];
+  const size = playerBodySize(rt.doc) || [];
+  return axes.map(a => Math.max(1, Math.ceil((size[a] ?? 1) / unit - 1e-6)));
 }
 
 export const problem = (code, path, message, extra = {}) => ({ code, path, message, ...extra });

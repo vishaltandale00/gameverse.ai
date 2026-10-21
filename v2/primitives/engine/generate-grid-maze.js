@@ -10,7 +10,7 @@
 // sub-seed is retried and the complete lattice (density 1) is the fallback.
 // Sizes, styles and house layouts are data. Maze rows run top-down; `yUp`
 // flips them into a y-up space.
-import { withDefaults, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, placeOn, problem } from './generate2d-lib.js';
+import { withDefaults, bodyCells, drawSeed, spaceOf, cellWriter, addZones, publish, spawnAt, placeOn, problem } from './generate2d-lib.js';
 import { seedFrom } from '../../kernel/rng.js';
 
 const ID = 'engine.generate.grid.maze';
@@ -175,8 +175,12 @@ export function isOpen(maze, x, y) {
 }
 const neighbours = (maze, x, y) => { const out = []; for (let d = 0; d < 4; d++) if (isOpen(maze, x + DX[d], y + DY[d])) out.push([wrapX(x + DX[d], maze.w), y + DY[d]]); return out; };
 
-/** Re-prove the invariants on the raster: problems as { code, path, message }. expect: { w, h, powerPellets?, tunnels? }. */
-export function checkMaze(maze, expect = {}, path = 'maze') {
+/**
+ * Re-prove the invariants on the raster: problems as { code, path, message }. expect: { w, h, powerPellets?, tunnels? }.
+ * body: the player's footprint [columns, rows, rowStep] in maze tiles (rowStep −1 when the maze's rows run down a y-up
+ * space): the reach walk moves that footprint, so a tile is reached when the body can cover it.
+ */
+export function checkMaze(maze, expect = {}, path = 'maze', body = [1, 1, 1]) {
   const problems = [], fail = (code, message) => problems.push(problem(code, path, message));
   const { cells, w: MW, h: MH } = maze;
   if ((expect.w && MW !== expect.w) || (expect.h && MH !== expect.h) || cells.length !== MW * MH || MW % 2) { fail('maze_size', `maze must be ${expect.w}×${expect.h} with an even width`); return problems; }
@@ -188,12 +192,18 @@ export function checkMaze(maze, expect = {}, path = 'maze') {
     if (x + 1 < MW && y + 1 < MH && isOpen(maze, x + 1, y) && isOpen(maze, x, y + 1) && isOpen(maze, x + 1, y + 1)) fail('maze_wide', `corridor wider than one tile at (${x},${y})`);
     if (neighbours(maze, x, y).length < 2) fail('maze_dead_end', `dead end at (${x},${y})`);
   }
-  const sx = Math.floor(maze.start.x), sy = maze.start.y;
-  if (!isOpen(maze, sx, sy) || !isOpen(maze, sx + 1, sy)) fail('maze_start', 'the player start is not on a corridor');
-  const seen = new Uint8Array(MW * MH), queue = [[sx, sy]];
-  if (isOpen(maze, sx, sy)) seen[sy * MW + sx] = 1;
+  const sx = Math.floor(maze.start.x), sy = maze.start.y, [bw, bh, step] = body;
+  const covers = (x, y) => { const out = []; for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) out.push([wrapX(x + i, MW), y + j * step]); return out; };
+  const fits = (x, y) => covers(x, y).every(([cx, cy]) => isOpen(maze, cx, cy));
+  if (!fits(sx, sy) || !isOpen(maze, sx + 1, sy)) fail('maze_start', 'the player start is not on a corridor (for its body)');
+  const seen = new Uint8Array(MW * MH), at = new Uint8Array(MW * MH), queue = [[sx, sy]];
+  if (fits(sx, sy)) at[sy * MW + sx] = 1; else queue.length = 0;
   let reached = 0;
-  while (queue.length) { const [x, y] = queue.pop(); reached++; for (const [nx, ny] of neighbours(maze, x, y)) if (!seen[ny * MW + nx]) { seen[ny * MW + nx] = 1; queue.push([nx, ny]); } }
+  const cover = (x, y) => { for (const [cx, cy] of covers(x, y)) if (!seen[cy * MW + cx]) { seen[cy * MW + cx] = 1; reached++; } };
+  while (queue.length) {
+    const [x, y] = queue.pop(); cover(x, y);
+    for (let d = 0; d < 4; d++) { const nx = wrapX(x + DX[d], MW), ny = y + DY[d]; if (isOpen(maze, x + DX[d], ny) && fits(nx, ny) && !at[ny * MW + nx]) { at[ny * MW + nx] = 1; queue.push([nx, ny]); } }
+  }
   if (reached !== corridors) fail('maze_disconnected', `${corridors - reached} corridor tiles cannot be reached from the start`);
   const unreachable = [...maze.pellets, ...maze.power].filter(i => !seen[i]);
   if (unreachable.length) fail('pellet_unreachable', `${unreachable.length} pellets cannot be reached`);
@@ -225,14 +235,14 @@ export function checkMaze(maze, expect = {}, path = 'maze') {
 }
 
 /** Generate with retries: sub-seeds first, then the complete lattice (density 1). */
-export function generateMaze(params, seed) {
+export function generateMaze(params, seed, body = [1, 1, 1]) {
   const sizes = { ...SIZES, ...(params.sizes || {}) }, spec = sizes[params.size] || SIZES.classic;
   const expect = { w: spec.w, h: spec.h, tunnels: params.tunnels, powerCount: powerCountFor(params.powerPellets, spec, (params.size || 'classic') === 'classic') };
   let best = null;
   for (let attempt = 0; attempt <= params.attempts; attempt++) {
     const fallback = attempt === params.attempts;
     const maze = buildMaze(fallback ? { ...params, density: 1 } : params, attempt ? seedFrom(`${seed}:${attempt}`) : seed);
-    const problems = checkMaze(maze, expect, '');
+    const problems = checkMaze(maze, expect, '', body);
     if (!best || problems.length < best.problems.length) best = { maze, problems, attempts: attempt + 1, fallback };
     if (!problems.length) break;
   }
@@ -265,6 +275,8 @@ export default {
     },
     provides: { content: ['cells', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
     requires: { capabilities: ['position', 'editCells'] },
+    // The guarantee: the published `targets` (every pellet) are reachable from `from` by the player's body.
+    traversal: { mover: 'player', problems: ['maze_start', 'maze_disconnected', 'pellet_unreachable', 'house_exit'] },
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
     validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],
   },
@@ -300,7 +312,9 @@ export default {
   },
   install(rt, raw, instance) {
     const config = withDefaults(this.card, raw), space = spaceOf(rt, instance), seed = drawSeed(rt);
-    const { maze, problems, attempts, fallback } = generateMaze(config, seed);
+    // The proof walks the player's body (card.traversal): its footprint in tiles, rows running down a y-up space.
+    const [bw, bh] = bodyCells(rt, space);
+    const { maze, problems, attempts, fallback } = generateMaze(config, seed, [bw, bh, config.yUp ? -1 : 1]);
     const [ox, oy] = config.origin, { w: MW, h: MH } = maze;
     const toAt = (x, y) => [ox + x, config.yUp ? oy + (MH - 1 - y) : oy + y];
     const fromAt = at => { const x = Math.floor(at[0]) - ox, ry = Math.round(at[1]) - oy; return [x, config.yUp ? MH - 1 - ry : ry]; };
@@ -324,6 +338,7 @@ export default {
       isOpen: at => { const [x, y] = fromAt(at), m = st(); return isOpen({ ...m, cells: m.cells }, x, y); },
       wrap: at => [ox + wrapX(Math.floor(at[0]) - ox, MW), ...at.slice(1)], toAt, fromAt, problems: () => st().problems,
     };
-    publish(rt, instance, space, ID, { ...maze, problems, attempts, fallback }, { maze: api });
+    const from = toAt(Math.floor(maze.start.x), maze.start.y), targets = [...maze.pellets, ...maze.power].map(i => ({ id: `pellet_${i}`, cells: [toAt(i % MW, Math.floor(i / MW))] }));
+    publish(rt, instance, space, ID, { ...maze, problems, attempts, fallback, from, targets }, { maze: api });
   },
 };

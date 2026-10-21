@@ -98,6 +98,9 @@ export default {
         return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : true)); },
       progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
+    // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
+    body: { size: [0.8, 1.4, 0.8] },
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],
     actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach' }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

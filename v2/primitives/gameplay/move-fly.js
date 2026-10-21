@@ -23,6 +23,9 @@ export default {
   card: {
     loop: { verbs: ['fly', 'ascend', 'descend', 'jump', 'sprint'], progress: ['fly_start', 'arrived'] },
     locomotion: 'base', medium: 'air', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
+    // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
+    body: { size: [0.8, 1.4, 0.8] },
     intent: 'Flight: free 3D/side flight with ascend and descend, or jetpack thrust against gravity, always on or toggled by a verb or a double jump, optionally burning fuel. Use it for creative-mode flying, wings, jetpacks, flying NPCs and drones.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },

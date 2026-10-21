@@ -11,7 +11,7 @@
 // key). Failing sub-seeds retry; the fallback is a straight chain.
 // Works on any space with `position`: cells are carved when the space has
 // editCells; positions map onto the 'xy' or 'xz' plane.
-import { withDefaults, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, vocabulary, problem, inRect } from './generate2d-lib.js';
+import { withDefaults, bodyCells, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, vocabulary, problem, inRect } from './generate2d-lib.js';
 
 const ID = 'engine.generate.dungeon.rooms';
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -55,6 +55,9 @@ export default {
     provides: { content: ['cells', 'rooms', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
     defines: [],
+    // The guarantee: the published `targets` (every room centre) are reachable from `from` by the player's body, keys
+    // before their locks.
+    traversal: { mover: 'player', problems: ['cells_unreachable', 'dungeon_unsolvable', 'room_unreachable'] },
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],
     validates: ['dungeon_area_missing', 'dungeon_area_small', 'dungeon_keys_many'],
   },
@@ -122,7 +125,9 @@ export default {
     const metres = config.area || zoneRect(space.zone(config.zone), plane) || [0, 0, sz[0], plane === 'xz' ? sz[2] ?? sz[1] : sz[1]];
     const area = model3d ? [Math.ceil(metres[0] / C), Math.ceil(metres[1] / C), Math.floor(metres[2] / C), Math.floor(metres[3] / C)] : metres;
     const carve = !model3d && (typeof space.api.setCell === 'function' || typeof space.api.bake === 'function');
-    const d = generateDungeon(config, area, seed, carve || Boolean(model3d));
+    // The cell proof walks the player's body (card.traversal): its footprint in plan cells on the plane.
+    const body = bodyCells(rt, space, { axes: plane === 'xz' ? [0, 2] : [0, 1], unit: C });
+    const d = generateDungeon(config, area, seed, carve || Boolean(model3d), body);
     const at = model3d ? (u, v) => [(u + 0.5) * C, config.floor, (v + 0.5) * C] : (u, v) => planeAt(config.plane, u, v, config.floor);
     if (carve) { const w = cellWriter(rt, space); for (const c of d.cells) w.set(at(c[0], c[1]), c[2]); w.flush(); }
     const doorIds = new Map();
@@ -177,7 +182,9 @@ export default {
     }, ID);
     if (config.placePlayer) rt.on('spawn', ev => { if (ev.id !== 'player') return; const p = rt.player(); if (p?.space === space.sid) placeOn(rt, space, p, center(d.rooms[d.start])); });
     const { cells, ...data } = d;
-    publish(rt, instance, space, ID, { ...data, opened: [], found: [], carved: carve, built: Boolean(model3d), cell: C, plane }, { dungeon: {
+    const centreCell = rm => [Math.floor((rm.rect[0] + rm.rect[2]) / 2), Math.floor((rm.rect[1] + rm.rect[3]) / 2)];
+    const proof = carve ? { from: at(...centreCell(d.rooms[d.start])), targets: d.rooms.map(rm => ({ id: `room_${rm.id}`, cells: [at(...centreCell(rm))] })) } : {};
+    publish(rt, instance, space, ID, { ...data, ...proof, opened: [], found: [], carved: carve, built: Boolean(model3d), cell: C, plane }, { dungeon: {
       rooms: () => st().rooms, start: () => st().start, boss: () => st().boss, locks: () => st().locks, keys: () => st().keys,
       roomAt: p => { const u = p[0] / C, v = (plane === 'xz' ? p[2] : p[1]) / C; return st().rooms.findIndex(r => inRect(r.rect, Math.floor(u), Math.floor(v))); },
       isOpen: id => st().opened.includes(id), problems: () => st().problems,
@@ -186,11 +193,11 @@ export default {
 };
 
 /** Pure generation with proof and retries. area = [x0,y0,x1,y1) on the plane. */
-export function generateDungeon(config, area, seed, carve = true) {
+export function generateDungeon(config, area, seed, carve = true, body = [1, 1]) {
   let best = null;
   for (let attempt = 0; attempt <= config.attempts; attempt++) {
     const fallback = attempt === config.attempts, r = stream(seed, 'dungeon', attempt);
-    const d = build(config, area, r, fallback, carve);
+    const d = build(config, area, r, fallback, carve, body);
     if (fallback) d.problems.unshift(problem('dungeon_fallback', 'branching', 'no solvable layout from the sub-seeds; using a straight chain'));
     if (!best || d.problems.length < best.problems.length) best = { ...d, attempts: attempt + 1, fallback };
     if (!d.problems.length) break;
@@ -198,7 +205,7 @@ export function generateDungeon(config, area, seed, carve = true) {
   return best;
 }
 
-function build(config, area, r, chain, carve) {
+function build(config, area, r, chain, carve, body = [1, 1]) {
   const slot = config.roomSize[1] + 3, C = Math.max(1, Math.floor((area[2] - area[0]) / slot)), R = Math.max(1, Math.floor((area[3] - area[1]) / slot));
   const N = Math.min(config.rooms, C * R), problems = [];
   if (N < config.rooms) problems.push(problem('dungeon_cramped', 'rooms', `only ${N} of ${config.rooms} rooms fit the area`));
@@ -276,18 +283,23 @@ function build(config, area, r, chain, carve) {
     }
   }
   const lockList = locks.sort((a, b) => a.k - b.k).map(({ k, edge }) => ({ id: `lock_${k + 1}`, key: config.keys[k], room: edge.b, from: edge.a, cells: lockCells.get(k) || [], at: (lockCells.get(k) || [[cx(rooms[edge.b]), cy(rooms[edge.b])]])[0] }));
-  // 8. Cell proof: walk open cells from the start room, doors passable once their key cell was reached.
+  // 8. Cell proof: walk the player's body (its footprint `body` [columns, rows] from its corner cell) over open cells
+  // from the start room, doors passable once their key cell was covered; a cell is reached when the body covers it.
   if (carve) {
     const doorOf = new Map(); lockList.forEach((l, k) => l.cells.forEach(([x, y]) => doorOf.set(cellKey(x, y), k)));
     const keyAt = new Map(keys.map(k => [cellKey(cx(rooms[k.room]), cy(rooms[k.room])), k.lock]));
-    const seenC = new Set(), have = new Set(), blockedQ = [];
-    let q = [cellKey(cx(rooms[0]), cy(rooms[0]))]; seenC.add(q[0]);
+    const foot = (x, y) => { const out = []; for (let j = 0; j < body[1]; j++) for (let i = 0; i < body[0]; i++) out.push(cellKey(x + i, y + j)); return out; };
+    const fits = (x, y) => foot(x, y).every(k => open.has(k)), locked = (x, y) => foot(x, y).some(k => doorOf.has(k) && !have.has(doorOf.get(k)));
+    const seenC = new Set(), at = new Set(), have = new Set(), blockedQ = [];
+    const cover = (x, y) => { for (const k of foot(x, y)) { seenC.add(k); if (keyAt.has(k)) have.add(keyAt.get(k)); } };
+    const [sx, sy] = [cx(rooms[0]), cy(rooms[0])];
+    let q = fits(sx, sy) ? [cellKey(sx, sy)] : []; q.forEach(k => at.add(k));
     while (q.length) {
       for (let i = 0; i < q.length; i++) {
-        const [x, y] = q[i].split(',').map(Number); if (keyAt.has(q[i])) have.add(keyAt.get(q[i]));
-        for (const [dx, dy] of DIRS) { const k = cellKey(x + dx, y + dy); if (!open.has(k) || seenC.has(k)) continue; if (doorOf.has(k) && !have.has(doorOf.get(k))) { blockedQ.push(k); continue; } seenC.add(k); q.push(k); }
+        const [x, y] = q[i].split(',').map(Number); cover(x, y);
+        for (const [dx, dy] of DIRS) { const k = cellKey(x + dx, y + dy); if (at.has(k) || !fits(x + dx, y + dy)) continue; if (locked(x + dx, y + dy)) { blockedQ.push(k); continue; } at.add(k); q.push(k); }
       }
-      q = blockedQ.filter(k => !seenC.has(k) && have.has(doorOf.get(k))); q.forEach(k => seenC.add(k)); blockedQ.length = 0;
+      q = blockedQ.filter(k => { const [x, y] = k.split(',').map(Number); return !at.has(k) && !locked(x, y); }); q.forEach(k => at.add(k)); blockedQ.length = 0;
       if (!q.length) break;
     }
     const lost = rooms.filter(rm => !seenC.has(cellKey(cx(rm), cy(rm))));

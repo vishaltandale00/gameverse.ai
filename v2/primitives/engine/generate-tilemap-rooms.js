@@ -1,15 +1,18 @@
 // Authored-topology 2D rooms: the document fixes each room's rect, zone, style
 // and exits; this fills them in (walls, ground, platforms, pits, water,
 // hazards, one-way rungs, features) from a seed and PROVES every room traversable for
-// the stated movement abilities: every exit reaches every other exit and every
-// feature is reachable (side view: jump arcs, falls, one-way rungs, climb, swim — see
-// generate2d-reach.js; top-down: 4-neighbour walking). Failed rooms retry with
+// the document's player (card.traversal): its movement envelope (the locomotion cards' card.envelope
+// for the abilities it starts with plus requiresAbilities) and its body box, on the tilemap's own
+// navigation graph (generate2d-reach.js), so the verifier's reachability finds what the proof found.
+// Every exit reaches every other exit and every feature is reachable. Failed rooms retry with
 // sub-seeds, then fall back to a plain layout (flat floor, staircase platforms,
-// rungs under high exits) which is proven too. Declare the rung block one_way in content.blocks for
-// real platformer spaces (testSpace treats every block as solid but only the proof walks it). Styles and palettes are data.
+// rungs under high exits) which is proven too; what no layout satisfies is reported with its code.
+// Declare the rung block one_way in content.blocks for real platformer spaces (testSpace treats every
+// block as solid but only the proof walks it). Styles and palettes are data.
 // Coordinates are tiles, y up; rect = [x0, y0, x1, y1) as space zones.
-import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect } from './generate2d-lib.js';
-import { ROLE, reachSide, reachTop, movementFor, ABILITY_EFFECTS } from './generate2d-reach.js';
+import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, placeOn, cellOfEntity, problem, rectsOverlap, inRect, documentMover } from './generate2d-lib.js';
+import { ROLE, proveReach, navMover, moverReach, moverCells } from './generate2d-reach.js';
+import { movementAbilityNames, abilityDefs } from '../gameplay/move-lib-envelope.js';
 
 const { EMPTY, SOLID, HAZARD, WATER, LADDER, ONEWAY } = ROLE;
 const ID = 'engine.generate.tilemap.rooms';
@@ -48,24 +51,21 @@ const room = { type: 'object', fields: {
     to: { type: 'ref', to: 'zone', effect: 'zone it leads to; unmatched exits become doors for a portal' },
     gate: { type: 'predicate', effect: 'progression gate (recorded on the exit; enforced by gate/portal primitives)' },
   } } },
-  requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'extra abilities assumed inside this room' },
+  requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'extra abilities (ids the document defines, or movement ability names) the player holds inside this room' },
 } };
+/** Problem codes of the traversal proof (card.traversal). */
+const TRAVERSAL = ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'start_blocked', 'clear_unreachable'];
 
 export default {
   id: ID,
   card: {
-    intent: 'Fills authored 2D room rects (side view or top-down) with walls, platforms, pits, water, hazards and features, and proves every room traversable for the stated movement abilities.',
+    intent: "Fills authored 2D room rects (side view or top-down) with walls, platforms, pits, water, hazards and features, and proves every room traversable for the player's movement and body.",
     views: ['side', 'td'],
     spaces: ['engine.space.tilemap'],
     params: {
       rooms: { type: 'list', of: room, min: 1, required: true },
-      requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities the proof assumes everywhere' },
+      requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities (ids the document defines, or movement ability names) the player holds everywhere in the proof' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side' },
-      movement: { type: 'object', default: {}, fields: {
-        jumpHeight: { type: 'number', min: 0, max: 20, unit: 'tiles' }, jumpDistance: { type: 'number', min: 0, max: 30, unit: 'tiles' },
-        doubleJump: { type: 'boolean' }, dash: { type: 'number', min: 0, max: 20, unit: 'tiles' }, climb: { type: 'boolean' }, wallJump: { type: 'boolean' }, swim: { type: 'boolean' }, fly: { type: 'boolean' },
-      }, effect: 'base movement the proof uses (tilemap ability names)' },
-      abilities: { type: 'json', default: {}, effect: 'ability id → movement deltas, e.g. {"briar_grip":{"climb":true},"ember_step":{"dash":3}}' },
       styles: { type: 'json', default: {}, effect: 'extra or overriding style recipes' },
       palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'string' }])), effect: 'role → block id' },
       themes: { type: 'json', default: {}, effect: 'theme → palette overrides' },
@@ -78,22 +78,25 @@ export default {
     },
     provides: { content: ['cells', 'rooms'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'room_door', 'room_door:*', 'blocked'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
-    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable'],
+    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked', 'clear_unreachable', 'pit_unclearable'],
+    // The guarantee: the published `targets` (every exit and every feature) are reachable from `from` by the document's
+    // player, its envelope and body (generate2d-lib documentMover), on the space's navigation, taking the published
+    // `passes` (paired doors); a seed whose layout cannot satisfy it reports these codes.
+    traversal: { mover: 'player', problems: TRAVERSAL },
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
   /**
    * Planner hook (v2/planner/world.js): a config that builds a world for a space that has none yet,
    * derived from the space's own zones. One room per zone rect (skipping zones too small for a room or
    * overlapping one already kept), an exit to every room it touches, tall side-view rooms as climbable
-   * shafts, and the proof's movement taken from the document's movement envelope, so the generator only
-   * builds what the player's real movement can traverse. -> { with, content? } or null.
+   * shafts. The proof's mover is the document's player (card.traversal), read at install. -> { with, content? } or null.
    */
   /** The tiles the rooms fill: the bounding box of their rects (provides.extent: 'own'). */
   extentOf(raw) {
     const rects = (raw?.rooms || []).map(r => r.rect).filter(r => Array.isArray(r) && r.length === 4);
     return rects.length ? [Math.min(...rects.map(r => r[0])), Math.min(...rects.map(r => r[1])), Math.max(...rects.map(r => r[2])), Math.max(...rects.map(r => r[3]))] : null;
   },
-  scaffold(space, doc, { envelope = {}, reserve = [] } = {}) {
+  scaffold(space, doc, { reserve = [] } = {}) {
     const E = this.card.params.exitSize.default, mode = space.with?.mode === 'topdown' ? 'topdown' : 'side';
     const [W, H] = Array.isArray(space.with?.size) ? space.with.size : [Infinity, Infinity];
     const rooms = [];
@@ -112,15 +115,6 @@ export default {
       const overlap = side === 'l' || side === 'r' ? span(ay0, ay1, by0, by1) : side ? span(ax0, ax1, bx0, bx1) : 0;
       return overlap >= E + 2 ? [{ side, to: b.zone }] : [];
     });
-    // The proof's movement: the envelope's reach in whole tiles (rounded down, so the proof never assumes more
-    // than the controller does). Wall climbing counts only for controllers that climb any wall.
-    const tiles = (v, max) => Math.max(0, Math.min(max, Math.floor(v)));
-    const movement = {};
-    if (Number.isFinite(envelope.jumpHeight)) movement.jumpHeight = tiles(envelope.jumpHeight, 20);
-    if (Number.isFinite(envelope.jumpGap)) movement.jumpDistance = tiles(envelope.jumpGap, 30);
-    if (Number.isFinite(envelope.dash) && envelope.dash > 0) movement.dash = tiles(envelope.dash, 20);
-    for (const k of ['doubleJump', 'wallJump', 'swim', 'fly']) if (envelope[k]) movement[k] = true;
-    if (envelope.climb && envelope.climbSurfaces === 'any') movement.climb = true;
     // Palette from the document's own blocks where they fit, else blocks this config adds.
     const blocks = doc.content?.blocks || [], add = [];
     const tagged = (b, ...t) => (b.tags || []).some(x => t.includes(x));
@@ -141,7 +135,7 @@ export default {
     const cx = (cols.find(x => !kept(x)) ?? want) + 0.5;
     const start = mode === 'side' ? [cx, sy] : [cx, sy + 0.5];
     return {
-      with: { mode, rooms, movement, palette: { wall: solid, ground: solid, platform: solid, rung: ledge }, ...(reserve.length ? { keepClear: reserve.map(r => r.map(Math.round)) } : {}) },
+      with: { mode, rooms, palette: { wall: solid, ground: solid, platform: solid, rung: ledge }, ...(reserve.length ? { keepClear: reserve.map(r => r.map(Math.round)) } : {}) },
       ...(add.length ? { content: { blocks: add } } : {}),
       ...(here ? { start } : {}),
     };
@@ -150,8 +144,10 @@ export default {
     const config = withDefaults(this.card, raw);
     const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.zones || []).some(z => z.id === config.rooms[0]?.zone)) || null;
     const size = sp?.with?.size, zones = new Map((sp?.zones || []).map(z => [z.id, z])), ids = new Set();
-    const known = a => a in (config.abilities || {}) || a in ABILITY_EFFECTS;
-    config.requiresAbilities.forEach((a, i) => { if (!known(a)) errors.push(problem('ability_unknown', `requiresAbilities[${i}]`, `ability '${a}' has no movement effect`, { hint: 'map it in params.abilities' })); });
+    // An ability is one the document defines (an `ability` reference kind) or a movement card's own ability name.
+    const names = new Set([...abilityDefs(doc, ctx.registry).keys(), ...movementAbilityNames(doc, ctx.registry)]), known = a => names.has(a);
+    const hint = [...names].join(', ') || 'no ability is defined in this document';
+    config.requiresAbilities.forEach((a, i) => { if (!known(a)) errors.push(problem('ability_unknown', `requiresAbilities[${i}]`, `ability '${a}' is not defined by the document or its movement`, { hint })); });
     config.rooms.forEach((r, i) => {
       const path = `rooms[${i}]`, [x0, y0, x1, y1] = r.rect || [];
       if (ids.has(r.id)) errors.push(problem('room_duplicate', `${path}.id`, `duplicate room '${r.id}'`)); ids.add(r.id);
@@ -160,14 +156,15 @@ export default {
       const z = zoneRect(zones.get(r.zone));
       if (z && !(x0 >= z[0] && y0 >= z[1] && x1 <= z[2] && y1 <= z[3])) errors.push(problem('room_outside_zone', `${path}.rect`, `room '${r.id}' extends outside zone '${r.zone}' ${JSON.stringify(z)}`));
       if (size && (x0 < 0 || y0 < 0 || x1 > size[0] || y1 > size[1])) errors.push(problem('room_outside_space', `${path}.rect`, `room '${r.id}' is outside the ${size[0]}×${size[1]} space`));
-      (r.requiresAbilities || []).forEach((a, k) => { if (!known(a)) errors.push(problem('ability_unknown', `${path}.requiresAbilities[${k}]`, `ability '${a}' has no movement effect`, { hint: 'map it in params.abilities' })); });
+      (r.requiresAbilities || []).forEach((a, k) => { if (!known(a)) errors.push(problem('ability_unknown', `${path}.requiresAbilities[${k}]`, `ability '${a}' is not defined by the document or its movement`, { hint })); });
       config.rooms.slice(0, i).forEach(o => { if (o.rect && r.rect && rectsOverlap(o.rect, r.rect)) errors.push(problem('room_overlap', `${path}.rect`, `room '${r.id}' overlaps '${o.id}'`)); });
     });
     return errors;
   },
   install(rt, raw, instance) {
     const config = withDefaults(this.card, raw), space = spaceOf(rt, instance), seed = drawSeed(rt);
-    const result = generateRooms(config, seed, playerStart(rt, space));
+    const start = playerStart(rt, space);
+    const result = generateRooms(config, seed, start, held => documentMover(rt, space, held, start));
     const writer = cellWriter(rt, space);
     for (const c of result.cells) writer.set(c.at, c.block);
     writer.flush();
@@ -214,11 +211,19 @@ function spawnFeature(rt, space, r, f) {
   spawnAt(rt, space, archetype, f.at, { feature: { ...f.spec, room: r.id, kind } }, id);
 }
 
-/** Pure generation: returns { rooms, graph, problems, cells, attempts, fallback }. Exported for tools and tests. */
-export function generateRooms(config, seed, start = null) {
+/**
+ * Pure generation: returns { rooms, graph, problems, cells, attempts, fallback, from, targets }. moverFor(abilityIds) gives
+ * the kernel reachability opts (+ body width/height) of the player holding those abilities. Exported for tools and tests.
+ */
+export function generateRooms(config, seed, start, moverFor) {
+  const moverOf = ids => navMover(moverFor(ids));
   const styles = { ...ROOM_STYLES, ...config.styles }, E = config.exitSize;
   const rooms = config.rooms.map(r => ({ ...r, style: styles[r.style] ? r.style : 'hall' }));
-  const ground = r => (config.mode === "side" ? 1 + Math.max(styles[r.style].ground ?? 1, r.gaps ? 2 : 0) : 1);
+  // Pits only where the player clears one: a pit is at most its jump distance less a tile wide (none when that is 0).
+  const roomMover = r => moverOf([...config.requiresAbilities, ...(r.requiresAbilities || [])]);
+  const pitMax = r => Math.floor(moverReach(roomMover(r)).distance) - 1;
+  const pits = r => (config.mode === 'side' && r.gaps && pitMax(r) >= 1 ? r.gaps : 0);
+  const ground = r => (config.mode === "side" ? 1 + Math.max(styles[r.style].ground ?? 1, pits(r) ? 2 : 0) : 1);
   // 1. Openings from geometry (no RNG), identical on both sides of a shared wall.
   const openings = new Map(rooms.map(r => [r.id, []])), links = [], problems = [];
   const touching = (a, side) => rooms.filter(b => b !== a && (
@@ -251,11 +256,12 @@ export function generateRooms(config, seed, start = null) {
   let attemptsTotal = 0, anyFallback = false;
   rooms.forEach((r, ri) => {
     const theme = { ...DEFAULT_PALETTE, ...config.palette, ...(config.themes?.[r.theme] || {}) };
-    const m = movementFor(config.movement, [...config.requiresAbilities, ...(r.requiresAbilities || [])], config.abilities);
+    const m = roomMover(r);
+    if (config.mode === 'side' && r.gaps && !pits(r)) problems.push(problem('pit_unclearable', `rooms[${ri}].gaps`, `room '${r.id}': the player's jump clears no pit, so the room has none`, { room: r.id }));
     let best = null;
     for (let attempt = 0; attempt <= config.attempts; attempt++) {
       const plain = attempt === config.attempts;
-      const built = buildRoom(r, styles[r.style], openings.get(r.id), m, config, theme, stream(seed, r.id, attempt), { plain, ground: ground(r), start: start && inRect(r.rect, Math.floor(start[0]), Math.floor(start[1])) ? start : null });
+      const built = buildRoom({ ...r, gaps: pits(r) }, styles[r.style], openings.get(r.id), m, config, theme, stream(seed, r.id, attempt), { plain, ground: ground(r), start: start && inRect(r.rect, Math.floor(start[0]), Math.floor(start[1])) ? start : null });
       attemptsTotal++;
       if (!best || built.problems.length < best.problems.length) best = { ...built, attempt, plain };
       if (!built.problems.length) break;
@@ -271,7 +277,8 @@ export function generateRooms(config, seed, start = null) {
   // with every ability the document mentions, every room and every exit must be reached. Unmatched
   // exits with a `to` zone are doors: each pairs with the nearest door of that zone leading back (else
   // any door there), and reaching a door continues from its partner's inner tile.
-  const all = movementFor(config.movement, [...config.requiresAbilities, ...rooms.flatMap(r => r.requiresAbilities || [])], config.abilities);
+  const all = moverOf([...config.requiresAbilities, ...rooms.flatMap(r => r.requiresAbilities || [])]);
+  const feetY = at => Math.floor(at[1] - (all.height ?? 1) / 2 + 0.1); // the space's feet cell of a body centred at `at`
   const bx0 = Math.min(...rooms.map(r => r.rect[0])), by0 = Math.min(...rooms.map(r => r.rect[1]));
   const BW = Math.max(...rooms.map(r => r.rect[2])) - bx0, BH = Math.max(...rooms.map(r => r.rect[3])) - by0;
   const big = new Raster(BW, BH, SOLID), goals = new Map(), portStarts = new Map();
@@ -289,11 +296,12 @@ export function generateRooms(config, seed, start = null) {
     if (pick) d.e.pair = { room: pick.r.id, exit: pick.pi, port: pick.e.port };
     else problems.push(problem('door_unpaired', `rooms[${out.indexOf(d.r)}].exits[${d.pi}]`, `room '${d.r.id}': the door to '${d.e.to}' has no door in that zone to lead to`, { room: d.r.id }));
   }
-  const reachG = config.mode === 'side' ? reachSide : reachTop;
+  const reachG = (grid, mover, from, targets) => proveReach(grid, config.mode, mover, from, targets);
   const startRoom = out.find(r => start && inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) || out[0];
-  let starts = start && startRoom === out.find(r => inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) ? [{ x: Math.floor(start[0]) - bx0, y: Math.floor(start[1]) - by0 }] : portStarts.get(startRoom.id).slice(0, 1);
+  let starts = start && startRoom === out.find(r => inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) ? [{ x: Math.floor(start[0]) - bx0, y: feetY(start) - by0 }] : portStarts.get(startRoom.id).slice(0, 1);
+  const from = starts[0] ? [starts[0].x + bx0, starts[0].y + by0] : null;
   const hit = new Set(), nodes = new Set(), entered = new Set([startRoom.id]);
-  if (start && reachG(big, all, starts).nodes.size === 0) problems.push(problem('start_blocked', 'rooms', `the player start ${JSON.stringify(start)} has no foothold`));
+  if (start && reachG(big, all, starts).nodes.size === 0) problems.push(problem('start_blocked', 'rooms', `the player start ${JSON.stringify(start)} has no foothold for its body`));
   for (let pass = 0; pass < rooms.length + 1 && starts.length; pass++) {
     const res = reachG(big, all, starts, goals);
     res.hit.forEach(h => hit.add(h)); res.nodes.forEach(n => nodes.add(n));
@@ -313,12 +321,19 @@ export function generateRooms(config, seed, start = null) {
     if (!any && out.some(r => rectsOverlap(r.rect, c))) problems.push(problem('clear_unreachable', `keepClear[${ci}]`, `kept-clear region ${JSON.stringify(c)} is not reachable from the start`));
   });
   const first = startRoom;
-  return { rooms: out, graph: { start: first.id, edges: links }, problems, cells, attempts: attemptsTotal, fallback: anyFallback, seed };
+  // What the proof guarantees (card.traversal), for checks that repeat it on the built space: every exit's cells and
+  // every placed feature, reachable from `from` (the start feet cell) taking doors.
+  const targets = [...out.flatMap(r => r.exits.map((e, i) => ({ id: `${r.id}#exit${i}`, cells: e.door ? [e.port] : e.cells }))),
+    ...out.flatMap(r => r.features.filter(f => f.at).map((f, i) => ({ id: `${r.id}#${f.id ?? `${f.kind}_${i}`}`, cells: [f.at.map(Math.floor)] })))];
+  const passes = doors.filter(d => d.e.pair).map(d => ({ from: d.e.port, to: d.e.pair.port }));
+  return { rooms: out, graph: { start: first.id, edges: links }, problems, cells, attempts: attemptsTotal, fallback: anyFallback, seed, from, targets, passes, mover: { abilities: all.abilities, width: all.width, height: all.height } };
 }
 
 /** Paint one room on a local raster (y up) and prove it. */
 function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground: g, start }) {
   const W = r.rect[2] - r.rect[0], H = r.rect[3] - r.rect[1], side = config.mode === 'side', E = config.exitSize;
+  // The mover's reach (tiles) sizes what is built: pits it can clear, platforms within its jump.
+  const { height: JH, distance: JD } = moverReach(m);
   const grid = new Raster(W, H, EMPTY), blocks = new Array(W * H).fill(null);
   const put = (x, y, role, block) => { if (!grid.in(x, y)) return; grid.set(x, y, role); blocks[y * W + x] = block ?? null; };
   const box = (x, y, w, h, role, block) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) put(i, j, role, block); };
@@ -343,7 +358,7 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
     if (side && style.water) { const wy = floor + Math.max(1, Math.floor(style.water * (top - floor))); for (let y = floor; y < wy; y++) for (let x = 1; x < W - 1; x++) if (grid.get(x, y) === EMPTY) put(x, y, WATER, palette.water); }
     // Pits: carved through the ground, never wider than a jump clears; hazards line the bottom when the room has any.
     if (side) for (let k = 0; k < (r.gaps || 0); k++) {
-      const gw = clamp(rnd.range(1, Math.max(1, Math.floor(m.D) - 1)), 1, Math.max(1, W - 8)), gx = rnd.range(3, Math.max(3, W - 4 - gw));
+      const gw = clamp(rnd.range(1, Math.floor(JD) - 1), 1, Math.max(1, W - 8)), gx = rnd.range(3, Math.max(3, W - 4 - gw));
       if (reserved(gx, floor) || reserved(gx + gw - 1, floor)) continue;
       for (let x = gx; x < gx + gw; x++) { for (let y = 2; y < g; y++) put(x, y, EMPTY); put(x, 1, r.hazards?.length ? HAZARD : EMPTY, r.hazards?.length ? r.hazards[0] : null); }
     }
@@ -354,11 +369,12 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
   }
   // Platforms: shafts stack them within jump height, alternating sides; elsewhere scattered (plain: a staircase).
   const count = r.platforms ?? style.platforms ?? 0, [pw0, pw1] = style.platformWidth || [3, 5], prole = config.oneWayPlatforms ? ONEWAY : SOLID;
-  if (side && count) {
-    const step = clamp(Math.floor(m.h) || 1, 1, Math.max(1, Math.floor(m.h))), stair = plain || style.climb;
+  // The plain layout is the one that must always prove: it stairs platforms only for a mover that jumps onto a step.
+  if (side && count && !(plain && Math.floor(JH) < 1)) {
+    const step = clamp(Math.floor(JH) || 1, 1, Math.max(1, Math.floor(JH))), stair = plain || style.climb;
     for (let k = 0; k < count; k++) {
       const pw = clamp(rnd.range(pw0, pw1), 2, Math.max(2, W - 4));
-      const py = stair ? floor + step * (k + 1) - 1 : floor + rnd.range(1, Math.max(1, Math.floor(m.h))) - 1 + (k % 2) * rnd.int(Math.max(1, top - floor - 3));
+      const py = stair ? floor + step * (k + 1) - 1 : floor + rnd.range(1, Math.max(1, Math.floor(JH))) - 1 + (k % 2) * rnd.int(Math.max(1, top - floor - 3));
       if (py >= top - 1) break;
       const px = stair ? (k % 2 ? W - 2 - pw - rnd.int(2) : 1 + rnd.int(2)) : rnd.range(2, Math.max(2, W - 2 - pw));
       for (let x = px; x < px + pw; x++) if (!reserved(x, py) && grid.get(x, py) !== HAZARD) put(x, py, prole, palette.platform);
@@ -367,8 +383,8 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
   // Routes up to high side exits: a staircase of short platforms along that wall, each rise within the jump.
   if (side && !plain) for (const o of openings) {
     if (o.door || (o.side !== 'l' && o.side !== 'r')) continue;
-    const y0 = o.span[0] - r.rect[1], step = Math.max(1, Math.floor(m.h) - 1), reach = clamp(Math.floor(m.D) - 1, 1, 3);
-    if (y0 - 1 <= floor + Math.floor(m.h) - 1) continue;
+    const y0 = o.span[0] - r.rect[1], step = Math.max(1, Math.floor(JH) - 1), reach = clamp(Math.floor(JD) - 1, 1, 3);
+    if (y0 - 1 <= floor + Math.floor(JH) - 1) continue;
     const xs = k => { const off = k % 2 ? reach + rnd.int(2) : 0; return o.side === 'l' ? 1 + off : W - 4 - off; };
     for (let y = y0 - 1, k = 0; y > floor + step - 1; y -= step, k++) for (let x = xs(k); x < xs(k) + 3; x++) if (x > 0 && x < W - 1) put(x, y, prole, palette.platform);
   }
@@ -393,7 +409,7 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
       const x0 = o.span[0] - r.rect[0], x1 = o.span[1] - r.rect[0];
       for (let x = x0; x < x1; x++) {
         if (o.side === 't') { put(x, H - 1, EMPTY); mark(x, H - 1); for (let y = top + 1; y < H - 1; y++) put(x, y, EMPTY); }
-        else { for (let y = 0; y < (side ? g : 1); y++) { put(x, y, EMPTY); mark(x, y); } }
+        else { for (let y = 0; y < (side ? g : 1); y++) { put(x, y, EMPTY); mark(x, y); } if (side) mark(x, g); } // side view: up to the floor row a body climbing in stands on
       }
       if (o.side === 't') starts.push({ x: x0, y: H - 1, port: oi });
       else starts.push({ x: x0, y: 0, port: oi, launch: side });
@@ -405,7 +421,7 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
   // from the opening down to the floor, the upper room inside its floor hole; consecutive rungs rise
   // at most jumpHeight − 1, across the wall too. The plain fallback also stacks rungs under mid-wall
   // side exits and ceiling doors. Rungs cut through platforms and cave noise.
-  const step = Math.max(1, Math.floor(m.h) - 1);
+  const step = Math.max(1, Math.floor(JH) - 1);
   const rungs = (x0, x1, yTop, yLow) => {
     for (let y = yLow; y <= yTop; y++) for (let x = Math.max(1, x0); x < Math.min(W - 1, x1); x++) if (y >= floor && y < H - 1 && grid.get(x, y) !== EMPTY) put(x, y, EMPTY); // a clear shaft
     for (let y = yTop; y >= yLow; y -= step) for (let x = x0; x < x1; x++) if (x > 0 && x < W - 1 || y >= H - 1 || y < g) put(x, y, ONEWAY, palette.rung);
@@ -418,16 +434,31 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
   });
   // Regions other primitives own stay empty (after everything above painted, before the proof sees the room).
   for (const [cx0, cy0, cx1, cy1] of config.keepClear || []) for (let y = Math.max(0, cy0 - r.rect[1]); y < Math.min(H, cy1 - r.rect[1]); y++) for (let x = Math.max(0, cx0 - r.rect[0]); x < Math.min(W, cx1 - r.rect[0]); x++) put(x, y, EMPTY);
-  // Proof: every port reaches every other port; features reachable from the first port.
-  const reach = side ? reachSide : reachTop, problems = [];
-  const fromPort = starts.map(s => reach(grid, m, [s.launch && grid.get(s.x, s.y) === ONEWAY ? { x: s.x, y: s.y + 1 } : s], goals));
+  // Proof: every port reaches every other port; features reachable from the first port. The room is proven on its
+  // raster padded with what lies beyond its floor and ceiling openings (open above a ceiling opening, so a body
+  // climbing out has its headroom; a foothold below a floor opening, where the room below lets the player in).
+  const problems = [], [, bodyRows] = moverCells(m), padBelow = 1, padAbove = bodyRows;
+  const P = new Raster(W, H + padBelow + padAbove, SOLID), up = i => i + padBelow * W;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) P.set(x, y + padBelow, grid.get(x, y));
+  for (const o of openings) if (!o.door && (o.side === 't' || o.side === 'b')) for (let x = o.span[0] - r.rect[0]; x < o.span[1] - r.rect[0]; x++) {
+    if (o.side === 'b') P.set(x, 0, side ? ONEWAY : EMPTY); else for (let y = 0; y < padAbove; y++) P.set(x, H + padBelow + y, EMPTY);
+  }
+  const pGoals = new Map([...goals].map(([i, g]) => [up(i), g]));
+  const reach = from => {
+    const res = proveReach(P, config.mode, m, from.map(s => ({ x: s.x, y: s.y + padBelow })), pGoals), nodes = new Set();
+    for (const i of res.nodes) { const y = Math.floor(i / W) - padBelow; if (y >= 0 && y < H) nodes.add(y * W + (i % W)); }
+    return { nodes, hit: res.hit };
+  };
+  const fromPort = starts.map(s => reach([s]));
   for (const [i, s] of starts.entries()) for (const t of starts) if (t.port !== s.port && !fromPort[i].hit.has(t.port))
     problems.push(problem('exit_unreachable', `exits[${openings[t.port].exit}]`, `room '${r.id}': exit '${openings[t.port].side}' unreachable from exit '${openings[s.port].side}'`, { room: r.id }));
   const reached = starts.length ? fromPort.reduce((acc, x) => (x.nodes.forEach(n => acc.add(n)), acc), new Set()) : null;
   if (!starts.length) problems.push(problem('room_isolated', '', `room '${r.id}' has no exits`, { room: r.id }));
+  // The player starts here: every exit is reached from the start too (a room with one exit is crossed from it).
+  const anchor = start ? [Math.floor(start[0]) - r.rect[0], Math.floor(start[1] - (m.height ?? 1) / 2 + 0.1) - r.rect[1]] : null;
+  if (anchor && starts.length) { const fromStart = reach([{ x: anchor[0], y: anchor[1] }]); for (const t of starts) if (!fromStart.hit.has(t.port)) problems.push(problem('exit_unreachable', `exits[${openings[t.port].exit}]`, `room '${r.id}': exit '${openings[t.port].side}' unreachable from the player start`, { room: r.id })); }
   // Features: explicit positions must be reachable; others pick reachable floor tiles spread by the seed.
-  const anchor = start ? [Math.floor(start[0]) - r.rect[0], Math.floor(start[1]) - r.rect[1]] : null;
-  const pool = reached ? [...reached] : anchor ? [...reach(grid, m, [{ x: anchor[0], y: anchor[1] }]).nodes] : [];
+  const pool = reached ? [...reached] : anchor ? [...reach([{ x: anchor[0], y: anchor[1] }]).nodes] : [];
   const free = pool.filter(i => !goals.has(i) && grid.cells[i] !== WATER).sort((a, b) => a - b);
   const taken = new Set(), features = [];
   (r.features || []).forEach((f, fi) => {

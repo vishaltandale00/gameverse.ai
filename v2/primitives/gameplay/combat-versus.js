@@ -11,7 +11,7 @@
 //   knockdown and wakeup with invulnerability; and a fighter controller
 //   (walk, back walk, jump arcs, dash) from the preset physique.
 // Fighter state lives in components.versus = {meter, juggle, guard, air, crouch, throwProt, st, t, pv}.
-import { grantInvuln, boxOf, add, v3, sub, posOf, facingSign, setFacing, like, spaceOf, round, err, archetypes, combat, service, intercept, statOf } from './combat-lib.js';
+import { grantInvuln, boxOf, add, v3, sub, posOf, facingSign, setFacing, like, spaceOf, round, err, archetypes, combat, service, intercept, statOf, controlDir, held } from './combat-lib.js';
 import { SUPER_COST, physique } from './combat-lib-moves.js';
 
 const KEY = 'gameplay.combat.versus';
@@ -65,11 +65,7 @@ export default {
     const melee = () => rt.service('melee');
     const scale = () => rt.doc.systems.find(s => s.use === 'gameplay.combat.melee')?.with?.fighterScale ?? 0.01;
     const physOf = e => melee().physique(e) ?? physique({});
-    const dirOf = e => {
-      if (e.id !== 'player') return e.components.melee?.intent?.dir ?? 5;
-      const [x = 0, y = 0] = rt.input?.axes?.move || [];
-      return 5 + (Math.abs(x) > 0.5 ? Math.sign(x) * facingSign(e) : 0) + 3 * (Math.abs(y) > 0.5 ? Math.sign(y) : 0);
-    };
+    const dirOf = e => controlDir(rt, e);
     const air = e => gpos(e)[1] > config.floor + 1e-6 || vs(e).st === 'launch' || vs(e).st === 'jump';
     const stunned = e => (e.components.health?.stun ?? 0) > 0;
     const gain = (e, n) => { const v = vs(e); v.meter = Math.min(config.meterMax, round(v.meter + n)); if (e.id === 'player') rt.state.vars.meter = v.meter; };
@@ -85,7 +81,7 @@ export default {
       if ((v.st === 'knockdown' || v.st === 'wakeup') && !hit.otg) return { cancel: true, reason: 'down' };
       if (v.st === 'launch' && v.juggle >= config.juggleMax) { rt.emit('juggle_limit', { who: d.id, by: hit.by }); return { cancel: true, reason: 'juggle' }; }
       const away = a ? Math.sign(gpos(d)[0] - gpos(a)[0]) || facingSign(a) : Math.sign(v3(hit.dir)[0]) || 1;
-      const dir = dirOf(d), holdBack = config.guard === 'button' ? (d.id === 'player' ? Boolean(rt.input?.held?.block) : Boolean(dm?.intent?.hold?.includes('block'))) : [1, 4, 7].includes(dir) && facingSign(d) === -away;
+      const dir = dirOf(d), holdBack = config.guard === 'button' ? held(rt, d, 'block') :[1, 4, 7].includes(dir) && facingSign(d) === -away;
       const low = dir >= 1 && dir <= 3;
       const levelOk = hit.level === 'low' ? low : hit.level === 'overhead' ? !low : true;
       const canBlock = !wasAir && (FREE_MELEE.has(dm?.st) || dm?.st === 'block') && !stunned(d) || (stunned(d) && d.components.health.stunKind === 'block');
@@ -146,6 +142,8 @@ export default {
     hookMelee();
 
     rt.action('dash', (v, rt) => { const p = rt.player(); if (p?.components.versus) vs(p).dashReq = v === 'back' ? -1 : 1; });
+    // A double tap (engine.input.motions dash-f / dash-b, for the player and every fighter with controls) dashes too.
+    rt.on('motion', ({ who, motion }) => { const e = rt.entity(who); if (e?.components.versus && (motion === 'dash-f' || motion === 'dash-b')) vs(e).dashReq = motion === 'dash-b' ? -1 : 1; });
 
     rt.system('physics', rt => {
       hookMelee();
@@ -217,6 +215,8 @@ export default {
       }
     }, KEY);
     rt.on('died', ({ who }) => { const e = rt.entity(who); if (e?.components.versus) { e.components.versus.st = 'ko'; } });
+    // A revived fighter (a new round's revive, a stock respawn) stands up free: KO is not a state it fights from.
+    rt.on('revived', ({ who }) => { const e = rt.entity(who); if (e?.components.versus) Object.assign(vs(e), { st: 'free', t: 0, juggle: 0, pv: 0, throwProt: 0 }); });
   },
 };
 export { statOf };

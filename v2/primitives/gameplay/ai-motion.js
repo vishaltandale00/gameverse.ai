@@ -102,6 +102,8 @@ const to2 = (P, at) => [dot(at, P.ax), dot(at, P.bx)];
 const to3 = (P, base, xy) => { const off = sub(v3(base), add(mul(P.ax, dot(base, P.ax)), mul(P.bx, dot(base, P.bx)))); return r6(add(off, add(mul(P.ax, xy[0]), mul(P.bx, xy[1])))); };
 /** Plane coordinate along "down" (screen y for the default down [0,1]). */
 const along = (P, xy) => xy[0] * Math.cos(P.DOWN) + xy[1] * Math.sin(P.DOWN);
+/** Where the bounds begin along `down` (the top of the screen): the least `along` over the four corners, for any down vector. */
+const topOf = (P, B) => Math.min(...[[B.min[0], B.min[1]], [B.max[0], B.min[1]], [B.min[0], B.max[1]], [B.max[0], B.max[1]]].map(c => along(P, c)));
 
 /** Catmull-Rom path follower (kit followPath): advances P.{i,u} by speed·dt, returns [x,y, done]. */
 export function followPath(path, speed, dt) {
@@ -165,7 +167,7 @@ function step(rt, e, m, api, config, P) {
       if (arena) {
         if (s.sub === 0) { const d = Math.hypot(s.tx - pos[0], s.ty - pos[1]); if (d < 6 || s.subT++ > 240) { s.sub = 1; s.subT = 0; } else { pos[0] += (s.tx - pos[0]) / d * speed * dt; pos[1] += (s.ty - pos[1]) / d * speed * dt; } }
         else if (++s.subT > 90) { s.sub = 0; s.subT = 0; [s.tx, s.ty] = randIn(rt, B, center); }
-      } else if (s.sub === 0) { fwd(speed); const line = (B ? along(P, B.min) : along(P, s.start)) + (cur.hoverAt ?? 100); if (along(P, pos) >= line && (s.onScreen || !B)) { s.sub = 1; s.subT = 0; s.bx = pos[0]; s.by = pos[1]; } }
+      } else if (s.sub === 0) { fwd(speed); const line = (B ? topOf(P, B) : along(P, s.start)) + (cur.hoverAt ?? 100); if (along(P, pos) >= line && (s.onScreen || !B)) { s.sub = 1; s.subT = 0; s.bx = pos[0]; s.by = pos[1]; } }
       else if (s.sub === 1) {
         s.subT++;
         const side = [-Math.sin(P.DOWN), Math.cos(P.DOWN)], dn = [Math.cos(P.DOWN), Math.sin(P.DOWN)];
@@ -196,7 +198,7 @@ function step(rt, e, m, api, config, P) {
       if (--s.subT <= 0) { s.subT = 50 + Math.floor(rt.random() * 40); s.sub = Math.floor(rt.random() * 3) - 1; }
       const side = [-Math.sin(P.DOWN), Math.cos(P.DOWN)], dn = [Math.cos(P.DOWN), Math.sin(P.DOWN)];
       pos[0] += Math.cos(s.ang) * speed * dt + dn[0] * s.sub * speed * 0.5 * dt; pos[1] += Math.sin(s.ang) * speed * dt + dn[1] * s.sub * speed * 0.5 * dt;
-      if (B && !arena) { const a0 = along(P, B.min) + 20, a1 = along(P, B.min) + H * 0.7, a = along(P, pos); if (a < a0 || a > a1) { const fix = clamp(a, a0, a1) - a; pos[0] += dn[0] * fix; pos[1] += dn[1] * fix; } }
+      if (B && !arena) { const a0 = topOf(P, B) + 20, a1 = topOf(P, B) + (Math.abs(W * Math.cos(P.DOWN)) + Math.abs(H * Math.sin(P.DOWN))) * 0.7, a = along(P, pos); if (a < a0 || a > a1) { const fix = clamp(a, a0, a1) - a; pos[0] += dn[0] * fix; pos[1] += dn[1] * fix; } }
       break;
     }
     case 'rock': { const v = cur.vel || [Math.cos(s.ang) * speed, Math.sin(s.ang) * speed]; pos[0] += v[0] * dt; pos[1] += v[1] * dt; s.spin += (cur.spin ?? 0) * dt; break; }

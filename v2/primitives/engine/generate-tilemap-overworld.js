@@ -15,7 +15,7 @@
 // tile-for-tile and doors with mats, and the whole warp graph is proven
 // connected from the start. Tiles are roles mapped to blocks by `tiles`
 // (walkable roles default to empty), so the look is data.
-import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, addZones, publish, spawnAt, placeOn, cellOfEntity, problem } from './generate2d-lib.js';
+import { withDefaults, bodyCells, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, addZones, publish, spawnAt, placeOn, cellOfEntity, problem } from './generate2d-lib.js';
 
 const ID = 'engine.generate.tilemap.overworld';
 const ROOM = new Set(['gym', 'interior', 'league']);
@@ -65,6 +65,9 @@ export default {
     provides: { content: ['cells', 'rooms', 'zones', 'entities'], extent: 'own', events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
     defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
+    // The guarantee: the published `targets` (every warp tile) are reachable from `from` by the player's body, walking
+    // and taking the published `passes` (warps).
+    traversal: { mover: 'player', problems: ['exit_unreachable', 'door_unreachable', 'map_unreachable'] },
     problems: ['exit_unreachable', 'door_unreachable', 'switch_unreachable', 'trainer_unreachable', 'item_unreachable', 'npc_unreachable', 'leader_unreachable', 'champion_unreachable', 'map_unreachable', 'warp_unpaired', 'area_too_big'],
     validates: ['area_duplicate', 'connect_unknown', 'start_unknown', 'gym_leader_missing'],
   },
@@ -86,7 +89,8 @@ export default {
   },
   install(rt, raw, instance) {
     const config = withDefaults(this.card, raw), space = spaceOf(rt, instance), seed = drawSeed(rt);
-    const world = generateOverworld(config, seed);
+    // The proof walks the player's body (card.traversal): its footprint in tiles, rows running up a y-up space.
+    const [bw, bh] = bodyCells(rt, space), world = generateOverworld(config, seed, bw === 1 && bh === 1 ? undefined : [bw, bh, config.yUp ? -1 : 1]);
     // Atlas: maps bound to zones go to their rect; the rest pack in rows.
     const W = config.rowWidth || space.size?.[0] || 256, [ox, oy] = config.origin, placed = new Map();
     let cx = 0, cy = 0, rowH = 0;
@@ -135,7 +139,10 @@ export default {
     const cave = Object.values(world.maps).filter(m => m.encounter === 'floor').map(m => m.id);
     let gs = null; const grassSet = () => (gs ??= new Set(grass));
     const signs = Object.values(world.maps).flatMap(m => Object.entries(m.signs).map(([k, text]) => { const [x, y] = k.split(',').map(Number); return { at: at(m.id, x, y), text }; }));
-    publish(rt, instance, space, ID, { problems: world.problems, attempts: world.attempts, fallback: world.fallback, links: world.links, warps,
+    // What the proof guarantees, for checks that repeat it on the built space: every warp tile reachable from the spawn,
+    // walking and taking warps (traversal links: from → to).
+    const proof = { from: at(spawn.map, spawn.x, spawn.y), targets: warps.map((w, i) => ({ id: `warp_${i}`, cells: [w.from] })), passes: warps.map(w => ({ from: w.from, to: w.to })) };
+    publish(rt, instance, space, ID, { ...proof, problems: world.problems, attempts: world.attempts, fallback: world.fallback, links: world.links, warps,
       maps: Object.values(world.maps).map(m => ({ id: m.id, area: m.area, kind: m.kind, name: m.name, size: [m.w, m.h], origin: at(m.id, 0, 0), attempt: m.attempt, problems: m.problems.length })),
       spawn: at(spawn.map, spawn.x, spawn.y), respawns: Object.fromEntries(Object.entries(world.respawns).map(([a, r]) => [a, at(r.map, r.x, r.y)])), ledges: Object.values(world.maps).flatMap(m => m.tiles.flatMap((row, y) => row.flatMap((t, x) => (t === 'ledge' ? [at(m.id, x, y)] : [])))), signs }, {
       overworld: {
@@ -181,35 +188,43 @@ function planLinks(areas) {
 }
 
 const walkable = t => WALKABLE.has(t);
-function neighbors(map, x, y, blocked) {
+/** The tiles a body [columns, rows, rowStep] covers from its corner tile (rowStep −1: rows run up a y-up space). */
+const footprint = (x, y, body = ONE) => { const out = []; for (let j = 0; j < body[1]; j++) for (let i = 0; i < body[0]; i++) out.push([x + i, y + j * body[2]]); return out; };
+const ONE = [1, 1, 1];
+const fits = (map, x, y, blocked, body) => footprint(x, y, body).every(([cx, cy]) => cx >= 0 && cy >= 0 && cx < map.w && cy < map.h && walkable(map.tiles[cy][cx]) && !blocked?.has(`${cx},${cy}`));
+function neighbors(map, x, y, blocked, body = ONE) {
   const out = [];
   for (const [dir, [dx, dy]] of Object.entries(DIRS)) {
     const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
     const t = map.tiles[ny][nx];
-    if (t === 'ledge') { if (dir === 'down' && ny + 1 < map.h && walkable(map.tiles[ny + 1][nx]) && !blocked?.has(`${nx},${ny + 1}`)) out.push([nx, ny + 1]); continue; }
-    if (walkable(t) && !blocked?.has(`${nx},${ny}`)) out.push([nx, ny]);
+    if (t === 'ledge') { if (dir === 'down' && ny + 1 < map.h && fits(map, nx, ny + 1, blocked, body)) out.push([nx, ny + 1]); continue; }
+    if (fits(map, nx, ny, blocked, body)) out.push([nx, ny]);
   }
   return out;
 }
-export function reach(map, from, blocked) {
-  const dist = new Map([[`${from[0]},${from[1]}`, 0]]), q = [from];
-  for (let i = 0; i < q.length; i++) { const [x, y] = q[i], d = dist.get(`${x},${y}`); for (const [nx, ny] of neighbors(map, x, y, blocked)) { const k = `${nx},${ny}`; if (!dist.has(k)) { dist.set(k, d + 1); q.push([nx, ny]); } } }
+/** Walk the player's body over a map: corner tile → steps from `from`. */
+export function reach(map, from, blocked, body = ONE) {
+  const dist = new Map(), q = [];
+  if (body === ONE || fits(map, from[0], from[1], blocked, body)) { dist.set(`${from[0]},${from[1]}`, 0); q.push(from); }
+  for (let i = 0; i < q.length; i++) { const [x, y] = q[i], d = dist.get(`${x},${y}`); for (const [nx, ny] of neighbors(map, x, y, blocked, body)) { const k = `${nx},${ny}`; if (!dist.has(k)) { dist.set(k, d + 1); q.push([nx, ny]); } } }
   return dist;
 }
+/** Tiles a body covers somewhere along a walk (reach's result). */
+const covered = (dist, body = ONE) => { if (body === ONE) return dist; const out = new Set(); for (const k of dist.keys()) { const [x, y] = k.split(',').map(Number); for (const [cx, cy] of footprint(x, y, body)) out.add(`${cx},${cy}`); } return out; };
 const blockers = map => new Set(map.entities.filter(e => e.solid !== false).map(e => `${e.x},${e.y}`));
 const adjacentReached = (dist, x, y) => [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => dist.has(`${x + dx},${y + dy}`));
 
-/** Problems with one map: entrances that cannot reach each other; doors, trainers, items, NPCs out of reach. */
-export function checkMap(input) {
+/** Problems with one map for the player's body (corner footprint, default one tile): entrances that cannot reach each other; doors, trainers, items, NPCs out of reach. */
+export function checkMap(input, body = ONE) {
   const problems = [], map = input.puzzle ? { ...input, tiles: input.tiles.map(row => row.map(t => (t === 'barrier' ? 'floor' : t))) } : input;
   const blocked = blockers(map);
   for (const e of map.entities) if (e.kind === 'guard') blocked.delete(`${e.x},${e.y}`);
   for (const d of [...map.doors, ...map.mats]) blocked.add(`${d.x},${d.y}`);
   const entries = [...map.openings.map(o => o.inner[0]), ...map.mats.map(m => m.inner)];
   if (!entries.length) return problems;
-  const dists = entries.map(p => reach(map, p, blocked));
+  const dists = entries.map(p => covered(reach(map, p, blocked, body), body));
   entries.forEach((p, i) => entries.forEach((q, j) => { if (i !== j && !dists[i].has(`${q[0]},${q[1]}`)) problems.push(problem('exit_unreachable', `maps.${map.id}`, `map '${map.id}': entrance ${JSON.stringify(q)} unreachable from ${JSON.stringify(p)}`)); }));
-  if (input.puzzle && !reach(input, entries[0], blocked).has(`${input.puzzle.switch.x},${input.puzzle.switch.y}`)) problems.push(problem('switch_unreachable', `maps.${map.id}`, `map '${map.id}': the barrier switch is unreachable`));
+  if (input.puzzle && !covered(reach(input, entries[0], blocked, body), body).has(`${input.puzzle.switch.x},${input.puzzle.switch.y}`)) problems.push(problem('switch_unreachable', `maps.${map.id}`, `map '${map.id}': the barrier switch is unreachable`));
   for (const d of map.doors) if (!dists[0].has(`${d.x},${d.y + 1}`)) problems.push(problem('door_unreachable', `maps.${map.id}`, `map '${map.id}': door to '${d.to}' unreachable`));
   for (const e of map.entities) {
     if (e.kind === 'guard' || e.kind === 'starter') continue;
@@ -415,7 +430,7 @@ function genBuilt(cfg, town, kind, id, r) {
 }
 
 /** Every map, warps, spawn and problems. Deterministic for (config, seed). */
-export function generateOverworld(cfg, seed) {
+export function generateOverworld(cfg, seed, body = ONE) {
   const areas = cfg.start ? [cfg.areas.find(a => a.id === cfg.start), ...cfg.areas.filter(a => a.id !== cfg.start)] : cfg.areas;
   const links = planLinks(areas), byId = new Map(areas.map(a => [a.id, a])), start = areas[0];
   const exitsOf = id => links.filter(l => l.type === 'edge' && (l.a === id || l.b === id)).map(l => ({ side: l.sides[id], to: l.a === id ? l.b : l.a, gate: l.gate[id] || null }));
@@ -430,13 +445,13 @@ export function generateOverworld(cfg, seed) {
       const r = stream(seed, a.id, attempt); attempts++;
       const map = a.kind === 'town' ? genTown(cfg, a, exits, roomDoorsOf(a.id), r, a === start) : a.kind === 'route' || a.kind === 'cave' ? genOutdoor(cfg, a, exits, r, { cave: a.kind === 'cave', attempt })
         : a.kind === 'gym' ? genGym(cfg, a, exits, doorLinked(a.id), r) : a.kind === 'league' ? genLeague(cfg, a, exits, doorLinked(a.id)) : genInterior(cfg, a, exits, doorLinked(a.id));
-      map.problems = checkMap(map); map.attempt = attempt;
+      map.problems = checkMap(map, body); map.attempt = attempt;
       if (!best || map.problems.length < best.problems.length) best = map;
       if (!map.problems.length) break;
     }
     if (best.attempt >= cfg.plainAfter) fallback = true;
     maps[a.id] = best; problems.push(...best.problems);
-    if (a.kind === 'town') for (const b of best.buildings) if (b.target.startsWith(`${a.id}-`)) maps[b.target] = genBuilt(cfg, a, b.kind, b.target, stream(seed, b.target)), maps[b.target].problems = checkMap(maps[b.target]), problems.push(...maps[b.target].problems);
+    if (a.kind === 'town') for (const b of best.buildings) if (b.target.startsWith(`${a.id}-`)) maps[b.target] = genBuilt(cfg, a, b.kind, b.target, stream(seed, b.target)), maps[b.target].problems = checkMap(maps[b.target], body), problems.push(...maps[b.target].problems);
   }
   // Warps: edge openings pair tile-for-tile; doors pair with their room's mat (or bottom opening).
   const warps = [], add = (map, x, y, to, tx, ty, facing, kind) => { const w = { map: map.id, x, y, toMap: to, to, tx, ty, facing, kind }; map.warps.push(w); warps.push(w); };
@@ -459,8 +474,8 @@ export function generateOverworld(cfg, seed) {
   while (q.length) {
     const [mid, x, y] = q.shift(), map = maps[mid], k = `${x},${y}`;
     if (!map || (seenTiles.get(mid) || new Set()).has(k)) continue;
-    const dist = reach(map, [x, y], new Set(map.entities.filter(e => e.kind !== 'guard' && e.solid !== false).map(e => `${e.x},${e.y}`)));
-    seenMaps.add(mid); const set = seenTiles.get(mid) || new Set(); for (const t of dist.keys()) set.add(t); seenTiles.set(mid, set);
+    const dist = covered(reach(map, [x, y], new Set(map.entities.filter(e => e.kind !== 'guard' && e.solid !== false).map(e => `${e.x},${e.y}`)), body), body);
+    if (dist.size) seenMaps.add(mid); const set = seenTiles.get(mid) || new Set(); for (const t of dist.keys()) set.add(t); seenTiles.set(mid, set);
     for (const w of map.warps) if (set.has(`${w.x},${w.y}`) || [[0, 1], [1, 0], [0, -1], [-1, 0]].some(([dx, dy]) => set.has(`${w.x + dx},${w.y + dy}`))) if (!(seenTiles.get(w.to) || new Set()).has(`${w.tx},${w.ty}`)) q.push([w.to, w.tx, w.ty]);
   }
   for (const id of Object.keys(maps)) if (!seenMaps.has(id)) problems.push(problem('map_unreachable', `maps.${id}`, `map '${id}' cannot be reached from the spawn`));

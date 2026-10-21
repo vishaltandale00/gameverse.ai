@@ -7,7 +7,7 @@
 // step-ups. Gravity exists only in side mode. Navigation is ability-aware
 // (spaces2d-tilenav.js) and powers path, reachable and canReach.
 import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
-import { makeNav, DEFAULT_ABILITIES } from './spaces2d-tilenav.js';
+import { makeNav, DEFAULT_ABILITIES, navOptions } from './spaces2d-tilenav.js';
 
 const EPS = 1e-4;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far (tiles) since the last slide
@@ -300,11 +300,7 @@ export default {
 
     // ---------- navigation ----------
     const navQ = { W, H, mode: side ? 'side' : 'topdown', wrapX, wrapY, kindAt, tagsAt: (x, y) => tagsAt(x, y), costAt };
-    const navOpts = (o = {}) => {
-      const env = { ...(o.envelope || {}), ...(o.abilities || {}) };
-      if (env.jumpGap !== undefined && env.jumpDistance === undefined) env.jumpDistance = env.jumpGap;
-      return { abilities: env, width: o.width ?? (o.radius != null ? o.radius * 2 : 1), height: o.height ?? 1, avoid: o.avoid, diagonals: o.diagonals, maxNodes: o.maxNodes, obstacles: o.obstacles ?? 'static', who: o.who };
-    };
+    const navOpts = navOptions;
     // Entity obstacles in navigation (opts.obstacles): "static" (default) adds solid entities that cannot move
     // or open as solid cells and one-way ones as one-way tops; 'all' adds dynamic ones at their current
     // position too; "none" ignores entities. Dynamic obstacles (doors, lifts, movers) are passable by default.
