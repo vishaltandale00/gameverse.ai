@@ -102,7 +102,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'gravity', 'surface', 'bounds', 'placement', 'heightfield', 'procedural'],
       capabilityMethods: { placement: ['objects', 'addObject', 'removeObject', 'objectsIn'], heightfield: ['heightSample', 'heightTile', 'cellOf'], procedural: ['model', 'standAt'] },
-      events: ['enter_zone', 'leave_zone', 'generated', 'object_added', 'object_removed'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'generated', 'object_added', 'object_removed'],
       services: ['surface'],
     },
     reads: [],
@@ -285,21 +285,40 @@ export default {
       const out = pts.filter((q, i) => i === 0 || i === pts.length - 1 || (pts[i - 1][0] - q[0]) * (pts[i + 1][2] - q[2]) - (pts[i - 1][2] - q[2]) * (pts[i + 1][0] - q[0]) !== 0);
       return out.map(q => [q[0], +(terrainY(q[0], q[2]) + p.h / 2).toFixed(9), q[2]]);
     }
+    // A flood fill is a connected component: any start inside a component computed for the same
+    // walking options and the same world (terrain version, runtime objects, zones) gets the same set.
+    // Movement option listing calls reachable() every step, so without this a 256 m map costs ~200 ms
+    // per call. Cleared when the world changes; never cached with an `avoid` callback.
+    const reachMemo = { world: null, list: [] };
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
-      const p = navOpts({ maxNodes: config.reachNodes, ...opts }), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs), out = new Set();
-      const s = snapCell(ok, [Math.floor(a[0] / cs), Math.floor(a[2] / cs)], 1);
+      const p = navOpts({ maxNodes: config.reachNodes, ...opts }), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs);
+      if (!a) { const none = new Set(); none.cell = cs; none.truncated = false; return none; }
+      const start = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)];
+      const world = p.avoid ? null : `${sync(), model.version}|${JSON.stringify(st().added)}|${Object.keys(st().removed).join()}|${JSON.stringify(zones())}`;
+      const optKey = world && JSON.stringify({ ...p, avoid: undefined, cs });
+      if (world) {
+        if (reachMemo.world !== world) { reachMemo.world = world; reachMemo.list = []; }
+        const hit = reachMemo.list.find(m => m.optKey === optKey && m.cells.has(start[0] * 1048576 + start[1]));
+        if (hit) return hit.out;
+      }
+      const out = new Set();
+      const s = snapCell(ok, start, 1);
       out.cell = cs; out.truncated = false;
       if (!s) return out;
       const seen = new Set([`${s[0]},${s[1]}`]), queue = [s];
       for (let i = 0; i < queue.length; i++) {
-        if (seen.size >= p.maxNodes) { out.truncated = true; break; }
+        // Truncated only when a new cell is found past the budget: a fill that exactly fits (reachCell sizes
+        // the grid to reachNodes cells, so a fully open map does) is complete.
         const c = queue[i];
-        for (const [dx, dz] of H8.slice(0, 4)) { const n = [c[0] + dx, c[1] + dz], k = `${n[0]},${n[1]}`; if (!seen.has(k) && ok(...n)) { seen.add(k); queue.push(n); } }
+        for (const [dx, dz] of H8.slice(0, 4)) { const n = [c[0] + dx, c[1] + dz], k = `${n[0]},${n[1]}`; if (!seen.has(k) && ok(...n)) { if (seen.size >= p.maxNodes) { out.truncated = true; break; } seen.add(k); queue.push(n); } }
+        if (out.truncated) break;
       }
       for (const c of queue) out.add(navKey(c[0], c[1], cs));
       const zs = zones();
       for (const c of queue) { const x = (c[0] + 0.5) * cs, z = (c[1] + 0.5) * cs; for (const zn of zs) if (!out.has(zn.id) && zoneHas(zn, x, undefined, z)) out.add(zn.id); }
+      // Only complete components are reusable (a truncated fill depends on where it started).
+      if (world && !out.truncated) { reachMemo.list.push({ optKey, cells: new Set(queue.map(c => c[0] * 1048576 + c[1])), out }); if (reachMemo.list.length > 8) reachMemo.list.shift(); }
       return out;
     }
 

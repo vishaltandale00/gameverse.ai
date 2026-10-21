@@ -322,7 +322,7 @@ export function entityOps({ rt, sid, model, defaultBody, st }) {
       const p = v3(e.at), inside = zonesContaining(zones(), p[0], p[1], p[2]).map(z => z.id);
       const s = st(); s.members ??= {};
       const before = s.members[e.id] || [];
-      for (const z of before) if (!inside.includes(z)) rt.emit('leave_zone', { who: e.id, zone: z });
+      for (const z of before) if (!inside.includes(z)) rt.emitTyped('leave_zone', z, { who: e.id, zone: z });
       for (const z of inside) if (!before.includes(z)) rt.emitTyped('enter_zone', z, { who: e.id, zone: z });
       s.members[e.id] = inside; e.zone = inside[0] ?? null;
     },
