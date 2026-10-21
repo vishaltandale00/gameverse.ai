@@ -130,7 +130,8 @@ export function placesFor(registry, space, shape, { systems, generators, config 
       const min = Math.max(Number(contracts.find(x => x.need === 'param' && x.param === k)?.min) || 0, Number(prop(spec, 'min')) || 0, prop(spec, 'required') === true ? 1 : 0);
       counts.push(refs === 'list' ? min : Math.min(1, min));
     }
-    for (const x of contracts) if (x.need === 'archetypes' && x.zones) counts.push(x.zones);
+    // Hostile content is never placed in the player's start zone (content.js placeContent), so its spread needs that place besides.
+    for (const x of contracts) if (x.need === 'archetypes' && x.zones) counts.push(x.zones + (list(x.kinds).some(k => k === 'enemy' || k === 'boss') ? 1 : 0));
   }
   return Math.max(0, ...counts);
 }
