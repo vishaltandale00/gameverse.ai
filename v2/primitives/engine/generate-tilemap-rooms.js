@@ -45,7 +45,7 @@ const room = { type: 'object', fields: {
   theme: { type: 'string', effect: 'palette override key in params.themes' },
   platforms: { type: 'integer', min: 0, max: 40 },
   gaps: { type: 'integer', min: 0, max: 12, effect: 'pits in the floor, never wider than the jump distance' },
-  hazards: { type: 'list', of: { type: 'ref', to: 'block' }, effect: 'hazard block ids placed on the floor' },
+  hazards: { type: 'list', of: { type: 'string' }, effect: 'hazard block ids (content.blocks ids) placed on the floor' },
   features: { type: 'list', of: feature, default: [] },
   exits: { type: 'list', default: [], of: { type: 'object', fields: {
     side: { type: 'string', options: ['l', 'r', 't', 'b'], required: true },
@@ -68,7 +68,7 @@ export default {
       requiresAbilities: { type: 'list', of: { type: 'string' }, default: [], effect: 'abilities (ids the document defines, or movement ability names) the player holds everywhere in the proof' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side' },
       styles: { type: 'json', default: {}, effect: 'extra or overriding style recipes' },
-      palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'ref', to: 'block' }])), effect: 'role → block id' },
+      palette: { type: 'object', open: true, default: {}, fields: Object.fromEntries(Object.keys(DEFAULT_PALETTE).map(k => [k, { type: 'string', effect: 'a content.blocks id' }])), effect: 'role → block id' },
       themes: { type: 'json', default: {}, effect: 'theme → palette overrides' },
       exitSize: { type: 'integer', min: 1, max: 8, default: 3, unit: 'tiles' },
       attempts: { type: 'integer', min: 1, max: 32, default: 6, effect: 'sub-seeds tried per room before the plain fallback' },
