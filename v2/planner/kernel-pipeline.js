@@ -17,6 +17,7 @@ import { detailTasks, writeDetail, acceptPatch } from './detail.js';
 import { tweakDocument, reviseDocument, applyOps, reviewChange } from './doc-revise.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { verifyDocument, regressed } from './verify-adapter.js';
+import { coreLoopProblems } from './core-loop.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
 
@@ -102,6 +103,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.gateMs = ms(t);
     checkpoint('gate', { viable: Boolean(base.viable), viability: base.viability || null, playtest: base.playtest || null, problems: (base.problems || []).slice(0, 20) });
     if (!base.viable) throw Object.assign(Error(`No playable game yet: ${base.viability}`), { status: 422, code: 'not_playable' });
+    const core = coreLoopProblems(current, selection.mechanics, registry);
+    checkpoint('coreLoop', { problems: core });
+    // Offline (no model) builds are a development path: report the gap, the model-written path enforces it.
+    if (spec && core.length) throw Object.assign(Error(`This isn't the game you asked for yet: ${core.slice(0, 3).map(p => p.message).join('; ')}`), { status: 422, code: core[0].code });
     // Quality is measured only once the gate passed, and never changes what publishes.
     t = performance.now();
     const quality = qualityReport(base, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });

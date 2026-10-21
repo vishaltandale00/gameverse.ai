@@ -28,6 +28,8 @@ function scriptedModel() {
     if (/A valid skeleton/.test(req.user)) {
       const doc = JSON.parse(req.user.split('placeholder names):\n')[1].split('\n\nWrite the outline')[0]);
       doc.title = 'Lamp of the Drowned'; doc.plot.premise = 'A keeper lost the lamp.';
+      // A model fills the content its core mechanics play with (the core-loop gate requires it).
+      doc.content ??= {}; if (!(doc.content.items || []).length) doc.content.items = [{ id: 'lamp', name: 'The lamp' }, { id: 'tide_chart', name: 'Tide chart' }];
       return JSON.stringify(doc);
     }
     if (/Write the detail patch for zone "([^"]+)"/.test(req.user)) {

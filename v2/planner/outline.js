@@ -15,6 +15,7 @@ import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
 import { configureGenerators, furnishWorld, worldProblems } from './world.js';
+import { coreLoopProblems } from './core-loop.js';
 import { verifyDocument, newErrors, newErrorCodes, newProblems, staticPlot } from './verify-adapter.js';
 
 export const OUTLINE_VERSION = 'outline/0.1';
@@ -266,10 +267,12 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   let lastProblems = null;
   // The publish gate (verify-adapter viability): what fails it goes back to the model with the agent's reason first.
   const gate = async doc => {
+    // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
+    const core = coreLoopProblems(doc, selection?.mechanics, registry);
     const v = await verifyDocument(doc, registry, logic, { budgetMs: verifyBudgetMs, playtestMs });
-    const problems = v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability, severity: 'error', hint: 'the game must run without crashing' },
-      ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)];
-    return { viable: Boolean(v.viable), problems, v };
+    const problems = [...core, ...(v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability, severity: 'error', hint: 'the game must run without crashing' },
+      ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)])];
+    return { viable: Boolean(v.viable) && !core.length, problems, v };
   };
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
