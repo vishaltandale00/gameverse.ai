@@ -100,6 +100,9 @@ export function buildAnswer(req, { space = [], picks = {} } = {}) {
   return null;
 }
 
+/** A writer that only answers the build's questions (buildAnswer), e.g. for a selection with a model. */
+export const buildWriter = (options = {}) => fakeWriter([req => buildAnswer(req, options) ?? '{}']);
+
 export const decomposition = (mechanics, extra = {}) => ({
   version: 'test', title: 'Test Game', premise: 'A test premise. Second sentence.', tone: 'brisk', references: [], views: [], spaces: [], acts: 2, zones: 4,
   mechanics: mechanics.map((m, i) => ({ id: `m${i}`, verb: m.split(' ')[0], description: m, from: '', importance: 'core' })), ...extra,

@@ -17,7 +17,7 @@ import {
   generatorsFor, planWorld, spaceNeeds, unfurnishable, configureGenerators, extentProblems, scaleWorld, spaceExtent,
   furnishWorld, addGenerator, contentOf, isEmpty, grows, generationProblems, worldProblems, needSetFor,
 } from '../v2/planner/world.js';
-import { fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, decomposition, buildWriter } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
 const live = name => { const j = JSON.parse(readFileSync(new URL(`./fixtures/v2-live/${name}`, import.meta.url), 'utf8')); return j.doc || j; };
@@ -246,8 +246,8 @@ test('selection plans a world for every space a mover or vehicle uses; a dungeon
   const pick = async (space, mechanics, primitives, premise, kind = 'continuous-3d') => {
     const d = decomposition(mechanics, { views: ['3p'], spaces: [{ role: 'world', kind }], zones: 4, acts: 1 });
     d.premise = premise;
-    const mapping = { mappings: mechanics.map((m, i) => ({ mechanic: `m${i}`, primitives: [...primitives, space], covered: true, why: '' })) };
-    return selectPrimitives({ decomposition: d, registry, writer: fakeWriter([mapping]) });
+    // The model builds on the space and picks the listed primitives, one mechanic at a time (build.js).
+    return selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: [space], picks: Object.fromEntries(mechanics.map((m, i) => [`m${i}`, [...primitives, space]])) }) });
   };
   const kart = await pick('engine.space.mesh3d', ['drive a shopping cart around the track'], ['gameplay.vehicle.car', 'gameplay.race'], 'Mario Kart with shopping carts');
   assert.equal(kart.spaces[0].use, 'engine.space.mesh3d');

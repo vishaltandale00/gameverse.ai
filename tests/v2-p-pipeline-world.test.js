@@ -13,7 +13,7 @@ import { firstPlayable } from '../v2/planner/first-playable.js';
 import { furnishWorld, worldProblems, spacesNeedingWorld, contentOf, reservedRegions, configureGenerators } from '../v2/planner/world.js';
 import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
-import { fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, decomposition, buildWriter } from './v2-p-pipeline-fixtures.js';
 
 // A fixed slice of the catalogue: the stored game's primitives plus every 2D generator (they compete).
 const IDS = ['engine.space.tilemap', 'engine.space.graph', 'engine.input.actions', 'gameplay.move.platformer', 'gameplay.move.climb', 'gameplay.inventory', 'plot.storyboard', 'gameplay.falling.pieces',
@@ -88,8 +88,7 @@ test('furnishWorld fills the empty tilemap with a proven rooms layout built from
 
 test('outline → first playable for the stored platformer: selection adds a generator, the skeleton and the model draft both get a world', async () => {
   const d = decomposition(['stack falling blocks to build a tower', 'run and jump through the tower', 'climb the built tower'], { views: ['side'], spaces: [{ role: 'main', kind: 'tiles-side' }], zones: 5, acts: 1 });
-  const mapping = { mappings: [{ mechanic: 'm0', primitives: ['engine.space.tilemap'], covered: true, why: '' }, { mechanic: 'm1', primitives: ['gameplay.move.platformer', 'engine.space.tilemap'], covered: true, why: '' }, { mechanic: 'm2', primitives: ['gameplay.move.climb'], covered: true, why: '' }] };
-  const selection = await selectPrimitives({ decomposition: d, registry, writer: fakeWriter([mapping]) });
+  const selection = await selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: ['engine.space.tilemap'], picks: { m0: ['engine.space.tilemap'], m1: ['gameplay.move.platformer', 'engine.space.tilemap'], m2: ['gameplay.move.climb'] } }) });
   assert.equal(selection.spaces[0].use, 'engine.space.tilemap');
   assert.deepEqual(selection.generators.map(g => [g.id, g.space]), [['engine.generate.tilemap.rooms', selection.spaces[0].id]], 'no mechanic named a generator; the space still gets one');
   // The model returns the stored document (no generator, and in a second variant no player at all).
@@ -164,9 +163,11 @@ test('a region another primitive owns (a falling-piece board, from boardParam me
 });
 
 test('the outline keeps a model draft with a blocked board playable, and a skeleton starts the player off the board', async () => {
+  // Falling pieces declare the space their mode is made for (card.mode.space): the slice includes it and the adapter
+  // that projects it, so the built collection composes as compose-check declares it.
+  const { registry, logic } = buildCatalogue([], [...IDS, 'engine.space.grid', 'engine.adapt.projection'].map(id => PRIMITIVES.find(p => p.id === id)).filter(Boolean));
   const d = decomposition(['stack falling blocks to build a tower', 'run and jump through the tower'], { views: ['side'], spaces: [{ role: 'tower', kind: 'tiles-side' }], zones: 5, acts: 1 });
-  const mapping = { mappings: [{ mechanic: 'm0', primitives: ['gameplay.falling.pieces'], covered: true, why: '' }, { mechanic: 'm1', primitives: ['gameplay.move.platformer', 'engine.space.tilemap'], covered: true, why: '' }] };
-  const selection = await selectPrimitives({ decomposition: d, registry, writer: fakeWriter([mapping]) });
+  const selection = await selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: ['engine.space.tilemap'], picks: { m0: ['gameplay.falling.pieces'], m1: ['gameplay.move.platformer', 'engine.space.tilemap'] } }) });
   const SEED = 1309811577; // with this seed the draft's rooms block the board (previous test)
   const o = await writeOutline({ forms: 'single', writer: fakeWriter([tetrisTower()]), prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: SEED, maxRounds: 1, verify: false });
   assert.ok(o.ok && o.source === 'fake-writer', JSON.stringify(o.rounds));
@@ -175,6 +176,13 @@ test('the outline keeps a model draft with a blocked board playable, and a skele
   const skeleton = await writeOutline({ prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: 4 });
   const fp = firstPlayable(skeleton.doc, registry, logic, { seed: 4 });
   assert.ok(fp.ok, JSON.stringify(fp.errors));
-  const board = reservedRegions(skeleton.doc, registry, skeleton.doc.spaces[0].id)[0];
-  assert.ok(board && !(fp.start.at[0] >= board[0] && fp.start.at[0] < board[2] && fp.start.at[1] < board[3]), `start ${fp.start.at} is off the board ${board}`);
+  // The built collection follows compose-check: falling pieces declare mode.space grid (its capability-list alternative,
+  // ['editCells'], is not read by compose-check yet), so the build binds them to a projected region (a union adapter)
+  // and the tilemap keeps no board of its own; otherwise the board is a reserved region of the tilemap.
+  const region = selection.bind['gameplay.falling.pieces'];
+  if (region) assert.ok(skeleton.doc.systems.some(s => s.id === region && registry.get(s.use).card.adapts?.subspace), JSON.stringify(skeleton.doc.systems));
+  else {
+    const board = reservedRegions(skeleton.doc, registry, skeleton.doc.spaces[0].id)[0];
+    assert.ok(board && !(fp.start.at[0] >= board[0] && fp.start.at[0] < board[2] && fp.start.at[1] < board[3]), `start ${fp.start.at} is off the board ${board}`);
+  }
 });
