@@ -41,6 +41,7 @@ import { isAvatar, unplayedLoops } from './play-spec.js';
 import { relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
 import { makeAsk, loopSteps, adapterSteps } from './build-steps.js';
+import { keepMashupAdapters } from './adapters.js';
 import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, MAX_LIST } from './retrieval.js';
 import { isStr, prop } from '../kernel/guards.js';
 
@@ -71,9 +72,10 @@ import { isStr, prop } from '../kernel/guards.js';
 /** The space step. @typedef {{ candidates: Array<{ use: string, score: number }>, asked: boolean, pick: string, why: string }} SpaceStep */
 /**
  * buildSelection()'s result: what each mechanic maps to, the space, the collection (picks and their closures), adapter
- * instances and bindings, gaps, the recorded content contracts and the step log.
+ * instances and bindings, how each mashup entry was realised (mashupAdapters), gaps, the recorded content contracts and
+ * the step log.
  * @typedef {{ version: string, loop: string | null, space: SpaceChoice, spaceStep: SpaceStep, mapping: Record<string, { primitives: string[], candidates: Array<{ id: string, score: number }>, why: string }>,
- *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
+ *   systems: string[], adapters: AdapterInstance[], bind: Record<string, string>, mashupAdapters: import('./adapters.js').MashupRealisation[], gaps: Gap[], contracts: string[], steps: Array<BuildStep | import('./build-steps.js').LoopStep>, calls: number, ms: number }} BuildResult
  */
 
 export const BUILD_VERSION = 'build/0.2';
@@ -338,13 +340,17 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   //    only); what none answers is a gap for the gap layer.
   const loopId = loopMechanicOf(decomposition);
   const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
-  // Adapters the mashup steps added keep their own list: tryAdd re-resolves the collection's adapters on each pick.
+  // Adapters the mashup steps added keep their own list: tryAdd re-resolves the collection's adapters on each pick, and
+  // the mashup instances are kept through it (adapters.js keepMashupAdapters), with the records of what each realises.
   /** @type {AdapterInstance[]} */
   const stepAdapters = [];
   /** @type {Record<string, string>} */
   const stepBind = {};
+  /** @type {import('./adapters.js').MashupRealisation[]} */
+  const realised = [];
+  const joined = () => keepMashupAdapters({ adapters, bind }, { adapters: stepAdapters, bind: stepBind, mashupAdapters: [{ relation: 'step', mechanics: [], instances: stepAdapters.map(a => ({ use: a.use, ...(a.id ? { id: a.id } : {}) })) }] });
   const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems],
-    adapters: [...adapters, ...stepAdapters.filter(a => !adapters.some(b => b.id === a.id))], bind: { ...bind, ...stepBind },
+    ...joined(),
     mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic?.id ?? null,
     composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
   if (loopMechanic && mapping[loopMechanic.id]?.primitives.length) {
@@ -366,12 +372,13 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
       adopt: (insts, b) => { stepAdapters.push(...insts); Object.assign(stepBind, b); return /** @type {any} */ (collection()); } });
     steps.push(...m.steps);
     gaps.push(...m.gaps);
+    realised.push(...m.realised);
   }
   const all = collection();
   const caps = [...(variants[variant]?.caps || [])];
   return {
     version: BUILD_VERSION, loop: loopMechanicOf(decomposition), space: { id: sid, use, with: variants[variant]?.with || {}, role, caps }, spaceStep,
-    mapping, systems, adapters: all.adapters, bind: all.bind, gaps, contracts, steps, calls, ms: Math.round(performance.now() - started),
+    mapping, systems, adapters: all.adapters, bind: all.bind, mashupAdapters: realised, gaps, contracts, steps, calls, ms: Math.round(performance.now() - started),
   };
 }
 

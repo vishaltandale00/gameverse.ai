@@ -22,10 +22,10 @@
 // Nothing here names a primitive, a genre or a game: everything is read from card declarations.
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { checkComposition, capsOf } from './compose-check.js';
-import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds } from './adapters.js';
+import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds, keepMashupAdapters } from './adapters.js';
 import { cardLoop, endsGame, composeLoop } from './loop.js';
 import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, LOOP_CODES } from './loop-check.js';
-import { preset, coreOf, declaredOutcomes } from './presets.js';
+import { preset, coreOf, declaredOutcomes, skinSections } from './presets.js';
 import { mashupSides } from './play-spec.js';
 import { declaredFit, relevance, servesInteraction } from './select.js';
 import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
@@ -38,6 +38,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./compose-check.js').AdapterInstance} AdapterInstance */
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/** @typedef {import('./adapters.js').MashupRealisation} MashupRealisation */
 /** @typedef {import('./select.js').Gap} Gap */
 /** @typedef {import('./loop-check.js').LoopProblem} LoopProblem */
 /** @typedef {import('./bundles.js').Composes} Composes */
@@ -61,7 +62,7 @@ import { str, isObj, prop, messageOf } from '../kernel/guards.js';
  * One loop step as selection.build.steps records it: the need, the candidates offered (and rejected, with why), the
  * question and its answer, what was added, the gap when none fits, and the loop check of the partial collection after it.
  * @typedef {{ kind: StepKind, mechanic: string | null, need: string, candidates: StepCandidate[], rejected: Array<{ id: string, why: string }>,
- *   asks: Array<{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }>, outcome: 'added' | 'reused' | 'gap', primitive: string | null,
+ *   asks: Array<{ offered: string[], pick: string, why: string, ok: boolean, problem?: string }>, outcome: 'added' | 'reused' | 'none' | 'gap', primitive: string | null,
  *   members: string[], loop: string[], collection: string[], ms: number }} LoopStep
  */
 /** Add a step's pick to the caller's collection, joined to `mechanic` (the core loop mechanic, or an inner loop's): the collection after it, or why not. @typedef {(kind: StepKind, pick: StepCandidate, mechanic?: string | null) => StepCollection | string} Commit */
@@ -405,9 +406,16 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
 //           outcomes (card.loop.outcome, presets.js declaredOutcomes).
 //   union   each joined loop whose declared spaces (card.loop.space) do not include the chosen space gets a region of the
 //           first one it declares, projected by the union adapter's adapt() hook; the loop is bound to the region.
-//   skin    the skin adapter, once (its maps come from the composition: presets.js configureSkins).
+//   skin    the skin adapter, once, when declarations decide it: the joined concept's primitives declare content
+//           sections (section contracts) and the concept joined into declares a contract they can fill (presets.js
+//           skinSections); its maps come from the composition (presets.js configureSkins). A joined concept with no
+//           content (a theme, a setting) needs none (outcome 'none': its theme flows to the content forms); content with
+//           no contract to fill is a gap.
 // union and skin ask nothing: their declarations decide. After each, the composition check and the loop check of the
-// partial collection run (nothing new may break) and the step is recorded; what cannot be derived is a gap.
+// partial collection run (nothing new may break) and the step is recorded; what cannot be derived is a gap. Every entry
+// the steps decide is recorded with the instances that realise it (adapters.js MashupRealisation): the collection keeps
+// them through every later re-resolution of its adapters (adapters.js keepMashupAdapters), and the pipeline checks the
+// published document still has them (adapters.js mashupAdapterProblems).
 //
 // Integration (build.js, owned elsewhere), after loopSteps:
 //     const m = await adapterSteps({ registry, decomposition, collection: collection(), ask, log,
@@ -416,8 +424,8 @@ export async function loopSteps({ registry, decomposition, collection, ask, comm
 //       adopt: (instances, b) => { stepAdapters.push(...instances); Object.assign(stepBind, b); return collection(); } });
 //     steps.push(...m.steps); gaps.push(...m.gaps);
 // stepAdapters / stepBind are kept apart from tryAdd's (which replaces `adapters` and `bind` with resolveAdapters' output
-// on every pick) and joined into collection() and the BuildResult: adapters: [...adapters, ...stepAdapters],
-// bind: { ...bind, ...stepBind }. Re-planning (replan.js) can call it the same way over selection.adapters / bind.
+// on every pick) and joined into collection() and the BuildResult with adapters.js keepMashupAdapters; the BuildResult
+// carries the records (mashupAdapters). Re-planning (replan.js) calls it over a selection (adapterStepsOnSelection).
 
 /** Add adapter instances (with the bindings onto their regions) to the caller's collection: the collection after it, or why not. @typedef {(instances: AdapterInstance[], bind: Record<string, string>) => StepCollection | string} Adopt */
 
@@ -487,9 +495,9 @@ function adapterChecks(registry, decomposition, c, instances, bind, logic) {
 /**
  * Run the mashup adapter steps (see above) on a collection: one per core.mashup entry across concepts. `commit` adds an
  * inner loop the loop step picked (joined to the joined concept's loop mechanic); `adopt` adds the adapter instances.
- * -> the steps recorded, the gaps, the adapter instances added and the collection after them.
+ * -> the steps recorded, the gaps, the adapter instances added, how each entry was realised and the collection after them.
  * @param {{ registry: RegistryLike, decomposition: Decomposition, collection: StepCollection, ask: Ask, commit: Commit, adopt: Adopt, logic?: LogicLike | null, log?: (msg: string) => void }} options
- * @returns {Promise<{ steps: LoopStep[], gaps: Gap[], adapters: AdapterInstance[], collection: StepCollection }>}
+ * @returns {Promise<{ steps: LoopStep[], gaps: Gap[], adapters: AdapterInstance[], realised: MashupRealisation[], collection: StepCollection }>}
  */
 export async function adapterSteps({ registry, decomposition, collection, ask, commit, adopt, logic = null, log = () => {} }) {
   const lg = logic || logicOf(registry);
@@ -500,6 +508,8 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
   const gaps = [];
   /** @type {AdapterInstance[]} */
   const added = [];
+  /** @type {MashupRealisation[]} */
+  const realised = [];
   for (const entry of decomposition.core?.mashup || []) {
     const sides = mashupSides(entry, decomposition.mechanics || []);
     const relation = entry.relation;
@@ -522,6 +532,8 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
       step.ms = Math.round(performance.now() - t0);
       steps.push(step);
     };
+    /** The entry is realised by these instances ([] when its relation needs none). @param {Array<{ use: string, id?: string }>} instances */
+    const realise = instances => { realised.push({ relation, mechanics: [...entry.mechanics], instances: instances.map(i => ({ use: i.use, ...(typeof i.id === 'string' ? { id: i.id } : {}) })) }); };
     /** Check and add instances; '' when added. @param {AdapterInstance[]} instances @param {Record<string, string>} bind */
     const add = (instances, bind) => {
       const checked = adapterChecks(registry, decomposition, c, instances, bind, lg);
@@ -529,6 +541,7 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
       const next = adopt(instances, bind);
       if (typeof next === 'string') return next;
       c = next; added.push(...instances); step.loop = checked.loop; step.outcome = 'added';
+      realise(instances);
       return '';
     };
     const taken = new Set([c.space.id, ...instanceIds({ adapters: c.adapters }), ...added.map(a => a.id).filter(/** @returns {x is string} */ x => typeof x === 'string')]);
@@ -536,7 +549,17 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
     const innerMechanic = joinedLoopOf(decomposition, entry);
 
     if (relation === 'skin') {
-      if (c.adapters.some(a => a.use === use) || c.systems.includes(use)) { step.outcome = 'reused'; finish(''); continue; }
+      const have = c.adapters.find(a => a.use === use);
+      if (have || c.systems.includes(use)) { step.outcome = 'reused'; realise([have || { use }]); finish(''); continue; }
+      // A skin maps content: only when the joined concept's primitives declare content sections (section contracts) and
+      // the core loop declares a contract they can fill (presets.js skinSections). A concept that brings no content (a
+      // theme, a setting) has no skin adapter: its theme flows to the content forms. Content with nothing to fill is a gap.
+      const joined = sides.inner.flatMap(id => c.mechanics.find(m => m.id === id)?.primitives || []).filter(id => c.systems.includes(id));
+      const owners = [...new Set([...(c.mechanics.find(m => m.id === c.loop)?.primitives || []), ...sides.outer.flatMap(id => c.mechanics.find(m => m.id === id)?.primitives || [])])].filter(id => c.systems.includes(id));
+      const sections = skinSections(registry, owners, joined);
+      step.members = [...joined];
+      if (!sections.from.length) { step.outcome = 'none'; realise([]); finish(''); continue; }
+      if (!sections.to) { finish(`the joined concept's content (${sections.from.join(', ')}) has no content contract of the core loop (${owners.join(', ') || 'none'}) to fill (card.content)`); continue; }
       const inst = { use, id: uniqueId(adapterInstanceId(registry, { use, space: c.space.id, with: {} }), taken), space: c.space.id, with: {} };
       finish(add([inst], {}));
       continue;
@@ -566,7 +589,7 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
       }
       step.members = [...inner];
       if (why) { finish(why); continue; }
-      if (!instances.length) { step.outcome = 'reused'; finish(''); continue; }
+      if (!instances.length) { step.outcome = 'reused'; realise([]); finish(''); continue; }
       finish(add(instances, bind));
       continue;
     }
@@ -617,7 +640,7 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
     const inst = { use, id: uniqueId(adapterInstanceId(registry, { use, with: w }, c.space.id), taken), with: w };
     finish(add([inst], {}));
   }
-  return { steps, gaps, adapters: added, collection: c };
+  return { steps, gaps, adapters: added, realised, collection: c };
 }
 
 /**
@@ -628,16 +651,23 @@ export async function adapterSteps({ registry, decomposition, collection, ask, c
  */
 export async function adapterStepsOnSelection({ registry, decomposition, selection: sel, ask, logic = null, log = () => {} }) {
   const loop = typeof decomposition.core?.loop === 'string' && sel.mechanics.some(m => m.id === decomposition.core?.loop) ? decomposition.core.loop : null;
-  /** @type {AdapterInstance[]} */
+  /** The instances adopted so far realise the relation being decided: they are kept like the recorded ones. @type {AdapterInstance[]} */
   const own = [];
   const collection = () => selectionCollection(registry, sel, loop);
-  return adapterSteps({ registry, decomposition, collection: collection(), ask, logic, log,
+  const r = await adapterSteps({ registry, decomposition, collection: collection(), ask, logic, log,
     commit: (kind, pick, mechanic) => {
       for (const id of pick.members) if (!sel.systems.includes(id)) sel.systems.push(id);
-      if (pick.adapters.length) { const r = resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry); sel.adapters = [...r.adapters, ...own]; Object.assign(sel.bind, r.bind); }
+      if (pick.adapters.length) {
+        const pending = [...(sel.mashupAdapters || []), { relation: kind, mechanics: [], instances: own.map(a => ({ use: a.use, ...(a.id ? { id: a.id } : {}) })) }];
+        const kept = keepMashupAdapters(resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry), { adapters: sel.adapters, bind: sel.bind, mashupAdapters: pending });
+        const spaces = new Set(sel.spaces.map(s => s.id));
+        sel.adapters = kept.adapters; sel.bind = { ...Object.fromEntries(Object.entries(sel.bind).filter(([, to]) => spaces.has(to))), ...kept.bind };
+      }
       const m = sel.mechanics.find(x => x.id === mechanic);
       if (m && !m.primitives.includes(pick.id)) m.primitives = [...m.primitives, pick.id];
       return collection();
     },
     adopt: (instances, bind) => { own.push(...instances); sel.adapters = [...(sel.adapters || []), ...instances]; Object.assign(sel.bind, bind); return collection(); } });
+  sel.mashupAdapters = [...(sel.mashupAdapters || []).filter(x => !r.realised.some(y => y.relation === x.relation && y.mechanics.join('\n') === x.mechanics.join('\n'))), ...r.realised];
+  return r;
 }

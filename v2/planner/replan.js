@@ -10,7 +10,7 @@
 import { requirementsOf, satisfying, dataShapes } from './catalog.js';
 import { composeLoop, cardLoop } from './loop.js';
 import { documentedBy } from './compose-check.js';
-import { resolveAdapters } from './adapters.js';
+import { resolveAdapters, keepMashupAdapters } from './adapters.js';
 import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, ownersOf } from './retrieval.js';
 import { loopProblems } from './loop-check.js';
 import { loopCore } from './presets.js';
@@ -22,6 +22,7 @@ import { isObj, isStr, list, prop } from '../kernel/guards.js';
 /** @typedef {import('./select.js').Gap} Gap */
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./compose-check.js').AdapterSpec} AdapterSpec */
+/** @typedef {import('./compose-check.js').AdapterInstance} AdapterInstance */
 /** @typedef {import('./compose-check.js').CompositionResult} CompositionResult */
 /** A problem as stages report it. @typedef {{ code?: unknown, path?: unknown, message?: unknown, primitive?: unknown, hint?: unknown, need?: unknown }} StageProblem */
 /** @typedef {import('./loop-check.js').LoopNeed} LoopNeed */
@@ -180,13 +181,18 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
   };
   /** The validity checks on the selection's space (the build's: retrieval.js collectionChecks). */
   const checksOf = () => { const space = sel.spaces[0]; return collectionChecks({ registry, space: { id: space?.id || 'world', use: space?.use || '' }, variants: [{ with: space?.with || {} }], documented }); };
-  /** The adapter instances and bindings the re-planned collection resolves (bindings to the selection's own spaces stay). */
-  const reresolve = () => {
-    const e = checksOf().evaluate(sel.systems, 0);
+  /**
+   * The adapter instances and bindings the re-planned collection resolves (bindings to the selection's own spaces stay),
+   * with the instances realising the mashup relations and the bindings onto their regions kept (keepMashupAdapters).
+   * @param {{ adapters: AdapterInstance[], bind: Record<string, string> }} resolved
+   */
+  const adopt = resolved => {
+    const kept = keepMashupAdapters(resolved, sel);
     const own = new Set((sel.spaces || []).map(x => x.id));
-    sel.adapters = e.adapters;
-    sel.bind = { ...Object.fromEntries(Object.entries(sel.bind || {}).filter(([, x]) => own.has(x))), ...e.bind };
+    sel.adapters = kept.adapters;
+    sel.bind = { ...Object.fromEntries(Object.entries(sel.bind || {}).filter(([, x]) => own.has(x))), ...kept.bind };
   };
+  const reresolve = () => adopt(checksOf().evaluate(sel.systems, 0));
   const coreMechanics = (sel.mechanics || []).filter(m => m.importance === 'core');
   // The core loop mechanic: the play spec's, else the first core one. The loop steps' picks join it.
   const loopId = isStr(prop(decomposition.core, 'loop')) ? String(prop(decomposition.core, 'loop')) : null;
@@ -210,10 +216,7 @@ export async function replan(selection, diagnoses, { registry, decomposition, tr
       exclude: () => [...seen, ...failed],
       commit: (kind, pick) => {
         for (const id of pick.members) { if (!sel.systems.includes(id)) { sel.systems.push(id); added.push(id); } require(id); }
-        if (pick.adapters.length) {
-          const resolved = resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry);
-          sel.adapters = resolved.adapters; Object.assign(sel.bind, resolved.bind);
-        }
+        if (pick.adapters.length) adopt(resolveAdapters({ spaces: sel.spaces, systems: sel.systems }, registry));
         if (kind !== 'driver' && loopMechanic && !loopMechanic.primitives.includes(pick.id)) loopMechanic.primitives = [...loopMechanic.primitives, pick.id];
         return collectionOf();
       } });

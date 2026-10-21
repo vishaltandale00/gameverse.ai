@@ -1,0 +1,169 @@
+{
+ "note": "live \"chess but with pokemon\" (v2-presets 5ed5399f, 2026-10-21): the spec joins pokemon nested into chess; the build left checkmate_objective a gap, re-planning added gameplay.turns for it, and v1 published without engine.adapt.nested",
+ "prompt": "chess but with pokemon",
+ "seed": 1028678653,
+ "trigger": "attack_hit",
+ "decomposition": {
+  "version": "decompose/0.2",
+  "title": "PokeChess Battle",
+  "premise": "Players engage in a strategic game where chess meets Pokemon, using classic chess rules blended with Pokemon-themed pieces. Each move triggers unique Pokemon battle mechanics, utilizing type advantages and special abilities to outmaneuver the opponent and achieve checkmate.",
+  "tone": "strategic, fantasy, competitive",
+  "concepts": [
+   {
+    "id": "chess",
+    "name": "Chess",
+    "quote": "chess",
+    "kind": "game",
+    "keeps": [
+     "core gameplay as a strategic board game with pieces of different moves and objective of checkmate"
+    ],
+    "loop": "turn_based_move"
+   },
+   {
+    "id": "pokemon",
+    "name": "Pokemon",
+    "quote": "pokemon",
+    "kind": "game",
+    "keeps": [
+     "theme of creatures battling",
+     "characters as different 'pieces' with unique abilities"
+    ],
+    "loop": "pokemon_strategy_loop"
+   }
+  ],
+  "references": [
+   {
+    "name": "Chess",
+    "kind": "game",
+    "keeps": [
+     "core gameplay as a strategic board game with pieces of different moves and objective of checkmate"
+    ]
+   },
+   {
+    "name": "Pokemon",
+    "kind": "game",
+    "keeps": [
+     "theme of creatures battling",
+     "characters as different 'pieces' with unique abilities"
+    ]
+   }
+  ],
+  "mechanics": [
+   {
+    "id": "turn_based_move",
+    "verb": "move",
+    "description": "players alternate turns to move one piece on the board",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "piece_movement_rules",
+    "verb": "move",
+    "description": "each piece has specific movement patterns defining how it can move on the board",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "capture_opponent_pieces",
+    "verb": "capture",
+    "description": "capture opponent pieces by moving onto their square according to movement rules",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "checkmate_objective",
+    "verb": "achieve",
+    "description": "win by placing the opponent's king in checkmate, where it cannot escape capture",
+    "from": "chess",
+    "importance": "core"
+   },
+   {
+    "id": "pokemon_strategy_loop",
+    "verb": "strategize with pokemon abilities",
+    "description": "the core gameplay loop combining chess moves and pokemon battle strategy to achieve checkmate or defeat",
+    "from": "pokemon",
+    "importance": "core"
+   },
+   {
+    "id": "select_and_deploy_pokemon",
+    "verb": "select and deploy",
+    "description": "choose pokemon to play as pieces on the chess board",
+    "from": "pokemon",
+    "importance": "core"
+   },
+   {
+    "id": "pokemon_battle_moves",
+    "verb": "use battle moves",
+    "description": "perform unique battle moves during encounters to affect the opponent",
+    "from": "pokemon",
+    "importance": "supporting"
+   },
+   {
+    "id": "pokemon_type_advantages",
+    "verb": "exploit type advantages",
+    "description": "use pokemon types to gain advantages in capturing or defending pieces",
+    "from": "pokemon",
+    "importance": "supporting"
+   }
+  ],
+  "spaces": [
+   {
+    "role": "main",
+    "kind": "board",
+    "description": "A chessboard where the game is played with pokemon-themed pieces each occupying discrete squares."
+   }
+  ],
+  "views": [
+   "board"
+  ],
+  "movement": "none",
+  "core": {
+   "loop": "turn_based_move",
+   "interaction": "pieces-turns",
+   "opponent": "ai-rival",
+   "win": "checkmate the opponent's king using strategic pokemon piece moves and battle tactics",
+   "lose": "your king is checkmated",
+   "theme": "fantasy chess with pokemon creatures",
+   "narrative": false,
+   "mashup": [
+    {
+     "relation": "nested",
+     "mechanics": [
+      "turn_based_move",
+      "pokemon_strategy_loop",
+      "select_and_deploy_pokemon",
+      "pokemon_battle_moves",
+      "pokemon_type_advantages"
+     ],
+     "why": "Each chess move triggers a nested pokemon battle mechanic that modifies move outcomes using unique battle moves and type advantages, integrating pokemon strateg"
+    }
+   ]
+  }
+ },
+ "mapping": {
+  "turn_based_move": [
+   "gameplay.turns"
+  ],
+  "piece_movement_rules": [
+   "gameplay.turns"
+  ],
+  "capture_opponent_pieces": [
+   "gameplay.combat.health"
+  ],
+  "checkmate_objective": [
+   "gameplay.turns"
+  ],
+  "pokemon_strategy_loop": [
+   "gameplay.creature.battle"
+  ],
+  "select_and_deploy_pokemon": [
+   "gameplay.creature.party"
+  ],
+  "pokemon_battle_moves": [
+   "gameplay.creature.battle"
+  ],
+  "pokemon_type_advantages": [
+   "gameplay.creature.battle"
+  ]
+ }
+}

@@ -18,6 +18,7 @@
 // the instances appended to systems and the needy instances re-bound (instance.space) to the region.
 import { checkComposition, compositionSpaces, adapterFits, adapterSignature } from './compose-check.js';
 import { Registry } from '../kernel/registry.js';
+import { mashupSides } from './play-spec.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').RegisteredPrimitive} RegisteredPrimitive */
@@ -130,6 +131,72 @@ export function resolveAdapters(composition, registry, opts = {}) {
   const resolved = applyAdapters(composition, adapters, bind);
   const result = checkComposition(resolved, registry, opts);
   return done(result, { verdict: gaps.length ? 'incompatible-needs-adapter' : result.verdict, adapters, bind, gaps, composition: resolved });
+}
+
+/**
+ * How the mashup adapter steps (build-steps.js adapterSteps) realised one core.mashup entry across concepts: the
+ * instances that realise it (use, and the instance id when the step added one); [] when the relation needs none (a union
+ * whose loops share the space, a skin whose joined concept brings no content: its theme flows to the content forms).
+ * A collection (build.js, select.js Selection) keeps one record per entry the steps decided, in `mashupAdapters`.
+ * @typedef {{ relation: string, mechanics: string[], instances: Array<{ use: string, id?: string }> }} MashupRealisation
+ */
+/** The adapter instance ids realising mashup relations. @param {{ mashupAdapters?: MashupRealisation[] }} c @returns {Set<string>} */
+export const mashupIds = c => new Set((c.mashupAdapters || []).flatMap(r => r.instances.map(i => i.id)).filter(/** @returns {x is string} */ x => typeof x === 'string'));
+
+/**
+ * A collection's adapters after they are resolved again (resolveAdapters re-derives what the spaces lack on every
+ * change to the collection, and never a mashup relation): the resolution's instances and bindings, with the instances
+ * that realise mashup relations (the previous collection's `mashupAdapters`) and the bindings onto their regions kept
+ * as they were. A resolved instance identical to a kept one (same adapter, host and configuration) is that one (its
+ * bindings follow it); one whose id a kept one holds gets another id (and its bindings follow). Pure.
+ * @param {{ adapters: AdapterInstance[], bind: Record<string, string> }} resolved
+ * @param {{ adapters?: AdapterInstance[], bind?: Record<string, string>, mashupAdapters?: MashupRealisation[] }} previous
+ * @returns {{ adapters: AdapterInstance[], bind: Record<string, string> }}
+ */
+export function keepMashupAdapters(resolved, previous) {
+  const ids = mashupIds(previous);
+  const kept = (previous.adapters || []).filter(a => typeof a.id === 'string' && ids.has(a.id));
+  const same = (/** @type {AdapterInstance} */ a, /** @type {AdapterInstance} */ b) => a.use === b.use && (a.space ?? null) === (b.space ?? null) && JSON.stringify(a.with ?? {}) === JSON.stringify(b.with ?? {});
+  const taken = new Set([...kept.map(a => /** @type {string} */ (a.id)), ...resolved.adapters.map(a => a.id).filter(/** @returns {x is string} */ x => typeof x === 'string')]);
+  /** @type {Map<string, string>} resolved id -> the id it has now */
+  const moved = new Map();
+  /** @type {AdapterInstance[]} */
+  const adapters = [];
+  for (const a of resolved.adapters) {
+    const twin = kept.find(k => same(k, a));
+    if (twin) { if (typeof a.id === 'string') moved.set(a.id, /** @type {string} */ (twin.id)); continue; }
+    if (typeof a.id === 'string' && ids.has(a.id)) { const id = uniqueId(a.id, taken); moved.set(a.id, id); adapters.push({ ...structuredClone(a), id }); continue; }
+    adapters.push(structuredClone(a));
+  }
+  const bind = Object.fromEntries(Object.entries(resolved.bind).map(([use, to]) => [use, moved.get(to) ?? to]));
+  for (const [use, to] of Object.entries(previous.bind || {})) if (ids.has(to)) bind[use] = to;
+  return { adapters: [...adapters, ...kept.map(a => structuredClone(a))], bind };
+}
+
+/**
+ * The publish invariant of the mashup relations: every core.mashup entry across concepts with a relation an adapter
+ * realises (card.adapts.relation: nested, union, skin) was decided by the adapter steps (a record in
+ * selection.mashupAdapters), and every instance realising it is in the document's systems (its adapter, and its id when
+ * the step gave it one). -> one problem per entry the document lost ([] when every relation is there).
+ * @param {unknown} doc @param {{ mechanics?: Array<{ id: string, from: string }>, core?: { mashup?: import('./play-spec.js').Mashup[] } | null }} decomposition
+ * @param {{ mashupAdapters?: MashupRealisation[] }} selection @param {RegistryLike} registry
+ * @returns {Array<{ code: string, path: string, message: string }>}
+ */
+export function mashupAdapterProblems(doc, decomposition, selection, registry) {
+  const systems = (isObj(doc) && Array.isArray(doc.systems) ? doc.systems : []).filter(isObj);
+  /** @type {Set<string | undefined>} */
+  const realised = new Set(adaptersOf(registry).map(id => registry.get(id)?.card.adapts?.relation));
+  /** @type {Array<{ code: string, path: string, message: string }>} */
+  const out = [];
+  for (const entry of decomposition.core?.mashup || []) {
+    if (!entry.relation || !realised.has(entry.relation) || !mashupSides(entry, decomposition.mechanics || []).outer.length) continue;
+    const label = `${entry.relation} mashup [${entry.mechanics.join(', ')}]`;
+    const rec = (selection.mashupAdapters || []).find(r => r.relation === entry.relation && r.mechanics.join('\n') === entry.mechanics.join('\n'));
+    if (!rec) { out.push({ code: 'mashup_adapter_missing', path: 'systems', message: `${label}: no mashup adapter step realised it (selection.mashupAdapters)` }); continue; }
+    const lost = rec.instances.filter(i => !systems.some(s => s.use === i.use && (i.id === undefined || s.id === i.id)));
+    if (lost.length) out.push({ code: 'mashup_adapter_missing', path: 'systems', message: `${label}: the document lost ${lost.map(i => `${i.use}${i.id ? ` '${i.id}'` : ''}`).join(', ')}, which the adapter steps added to realise it` });
+  }
+  return out;
 }
 
 /**

@@ -177,7 +177,7 @@ export default {
     // The participants an event names (role -> data field): who used something and what it used.
     loop: { verbs: ['interact'], progress: ['interacted', 'used', 'read'], involves: { interacted: { user: 'who', used: 'target' } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
-    components: { interact: { type: 'object', fields: { prompt: { type: 'string' }, range: { type: 'number', min: 0 }, kind: { type: 'string' }, id: { type: 'string', effect: 'interactable id (used:<id> events)' } }, effect: 'something the player can use' } },
+    components: { interact: { type: 'object', fields: { prompt: { type: 'string' }, range: { type: 'number', min: 0 }, kind: { type: 'string', options: KINDS, effect: 'how it is used (default: from its other components)' }, id: { type: 'string', effect: 'interactable id (used:<id> events)' } }, effect: 'something the player can use' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "archetypes", "component": "interact", "min": 1, "placed": 2, "why": "interactables are entities with an interact component {prompt, range}, placed where the player can use them", "example": {"id": "old_lever", "kind": "prop", "components": {"interact": {"prompt": "Pull", "range": 1.5}}}},
