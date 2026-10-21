@@ -111,24 +111,20 @@ test(`nested: every ordered pair with an entry event and an enterable inner loop
   timings.nestedMs = Math.round(performance.now() - t0);
 });
 
-// Every composed nested pair passes the composition check except for the inputs: a template whose input primitive
-// (engine.input.motions, the fighting template's) declares only its own interactions makes compose-check require that
-// every loop's interaction (pieces-turns, menu, cursor-board) be served by an input primitive, which the UI primitives
-// that serve them do not declare yet (controls, HANDOFF item 3). The second test holds the rest of the check meanwhile:
-// it found compose-check reading the first instance of a primitive for every unit of it (the race's goal-less course
-// read with the runner's goal), fixed by reading each unit's own instance.
-test('nested: every composed pair passes the composition check', { todo: "controls (HANDOFF item 3): \"mode_input_mismatch: no input primitive supports the 'pieces-turns' interaction\" (board, card-battle, tactics with fighting), \"... the 'menu' interaction\" (card-battle, creature-battle with fighting), \"... the 'cursor-board' interaction\" (rts × fighting): the UI primitives serving them declare no input interactions" }, () => {
+// Every composed nested pair passes the composition check, judged as the document a person plays (compose-check.js:
+// the host's input and UI added, v2/web/host-doc.js): a template whose input primitive (engine.input.motions, the
+// fighting template's) serves only its own interaction no longer hides the controls the host gives the other loop
+// (pieces-turns, menu, cursor-board through the host's input mapping and UI primitives). The check reads each unit's own
+// instance (the race's goal-less course is not read with the runner's goal).
+test('nested: every composed pair passes the composition check', () => {
+  let checked = 0;
   for (const [a, b] of NESTED) {
     const r = composeNested(part(a), part(b), cat);
-    if (r.doc) assert.deepEqual(checkComposition(preflight(structuredClone(r.doc), registry, logic).doc, registry, { logic }).failures.map(f => `${f.code}: ${f.message}`), [], `${a} × ${b}`);
+    if (!r.doc) continue;
+    checked++;
+    assert.deepEqual(checkComposition(preflight(structuredClone(r.doc), registry, logic).doc, registry, { logic }).failures.map(f => `${f.code}: ${f.message}`), [], `${a} × ${b}`);
   }
-});
-
-test('nested: every composed pair passes the composition check but for the input interactions the controls work declares', () => {
-  for (const [a, b] of NESTED) {
-    const r = composeNested(part(a), part(b), cat);
-    if (r.doc) assert.deepEqual(checkComposition(preflight(structuredClone(r.doc), registry, logic).doc, registry, { logic }).failures.filter(f => f.code !== 'mode_input_mismatch').map(f => `${f.code}: ${f.message}`), [], `${a} × ${b}`);
-  }
+  assert.ok(checked > 0);
 });
 
 test(`union: every ordered pair (${PAIRS.length}) composes into a document that passes the checks with both loops, or fails with a named problem; never throws`, t => {
@@ -141,7 +137,7 @@ test(`union: every ordered pair (${PAIRS.length}) composes into a document that 
     if (!r.doc) {
       assert.ok(r.problems.length, `${label}: no document and no problem`);
       for (const p of r.problems) assert.ok(CODES.has(p.code), `${label}: ${p.code} is a declared composition problem`);
-      for (const p of r.problems.filter(x => x.code === 'union_needs_adapter')) assert.match(p.message, /\[[a-z_]+\]/, `${label}: names the composition check's failure`);
+      for (const p of r.problems.filter(x => x.code === 'union_needs_adapter' || x.code === 'union_incompatible')) assert.match(p.message, /\[[a-z_]+\]/, `${label}: names the composition check's failure`);
       for (const code of new Set(r.problems.map(p => p.code))) (failed[code] ??= []).push(label);
       continue;
     }

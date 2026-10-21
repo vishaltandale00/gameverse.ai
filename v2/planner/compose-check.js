@@ -57,10 +57,13 @@
 //                (v2/verify/strategies); mode.win/lose.param and .end exist (on the card, or its card.mode.via
 //                primitive) and, in a document, the win of the loop that owns the game's win (loop.js winOwner) is
 //                wired to a won ending as the loop check reads it (loop.js unwired: an end_game effect in the param,
-//                or the end boolean set); and an input primitive whose
-//                card.interactions includes the interaction the loop is played in is present: the play spec's
-//                (opts.interaction) when the loop's declared interactions include it, else one of them (input
-//                cards without card.interactions are a type hole).
+//                or the end boolean set); and the loop can be played in its interaction: the play spec's
+//                (opts.interaction) when the loop's declared interactions include it, else (a selection) one of them,
+//                (a document) every one. A selection needs an input primitive whose card.interactions includes it
+//                (input cards without card.interactions are a type hole); a document, judged as the document a person
+//                plays (v2/web/host-doc.js: the host's input and UI added), needs a control a person has for each of
+//                the loop's verbs in it (v2/verify/controls.js uncontrolledVerbs, as the template contract's controls).
+//   content    one reading with the gate's world check: v2/planner/space-content.js.
 //
 // Planner use (select.js is owned elsewhere; the one call site to add, at the end of selectPrimitives just
 // before `return`, with `selection` the object it is about to return):
@@ -75,9 +78,12 @@ import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
-import { OUTLINE_AUTHORS } from './world.js';
+import { OUTLINE_AUTHORS, carriedContent, unitGives } from './space-content.js';
 import { cardLoop, loopSpaceFits, loopExists, loopInstances, winOwner, unwired } from './loop.js';
 import { list, prop } from '../kernel/guards.js';
+import { hostDocument } from '../web/host-doc.js';
+import { uncontrolledVerbs } from '../verify/controls.js';
+import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
 /** @typedef {import('../kernel/types.js').Card} Card */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -91,7 +97,7 @@ import { list, prop } from '../kernel/guards.js';
 /** @typedef {{ kind: keyof Needs, item: string }} Need  what an adaptable failure lacks */
 /** @typedef {{ check: CheckName, code: string, unit: string, space?: string, message: string, hint?: string, adaptable: boolean, need?: Need }} Failure */
 /** @typedef {{ capabilities: string[], content: string[], services: string[] }} Needs */
-/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string>, zones: number, projected?: string, given?: string[] }} SpaceUnit  projected: the sub-space adapter defining it; given: content it has from its host */
+/** @typedef {{ use: string, with: Record<string, any>, caps: Set<string>, base: Set<string>, zones: unknown[], projected?: string, given?: string[] }} SpaceUnit  zones: its zone list; projected: the sub-space adapter defining it; given: content it has from its host */
 /** @typedef {{ use: string, space: string, slot: 'space' | 'generator' | 'system' | 'graphics', added?: string, id?: string, with?: Record<string, any> }} Unit */
 /** @typedef {{ use: string, id?: string, space?: string, with?: Record<string, any> }} AdapterInstance  an adapter systems instance (resolveAdapters output) */
 /**
@@ -300,6 +306,12 @@ function sectionDeclared(/** @type {RegistryLike} */ registry, /** @type {string
 }
 
 /**
+ * Whether a composition is a document (a schema, or instance objects in systems) rather than a selection (system ids).
+ * @param {Doc | Selection} input
+ */
+const isDocument = input => { const sel = /** @type {Selection & Partial<Doc>} */ (input); return typeof sel.schema === 'string' || (isList(sel.systems) && sel.systems.some(s => isObj(s) && typeof s.use === 'string')); };
+
+/**
  * Normalize a document, a select.js selection or a compact { space, primitives } into spaces and units.
  * @param {Doc | Selection} input
  * @param {RegistryLike} registry
@@ -310,12 +322,11 @@ function normalize(input, registry) {
   /** @type {Unit[]} */
   const units = [];
   const sel = /** @type {Selection & Partial<Doc>} */ (input);
-  // A document has a schema or instance objects in systems; a selection lists system ids.
-  const isDoc = typeof sel.schema === 'string' || (isList(sel.systems) && sel.systems.some(s => isObj(s) && typeof s.use === 'string'));
+  const isDoc = isDocument(input);
   const spaceList = isList(sel.spaces) ? sel.spaces : sel.space ? [{ id: 'world', ...sel.space }] : [];
   spaceList.forEach((s, i) => {
     const id = s.id || `space${i}`, base = capsOf(registry, s.use, s.with || {});
-    spaces.set(id, { use: s.use, with: s.with || {}, base, caps: new Set(base), zones: list(s.zones).length });
+    spaces.set(id, { use: s.use, with: s.with || {}, base, caps: new Set(base), zones: list(s.zones) });
     units.push({ use: s.use, space: id, slot: 'space' });
     for (const g of /** @type {any} */ (s).generators || []) if (g?.use) units.push({ use: g.use, space: id, slot: 'generator' });
   });
@@ -339,7 +350,7 @@ function normalize(input, registry) {
     if (!sub || typeof u.id !== 'string' || spaces.has(u.id)) continue;
     const w = u.with || {}, kind = typeof w[sub.kind] === 'string' ? w[sub.kind] : '';
     const caps = subspaceCaps(registry, sub, w);
-    spaces.set(u.id, { use: kind || u.use, with: (sub.config && isObj(w[sub.config]) ? w[sub.config] : {}), base: caps, caps: new Set(caps), zones: list(w.zones).length, projected: u.use, given: [...(sub.content || [])] });
+    spaces.set(u.id, { use: kind || u.use, with: (sub.config && isObj(w[sub.config]) ? w[sub.config] : {}), base: caps, caps: new Set(caps), zones: list(w.zones), projected: u.use, given: [...(sub.content || [])] });
   }
   const mechanics = isList(sel.mechanics) ? sel.mechanics.filter(isObj) : [];
   return { spaces, units, isDoc, mechanics };
@@ -356,17 +367,6 @@ export function compositionSpaces(input, registry) {
 }
 
 /**
- * Whether a space carries world content `item` in its own params (card.provides.contentParams): in a document, when
- * one of those params is non-empty; in a selection, the document will write them (as the outline writes zones).
- * @param {Card} card @param {SpaceUnit} space @param {string} item @param {boolean} isDoc
- */
-function inParams(card, space, item, isDoc) {
-  const params = card.provides.contentParams?.[item];
-  if (!isList(params) || !params.length) return false;
-  return !isDoc || params.some(p => { const v = space.with?.[p]; return isList(v) ? v.length > 0 : isObj(v) ? Object.keys(v).length > 0 : v != null; });
-}
-
-/**
  * checkComposition(doc | selection, registry, opts?) -> CompositionResult. Pure and static: card declarations only.
  * @param {Doc | Selection} input
  * @param {RegistryLike} registry
@@ -376,7 +376,12 @@ function inParams(card, space, item, isDoc) {
 export function checkComposition(input, registry, opts = {}) {
   const started = performance.now();
   const logic = opts.logic || logicOf(registry);
-  const { spaces, units, isDoc, mechanics } = normalize(input, registry);
+  // A document is judged as the document a person plays (ARCHITECTURE.md §6.3, KERNEL_API.md §6): the host's input
+  // mapping and UI added (v2/web/host-doc.js, the function the browser player mounts and the gate verifies), so the
+  // controls a loop is played through are the ones a person gets. A selection is no document yet: it is judged as
+  // written, and resolving adds what it lacks.
+  const judged = isDocument(input) ? /** @type {Doc} */ (hostDocument(input, registry)) : input;
+  const { spaces, units, isDoc, mechanics } = normalize(judged, registry);
   const strategyIds = new Set(opts.strategies ?? STRATEGIES.keys());
   const resolve = opts.resolve ?? !isDoc;
   /** @type {string[]} */
@@ -431,7 +436,9 @@ export function checkComposition(input, registry, opts = {}) {
      * declares them), or it is an active adapter projecting it? (The space's own content is the space card's.)
      * @param {Unit} g @param {string} item @param {SpaceUnit} space
      */
-    const gives = (g, item, space) => { const gc = cardOf(registry, g.use); return (g.slot !== 'space' && (gc?.provides.content || []).includes(item) && (!isList(gc?.spaces) || gc.spaces.includes(space.use))) || (adapters.includes(g.use) && (gc?.adapts?.provides.content || []).includes(item)); };
+    const gives = (g, item, space) => g.slot !== 'space' && unitGives(cardOf(registry, g.use), item, space.use, { adapter: adapters.includes(g.use) });
+    /** World content a space carries itself (space-content.js, the reading the gate's world check makes). @param {SpaceUnit} space */
+    const carries = space => carriedContent(cardOf(registry, space.use), space, { written: isDoc });
     /** @param {(c: NonNullable<Card['adapts']>) => string[] | undefined} pick @param {string} item @param {SpaceUnit} space */
     const adapterFor = (pick, item, space) => registry.ids().filter(id => { const c = cardOf(registry, id); return c?.adapts && (pick(c.adapts) || []).includes(item) && adapterFits(c, space); })
       .sort((a, b) => ((cardOf(registry, a)?.requires.capabilities || []).every(x => space.base.has(x)) ? 0 : 1) - ((cardOf(registry, b)?.requires.capabilities || []).every(x => space.base.has(x)) ? 0 : 1) || a.localeCompare(b))[0] || null;
@@ -486,7 +493,7 @@ export function checkComposition(input, registry, opts = {}) {
     }
 
     // Content: each space's needs (card.needs.content, or any one of card.needs.alternatives), plus any bound
-    // card's own needs.content, covered on that space. Outline-authored kinds (world.js OUTLINE_AUTHORS: zones)
+    // card's own needs.content, covered on that space. Outline-authored kinds (space-content.js OUTLINE_AUTHORS: zones)
     // need no generator; in a document the space must have them.
     for (const [sid, s] of spaces) {
       const sc = cardOf(registry, s.use); if (!sc) continue;
@@ -500,10 +507,9 @@ export function checkComposition(input, registry, opts = {}) {
        * @param {string} item @returns {{ how: 'have' } | { how: 'add', id: string, adapter: boolean } | { how: 'holes', ids: string[] } | null}
        */
       const coverOf = item => {
-        if ((sc.provides.content || []).includes(item) || (s.given || []).includes(item)) return { how: 'have' }; // a space may carry it (a track is a course; a region has it from its host)
-        if (inParams(sc, s, item, isDoc)) return { how: 'have' };
-        if (OUTLINE_AUTHORS.includes(item) && (!isDoc || s.zones > 0)) return { how: 'have' };
-        if (here.some(u => gives(u, item, s))) return { how: 'have' };
+        // The space carries it (a track is a course, a region has it from its host, its params hold it, its zones), or
+        // a unit on it gives it: space-content.js, the one reading the gate's world check makes too.
+        if (carries(s).includes(item) || here.some(u => gives(u, item, s))) return { how: 'have' };
         // A generator that carries a loop of its own (card.loop / card.mode: a crawl with its boss) is a mechanic, not
         // filler: content coverage never adds one (loop.js winProviders keeps the same rule for wins).
         const cand = declared.find(id => { const c = /** @type {Card} */ (cardOf(registry, id)); return !cardLoop(c) && /** @type {string[]} */ (c.spaces).includes(s.use) && /** @type {string[]} */ (c.provides.content).includes(item) && fitsCaps(id); });
@@ -574,7 +580,7 @@ export function checkComposition(input, registry, opts = {}) {
     // Mode: a mechanic's card.mode (see the header) must be satisfiable by this composition.
     for (const m of mechanics) if (m.importance === 'core' && !(m.primitives || []).some(id => registry.has(id)))
       fail({ check: 'mode', code: 'core_mechanic_unmapped', unit: String(m.id), message: `core mechanic '${m.id}' has no primitive`, hint: 'map it to a catalogue primitive or write one (gap layer)', adaptable: false });
-    const docLike = isDoc ? /** @type {Record<string, any>} */ (input) : null;
+    const docLike = isDoc ? /** @type {Record<string, any>} */ (judged) : null;
     const form = opts.content || null;
     const sectionValue = (/** @type {string} */ path) => {
       // A path through a list reads every entry ('spaces.zones': the zones of every space).
@@ -609,8 +615,7 @@ export function checkComposition(input, registry, opts = {}) {
         if (typeof item !== 'string') continue;
         if (!item.includes('.')) {
           if (!s) continue;
-          const sc = cardOf(registry, s.use);
-          const has = (sc?.provides.content || []).includes(item) || (s.given || []).includes(item) || (sc ? inParams(sc, s, item, isDoc) : false) || known.some(g => g.space === u.space && gives(g, item, s));
+          const has = carries(s).includes(item) || known.some(g => g.space === u.space && gives(g, item, s));
           if (has) continue;
           const gen = registry.ids('engine').filter(isGenerator).find(id => { const gc = cardOf(registry, id); return gc && !cardLoop(gc) && isList(gc.spaces) && gc.spaces.includes(s.use) && (gc.provides.content || []).includes(item) && (gc.requires.capabilities || []).every(x => s.caps.has(x)); });
           if (gen && propose(gen, u.space, `generates ${item} for ${u.use}'s mode`)) continue;
@@ -684,13 +689,24 @@ export function checkComposition(input, registry, opts = {}) {
       // loop serves it, else any it declares).
       const own = /** @type {string[]} */ (md.interactions).filter(x => x !== 'none');
       const played = opts.interaction && own.includes(opts.interaction) ? [opts.interaction] : own;
+      // In a document (the host document), the loop's verbs each have a control a person has in the interactions it is
+      // played in (the play spec's, else every one it declares): a key of engine.input.actions when its card serves the
+      // interaction, or a mounted UI primitive issuing the verb that serves it. The same reading as the controls the
+      // template contract and the input driver check (v2/verify/controls.js uncontrolledVerbs).
+      if (docLike && played.length) {
+        const verbs = instanceVerbs(c, inst, docLike);
+        for (const i of verbs.length ? played : []) {
+          const missing = uncontrolledVerbs(docLike, registry, verbs, /** @type {any} the interaction (controls.js is not type-checked) */ (i));
+          if (missing.length) fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no control a person has issues ${missing.map(x => `'${x}'`).join(', ')} in the '${i}' interaction`, hint: 'an input primitive serving the interaction with a binding for the verb, or a UI primitive whose card.controls issue it and whose card.interactions include it', adaptable: false });
+        }
+        continue;
+      }
       if (played.length) {
         const pool = inputs.length ? inputs.map(i => i.use) : registry.ids('engine').filter(id => id.startsWith('engine.input.'));
         const declared = pool.filter(id => isList(cardOf(registry, id)?.interactions));
         const servedBy = (/** @type {string} */ id) => played.find(x => /** @type {unknown[]} */ (cardOf(registry, id)?.interactions).includes(x));
         const match = declared.find(id => servedBy(id));
-        // An input the host supplies when a document leaves it out (card.hostDefault) needs no instance.
-        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${servedBy(match)} interaction`) && !cardOf(registry, match)?.hostDefault) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
+        if (match) { if (!inputs.some(i => i.use === match) && !propose(match, u.space, `input for ${u.use}'s ${servedBy(match)} interaction`)) fail({ check: 'mode', code: 'mode_input_missing', unit: u.use, message: `'${u.use}' needs input ${match}`, adaptable: false }); continue; }
         const undeclared = pool.filter(id => !declared.includes(id));
         if (undeclared.length) for (const id of undeclared) hole('mode', { card: id, field: 'card.interactions', code: 'input_interactions_undeclared', message: 'input primitive does not declare the interactions it supports (card.interactions)' });
         else fail({ check: 'mode', code: 'mode_input_mismatch', unit: u.use, message: `no input primitive supports the ${played.map(x => `'${x}'`).join(' or ')} interaction`, hint: `inputs: ${pool.join(', ') || 'none'}`, adaptable: false });

@@ -17,8 +17,8 @@ export default {
   card: {
     // Interaction models this input layer serves (direct control, grid steps, piece/cursor selection, menus): see card.mode.interaction.
     interactions: ['avatar-realtime', 'avatar-grid', 'pieces-turns', 'cursor-board', 'menu'],
-    // The browser host adds this primitive when a document has none (v2/web/input-defaults.js).
-    hostDefault: true,
+    // The browser host adds this primitive when a document has none and its loops have verbs a key issues
+    // (v2/web/input-defaults.js); the checks judge that host document (v2/web/host-doc.js), so nothing declares it here.
     intent: 'Declares the game\'s semantic verbs (move, look, jump, attack, use, mine, drive...) and their keyboard, mouse, gamepad and touch bindings per view. Gives every primitive one input view per entity (player or AI-driven) with held, pressed and axes, and hands out free verbs to primitives that need a button.',
     views: ['any'],
     params: {
