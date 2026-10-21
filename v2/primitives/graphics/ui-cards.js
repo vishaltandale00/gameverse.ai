@@ -35,6 +35,8 @@ export const cardArt = (id, type) => { const h = hashHue(id), h2 = (h + 40) % 36
 export default {
   id: 'graphics.ui.cards',
   card: {
+    // The quantities it shows a person (graphics/ui-defaults.js: a loop's goal it displays needs no HUD widget).
+    displays: [{ component: 'health', of: 'opponents' }, { component: 'health', of: 'player' }],
     intent: 'Card game UI for any deck game: fanned hand with focus lift, costs and playable glow, procedural card art, energy, draw/discard piles, enemies with intents and health, duel board row, targeting and End turn.',
     views: ['ui', 'any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).

@@ -20,6 +20,8 @@ export function optionLabel(doc, o) {
 export default {
   id: 'graphics.ui.story',
   card: {
+    // The quantities it shows a person: the story's beats as its scenes (graphics/ui-defaults.js hudGoals).
+    displays: [{ count: 'beat' }],
     intent: 'Shows the current scene, a running story log of dialogue and events, the inventory, and the available choices as focusable buttons (keyboard, gamepad, pointer, number keys); renders endings when no results screen exists.',
     views: ['text', 'overlay'],
     // It lists the game's options as its choices and sends the chosen one's actions (ARCHITECTURE §6.3: menu, choose an option).

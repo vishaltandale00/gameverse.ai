@@ -27,7 +27,7 @@ export default {
     ],
     // Collect mode (only when a counter clears the level): gather every pickup while threats chase. Touch and use
     // collect whatever moves the collector (box overlap, radius, the cell it is on), so it is played stepping or in real time.
-    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
+    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', shown: config => (config.counters || []).filter(c => c.clearsLevel).map(c => ({ var: c.var || `collected.${c.id}`, max: `${c.var || `collected.${c.id}`}.total`, label: c.id })), reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
     intent: 'Pickups and counters (coins, shards, pages, pellets): touch or use to collect, magnet pull, per-zone totals, a var per counter, level clear when a counter completes, and timed bonus prizes spawned at chosen counts.',
     views: ['any'],
     params: {
@@ -159,7 +159,8 @@ export default {
 
     rt.on('interacted', d => { const t = rt.entity(d.target); if (t && counterOf(t)) collect(t, d.who); });
     rt.system('interaction', rt => {
-      st().totals ??= computeTotals();
+      // Each counter's count and total as vars from the first step: what a person watches for the win (card.loop.win.shown).
+      if (!st().totals) { st().totals = computeTotals(); for (const c of config.counters) { rt.state.vars[varOf(c)] ??= 0; rt.state.vars[`${varOf(c)}.total`] = st().totals[c.id]; } }
       const s = st();
       for (const [id, until] of Object.entries(s.prizes)) if (rt.state.frame >= until) { delete s.prizes[id]; if (rt.entity(id)) { rt.despawn(id); rt.emit('prize_expired', { id }); } }
       const collectors = Object.values(rt.state.entities).filter(isCollector);

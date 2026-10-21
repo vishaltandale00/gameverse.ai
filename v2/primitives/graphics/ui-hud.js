@@ -11,6 +11,7 @@ import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
+import { sideOf } from './allegiance.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const pos = (d = 'top-left') => ({ type: 'string', default: d, options: POSITIONS, effect: 'screen anchor' });
@@ -42,6 +43,17 @@ const card = {
       format: { type: 'string', default: 'number', options: ['number', 'clock', 'percent', 'ordinal', 'speed'], effect: 'how the value is written' },
       max: { type: 'json', effect: 'optional max (number or var) shown as value/max' },
     } }, effect: 'labelled values: timers, laps, positions, speed, moves' },
+    goals: { type: 'list', default: [], of: { type: 'object', fields: {
+      end: { type: 'string', options: ['win', 'lose'], effect: 'the loop end this quantity is what a person watches for' },
+      use: { type: 'string', effect: 'the primitive whose loop end it is' },
+      var: { type: 'string', effect: "a var (a name ending in '.*': the scoreboard of its per-team vars)" },
+      count: { type: 'string', effect: 'an event, shown as how many times it happened' },
+      component: { type: 'string', effect: 'a component of entities, shown for the entities `of` names' },
+      of: { type: 'string', options: ['opponents', 'player'], default: 'opponents' },
+      bar: { type: 'string', options: ['boss'], effect: 'a bar widget that shows it (the boss bar)' },
+      max: { type: 'json', effect: 'the target: a number or a var name' },
+      label: { type: 'string' }, pos: pos('top-right'),
+    } }, effect: 'the quantities the loops\' win and lose read (ui-defaults.js hudGoals, from card.loop win/lose reads)' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
     compass: { type: 'boolean', default: false, effect: 'heading strip with the tracked objective marker' },
     clock: { type: 'boolean', default: false, effect: 'time of day and day count (engine.time vars)' },
@@ -185,7 +197,54 @@ export function hudModel(rt, config, local = {}) {
       out.compass = { heading: hdg, markers };
     }
   }
+  out.goals = goalsFor(rt, config, out, bound, local);
   return out;
+}
+
+const countOf = (rt, name) => { const c = rt.state.counts || {}; if (c[name] !== undefined) return c[name]; let n = 0; for (const k in c) if (k.startsWith(name + ':')) n += c[k]; return n; };
+const deadOf = e => { const h = e.components?.health; return Boolean(h && (h.dead || (isNum(h.hp) && h.hp <= 0))); };
+/**
+ * The loops' goal quantities (config.goals): each is shown as a readout, meter or bar of the model unless another
+ * widget already binds it. Returns [{ ...goal, shown }]: shown is whether the HUD shows it now.
+ */
+export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
+  const vars = rt.state.vars, res = [];
+  const valueShown = v => bound.has(v) || out.score?.value !== undefined && (config.score?.var ?? 'score') === v || (out.lives && (config.lives?.var ?? 'lives') === v) || out.readouts.some(r => r.var === v);
+  const maxOf2 = m => (isNum(m) ? m : typeof m === 'string' && isNum(vars[m]) ? vars[m] : null);
+  for (const [i, g] of (config.goals || []).entries()) {
+    const key = `g${i}`, pos = g.pos || 'top-right';
+    if (g.var && g.var.endsWith('.*')) { res.push({ ...g, shown: Boolean(out.scoreboard) }); continue; }
+    if (g.var || g.count) {
+      // An absent var is 0, as the kernel's var predicate reads it (the win tests it from 0).
+      const v = g.var ? vars[g.var] ?? 0 : countOf(rt, g.count);
+      if (g.var && valueShown(g.var)) { res.push({ ...g, shown: true }); continue; }
+      if (!isNum(v)) { res.push({ ...g, shown: false }); continue; }
+      const max = maxOf2(g.max);
+      out.readouts.push({ key, var: g.var || `count:${g.count}`, label: titleCase(g.label ?? String(g.var || g.count).split('.').pop().replace(/:/g, ' ')), text: fmtInt(v) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos, format: 'number', low: false });
+      res.push({ ...g, shown: true }); continue;
+    }
+    if (g.bar === 'boss') { res.push({ ...g, shown: Boolean(config.bossBar) }); continue; }
+    if (g.component) {
+      if ((g.of || 'opponents') === 'player') {
+        const p = rt.player(), h = p?.components?.[g.component];
+        if (g.component === 'health' && (bound.has('hp') || out.meters.some(m => m.id === 'hp') || out.counters.some(c => c.key === 'auto-hp'))) { res.push({ ...g, shown: true }); continue; }
+        if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label: g.label ?? 'Health', value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
+        res.push({ ...g, shown: false }); continue;
+      }
+      // The opponents a win counts: entities carrying the component that are not the player's or on its side (allegiance.js).
+      const foes = Object.values(rt.state.entities).filter(e => e.id !== 'player' && e.components?.[g.component] !== undefined && !sideOf(rt, e)?.mine).sort((a, b) => (a.id < b.id ? -1 : 1));
+      const seen = (local.foes ??= new Set()); for (const e of foes) seen.add(e.id);
+      const alive = foes.filter(e => !deadOf(e));
+      if (g.component === 'health' && alive.length >= 1 && alive.length <= 3 && seen.size <= 3) for (const e of alive) {
+        const h = e.components.health, max = h.max ?? h.hp ?? 1, hp = h.hp ?? max;
+        out.meters.push({ key: `${key}:${e.id}`, id: e.id, label: S.entityName(rt, e.id), value: hp, max, frac: clamp(hp / (max || 1), 0, 1), color: '#e8404a', pos, style: 'bar', low: hp / (max || 1) <= 0.25 });
+      }
+      else out.readouts.push({ key, var: `foes:${g.component}`, label: g.label ?? 'Foes', text: `${fmtInt(alive.length)}/${fmtInt(seen.size)}`, pos, format: 'number', low: false });
+      res.push({ ...g, shown: true }); continue;
+    }
+    res.push({ ...g, shown: false });
+  }
+  return res;
 }
 
 export default {

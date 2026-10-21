@@ -11,7 +11,10 @@ export function planeOf(space) {
   if (zones.some(z => z.bounds || z.polygon || z.center)) return 'xz';
   return 'xy';
 }
-export const isGraph = space => /space\.(graph|none)/.test(space?.use || '') || ((space?.zones || []).length > 0 && (space.zones || []).every(z => !z.rect && !z.bounds && !z.polygon && !z.center && !z.at));
+// A space is a graph of locations when it is one (engine.space.graph and engine.space.none: slot anchors), never because
+// its zones carry no plane shape (a track's zones are ranges along it, a grid's may be cell lists).
+const titleCase = id => { const t = String(id ?? '').replace(/[_-]+/g, ' ').trim(); return t ? t[0].toUpperCase() + t.slice(1) : ''; };
+export const isGraph = space => /^engine\.space\.(graph|none)$/.test(space?.use || '');
 
 /** Project a world position onto the map plane: [u, v] with v pointing "north" (up on the map). */
 export function project(at, plane) {
@@ -28,6 +31,8 @@ export function zoneShape(zone, plane) {
   if (c) { const r = b?.r ?? zone.r ?? 10; return { kind: 'circle', c: c.length === 2 ? (plane === 'xz' ? [c[0], -c[1]] : c) : project(c, plane), r }; }
   if (zone.polygon) return { kind: 'poly', points: zone.polygon.map(p => (plane === 'xz' ? [p[0], -p[1]] : p)) };
   if (Array.isArray(zone.at)) { const p = project(zone.at, plane); return { kind: 'circle', c: p, r: zone.r ?? 4 }; }
+  // A cell list (grid zones): the box its cells cover, cells centred on integer positions.
+  if (Array.isArray(zone.cells) && zone.cells.length) { const xs = zone.cells.map(c => c[0]), ys = zone.cells.map(c => c[1]), [x0, x1, y0, y1] = [Math.min(...xs) - 0.5, Math.max(...xs) + 0.5, Math.min(...ys) - 0.5, Math.max(...ys) + 0.5]; return { kind: 'poly', points: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] }; }
   return null;
 }
 export function shapeCenter(s) {
@@ -84,13 +89,13 @@ export function spaceGeometry(space, start) {
   const zones = space?.zones || [];
   if (isGraph(space)) {
     const pos = graphLayout(zones, start);
-    const out = zones.map(z => ({ id: z.id, name: z.name || z.id, tags: z.tags || [], shape: { kind: 'circle', c: pos[z.id], r: 2.2 }, center: pos[z.id], exits: z.exits || [] }));
+    const out = zones.map(z => ({ id: z.id, name: z.name || titleCase(z.id), tags: z.tags || [], shape: { kind: 'circle', c: pos[z.id], r: 2.2 }, center: pos[z.id], exits: z.exits || [] }));
     const edges = []; const seen = new Set();
     for (const z of zones) for (const e of z.exits || []) { const to = e.to ?? e, k = [z.id, to].sort().join('>'); if (pos[to] && !seen.has(k)) { seen.add(k); edges.push([z.id, to, Boolean(e.gate)]); } }
     return { plane: 'graph', graph: true, zones: out, edges, bounds: shapeBounds(out.map(z => z.shape)) };
   }
   const plane = planeOf(space);
-  const out = zones.map(z => { const shape = zoneShape(z, plane); return { id: z.id, name: z.name || z.id, tags: z.tags || [], shape, center: shapeCenter(shape) }; }).filter(z => z.shape);
+  const out = zones.map(z => { const shape = zoneShape(z, plane); return { id: z.id, name: z.name || titleCase(z.id), tags: z.tags || [], shape, center: shapeCenter(shape) }; }).filter(z => z.shape);
   return { plane, graph: false, zones: out, edges: [], bounds: shapeBounds(out.map(z => z.shape)) };
 }
 

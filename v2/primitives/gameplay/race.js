@@ -59,7 +59,7 @@ export default {
     engage: { participants: { param: 'racers' }, encounter: { start: [{ do: 'start_race' }], config: { autoStart: false } } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
     // Its target service (mode.targets): each AI-controlled racer's next checkpoint zone while the race runs.
-    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', shown: { var: 'race.lap', max: 'race.laps' }, reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', once: true, reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {
@@ -111,12 +111,15 @@ export default {
       s.state = config.countdown > 0 ? 'countdown' : 'running'; s.t = 0; s.countT = frames(config.countdown); s.finishers = []; s.firstFinish = null;
       s.racers = {}; enter(s);
       s.timer = config.timeLimit ? frames(config.timeLimit) : null; s.trace = [];
+      lapVars(null);
       if (s.state === 'running') begin(s); else rt.emit('race_countdown', { race: config.id, sec: config.countdown });
     };
     // Everyone on the grid when the race starts races: racers that appear during the countdown (spawned on the first
     // step by a spawner listed after the race) join it at the start.
     const enter = s => { for (const id of racerIds()) if (!s.racers[id]) { const e = rt.entity(id); s.racers[id] = { lap: 0, next: 1 % N, inside: e ? inZone(e, CP[1 % N]) : false, lapStart: 0, laps: [], best: null, finished: false, place: null, time: 0, last: null, away: 0 }; } };
-    const begin = s => { enter(s); s.state = 'running'; s.t = 0; rt.emit('race_start', { race: config.id, racers: Object.keys(s.racers) }); spawnGhost(s); };
+    // The player's lap (the one running, of the laps to finish): what a person watches for the win (card.loop.win.shown).
+    const lapVars = r => { rt.state.vars['race.lap'] = Math.min((r?.lap ?? 0) + 1, config.laps); rt.state.vars['race.laps'] = config.laps; };
+    const begin = s => { enter(s); lapVars(s.racers.player); s.state = 'running'; s.t = 0; rt.emit('race_start', { race: config.id, racers: Object.keys(s.racers) }); spawnGhost(s); };
     const spawnGhost = s => {
       if (!config.ghostArchetype || !s.ghost) return;
       const gid = `ghost-${config.id}`, p = rt.player(); if (!p) return;
@@ -140,6 +143,7 @@ export default {
       if (r.next === 0) {
         const time = s.t - r.lapStart; r.laps.push(time); r.lapStart = s.t; r.lap++;
         rt.emit('lap', { race: config.id, who: id, lap: r.lap, time: r6(time / 60) });
+        if (id === 'player') lapVars(r);
         if (r.best === null || time < r.best) {
           r.best = time;
           if (id === 'player') {

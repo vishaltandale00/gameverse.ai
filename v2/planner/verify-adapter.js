@@ -11,7 +11,7 @@ import { loopEvents } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { isObj, objects, prop } from '../kernel/guards.js';
-import { loopInstances, winOwner, readsOf } from './loop-check.js';
+import { winQuantity } from './loop.js';
 import { presentationProblems } from '../primitives/graphics/presentation.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -134,26 +134,8 @@ function unplayable(play, problems, strategies, loop) {
 /** @param {unknown} v @returns {v is Record<string, unknown>} */
 const isObjLike = v => typeof v === 'object' && v !== null;
 
-/**
- * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
- * winOwner: `core` orders the loops as the planner does, else the win the document wires), with the comparison and target of the won plot ending that
- * tests it, when one does. null when no loop declares a game-ending win with reads.
- * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {WinQuantity | null}
- */
-export function winQuantity(doc, registry, core = null) {
-  const owner = winOwner(doc, registry, loopInstances(doc, registry), core);
-  const reads = owner ? readsOf(owner.loop.win) : null;
-  if (!owner || !reads) return null;
-  /** @type {WinQuantity} */
-  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event } : { use: owner.use, var: /** @type {string} */ (reads.var) };
-  for (const e of objects(prop(prop(doc, 'plot'), 'endings'))) {
-    const w = e.when;
-    if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;
-    const cmp = ['gte', 'gt', 'lte', 'lt', 'eq'].find(k => typeof w[k] === 'number');
-    if (cmp) return { ...out, cmp, target: Number(w[cmp]) };
-  }
-  return out;
-}
+// winQuantity lives with the loop declarations (loop.js), so the host's HUD (browser side) shows the same quantity.
+export { winQuantity };
 
 /**
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic

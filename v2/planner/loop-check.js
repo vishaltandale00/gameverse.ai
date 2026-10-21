@@ -32,7 +32,7 @@
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
 // structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
-import { cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
+import { readsOf, cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
 import { contractsOf, participantsOf } from './content.js';
 import { spawnRules, placedBy } from './census.js';
 import { defaultsOf } from './catalog.js';
@@ -122,32 +122,8 @@ const cardWithId = (registry, id) => { const c = registry.get(String(id))?.card;
 /** @param {unknown} id @param {string} req a required primitive id (or prefix) */
 const satisfies = (id, req) => id === req || (isStr(id) && id.startsWith(req + '.'));
 
-/**
- * The state a loop end reads: its declared `reads`, else the count or var its `when` template tests.
- * @param {LoopEnd | null | undefined} end @returns {LoopReads | null}
- */
-export function readsOf(end) {
-  if (!end) return null;
-  const r = /** @type {unknown} */ (/** @type {Record<string, unknown>} */ (end).reads);
-  if (isObj(r)) {
-    /** @type {LoopReads} */
-    const out = {};
-    for (const k of /** @type {const} */ (['component', 'of', 'event', 'var', 'from'])) if (isStr(r[k])) out[k] = String(r[k]);
-    if (isObj(r.by)) {
-      const by = r.by;
-      /** @type {import('./loop.js').ReadsBy} */
-      const b = {};
-      for (const k of /** @type {const} */ (['actions', 'effects', 'events'])) if (Array.isArray(by[k])) b[k] = by[k].filter(isStr).map(String);
-      if (by.movement === true) b.movement = true;
-      out.by = b;
-    }
-    return out.component || out.event || out.var ? out : null;
-  }
-  const w = end.when;
-  if (isObj(w) && isStr(w.count)) return { event: w.count };
-  if (isObj(w) && isStr(w.var)) return { var: w.var };
-  return null;
-}
+// readsOf lives with the loop declarations (loop.js), so browser-side readers (the host's HUD) share it.
+export { readsOf };
 
 /** Cards that own a component (declare card.components[component]). @param {RegistryLike} registry @param {string} component @returns {string[]} */
 export const ownersOf = (registry, component) => registry.cards().filter(c => isObj(c.components) && c.components[component] !== undefined).map(c => c.id).sort();

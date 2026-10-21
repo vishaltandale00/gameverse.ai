@@ -47,7 +47,8 @@ for (const t of TEMPLATES) {
   });
 
   test(`${t.id}: the presentation shows the themed names, never the ids behind them`, () => {
-    const named = namedSections(t.doc).flatMap(s => s.entries.filter(e => typeof e.name === 'string' && e.name));
+    // (An all-digit id, a 2048 tile's, cannot be told from the numbers the HUD shows: it is left out.)
+    const named = namedSections(t.doc).flatMap(s => s.entries.filter(e => typeof e.name === 'string' && e.name && !/^\d+$/.test(e.id)));
     const m = play(renamed(t.doc, (e, k) => `Zq${k.toString(36)}x`));
     // What this layer shows: the renderers' canvases and the HUD, battle, cards and scene-card DOM.
     const shown = [];
