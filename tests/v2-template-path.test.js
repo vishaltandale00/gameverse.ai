@@ -9,7 +9,7 @@ import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import {
-  pickForm, pickSystem, checkPick, composeTemplates, namedSections, namesForm, conceptForm, frameTuneForm, writeContent, askPick, narrowPick, tuneTarget, offeredTemplates, templateLoops,
+  pickForm, pickSystem, checkPick, composeTemplates, namedSections, namesForm, conceptForm, frameTuneForm, writeContent, askPick, narrowPick, tuneTarget, tunePaths, offeredTemplates, templateLoops,
   LOOP_KINDS, THEME_KINDS, PICK_KINDS, PLAYED_RELATIONS, PICK_RULES, NAME_PATTERN,
 } from '../v2/planner/templates.js';
 import { fakeWriter, mazeWriter } from './v2-p-pipeline-fixtures.js';
@@ -299,7 +299,7 @@ test('content forms: one strict names form per template of the composition (a sl
     assert.deepEqual(f.check(f.narrow(all(40, 0))).map(p => [p.code, p.field]), [['name_invalid', `${sections[0].form}.${sections[0].entries[0].id}`]]);
     const frame = frameTuneForm(c.template, doc, cat);
     assert.deepEqual(strictProblems(frame.schema.schema), []);
-    assert.deepEqual(frame.slots.map(s => s.path), t.tune);
+    assert.deepEqual(frame.slots.map(s => s.path), tunePaths(t));
   }
   // Composed: each template names what it brought, in its own form.
   const chess = composeTemplates(pickWith({ primary: game('Chess', 'game', 'board'), games: [game('Pokémon', 'game', 'creature-battle', 'nested')] }), { templates: TEMPLATES, registry });
@@ -344,15 +344,15 @@ test('tune slots conform to their card specs across all templates: every declare
     for (const s of frame.slots) {
       const slot = frame.schema.schema.properties[s.key], spec = s.spec;
       assert.equal(slot.type, spec.type === 'integer' ? 'integer' : spec.type, `${t.id} ${s.path}: type`);
-      /** Values the card allows: its bounds, a midpoint, its default, every option. */
+      /** Values the slot allows (the template's playable range of the card's param: s.spec): its bounds, a midpoint, the template's value, every option. */
       let allowed = [];
       if (spec.type === 'number' || spec.type === 'integer') {
         assert.equal(slot.minimum, spec.min, `${s.path}: minimum`); assert.equal(slot.maximum, spec.max, `${s.path}: maximum`);
         const lo = typeof spec.min === 'number', hi = typeof spec.max === 'number';
         // An open end is declared too: sample past the declared bound (min + 100, max - 100) on that side.
         const mid = lo && hi ? (spec.min + spec.max) / 2 : lo ? spec.min + 100 : hi ? spec.max - 100 : (spec.default ?? 0) + 1;
-        allowed = [lo ? spec.min : undefined, hi ? spec.max : undefined, spec.type === 'integer' ? Math.round(mid) : mid, spec.default].filter(v => v !== undefined);
-        for (const out of [...(lo ? [spec.min - 1] : []), ...(hi ? [spec.max + 1] : []), ...(spec.type === 'integer' ? [Math.round(mid) + 0.5] : [])]) assert.equal(accepts(slot, out), false, `${t.id} ${s.path}: ${out} is outside the card's range, so the form does not allow it`);
+        allowed = [lo ? spec.min : undefined, hi ? spec.max : undefined, spec.type === 'integer' ? Math.round(mid) : mid, current[s.key]].filter(v => v !== undefined);
+        for (const out of [...(lo ? [spec.min - 1] : []), ...(hi ? [spec.max + 1] : []), ...(spec.type === 'integer' ? [Math.round(mid) + 0.5] : [])]) assert.equal(accepts(slot, out), false, `${t.id} ${s.path}: ${out} is outside the playable range, so the form does not allow it`);
       } else if (spec.type === 'boolean') allowed = [true, false];
       else if (spec.type === 'string' && spec.options?.length) { assert.deepEqual(slot.enum, spec.options.map(String)); allowed = spec.options; assert.equal(accepts(slot, '__undeclared__'), false); }
       else if (spec.type === 'string') allowed = [spec.default, current[s.key]].filter(v => v !== undefined);
@@ -369,6 +369,20 @@ test('tune slots conform to their card specs across all templates: every declare
       }
     }
   }
+});
+
+test('frame_tune: a slot allows the template\'s playable range, not the card\'s; its check holds writers that ignore the schema to it, and names the card\'s rules on the param', () => {
+  const t = TEMPLATES.find(x => x.id === 'race'), doc = composeTemplates(pickOf('race'), { templates: TEMPLATES, registry }).doc;
+  const frame = frameTuneForm(t, doc, cat), laps = frame.slots.find(s => s.path === 'gameplay.race.laps');
+  assert.equal(laps.spec.max, 5, 'the template\'s playable range');
+  assert.equal(registry.get('gameplay.race').card.params.laps.max, 99, 'the card allows more');
+  assert.equal(frame.schema.schema.properties[laps.key].maximum, 5);
+  const current = Object.fromEntries(frame.slots.map(s => [s.key, tuneTarget(doc, s.path, registry).instances[0].with?.[s.param]]));
+  const problems = frame.check(frame.narrow({ logline: 'A line.', ...current, [laps.key]: 99 }));
+  assert.deepEqual(problems.map(p => [p.code, p.field]), [['tune_range', laps.key]], '99 laps preflights, but is outside the playable range');
+  const dungeon = TEMPLATES.find(x => x.id === 'dungeon'), d = composeTemplates(pickOf('dungeon'), { templates: TEMPLATES, registry }).doc;
+  const rooms = frameTuneForm(dungeon, d, cat).schema.schema.properties.engine__generate__dungeon__rooms__rooms;
+  assert.match(rooms.description, /rule dungeon_keys_many: rooms is at least the number of keys \+ 2/);
 });
 
 test('the pick: a failing field is re-asked alone, then the escalation writer once, then 422 template_pick_failed with the problems', async () => {

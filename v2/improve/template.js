@@ -6,9 +6,11 @@
 //   id       the request's template id (the game's id when the request names none)
 //   concept  the document's premise (doc.plot.premise), on one line
 //   doc      the published document, its id set to the template id
-//   tune     every param a card declares as a number, integer, boolean or closed set of strings, that the document
-//            sets on the instance of a primitive it instantiates once (the values the build chose); in document order
-import { formatProblems } from '../templates/contract.js';
+//   tune     every param a card declares as a number or integer with a finite range, a boolean or a closed set of
+//            strings, that the document sets on the instance of a primitive it instantiates once (the values the build
+//            chose), in document order; then only the candidates proven playable over that whole range (provenTune: the
+//            contract's bounds stage, each candidate alone) stay tunable, the others are structure the build fixed
+import { formatProblems, boundValues, boundsProblems } from '../templates/contract.js';
 import { PROMOTED_SCHEMA } from '../templates/registry.js';
 import { instancesIn } from '../planner/templates.js';
 
@@ -17,8 +19,8 @@ export const DERIVE_CODES = Object.freeze(['derive_doc_invalid', 'derive_has_exp
 export const templatePaths = id => ({ file: `v2/templates/promoted/${id}.json` });
 
 const isObj = v => typeof v === 'object' && v !== null && !Array.isArray(v);
-/** A param the frame_tune form can set from the card's declaration alone. */
-const tunable = spec => ['number', 'integer', 'boolean'].includes(spec?.type) || (spec?.type === 'string' && Array.isArray(spec.options) && spec.options.length > 0);
+/** A param the frame_tune form can set from the card's declaration alone, over a range the bounds stage can prove. */
+const tunable = spec => ['number', 'integer', 'boolean', 'string'].includes(spec?.type) && boundValues(spec) !== null;
 
 /** The tune paths of a document (see the header). @param {Record<string, any>} doc @param {{ get(id: string): any }} registry */
 export function derivedTune(doc, registry) {
@@ -56,4 +58,18 @@ export function promotedFile(template, provenance) {
   const problems = formatProblems(template);
   if (problems.length) throw Error(`not a template: ${problems.map(p => p.code).join(', ')}`);
   return `${JSON.stringify({ schema: PROMOTED_SCHEMA, template, provenance }, null, 2)}\n`;
+}
+
+/**
+ * The derived tune entries proven playable over their card's whole range: each candidate's bounds played alone (the
+ * template contract's bounds stage). -> { tune: the proven paths, dropped: [{ path, problems }] }
+ * @param {{ id: string, doc: Record<string, any>, tune: string[] }} template @param {{ registry: any, logic: any }} catalogue
+ */
+export function provenTune(template, { registry, logic }) {
+  const tune = [], dropped = [];
+  for (const path of template.tune) {
+    const problems = boundsProblems({ ...template, tune: [path] }, registry, logic, { bounds: [] });
+    if (problems.length) dropped.push({ path, problems: problems.map(p => `${p.code}: ${p.message}`.slice(0, 200)) }); else tune.push(path);
+  }
+  return { tune, dropped };
 }

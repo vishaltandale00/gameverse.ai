@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'hero', at: 'hand' },
   },
-  tune: ['gameplay.stage.sequence.introSec', 'gameplay.stage.sequence.clearSec'],
+  tune: [{ path: 'gameplay.stage.sequence.introSec', max: 3 }, { path: 'gameplay.stage.sequence.clearSec', max: 3 }],
 };

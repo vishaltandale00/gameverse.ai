@@ -45,5 +45,5 @@ export default {
       blocks: [{ id: 'rock', name: 'Rock', solid: true }],
     },
   },
-  tune: ['engine.generate.grid.board.symmetry'],
+  tune: [{ path: 'engine.generate.grid.board.symmetry', options: ['mirror', 'rotate'] }],
 };

@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'ship', at: [150, 40] },
   },
-  tune: ['gameplay.death.lives', 'gameplay.ai.attacks.difficulty'],
+  tune: [{ path: 'gameplay.death.lives', min: 1, max: 9 }, 'gameplay.ai.attacks.difficulty'],
 };

@@ -35,7 +35,9 @@ test('derive: concept from the premise, the document under the template id, tune
   assert.equal(doc.id, 'harvest-moon-lx1', 'the version is not changed');
   assert.deepEqual(formatProblems(template), []);
   assert.deepEqual(tuneProblems(template, registry), [], 'every derived tune path passes the contract\'s tune stage');
-  assert.ok(template.tune.includes('gameplay.farming.daySec') && template.tune.includes('engine.generate.grid.board.density'), template.tune.join(', '));
+  assert.ok(template.tune.includes('engine.generate.grid.board.density'), template.tune.join(', '));
+  // A param whose card range is not finite (daySec: min 0, no max) cannot be proven playable over it: structure, not tuning.
+  assert.ok(!template.tune.includes('gameplay.farming.daySec'), template.tune.join(', '));
   for (const path of template.tune) {
     const inst = instancesIn(template.doc).find(i => path.startsWith(`${i.use}.`) && path.slice(i.use.length + 1) in (i.with || {}));
     assert.ok(inst, `${path}: the document sets it`);
@@ -65,6 +67,10 @@ test('promotion: a passing version is checked out of process and written once wi
   const file = JSON.parse(writer.writes[0].text);
   assert.equal(file.schema, PROMOTED_SCHEMA);
   assert.equal(file.template.id, 'harvest');
+  // The written tune is the derived candidates the checker proved playable at every bound (check-template.mjs provenTune).
+  const derived = deriveTemplate({ doc: published() }, { id: 'harvest', registry }).template.tune;
+  assert.ok(file.template.tune.every(p => derived.includes(p)) && file.template.tune.includes('engine.generate.grid.board.density'), JSON.stringify(file.template.tune));
+  assert.deepEqual([...file.template.tune, ...done.result.tuneDropped.map(d => d.path)].sort(), [...derived].sort(), 'every candidate is kept or dropped with why');
   assert.equal(file.provenance.job, job.id);
   assert.equal(file.provenance.contract, CONTRACT_VERSION);
   assert.equal(file.provenance.gameVersion, 2);

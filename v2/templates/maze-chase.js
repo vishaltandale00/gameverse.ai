@@ -2,7 +2,8 @@
 // personalities leaving a house through a door only they pass, a scatter/chase clock, power pellets that make
 // touching a hunter defeat it, three lives. Clearing every pellet wins.
 const won = [{ do: 'end_game', outcome: 'won' }], lost = [{ do: 'end_game', outcome: 'lost' }];
-const HUNTERS = [['chaser', [25, 32], [13, 19]], ['ambusher', [2, 32], [13, 16]], ['whimsical', [27, -1], [12, 16]], ['shy', [0, -1], [15, 16]]];
+// [archetype, scatter corner, start cell, personality (gameplay.ai.brain's declared target-tile personalities)]
+const HUNTERS = [['chaser', [25, 32], [13, 19], 'chaser'], ['ambusher', [2, 32], [13, 16], 'ambusher'], ['whimsical', [27, -1], [12, 16], 'vector'], ['shy', [0, -1], [15, 16], 'shy']];
 
 export default {
   id: 'maze-chase',
@@ -27,7 +28,7 @@ export default {
         { id: 'hero', name: 'Hero', components: { health: { max: 1 } } },
         { id: 'pellet', name: 'Pellet', kind: 'pickup', components: {} },
         { id: 'power_pellet', name: 'Power pellet', kind: 'pickup', components: {} },
-        ...HUNTERS.map(([personality, scatter]) => ({ id: personality, name: personality[0].toUpperCase() + personality.slice(1), kind: 'enemy',
+        ...HUNTERS.map(([id, scatter, , personality]) => ({ id, name: id[0].toUpperCase() + id.slice(1), kind: 'enemy',
           components: { body: { layer: 'hunter' }, health: { max: 1, respawn: { mode: 'spawn', sec: 3 } }, touch: { damage: 1 }, ai: { brain: [{ do: 'target-tile', personality, scatter }], speed: 7 } } })),
       ],
       statuses: [{ id: 'frightened', name: 'Frightened', duration: 6, mods: { 'stat.fright': 1 } }],
@@ -35,5 +36,5 @@ export default {
     },
     player: { archetype: 'hero' },
   },
-  tune: ['engine.generate.grid.maze.style', 'engine.generate.grid.maze.density', 'gameplay.death.lives'],
+  tune: [{ path: 'engine.generate.grid.maze.density', min: 0.4, max: 0.6 }, { path: 'gameplay.death.lives', min: 3, max: 9 }],
 };

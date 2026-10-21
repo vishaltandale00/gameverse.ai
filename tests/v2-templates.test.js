@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TEMPLATES, templateById } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
+import { tunePaths } from '../v2/planner/templates.js';
 import { preflight } from '../v2/kernel/document.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 import { loopProblems } from '../v2/planner/loop-check.js';
@@ -41,7 +42,7 @@ test('templates: unique ids, a one-line concept, a document and declared tune pa
     assert.equal(templateById(t.id), t);
     assert.ok(typeof t.concept === 'string' && t.concept.length > 10 && !t.concept.includes('\n'), `${t.id}: concept`);
     assert.equal(t.doc.id, t.id, `${t.id}: the document id is the template id`);
-    for (const path of t.tune) {
+    for (const path of tunePaths(t)) {
       const target = tuneTarget(t.doc, path);
       assert.ok(target, `${t.id}: tune '${path}' names a param of an instance in the document`);
       assert.ok(['number', 'integer', 'boolean', 'string'].includes(target.spec.type), `${t.id}: tune '${path}' is a scalar (${target.spec.type})`);

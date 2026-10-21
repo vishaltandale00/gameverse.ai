@@ -19,11 +19,15 @@ export interface ParamSchema {
   default?: unknown;
   min?: number;
   max?: number;
+  /** `number` / `integer`: every value is a multiple of this (an even width: 2). */
+  multipleOf?: number;
   unit?: string;
   options?: readonly string[];
   /** Values a string param may never take (ids the primitive itself uses). */
   reserved?: readonly string[];
   maxLength?: number;
+  /** `string`: a regular expression (u flag) every value matches (ids of indexed entries: kernel/sections.js ID_PATTERN). */
+  pattern?: string;
   /** `ref`: the reference kind (base REF_KINDS or a card.defines kind). */
   to?: string;
   /** `string`: an entity selector (an entity id, an archetype id or a tag); a value that is an id of one of these kinds (params.js ENTITY_KINDS) refers to that entry. */

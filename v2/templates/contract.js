@@ -5,7 +5,9 @@
 // added to templates later is added to this file, never to one caller.
 //
 //   format       id, a one-line concept, a document whose id is the template id, tune a list of '<primitive>.<param>'
-//   tune         each tune path names a scalar param the card declares, of exactly one instance in the document
+//   tune         each tune entry names a scalar param the card declares, of exactly one instance in the document, with
+//                a playable range inside the card's (a template narrows it where the card's range is not playable), a
+//                finite one the bounds stage can prove, holding the template's own value
 //   preflight    the document preflights against the catalogue's card-derived schemas
 //   composition  the static composition check (card declarations only) finds no failure
 //   loop         the loop check finds no problem
@@ -16,6 +18,9 @@
 //                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
 //                on every world seed in SEEDS through the real controls, and replays to the same runs
+//   bounds       every value the frame_tune form allows keeps the game playable: at each bound of each tune entry (the
+//                min and max of a number, each value of a boolean or a closed set; the other params at the template's
+//                values) the document preflights and every named bot wins on every world seed in SEEDS
 //
 // Static stages stop the check when one fails (nothing simulates a document that is malformed or fails its
 // declarations); the dynamic stages (gate, bots) both run once the static ones pass.
@@ -24,7 +29,7 @@ import { preflight } from '../kernel/document.js';
 import { checkComposition } from '../planner/compose-check.js';
 import { loopProblems } from '../planner/loop-check.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
-import { tuneTarget } from '../planner/templates.js';
+import { tuneTarget, tuneRanges, tunedSpec, instancesWithPaths } from '../planner/templates.js';
 import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
@@ -51,7 +56,7 @@ export const RESERVED_IDS = Object.freeze(['none']);
 /** Every problem code the contract emits, by stage (the stage order is the check order). */
 export const CODES = Object.freeze({
   format: Object.freeze(['template_shape', 'template_id_invalid', 'template_id_reserved', 'template_concept_invalid', 'template_doc_invalid', 'template_doc_id_mismatch', 'template_tune_invalid']),
-  tune: Object.freeze(['tune_unknown', 'tune_not_scalar', 'tune_ambiguous']),
+  tune: Object.freeze(['tune_unknown', 'tune_not_scalar', 'tune_ambiguous', 'tune_range_invalid', 'tune_unbounded', 'tune_value_outside']),
   preflight: Object.freeze(['preflight_failed']),
   composition: Object.freeze(['composition_failed']),
   loop: Object.freeze(['loop_problem']),
@@ -59,6 +64,7 @@ export const CODES = Object.freeze({
   controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
   bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
+  bounds: Object.freeze(['bound_invalid', 'bound_bot_failed', 'bound_not_won']),
 });
 export const STAGES = Object.freeze(Object.keys(CODES));
 const DYNAMIC = STAGES.indexOf('gate');
@@ -75,18 +81,58 @@ export function formatProblems(t) {
   if (typeof t.concept !== 'string' || t.concept.trim().length <= 10 || t.concept.includes('\n')) out.push(problem('template_concept_invalid', 'concept is one line of more than 10 characters: what the template pick matches the idea against', { path: 'concept' }));
   if (!isObj(t.doc) || t.doc.schema !== DOC_SCHEMA) out.push(problem('template_doc_invalid', `doc is a complete game document (schema ${DOC_SCHEMA})`, { path: 'doc' }));
   else if (t.doc.id !== t.id) out.push(problem('template_doc_id_mismatch', `the document id '${t.doc.id}' is not the template id '${t.id}'`, { path: 'doc.id' }));
-  if (!Array.isArray(t.tune) || !t.tune.every(p => typeof p === 'string' && p.length > 0) || new Set(t.tune).size !== t.tune.length) out.push(problem('template_tune_invalid', "tune is a list of distinct '<primitive id>.<param>' paths", { path: 'tune' }));
+  if (!Array.isArray(t.tune) || !t.tune.every(tuneEntryWellFormed) || new Set(t.tune.map(e => (typeof e === 'string' ? e : e.path))).size !== t.tune.length) out.push(problem('template_tune_invalid', "tune is a list of distinct entries: a '<primitive id>.<param>' path, or { path, min?, max? } (a number) or { path, options } (a closed set) giving its playable range", { path: 'tune' }));
   return out;
+}
+
+const RANGE_KEYS = ['path', 'min', 'max', 'options'];
+/** A tune entry: a non-empty path, or { path, min?, max?, options? } with finite bounds and a non-empty list of distinct strings. @param {unknown} e */
+function tuneEntryWellFormed(e) {
+  if (typeof e === 'string') return e.length > 0;
+  if (!isObj(e) || typeof e.path !== 'string' || !e.path || !Object.keys(e).every(k => RANGE_KEYS.includes(k)) || Object.keys(e).length < 2) return false;
+  if (['min', 'max'].some(k => e[k] !== undefined && !Number.isFinite(e[k]))) return false;
+  return e.options === undefined || (Array.isArray(e.options) && e.options.length > 0 && e.options.every(o => typeof o === 'string') && new Set(e.options).size === e.options.length);
+}
+
+/**
+ * The values the bounds stage plays for a tune entry's playable spec (planner/templates.js tunedSpec): a number's min
+ * and max, both booleans, every value of a closed set; null when the range is not finite (tune_unbounded).
+ * @param {Record<string, any>} spec @returns {unknown[] | null}
+ */
+export function boundValues(spec) {
+  if (spec.type === 'number' || spec.type === 'integer') return Number.isFinite(spec.min) && Number.isFinite(spec.max) ? [...new Set([spec.min, spec.max])] : null;
+  if (spec.type === 'boolean') return [false, true];
+  if (spec.type === 'string') return Array.isArray(spec.options) && spec.options.length ? [...spec.options] : null;
+  return null;
 }
 
 /** The tune stage: each path names one declared scalar param of exactly one instance. */
 export function tuneProblems(t, registry) {
   const out = [];
-  for (const path of t.tune) {
-    const target = tuneTarget(t.doc, path, registry);
+  for (const range of tuneRanges(t)) {
+    const path = range.path, target = tuneTarget(t.doc, path, registry);
     if (!target) { out.push(problem('tune_unknown', `tune '${path}' names no param a card declares on an instance in the document`, { path })); continue; }
-    if (!SCALAR_TYPES.includes(target.spec.type)) out.push(problem('tune_not_scalar', `tune '${path}' is a ${target.spec.type}; a tune param is one of ${SCALAR_TYPES.join(', ')}`, { path }));
-    if (target.instances.length !== 1) out.push(problem('tune_ambiguous', `tune '${path}' names ${target.instances.length} instances of ${target.use}; it must name exactly one`, { path }));
+    const spec = target.spec;
+    if (!SCALAR_TYPES.includes(spec.type)) { out.push(problem('tune_not_scalar', `tune '${path}' is a ${spec.type}; a tune param is one of ${SCALAR_TYPES.join(', ')}`, { path })); continue; }
+    if (target.instances.length !== 1) { out.push(problem('tune_ambiguous', `tune '${path}' names ${target.instances.length} instances of ${target.use}; it must name exactly one`, { path })); continue; }
+    // The playable range narrows the card's: min/max for a number inside the card's range, options for a closed set within the card's.
+    const numeric = spec.type === 'number' || spec.type === 'integer';
+    const wide = [
+      ...(range.min !== undefined || range.max !== undefined ? (!numeric ? [`a ${spec.type} has no min or max`] : []) : []),
+      ...(numeric && range.min !== undefined && Number.isFinite(spec.min) && range.min < spec.min ? [`min ${range.min} is below the card's ${spec.min}`] : []),
+      ...(numeric && range.max !== undefined && Number.isFinite(spec.max) && range.max > spec.max ? [`max ${range.max} is above the card's ${spec.max}`] : []),
+      ...(numeric && spec.type === 'integer' && [range.min, range.max].some(v => v !== undefined && !Number.isInteger(v)) ? ['an integer param has integer bounds'] : []),
+      ...(range.options !== undefined && spec.type !== 'string' ? [`a ${spec.type} has no options`] : []),
+      ...(range.options !== undefined && spec.type === 'string' && Array.isArray(spec.options) && !range.options.every(o => spec.options.includes(o)) ? [`options ${range.options.filter(o => !spec.options.includes(o)).join(', ')} are not the card's (${spec.options.join(', ')})`] : []),
+      ...(range.options !== undefined && spec.type === 'string' && !Array.isArray(spec.options) ? ['the card declares no closed set of values to choose options from'] : []),
+    ];
+    const tuned = tunedSpec(spec, range);
+    if (numeric && Number.isFinite(tuned.min) && Number.isFinite(tuned.max) && tuned.min > tuned.max) wide.push(`min ${tuned.min} is above max ${tuned.max}`);
+    if (wide.length) { out.push(problem('tune_range_invalid', `tune '${path}': ${wide.join('; ')}`, { path })); continue; }
+    if (!boundValues(tuned)) { out.push(problem('tune_unbounded', `tune '${path}' allows ${numeric ? `[${tuned.min ?? '-∞'}, ${tuned.max ?? '∞'}]` : 'any text'}: declare its playable range ({ path, min, max } or { path, options }) so every value the form allows is proven`, { path })); continue; }
+    const value = target.instances[0].with?.[target.param] ?? spec.default;
+    const inside = numeric ? value >= tuned.min && value <= tuned.max : spec.type === 'string' ? tuned.options.includes(value) : typeof value === 'boolean';
+    if (!inside) out.push(problem('tune_value_outside', `tune '${path}': the template's value ${JSON.stringify(value)} is outside its playable range`, { path }));
   }
   return out;
 }
@@ -133,6 +179,42 @@ function botProblems(checked, registry, logic, evidence) {
 }
 
 /**
+ * The bounds stage: every bound of every tune entry (boundValues of its playable spec) other than the template's own
+ * value, set alone on the document: it preflights as a person plays it, and every bot its loops name wins on every world
+ * seed in SEEDS through the real controls (the bots stage proved replay at the template's values; a bound plays once).
+ * Per-bound evidence goes into `evidence.bounds`.
+ */
+export function boundsProblems(t, registry, logic, evidence) {
+  const out = [];
+  for (const range of tuneRanges(t)) {
+    const target = /** @type {NonNullable<ReturnType<typeof tuneTarget>>} */ (tuneTarget(t.doc, range.path, registry));
+    const own = target.instances[0].with?.[target.param] ?? target.spec.default;
+    for (const value of boundValues(tunedSpec(target.spec, range)) ?? []) {
+      if (isDeepStrictEqual(value, own)) continue;
+      const doc = structuredClone(t.doc), inst = instancesWithPaths(doc).find(x => x.inst.use === target.use)?.inst;
+      inst.with = { ...(isObj(inst.with) ? inst.with : {}), [target.param]: value };
+      const at = { path: range.path, value };
+      const host = hostPreflight(doc, registry, logic);
+      if (!host.ok) { out.push(problem('bound_invalid', `${range.path} = ${JSON.stringify(value)} does not preflight: ${host.errors.slice(0, 3).map(e => `${e.code} ${e.path}: ${e.message}`).join('; ')}`, { ...at, cause: host.errors[0]?.code ?? null })); evidence.bounds.push({ ...at, ok: false, bots: [] }); continue; }
+      const ctx = playContext({ doc }, registry, logic), row = { ...at, ok: true, bots: /** @type {any[]} */ ([]) };
+      for (const id of modeBots(ctx).map(x => x.s.id)) {
+        const t0 = performance.now();
+        let r;
+        try { r = strategies.get(id).run(ctx, { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] }); } catch (error) { out.push(problem('bound_bot_failed', `${range.path} = ${JSON.stringify(value)}: ${id}: ${String(error?.message || error).slice(0, 300)}`, { ...at, bot: id })); row.ok = false; continue; }
+        const runs = runsOf(r);
+        row.bots.push({ id, runs: runs.map(x => ({ seed: x.seed ?? null, status: x.status ?? null, frames: x.frames ?? null })), ms: Math.round(performance.now() - t0) });
+        for (const seed of SEEDS) {
+          const run = runs.find(x => x.seed === seed);
+          if (run?.status !== 'won') { out.push(problem('bound_not_won', `${range.path} = ${JSON.stringify(value)}: ${id} on world seed ${seed} ${run ? `ended ${run.status}` : 'did not run'} (the other tune params at the template's values)`, { ...at, bot: id, seed })); row.ok = false; }
+        }
+      }
+      evidence.bounds.push(row);
+    }
+  }
+  return out;
+}
+
+/**
  * Check a template against a catalogue. -> { ok, problems: [{ code, stage, message, path?, cause?, bot?, seed? }], evidence }
  * `opts.through` names the last stage to run (discovery runs 'format'); the whole contract runs without it.
  * @param {unknown} template @param {{ registry: any, logic: any }} catalogue @param {{ through?: string }} [opts]
@@ -141,7 +223,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const started = performance.now();
   const last = opts.through === undefined ? STAGES.length - 1 : STAGES.indexOf(opts.through);
   if (last < 0) throw Error(`checkTemplate: unknown stage '${opts.through}' (one of ${STAGES.join(', ')})`);
-  const evidence = { contract: CONTRACT_VERSION, seeds: [...SEEDS], stages: {}, gate: null, bots: [], ms: 0 };
+  const evidence = { contract: CONTRACT_VERSION, seeds: [...SEEDS], stages: {}, gate: null, bots: [], bounds: [], ms: 0 };
   const problems = [];
   const t = /** @type {any} */ (template);
   let checked = null, bare = null, gateFeatures = null;
@@ -180,10 +262,13 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       return gateFeatures.problems.filter(p => p.severity !== 'warning').map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.verb ? { verb: p.verb } : {}) }));
     },
     bots: () => botProblems(checked, registry, logic, evidence),
+    bounds: () => boundsProblems(t, registry, logic, evidence),
   };
   for (let i = 0; i <= last; i++) {
     const stage = STAGES[i];
     if (i === DYNAMIC && problems.length) break;
+    // The bounds are played only for a template proven at its own values.
+    if (stage === 'bounds' && problems.length) break;
     const t0 = performance.now();
     const found = await run[stage]();
     evidence.stages[stage] = { ms: Math.round(performance.now() - t0), problems: found.length };

@@ -39,7 +39,7 @@ import { isObj, isList, isStr, list, strings, obj as asObject, prop } from '../k
 /** @typedef {{ id: string, exits: boolean, count: number }} SpaceLayout */
 /**
  * Where a strict slot's reference fields get their enums: the ids a field may hold (the document's own ids of the
- * section its declaration names), or null when the field stays free text.
+ * section its declaration names; [] when it names none), or null when the field is no reference (free text).
  * @typedef {{ allowed: (spec: Spec) => string[] | null }} RefContext
  */
 /** Component slots: the archetype components schema and each component's codec. @typedef {{ schema: ObjectSchema, codecs: Record<string, Codec> }} ComponentSlots */
@@ -73,8 +73,8 @@ export const obj = (properties, description) => ({ type: 'object', additionalPro
 export const arr = (items, description) => ({ type: 'array', items, ...(description ? { description } : {}) });
 
 /**
- * Where a value breaks a strict form schema (the dialect above: object, array, string with enum/pattern, number and
- * integer with minimum/maximum, boolean, null, anyOf). The form a model fills and the check of its answer are this one
+ * Where a value breaks a strict form schema (the dialect above: object, array with minItems/maxItems, string with enum/pattern, number and
+ * integer with minimum/maximum/multipleOf, boolean, null, anyOf). The form a model fills and the check of its answer are this one
  * schema (ARCHITECTURE §1.4): a writer that does not enforce the schema (writer.js claudeWriter) is held to it here.
  * Paths are fieldForm paths ('a.b[0].c'; '' is the root). -> [{ path, message }]
  * @param {JsonSchema} schema @param {unknown} value @param {string} [path] @returns {Array<{ path: string, message: string }>}
@@ -98,6 +98,8 @@ export function answerProblems(schema, value, path = '') {
   }
   if (type === 'array') {
     if (!Array.isArray(value)) return [{ path, message: `${shown(value)} is not a list` }];
+    if (typeof schema.minItems === 'number' && value.length < schema.minItems) return [{ path, message: `needs at least ${schema.minItems} entries` }];
+    if (typeof schema.maxItems === 'number' && value.length > schema.maxItems) return [{ path, message: `at most ${schema.maxItems} entries` }];
     return isObj(schema.items) ? value.flatMap((v, i) => answerProblems(/** @type {JsonSchema} */ (schema.items), v, `${path}[${i}]`)) : [];
   }
   if (Array.isArray(schema.enum) && !schema.enum.includes(value)) return [{ path, message: `${shown(value)} is not one of ${schema.enum.join(', ')}` }];
@@ -110,6 +112,7 @@ export function answerProblems(schema, value, path = '') {
     if (typeof value !== 'number' || !Number.isFinite(value) || (type === 'integer' && !Number.isInteger(value))) return [{ path, message: `${shown(value)} is not ${type === 'integer' ? 'an integer' : 'a number'}` }];
     if (typeof schema.minimum === 'number' && value < schema.minimum) return [{ path, message: `${value} is below ${schema.minimum}` }];
     if (typeof schema.maximum === 'number' && value > schema.maximum) return [{ path, message: `${value} is above ${schema.maximum}` }];
+    if (typeof schema.multipleOf === 'number' && value % schema.multipleOf !== 0) return [{ path, message: `${value} is not a multiple of ${schema.multipleOf}` }];
     return [];
   }
   return [{ path, message: `the form declares no type here (${shown(type)})` }];
@@ -122,7 +125,7 @@ const describe = spec => [spec.effect, spec.unit && `unit ${spec.unit}`, (spec.m
 /** A string slot restricted to ids (an enum) with its description. @param {string[]} ids @param {string | undefined} d @returns {JsonSchema} */
 const idEnum = (ids, d) => ({ type: 'string', enum: ids, ...(d ? { description: d } : {}) });
 /** A spec whose values are single strings (no fixed options): a reference may restrict them. @param {Spec | undefined} s */
-const plainString = s => Boolean(s && (s.type === 'ref' || (s.type === 'string' && !s.options?.length)));
+export const plainString = s => Boolean(s && (s.type === 'ref' || (s.type === 'string' && !s.options?.length)));
 
 /**
  * Schema + codec for one param/field spec. codec: 'raw' | 'json' | { fields, more } | { list }. With `refs`, reference
@@ -134,20 +137,56 @@ export function specSchema(spec, depth = 0, refs = null) {
   const t = spec?.type;
   const ids = refs && (plainString(spec) || (t === 'list' && plainString(spec.of))) ? refs.allowed(spec) : null;
   if (ids && t !== 'list') return { schema: idEnum(ids, d), codec: 'raw' };
-  if (ids && t === 'list' && depth < MAX_DEPTH) return { schema: arr(idEnum(ids, describe(spec.of || {})), d), codec: { list: 'raw' } };
+  if (ids && t === 'list' && depth < MAX_DEPTH) return { schema: { ...arr(idEnum(ids, describe(spec.of || {})), d), ...itemCounts(spec) }, codec: { list: 'raw' } };
   // The card's range is the slot's range (minimum/maximum), so the form never allows a number preflight rejects.
-  if (t === 'number' || t === 'integer') return { schema: { type: t, ...(typeof spec.min === 'number' ? { minimum: spec.min } : {}), ...(typeof spec.max === 'number' ? { maximum: spec.max } : {}), ...(d ? { description: d } : {}) }, codec: 'raw' };
+  if (t === 'number' || t === 'integer') return { schema: { type: t, ...(typeof spec.min === 'number' ? { minimum: spec.min } : {}), ...(typeof spec.max === 'number' ? { maximum: spec.max } : {}), ...(typeof spec.multipleOf === 'number' ? { multipleOf: spec.multipleOf } : {}), ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'boolean') return { schema: { type: 'boolean', ...(d ? { description: d } : {}) }, codec: 'raw' };
   if (t === 'string' && Array.isArray(spec.reserved) && spec.reserved.length) d = `${d ? d + '; ' : ''}never ${spec.reserved.join(', ')} (reserved)`;
-  if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : str(d), codec: 'raw' };
+  if (t === 'string') return { schema: spec.options?.length ? { type: 'string', enum: spec.options.map(String), ...(d ? { description: d } : {}) } : { ...str(d), ...(typeof spec.pattern === 'string' ? { pattern: spec.pattern } : {}) }, codec: 'raw' };
   if (t === 'ref') return { schema: str(`id of a ${spec.to}${d ? `; ${d}` : ''}`), codec: 'raw' };
   if (t === 'list' && depth < MAX_DEPTH) {
     const inner = specSchema(spec.of || { type: 'json' }, depth + 1, refs);
-    return { schema: arr(inner.schema, d), codec: { list: inner.codec } };
+    return { schema: { ...arr(inner.schema, d), ...itemCounts(spec) }, codec: { list: inner.codec } };
   }
   if (t === 'object' && spec.fields && !spec.open && depth < MAX_DEPTH && Object.keys(spec.fields).length) return objectSchema(spec.fields, depth + 1, d, refs);
   // json params may hold a bare string ("coins"); predicates, effects and objects must parse as JSON.
   return { schema: nul(str(`${d ? d + '. ' : ''}${JSON_HINT}`)), codec: t === 'json' || !t ? 'json' : t === 'effects' ? 'effects' : 'strict' };
+}
+
+/**
+ * The strict schema and codec of a declared param or field (ARCHITECTURE §1.4: every model form is derived from the
+ * card's declarations and has no free-JSON field), or null when its declaration has no strict shape: json, effects,
+ * predicates, a map with free keys, nesting past MAX_DEPTH, or a reference with nothing in the document to name (refs:
+ * `allowed` gives [] for it). Those stay as the card or the template declares them: no form asks for them. An object's
+ * declared fields are asked (an open object's other keys are nobody's to write); a required field without a strict
+ * shape makes its object unaskable.
+ * @param {unknown} spec @param {number} depth @param {RefContext | null} refs @returns {{ schema: JsonSchema, codec: Codec } | null}
+ */
+export function strictSpec(spec, depth, refs) {
+  if (!isObj(spec)) return null;
+  const t = spec.type, s = /** @type {Spec} */ (spec);
+  const ids = refs && (plainString(s) || (t === 'list' && plainString(s.of))) ? refs.allowed(s) : null;
+  if (ids && !ids.length) return null;
+  if (t === 'number' || t === 'integer' || t === 'boolean' || t === 'string' || t === 'ref') return specSchema(s, depth, refs);
+  if (depth >= MAX_DEPTH) return null;
+  if (t === 'list') {
+    if (ids) return specSchema(s, depth, refs);
+    const inner = strictSpec(s.of, depth + 1, refs);
+    return inner ? { schema: { ...arr(inner.schema, describe(s)), ...itemCounts(s) }, codec: { list: inner.codec } } : null;
+  }
+  if (t === 'object' && isObj(s.fields) && !s.values) {
+    /** @type {Record<string, JsonSchema>} */
+    const props = {};
+    /** @type {Record<string, Codec>} */
+    const codecs = {};
+    for (const [k, f] of Object.entries(s.fields)) {
+      const inner = strictSpec(f, depth + 1, refs);
+      if (!inner) { if (prop(f, 'required')) return null; continue; }
+      props[k] = prop(f, 'required') ? inner.schema : nul(inner.schema); codecs[k] = inner.codec;
+    }
+    return Object.keys(props).length ? { schema: obj(props, describe(s)), codec: { fields: codecs, more: false } } : null;
+  }
+  return null;
 }
 
 /**
@@ -168,6 +207,9 @@ export function objectSchema(fields, depth = 0, description, refs = null) {
   if (more) props.more_json = nul(str(`other fields as one JSON object: ${entries.filter(e => !keep.includes(e)).map(([k]) => k).join(', ').slice(0, 300)}`));
   return { schema: obj(props, description), codec: { fields: codecs, more } };
 }
+
+/** A list declaration's entry counts as the form's minItems/maxItems (the card's min/max of a list). @param {Spec} spec @returns {Record<string, number>} */
+export const itemCounts = spec => ({ ...(typeof spec.min === 'number' && spec.min > 0 ? { minItems: spec.min } : {}), ...(typeof spec.max === 'number' ? { maxItems: spec.max } : {}) });
 
 /** Decode a form value back to document JSON with its codec (nulls drop out: they mean "use the default"). @param {unknown} value model output @param {Codec} codec @returns {unknown} */
 export function decode(value, codec) {

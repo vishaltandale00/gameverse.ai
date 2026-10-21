@@ -223,7 +223,9 @@ export function createImprovementService({ root, runner, config: overrides = {},
       const ok = res.code === 0 && !res.timedOut && out?.ok === true;
       const problems = out?.problems ?? [{ code: res.timedOut ? 'check_timed_out' : 'check_crashed', message: res.timedOut ? `the contract did not finish in ${L.verifyCommandTimeoutMs} ms` : tail(redact(res.stderr || res.stdout || ''), 800) }];
       attempt.verify = { ok, ms: Date.now() - started, checks: [{ id: 'template-contract', ok, ms: res.ms ?? null, code: res.code ?? null, timedOut: !!res.timedOut, ...(ok ? {} : { problems: problems.map(p => `${p.code}: ${p.message}`.slice(0, 300)) }) }] };
-      job.result = { template: { id: job.templateId, tune: derived.template.tune, concept: derived.template.concept }, problems: ok ? [] : problems, evidence: out?.evidence ?? null };
+      // The checked template: the derived one with the tune the checker proved (check-template.mjs provenTune).
+      const checkedTemplate = out?.template ?? derived.template;
+      job.result = { template: { id: job.templateId, tune: checkedTemplate.tune, concept: checkedTemplate.concept }, tuneDropped: out?.tuneDropped ?? [], problems: ok ? [] : problems, evidence: out?.evidence ?? null };
       store.save(job);
       emit(job, 'improve_check', { attempt: 0, id: 'template-contract', ok, ms: res.ms ?? null });
       if (!ok) { outcome = 'failed'; reason = `the template contract failed: ${[...new Set(problems.map(p => p.code))].join(', ')}`; return; }
@@ -231,7 +233,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
       const provenance = { job: job.id, derivation: TEMPLATE_DERIVATION_VERSION, contract: CONTRACT_VERSION, gameId: job.gameId, gameVersion: job.gameVersion, sourceDocSha256: job.experiment.codeSha256,
         sourceCommit: job.context.sourceCommit, catalogHash: out.catalogHash ?? null, loop: { id: config.id, version: config.version }, promotedAt: new Date().toISOString(),
         evidence: { ms: out.evidence?.ms ?? null, gate: out.evidence?.gate ?? null, bots: out.evidence?.bots ?? [] } };
-      await writer.write(file, promotedFile(derived.template, provenance));
+      await writer.write(file, promotedFile(checkedTemplate, provenance));
       job.result.file = file;
       outcome = 'succeeded';
     } catch (error) {

@@ -257,12 +257,14 @@ export default {
     spaces: ['engine.space.grid', 'engine.space.tilemap'],
     params: {
       size: { type: 'string', default: 'classic', scale: 'world', effect: `maze size: ${Object.keys(SIZES).join('|')} or a key of params.sizes` },
-      style: { type: 'string', default: 'classic', effect: `corridor shape: ${Object.keys(STYLES).join('|')} or a key of params.styles` },
+      style: { type: 'string', options: Object.keys(STYLES), default: 'classic', effect: 'corridor shape: classic, compact (tighter) or sprawling (longer corridors)' },
       density: { type: 'number', min: 0, max: 1, default: 0.6, effect: '1 keeps every lattice corridor; lower removes more (never below degree 2)' },
       tunnels: { type: 'integer', min: 1, max: 2, default: 1 },
       powerPellets: { type: 'integer', min: 2, max: 6, default: 4, effect: 'classic-size count; larger sizes scale with area' },
-      sizes: { type: 'json', default: {}, effect: 'extra sizes {name:{w,h,houses:[{axis,cy}]}} (w even)' },
-      styles: { type: 'json', default: {}, effect: 'extra styles {name:{gaps:[i..], inner:n}}' },
+      sizes: { type: 'object', default: {}, values: { type: 'object', fields: {
+        w: { type: 'integer', min: 20, multipleOf: 2, required: true, effect: 'maze width in cells (even: the maze is mirrored)' }, h: { type: 'integer', min: 21, required: true, effect: 'maze height in cells' },
+        houses: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { axis: { type: 'boolean', required: true, effect: 'on the mirror axis, else a mirrored pair' }, cy: { type: 'number', min: 0, max: 1, required: true, effect: 'height of the house, as a fraction of the maze height' } } } },
+      } }, effect: 'extra sizes by name (size names one of them)' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world', effect: 'space cell of the maze corner' },
       yUp: { type: 'boolean', default: true, effect: 'maze row 0 is the top row of the space region' },
       palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall', effect: 'a content.blocks id' }, houseWall: { type: 'string', default: 'house_wall', effect: 'a content.blocks id' }, door: { type: 'string', default: 'house_door', effect: 'a content.blocks id' } } },
@@ -278,7 +280,10 @@ export default {
     // The guarantee: the published `targets` (every pellet) are reachable from `from` by the player's body.
     traversal: { mover: 'player', problems: ['maze_start', 'maze_disconnected', 'pellet_unreachable', 'house_exit'] },
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
-    validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],
+    rules: {
+      maze_size_unknown: { fields: ['size', 'sizes'], message: `size is one of ${Object.keys(SIZES).join(', ')} or a name in sizes` },
+      maze_outside_space: { fields: ['origin', 'size', 'sizes'], message: 'the maze (its size from origin) fits inside its space' },
+    },
   },
   /** The cells the maze fills: [x0, y0, x1, y1) from its origin and size (card provides.extent: 'own'). */
   extentOf(raw) {
@@ -299,13 +304,8 @@ export default {
   },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
-    const errors = [], sizes = { ...SIZES, ...config.sizes }, styles = { ...STYLES, ...config.styles }, spec = sizes[config.size];
+    const errors = [], sizes = { ...SIZES, ...config.sizes }, spec = sizes[config.size];
     if (!spec) errors.push(problem('maze_size_unknown', 'size', `unknown maze size '${config.size}'`, { hint: Object.keys(sizes).join(', ') }));
-    if (!styles[config.style]) errors.push(problem('maze_style_unknown', 'style', `unknown maze style '${config.style}'`, { hint: Object.keys(styles).join(', ') }));
-    for (const [name, s] of Object.entries(config.sizes || {})) if (!(Number.isInteger(s?.w) && Number.isInteger(s?.h) && s.w % 2 === 0 && s.w >= 20 && s.h >= 21 && Array.isArray(s.houses) && s.houses.length))
-      errors.push(problem('maze_size_invalid', `sizes.${name}`, 'a size needs an even integer w ≥ 20, integer h ≥ 21 and at least one house {axis, cy}'));
-    for (const [name, s] of Object.entries(config.styles || {})) if (!(Array.isArray(s?.gaps) && s.gaps.length && s.gaps.every(g => Number.isInteger(g) && g >= 3)))
-      errors.push(problem('maze_size_invalid', `styles.${name}`, 'a style needs gaps: integers ≥ 3 (walls stay ≥ 2 thick)'));
     const sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.generators || []).some(g => g.use === ID)), size = sp?.with?.size;
     if (spec && size && (config.origin[0] + spec.w > size[0] || config.origin[1] + spec.h > size[1])) errors.push(problem('maze_outside_space', 'origin', `a ${spec.w}×${spec.h} maze at ${config.origin} does not fit the ${size[0]}×${size[1]} space`));
     return errors;

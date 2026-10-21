@@ -33,12 +33,12 @@ import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { preflight } from '../kernel/document.js';
 import { checkComposition } from './compose-check.js';
 import { loopProblems } from './loop-check.js';
-import { contractsFor, populateProblems, referenceOf, idsAt, ZONES, SECTIONS } from './content.js';
+import { contractsFor, populateProblems, referenceOf, idsAt } from './content.js';
 import { engageDocument } from './engage.js';
 import { formBundle } from './bundles.js';
 import { pickOption, servesContext, STRUCTURAL } from './retrieval.js';
 import { makeAsk } from './build-steps.js';
-import { specSchema, formKey, obj as strictObj, arr as strictArr, nul, decode } from './outline-form.js';
+import { strictSpec, formKey, obj as strictObj, nul, decode } from './outline-form.js';
 import { declaredVerbs, instancesIn, instancesWithPaths } from './templates.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 import { isObj, isStr, prop, messageOf } from '../kernel/guards.js';
@@ -73,10 +73,6 @@ export const EXTEND_RULES = Object.freeze({
   extension_params: 'an extension\'s params pass preflight on its instance',
 });
 
-/** At most this many ids a reference field offers as an enum (outline-form's MAX_ENUM): beyond it the field stays text. */
-const MAX_ENUM = 64;
-/** Nesting inside a param before a value has no strict form (outline-form's MAX_DEPTH). */
-const MAX_DEPTH = 4;
 
 /** @param {RegistryLike} registry @param {string} id @returns {Card | null} */
 const cardOf = (registry, id) => registry.get(id)?.card ?? null;
@@ -296,38 +292,6 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
 // The params form of an extension's primitive: strict, derived from its card.
 // ---------------------------------------------------------------------------------------------------------------
 
-/** @param {Record<string, any>} spec */
-const describe = spec => [spec.effect, spec.unit && `unit ${spec.unit}`, (spec.min !== undefined || spec.max !== undefined) && `range ${spec.min ?? ''}..${spec.max ?? ''}`, spec.default !== undefined && `default ${JSON.stringify(spec.default).slice(0, 60)}`].filter(Boolean).join('; ').slice(0, 200) || undefined;
-
-/**
- * The strict schema and codec of a declared param or field, or null when its declaration has no strict shape (json,
- * effects, predicates, open objects, nesting past MAX_DEPTH): those stay as the card declares them, never free JSON.
- * @param {unknown} spec @param {number} depth @param {RefContext} refs @returns {{ schema: Record<string, unknown>, codec: Codec } | null}
- */
-export function strictSpec(spec, depth, refs) {
-  if (!isObj(spec)) return null;
-  const t = spec.type;
-  if (t === 'number' || t === 'integer' || t === 'boolean' || t === 'string' || t === 'ref') return specSchema(/** @type {any} */ (spec), depth, refs);
-  if (depth >= MAX_DEPTH) return null;
-  if (t === 'list') {
-    const inner = strictSpec(spec.of, depth + 1, refs);
-    return inner ? { schema: strictArr(inner.schema, describe(spec)), codec: { list: inner.codec } } : null;
-  }
-  if (t === 'object' && isObj(spec.fields) && !spec.open) {
-    /** @type {Record<string, Record<string, unknown>>} */
-    const props = {};
-    /** @type {Record<string, Codec>} */
-    const codecs = {};
-    for (const [k, f] of Object.entries(spec.fields)) {
-      const s = strictSpec(f, depth + 1, refs);
-      if (!s) { if (prop(f, 'required')) return null; continue; }
-      props[k] = prop(f, 'required') ? s.schema : nul(s.schema); codecs[k] = s.codec;
-    }
-    return Object.keys(props).length ? { schema: strictObj(props, describe(spec)), codec: { fields: codecs, more: false } } : null;
-  }
-  return null;
-}
-
 /**
  * The params form of one extension primitive in a document (see the section header), or null when its card declares
  * no param with a strict shape. Its answer: one slot per param (null keeps the card's declaration).
@@ -340,9 +304,8 @@ export function paramsForm(doc, use, { registry, logic }) {
   /** @type {RefContext} */
   const refs = { allowed(spec) {
     const section = referenceOf(registry, spec);
-    if (!section || section === SECTIONS) return null;
-    const ids = [...new Set(idsAt(doc, section === ZONES ? ZONES : section))];
-    return ids.length && ids.length <= MAX_ENUM ? ids : null;
+    if (!section) return null;
+    return [...new Set(idsAt(doc, section))];
   } };
   /** @type {Array<{ key: string, codec: Codec, schema: Record<string, unknown> }>} */
   const slots = [];

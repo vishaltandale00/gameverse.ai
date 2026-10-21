@@ -72,9 +72,10 @@ test('grid.maze: same seed replays exactly; another seed differs', () => {
 test('grid.maze: preflight rejects bad configs with stable codes', () => {
   const r = new Registry(ALL), logic = buildLogic(r, Logic), codes = d => preflight(d, r, logic).errors.map(e => e.code);
   const d = doc(); Object.assign(d.spaces[0].generators[0].with, { size: 'gigantic', style: 'wavy' });
-  assert.ok(codes(d).includes('maze_size_unknown')); assert.ok(codes(d).includes('maze_style_unknown'));
-  const e = doc(); Object.assign(e.spaces[0].generators[0].with, { sizes: { odd: { w: 27, h: 31, houses: [] } }, styles: { tight: { gaps: [2] } } });
-  assert.equal(codes(e).filter(c => c === 'maze_size_invalid').length, 2);
+  // A style is one of the declared styles (card params.style options); a size is a preset or one the instance declares.
+  assert.ok(codes(d).includes('maze_size_unknown')); assert.ok(codes(d).includes('param_option'));
+  const e = doc(); Object.assign(e.spaces[0].generators[0].with, { sizes: { odd: { w: 27, h: 31, houses: [] } } });
+  assert.deepEqual(codes(e).filter(c => c === 'param_range'), ['param_range', 'param_range'], 'an odd width and no house: the declared shape of a size (card params.sizes)');
   const f = doc(); f.spaces[0].with.size = [20, 20, 1];
   assert.ok(codes(f).includes('maze_outside_space'));
   const g = doc(); g.spaces[0].generators[0].with.density = 3;

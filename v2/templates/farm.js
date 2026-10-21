@@ -32,5 +32,5 @@ export default {
     plot: { endings: [{ id: 'victory', title: 'Victory', epilogue: 'The harvest is in.', outcome: 'won', when: { count: 'harvested', gte: 8 } }] },
     player: { archetype: 'farmer', at: [1, 0] },
   },
-  tune: ['gameplay.farming.daySec', 'engine.generate.grid.board.density'],
+  tune: [{ path: 'gameplay.farming.daySec', min: 3, max: 20 }, 'engine.generate.grid.board.density'],
 };

@@ -46,5 +46,5 @@ export default {
     },
     player: { archetype: 'runner', at: [2, 0.55] },
   },
-  tune: ['engine.generate.chunks.goal', 'engine.generate.chunks.density', 'gameplay.death.lives'],
+  tune: [{ path: 'engine.generate.chunks.goal', min: 120, max: 400 }, 'engine.generate.chunks.density', { path: 'gameplay.death.lives', min: 1, max: 9 }],
 };

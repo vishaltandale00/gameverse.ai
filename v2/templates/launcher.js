@@ -41,5 +41,5 @@ export default {
     },
     plot: { endings: [{ id: 'guards_down', title: 'Guards down', epilogue: 'Every guard is down.', outcome: 'won', when: { count: 'destroyed:target', gte: 4 } }] },
   },
-  tune: ['gameplay.launcher.aimSpeed', 'gameplay.launcher.quietSec'],
+  tune: [{ path: 'gameplay.launcher.aimSpeed', min: 0.3, max: 3 }, { path: 'gameplay.launcher.quietSec', min: 0.2, max: 2 }],
 };

@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import os from 'node:os';
-import { checkTemplate, formatProblems, CODES, STAGES, SEEDS } from '../v2/templates/contract.js';
+import { checkTemplate, formatProblems, tuneProblems, boundsProblems, boundValues, CODES, STAGES, SEEDS } from '../v2/templates/contract.js';
+import { tuneRanges, tuneTarget, tunedSpec } from '../v2/planner/templates.js';
 import { TEMPLATES, templateById, loadTemplates, promotedTemplates, PROMOTED_SCHEMA, INFRASTRUCTURE } from '../v2/templates/registry.js';
 import { readdirSync } from 'node:fs';
 import { liveCatalogue, buildCatalogue } from '../v2/planner/catalog.js';
@@ -20,7 +21,7 @@ const tmp = mkdtempSync(join(os.tmpdir(), 'gv-templates-'));
 test.after(() => rmSync(tmp, { recursive: true, force: true }));
 
 test('contract: stages in order, every code stable and owned by one stage', () => {
-  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'gate', 'controls', 'features', 'bots']);
+  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'gate', 'controls', 'features', 'bots', 'bounds']);
   const all = Object.values(CODES).flat();
   assert.equal(new Set(all).size, all.length, 'no code belongs to two stages');
   assert.deepEqual(SEEDS, [1, 2, 3]);
@@ -59,10 +60,12 @@ test('discovery: modules and promoted files are found without a list; malformed 
   await assert.rejects(loadTemplates({ dir }), e => e.code === 'template_duplicate');
 });
 
-for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check against the live catalogue`, async () => {
-  const r = await checkTemplate(t, live);
+// The bounds stage plays every bound of every template's tune: its runs are sharded over the files
+// tests/v2-template-bounds-<n>.test.js so they run beside this one.
+for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check through the bots against the live catalogue`, async () => {
+  const r = await checkTemplate(t, live, { through: 'bots' });
   assert.deepEqual(r.problems, [], `${t.id}: ${JSON.stringify(r.problems).slice(0, 800)}`);
-  assert.deepEqual(Object.keys(r.evidence.stages), STAGES, 'every stage ran');
+  assert.deepEqual(Object.keys(r.evidence.stages), STAGES.slice(0, STAGES.indexOf('bots') + 1), 'every stage through the bots ran');
   assert.ok(r.evidence.bots.length && r.evidence.bots.every(b => b.runs.map(x => x.seed).join() === SEEDS.join()), JSON.stringify(r.evidence.bots));
 });
 
@@ -92,10 +95,49 @@ test('contract tune: a path naming no declared param, a non-scalar param, or sev
   for (const [t, code] of cases) assert.deepEqual(codes(await checkTemplate(t, live)), [code]);
 });
 
+test('contract tune: a playable range narrows the card\'s, is finite and holds the template\'s own value', () => {
+  const dungeon = templateById('dungeon'), rooms = 'engine.generate.dungeon.rooms.rooms';
+  const tune = entries => broken(dungeon, t => { t.tune = entries; });
+  const cases = [
+    [[{ path: rooms, min: 2, max: 12 }], 'tune_range_invalid'], // below the card's min 3
+    [[{ path: rooms, min: 4, max: 100 }], 'tune_range_invalid'], // above the card's max 80
+    [[{ path: rooms, min: 9, max: 4 }], 'tune_range_invalid'],
+    [[{ path: rooms, min: 4.5, max: 9 }], 'tune_range_invalid'], // an integer's bounds are integers
+    [[{ path: 'gameplay.death.lives', options: ['a'] }], 'tune_range_invalid'],
+    [[{ path: rooms, min: 10, max: 12 }], 'tune_value_outside'], // the template's 8 rooms
+  ];
+  for (const [entries, code] of cases) assert.deepEqual(tuneProblems(tune(entries), live.registry).map(p => p.code), [code], JSON.stringify(entries));
+  assert.deepEqual(tuneProblems(broken(farm, t => { t.tune = ['gameplay.farming.daySec']; }), live.registry).map(p => p.code), ['tune_unbounded'], 'daySec has no max on its card: the template declares its playable range');
+  assert.deepEqual(formatProblems(tune([{ path: rooms }])).map(p => p.code), ['template_tune_invalid'], 'a range entry names a range');
+  assert.deepEqual(formatProblems(tune([{ path: rooms, min: 4, step: 2 }])).map(p => p.code), ['template_tune_invalid']);
+});
+
+test('contract tune: every template\'s tune slots allow exactly its playable range, every bound of which the bounds stage plays', () => {
+  for (const t of TEMPLATES) for (const range of tuneRanges(t)) {
+    const target = tuneTarget(t.doc, range.path, live.registry), values = boundValues(tunedSpec(target.spec, range));
+    assert.ok(values?.length, `${t.id} ${range.path}: a finite playable range`);
+    if (range.min !== undefined) assert.ok(values.includes(range.min), `${t.id} ${range.path}: its declared min is a bound`);
+    if (range.max !== undefined) assert.ok(values.includes(range.max), `${t.id} ${range.path}: its declared max is a bound`);
+  }
+});
+
+test('contract bounds: a bound that breaks a declared cross-field rule fails bound_invalid; one the bot cannot win fails bound_not_won', () => {
+  const dungeon = templateById('dungeon');
+  // Two keys need at least four rooms (engine.generate.dungeon.rooms card.rules dungeon_keys_many).
+  const rooms = broken(dungeon, t => { t.tune = [{ path: 'engine.generate.dungeon.rooms.rooms', min: 3, max: 8 }]; });
+  const ev = { bounds: [] }, p = boundsProblems(rooms, live.registry, live.logic, ev);
+  assert.deepEqual(p.map(x => `${x.code}:${x.cause}:${x.value}`), ['bound_invalid:dungeon_keys_many:3'], JSON.stringify(p));
+  assert.deepEqual(ev.bounds.map(b => [b.value, b.ok]), [[3, false]], 'the template\'s own value is not replayed');
+  // Rivals faster than the karts can be beaten (the race template's playable range stops below this).
+  const fast = broken(templateById('race'), t => { t.tune = [{ path: 'gameplay.ai.seek.speed', min: 16, max: 40 }]; });
+  const lost = boundsProblems(fast, live.registry, live.logic, { bounds: [] });
+  assert.ok(lost.length && lost.every(x => x.code === 'bound_not_won' && x.value === 40), JSON.stringify(lost).slice(0, 400));
+});
+
 test('contract static stages: preflight, composition and loop failures stop the check before anything simulates', async () => {
   const pre = await checkTemplate(broken(farm, t => { t.doc.plot.endings = []; }), live);
   assert.ok(pre.problems.length && pre.problems.every(p => p.code === 'preflight_failed' && p.cause), JSON.stringify(pre.problems));
-  const comp = await checkTemplate(broken(farm, t => { t.doc.spaces[0].generators = []; t.tune = ['gameplay.farming.daySec']; }), live);
+  const comp = await checkTemplate(broken(farm, t => { t.doc.spaces[0].generators = []; t.tune = [{ path: 'gameplay.farming.daySec', min: 3, max: 20 }]; }), live);
   assert.deepEqual([...new Set(codes(comp))], ['composition_failed'], JSON.stringify(comp.problems));
   const loop = await checkTemplate(broken(farm, t => { t.doc.systems = t.doc.systems.filter(s => s.use !== 'plot.ending'); }), live);
   assert.deepEqual(loop.problems.map(p => `${p.code}:${p.cause}`), ['loop_problem:loop_win_unwired']);

@@ -47,6 +47,7 @@ export function checkParam(schema, value, path, errors, ctx) {
     case 'number': case 'integer':
       if (!Number.isFinite(value) || (schema.type === 'integer' && !Number.isInteger(value))) fail('param_type', `must be ${schema.type === 'integer' ? 'an integer' : 'a number'}`);
       else if ((schema.min !== undefined && value < schema.min) || (schema.max !== undefined && value > schema.max)) fail('param_range', `${value} outside [${schema.min ?? '-∞'}, ${schema.max ?? '∞'}] ${schema.unit || ''}`.trim(), `default ${schema.default}`);
+      else if (typeof schema.multipleOf === 'number' && value % schema.multipleOf !== 0) fail('param_range', `${value} is not a multiple of ${schema.multipleOf}`);
       return value;
     case 'boolean':
       if (typeof value !== 'boolean') fail('param_type', 'must be true or false');
@@ -56,6 +57,7 @@ export function checkParam(schema, value, path, errors, ctx) {
       else if (schema.options && !schema.options.includes(value)) fail('param_option', `'${value}' is not one of ${schema.options.join('|')}`);
       else if (Array.isArray(schema.reserved) && schema.reserved.includes(value)) fail('param_reserved', `'${value}' is reserved (${schema.reserved.join(', ')}): pick another`);
       else if (schema.maxLength && value.length > schema.maxLength) fail('param_range', `longer than ${schema.maxLength} characters`);
+      else if (typeof schema.pattern === 'string' && !new RegExp(schema.pattern, 'u').test(value)) fail('param_pattern', `'${value.slice(0, 60)}' does not match ${schema.pattern}`);
       return value;
     case 'ref': {
       const to = /** @type {string} */ (schema.to); // a ref schema without `to` indexes nothing: every id is unknown

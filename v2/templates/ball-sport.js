@@ -35,5 +35,5 @@ export default {
     },
     player: { archetype: 'hero', at: [17, 12] },
   },
-  tune: ['gameplay.sports.periodSec', 'gameplay.sports.periods'],
+  tune: [{ path: 'gameplay.sports.periodSec', min: 15, max: 60 }, { path: 'gameplay.sports.periods', min: 1, max: 3 }],
 };

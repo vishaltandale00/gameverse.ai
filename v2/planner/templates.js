@@ -15,13 +15,20 @@ import { buildLogic } from '../kernel/world.js';
 import { Logic } from '../kernel/logic.js';
 import { composeNested, composeUnion, entryTriggers, innerLoops, definedIds, prefixOf } from './compose.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
+import { rulesOn } from '../kernel/rules.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
 /** @typedef {import('../kernel/types.js').ParamSchema} ParamSchema */
 /** @typedef {import('./types.js').Writer} Writer */
 /** @typedef {import('./types.js').ReplySchema} ReplySchema */
-/** A template (v2/templates/<id>.js). @typedef {{ id: string, concept: string, doc: Record<string, any>, tune: string[] }} Template */
+/**
+ * A tune entry: '<primitive id>.<param>' (the card's whole range is playable), or the playable range where it is narrower
+ * than the card's: { path, min?, max? } for a number or integer, { path, options } for a closed set of strings.
+ * @typedef {string | TuneRange} TuneEntry
+ */
+/** @typedef {{ path: string, min?: number, max?: number, options?: string[] }} TuneRange */
+/** A template (v2/templates/<id>.js). @typedef {{ id: string, concept: string, doc: Record<string, any>, tune: TuneEntry[] }} Template */
 /** The primary: the one game or genre played. @typedef {{ name: string, kind: string, template: string }} PickPrimary */
 /** Another game or genre the idea plays, nested in or united with the primary. @typedef {PickPrimary & { relation: string }} PickGame */
 /**
@@ -92,6 +99,22 @@ export function tuneTarget(doc, path, registry) {
   if (!use) return null;
   const param = path.slice(use.length + 1), spec = /** @type {ParamSchema | undefined} */ (registry.get(use)?.card?.params?.[param]);
   return spec ? { use, param, spec, instances: instancesIn(doc).filter(i => i.use === use) } : null;
+}
+
+/** A template's tune entries as ranges ({ path } where the card's whole range is playable). @param {{ tune: readonly TuneEntry[] }} template @returns {TuneRange[]} */
+export const tuneRanges = template => template.tune.map(e => (typeof e === 'string' ? { path: e } : { ...e }));
+/** @param {TuneEntry} e */
+const pathOfEntry = e => (typeof e === 'string' ? e : e.path);
+/** A template's tune paths. @param {{ tune: readonly TuneEntry[] }} template @returns {string[]} */
+export const tunePaths = template => tuneRanges(template).map(e => e.path);
+
+/**
+ * The spec a tune slot allows: the card's param narrowed by the template's playable range (ARCHITECTURE §5: the values
+ * the model may set keep the game playable; the template contract's bounds stage proves its bot wins at every bound).
+ * @param {ParamSchema} spec @param {TuneRange} range @returns {ParamSchema}
+ */
+export function tunedSpec(spec, range) {
+  return { ...spec, ...(range.min !== undefined ? { min: range.min } : {}), ...(range.max !== undefined ? { max: range.max } : {}), ...(range.options ? { options: [...range.options] } : {}) };
 }
 
 /** The templates code can compose in this catalogue: every primitive their document uses is registered. @param {readonly Template[]} templates @param {RegistryLike} registry */
@@ -491,8 +514,8 @@ export function composeTemplates(pick, { templates, registry, logic = logicOf(re
   if (problems.length) return { doc: null, template: outer, parts, themes, stepPath, problems, joins };
   doc.title = pick.title;
   doc.plot = { ...(isObj(doc.plot) ? doc.plot : {}), premise: pick.premise };
-  // The composed tune: every part's paths that still name one declared param of one instance (shared instances are one).
-  const tune = [...new Set(parts.flatMap(p => p.template.tune))];
+  // The composed tune: every part's entries (a path named by two parts, a shared instance, is one: the first part's).
+  const tune = parts.flatMap(p => p.template.tune).filter((e, i, all) => all.findIndex(x => pathOfEntry(x) === pathOfEntry(e)) === i);
   return { doc, template: parts.length > 1 ? { ...outer, tune } : outer, parts, themes, stepPath, problems, joins };
 }
 
@@ -580,13 +603,16 @@ export function conceptForm(doc, part) {
  */
 export function frameTuneForm(template, doc, { registry, logic }) {
   const paths = instancesWithPaths(doc);
-  const slots = template.tune.map(path => {
-    const target = tuneTarget(doc, path, registry);
+  const slots = tuneRanges(template).map(range => {
+    const path = range.path, target = tuneTarget(doc, path, registry);
     if (!target || target.instances.length !== 1) throw Object.assign(Error(`template '${template.id}': tune '${path}' names ${target ? `${target.instances.length} instances` : 'no declared param of an instance'} in its document`), { status: 422, code: 'template_defect', problems: [{ code: 'tune_unknown', path, message: 'a tune path names one declared param of one instance' }] });
     const inst = target.instances[0], at = /** @type {{ path: string }} */ (paths.find(p => p.inst === inst)).path;
-    const { schema, codec } = specSchema(target.spec);
+    // The slot allows the template's playable range of the param (tunedSpec), and names the card's rules on it.
+    const spec = tunedSpec(target.spec, range);
+    const { schema, codec } = specSchema(spec);
     const current = inst.with?.[target.param] ?? target.spec.default;
-    return { key: formKey(path), path, param: target.param, at, codec, spec: target.spec, schema: { ...schema, description: `${path}: ${String(schema.description || '')}; now ${JSON.stringify(current)}`.slice(0, 300) } };
+    const rules = rulesOn(registry.get(target.use)?.card, target.param).map(r => `rule ${r.code}: ${r.message}`);
+    return { key: formKey(path), path, param: target.param, at, codec, spec, schema: { ...schema, description: `${path}: ${[String(schema.description || ''), ...rules].filter(Boolean).join('; ')}; now ${JSON.stringify(current)}`.slice(0, 400) } };
   });
   /** @type {ReplySchema} */
   const schema = { name: 'frame_tune', schema: strictObj({ logline: text('one sentence that sells the game'), ...Object.fromEntries(slots.map(s => [s.key, s.schema])) }) };
@@ -603,7 +629,11 @@ export function frameTuneForm(template, doc, { registry, logic }) {
     /** @type {FormProblem[]} */
     const problems = [];
     if (!TEXT_RE.test(String(v.logline))) problems.push({ code: 'text_missing', field: 'logline', message: 'write a one-sentence logline' });
-    for (const s of slots) if (v[s.key] === undefined) problems.push({ code: 'tune_missing', field: s.key, message: `${s.path} needs a value` });
+    for (const s of slots) {
+      if (v[s.key] === undefined) problems.push({ code: 'tune_missing', field: s.key, message: `${s.path} needs a value` });
+      // The slot's own schema (the playable range) holds for writers that do not enforce it.
+      else for (const p of answerProblems(s.schema, v[s.key])) problems.push({ code: 'tune_range', field: s.key, message: `${s.path}: ${p.message}` });
+    }
     if (problems.length) return problems;
     const d = structuredClone(doc);
     apply(d, v);

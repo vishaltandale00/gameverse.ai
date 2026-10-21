@@ -23,5 +23,5 @@ export default {
     },
     plot: { endings: [{ id: 'target_score', title: 'Target reached', epilogue: 'The board sparkles: target score reached.', outcome: 'won', when: { var: 'score', gte: 15000 } }] },
   },
-  tune: ['gameplay.match.swapFrames'],
+  tune: [{ path: 'gameplay.match.swapFrames', max: 20 }],
 };

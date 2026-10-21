@@ -18,5 +18,5 @@ export default {
       blocks: [2, 4, 8, 16, 32, 64, 128, 256].map(v => ({ id: String(v), name: `Tile ${v}`, solid: true })),
     },
   },
-  tune: ['gameplay.slide.merge.spawnFour', 'gameplay.slide.merge.slideFrames'],
+  tune: ['gameplay.slide.merge.spawnFour', { path: 'gameplay.slide.merge.slideFrames', max: 15 }],
 };

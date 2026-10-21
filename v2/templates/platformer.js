@@ -58,5 +58,5 @@ export default {
     },
     player: { archetype: 'hero', at: [3, 3] },
   },
-  tune: ['gameplay.death.lives', 'gameplay.move.platformer.feel'],
+  tune: [{ path: 'gameplay.death.lives', min: 1, max: 9 }, { path: 'gameplay.move.platformer.feel', options: ['snappy', 'floaty'] }],
 };

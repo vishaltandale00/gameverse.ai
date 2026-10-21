@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'hero', at: PLAYER },
   },
-  tune: ['gameplay.race.laps', 'gameplay.ai.seek.speed'],
+  tune: [{ path: 'gameplay.race.laps', min: 1, max: 5 }, { path: 'gameplay.ai.seek.speed', min: 8, max: 16 }],
 };

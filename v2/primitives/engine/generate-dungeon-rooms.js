@@ -59,7 +59,11 @@ export default {
     // before their locks.
     traversal: { mover: 'player', problems: ['cells_unreachable', 'dungeon_unsolvable', 'room_unreachable'] },
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],
-    validates: ['dungeon_area_missing', 'dungeon_area_small', 'dungeon_keys_many'],
+    rules: {
+      dungeon_area_missing: { fields: ['area', 'zone'], message: 'the dungeon has an area to fill: area, a zone with a rect or bounds, or a space with a size' },
+      dungeon_area_small: { fields: ['rooms', 'roomSize', 'area'], message: 'rooms is at most the room slots the area holds (each slot is roomSize[1] + 3 cells a side)' },
+      dungeon_keys_many: { fields: ['rooms', 'keys'], message: 'rooms is at least the number of keys + 2 (a lock per key needs a room before it and the boss room after it)' },
+    },
   },
   /**
    * Planner hook (v2/planner/world.js), grid and top-down tilemap spaces: as many rooms as the space's slot grid
