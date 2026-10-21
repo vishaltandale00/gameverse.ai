@@ -13,7 +13,7 @@ import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { actionCellAt, faceDir } from '../../primitives/gameplay/items-lib.js';
 import { spaceFrame } from '../../primitives/engine/runtime-lib-frame.js';
 import { stepsFrom } from '../../kernel/testing.js';
-import { multiSeed, problem, pathOf } from './common.js';
+import { multiSeed, problem, pathOf, yieldToEncounter } from './common.js';
 
 const FARMING = 'gameplay.farming';
 /** Each verb of the farming loop and the event its press emits when it acts. */
@@ -103,6 +103,7 @@ export default {
       hold(rt, {}, 1, b);
       if (!rt.hasService('farming') || !rt.hasService('inventory')) stuck = 'the farming and inventory services are missing';
       while (!stuck && rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
+        if (yieldToEncounter(ctx, rt, ['editCells', 'navigate'], b)) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player(); if (!p) { stuck = 'no player'; break; }
         const today = rt.service('farming').day();
         if (today !== day) { day = today; skip = new Set(); }

@@ -8,7 +8,7 @@
 import { hold, DIRS8 } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
-import { multiSeed, problem, pathOf } from './common.js';
+import { multiSeed, problem, pathOf, yieldToEncounter } from './common.js';
 
 const RACE = 'gameplay.race';
 
@@ -86,6 +86,7 @@ export default {
       // Countdown: wait until the race runs (positions only start counting then).
       while (rt.state.status === 'playing' && raceView(rt, ctx.doc, config).s?.state !== 'running' && rt.state.frame < 600) { hold(rt, {}, every, b); path.push('wait'); }
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !raceView(rt, ctx.doc, config).done && !b.over()) {
+        if (yieldToEncounter(ctx, rt, ['position'], b)) continue; // an encounter holds this loop: play the one the player is in
         const { m } = best(rt, depth); if (!m) break;
         playMacro(rt, m, b); path.push(m.label);
       }

@@ -1,6 +1,6 @@
 // Helpers shared by the strategy library: decision points, board reading,
 // simulation of a choice on a snapshot, multi-seed runs and result records.
-import { applyOption, hold, optionLabels, hpOf, foes } from '../drive.js';
+import { applyOption, hold, optionLabels, hpOf, foes, vitality } from '../drive.js';
 import { seedFrom } from '../../kernel/rng.js';
 import { instancesOf, problem } from '../util.js';
 
@@ -52,10 +52,13 @@ export const filledCount = rows => rows.reduce((n, r) => n + r.filter(c => c !==
 /** Numeric value of a cell token ('8', 8, 'tile_8'); null when not numeric. */
 export const numeric = c => { if (typeof c === 'number') return c; if (typeof c !== 'string') return null; const m = /-?\d+(\.\d+)?/.exec(c); return m ? Number(m[0]) : null; };
 
-/** Run `play(seed)` over seeds until `runs` finish; pass when wins/runs ≥ passRate. */
+/**
+ * Run `play(seed)` on every seed given, one run each (a play past the budget returns at once, marked budget); pass
+ * when wins/runs ≥ passRate. A caller that names seeds gets a run per seed, never fewer.
+ */
 export function multiSeed(play, { seeds, passRate = 0.7, b }) {
   const out = [];
-  for (const s of seeds) { if (out.length && b?.over()) break; out.push(play(s)); }
+  for (const s of seeds) out.push(play(s));
   const wins = out.filter(r => r.won).length;
   return { runs: out, wins, rate: out.length ? wins / out.length : 0, ok: out.length > 0 && wins / out.length >= passRate };
 }
@@ -94,3 +97,29 @@ export const foeHp = rt => foes(rt).reduce((s, e) => s + Math.max(0, hpOf(e) ?? 
 export const livingFoes = rt => foes(rt).filter(e => (hpOf(e) ?? 1) > 0);
 
 export { optionLabels, hold, problem };
+
+/**
+ * When the player is in a space a bot cannot act in (its required capabilities: an encounter moved the player into a
+ * battle screen, a space without positions), play that loop instead of crashing on the outer one's geometry: one
+ * turn chosen among the options the game offers there (hints of what the controls issue), by the exchange each makes
+ * when resolved on a snapshot (damage dealt minus taken, the objective's change, a won or lost end), taken through
+ * the controls; with no option offered, wait a frame. -> true when the player was in such a space (the bot yielded).
+ * @param {any} ctx @param {any} rt @param {string[]} caps the capabilities the bot needs @param {any} [b] its budget
+ */
+export function yieldToEncounter(ctx, rt, caps, b = null) {
+  const p = rt.player(); if (!p) return false;
+  const have = new Set(ctx.capabilities?.[p.space] || []);
+  if (caps.every(c => have.has(c)) && Array.isArray(p.at)) return false;
+  const options = rt.availableOptions();
+  if (!options.length) { hold(rt, {}, 1, b); return true; }
+  const snap = rt.snapshot(), own = () => vitality(rt).hp ?? 0, f0 = foeHp(rt), h0 = own(), score = rt.state.vars.score ?? 0;
+  let best = -1, bestV = -Infinity;
+  for (let i = 0; i < Math.min(options.length, 24); i++) {
+    simulateOption(rt, snap, i, { b, maxWait: 240 });
+    const v = (f0 - foeHp(rt)) - (h0 - own()) + ((rt.state.vars.score ?? 0) - score) + (rt.state.status === 'won' ? 1e6 : rt.state.status === 'lost' ? -1e6 : 0);
+    if (v > bestV) { bestV = v; best = i; }
+  }
+  rt.restore(snap);
+  applyOption(rt, rt.availableOptions()[best], b);
+  return true;
+}

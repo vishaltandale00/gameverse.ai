@@ -101,8 +101,8 @@ export default {
       const won = rt.state.status === 'won' || (rt.state.status === 'playing' && placed >= pieces);
       return { seed, won, status: rt.state.status, pieces: placed, cleared, maxHeight: maxH, budget: b.hit && !won };
     };
-    let r = multiSeed(play, { seeds: seeds.slice(0, 1), passRate: 1, b });
-    if (!r.ok && !r.runs[0]?.budget) r = multiSeed(play, { seeds, passRate: 2 / 3, b });
+    // Every seed it is given is played (one run per seed): one seed must win, several at two in three.
+    const r = multiSeed(play, { seeds, passRate: seeds.length > 1 ? 2 / 3 : 1, b });
     const path = ownerPath(ctx, probe, ['gameplay.falling', 'gameplay.puzzle']);
     const problems = [];
     const finished = r.runs.filter(x => !x.budget);

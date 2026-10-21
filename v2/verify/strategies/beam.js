@@ -93,7 +93,7 @@ export default {
       return { seed, won: res.ok, status, reached, goal: +goal.toFixed(2), frames: res.frames, path: res.path || null, timeout: Boolean(res.timeout), sIdx, space, zone: res.ok ? null : api.zoneAt?.(posOf(rt), rt) ?? null };
     };
     const runs = [];
-    for (const seed of seeds) { if (runs.length && b.over()) break; runs.push(play(seed)); }
+    for (const seed of seeds) runs.push(play(seed)); // one run per seed given (a play past the budget stops at once)
     const problems = [];
     for (const r of runs.filter(x => !x.won)) {
       const zj = (r.space.zones || []).findIndex(x => x.id === r.zone), at = `seed ${r.seed}: `;

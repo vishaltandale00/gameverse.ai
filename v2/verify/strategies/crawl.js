@@ -15,7 +15,7 @@ import { hold, posOf, threats, collectibles, hpOf } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { stepsFrom } from '../../kernel/testing.js';
-import { multiSeed, problem } from './common.js';
+import { multiSeed, problem, yieldToEncounter } from './common.js';
 
 const LOOP = 'crawl';
 
@@ -75,6 +75,7 @@ export default {
       const tried = new Map();
       let gains = 0, lastPickups = null, blockedFor = 0;
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
+        if (yieldToEncounter(ctx, rt, ['navigate'], b)) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player();
         if (!p || p.components.health?.dead) { hold(rt, {}, 1, b); counts.wait++; continue; }
         const api = rt.space(p.space), here = keyAt(api, posOf(rt, p));

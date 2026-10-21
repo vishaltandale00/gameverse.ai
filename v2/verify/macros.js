@@ -14,16 +14,19 @@ import { instancesOf } from './util.js';
 
 /** The verb that makes the player rise when pressed from rest (jump, flap), or null. */
 export function jumpVerb(rt) {
-  const p = rt.player(); if (!p || !Array.isArray(p.at)) return null;
+  const pos = () => { const q = posOf(rt); return Array.isArray(q) ? q : null; }; // spaces without positions (none, graph) have no height
+  const p = rt.player(); if (!p || !Array.isArray(p.at) || !pos()) return null;
   const snap = rt.snapshot();
   hold(rt, {}, 20); // settle onto the ground
-  const base = rt.snapshot(), y0 = posOf(rt)[1];
+  if (!pos()) { rt.restore(snap); return null; }
+  const base = rt.snapshot(), y0 = pos()[1];
   let found = null;
-  for (const v of rt.actions()) {
+  // On a controlled runtime (v2/verify/controls.js) only the verbs a key presses are tried: what a person can press.
+  for (const v of rt.controls ? rt.controls.pressable() : rt.actions()) {
     rt.restore(base);
     hold(rt, { actions: { [v]: true }, held: { [v]: true } }, 1);
-    let top = posOf(rt)?.[1] ?? y0;
-    for (let i = 0; i < 12; i++) { hold(rt, { held: { [v]: true } }, 1); top = Math.max(top, posOf(rt)?.[1] ?? top); }
+    let top = pos()?.[1] ?? y0;
+    for (let i = 0; i < 12; i++) { hold(rt, { held: { [v]: true } }, 1); top = Math.max(top, pos()?.[1] ?? top); }
     if (top > y0 + 0.5) { found = v; break; }
   }
   rt.restore(snap);
@@ -109,7 +112,7 @@ export function travelOptions(registry, { mode = 'auto' } = {}) {
     const zones = rt.doc.spaces.find(s => s.id === p.space)?.zones || [];
     // A zone the game's own primitives already offer travel to (their real controllers) gets no second, generic macro.
     const offered = new Set(rt.optionsExcept(provider).filter(o => o.macro && o.actions?.travel).map(o => o.actions.travel));
-    return zones.filter(z => !api.inZone(p, z.id, rt) && !offered.has(z.id)).map(z => ({ label: `travel ${z.id}`, macro: resolved, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
+    return zones.filter(z => !api.inZone(p, z.id, rt) && !offered.has(z.id)).map(z => ({ label: `travel ${z.id}`, macro: resolved, zone: z.id, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
   };
   provider.resolved = () => resolved;
   return provider;

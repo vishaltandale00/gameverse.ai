@@ -22,6 +22,9 @@ export default {
   card: {
     intent: 'Shows the current scene, a running story log of dialogue and events, the inventory, and the available choices as focusable buttons (keyboard, gamepad, pointer, number keys); renders endings when no results screen exists.',
     views: ['text', 'overlay'],
+    // It lists the game's options as its choices and sends the chosen one's actions (ARCHITECTURE §6.3: menu, choose an option).
+    interactions: ['menu', 'avatar-grid', 'avatar-realtime'],
+    controls: { options: true },
     params: {
       log: { type: 'integer', default: 40, min: 5, max: 400, unit: 'lines', effect: 'story lines kept on screen' },
       style: { type: 'string', default: 'book', options: ['book', 'terminal', 'comic', ...THEMES.filter(t => !['book', 'terminal', 'comic'].includes(t)), 'auto'], effect: 'typography and framing' },

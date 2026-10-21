@@ -6,7 +6,7 @@
 import { hold, posOf, DIRS8 } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
-import { multiSeed, problem, pathOf } from './common.js';
+import { multiSeed, problem, pathOf, yieldToEncounter } from './common.js';
 
 const SPORTS = 'gameplay.sports';
 const sub = (a, b) => a.map((v, i) => v - (b[i] ?? 0)), len = v => Math.hypot(...v);
@@ -34,6 +34,7 @@ export default {
     const play = seed => {
       const rt = ctx.make(seed), path = [], goal = goalFor(rt, ctx.doc, config);
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over() && goal) {
+        if (yieldToEncounter(ctx, rt, ['position'], b)) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player(), ball = rt.entity(ballId);
         if (!p || !ball || !rt.test({ sports: 'play' })) { hold(rt, {}, every, b); path.push('wait'); continue; }
         const bc = centreOf(rt, ball).slice(0, 2), pc = centreOf(rt, p).slice(0, 2), toGoal = sub(goal, bc), l = len(toGoal) || 1, dir = toGoal.map(v => v / l);

@@ -28,11 +28,9 @@ import { tuneTarget } from '../planner/templates.js';
 import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
-import { uncontrolledVerbs } from '../verify/controls.js';
+import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
-import { loopVerbs, verbInstances } from '../primitives/engine/runtime-lib-controls.js';
-import { cardLoop } from '../planner/loop.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
@@ -164,10 +162,8 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
     // The document a person plays gives a control for every verb its loops declare (in each interaction they are played
     // in), and pressing each direction moves the player the way the view the host mounts shows it (verify/directions.js).
     controls: () => {
-      const host = checked.doc, verbs = loopVerbs(host, registry);
-      const interactions = [...new Set(verbInstances(host).flatMap(i => cardLoop(registry.get(i.use)?.card)?.interactions || []))];
-      const out = [];
-      for (const i of interactions.length ? interactions : [null]) for (const v of uncontrolledVerbs(host, registry, verbs, i)) out.push(problem('controls_missing', `no control a person has issues '${v}'${i ? ` in ${i}` : ''}`, { verb: v.split(' ')[0] }));
+      const host = checked.doc;
+      const out = documentUncontrolled(host, registry).map(m => problem('controls_missing', `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, { verb: m.verb, use: m.use }));
       const d = directionProblems(host, registry, playContext(checked, registry, logic).make, SEEDS[0]);
       evidence.directions = d.evidence;
       return [...out, ...d.problems.map(p => problem(p.code, p.message))];

@@ -10,7 +10,7 @@
 import { posOf, threats, collectibles, isVulnerable, vitality, hold, applyOption, optionLabels } from '../drive.js';
 import { plotZones } from '../objective.js';
 import { budget as makeBudget } from '../util.js';
-import { multiSeed, problem } from './common.js';
+import { multiSeed, problem, yieldToEncounter } from './common.js';
 import { stepsFrom } from '../../kernel/testing.js';
 
 export const DANGER = 3, MARGIN = 2, FIELD_CAP = 24, FAR = 32767, SAFE_LEAD = 8;
@@ -110,6 +110,7 @@ export default {
       let deaths = 0, hunted = 0, lastHp = vitality(rt).hp, lastLives = vitality(rt).lives, why = '';
       const counts = {};
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
+        if (yieldToEncounter(ctx, rt, ['navigate'], b)) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player(); if (!p) break;
         const api = rt.space(p.space), here = cellIn(api, posOf(rt));
         const hs = threats(rt), sources = [];

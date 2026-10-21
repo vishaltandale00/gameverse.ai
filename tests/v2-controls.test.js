@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { controlsOf, controlledMaker, hostPreflight, ControlsMissing, uncontrolledVerbs } from '../v2/verify/controls.js';
+import { controlsOf, controlledMaker, hostPreflight, ControlsMissing, uncontrolledVerbs, documentUncontrolled } from '../v2/verify/controls.js';
 import { verbInstances, loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
 import { compile, sample } from '../v2/primitives/engine/runtime-lib-input.js';
 import { touchButtons } from '../v2/primitives/engine/input-actions.js';
@@ -38,9 +38,8 @@ test('controls conformance: every loop card × interaction × view: each of its 
 
 test('controls conformance: every template, as the host mounts it, gives a control for every verb its loops declare', () => {
   for (const t of TEMPLATES) {
-    const host = hostDocument(t.doc, registry), verbs = loopVerbs(host, registry);
-    const interactions = [...new Set(verbInstances(host).flatMap(i => cardLoop(registry.get(i.use)?.card)?.interactions || []))];
-    for (const i of interactions.length ? interactions : ['avatar-realtime']) assert.deepEqual(uncontrolled(host, verbs, i), [], `${t.id} × ${i}`);
+    const host = hostDocument(t.doc, registry);
+    assert.deepEqual(documentUncontrolled(host, registry), [], t.id);
     assert.ok(hostPreflight(t.doc, registry, logic).ok, `${t.id}: the host document preflights`);
   }
 });

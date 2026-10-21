@@ -48,7 +48,9 @@ const GOAL_FIELDS = {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['select_stage', 'next_stage'], progress: ['stage_clear', 'sequence_complete'] },
+    // select_stage exists when the instance allows choosing (select); next_stage skips an intro or a clear screen, so it
+    // exists only when the stages have one (runtime-lib-controls.js instanceVerbs).
+    loop: { verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { select_stage: { type: 'choice', of: 'a stage' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

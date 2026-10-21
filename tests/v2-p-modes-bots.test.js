@@ -287,3 +287,29 @@ test('modes: every interaction a mode declares is one it is played in here, with
 // The documents played another way than the mode's own one (above): the mode's bot wins them too.
 for (const [loop, ways] of Object.entries(PLAYED_AS)) for (const [interaction, make] of Object.entries(ways))
   test(`mode ${loop} played ${interaction}: its bot reaches the win`, () => { playMode(loop, make); });
+
+// An encounter that moves the player into a space an outer loop's bot cannot act in (a battle screen with no
+// positions) is played through its options instead of crashing on the outer loop's geometry (strategies/common.js).
+test('bots: an outer loop\'s bot yields to the encounter the player is in, playing it through the controls', async () => {
+  const { yieldToEncounter } = await import('../v2/verify/strategies/common.js');
+  const ctx = ctxOf(DOCS['creature-battle']()), rt = ctx.make(1);
+  assert.equal(yieldToEncounter(ctx, rt, ['navigate']), false, 'on the town grid the outer bot plays');
+  for (let i = 0; i < 600 && !rt.state.prim['gameplay.creature.battle']?.battle; i++) rt.step({});
+  assert.notEqual(ctx.capabilities[rt.player().space]?.includes('navigate'), true, 'the battle holds the player in a space without navigation');
+  let turns = 0;
+  while (rt.state.status === 'playing' && turns < 200 && yieldToEncounter(ctx, rt, ['navigate'])) turns++;
+  assert.equal(rt.state.status, 'won', `the encounter was played to its end (${turns} turns)`);
+});
+
+// Every bot plays every seed it is given: a caller naming seeds [a, b, c] gets one run per seed, in that order (the
+// template contract proves world seeds 1-3; a bot that stops after a first win leaves seeds unplayed).
+test('bots: every mode bot given seeds reports one run per seed', () => {
+  const failures = [];
+  for (const loop of Object.keys(DOCS)) {
+    const ctx = ctxOf(DOCS[loop]()), mine = modesIn(ctx.doc, registry).find(m => m.mode.loop === loop), bot = strategies.get(mine.mode.bot);
+    const r = bot.run(ctx, { ...OPTS[bot.id], budgetMs: 1500, seeds: [1, 2, 3] });
+    const seeds = (r.metrics.runs ?? r.metrics.matches ?? []).map(x => x.seed);
+    if (JSON.stringify(seeds) !== '[1,2,3]') failures.push(`${loop} (${bot.id}): runs for seeds ${JSON.stringify(seeds)}`);
+  }
+  assert.deepEqual(failures, []);
+});

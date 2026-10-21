@@ -4,8 +4,9 @@
 //   card.loop.verbs      the verbs a loop is played with (each needs a control);
 //   card.actionSpace     how a verb's value is given (none: a press; enum: one key per value; an input axis: held;
 //                        choice, or a number or vector that is no input axis: a UI control);
-//   card.controls        on UI primitives: { verbs: [verbs it sends through view.act], choice?: true } (choice: it
-//                        issues every choice verb the document's other mounted UIs do not, from the game's options).
+//   card.controls        on UI primitives: { verbs: [verbs it sends through view.act], choice?: true, options?: true }
+//                        (choice: it issues every choice verb the document's other mounted UIs do not, from the game's
+//                        options; options: it lists the game's options and sends the chosen one's actions whole).
 
 /** Verbs that are 2D input axes (held [x, y] inputs) when a card declares them as vectors or continuous inputs. */
 export const AXIS_VERBS = new Set(['move', 'look', 'drive', 'steer', 'aim']);
@@ -69,13 +70,14 @@ export function loopVerbs(doc, registry) {
  * @param {any} doc @param {any} registry @returns {{ verbs: Map<string, string[]>, choice: string[] }}
  */
 export function uiControls(doc, registry) {
-  const verbs = new Map(), choice = [];
+  const verbs = new Map(), choice = [], options = [];
   for (const g of doc.graphics || []) {
     const c = registry?.get(g.use)?.card?.controls; if (!c) continue;
     for (const v of c.verbs || []) (verbs.get(v) || verbs.set(v, []).get(v)).push(g.use);
     if (c.choice && !choice.includes(g.use)) choice.push(g.use);
+    if (c.options && !options.includes(g.use)) options.push(g.use);
   }
-  return { verbs, choice };
+  return { verbs, choice, options };
 }
 
 /** The loop verbs of a document whose value is a choice (verbControl kind 'choice'), in loop order. */

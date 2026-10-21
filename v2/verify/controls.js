@@ -16,7 +16,8 @@
 import { createWorld } from '../kernel/world.js';
 import { preflight } from '../kernel/document.js';
 import { compile, sample, deviceOf, hostView, AXIS_KEYS } from '../primitives/engine/runtime-lib-input.js';
-import { uiControls, choiceVerbs, verbControl, verbInstances } from '../primitives/engine/runtime-lib-controls.js';
+import { uiControls, choiceVerbs, verbControl, verbInstances, instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
+import { cardLoop } from '../planner/loop.js';
 import { hostDocument } from '../web/host-doc.js';
 
 const INPUT = 'engine.input.actions';
@@ -94,6 +95,8 @@ export function driver(rt, registry) {
     // A UI that issues choices from the game's options (controls.choice) sends an option's whole actions record, so an
     // intent carrying one of its verbs goes to it whole, the press verbs with it, in the record's order.
     const record = Object.entries(intent.actions || {}).filter(([, v]) => v !== undefined && v !== null && v !== false);
+    // A UI that lists the game's options (controls.options: the story's choices) sends one's whole actions record.
+    if (record.length && c.ui.options.length && rt.availableOptions().some(o => same(o.actions, intent.actions))) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
     const viaChoice = record.some(([verb, v]) => { const u = c.uiFor(verb); return u && c.ui.choice.includes(u) && !keysSending(c.map, verb, v).length; });
     if (viaChoice) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
     for (const [verb, v] of Object.entries(intent.actions || {})) {
@@ -164,6 +167,21 @@ export function uncontrolledVerbs(host, registry, verbs, interaction = null) {
       : kind.kind === 'values' ? kind.options.every(o => sends(verb, o)) : kind.kind === 'press' ? sends(verb, true) : false);
     const ui = c.uiFor(verb);
     if (!keyed && !(ui && serves(ui))) out.push(`${verb} (${kind.kind})`);
+  }
+  return out;
+}
+
+/**
+ * Every verb a document's loops are played with that no control issues in the interactions its loop is played in:
+ * for each instance whose card declares a loop, its verbs (instanceVerbs) × the interactions its loop declares (any,
+ * when it declares none). -> [{ use, verb, interaction }]
+ */
+export function documentUncontrolled(host, registry) {
+  const out = [];
+  for (const inst of verbInstances(host)) {
+    const card = registry.get(inst.use)?.card, loop = cardLoop(card), verbs = instanceVerbs(card, inst, host);
+    if (!loop || !verbs.length) continue;
+    for (const i of loop.interactions.length ? loop.interactions : [null]) for (const v of uncontrolledVerbs(host, registry, verbs, i)) out.push({ use: inst.use, verb: v.split(' ')[0], kind: v, interaction: i });
   }
   return out;
 }

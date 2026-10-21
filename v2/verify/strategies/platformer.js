@@ -13,7 +13,7 @@ import { hold, posOf, threats, vitality } from '../drive.js';
 import { budget as makeBudget, stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { navOptions } from '../movement.js';
-import { multiSeed, problem } from './common.js';
+import { multiSeed, problem, yieldToEncounter } from './common.js';
 
 const LOOP = 'platformer';
 
@@ -92,6 +92,7 @@ export default {
       };
       let shrink = 0, failures = 0, plan = null;
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
+        if (yieldToEncounter(ctx, rt, ['position', 'gravity', 'pathfind'], b)) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player();
         if (!p || p.components.health?.dead || !grounded(p)) { step({}, 1); continue; }
         const goal = goalOf(p);
