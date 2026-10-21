@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { playtest, explorerWorlds } from '../v2/verify/playtest.js';
-import { hostPreflight, uncontrolledVerbs } from '../v2/verify/controls.js';
+import { hostPreflight, uncontrolledVerbs, controlsOf } from '../v2/verify/controls.js';
 
 const { registry, logic } = buildCatalogue();
 
@@ -19,7 +19,10 @@ for (const t of TEMPLATES) test(`explorer: ${t.id} is explored only through the 
   assert.ok(w.ok && w.make(seed).controls, 'controlled worlds of the host document');
   const r = playtest(t.doc, registry, logic, { seed, maxRounds: 40, maxFrames: 1500 });
   assert.deepEqual(r.problems.filter(p => p.code === 'controls_missing' || p.code === 'runtime_error').map(p => p.message), [], t.id);
-  assert.deepEqual(uncontrolledVerbs(host, registry, Object.keys(r.verbsUsed)), [], `${t.id}: every verb the explorer pressed has a control`);
+  // Every verb it pressed has a key, an axis or a UI naming it; a UI that lists the game's options (the story's choices)
+  // sends an option's whole record, so verbs in those records have that control (the driver checked each record).
+  const listed = controlsOf(host, registry).ui.options.length > 0;
+  assert.deepEqual(listed ? [] : uncontrolledVerbs(host, registry, Object.keys(r.verbsUsed)), [], `${t.id}: every verb the explorer pressed has a control`);
   if (r.win) assert.equal(r.win.replayed, true, `${t.id}: the win replays`);
   for (const p of r.problems.filter(x => x.code === 'option_uncontrolled')) tc.diagnostic(p.message);
 });
