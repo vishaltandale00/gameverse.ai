@@ -40,7 +40,11 @@ import { isObj, isList, list, strings, obj as asObject, prop } from '../kernel/g
 /** Component slots: the archetype components schema and each component's codec. @typedef {{ schema: ObjectSchema, codecs: Record<string, Codec> }} ComponentSlots */
 /**
  * The outline form: the strict schema, the converter of a filled form (model output) into a draft document, and what it was built from.
- * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], version: string }} OutlineForm
+ * @typedef {{ schema: ReplySchema, toDoc: (form: unknown) => Record<string, unknown>, contracts: MergedContract[], systems: string[], sections: string[], groups: FormGroup[], version: string }} OutlineForm
+ */
+/**
+ * One small part of the form, asked for on its own (in parallel with the others; `wave` 2 waits for wave 1's ids).
+ * @typedef {{ id: string, keys: string[], wave: number, schema: ReplySchema }} FormGroup
  */
 
 export const FORM_VERSION = 'outline-form/0.1';
@@ -231,7 +235,31 @@ export function outlineForm({ registry, skeleton, selection = null }) {
 
   const schema = { name: 'game_outline', schema: obj(props) };
   const toDoc = (/** @type {unknown} */ form) => formToDoc(form, { registry, skeleton, systems, sysCodecs, comps, sections, spawner, layout, sectionCodecs });
-  return { schema, toDoc, contracts, systems, sections, version: FORM_VERSION };
+  return { schema, toDoc, contracts, systems, sections, groups: formGroups(props), version: FORM_VERSION };
+}
+
+// The small forms the outline is asked in: each a strict schema of a few top-level slots. The world frame, the
+// primitives' params, the cast (archetypes, their spawns, items, characters) and each content section are
+// independent (wave 1, in parallel); the story refers to the cast and places (wave 2).
+const GROUPS = [
+  { id: 'frame', keys: ['title', 'logline', 'premise', 'spaces', 'player', 'endings'], wave: 1 },
+  { id: 'systems', keys: ['systems', 'extra_systems'], wave: 1 },
+  { id: 'cast', keys: ['archetypes', 'spawns', 'items', 'characters'], wave: 1 },
+  { id: 'story', keys: ['acts', 'dialogue', 'quests'], wave: 2 },
+];
+/** The form split into small strict forms (sections get one each). @param {Record<string, JsonSchema>} props @returns {FormGroup[]} */
+export function formGroups(props) {
+  /** @type {FormGroup[]} */
+  const out = [];
+  const pick = (/** @type {string[]} */ keys) => Object.fromEntries(keys.filter(k => props[k]).map(k => [k, props[k]]));
+  for (const g of GROUPS) { const p = pick(g.keys); if (Object.keys(p).length) out.push({ id: g.id, keys: Object.keys(p), wave: g.wave, schema: { name: `game_outline_${g.id}`, schema: obj(p) } }); }
+  for (const k of Object.keys(props)) if (k.startsWith('section_')) out.push({ id: k, keys: [k], wave: 1, schema: { name: `game_outline_${k}`.slice(0, 64), schema: obj({ [k]: props[k] }) } });
+  return out;
+}
+/** The group a form path belongs to (its top-level slot), or null. @param {FormGroup[]} groups @param {string} path */
+export function groupOfPath(groups, path) {
+  const top = String(path || '').split(/[.[]/)[0];
+  return groups.find(g => g.keys.includes(top)) || null;
 }
 
 /** A primitive id as a form property name (strict schemas want plain names: dots become double underscores). @param {string} id */

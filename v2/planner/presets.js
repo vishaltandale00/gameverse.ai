@@ -21,6 +21,7 @@ import { vocabIndex } from './select.js';
 import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld } from './world.js';
 import { modeOf, isAvatar, STORY } from './modes.js';
+import { engageDocument } from './engage.js';
 import { isList, isObj, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -170,6 +171,29 @@ function wire(inst, registry, spec, ending) {
 }
 
 /**
+ * Content packs (card.pack): mechanically valid default content the installed primitives ship, put where the document
+ * has none (a list section that already has entries only gets the pack entries whose ids it lacks, e.g. a ball item).
+ * The model themes it later. Mutates `doc`; returns the sections filled.
+ * @param {any} doc @param {RegistryLike} registry @returns {string[]}
+ */
+export function applyPacks(doc, registry) {
+  /** @type {string[]} */
+  const filled = [];
+  for (const inst of doc.systems || []) {
+    const pack = /** @type {Record<string, unknown> | undefined} */ (registry.get(inst?.use)?.card.pack);
+    for (const [path, value] of Object.entries(pack || {})) {
+      const [root, key] = path.split('.');
+      if (!['plot', 'content'].includes(root) || !key) continue;
+      doc[root] = isObj(doc[root]) ? doc[root] : {};
+      const cur = doc[root][key];
+      if (cur === undefined || (Array.isArray(cur) && !cur.length) || (isObj(cur) && !Object.keys(cur).length)) { doc[root][key] = structuredClone(value); filled.push(path); }
+      else if (Array.isArray(cur) && Array.isArray(value)) { const have = new Set(cur.map(x => prop(x, 'id'))); const add = value.filter(x => !have.has(prop(x, 'id'))); if (add.length && path === 'content.items') { cur.push(...structuredClone(add)); filled.push(path); } }
+    }
+  }
+  return filled;
+}
+
+/**
  * Re-apply the play spec's loop wiring to a document (a model draft may have rewritten the params the preset wired):
  * the mode applies, and its win/lose end the game. Idempotent; the input is not modified. -> { doc, wired }
  * @param {any} input @param {Decomposition} decomposition @param {RegistryLike} registry
@@ -314,8 +338,13 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   }
   const primaryShape = /** @type {ZoneShape} */ (primary._shape);
   for (const s of spaces) delete s._shape;
+  // Primitives no space of this structure can host (the mode's space replaced the selection's) leave, reported: they
+  // were the selection's guesses for this space, not the loop (the mode's own primitives are kept whatever they need).
+  const loopIds = new Set([st.mode?.use, st.mode?.via, ...st.secondary.map(x => x.entry.use)].filter(Boolean));
+  const hosted = (/** @type {string} */ id) => { const need = registry.get(id)?.card.requires?.capabilities || []; const bound = selection.bind[id]; return selSpaces.some(sp => (!bound || sp.id === bound || !selSpaces.some(x => x.id === bound)) && need.every(c => sp.caps.includes(c))); };
+  for (const id of [...st.systems]) if (!loopIds.has(id) && !hosted(id)) { st.systems = st.systems.filter(x => x !== id); st.removed.push({ use: id, why: `needs ${(registry.get(id)?.card.requires?.capabilities || []).join(', ')}, which no space of this game provides` }); }
   /** @type {SystemInstance[]} */
-  const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] ? { space: selection.bind[id] } : {}) }));
+  const systems = st.systems.map(id => ({ use: id, ...(selection.bind[id] && selSpaces.some(sp => sp.id === selection.bind[id]) ? { space: selection.bind[id] } : {}) }));
   // The mode applies (its config matches), nested modes point at their space, and the core loop's win/lose end the game.
   /** @type {Array<{ id: string, title: string, text: string, outcome: string, when?: Record<string, unknown> }>} */
   const endings = [];
@@ -352,13 +381,18 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
     player: { archetype: playerArch.id, space: primary.id, ...(at !== null && at !== undefined ? { at } : {}) },
   };
   if (!doc.graphics.length) delete doc.graphics;
+  const packed = applyPacks(doc, registry);
   // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
   const scaffolded = configureGenerators(doc, registry);
   const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
-  const repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true, protect: coreOf({ ...selection, systems: st.systems, mode: st.mode }, registry) });
+  const keep = coreOf({ ...selection, systems: st.systems, mode: st.mode }, registry);
+  let repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true, protect: keep });
+  // Engagement fills what a mode needs from the content (a starting deck from the cards, sides from the units): when the
+  // draft only fails for that, engage it and repair again.
+  if (!repaired.ok) { const engaged = engageDocument(/** @type {any} */ (repaired.doc), registry, logic, { force: true }); if (engaged.applied.length) repaired = repairDocument(engaged.doc, { registry, logic, fallbackSpace, isolate: true, protect: keep }); }
   // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
   const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
-  const structure = { version: PRESETS_VERSION, mode: st.mode?.id || (decomposition.core ? STORY : null), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed, endings: endings.map(e => e.id), nested: nested.map(n => n.space) };
+  const structure = { version: PRESETS_VERSION, packs: packed, mode: st.mode?.id || (decomposition.core ? STORY : null), avatar: st.avatar, narrative: st.narrative, zones: st.zones, added: st.added, removed: st.removed, endings: endings.map(e => e.id), nested: nested.map(n => n.space) };
   const rest = { errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems }, structure };
   return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: /** @type {true} */ (true), ...rest } : { doc: /** @type {unknown} */ (repaired.doc), ok: /** @type {false} */ (false), ...rest };
 }

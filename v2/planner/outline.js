@@ -12,7 +12,7 @@ import { random, seedFrom } from '../kernel/rng.js';
 import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
-import { outlineForm, formPath } from './outline-form.js';
+import { outlineForm, formPath, groupOfPath } from './outline-form.js';
 import { preset, coreOf, zoneStart, wireCore } from './presets.js';
 import { isAvatar, modeOf } from './modes.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
@@ -253,10 +253,10 @@ const isDocShape = x => isObj(x) && (Array.isArray(x.spaces) || x.schema === DOC
  * offline mode. Primitives of core mechanics are never isolated.
  * @param {{ writer?: Writer | null, prompt: string, answers?: Array<{ question?: unknown, answer?: unknown }>, decomposition: Decomposition, selection: Selection,
  *   registry: RegistryLike, logic: LogicLike, seed: number, maxRounds?: number, verify?: boolean, verifyBudgetMs?: number, playtestMs?: number,
- *   protect?: Set<string> | null }} args
+ *   protect?: Set<string> | null, forms?: 'split' | 'single', escalate?: Writer | null }} args
  * @returns {Promise<OutlineResult>}
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null }) {
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200, playtestMs = 1500, protect = null, forms = 'split', escalate = null }) {
   // The core: mechanics' gameplay/plot primitives and the play spec's mode (and the primitive its params live on).
   const keep = protect || coreOf({ ...selection, mode: decomposition.core ? modeOf(registry, decomposition.core.mode) : null }, registry);
   /** @param {Doc} doc @returns {Promise<Gate & { problems: VerifyProblem[], v: Verification }>} */
@@ -295,24 +295,78 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   let best = null;
   /** @type {ProblemLike[] | null} */
   let lastProblems = null;
+  // Small forms (forms 'split'): every group is its own short strict call, all of a wave in parallel; a repair round
+  // re-asks only the groups its problems point at, with only those problems. A group the spec model fails twice is
+  // retried once on the escalation writer (effort low). forms 'single' asks the whole form in one call.
+  /** @type {Record<string, unknown>} */
+  let merged = {};
+  /** @type {Record<string, number>} */
+  const failures = {};
+  /** @type {Array<{ group: string, ms: number, model: string | null, escalated?: boolean, error?: string }>} */
+  let calls = [];
+  const groups = forms === 'split' ? form.groups : [];
+  /** Ids the other parts use, so a small form keeps references consistent. */
+  const known = () => JSON.stringify({ zones: list(prop(merged, 'spaces')).length ? null : undefined, archetypes: list(prop(merged, 'archetypes')).map(a => prop(a, 'id')), items: list(prop(merged, 'items')).map(a => prop(a, 'id')), characters: list(prop(merged, 'characters')).map(a => prop(a, 'id')),
+    zonesByScaffold: scaffold.spaces.map(sp => ({ space: sp.id, zones: (sp.zones || []).map(z => z.id) })) });
+  /** @param {import('./outline-form.js').FormGroup} g @param {ProblemLike[]} problems */
+  const askGroup = async (g, problems) => {
+    const t0 = performance.now();
+    const w = (failures[g.id] || 0) >= 2 && escalate ? escalate : writer;
+    const current = Object.fromEntries(g.keys.map(k => [k, prop(merged, k)]).filter(([, v]) => v !== undefined));
+    // Sections a content pack already fills: the model themes them (names, flavour, which ones), keeping the numbers valid.
+    const pack = g.keys.filter(k => k.startsWith('section_')).map(k => { const [root, key] = k.slice(8).split('_'); return prop(prop(scaffold, root), key); }).find(v => v !== undefined);
+    const ask = `${base}
+
+Fill ONLY this part of the outline now: ${g.keys.join(', ')} (other parts are written separately; keep zone ids from the scaffold and use these ids where you refer to other parts: ${known()}).${pack !== undefined ? `\nA mechanically valid default is provided; keep its ids and numbers valid, theme its names and flavour to the idea, and add or drop entries only as the idea needs:\n${JSON.stringify(pack).slice(0, 6000)}` : ''}${problems.length ? `\n\nYour previous answer for this part failed checks (fix each one):\n${describeProblems(problems, null)}\nPrevious answer:\n${JSON.stringify(current).slice(0, 12000)}` : ''}`;
+    try {
+      const reply = await /** @type {Writer} */ (w).complete({ system, user: ask, schema: g.schema, ...(w === escalate ? { effort: 'low' } : {}) });
+      const part = parseReply(reply.text);
+      model = reply.model;
+      if (isObj(part)) for (const k of g.keys) if (part[k] !== undefined) merged[k] = part[k];
+      calls.push({ group: g.id, ms: reply.ms ?? Math.round(performance.now() - t0), model: reply.model || null, ...(w === escalate ? { escalated: true } : {}) });
+      return { ok: true, value: part };
+    } catch (error) {
+      calls.push({ group: g.id, ms: Math.round(performance.now() - t0), model: null, error: String(prop(error, 'message') || error).slice(0, 120) });
+      return { ok: false, error };
+    }
+  };
+  /** @type {Map<string, ProblemLike[]>} */
+  let pending = new Map();
   for (let round = 0; round <= maxRounds; round++) {
     /** @type {unknown} */
     let value;
     const t = performance.now();
-    try {
-      const reply = await writer.complete({ system, user, schema: form.schema });
-      modelMs += reply.ms ?? Math.round(performance.now() - t); model = reply.model;
-      value = parseReply(reply.text);
-    } catch (error) {
-      const message = String(prop(error, 'message') || error), code = prop(error, 'code');
-      rounds.push({ kind: round ? 'model_repair' : 'model', ok: false, error: message.slice(0, 160), ms: Math.round(performance.now() - t) });
-      lastProblems = [{ code: typeof code === 'string' && code ? code : 'model_failed', path: '$', message: message.slice(0, 200) }];
-      if (code !== 'model_output_not_json') break;
-      user = `${base}\n\nYour previous reply was not one JSON object (${message.slice(0, 120)}). Reply with the form as one JSON object.`;
-      continue;
+    calls = [];
+    if (groups.length) {
+      // Round 0 asks every group (wave 1 in parallel, then wave 2); later rounds only the groups with problems.
+      const todo = round === 0 ? groups : groups.filter(g => pending.has(g.id));
+      for (const wave of [1, 2]) await Promise.all(todo.filter(g => g.wave === wave).map(g => askGroup(g, pending.get(g.id) || [])));
+      const ms = calls.reduce((m, c) => Math.max(m, c.ms), 0);
+      modelMs += ms;
+      // A writer that answers with a whole document (older prompts and fakes) is a draft as is.
+      const docShaped = calls.length && isDocShape(merged) ? merged : null;
+      if (!calls.some(c => !c.error) && round === 0) {
+        rounds.push({ kind: 'model', ok: false, error: calls[0]?.error || 'no answer', ms: Math.round(performance.now() - t) });
+        lastProblems = [{ code: 'model_failed', path: '$', message: String(calls[0]?.error || 'no answer') }];
+        break;
+      }
+      value = docShaped || merged;
+    } else {
+      try {
+        const reply = await writer.complete({ system, user, schema: form.schema });
+        modelMs += reply.ms ?? Math.round(performance.now() - t); model = reply.model;
+        value = parseReply(reply.text);
+      } catch (error) {
+        const message = String(prop(error, 'message') || error), code = prop(error, 'code');
+        rounds.push({ kind: round ? 'model_repair' : 'model', ok: false, error: message.slice(0, 160), ms: Math.round(performance.now() - t) });
+        lastProblems = [{ code: typeof code === 'string' && code ? code : 'model_failed', path: '$', message: message.slice(0, 200) }];
+        if (code !== 'model_output_not_json') break;
+        user = `${base}\n\nYour previous reply was not one JSON object (${message.slice(0, 120)}). Reply with the form as one JSON object.`;
+        continue;
+      }
     }
     // A reply in the document's own shape (older prompts, some writers) is a draft as is; otherwise it is the form.
-    const draft = isDocShape(value) ? value : form.toDoc(value);
+    const draft = isDocShape(value) ? structuredClone(value) : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
     keepPlayer(draft, skeleton.doc);
     // The core loop's wiring is code's: whatever the model wrote, the mode applies and its win/lose end the game.
@@ -349,7 +403,7 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     const fixes = repaired.fixes.length;
     if (firstPassOk === null) firstPassOk = repaired.ok && fixes === 0;
     /** @type {OutlineRound} */
-    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
+    const entry = { kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes, form: !isDocShape(value), ...(calls.length ? { groups: calls.map(c => `${c.group}${c.escalated ? '*' : ''}:${c.error ? 'error' : c.ms}`) } : {}), ...(worldAdded.length ? { worldAdded } : {}), ...(placed.length ? { placed: placed.length } : {}), ms: Math.round(performance.now() - t) };
     rounds.push(entry);
     last = repaired;
     /** @type {ProblemLike[]} */
@@ -380,6 +434,17 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     } else problems = [...repaired.errors, ...populateProblems(repaired.doc, registry).slice(0, 8)];
     lastProblems = problems;
     if (round === maxRounds) break;
+    if (groups.length) {
+      // Field-level repair: each problem goes to the small form that owns its slot; unplaced problems to the cast and params.
+      pending = new Map();
+      for (const pr of problems) {
+        const g = groupOfPath(groups, formPath(pr.path || '', repaired.doc)) || null;
+        const ids = g ? [g.id] : ['cast', 'systems'];
+        for (const id of ids) if (groups.some(x => x.id === id)) pending.set(id, [...(pending.get(id) || []), pr]);
+      }
+      for (const id of pending.keys()) failures[id] = (failures[id] || 0) + 1;
+      continue;
+    }
     user = `${base}
 
 Your previous outline failed ${repaired.ok ? (entry.viable === false ? 'verification' : 'the content and plot checks') : 'preflight'} with these problems (stable codes; fix each one in the form):

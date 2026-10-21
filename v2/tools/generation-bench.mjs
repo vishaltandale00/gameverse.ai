@@ -113,7 +113,8 @@ export async function playReport(doc, registry, logic, { playtestMs = 3000, budg
 export function avatarFit(decomposition, doc, registry, expected = null) {
   // The bench's own expectation for the idea when it has one, else what the play spec says.
   const want = typeof expected === 'boolean' ? expected : decomposition?.core ? isAvatar(decomposition.core.interaction) : null;
-  const moves = (doc.systems || []).some(s => registry.get(s.use)?.card.locomotion === 'base' || registry.get(s.use)?.card.engage?.player?.spawn);
+  const places = (doc.spaces || []).some(s => (s.zones || []).some(z => Array.isArray(z.exits) && z.exits.length) && s.id === (doc.player?.space ?? doc.spaces[0]?.id));
+  const moves = places || (doc.systems || []).some(s => registry.get(s.use)?.card.locomotion === 'base' || registry.get(s.use)?.card.engage?.player?.spawn);
   return { want, has: moves, ok: want === null ? null : want === moves };
 }
 
@@ -213,7 +214,7 @@ export function row(g) {
   return [g.id, 'ok', `mode ${g.core?.mode || '-'}/${g.core?.interaction || '-'}`, `kind/view ${g.kindView?.ok ? 'kept' : `LOST (${(g.kindView?.problems || []).join('; ')})`}`,
     `avatar ${g.avatar?.ok === null ? '-' : g.avatar?.ok ? 'fits' : g.avatar?.has ? 'UNNEEDED' : 'MISSING'}`, `core ${g.coverage ? `${g.coverage.covered} covered, ${g.coverage.gapped} gapped${g.coverage.dropped.length ? `, DROPPED ${g.coverage.dropped.join(',')}` : ''}` : '-'}`, `arch ${c.archetypesReal}/${c.archetypes} real, ${c.archetypesPlaced} placed`, `spawns ${c.spawnRulesNonPlayer}+${c.spawnEffects}fx`, `rt ents ${c.runtime?.entities ?? '-'}`, `items ${c.items}`, `chars ${c.characters}`,
     `quests ${c.questsRead}/${c.quests}`, `dlg ${c.dialogueRead}/${c.dialogue}`, `zones ${c.zonesDistinct}/${c.zones} distinct`, `play: ${p.crashes ? `CRASH ${p.crashCodes.join(',')}` : 'no crash'}, explored ${p.explored}, completed ${p.completed === undefined ? (p.ending ? 'yes' : 'no') : p.completed ? `yes (${p.by}${p.trace != null ? `, trace ${p.trace}` : ''})` : 'no'}`,
-    `total ${Math.round((g.timings?.totalMs ?? g.ms) / 1000)}s`].join(' | ');
+    `playable ${g.timings?.requestToFirstPlayableMs != null ? `${(g.timings.requestToFirstPlayableMs / 1000).toFixed(1)}s` : '-'}${g.timings?.requestToThemedMs != null ? `, themed ${(g.timings.requestToThemedMs / 1000).toFixed(1)}s` : ''}, total ${Math.round((g.timings?.totalMs ?? g.ms) / 1000)}s`].join(' | ');
 }
 
 /**

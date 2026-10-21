@@ -85,7 +85,7 @@ test('when the thrower cannot be removed (the space), the error names it, says i
   const selection = await selectPrimitives({ decomposition: d, registry });
   const good = doc([], []);
   const writer = fakeWriter([doc([], [], 'engine.space.boom'), good]);
-  const o = await writeOutline({ writer, prompt: 'a glass house', decomposition: d, selection, registry, logic, seed: 1, maxRounds: 1, verify: false });
+  const o = await writeOutline({ forms: 'single', writer, prompt: 'a glass house', decomposition: d, selection, registry, logic, seed: 1, maxRounds: 1, verify: false });
   assert.equal(writer.calls.length, 2);
   assert.match(writer.calls[1].user, /\[install_threw\] spaces\[0\]: 'engine\.space\.boom' threw while installing: kaboom/);
   assert.ok(o.ok && o.source === 'fake-writer');

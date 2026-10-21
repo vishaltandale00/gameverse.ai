@@ -506,6 +506,8 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           break;
         }
         case 'predicate_invalid': removals.push(keys); fix('removed invalid predicate'); break;
+        // A malformed effect inside story or dialogue data (a missing target): the effect goes, the beat or line stays.
+        case 'effect_invalid': if (/^plot\./.test(e.path) && typeof keys.at(-1) === 'number') { removals.push(keys); fix('removed invalid effect'); } break;
         case 'character_unspawnable': {
           // A character with no body: the body most other characters use (the game's NPC archetype), else no body.
           const c = getAt(doc, keys); if (!isBag(c)) break;

@@ -95,7 +95,7 @@ test('outline → first playable for the stored platformer: selection adds a gen
   // The model returns the stored document (no generator, and in a second variant no player at all).
   for (const draft of [stored(), Object.fromEntries(Object.entries(stored()).filter(([k]) => k !== 'player'))]) {
     const writer = fakeWriter([draft]);
-    const o = await writeOutline({ writer, prompt: 'A platformer where you climb a tower built from falling Tetris pieces', decomposition: d, selection, registry, logic, seed: 11, maxRounds: 1, verify: false });
+    const o = await writeOutline({ forms: 'single', writer, prompt: 'A platformer where you climb a tower built from falling Tetris pieces', decomposition: d, selection, registry, logic, seed: 11, maxRounds: 1, verify: false });
     assert.ok(o.ok && o.source === 'fake-writer', JSON.stringify(o.rounds));
     assert.deepEqual(o.doc.spaces[0].generators.map(g => g.use), ['engine.generate.tilemap.rooms']);
     assert.ok(o.rounds.some(r => r.worldAdded?.includes('engine.generate.tilemap.rooms')));
@@ -168,7 +168,7 @@ test('the outline keeps a model draft with a blocked board playable, and a skele
   const mapping = { mappings: [{ mechanic: 'm0', primitives: ['gameplay.falling.pieces'], covered: true, why: '' }, { mechanic: 'm1', primitives: ['gameplay.move.platformer', 'engine.space.tilemap'], covered: true, why: '' }] };
   const selection = await selectPrimitives({ decomposition: d, registry, writer: fakeWriter([mapping]) });
   const SEED = 1309811577; // with this seed the draft's rooms block the board (previous test)
-  const o = await writeOutline({ writer: fakeWriter([tetrisTower()]), prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: SEED, maxRounds: 1, verify: false });
+  const o = await writeOutline({ forms: 'single', writer: fakeWriter([tetrisTower()]), prompt: 'climb a tower of falling pieces', decomposition: d, selection, registry, logic, seed: SEED, maxRounds: 1, verify: false });
   assert.ok(o.ok && o.source === 'fake-writer', JSON.stringify(o.rounds));
   assert.deepEqual(o.doc.spaces[0].generators[0].with.keepClear, [[0, 0, 10, 20]]);
   assert.ok(firstPlayable(o.doc, registry, logic, { seed: SEED }).ok);

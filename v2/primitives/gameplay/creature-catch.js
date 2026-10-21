@@ -22,6 +22,8 @@ export default {
     },
     provides: { events: ['capture_thrown', 'capture_shake', 'caught', 'caught:*', 'capture_failed'], services: ['capture'] },
     requires: { primitives: ['gameplay.creature.party'] },
+    // Content pack: mechanically valid default content the planner starts from (the model themes it).
+    pack: { 'content.items': [{ id: 'capture_orb', name: 'Capture Orb', kind: 'misc', creature: { kind: 'ball', value: 1 } }] },
     reads: ['content.items'],
   },
   logic(logic) {

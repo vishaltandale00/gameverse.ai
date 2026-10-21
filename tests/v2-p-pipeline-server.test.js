@@ -25,7 +25,7 @@ function memoryCtx() {
 function scriptedModel() {
   return fakeWriter([(req) => {
     if (req.schema?.name === 'decomposition') return JSON.stringify({ title: 'Lamp of the Drowned', premise: 'A keeper lost the lamp. Find it.', tone: 'salt and fog', references: [{ name: 'a lighthouse mystery', kind: 'genre', keeps: ['clues'] }], mechanics: [{ id: 'collect', verb: 'collect', description: 'find and collect items', from: '', importance: 'core' }, { id: 'tides', verb: 'flood', description: 'tides flood the lower rooms on a timer', from: '', importance: 'core' }], spaces: [{ role: 'lighthouse', kind: 'locations', description: '' }], views: ['text'], acts: 2, zones: 4 });
-    if (req.schema?.name === 'game_outline') {
+    if (String(req.schema?.name || '').startsWith('game_outline')) {
       // The outline form: the scaffold's zones, named; params, story and endings left to the scaffold's defaults.
       const scaffold = JSON.parse(req.user.split('not the game):\n')[1].split('\n\nWrite the outline')[0]);
       const spaces = Object.fromEntries(scaffold.spaces.map(s => [s.id, { zones: s.zones.map(z => ({ id: z.id, name: z.id.replace(/_/g, ' '), description: `the ${z.id}`, exits: (z.exits || []).map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) })) }]));
@@ -46,14 +46,19 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   const pipeline = createKernelPipeline({ catalogue: async () => base, writers: { spec }, decisions: null });
   const { ctx, versions, stages } = memoryCtx();
   const out = await pipeline({ gameId: 'g', prompt: 'a lighthouse mystery with tides', kind: 'create', seed: 5 }, ctx);
+  // The preset publishes first (code only, no model call), then the themed outline replaces it.
   assert.equal(versions[0].stage, 'first_playable');
-  assert.equal(versions[0].doc.title, 'Lamp of the Drowned');
-  assert.equal(versions[0].report.outline.source, 'fake-writer');
-  assert.ok(versions[0].report.timings.firstPlayableBuildMs < 1000);
-  for (const m of versions[0].report.selection.mechanics) assert.ok(m.primitives.length || versions[0].report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
+  assert.equal(versions[0].report.outline.source, 'preset');
+  const themed = versions.find(v => v.stage === 'themed');
+  assert.ok(themed, versions.map(v => v.stage).join(' '));
+  assert.equal(themed.doc.title, 'Lamp of the Drowned');
+  assert.equal(themed.report.outline.source, 'fake-writer');
+  assert.ok(themed.report.timings.firstPlayableBuildMs < 1000);
+  assert.ok(out.timings.requestToFirstPlayableMs <= out.timings.requestToThemedMs, 'the preset is playable before the themed outline');
+  for (const m of themed.report.selection.mechanics) assert.ok(m.primitives.length || themed.report.gaps.some(g => g.mechanic === m.id), `${m.id} is either mapped or reported as a gap, never faked`);
   assert.ok(out.detail.accepted >= 1 && out.detail.proposed >= out.detail.accepted);
-  assert.ok(versions.slice(1).every(v => v.stage.startsWith('detail:') && v.report.added));
-  for (const k of ['decomposeMs', 'selectMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
+  assert.ok(versions.slice(versions.indexOf(themed) + 1).every(v => v.stage.startsWith('detail:') && v.report.added));
+  for (const k of ['decomposeMs', 'selectMs', 'presetMs', 'outlineMs', 'firstPlayableBuildMs', 'requestToFirstPlayableMs', 'requestToThemedMs', 'totalMs']) assert.equal(typeof out.timings[k], 'number', k);
   assert.ok(stages.some(s => s.name === 'complete'));
   // Revise: a parameter tweak takes no model call; a content change goes to the model as targeted ops.
   const calls = spec.calls.length;

@@ -59,7 +59,7 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   draft.title = 'The Drowned Lamp';
   draft.systems.find(s => s.use === 'gameplay.inventory').with = { slots: 99999, sparkle: true };
   const writer = fakeWriter([draft]);
-  const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
+  const r = await writeOutline({ forms: 'single', writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
   assert.ok(r.ok);
   assert.equal(r.doc.title, 'The Drowned Lamp');
   assert.equal(r.firstPassOk, false, 'it needed repair');
@@ -71,7 +71,7 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   const p = testCatalogue([picky]);
   const needsModel = { ...full(skeleton), title: 'Drowned Lamp', systems: [...skeleton.systems, { use: 'gameplay.test.picky' }] };
   const two = fakeWriter([needsModel, { ...needsModel, title: 'The Drowned Lamp' }]);
-  const m = await writeOutline({ writer: two, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1 });
+  const m = await writeOutline({ forms: 'single', writer: two, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1 });
   assert.ok(m.ok && !m.fellBack);
   assert.equal(two.calls.length, 2);
   assert.match(two.calls[1].user, /\[picky_title\] title: the title must start with "The" \(hint: rename the game\)/, 'the repair round names the stable code, path and hint');
@@ -79,17 +79,17 @@ test('model outline: errors are repaired by code first, then sent back to the mo
   // A model that never validates: bounded rounds, then the (non-core) primitive it can't configure is isolated
   // (a reported gap) and the model's world and story are kept.
   const stubborn = fakeWriter([needsModel]);
-  const f = await writeOutline({ writer: stubborn, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
+  const f = await writeOutline({ forms: 'single', writer: stubborn, prompt: 'idea', decomposition: d, selection: sel, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
   assert.equal(stubborn.calls.length, 2);
   assert.ok(f.ok && f.isolated && f.source === 'fake-writer' && f.doc.title === 'Drowned Lamp');
   assert.deepEqual(f.removed.map(r => r.use), ['gameplay.test.picky']);
   // A primitive of a core mechanic is never isolated: the same stubborn model now fails the job with the reason.
   const core = { ...sel, mechanics: [...sel.mechanics, { id: 'pick', description: 'picky titles', importance: 'core', primitives: ['gameplay.test.picky'] }] };
-  const g = await writeOutline({ writer: fakeWriter([needsModel]), prompt: 'idea', decomposition: d, selection: core, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
+  const g = await writeOutline({ forms: 'single', writer: fakeWriter([needsModel]), prompt: 'idea', decomposition: d, selection: core, registry: p.registry, logic: p.logic, seed: 1, maxRounds: 1 });
   assert.equal(g.ok, false);
   assert.ok(g.errors.some(e => e.code === 'picky_title'), 'the reason is the core primitive\'s own error');
   // No usable draft at all: no substitution with the skeleton; the job fails and says why.
-  const garbage = await writeOutline({ writer: fakeWriter(['no json here']), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, maxRounds: 1 });
+  const garbage = await writeOutline({ forms: 'single', writer: fakeWriter(['no json here']), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, maxRounds: 1 });
   assert.ok(!garbage.ok && !garbage.fellBack);
   assert.ok(garbage.errors.length);
 });
@@ -100,7 +100,7 @@ test('model outline: a hollow draft gets the missing content back as concrete pr
   const hollow = structuredClone(skeleton); hollow.content.items = [];
   const filled = structuredClone(skeleton); filled.content.items = [{ id: 'lantern', name: 'Lantern' }, { id: 'rope', name: 'Rope' }];
   const writer = fakeWriter([hollow, filled]);
-  const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
+  const r = await writeOutline({ forms: 'single', writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
   assert.ok(r.ok);
   assert.equal(writer.calls.length, 2);
   assert.match(writer.calls[1].user, /\[content_(missing|thin)\] content\.items/);
@@ -118,7 +118,7 @@ test('model outline: static plot analysis (plotGraph) and verification problems 
   locked.content.items = [...(locked.content.items || []), { id: 'silver_key', name: 'Silver key' }];
   locked.spaces[0].zones[0].exits.forEach(x => { x.gate = { item: 'silver_key' }; });
   const writer = fakeWriter([locked, skeleton]);
-  const r = await writeOutline({ writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
+  const r = await writeOutline({ forms: 'single', writer, prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1 });
   assert.ok(r.ok && !r.fellBack);
   assert.equal(writer.calls.length, 2);
   assert.match(writer.calls[1].user, /\[item_unobtainable\]/, 'the cause, from plotGraph, reaches the model');
