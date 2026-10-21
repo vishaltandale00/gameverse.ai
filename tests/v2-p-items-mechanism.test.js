@@ -11,12 +11,12 @@ const ms = (rt, id) => rt.state.prim['gameplay.mechanism'].m[id];
 const castle = () => doc({ combat: true,
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact', with: { range: 2 } }, { use: 'gameplay.loot' }, { use: 'gameplay.mechanism', with: { mechanisms: [
     { id: 'lever', kind: 'lever', at: [2, 1, 0], signal: 'bridge', prompt: 'Pull', entity: true },
-    { id: 'door', kind: 'door', at: [5, 1, 0], size: [1, 2, 1], cells: true, block: 'stone', opens: ['bridge'] },
+    { id: 'door', kind: 'door', at: [5, 1, 0], size: [1, 2, 1], cells: { from: 'box' }, block: 'stone', opens: ['bridge'] },
     { id: 'plate', kind: 'plate', at: [8, 1, 0], signal: 'pressed', sec: 0.5 },
-    { id: 'portcullis', kind: 'gate', at: [10, 1, 0], size: [1, 3, 1], cells: true, block: 'stone', opens: ['pressed'], gate: { flag: 'power_on' } },
-    { id: 'crate', kind: 'breakable', at: [12, 1, 0], hits: 3, loot: 'crate_loot', cells: true, block: 'stone' },
+    { id: 'portcullis', kind: 'gate', at: [10, 1, 0], size: [1, 3, 1], cells: { from: 'box' }, block: 'stone', opens: ['pressed'], gate: { flag: 'power_on' } },
+    { id: 'crate', kind: 'breakable', at: [12, 1, 0], hits: 3, loot: 'crate_loot', cells: { from: 'box' }, block: 'stone' },
     { id: 'vault', kind: 'door', at: [14, 1, 0], hits: 2, hitsWith: { bomb: 2 }, prompt: 'Breach', entity: true },
-    { id: 'bunker', kind: 'breakable', at: [16, 4, 0], size: [12, 7, 1], preset: 'bunker', cells: 'pattern', block: 'stone', blast: 1 },
+    { id: 'bunker', kind: 'breakable', at: [16, 4, 0], size: [12, 7, 1], preset: 'bunker', cells: { from: 'pattern' }, block: 'stone', blast: 1 },
     { id: 'spikes', kind: 'trap', at: [3, 8, 0], damage: 2, sec: 0.2, cooldown: 0.5 },
     { id: 'clock', kind: 'timer', at: [0, 12, 0], sec: 1, signal: 'tick' },
     { id: 'elevator', kind: 'lift', at: [6, 10, 0], size: [2, 1, 1], stops: [[6, 10, 0], [6, 14, 0]], speed: 4, opens: ['tick'] },
@@ -229,6 +229,8 @@ test('mechanism: deterministic replay, bad config codes and game instances', () 
   list.push({ id: 'w', kind: 'gate', at: [1, 1], gate: { quantum: true } });
   bad.content.archetypes.push({ id: 'thing', components: { mechanism: 'nothing' } });
   const c = codes(checkWith(bad));
-  for (const code of ['id_duplicate', 'param_option', 'mechanism_invalid', 'signal_unknown', 'group_unknown', 'predicate_unknown', 'ref_unknown']) assert.ok(c.includes(code), code);
+  // A position that is no vector is param_type (was mechanism_invalid); groups are a kind the card defines, so an unknown
+  // group is ref_unknown (was group_unknown); the flipper without a verb stays mechanism_invalid.
+  for (const code of ['id_duplicate', 'param_option', 'param_type', 'mechanism_invalid', 'signal_unknown', 'predicate_unknown', 'ref_unknown']) assert.ok(c.includes(code), code);
   for (const x of gameInstances('gameplay.mechanism')) assert.deepEqual(x.paramErrors, [], x.game);
 });

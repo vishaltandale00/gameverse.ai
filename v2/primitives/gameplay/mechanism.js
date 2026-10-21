@@ -9,12 +9,13 @@
 // a mechanism listing inputs in `opens` follows them (`logic` any|all, `invert`).
 // Inputs are read from the previous step, so wiring is order-independent and
 // deterministic. Doors and gates can block cells (`cells` + `block`) and are
-// locked while their `gate` predicate (or plot.gate id) fails. Entities whose
+// locked while their `gate` predicate (a plot.gate is { gate: <id> }) fails. Entities whose
 // `mechanism` component names a mechanism forward interactions to it; `entity`
 // spawns such an entity (with a body box and an interact prompt) automatically.
 // Physics toys act on entities with components.body.vel (velocities in space
 // units per second).
 import { compare } from '../../kernel/logic.js';
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { count, take } from './inventory.js';
 import { addScore, runIf, boxAt, boxOf, boxesTouch, center, isVec, v3, add, sub, len, norm, dot, posForMin, whoKey, velocity, setVelocity, testIf } from './items-lib.js';
 
@@ -32,26 +33,31 @@ const SOLID_WHEN = { door: s => !s.active, gate: s => !s.active, breakable: s =>
 export const BUNKER = ['..########..', '.##########.', '############', '############', '####....####', '####....####', '####....####'];
 
 const F = (type, extra = {}) => ({ type, ...extra });
+/** A position or direction in space coordinates. @param {Record<string, unknown>} [extra] */
+const VEC = (extra = {}) => F('list', { of: { type: 'number' }, min: 2, max: 3, ...extra });
 const MECH_FIELDS = {
   id: F('string', { required: true }), kind: F('string', { required: true, options: KINDS }),
-  at: F('json', { required: true, effect: 'box position (space anchor convention)' }), size: F('json', { default: [1, 1, 1] }),
-  space: F('ref', { to: 'space' }), name: F('string'), prompt: F('string', { effect: 'interact prompt for its entity' }),
+  at: VEC({ required: true, effect: 'box position (space anchor convention)' }), size: VEC({ default: [1, 1, 1], effect: 'box size' }),
+  space: F('ref', { to: 'space' }), name: F('string', { display: true, effect: 'the name a person reads' }), prompt: F('string', { display: true, effect: 'interact prompt for its entity' }),
   signal: F('string', { effect: 'signal driven while active' }),
   opens: F('list', { default: [], of: { type: 'string' }, effect: 'inputs: signals or mechanism ids this follows' }),
   logic: F('string', { default: 'any', options: ['any', 'all'] }), invert: F('boolean', { default: false, effect: 'active when the inputs are off (arena doors slam shut)' }),
-  gate: F('json', { effect: 'predicate (or plot.gate id) required to open/use' }),
+  gate: F('predicate', { effect: 'required to open/use ({ gate: <plot.gate id> } for a plot gate)' }),
   hits: F('integer', { default: 0, min: 0, effect: 'hits needed to break/breach (0 = not breakable by hits)' }),
-  hitsWith: F('object', { open: true, fields: {}, effect: 'item id → hits applied when used with that item (consumes one)' }),
+  hitsWith: F('object', { values: { type: 'integer', min: 1 }, effect: 'item id → hits applied when used with that item (consumes one)' }),
   sec: F('number', { default: 0, min: 0, unit: 's', effect: 'lever/plate hold, trap firing time, timer duration, ramp ride time' }),
   cooldown: F('number', { default: 1, min: 0, unit: 's', effect: 'trap re-arm time' }),
   persist: F('boolean', { default: false, effect: 'once activated it stays active' }),
-  cells: F('json', { effect: "cells it occupies in an editCells space: true (its box), [[x,y,z]...], or 'pattern'" }),
+  cells: F('object', { effect: 'cells it occupies in an editCells space', fields: {
+    from: F('string', { required: true, options: ['box', 'pattern', 'list'], effect: 'box: the cells of its box; pattern: the solid cells of its pattern (or preset); list: the cells listed' }),
+    list: F('list', { of: VEC(), min: 1, effect: 'from list: the cells' }),
+  } }),
   block: F('ref', { to: 'block', effect: 'block written to its cells while closed/intact/up' }),
   pattern: F('list', { of: { type: 'string' }, effect: "erodible cell grid rows, top first ('#' solid)" }),
   preset: F('string', { options: ['bunker'], effect: 'built-in pattern' }),
   cellSize: F('number', { default: 1, min: 0.01, effect: 'size of a pattern cell in space units' }),
   blast: F('integer', { default: 0, min: 0, max: 8, effect: 'erosion radius per hit (Manhattan; the square ring beyond erodes with p 0.4)' }),
-  stops: F('json', { effect: 'lift stop positions [[x,y,z]...] (default [at])' }),
+  stops: F('list', { of: VEC(), min: 1, effect: 'lift stop positions (default [at])' }),
   speed: F('number', { default: 2, min: 0, effect: 'lift/moving-platform speed (units/s), flipper swing (1/s)' }),
   axis: F('integer', { default: 0, min: 0, max: 2, effect: 'moving platform axis' }),
   range: F('number', { default: 0, min: 0, effect: 'moving platform half-travel' }),
@@ -61,17 +67,17 @@ const MECH_FIELDS = {
   launch: F('number', { default: 24, min: 0, effect: 'spring launch speed' }),
   kick: F('number', { default: 12.5, min: 0, effect: 'bumper/kicker/flipper impulse speed' }),
   lift: F('number', { default: 0, effect: 'extra upward speed added by kickers' }),
-  normal: F('json', { default: [0, 1, 0], effect: 'kicker/flipper/drop-target face direction' }),
+  normal: VEC({ default: [0, 1, 0], effect: 'kicker/flipper/drop-target face direction' }),
   minSpeed: F('number', { default: 0, min: 0, effect: 'kicker/ramp minimum approach speed' }),
   verb: F('string', { effect: 'flipper/plunger input verb (held)' }),
   charge: F('number', { default: 1.15, min: 0.01, effect: 'plunger charge per second (to 1)' }),
-  power: F('json', { default: [10, 14], effect: 'plunger launch speed [base, + per full charge]' }),
-  dir: F('json', { default: [0, 1, 0], effect: 'plunger launch / ramp entry direction' }),
-  path: F('json', { effect: 'ramp waypoints [[x,y,z]...]' }), exit: F('json', { effect: 'ramp exit position' }), exitVel: F('json', { default: [0, 0, 0] }),
+  power: F('list', { of: { type: 'number', min: 0 }, min: 2, max: 2, default: [10, 14], effect: 'plunger launch speed [base, + per full charge]' }),
+  dir: VEC({ default: [0, 1, 0], effect: 'plunger launch / ramp entry direction' }),
+  path: F('list', { of: VEC(), min: 2, effect: 'ramp waypoints' }), exit: VEC({ effect: 'ramp exit position' }), exitVel: VEC({ default: [0, 0, 0], effect: 'velocity leaving the ramp' }),
   comboSec: F('number', { default: 4, min: 0 }),
   points: F('number', { default: 0, effect: 'score on hit/activation' }),
-  group: F('string', { effect: 'rollover/drop-target group' }),
-  by: F('list', { default: [], of: { type: 'string' }, effect: "who presses plates/traps/toys: entity ids or archetypes ([] = player and every body)" }),
+  group: F('ref', { to: 'mechanism_group', effect: 'its groups[] rollover/drop-target bank' }),
+  by: F('list', { default: [], of: { type: 'string', selects: ENTITY_KINDS }, effect: "who presses plates/traps/toys: entity ids or archetypes ([] = player and every body)" }),
   damage: F('number', { default: 0, min: 0, effect: 'trap damage to entities in its box when it fires' }),
   do: F('effects', { default: [], effect: 'effects when it activates (self = the mechanism entity if any)' }),
   undo: F('effects', { default: [], effect: 'effects when it deactivates' }),
@@ -100,7 +106,13 @@ export default {
     provides: { events: ['timer_started', 'mechanism_hit', 'lift_arrived', 'triggered', 'triggered:*', 'opened', 'opened:*', 'closed', 'closed:*', 'broken', 'broken:*', 'deactivated', 'deactivated:*', 'mechanism_denied', 'chip', 'flip', 'bumper', 'kicked', 'launched', 'rollover', 'group_complete', 'group_complete:*', 'ramp', 'ramp_exit', 'ramp_combo', 'sprung', 'landed_on', 'timer_done', 'timer_done:*', 'trap_fired', 'trap_fired:*'], services: ['mechanisms'] },
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
-    defines: [{ kind: 'mechanism', in: 'mechanisms' }],
+    defines: [{ kind: 'mechanism', in: 'mechanisms' }, { kind: 'mechanism_group', in: 'groups' }],
+    components: { mechanism: { type: 'ref', to: 'mechanism', effect: 'the mechanism this entity forwards interactions to' } },
+    rules: {
+      mechanism_invalid: { fields: ['mechanisms[].kind', 'mechanisms[].verb', 'mechanisms[].path', 'mechanisms[].cells', 'mechanisms[].pattern', 'mechanisms[].preset'], message: "flippers and plungers have a verb; a ramp has a path; cells from 'pattern' need a pattern or preset, from 'list' a list; pattern rows are strings of equal length" },
+      signal_unknown: { fields: ['mechanisms[].opens', 'mechanisms[].signal'], message: 'each opens input is a signal some mechanism drives or a mechanism id', example: { doc: { systems: [{ use: 'gameplay.mechanism', with: { mechanisms: [{ id: 'door', kind: 'door', at: [1, 1], opens: ['nobody'] }] } }] } } },
+      mechanism_hits_with: { fields: ['mechanisms[].hitsWith'], message: 'hitsWith keys are content.items ids', example: { doc: { systems: [{ use: 'gameplay.mechanism', with: { mechanisms: [{ id: 'wall', kind: 'breakable', at: [1, 1], hits: 3, hitsWith: { no_such_item: 1 } }] } }] } } },
+    },
   },
   logic(logic) {
     const api = rt => rt.caches.mechanisms;
@@ -117,26 +129,19 @@ export default {
   },
   validate(config, doc, ctx, inst = {}) {
     const W = inst.path ? `${inst.path}.with` : undefined, at = (i, f) => (W ? `${W}.mechanisms[${i}]${f ? `.${f}` : ""}` : undefined);
-    const errors = [], ids = new Set(), sigs = new Set(config.mechanisms.map(m => m.signal).filter(Boolean)), groups = new Set(config.groups.map(g => g.id));
-    for (const m of config.mechanisms) { if (ids.has(m.id)) errors.push({ code: 'id_duplicate', message: `duplicate mechanism '${m.id}'` }); ids.add(m.id); }
-    const vec = v => Array.isArray(v) && v.length >= 2 && v.length <= 3 && v.every(Number.isFinite);
+    // Mechanism and group ids are kinds the card defines, positions and the gate predicate are declared shapes, and an
+    // entity's mechanism component is a reference: the kernel checks those.
+    const errors = [], ids = new Set(config.mechanisms.map(m => m.id)), sigs = new Set(config.mechanisms.map(m => m.signal).filter(Boolean));
     config.mechanisms.forEach((m, i) => {
       const bad = msg => errors.push({ code: 'mechanism_invalid', path: at(i), message: `mechanism '${m.id}': ${msg}` });
-      if (!vec(m.at)) bad('at must be [x,y] or [x,y,z]');
-      if (!vec(m.size)) bad('size must be [w,h] or [w,h,d]');
-      for (const k of ['normal', 'dir', 'exitVel']) if (m[k] !== undefined && !vec(m[k])) bad(`${k} must be a vector`);
       for (const inp of m.opens) if (!sigs.has(inp) && !ids.has(inp)) errors.push({ code: 'signal_unknown', path: at(i, 'opens'), message: `mechanism '${m.id}' listens to '${inp}', which no mechanism drives`, hint: [...sigs, ...ids].join(', ') });
-      if (m.gate !== undefined) ctx.checkPredicate(typeof m.gate === 'string' ? { gate: m.gate } : m.gate, at(i, 'gate') ?? `mechanisms[${i}].gate`, errors);
-      if (m.group && !groups.has(m.group)) errors.push({ code: 'group_unknown', path: at(i, 'group'), message: `mechanism '${m.id}' is in unknown group '${m.group}'` });
       if ((m.kind === 'flipper' || m.kind === 'plunger') && !m.verb) bad(`${m.kind} needs a verb`);
-      if (m.kind === 'ramp' && !(Array.isArray(m.path) && m.path.length >= 2 && m.path.every(vec)) ) bad('ramp needs a path of at least two points');
-      if (m.kind === 'lift' && m.stops !== undefined && !(Array.isArray(m.stops) && m.stops.length >= 1 && m.stops.every(vec))) bad('stops must be a list of positions');
-      if (m.cells === 'pattern' && !m.pattern && !m.preset) bad("cells 'pattern' needs a pattern or preset");
-      if (m.cells !== undefined && m.cells !== true && m.cells !== 'pattern' && !(Array.isArray(m.cells) && m.cells.every(vec))) bad("cells must be true, 'pattern' or a list of cells");
-      if (m.pattern && !m.pattern.every(r => typeof r === 'string' && r.length === m.pattern[0].length)) bad('pattern rows must be strings of equal length');
-      for (const it of Object.keys(m.hitsWith || {})) if (!(doc.content?.items || []).some(x => x.id === it)) errors.push({ code: 'ref_unknown', path: at(i, 'hitsWith'), message: `mechanism '${m.id}' hitsWith unknown item '${it}'` });
+      if (m.kind === 'ramp' && !m.path) bad('ramp needs a path of at least two points');
+      if (m.cells?.from === 'pattern' && !m.pattern && !m.preset) bad("cells from 'pattern' needs a pattern or preset");
+      if (m.cells?.from === 'list' && !m.cells.list) bad("cells from 'list' needs the list");
+      if (m.pattern && !m.pattern.every(r => r.length === m.pattern[0].length)) bad('pattern rows must be strings of equal length');
+      for (const it of Object.keys(m.hitsWith || {})) if (!(doc.content?.items || []).some(x => x.id === it)) errors.push({ code: 'mechanism_hits_with', path: at(i, 'hitsWith'), message: `mechanism '${m.id}' hitsWith unknown item '${it}'` });
     });
-    (doc.content?.archetypes || []).forEach((a, i) => { const id = a.components?.mechanism; if (typeof id === 'string' && !ids.has(id)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.mechanism`, message: `unknown mechanism '${id}'`, hint: [...ids].slice(0, 20).join(', ') }); });
     return errors;
   },
   /** Solver key: discrete mechanism state and signals, not contact/previous-position bookkeeping. */
@@ -148,7 +153,7 @@ export default {
     st(); // created at install, so reads later never add state
     const frames = sec => Math.max(1, Math.round(sec / rt.dt));
     // plot.gate locks ('mechanism:<id>') apply on top of the mechanism's own gate predicate.
-    const gateOk = (m, who) => !(rt.hasService('gates') && rt.service('gates').locked(`mechanism:${m.id}`)) && (m.gate === undefined || testIf(rt, typeof m.gate === 'string' ? { gate: m.gate } : m.gate, { actor: who, self: entIdOf(m) }, false));
+    const gateOk = (m, who) => !(rt.hasService('gates') && rt.service('gates').locked(`mechanism:${m.id}`)) && (m.gate === undefined || testIf(rt, m.gate, { actor: who, self: entIdOf(m) }, false));
     const entIdOf = m => `mech_${m.id}`;
     const pattern = m => m.pattern ?? (m.preset === 'bunker' ? BUNKER : null);
 
@@ -156,8 +161,8 @@ export default {
     const posOf = m => st().m[m.id]?.pos ?? v3(m.at);
     const boxM = m => boxAt(rt, spaceOf(m), posOf(m), m.size);
     const cellsOf = m => {
-      if (m.cells === true) { const b = boxM(m), out = []; for (let x = Math.floor(b.min[0]); x < Math.ceil(b.max[0]); x++) for (let y = Math.floor(b.min[1]); y < Math.ceil(b.max[1]); y++) for (let z = Math.floor(b.min[2]); z < Math.max(Math.ceil(b.max[2]), Math.floor(b.min[2]) + 1); z++) out.push([x, y, z]); return out; }
-      if (Array.isArray(m.cells)) return m.cells.map(v3);
+      if (m.cells?.from === 'box') { const b = boxM(m), out = []; for (let x = Math.floor(b.min[0]); x < Math.ceil(b.max[0]); x++) for (let y = Math.floor(b.min[1]); y < Math.ceil(b.max[1]); y++) for (let z = Math.floor(b.min[2]); z < Math.max(Math.ceil(b.max[2]), Math.floor(b.min[2]) + 1); z++) out.push([x, y, z]); return out; }
+      if (m.cells?.from === 'list') return m.cells.list.map(v3);
       return [];
     };
     const writeCells = (m, solid) => {
@@ -225,9 +230,9 @@ export default {
       if (!s.cells.some(Boolean)) breakIt(m, null);
       return true;
     }
-    // With cells: 'pattern' and a block, pattern cells are mirrored into the space's cells.
+    // With cells from 'pattern' and a block, pattern cells are mirrored into the space's cells.
     function mirror(m) {
-      const s = st().m[m.id], sp = rt.space(spaceOf(m)); if (m.cells !== 'pattern' || !m.block || typeof sp.setCell !== 'function') return;
+      const s = st().m[m.id], sp = rt.space(spaceOf(m)); if (m.cells?.from !== 'pattern' || !m.block || typeof sp.setCell !== 'function') return;
       const pat = pattern(m), rows = pat.length, cols = pat[0].length, b = boxM(m);
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const cell = [Math.floor(b.min[0] + c * m.cellSize), Math.floor(b.min[1] + (rows - 1 - r) * m.cellSize), Math.floor(b.min[2])];
