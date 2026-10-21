@@ -101,37 +101,68 @@ const STUB = { character: id => ({ id, name: title(id) }), archetype: id => ({ i
 const CREATABLE = new Set(['character', 'archetype', 'ending', 'item', 'quest', 'recipe']);
 
 const asList = v => (v === undefined || v === null ? undefined : Array.isArray(v) ? v : [v]);
+const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 /**
  * Coerce the kernel document's own structure (ARCHITECTURE.md §3, not any primitive's params) so that
- * validators never see a beat whose `do` is an object or a space whose `zones` is a map. Models make these
- * slips; primitives' validators may assume the documented shapes.
+ * validators, repair and the planner never see a beat whose `do` is an object, a space whose `zones` is a
+ * map, a null list entry or an id that is not a string. Models make these slips; everything downstream may
+ * assume the documented shapes. Total: any JSON value in, a document of the documented shape out.
  */
 export function normalizeShape(doc, fixes = []) {
   const fix = (path, what) => fixes.push({ code: 'shape', path, action: what });
-  for (const key of ['spaces', 'systems', 'graphics']) if (doc[key] !== undefined && !Array.isArray(doc[key])) { doc[key] = asList(doc[key]).filter(x => x && typeof x === 'object'); fix(key, 'made a list'); }
-  (doc.spaces || []).forEach((s, i) => { for (const k of ['zones', 'generators']) if (s[k] !== undefined && !Array.isArray(s[k])) { s[k] = typeof s[k] === 'object' ? Object.entries(s[k]).map(([id, z]) => ({ id, ...(z || {}) })) : []; fix(`spaces[${i}].${k}`, 'made a list'); }
-    (s.zones || []).forEach((z, j) => { if (z.exits !== undefined && !Array.isArray(z.exits)) { z.exits = asList(z.exits); fix(`spaces[${i}].zones[${j}].exits`, 'made a list'); } }); });
+  // A list of objects: maps become lists (key -> id), scalars and nulls are dropped, non-string ids are dropped.
+  const objects = (owner, key, path, { keyed = true, ids = true } = {}) => {
+    let v = owner[key];
+    if (v === undefined) return;
+    if (v === null) { delete owner[key]; fix(path, 'removed null'); return; }
+    if (!Array.isArray(v)) { v = isObj(v) && keyed && !('id' in v) ? Object.entries(v).map(([id, x]) => (isObj(x) ? { id, ...x } : null)) : [v]; fix(path, 'made a list'); }
+    const kept = v.filter(x => isObj(x)).filter(x => !ids || x.id === undefined || typeof x.id === 'string' || (typeof x.id === 'number' && (x.id = String(x.id))));
+    if (kept.length !== v.length) fix(path, `dropped ${v.length - kept.length} malformed entr${v.length - kept.length === 1 ? 'y' : 'ies'}`);
+    owner[key] = kept;
+  };
+  const section = key => { if (doc[key] !== undefined && !isObj(doc[key])) { doc[key] = {}; fix(key, 'made an object'); } };
+  for (const key of ['spaces', 'systems', 'graphics']) objects(doc, key, key, { keyed: key === 'spaces' });
+  (doc.spaces || []).forEach((s, i) => {
+    objects(s, 'zones', `spaces[${i}].zones`); objects(s, 'generators', `spaces[${i}].generators`, { keyed: false });
+    if (s.with !== undefined && !isObj(s.with)) { delete s.with; fix(`spaces[${i}].with`, 'removed non-object'); }
+    (s.zones || []).forEach((z, j) => { if (z.exits !== undefined) { if (!Array.isArray(z.exits)) { z.exits = asList(z.exits) || []; fix(`spaces[${i}].zones[${j}].exits`, 'made a list'); } z.exits = z.exits.filter(isObj); } });
+  });
+  for (const key of ['systems', 'graphics']) (doc[key] || []).forEach((x, i) => { if (x.with !== undefined && !isObj(x.with)) { delete x.with; fix(`${key}[${i}].with`, 'removed non-object'); } });
+  section('plot'); section('content'); section('player');
   const plot = doc.plot;
-  if (plot && typeof plot === 'object') {
-    for (const k of ['characters', 'quests', 'endings']) if (plot[k] !== undefined && !Array.isArray(plot[k])) { plot[k] = typeof plot[k] === 'object' ? Object.entries(plot[k]).map(([id, x]) => ({ id, ...(x || {}) })) : []; fix(`plot.${k}`, 'made a list'); }
-    const acts = plot.storyboard?.acts;
-    if (acts !== undefined && !Array.isArray(acts)) { plot.storyboard.acts = asList(acts); fix('plot.storyboard.acts', 'made a list'); }
+  if (plot) {
+    for (const k of ['characters', 'quests', 'endings']) objects(plot, k, `plot.${k}`);
+    if (plot.storyboard !== undefined && !isObj(plot.storyboard)) { plot.storyboard = Array.isArray(plot.storyboard) ? { acts: plot.storyboard } : { acts: [] }; fix('plot.storyboard', 'made an object'); }
+    if (plot.storyboard) objects(plot.storyboard, 'acts', 'plot.storyboard.acts', { keyed: true });
     (plot.storyboard?.acts || []).forEach((a, i) => {
-      if (!Array.isArray(a.beats)) { a.beats = asList(a.beats) || []; fix(`plot.storyboard.acts[${i}].beats`, 'made a list'); }
+      if (a.beats === undefined || a.beats === null) a.beats = [];
+      objects(a, 'beats', `plot.storyboard.acts[${i}].beats`);
       a.beats.forEach((b, j) => {
-        if (b.do !== undefined && !Array.isArray(b.do)) { b.do = asList(b.do); fix(`plot.storyboard.acts[${i}].beats[${j}].do`, 'made a list'); }
-        if (b.after !== undefined && !Array.isArray(b.after)) { b.after = asList(b.after); fix(`plot.storyboard.acts[${i}].beats[${j}].after`, 'made a list'); }
+        if (b.do !== undefined && !Array.isArray(b.do)) { b.do = asList(b.do) || []; fix(`plot.storyboard.acts[${i}].beats[${j}].do`, 'made a list'); }
+        if (Array.isArray(b.do)) b.do = b.do.filter(isObj);
+        if (b.after !== undefined && !Array.isArray(b.after)) { b.after = asList(b.after) || []; fix(`plot.storyboard.acts[${i}].beats[${j}].after`, 'made a list'); }
+        if (Array.isArray(b.after)) b.after = b.after.filter(x => typeof x === 'string');
       });
     });
+    if (plot.dialogue !== undefined && !isObj(plot.dialogue)) { plot.dialogue = Array.isArray(plot.dialogue) ? Object.fromEntries(plot.dialogue.filter(d => isObj(d) && typeof d.id === 'string').map(({ id, ...d }) => [id, d])) : {}; fix('plot.dialogue', 'made an id-keyed object'); }
   }
-  if (doc.content && typeof doc.content === 'object') for (const k of ['items', 'archetypes', 'recipes']) if (doc.content[k] !== undefined && !Array.isArray(doc.content[k])) { doc.content[k] = typeof doc.content[k] === 'object' ? Object.entries(doc.content[k]).map(([id, x]) => ({ id, ...(x || {}) })) : []; fix(`content.${k}`, 'made a list'); }
+  if (doc.content) {
+    for (const k of ['items', 'archetypes', 'recipes', 'blocks']) objects(doc.content, k, `content.${k}`);
+    for (const a of doc.content.archetypes || []) if (a.components !== undefined && !isObj(a.components)) { a.components = {}; fix(`content.archetypes.${a.id}.components`, 'made an object'); }
+    if (doc.content.models !== undefined && !isObj(doc.content.models)) { delete doc.content.models; fix('content.models', 'removed non-object'); }
+  }
   return doc;
 }
 
 /** preflight that reports a validator crash as an error instead of throwing. */
 function safePreflight(doc, registry, logic) {
   try { return preflight(doc, registry, logic); }
-  catch (error) { if (process.env.GV_DEBUG) console.error(error.stack); return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
+  catch (error) {
+    if (process.env.GV_DEBUG) console.error(error.stack);
+    // Where it threw (first v2 frame), so a crash is diagnosable from a stored record without a debugger.
+    const at = String(error?.stack || '').split('\n').find(l => /\/v2\//.test(l))?.replace(/^.*\/v2\//, 'v2/').replace(/\)$/, '') || null;
+    return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}${at ? ` (at ${at})` : ''}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] };
+  }
 }
 
 /**
