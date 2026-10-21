@@ -46,7 +46,7 @@ export default {
       services: ['pause'],
       actions: ['mg_press', 'mg_input', 'mg_quit'],
     },
-    actionSpace: { mg_input: { type: 'choice', of: 'a key of the running sequence' }, mg_press: { kind: 'impulse', params: {} } },
+    actionSpace: { mg_input: { type: 'choice', of: 'a key of the running sequence', from: 'options', emits: ['minigame_key'] }, mg_press: { kind: 'impulse', params: {} } },
     requires: {},
     defines: [{ kind: 'minigame', in: 'games' }],
     // As an encounter's inner loop: the encounter starts its first game.

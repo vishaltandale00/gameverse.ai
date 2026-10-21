@@ -14,7 +14,7 @@ export default {
     // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
     frame: null,
     params: {},
-    provides: { capabilities: [], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'zone_added'] },
+    provides: { capabilities: [], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'zone_added', 'zone_removed', 'zone_moved'] },
     at: 'At = a slot (zone) id or null',
     zones: 'Zone = {id, name?, tags?} — a named slot',
     state: 'rt.state.spaces[id] = {zones?: runtime slots}; positions live on entities',

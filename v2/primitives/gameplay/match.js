@@ -226,7 +226,7 @@ export default {
   card: {
     loop: { verbs: ['swap'], progress: ['matched', 'cascade'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { swap: { type: 'choice', of: 'two neighbouring cells' } },
+    actionSpace: { swap: { type: 'choice', of: 'two neighbouring cells', from: 'options', emits: ['swap', 'matched'] } },
     // Match-board mode: swaps under a move limit; the score (or a stage goal) wins, running out of moves loses.
     mode: { loop: 'match-board', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'score', gte: '$target' }, reads: { var: 'score', by: { actions: ['swap'] } } }, lose: { param: 'onOutOfMoves', reads: { var: 'match.moves', by: { actions: ['swap'] } } }, bot: 'greedy' },
     intent: 'Matching rules on a board in any editCells space: match-3 swaps with L/T groups, striped/area/colour-bomb specials and combos, jelly, blockers, items and reshuffles; or puyo-style group pops and Dr-Mario virus lines resolved after falling pieces land, with cascades and chain scoring.',
@@ -254,6 +254,8 @@ export default {
       clearFrames: { type: 'integer', default: 16, min: 0, max: 120, unit: 'frames', effect: 'pause before matched cells vanish' },
       settleFrames: { type: 'integer', default: 8, min: 0, max: 120, unit: 'frames', effect: 'pause per gravity/refill step' },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['swap_invalid'],
     provides: {
       events: ['matched', 'matched:*', 'cascade', 'chain', 'special_created', 'special_created:*', 'special_combo', 'special_combo:*', 'jelly_cleared', 'blocker_broken', 'virus_cleared', 'collected', 'board_shuffled', 'swap', 'swap_invalid', 'move', 'out_of_moves', 'board_busy', 'board_idle', 'score'],
       vars: ['match.moves', 'match.jelly', 'match.blockers', 'match.viruses', 'match.items', 'match.max_chain', 'score'],

@@ -33,7 +33,7 @@ export default {
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'wrap'],
       capabilityMethods: { ...BOUNDS_CAPS },
-      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'passed', 'culled', 'lap', 'landed', 'zone_added'],
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'passed', 'culled', 'lap', 'landed', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     at: 'At = [progress, lane, height], the centre of the body box; components.body.size = [length, width in lanes, height] (default [1, 0.8, 1]). Resting on the ground means height = size[2] / 2.',
     zones: 'Zone = {id, name?, range:[p0,p1), lanes?:[l0,l1] inclusive, tags?, rules?} — track segments (tunnel, bridge, finish)',

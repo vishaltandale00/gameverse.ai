@@ -98,7 +98,9 @@ export default {
       friendlyFire: { type: 'boolean', default: false },
       moves: { type: 'list', default: [], of: { type: 'object', fields: MOVE_FIELDS, open: true }, effect: 'move library: frame-data records any archetype can list in components.melee.moves' },
     },
-    provides: { events: ['attack_started', 'guard_up', 'move_denied', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['move_denied'],
+    provides: { events: ['weapon_used', 'attack_started', 'guard_up', 'move_denied', 'hit', 'blocked', 'parried', 'staggered', 'guard_broken', 'riposte', 'combo', 'pogo', 'grabbed', 'tech', 'whiff', 'exhausted_attack', 'teleported', 'counter_stance'], services: ['melee'], actions: ['attack', 'heavy', 'special', 'super', 'throw', 'block'] },
     requires: { primitives: ['gameplay.combat.health'], capabilities: ['overlap'] },
     reads: ['content.items'],
     defines: [{ kind: 'move', in: 'moves' }],

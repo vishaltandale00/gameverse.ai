@@ -51,7 +51,7 @@ export default {
       collide: { type: 'boolean', default: false, effect: 'collide with solid cells through space.slide instead of flying over them' },
       ...COMMON_PARAMS, ...MACRO_PARAMS,
     },
-    provides: { events: ['hyperspace', 'thrust_start', 'thrust_end'], actions: ['move', 'thrust', 'focus', 'hyperspace', 'aim'] },
+    provides: { events: ['evaded', 'hyperspace', 'thrust_start', 'thrust_end'], actions: ['move', 'thrust', 'focus', 'hyperspace', 'aim'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['bounds', 'wrap', 'overlap', 'distance'] },
     envelope,

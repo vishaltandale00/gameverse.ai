@@ -56,7 +56,7 @@ export default {
   card: {
     loop: { verbs: ['talk'], progress: ['talked', 'met'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { talk: { type: 'choice', of: 'a character in range' } },
+    actionSpace: { talk: { type: 'choice', of: 'a character in range', from: 'options', emits: ['talked'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "plot.characters", "min": 2, "why": "people the player meets, each with a role, a home zone and (with dialogue) their lines", "example": {"id": "keeper", "name": "Old Maren", "role": "lighthouse keeper", "home": "lighthouse", "bio": "Kept the light for forty years.", "dialogue": [{"id": "keeper_intro"}]}},
