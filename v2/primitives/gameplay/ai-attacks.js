@@ -6,6 +6,7 @@
 // patterns (aimed, spread, ring, spiral, burst, flower) are ported from the
 // shmup kit with live-bullet caps per mode and difficulty multipliers.
 import { checkParam } from '../../kernel/params.js';
+import { DECLARATIONS_ENFORCED } from '../../kernel/document.js';
 import { ID_PATTERN } from '../../kernel/sections.js';
 import { objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, centerOf, distBetween, facingOf, headingOf, clearLine, selfRelative, weighted, applyHit, dead, cleanupOnDespawn, ensureLocomotion, upAt, planar, between, TAU } from './ai-lib.js';
 import { hostile } from './ai-brain.js';
@@ -96,9 +97,9 @@ export default {
     (doc.content?.archetypes || []).forEach((a, i) => {
       const list = a?.components?.attacks; if (list === undefined) return;
       const path = `content.archetypes[${i}].components.attacks`;
-      // The declared component shape, checked as errors here until preflight enforces declared shapes itself
-      // (kernel/document.js DECLARATIONS_ENFORCED); then this re-check goes.
-      checkParam(ATTACKS, list, path, errors, ctx);
+      // The declared component shape, checked as errors here only until preflight enforces declared shapes itself
+      // (kernel/document.js DECLARATIONS_ENFORCED): delete this re-check with the flag.
+      if (!DECLARATIONS_ENFORCED) checkParam(ATTACKS, list, path, errors, ctx);
       if (!Array.isArray(list)) return;
       const ids = new Set();
       list.forEach((atk, j) => {

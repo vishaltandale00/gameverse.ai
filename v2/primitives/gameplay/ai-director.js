@@ -39,12 +39,10 @@ export default {
       director_distance: { fields: ['distance'], message: 'distance is [near, far] with near at most far' },
       director_group: { fields: ['spawns[].group'], message: 'group is [min, max] with min at most max', example: { spawns: [{ archetype: 'ball', cost: null, weight: null, group: [3, 1] }] } },
       director_thresholds: { fields: ['calm', 'peak'], message: 'calm is at or below peak' },
-      // A set_director effect's phase (code and templates write effects; no form asks for them).
-      director_phase: { fields: ['set_director.phase'], message: `phase is one of ${PHASES.join('|')}`, in: 'effect', kind: 'set_director', example: { do: 'set_director', phase: 'chaos' } },
     },
   },
   logic(logic) {
-    logic.effect('set_director', { check: (e, path, errs) => { if (e.phase !== undefined && !PHASES.includes(e.phase)) errs.push({ code: 'director_phase', path: `${path}.phase`, message: `phase is one of ${PHASES.join('|')}` }); },
+    logic.effect('set_director', { codes: [{ code: 'director_phase', fields: ['phase'], message: `phase is one of ${PHASES.join('|')}`, example: { do: 'set_director', phase: 'chaos' } }], check: (e, path, errs) => { if (e.phase !== undefined && !PHASES.includes(e.phase)) errs.push({ code: 'director_phase', path: `${path}.phase`, message: `phase is one of ${PHASES.join('|')}` }); },
       run: (e, rt) => { const s = st(rt); if (e.intensity !== undefined) s.intensity = e.intensity; if (e.phase) setPhase(rt, s, e.phase); publish(rt, s); } });
   },
   validate(config) {

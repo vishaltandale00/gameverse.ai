@@ -113,7 +113,7 @@ test('lunges move the attacker during the active window; summons are capped; bla
   run(rt, 15); const x0 = f.at[0]; run(rt, 30);
   assert.ok(f.at[0] < x0 - 1, `lunged toward the player: ${x0} → ${f.at[0]}`);
   const caller = { id: 'caller', kind: 'boss', components: { ai: { brain: [{ do: 'sit' }] }, attacks: [{ id: 'call', windup: 0.1, active: 0.1, recover: 0.1, summon: 'foe', count: 3, shape: 'summon' }] } };
-  const r2 = compile(doc({ archetypes: [caller, foe([])], attacks: { maxSummons: 4 } }), { primitives: P }).rt;
+  const r2 = compile(doc({ archetypes: [caller, foe(undefined)], attacks: { maxSummons: 4 } }), { primitives: P }).rt;
   r2.spawn('caller', { at: [20, 10, 0] }); run(r2, 120);
   assert.equal(Object.values(r2.state.entities).filter(e => e.components.summonedBy).length, 4);
   const boomer = foe([{ id: 'fuse', range: 3, windup: 0.3, active: 0.1, recover: 0, damage: 7, shape: 'blast', blastBlocks: 2, selfDestruct: true }]);
@@ -136,8 +136,10 @@ test('attacks replay deterministically through snapshot/restore', () => {
 test('preflight rejects bad attack patterns with stable codes', () => {
   const { registry, logic } = catalogue([testSpace]);
   const bad = doc({ archetypes: [foe([{ id: 'x', shape: 'spaghetti', windup: -1 }, { id: 'x', summon: 'ghost', shape: 'summon' }, { range: 2, spped: 3 }, { id: 'e', emitter: { pattern: 'zigzag' } }, { id: 's', shape: 'summon' }])], attacks: { shapes: { goo: { kind: 'blob' } } } });
-  const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['attack_shape_unknown', 'param_range', 'attack_duplicate', 'ref_unknown', 'param_missing', 'param_unknown', 'param_option', 'attack_summon_missing', 'attack_shape_kind']) assert.ok(codes.includes(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = errors.map(e => e.code);
+  for (const c of ['attack_shape_unknown', 'param_range', 'attack_duplicate', 'ref_unknown', 'param_missing', 'param_unknown', 'param_option', 'attack_summon_missing']) assert.ok(codes.includes(c), c);
+  // The shapes param is typed (a map of hit geometries): an unknown kind is the kernel's param_option at it (was attack_shape_kind).
+  assert.ok(errors.some(e => e.code === 'param_option' && e.path.endsWith('with.shapes.goo.kind')), JSON.stringify(errors));
 });
 
 test('every gameplay.ai.attacks instance and attacks component in v2/games preflights without param errors', () => {
