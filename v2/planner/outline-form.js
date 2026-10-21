@@ -85,12 +85,12 @@ export function specSchema(spec, depth = 0) {
  */
 export function objectSchema(fields, depth = 0, description) {
   const entries = Object.entries(fields || {});
-  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || i < KEEP) : entries;
+  const keep = entries.length > WIDE ? entries.filter(([, f], i) => f?.required || (f?.type === 'list' && (f.min || 0) > 0) || i < KEEP) : entries;
   /** @type {Record<string, JsonSchema>} */
   const props = {};
   /** @type {Record<string, Codec>} */
   const codecs = {};
-  for (const [k, f] of keep) { const s = specSchema(f || {}, depth); props[k] = f?.required || typeof s.codec === 'string' && s.codec !== 'raw' ? s.schema : nul(s.schema); codecs[k] = s.codec; }
+  for (const [k, f] of keep) { const s = specSchema(f || {}, depth); props[k] = f?.required || (f?.type === 'list' && (f.min || 0) > 0) || (typeof s.codec === 'string' && s.codec !== 'raw') ? s.schema : nul(s.schema); codecs[k] = s.codec; }
   const more = entries.length > keep.length;
   if (more) props.more_json = nul(str(`other fields as one JSON object: ${entries.filter(e => !keep.includes(e)).map(([k]) => k).join(', ').slice(0, 300)}`));
   return { schema: obj(props, description), codec: { fields: codecs, more } };

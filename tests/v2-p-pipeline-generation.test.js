@@ -11,7 +11,7 @@ import { selectPrimitives, locomotionCompleteness, checkMapping, baseLocomotion 
 import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { detailForm, detailTasks, acceptPatch, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
+import { detailForm, detailTasks, mergeDetail, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
 import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner/doc-revise.js';
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
@@ -120,7 +120,8 @@ test('decode: JSON text fields become values; strict ones never become strings; 
 
 test('writeOutline with a replayed form: the model fills content, populate problems go back, the result is the model\'s game', async () => {
   const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground' };
-  const sel = await selectPrimitives({ decomposition: d, registry });
+  // A fixed selection (the offline lexical one is not the point here): melee combat with an inventory and a story.
+  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   const needsEnemies = form.contracts.some(c => c.need === 'archetypes' && c.component === 'health');
@@ -139,6 +140,7 @@ test('writeOutline with a replayed form: the model fills content, populate probl
   assert.equal(writer.calls[0].schema.name, 'game_outline');
   if (needsEnemies) {
     assert.ok(writer.calls.length >= 2, 'the hollow first form is sent back');
+    assert.ok(r.rounds[2].content < r.rounds[1].content, 'the filled form has fewer content problems');
     assert.match(writer.calls[1].user, /\[content_missing\] content\.archetypes \(form: archetypes\)/);
     const c = census(r.doc, registry, logic, { boot: 0 });
     assert.ok(c.archetypesPlaced >= 1 && c.spawnRulesNonPlayer >= 2);
@@ -232,8 +234,11 @@ test('detail: the per-zone form adds spawns to the spawner and residents with th
   assert.equal(clean.spawns[0].archetype, `${task.zone}_moth_swarm`, 'new archetype ids are namespaced and spawns follow them');
   assert.equal(clean.spawns[1].archetype, 'mossling', 'existing archetypes keep their ids');
   assert.equal(clean.plot.characters[0].home, task.zone);
-  const r = await acceptPatch({ current: lantern, patch, task, registry, logic, budgetMs: 300 });
-  assert.ok(r.ok, `${r.reason} ${JSON.stringify(r.errors?.slice(0, 2))}`);
+  // Merge + repair (acceptPatch's checks before verification; verifying this full-scale game takes minutes in the strategies stage).
+  const merged = mergeDetail(lantern, clean, registry);
+  assert.deepEqual(merged.added.spawns, clean.spawns.map(x => x.id));
+  const r = repairDocument(merged.doc, { registry, logic, rounds: 4 });
+  assert.ok(r.ok, JSON.stringify(r.errors.slice(0, 2)));
   const rules = r.doc.systems.find(s => s.use === 'engine.spawner').with.rules.filter(x => x.zone === task.zone);
   assert.ok(rules.some(x => x.archetype === `${task.zone}_moth_swarm`));
   // Offline detail gives each zone its own mix of the game's pickups and enemies.

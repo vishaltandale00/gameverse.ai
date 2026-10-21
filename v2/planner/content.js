@@ -107,7 +107,7 @@ export function placementCounts(doc, registry) {
 
 /** Non-player archetypes that satisfy a contract's component/kinds. @param {unknown} doc @param {ContractSpec} c @returns {Record<string, unknown>[]} */
 const archetypesWith = (doc, c) => objects(prop(prop(doc, 'content'), 'archetypes')).filter(a => a.id && a.id !== prop(prop(doc, 'player'), 'archetype') && a.kind !== 'player'
-  && (!c.component || (isObj(a.components) && a.components[c.component] !== undefined)) && (!c.kinds?.length || !a.kind || c.kinds.some(k => k === a.kind)));
+  && (!c.component || (isObj(a.components) && a.components[c.component] !== undefined)) && (!c.kinds?.length || c.kinds.some(k => k === a.kind)));
 
 /** @param {unknown} example */
 const shape = example => (example === undefined ? '' : ` Shape: ${JSON.stringify(example).slice(0, 600)}`);

@@ -13,6 +13,7 @@ import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath } from './outline-form.js';
+import { preset, coreOf, zoneStart } from './presets.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
@@ -78,145 +79,10 @@ const STOP = new Set('a an the of in on with and or to for from by as at is are 
 const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 
 /**
- * Zone fields a space understands. Cards describe their zone shape in `card.zones` (e.g. "Zone = {id, rect:[x0,y0,x1,y1)...}");
- * without one, capabilities decide (graph-like spaces link zones by exits; positional ones bound them).
- * @param {{ zones?: unknown, views?: string[] }} card @param {string[]} caps @param {Record<string, unknown>} config @returns {ZoneShape}
+ * The procedural skeleton: the preset the play spec and the chosen cards compose (presets.js). Without a play spec
+ * it is the story preset (zones visited in act order, gated progression, a finale), as before.
  */
-function zoneShape(card, caps, config) {
-  const text = typeof card.zones === 'string' ? card.zones : '';
-  const extent = [config.size, config.bounds].find(/** @returns {v is number[]} */ (/** @type {unknown} */ v) => Array.isArray(v) && v.length >= 2 && v.every(Number.isFinite)) || null;
-  if (text) return { exits: /exits/.test(text), rect: /rect/.test(text), range: /range/.test(text), bounds: /bounds/.test(text), slot: /slot/.test(text), extent, length: Number(config.length) || 0 };
-  return { exits: caps.includes('navigate') && !caps.includes('overlap'), rect: !caps.includes('navigate') || caps.includes('overlap'), bounds: (card.views || []).some(v => v === '1p' || v === '3p'), extent };
-}
-/** Lay n zones side by side across the space's extent (or 16-unit cells when it has none). @param {OutlineZone} z @param {number} i @param {number} n @param {ZoneShape} shape */
-function placeZone(z, i, n, shape) {
-  const [W, H] = shape.extent || [16 * n, 16];
-  if (shape.rect) { const w = Math.max(1, Math.floor(W / n)); z.rect = [i * w, 0, i === n - 1 ? W : (i + 1) * w, H]; }
-  if (shape.range) { const L = shape.length || 40 * n, w = L / n; z.range = [+(i * w).toFixed(2), +((i + 1) * w).toFixed(2)]; }
-  if (shape.bounds) z.bounds = { min: [i * 64, 0, 0], max: [i * 64 + 64, 64, 64] };
-}
-
-/**
- * The procedural skeleton: spaces from the selection with a zone graph, systems and graphics
- * bound as selected, a storyboard visiting every zone in act order, gated progression with key
- * items when the catalogue offers an item vocabulary and the space supports gated exits, and an ending.
- * @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} args
- * @returns {ProceduralOutline}
- */
-export function proceduralOutline({ decomposition, selection, registry, logic, seed, prompt = '' }) {
-  const state = { rng: seed >>> 0 || 1 };
-  const rand = () => random(state);
-  const vocab = vocabIndex(registry);
-  const hasItems = Boolean(vocab.effects.give_item && vocab.predicates.item);
-  const hasStory = selection.systems.some(id => (registry.get(id)?.card.reads || []).includes('plot.storyboard'));
-  const words = [...new Set((`${decomposition.title} ${decomposition.premise} ${prompt}`.match(/[A-Za-z]{4,}/g) || []).filter(w => !STOP.has(w.toLowerCase())))];
-  const cap = (/** @type {string} */ w) => w[0].toUpperCase() + w.slice(1).toLowerCase();
-  const usedNames = new Set();
-  const placeName = (/** @type {number} */ i) => {
-    for (let k = 0; k < 8; k++) {
-      const n = `${words.length ? cap(words[Math.floor(rand() * words.length)]) + ' ' : ''}${PLACES[Math.floor(rand() * PLACES.length)]}`;
-      if (!usedNames.has(n)) { usedNames.add(n); return n; }
-    }
-    return `Place ${i + 1}`;
-  };
-  /** @type {OutlineSpace[]} */
-  const spaces = selection.spaces.map((s, si) => {
-    const card = registry.get(s.use)?.card || {};
-    const shape = zoneShape(card, s.caps, { ...defaultsOf(card), ...(s.with || {}) });
-    const n = si === 0 ? decomposition.zones : 2;
-    /** @type {string[]} */
-    const ids = [];
-    const zones = Array.from({ length: n }, (_, i) => {
-      const name = placeName(i + si * 10);
-      let id = slug(name); while (ids.includes(id)) id += '_b'; ids.push(id);
-      /** @type {OutlineZone} */
-      const z = { id, name, description: `${name}${decomposition.tone ? `, ${decomposition.tone}` : ''}.` };
-      placeZone(z, i, n, shape);
-      return z;
-    });
-    if (shape.exits) zones.forEach((z, i) => {
-      z.exits = [];
-      if (i > 0) z.exits.push({ to: zones[i - 1].id });
-      if (i < zones.length - 1) z.exits.push({ to: zones[i + 1].id });
-      if (i > 1 && i % 3 === 0) { z.exits.push({ to: zones[i - 2].id }); zones[i - 2].exits?.push({ to: z.id }); }
-    });
-    const generators = selection.generators.filter(g => g.space === s.id).map(g => ({ use: g.id }));
-    return { id: s.id, use: s.use, ...(Object.keys(s.with || {}).length ? { with: s.with } : {}), zones, ...(generators.length ? { generators } : {}), _shape: shape };
-  });
-  const primary = spaces[0];
-  /** @type {Array<{ id: string, name: string }>} */
-  const items = [];
-  /** @type {OutlineAct[]} */
-  const acts = [];
-  const actCount = Math.max(1, Math.min(decomposition.acts, primary.zones.length - 1));
-  const perAct = Math.ceil((primary.zones.length - 1) / actCount);
-  const guide = decomposition.references.find(r => r.kind === 'character')?.name || 'Guide';
-  const characters = [{ id: slug(guide), name: guide, role: 'guide' }];
-  if (hasStory) {
-    acts.push({ id: 'act_1', title: 'Arrival', beats: [{ id: 'arrival', title: decomposition.title, do: [{ do: 'say', character: characters[0].id, text: decomposition.premise.slice(0, 220) }] }] });
-    primary.zones.slice(1).forEach((z, i) => {
-      const a = Math.min(actCount - 1, Math.floor(i / perAct));
-      acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-      /** @type {OutlineBeat} */
-      const beat = { id: `reach_${z.id}`, title: z.name, when: { zone: z.id }, do: [{ do: 'say', character: characters[0].id, text: `${z.name}. Keep going.` }] };
-      // Key items gate the next act's first exit on spaces with gated exits.
-      const lastOfAct = (i + 1) % perAct === 0 && i + 1 < primary.zones.length - 1;
-      if (hasItems && primary._shape?.exits && lastOfAct) {
-        const key = `${z.id}_key`, next = primary.zones[i + 2];
-        items.push({ id: key, name: `${z.name} key` });
-        beat.do.push({ do: 'give_item', item: key });
-        const exit = z.exits?.find(x => x.to === next.id); if (exit) exit.gate = { item: key };
-      }
-      acts[a].beats.push(beat);
-    });
-    for (let a = 0; a < actCount; a++) acts[a] ??= { id: `act_${a + 1}`, title: `Act ${a + 1}`, beats: [] };
-    const last = acts[acts.length - 1], finalZone = primary.zones[primary.zones.length - 1];
-    // A second space (one primary can't host a chosen primitive) is visited before the end.
-    for (const extra of spaces.slice(1)) {
-      last.beats.push({ id: `enter_${extra.id}`, after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, when: { zone: finalZone.id }, do: [{ do: 'teleport', space: extra.id, zone: extra.zones[0].id }] });
-      for (const b of last.beats) if (b.after === undefined) delete b.after;
-    }
-    const endZone = spaces.length > 1 ? spaces[spaces.length - 1].zones[0] : finalZone;
-    last.beats.push({ id: 'finale', title: 'Finale', after: last.beats.length ? [last.beats[last.beats.length - 1].id] : undefined, ...(spaces.length > 1 ? {} : { when: { zone: endZone.id } }), do: [{ do: 'end_game', ending: 'victory' }] });
-    for (const b of last.beats) if (b.after === undefined) delete b.after;
-  }
-  const primaryShape = /** @type {ZoneShape} */ (primary._shape);
-  for (const s of spaces) delete s._shape;
-  // A draft for repair (views is { primary, alternates }, as documents write it).
-  /** @type {Omit<Doc, 'views' | 'graphics'> & { views: { primary: string, alternates: string[] }, graphics?: Instance[] }} */
-  const doc = {
-    schema: DOC_SCHEMA, id: slug(decomposition.title, '-'), title: decomposition.title, logline: decomposition.premise.split(/(?<=\.)\s/)[0].slice(0, 160), seed,
-    views: { primary: decomposition.views[0] || registry.get(primary.use)?.card.views?.[0] || 'any', alternates: decomposition.views.slice(1) },
-    spaces,
-    systems: selection.systems.map(id => ({ use: id, ...(selection.bind[id] ? { space: selection.bind[id] } : {}) })),
-    graphics: selection.graphics.map(g => ({ use: g.id, ...(g.space ? { space: g.space } : {}) })),
-    plot: { premise: decomposition.premise, characters, ...(hasStory ? { storyboard: { acts }, endings: [{ id: 'victory', title: 'Victory', text: `${decomposition.title}: the end.`, outcome: 'won' }] } : {}) },
-    content: { ...(items.length ? { items } : {}), archetypes: [{ id: 'hero', components: { name: 'You' } }] },
-    player: { archetype: 'hero', space: primary.id, at: primaryShape.exits ? primary.zones[0].id : zoneStart(primary.zones[0]) },
-  };
-  if (!doc.graphics?.length) delete doc.graphics;
-  // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
-  const scaffolded = configureGenerators(doc, registry);
-  const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
-  const repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true });
-  // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
-  const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
-  const rest = { errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems } };
-  return repaired.ok ? { doc: world?.doc ?? repaired.doc, ok: true, ...rest } : { doc: repaired.doc, ok: false, ...rest };
-}
-/**
- * A start position inside a zone (bounds, rect or range), else null. Zones of a model draft are unchecked: a shape
- * that is not a list of coordinates is skipped.
- * @param {unknown} z @returns {number[] | null}
- */
-const zoneStart = z => {
-  const min = prop(prop(z, 'bounds'), 'min'), rect = prop(z, 'rect'), range = prop(z, 'range');
-  const nums = (/** @type {unknown[]} */ v) => v.map(Number);
-  if (isList(min)) { const m = nums(min); return [m[0] + 1, m[1] + 1, m[2] + 1]; }
-  if (isList(rect)) { const r = nums(rect); return [r[0] + Math.min(1, (r[2] - r[0]) / 2), r[1] + Math.min(1, (r[3] - r[1]) / 2)]; }
-  if (isList(range)) return [Number(range[0]) + 0.5, 0, 0];
-  return null;
-};
+export function proceduralOutline(spec) { return preset(spec); }
 
 /**
  * Player agency, checked empirically: the skeleton is booted headless and must offer the player
@@ -298,20 +164,6 @@ export function fewShot(registry, { maxChars = 9000 } = {}) {
     out.push(text);
   }
   return out;
-}
-
-/**
- * Primitives bound to a core mechanic: never isolated or dropped; their errors go back to the model.
- * @param {{ mechanics?: Array<{ importance?: string, primitives?: string[] }>, systems?: string[] } | null | undefined} selection
- * @param {RegistryLike | null} [registry] @returns {Set<string>}
- */
-export function coreOf(selection, registry = null) {
-  /** @type {Set<string>} */
-  const ids = new Set();
-  for (const m of selection?.mechanics || []) if (m.importance === 'core') for (const id of m.primitives || []) if (!isSpace(id)) ids.add(id);
-  // A core primitive's requirements are core too (removing melee's health would remove melee).
-  if (registry) for (let grew = true; grew;) { grew = false; for (const id of [...ids]) for (const r of registry.get(id)?.card.requires?.primitives || []) { const s = [...(selection?.systems || [])].find(x => x === r || x.startsWith(r + '.')); if (s && !ids.has(s)) { ids.add(s); grew = true; } } }
-  return ids;
 }
 
 /**
@@ -558,4 +410,4 @@ function keepPlayer(draft, skeleton) {
   }
 }
 
-export { seedFrom, isSpace };
+export { seedFrom, isSpace, coreOf };

@@ -8,7 +8,7 @@
 // or another space, and only as a last resort is an instance removed (and
 // reported as a gap). Model repair rounds only see what this cannot fix.
 import { preflight, DOC_SCHEMA } from '../kernel/document.js';
-import { REF_KINDS } from '../kernel/params.js';
+import { REF_KINDS, checkFields } from '../kernel/params.js';
 import { defaultsOf, isSpace, isGenerator, isGraphics, satisfying, spaceVariants, requirementsOf } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { isObj, isStr, list, obj, objects, prop, str } from '../kernel/guards.js';
@@ -156,7 +156,8 @@ export function synthesize(schema, ctx) {
     case 'string': return schema.options?.[0] ?? 'untitled';
     case 'ref': return ctx.ensureId(String(schema.to));
     case 'list': return Array.from({ length: schema.min || 0 }, () => synthesize(schema.of, ctx));
-    case 'object': return Object.fromEntries(Object.entries(schema.fields || {}).filter(([, f]) => f.required).map(([k, f]) => [k, synthesize(f, ctx)]));
+    // Required fields, plus lists without a default (validators iterate them): an empty or minimal list, never undefined.
+    case 'object': return Object.fromEntries(Object.entries(schema.fields || {}).filter(([, f]) => f.required || (f.type === 'list' && f.default === undefined)).map(([k, f]) => [k, synthesize(f, ctx)]));
     case 'predicate': return { time: 0, gte: 0 };
     case 'effects': return [];
     default: return null;
@@ -243,6 +244,31 @@ export function normalizeShape(doc, fixes = []) {
   return doc;
 }
 
+/**
+ * List params whose validators assume complete entries: an unset list with a default gets its default entries with
+ * their field defaults applied (a card default like [{id:'attack', hit:{...}}] that omits a defaulted field), and an
+ * unset list the card needs at least one entry of (min >= 1, no default) gets a synthesized entry, so validators
+ * never run on undefined. Instances only; values the document sets are left alone.
+ */
+function materializeLists(doc, registry, fixes) {
+  const all = [...(doc.spaces || []).flatMap((s, i) => (s.generators || []).map((g, j) => [g, `spaces[${i}].generators[${j}]`])), ...(doc.systems || []).map((x, i) => [x, `systems[${i}]`])];
+  for (const [inst, path] of all) {
+    const params = registry.get(inst?.use)?.card.params || {};
+    for (const [k, spec] of Object.entries(params)) {
+      if (spec.type !== 'list' || inst.with?.[k] !== undefined) continue;
+      const fields = spec.of?.type === 'object' ? spec.of.fields : null;
+      if (Array.isArray(spec.default) && spec.default.length && fields) {
+        const filled = spec.default.map(item => (item && typeof item === 'object' ? checkFields(fields, structuredClone(item), '', [], null) : item));
+        if (JSON.stringify(filled) !== JSON.stringify(spec.default)) { inst.with = { ...(inst.with || {}), [k]: filled }; fixes.push({ code: 'list_defaults', path: `${path}.with.${k}`, action: 'filled the default entries\' field defaults' }); }
+      } else if (spec.default === undefined && (spec.min || 0) > 0) {
+        inst.with = { ...(inst.with || {}), [k]: synthesize({ ...spec, min: spec.min }, { ensureId: kind => `${kind}_1` }) };
+        fixes.push({ code: 'list_required', path: `${path}.with.${k}`, action: `synthesized ${spec.min} entr${spec.min === 1 ? 'y' : 'ies'} the primitive needs` });
+      }
+    }
+  }
+}
+
+/** preflight that reports a validator crash as an error instead of throwing. */
 /** preflight that reports a validator crash as an error instead of throwing. @param {unknown} doc @param {RegistryLike} registry @param {LogicLike} logic @returns {PreflightResult} */
 function safePreflight(doc, registry, logic) {
   try { return preflight(doc, registry, logic); }
@@ -300,6 +326,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
   const removed = [];
   if (!isObj(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
   normalizeShape(doc, fixes);
+  materializeLists(doc, registry, fixes);
   unwrapCountPredicates(doc, logic, fixes);
   const vocab = vocabIndex(registry);
   /** @type {SynthContext} */
@@ -495,6 +522,13 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         }
         default: {
           const last = keys.at(-1);
+          // "archetype 'x' has no <component> component": give it the component, synthesized from the owning card's shape.
+          if (/has no (\w+) component/.test(String(e.message || '')) && /archetype '([^']+)'/.test(String(e.message || ''))) {
+            const comp = /has no (\w+) component/.exec(String(e.message))?.[1] || '', id = /archetype '([^']+)'/.exec(String(e.message))?.[1] || '';
+            const owner = registry.cards().find(c => c.components?.[comp]);
+            const arch = (doc.content?.archetypes || []).find(a => a?.id === id);
+            if (owner && arch) { arch.components = arch.components && typeof arch.components === 'object' ? arch.components : {}; arch.components[comp] = synthesize(owner.components[comp], ctx); fix(`gave '${id}' a ${comp} component (${owner.id})`); break; }
+          }
           // A primitive's own validate() code inside an instance's params: fall back to the param's default.
           if (loc?.schema && !loc.schema.required && loc.rest.length > 1) { removals.push(keys); fix(`reset ${e.code} param to default`); }
           // A primitive's "<something>_unknown" on document data is a dangling field or pointer: drop that field

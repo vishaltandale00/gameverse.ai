@@ -5,9 +5,11 @@
 // and structures, not primitive ids), so a mechanic no primitive covers shows
 // up as a gap instead of being silently bent into something that exists.
 import { parseReply } from './writer.js';
+import { coreSchema, coreOffline, normalizeCore, isAvatar, modeCatalogue } from './modes.js';
 import { obj, list, objects, isStr, messageOf } from '../kernel/guards.js';
 
 /** @typedef {import('./types.js').Writer} Writer */
+/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {{ question: string, answer: string }} Answer */
 /** @typedef {{ name: string, kind: string, keeps: string[] }} Reference */
 /** @typedef {'core' | 'supporting' | 'flavor'} Importance */
@@ -27,10 +29,11 @@ import { obj, list, objects, isStr, messageOf } from '../kernel/guards.js';
  * @property {string} movement  ground | air | water | track | none (MOVEMENT)
  * @property {number} acts
  * @property {number} zones
+ * @property {import('./modes.js').Core} [core]  the play spec (with a registry)
  */
 /** decomposeIdea()'s result: the decomposition plus where it came from. @typedef {Decomposition & { source: string, ms: number, error?: string }} DecompositionResult */
 
-export const DECOMPOSITION_VERSION = 'decompose/0.1';
+export const DECOMPOSITION_VERSION = 'decompose/0.2';
 /** @type {readonly unknown[]} */
 const SPACE_KINDS = ['continuous-3d', 'continuous-2d', 'tiles-side', 'tiles-topdown', 'board', 'locations', 'none'];
 /** @type {readonly unknown[]} */
@@ -65,24 +68,34 @@ const SYSTEM = `You decompose a player's game idea into what it is made of, befo
 - title: an evocative working title. premise: two sentences. tone: a few words.
 Example names are illustrations only; decompose THIS idea.`;
 
+const CORE = `- core: the play spec. mode: the loop the game is built around, from the listed modes (story: a game whose loop is its story, walking places, talking and questing). interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost, in the game's own terms (checkmate, finish first, clear every line, catch the culprit). narrative: true only when the idea has a story told in acts. secondary: for a mashup, the other ideas' modes and how they join the primary: nested (a sub-mode entered from the primary, e.g. a creature battle resolving a capture), union (both loops in one space), skin (only its content and cast). A mashup keeps BOTH ideas.`;
+
+/** The decomposition schema; with a registry it includes the play spec (`core`) whose mode enum is the catalogue's. */
+export function decompositionSchema(registry = null) {
+  if (!registry) return DECOMPOSITION_SCHEMA;
+  return { ...DECOMPOSITION_SCHEMA, required: [...DECOMPOSITION_SCHEMA.required, 'core'], properties: { ...DECOMPOSITION_SCHEMA.properties, core: coreSchema(registry) } };
+}
+
 /**
  * Decompose with a writer (strict schema), falling back to the offline decomposition on any failure.
- * @param {{ writer?: Writer | null, prompt: string, answers?: Answer[] }} options
+ * @param {{ writer?: Writer | null, prompt: string, answers?: Answer[], registry?: RegistryLike | null }} options
  * @returns {Promise<DecompositionResult>}
  */
-export async function decomposeIdea({ writer = null, prompt, answers = [] }) {
+export async function decomposeIdea({ writer = null, prompt, answers = [], registry = null }) {
   const started = performance.now();
   const user = `Idea: ${prompt}${answers.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
   if (writer) {
     try {
-      const reply = await writer.complete({ system: SYSTEM, user, schema: { name: 'decomposition', schema: DECOMPOSITION_SCHEMA } });
-      const d = normalize(parseReply(reply.text), prompt);
+      const modes = registry ? modeCatalogue(registry).map(m => `- ${m.id}: ${String(m.intent || registry.get(m.use)?.card.intent || '').replace(/\s+/g, ' ').slice(0, 140)}${m.interaction ? ` (interaction ${m.interaction}${m.opponent ? `, opponent ${m.opponent}` : ''})` : ''}`).join('\n') : '';
+      const ask = registry ? `${user}\n\nModes in the catalogue:\n${modes || '(none declared)'}\n- story: a game whose loop is its story (places, characters, quests)` : user;
+      const reply = await writer.complete({ system: registry ? `${SYSTEM}\n${CORE}` : SYSTEM, user: ask, schema: { name: 'decomposition', schema: decompositionSchema(registry) } });
+      const d = normalize(parseReply(reply.text), prompt, registry);
       return { ...d, source: reply.model, ms: Math.round(performance.now() - started) };
     } catch (error) {
-      return { ...decomposeOffline(prompt, answers), ms: Math.round(performance.now() - started), error: String(messageOf(error) || error).slice(0, 160) };
+      return { ...decomposeOffline(prompt, answers, registry), ms: Math.round(performance.now() - started), error: String(messageOf(error) || error).slice(0, 160) };
     }
   }
-  return { ...decomposeOffline(prompt, answers), ms: Math.round(performance.now() - started) };
+  return { ...decomposeOffline(prompt, answers, registry), ms: Math.round(performance.now() - started) };
 }
 
 /** @param {unknown} s */
@@ -92,9 +105,9 @@ const clampInt = (v, lo, hi, d) => typeof v === 'number' && Number.isInteger(v) 
 
 /**
  * A decomposition from model output (or the offline path): `d` is unknown and narrowed field by field.
- * @param {unknown} input @param {string} [prompt] @returns {Decomposition}
+ * @param {unknown} input @param {string} [prompt] @param {RegistryLike | null} [registry] @returns {Decomposition}
  */
-export function normalize(input, prompt = '') {
+export function normalize(input, prompt = '', registry = null) {
   const d = obj(input);
   const seen = new Set();
   /** @type {readonly unknown[]} */
@@ -105,7 +118,8 @@ export function normalize(input, prompt = '') {
     seen.add(id);
     return { id, verb: String(m.verb || '').slice(0, 60), description: String(m.description || m.verb || '').slice(0, 240), from: String(m.from || '').slice(0, 80), importance: IMPORTANCE.includes(m.importance) ? /** @type {Importance} */ (m.importance) : 'supporting' };
   });
-  return {
+  /** @type {Decomposition} */
+  const out = {
     version: DECOMPOSITION_VERSION,
     title: String(d.title || titleFrom(prompt)).slice(0, 80),
     premise: String(d.premise || prompt).slice(0, 600),
@@ -117,6 +131,13 @@ export function normalize(input, prompt = '') {
     movement: isStr(d.movement) && MOVEMENT.includes(d.movement) ? d.movement : movementFrom(JSON.stringify(mechanics).toLowerCase()),
     acts: clampInt(d.acts, 1, 6, 3), zones: clampInt(d.zones, 2, 12, 5),
   };
+  // The play spec: the model's (normalized against the catalogue), else derived offline from the mechanics.
+  if (registry) {
+    out.core = normalizeCore(d.core, registry) || coreOffline(out, registry, prompt);
+    // No avatar, no avatar movement: the medium follows the interaction.
+    if (!isAvatar(out.core.interaction)) out.movement = 'none';
+  }
+  return out;
 }
 
 /** The avatar's medium from mechanic text when no model said: ground unless the idea flies, swims or runs a track. @param {string} text @returns {string} */
@@ -152,9 +173,9 @@ const VERBS = [
 
 /**
  * Offline decomposition: references split from the sentence, mechanics from the verb vocabulary. Deterministic.
- * @param {string} prompt @param {Answer[]} [answers] @returns {Decomposition & { source: string }}
+ * @param {string} prompt @param {Answer[]} [answers] @param {RegistryLike | null} [registry] @returns {Decomposition & { source: string }}
  */
-export function decomposeOffline(prompt, answers = []) {
+export function decomposeOffline(prompt, answers = [], registry = null) {
   const text = `${prompt} ${answers.map(a => a.answer).join(' ')}`;
   const lower = text.toLowerCase();
   const parts = prompt.split(/\s*(?:×|\bx\b|\+|\bmeets\b|\bcrossed with\b|\bmixed with\b|\bwith\b|\bin the style of\b|\bplus\b|,|&)\s*/i).map(s => s.trim()).filter(s => s.length > 1);
@@ -163,5 +184,5 @@ export function decomposeOffline(prompt, answers = []) {
   if (!mechanics.some(m => m.id === 'explore')) mechanics.push({ id: 'explore', verb: 'explore', description: 'explore places and travel between them', from: '', importance: mechanics.length ? 'supporting' : 'core' });
   if (!mechanics.some(m => m.id === 'story')) mechanics.push({ id: 'story', verb: 'story', description: 'follow a story told in acts and beats', from: '', importance: 'supporting' });
   const views = [/\bfirst[- ]person\b|\bfps\b/.test(lower) && '1p', /\bthird[- ]person\b|\b3d\b/.test(lower) && '3p', /\btop[- ]down\b/.test(lower) && 'td', /\bside[- ]?scroll\w*\b|\bplatform\w*\b/.test(lower) && 'side', /\btext\b|\bstory\b|\bmystery\b/.test(lower) && 'text'].filter(Boolean);
-  return { ...normalize({ title: titleFrom(prompt), premise: prompt, references, mechanics, spaces: [], views, acts: 3, zones: 5, tone: '' }, prompt), source: 'offline' };
+  return { ...normalize({ title: titleFrom(prompt), premise: prompt, references, mechanics, spaces: [], views, acts: 3, zones: 5, tone: '' }, prompt, registry), source: 'offline' };
 }
