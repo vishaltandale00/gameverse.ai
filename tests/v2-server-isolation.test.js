@@ -12,6 +12,7 @@ import { createStore } from '../v2/server/store.js';
 import { isolationLimits, ISOLATION_DEFAULTS } from '../v2/server/isolate.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
+import { mazeWriter } from './v2-p-pipeline-fixtures.js';
 
 const tmp = () => mkdtempSync(join(os.tmpdir(), 'gv-isolation-'));
 const runner = new URL('./v2-server-fixture-runner.mjs', import.meta.url).href;
@@ -96,7 +97,7 @@ test('unbounded allocation hits the heap limit; queued jobs still run and the se
 
 test('a normal job builds and publishes through the child process', async () => {
   const { call, done } = service({ heapMb: 512, timeoutMs: 60000 }, { maxDetailTasks: 1, solveBudgetMs: 300 });
-  // Offline (no model writes a story or content): an idea the catalogue builds without them.
+  // No live model: the runner's scripted spec writer plans the idea and answers the build's questions (nothing is picked without one).
   const { json: created } = await call('POST', '/api/v2/games', { prompt: 'collect coins in a maze' });
   const finished = await done(created.gameId);
   assert.equal(finished.type, 'job_done', finished.error);
@@ -119,7 +120,7 @@ test('a normal job builds and publishes through the child process', async () => 
 test('a pipeline failure keeps decomposition, selection, outline, provenance, stage timings and the stack', async () => {
   const store = createStore(tmp());
   const base = buildCatalogue();
-  const kernel = createKernelPipeline({ catalogue: async () => base, writers: {}, decisions: null });
+  const kernel = createKernelPipeline({ catalogue: async () => base, writers: { spec: mazeWriter() }, decisions: null });
   // Fails where the live "first playable would not start" failure did: after the outline, at the first version.
   const pipeline = (job, ctx) => kernel(job, { ...ctx, publish: async () => { throw Object.assign(Error('The first playable would not start: test'), { status: 422 }); } });
   const jobs = createJobs({ store, pipeline });

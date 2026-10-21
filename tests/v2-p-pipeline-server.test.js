@@ -8,7 +8,7 @@ import { createGameService } from '../v2/server/api.mjs';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { runBench } from '../v2/tools/kernel-bench.mjs';
-import { fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
+import { fakeWriter, buildAnswer, decomposer, planFrom, mazeWriter } from './v2-p-pipeline-fixtures.js';
 
 const tmp = () => mkdtempSync(join(os.tmpdir(), 'gv-pipeline-'));
 
@@ -125,8 +125,8 @@ test('the server builds kernel games, revises them, and refuses to route anythin
 });
 
 test('the benchmark records latency, pass rates, detail acceptance and determinism with its context', async () => {
-  // Offline, nothing writes a story or content: the idea is one the catalogue's lexical selection builds without them.
-  const r = await runBench({ prompts: ['collect coins in a maze'], n: 1, offline: true });
+  // Offline (no live model): a scripted spec writer answers the plan and the build's questions, since nothing is picked without one.
+  const r = await runBench({ prompts: ['collect coins in a maze'], n: 1, offline: true, writers: { spec: mazeWriter(), code: null } });
   assert.equal(r.summary.succeeded, 1);
   assert.equal(typeof r.summary.requestToFirstPlayableMs.p50, 'number');
   assert.equal(r.summary.replayDeterministicRate, 1);
