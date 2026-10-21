@@ -422,17 +422,37 @@ export function unwired(doc, l, end, outcome, registry) {
 }
 
 /**
+ * The subjects a typed event counts for the player's side (reads.of 'player'): the player, and every side of the loop's
+ * own instance the player joins (card.engage.join: entries of `param` whose `field` lists the player, or that match its
+ * `where`), so a rival's lap or the other team's goal is not the player's progress.
+ * @param {LoopInstance} owner @returns {string[]}
+ */
+export function playerSubjects(owner) {
+  const join = prop(prop(owner.card, 'engage'), 'join'), out = ['player'];
+  if (isObj(join) && isStr(join.param)) {
+    const where = isObj(join.where) ? join.where : null, field = isStr(join.field) ? join.field : null;
+    for (const side of objects(prop(owner.config, join.param))) {
+      if (!isStr(side.id)) continue;
+      const listed = field && list(side[field]).includes('player'), matches = where && Object.entries(where).every(([k, v]) => side[k] === v);
+      if ((listed || matches) && !out.includes(side.id)) out.push(side.id);
+    }
+  }
+  return out;
+}
+
+/**
  * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
  * winOwner: `core` orders the loops as the planner does, else the win the document wires), with the comparison and target of the won plot ending that
- * tests it, when one does. null when no loop declares a game-ending win with reads.
- * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {{ use: string, event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number } | null}
+ * tests it, when one does. An event read `of: 'player'` counts the player's side only: `subjects` (playerSubjects) name
+ * the typed events (`event:<subject>`) that are its. null when no loop declares a game-ending win with reads.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {{ use: string, event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number } | null}
  */
 export function winQuantity(doc, registry, core = null) {
   const owner = winOwner(doc, registry, loopInstances(doc, registry), core);
   const reads = owner ? readsOf(owner.loop.win) : null;
   if (!owner || !reads) return null;
-  /** @type {{ use: string, event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number }} */
-  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event } : { use: owner.use, var: /** @type {string} */ (reads.var) };
+  /** @type {{ use: string, event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number }} */
+  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event, ...(reads.of === 'player' ? { of: 'player', subjects: playerSubjects(owner) } : {}) } : { use: owner.use, var: /** @type {string} */ (reads.var) };
   for (const e of objects(prop(prop(doc, 'plot'), 'endings'))) {
     const w = e.when;
     if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;

@@ -76,13 +76,15 @@ const DIRECTION = { gte: 1, gt: 1, lte: -1, lt: -1 };
  * The quantity the core loop's win reads, as a measurement of play: `win` is { event } | { var } | { component, of }
  * (card.loop.win.reads of the loop that owns the win, planner/verify-adapter.js winQuantity) with { cmp, target } when
  * the document's won ending declares one. Its `advance` is how far play moved it toward the win from where it started:
- *   event      occurrences since the start (typed `event:x` occurrences count when the bare name is not counted);
+ *   event      occurrences since the start (typed `event:x` occurrences count when the bare name is not counted); a
+ *              read of the player's side (`of: 'player'`, with `subjects`) counts only `event:<subject>` of those
+ *              subjects (the player's laps, its team's goals), never a rival's;
  *   var        the change toward the target (gte/gt up, lte/lt down, eq closer to it), any change without a target;
  *   component  how many of the entities it reads ('opponents': non-player entities carrying it, 'player': the player)
  *              had it changed from how they first carried it, plus those removed during play (`carry`: per path).
  * track(rt) is taken before a stretch of play and carry(c, token, rt) after it, so removals count along a path.
  * -> null when there is no win quantity.
- * @param {{ event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number } | null | undefined} win
+ * @param {{ event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number } | null | undefined} win
  */
 export function winMeasure(win) {
   if (!win || typeof win !== 'object') return null;
@@ -94,11 +96,14 @@ export function winMeasure(win) {
   };
   if (typeof win.event === 'string' || typeof win.var === 'string') {
     const name = String(win.event ?? win.var), isEvent = typeof win.event === 'string';
-    const q = isEvent
+    const mine = isEvent && win.of === 'player' && Array.isArray(win.subjects) ? win.subjects.map(s => `${name}:${s}`) : null;
+    const q = mine
+      ? rt => mine.reduce((n, k) => n + (rt.state.counts[k] || 0), 0)
+      : isEvent
       ? rt => { const c = rt.state.counts; if (c[name] !== undefined) return c[name]; let n = 0; for (const k in c) if (k.startsWith(name + ':')) n += c[k]; return n; }
       : rt => { const v = Number(rt.state.vars[name]); return Number.isFinite(v) ? v : 0; };
     return {
-      label: `${isEvent ? 'event' : 'var'} ${name}`, target,
+      label: `${isEvent ? 'event' : 'var'} ${name}${mine ? ` (${win.subjects.join(', ')})` : ''}`, target,
       start: rt => ({ q0: q(rt) }), track: () => null, carry: c => c,
       advance: (rt, c) => (isEvent ? q(rt) - c.q0 : towards(q(rt), c.q0)),
     };
